@@ -47,9 +47,9 @@ schema_version: '2.7'
 setup_cli_version: '2.7'
 verify:
   checks:
-    build: ''
+    build: pnpm -C frontend build
     e2e: ''
-    lint: ''
-    test: ''
-    typecheck: ''
+    lint: uv --directory backend run ruff check . && pnpm -C frontend lint
+    test: uv --directory backend run pytest && pnpm -C frontend test --run
+    typecheck: uv --directory backend run mypy && pnpm -C frontend typecheck
 workflow_version: '2.7'
