@@ -1,0 +1,14 @@
+[Unit]
+Description=gin-console
+After=network-online.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Service]
+WorkingDirectory=%h/gin-console
+ExecStart=%h/.local/bin/uv --directory %h/gin-console/backend run --frozen python -m gin_console
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

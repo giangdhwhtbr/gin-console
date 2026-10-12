@@ -1,0 +1,12 @@
+# Copy to ~/.config/gin-console/config.yaml (or point GIN_CONSOLE_CONFIG at it).
+server:
+  host: 127.0.0.1   # loopback only; exposed through `tailscale serve`
+  port: 8700
+projects:
+  - name: qwikfone
+    path: /home/gin/qwikfone
+  - name: scotty
+    path: /home/gin/scotty
+    scotty_id: scotty
+  - name: gin-workflow
+    path: /home/gin/gin-workflow
