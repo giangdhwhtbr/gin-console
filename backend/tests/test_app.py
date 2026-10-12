@@ -82,3 +82,17 @@ def test_server_004_not_built_is_503(tmp_path: Path) -> None:
     response = make_client(tmp_path, [], built=False).get("/")
     assert response.status_code == 503
     assert "pnpm -C frontend build" in response.text
+
+
+# REQ-SERVER-004
+def test_server_004_null_byte_path_does_not_500(tmp_path: Path) -> None:
+    response = make_client(tmp_path, []).get("/%00")
+    assert response.status_code == 200
+    assert response.text == "<html>console</html>"
+
+
+# REQ-SERVER-004
+def test_server_004_bare_api_is_404(tmp_path: Path) -> None:
+    response = make_client(tmp_path, []).get("/api")
+    assert response.status_code == 404
+    assert "console" not in response.text
