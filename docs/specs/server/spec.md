@@ -31,7 +31,7 @@ WHEN a client requests `GET /api/health`, the server SHALL respond 200 with `sta
 - THEN the response is 200 with `{"status": "ok", "version": "<app version>"}`
 
 ### REQ-SERVER-003: Projects endpoint
-WHEN a client requests `GET /api/projects`, the server SHALL return the configured projects in config order, each with `name`, `path`, `scotty_id`, and `exists` reflecting whether `path` is a directory at request time.
+WHEN a client requests `GET /api/projects`, the server SHALL return the configured projects in config order, each with `name`, `path`, `scotty_id`, `scotty_url` (`<server.scotty_base_url>/p/<scotty_id>`, or `null` when either is unset), `exists` reflecting whether `path` is a directory at request time, `workflow` and `beads`.
 
 #### Scenario: Existing and missing paths
 - GIVEN two configured projects, one whose path is a directory and one whose path does not exist
@@ -42,6 +42,16 @@ WHEN a client requests `GET /api/projects`, the server SHALL return the configur
 - GIVEN a configured project whose path did not exist at startup
 - WHEN the directory is created and a client requests `GET /api/projects`
 - THEN that project has `exists` true
+
+#### Scenario: Scotty URL
+- GIVEN `server.scotty_base_url` is `https://h` and a project has `scotty_id` `scotty`
+- WHEN a client requests `GET /api/projects`
+- THEN that project's `scotty_url` is `https://h/p/scotty`
+
+#### Scenario: No Scotty URL
+- GIVEN a project without `scotty_id`, or no `server.scotty_base_url`
+- WHEN a client requests `GET /api/projects`
+- THEN that project's `scotty_url` is `null`
 
 ### REQ-SERVER-004: Frontend serving
 The server SHALL serve the built frontend from `frontend/dist` for non-API paths, falling back to `index.html`; unknown `/api/*` paths SHALL return 404, and IF `frontend/dist` has no `index.html`, THEN non-API paths SHALL return 503 with instructions to run `pnpm -C frontend build`.
@@ -60,3 +70,55 @@ The server SHALL serve the built frontend from `frontend/dist` for non-API paths
 - GIVEN `frontend/dist/index.html` does not exist
 - WHEN a client requests `/`
 - THEN the response is 503 and names the build command
+
+### REQ-SERVER-005: Workflow state per project
+WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `workflow` object with `stage`, `layout` and `gates` (gate name to state), taken from `gin-workflow state --format json` run read-only in the project directory.
+
+#### Scenario: Workflow state present
+- GIVEN a project whose `gin-workflow state --format json` reports stage `discuss` and five gates
+- WHEN a client requests `GET /api/projects`
+- THEN that project's `workflow` has `stage` `discuss` and the five gates with their states
+
+### REQ-SERVER-006: Beads summary per project
+WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id` and `title`, taken from read-only `bd` commands run in the project directory.
+
+#### Scenario: Counts and active epics
+- GIVEN a project with 3 open, 1 in_progress and 2 ready issues, one in_progress epic and one ready open epic
+- WHEN a client requests `GET /api/projects`
+- THEN `beads` has those counts and `epics` lists both epics
+
+#### Scenario: No active epics
+- GIVEN a project with no in_progress epic and no ready open epic
+- WHEN a client requests `GET /api/projects`
+- THEN `beads.epics` is an empty list
+
+### REQ-SERVER-007: Per-block errors
+IF a `gin-workflow` or `bd` command for a project is missing, times out, exits non-zero, or prints invalid JSON, THEN the server SHALL set that block (`workflow` or `beads`) to an object whose only content is an `error` message, and SHALL leave the other block and the other projects unaffected; for a project whose `exists` is false the server SHALL run no command and return both blocks as `null`.
+
+#### Scenario: One block fails
+- GIVEN `bd` fails for a project while `gin-workflow state` succeeds
+- WHEN a client requests `GET /api/projects`
+- THEN that project's `beads` is `{"error": "<message>"}` and its `workflow` has data
+
+#### Scenario: Missing project path
+- GIVEN a configured project whose path does not exist
+- WHEN a client requests `GET /api/projects`
+- THEN its `workflow` and `beads` are `null` and no command was run for it
+
+### REQ-SERVER-008: Short-lived cache
+The server SHALL reuse a project's collected `workflow` and `beads` data for 5 seconds, and SHALL run the commands for one project at most once at a time when requests overlap.
+
+#### Scenario: Cache hit
+- GIVEN a project's data was collected 2 seconds ago
+- WHEN a client requests `GET /api/projects`
+- THEN no command is run for that project
+
+#### Scenario: Cache expired
+- GIVEN a project's data was collected 6 seconds ago
+- WHEN a client requests `GET /api/projects`
+- THEN the commands run again
+
+#### Scenario: Overlapping requests
+- GIVEN two requests arrive while the commands for a project are running
+- WHEN both complete
+- THEN the commands ran once for that project

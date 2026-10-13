@@ -47,3 +47,16 @@ IF the config file is missing, is not valid YAML, or violates the schema (duplic
 - GIVEN a project whose `path` is `qwikfone`
 - WHEN the console starts
 - THEN it exits non-zero and the message names that project's `path` field
+
+### REQ-CONFIG-004: Scotty base URL
+WHERE `server.scotty_base_url` is set, the config SHALL accept it as an absolute `http` or `https` URL, and IF it is set to anything else, THEN the console SHALL exit with a non-zero status naming the field.
+
+#### Scenario: Valid base URL
+- GIVEN `server.scotty_base_url` is `https://host.example.ts.net`
+- WHEN the console starts
+- THEN it loads the config
+
+#### Scenario: Invalid base URL
+- GIVEN `server.scotty_base_url` is `host.example.ts.net` (no scheme)
+- WHEN the console starts
+- THEN it exits non-zero and the message names `scotty_base_url`
