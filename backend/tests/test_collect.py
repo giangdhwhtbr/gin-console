@@ -88,7 +88,15 @@ def test_server_006_no_active_epics(monkeypatch: pytest.MonkeyPatch, tmp_path: P
 
 
 # REQ-SERVER-007
-@pytest.mark.parametrize("failure", [FileNotFoundError(), subprocess.TimeoutExpired("bd", 10), 1])
+@pytest.mark.parametrize(
+    "failure",
+    [
+        FileNotFoundError(),
+        PermissionError(13, "Permission denied"),
+        subprocess.TimeoutExpired("bd", 10),
+        1,
+    ],
+)
 def test_server_007_beads_error_isolated(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, failure: Exception | int
 ) -> None:

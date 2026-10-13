@@ -48,6 +48,8 @@ def _run_json(cmd: list[str], cwd: Path, json_on_failure: bool = False) -> Any:
         raise CollectError(f"{cmd[0]} not found") from None
     except subprocess.TimeoutExpired:
         raise CollectError(f"{cmd[0]} timed out") from None
+    except OSError as exc:  # e.g. PermissionError on the command or the project directory
+        raise CollectError(f"{cmd[0]} failed: {exc.strerror}") from None
     if done.returncode != 0 and not json_on_failure:
         raise CollectError(f"{cmd[0]} exited {done.returncode}: {done.stderr.strip()[:200]}")
     try:
