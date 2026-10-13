@@ -5,6 +5,7 @@ from __future__ import annotations
 import ipaddress
 from collections.abc import Mapping
 from pathlib import Path
+from urllib.parse import urlparse
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
@@ -23,6 +24,16 @@ class ServerSettings(BaseModel):
 
     host: str = "127.0.0.1"
     port: int = Field(default=8700, ge=1, le=65535)
+    scotty_base_url: str | None = None
+
+    @field_validator("scotty_base_url")
+    @classmethod
+    def _http_url(cls, value: str | None) -> str | None:
+        if value is not None:
+            parsed = urlparse(value)
+            if parsed.scheme not in ("http", "https") or not parsed.netloc:
+                raise ValueError("must be an absolute http or https URL")
+        return value
 
 
 class ProjectEntry(BaseModel):

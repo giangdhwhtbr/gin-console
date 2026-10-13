@@ -2,6 +2,7 @@
 server:
   host: 127.0.0.1   # loopback only; exposed through `tailscale serve`
   port: 8700
+  scotty_base_url: https://instance-20260515-2304.tail5ca54e.ts.net   # optional; enables Scotty links
 projects:
   - name: qwikfone
     path: /home/gin/qwikfone
