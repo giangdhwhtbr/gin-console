@@ -79,9 +79,9 @@ The server SHALL reuse a project's collected `workflow` and `beads` data for 5 s
 The Projects page SHALL show, for each project with `workflow` data, the `stage` and one chip per gate whose text names the gate and its state.
 
 #### Scenario: Stage and gates
-- GIVEN a project with stage `plan` and gate `requirement_confirmed` met
+- GIVEN a project with stage `plan` and gate `requirement_confirmed` satisfied
 - WHEN the Projects page loads
-- THEN the project's card shows `plan` and a chip naming `requirement_confirmed` as met
+- THEN the project's card shows `plan` and a chip naming `requirement_confirmed` as satisfied
 
 ### REQ-UI-004: Beads summary display
 The Projects page SHALL show, for each project with `beads` data, the counts open, in progress, blocked and ready, and the active epics as `id` and `title`, or a "no active epics" note when the list is empty.

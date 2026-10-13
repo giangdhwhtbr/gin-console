@@ -3,7 +3,7 @@
 Epic: gin-console-rm-projects-dashboard
 
 ## Architecture
-- Backend: new `projects/collect.py` runs `gin-workflow state --format json`, `bd list --status open,in_progress --json`, `bd ready --json` with `cwd=project.path`, timeout 10 s, and shapes `workflow` and `beads`. `projects/router.py` merges them into each project entry. Config gets `server.scotty_base_url` (validated as http/https URL).
+- Backend: new `projects/collect.py` runs `gin-workflow state --format json`, `bd list --status open,in_progress --limit 0 --json`, `bd ready --limit 0 --json`, `bd blocked --json` with `cwd=project.path`, timeout 10 s, and shapes `workflow` and `beads`. `projects/router.py` merges them into each project entry. Config gets `server.scotty_base_url` (validated as http/https URL).
 - Cache: dict per project name of `(timestamp, workflow, beads)`, TTL 5 s, one lock per project; projects collected in parallel with a thread pool (handlers are sync, `subprocess.run` blocks).
 - Frontend: `ProjectsPage` renders one card per project (existing shadcn components, no new dependency); `api.ts` types extended.
 
