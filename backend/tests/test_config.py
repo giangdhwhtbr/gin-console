@@ -5,8 +5,12 @@ import pytest
 from gin_console.config import (
     ALLOW_NON_LOOPBACK_ENV,
     CONFIG_ENV,
+    HOST_ENV,
     ConfigError,
+    ServerSettings,
+    Settings,
     check_bind_host,
+    effective_host,
     load_settings,
     resolve_config_path,
 )
@@ -103,3 +107,16 @@ def test_server_001_non_loopback_refused(host: str) -> None:
 # REQ-SERVER-001
 def test_server_001_override_allows() -> None:
     check_bind_host("0.0.0.0", {ALLOW_NON_LOOPBACK_ENV: "1"})
+
+
+# REQ-DOCKER-007
+def test_effective_host_env_overrides_config() -> None:
+    settings = Settings(server=ServerSettings(host="127.0.0.1"))
+    assert effective_host(settings, {HOST_ENV: "0.0.0.0"}) == "0.0.0.0"
+
+
+# REQ-DOCKER-007
+def test_effective_host_defaults_to_config() -> None:
+    settings = Settings(server=ServerSettings(host="127.0.0.1"))
+    assert effective_host(settings, {}) == "127.0.0.1"
+    assert effective_host(settings, {HOST_ENV: ""}) == "127.0.0.1"
