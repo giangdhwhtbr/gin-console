@@ -32,4 +32,4 @@ if command -v bd >/dev/null 2>&1; then
 fi
 # --- END BEADS INTEGRATION v1.0.5 ---
 
-exec gin-workflow hooks run pre-commit "$@"
+exec gin-workflow hooks run pre-commit
