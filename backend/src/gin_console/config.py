@@ -19,6 +19,17 @@ class ConfigError(Exception):
     """Startup configuration problem; the message is shown to the operator."""
 
 
+def _is_http_url(value: str) -> bool:
+    if any(char.isspace() for char in value):
+        return False
+    parsed = urlparse(value)
+    try:
+        _ = parsed.port  # raises ValueError for a non-numeric or out-of-range port
+    except ValueError:
+        return False
+    return parsed.scheme in ("http", "https") and bool(parsed.hostname)
+
+
 class ServerSettings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -29,10 +40,8 @@ class ServerSettings(BaseModel):
     @field_validator("scotty_base_url")
     @classmethod
     def _http_url(cls, value: str | None) -> str | None:
-        if value is not None:
-            parsed = urlparse(value)
-            if parsed.scheme not in ("http", "https") or not parsed.netloc:
-                raise ValueError("must be an absolute http or https URL")
+        if value is not None and not _is_http_url(value):
+            raise ValueError("must be an absolute http or https URL")
         return value
 
 

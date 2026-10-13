@@ -134,7 +134,19 @@ def test_config_004_scotty_base_url_defaults_to_none(tmp_path: Path) -> None:
 
 
 # REQ-CONFIG-004
-@pytest.mark.parametrize("value", ["host.example.ts.net", "ftp://host", "https://"])
+@pytest.mark.parametrize(
+    "value",
+    [
+        "host.example.ts.net",
+        "ftp://host",
+        "https://",
+        "https://host:notaport",
+        "https://host:99999",
+        "https://   ",
+        " https://host",
+        "https://:8443",
+    ],
+)
 def test_config_004_scotty_base_url_invalid(tmp_path: Path, value: str) -> None:
     path = write(tmp_path, f"server: {{scotty_base_url: '{value}'}}\n")
     with pytest.raises(ConfigError, match="scotty_base_url"):
