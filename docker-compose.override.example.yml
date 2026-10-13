@@ -1,0 +1,7 @@
+# Copy to docker-compose.override.yml (git-ignored) and list every project from config.yaml.
+services:
+  gin-console:
+    volumes:
+      - /home/gin/qwikfone:/home/gin/qwikfone
+      - /home/gin/scotty:/home/gin/scotty
+      - /home/gin/gin-workflow:/home/gin/gin-workflow

@@ -1,0 +1,13 @@
+.git
+.planning
+.beads
+.agent-workflow
+.claude
+.codex
+.agents
+docs
+backend/.venv
+backend/.*_cache
+**/__pycache__
+frontend/node_modules
+frontend/dist
