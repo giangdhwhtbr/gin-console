@@ -1,21 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { fetchProjects, type Project } from "./api";
+import { ProjectCard } from "./ProjectCard";
 
 type State =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ok"; projects: Project[] };
+  | { status: "ok"; projects: Project[]; error: string | null };
+
+const REFRESH_MS = 10_000;
+
+const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export function ProjectsPage() {
   // simplified: server state lives in component state; move to a query cache when a second
@@ -24,30 +20,46 @@ export function ProjectsPage() {
 
   const load = useCallback(() => {
     void fetchProjects().then(
-      (projects) => setState({ status: "ok", projects }),
+      (projects) => setState({ status: "ok", projects, error: null }),
       (error: unknown) =>
-        setState({ status: "error", message: error instanceof Error ? error.message : String(error) }),
+        setState((previous) =>
+          previous.status === "ok"
+            ? { ...previous, error: messageOf(error) }
+            : { status: "error", message: messageOf(error) },
+        ),
     );
   }, []);
 
   useEffect(() => {
     load();
+    const refresh = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    const timer = setInterval(refresh, REFRESH_MS);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, [load]);
 
   const retry = () => {
-    setState({ status: "loading" });
+    if (state.status === "error") setState({ status: "loading" });
     load();
   };
+
+  const errorMessage =
+    state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
 
   return (
     <section className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold">Projects</h1>
       {state.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}
-      {state.status === "error" && (
+      {errorMessage !== null && (
         <Alert variant="destructive">
           <AlertTitle>Projects could not be loaded</AlertTitle>
           <AlertDescription className="flex flex-col items-start gap-2">
-            <span>{state.message}</span>
+            <span>{errorMessage}</span>
             <Button variant="outline" size="sm" onClick={retry}>
               Retry
             </Button>
@@ -61,26 +73,11 @@ export function ProjectsPage() {
         </p>
       )}
       {state.status === "ok" && state.projects.length > 0 && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Path</TableHead>
-              <TableHead>Status</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {state.projects.map((project) => (
-              <TableRow key={project.name}>
-                <TableCell className="font-medium">{project.name}</TableCell>
-                <TableCell className="font-mono text-sm">{project.path}</TableCell>
-                <TableCell>
-                  {!project.exists && <Badge variant="destructive">missing</Badge>}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {state.projects.map((project) => (
+            <ProjectCard key={project.name} project={project} />
+          ))}
+        </div>
       )}
     </section>
   );
