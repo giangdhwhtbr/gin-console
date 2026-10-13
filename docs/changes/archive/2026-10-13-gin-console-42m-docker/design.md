@@ -21,7 +21,7 @@ scripts/docker-smoke.sh   # post-start checks
 deploy/README.md          # + Docker section
 ```
 
-Build args: `BD_VERSION`, `CLAUDE_VERSION`, `CODEX_VERSION`, `GIN_WORKFLOW_REF`, `APP_UID`, `APP_GID`. Defaults match the versions on the host (bd 1.0.5, claude 2.1.296, codex 0.160.0).
+Build args: `BD_VERSION`, `CLAUDE_VERSION`, `CODEX_VERSION`, `GIN_WORKFLOW_REF`, `APP_UID`, `APP_GID`. Defaults match the versions on the host (bd 1.0.5, claude 2.1.296, codex 0.160.0). `bd` is built from source because 1.0.5 has no release binary, and newer `bd` (1.3.1 tried) cannot read the schema v49 databases of existing projects (`table not found: leases`).
 
 Compose mounts, all at identical host paths: `${HOME}/.config/gin-console/config.yaml` ro, each project directory rw (listed in `docker-compose.override.yml`, kept out of git, with an example), `${HOME}/.claude` ro, `${HOME}/.codex` ro. Port mapping `127.0.0.1:8700:8700`. The shared host config says `server.host: 127.0.0.1`, which the published port cannot reach from inside the container. The one application change is a `GIN_CONSOLE_HOST` environment variable that overrides `server.host` (REQ-DOCKER-007); compose sets `GIN_CONSOLE_HOST=0.0.0.0` and `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1`, and the existing bind guard still validates the result. The change lives in `config.py` next to `check_bind_host`.
 

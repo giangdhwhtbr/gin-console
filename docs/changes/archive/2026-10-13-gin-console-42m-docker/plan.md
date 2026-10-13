@@ -353,3 +353,5 @@ def effective_host(settings: Settings, env: Mapping[str, str]) -> str
 - Model guidance is planning metadata, not Beads state.
 - Docker cannot be tried without stopping the systemd service because both use port 8700; the plan stops and restarts it explicitly (user-visible side effect).
 - The editable uv install keeps `DEFAULT_STATIC_DIR` correct (`/app/frontend/dist`); do not move the backend directory in the image.
+- Implementation deviation: `@beads/bd` from npm fails because the `v1.0.5` release has no binary assets, and `bd` 1.3.1 cannot read existing schema v49 project databases. The image builds `bd` from the `v1.0.5` tag in a `golang:1.26-bookworm` stage (`CGO_ENABLED=1`, tag `gms_pure_go`).
+- `bd` writes `.beads/.local_version` and Dolt files even for reads, so project mounts stay read-write.

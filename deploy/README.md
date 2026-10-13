@@ -40,3 +40,22 @@ Prefix with `sudo` if your user is not the Tailscale operator. Scotty stays at `
 ```bash
 journalctl --user -u gin-console -f
 ```
+
+## Docker
+
+An alternative to the systemd service. Both use port 8700, so run only one at a time (`systemctl --user stop gin-console` first).
+
+```bash
+cp .env.example .env                                           # uid/gid, gin-workflow ref
+cp docker-compose.override.example.yml docker-compose.override.yml   # list every project from config.yaml
+GH_TOKEN="${GH_TOKEN:-}" docker compose build                  # GH_TOKEN only if the gin-workflow repo is private
+GH_TOKEN="${GH_TOKEN:-}" docker compose up -d
+scripts/docker-smoke.sh
+docker compose logs -f
+```
+
+- The container runs as your uid (default 1002) with `HOME=/home/gin` and mounts the config, projects, `~/.claude`, and `~/.codex` at the same paths as on the host, so the same `config.yaml` works in both modes. `~/.claude` and `~/.codex` are read-only; projects are read-write because `bd` writes `.beads/.local_version` and Dolt files even for reads.
+- The port is published on `127.0.0.1:8700` only; `tailscale serve --https=8443 http://127.0.0.1:8700` is unchanged.
+- The image carries `uv`, `git`, `bd`, `gin-workflow`, `claude`, and `codex`. Versions are build args (`BD_VERSION`, `CLAUDE_VERSION`, `CODEX_VERSION`, `GIN_WORKFLOW_REF`). `bd` is built from source because 1.0.5 has no release binary.
+- Switch back: `docker compose down && systemctl --user start gin-console`.
+

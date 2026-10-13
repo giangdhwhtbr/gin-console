@@ -1,0 +1,27 @@
+services:
+  gin-console:
+    build:
+      context: .
+      args:
+        APP_UID: ${APP_UID:-1002}
+        APP_GID: ${APP_GID:-1002}
+        GIN_WORKFLOW_REF: ${GIN_WORKFLOW_REF:-v1.4.2}
+      secrets: [gh_token]
+    image: gin-console:local
+    user: "${APP_UID:-1002}:${APP_GID:-1002}"
+    restart: on-failure:3
+    ports:
+      - "127.0.0.1:8700:8700"
+    environment:
+      HOME: ${HOME}
+      GIN_CONSOLE_HOST: 0.0.0.0
+      GIN_CONSOLE_ALLOW_NON_LOOPBACK: "1"
+    volumes:
+      - ${HOME}/.config/gin-console/config.yaml:${HOME}/.config/gin-console/config.yaml:ro
+      - ${HOME}/.claude:${HOME}/.claude:ro
+      - ${HOME}/.codex:${HOME}/.codex:ro
+      # project directories: see docker-compose.override.example.yml
+
+secrets:
+  gh_token:
+    environment: GH_TOKEN

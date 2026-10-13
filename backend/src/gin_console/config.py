@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 
 CONFIG_ENV = "GIN_CONSOLE_CONFIG"
 ALLOW_NON_LOOPBACK_ENV = "GIN_CONSOLE_ALLOW_NON_LOOPBACK"
+HOST_ENV = "GIN_CONSOLE_HOST"
 
 
 class ConfigError(Exception):
@@ -62,6 +63,10 @@ def default_config_path() -> Path:
 def resolve_config_path(env: Mapping[str, str]) -> Path:
     raw = env.get(CONFIG_ENV)
     return Path(raw).expanduser() if raw else default_config_path()
+
+
+def effective_host(settings: Settings, env: Mapping[str, str]) -> str:
+    return env.get(HOST_ENV) or settings.server.host
 
 
 def load_settings(path: Path) -> Settings:
