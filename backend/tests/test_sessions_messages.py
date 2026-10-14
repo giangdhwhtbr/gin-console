@@ -268,3 +268,31 @@ def test_sessions_008_unreadable_transcript_is_404(tmp_path: Path) -> None:
         assert resp.status_code == 404
     finally:
         path.chmod(0o644)
+
+
+# REQ-SESSIONS-007
+@pytest.mark.parametrize(
+    "line",
+    [
+        r'{"type":"user","message":{"content":"a\ud800b"}}',
+        r'{"type":"assistant","message":{"content":[{"type":"tool_use","name":"\ud800","input":{}}]}}',
+        r'{"type":"assistant","message":{"content":[{"type":"tool_use","name":"x","input":{"\ud800":1}}]}}',
+    ],
+)
+def test_sessions_007_lone_surrogates_do_not_break_the_page(tmp_path: Path, line: str) -> None:
+    home = make_home(tmp_path)
+    write_transcript(home, DIR, A, [line])
+    response = messages(client_for(tmp_path, home))
+    assert response.status_code == 200
+    assert len(response.json()["items"]) == 1
+
+
+# REQ-SESSIONS-008
+def test_sessions_008_symlink_to_a_file_outside_the_project_is_404(tmp_path: Path) -> None:
+    home = make_home(tmp_path)
+    outside = tmp_path / "outside.jsonl"
+    outside.write_text(json.dumps(user("SECRET")) + "\n")
+    directory = home / "projects" / DIR
+    directory.mkdir(parents=True)
+    (directory / f"{A}.jsonl").symlink_to(outside)
+    assert messages(client_for(tmp_path, home)).status_code == 404

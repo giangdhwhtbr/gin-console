@@ -85,8 +85,13 @@ def _first_user_text(records: Iterable[dict[str, Any]]) -> str | None:
     return None
 
 
+def _clean(text: str) -> str:
+    """Replace lone surrogates: valid in JSON, but a response cannot encode them as UTF-8."""
+    return text.encode("utf-8", "replace").decode("utf-8")
+
+
 def _text(value: Any) -> str | None:
-    return value if isinstance(value, str) else None
+    return _clean(value) if isinstance(value, str) else None
 
 
 def _resume_command(session_id: str, cwd: str | None) -> str:
@@ -104,13 +109,13 @@ def _summarize(path: Path, project: str, live: dict[str, dict[str, Any]]) -> Ses
         else:
             tail = head
     head_records = list(_records(head))
-    title = (
+    title = _clean(
         _last_title(_records(tail))
         or _last_title(head_records)
         or _first_user_text(head_records)
         or path.stem
     )
-    cwd = next((r["cwd"] for r in head_records if isinstance(r.get("cwd"), str)), None)
+    cwd = _text(next((r["cwd"] for r in head_records if isinstance(r.get("cwd"), str)), None))
     registry = live.get(path.stem)
     return SessionSummary(
         id=path.stem,
@@ -155,12 +160,14 @@ def find_transcript(claude_home: Path, entry: ProjectEntry, session_id: str) -> 
         return None
     for directory in project_dirs(claude_home, entry):
         path = directory / f"{session_id}.jsonl"
-        if path.is_file():
+        # resolve(): a symlink pointing outside the project directory is not a transcript of it
+        if path.is_file() and path.resolve().parent == directory.resolve():
             return path
     return None
 
 
 def _cut(text: str) -> tuple[str, bool]:
+    text = _clean(text)
     return (text[:MAX_TEXT], True) if len(text) > MAX_TEXT else (text, False)
 
 
@@ -199,7 +206,9 @@ def _block(raw: Any) -> Block | None:
         return None
     text, truncated = _cut(body)
     if kind == "tool_use":
-        return Block(type=kind, name=str(raw.get("name", "")), input=text, truncated=truncated)
+        return Block(
+            type=kind, name=_clean(str(raw.get("name", ""))), input=text, truncated=truncated
+        )
     return Block(type=kind, text=text, truncated=truncated)
 
 

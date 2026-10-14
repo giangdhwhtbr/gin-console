@@ -189,3 +189,33 @@ def test_sessions_004_deeply_nested_registry_file_is_ignored(tmp_path: Path) -> 
     write_transcript(home, "-home-gin-qwikfone", A, [])
     (home / "sessions" / "deep.json").write_text("[" * 100_000)
     assert list_sessions(settings(QWIK), home, None)[0].live is False
+
+
+# REQ-SESSIONS-003
+@pytest.mark.parametrize(
+    "line",
+    [
+        r'{"type":"ai-title","aiTitle":"a\ud800b"}',
+        r'{"type":"user","message":{"content":"a\ud800b"}}',
+        r'{"type":"user","cwd":"/x\ud800"}',
+    ],
+)
+def test_sessions_003_lone_surrogates_are_replaced(tmp_path: Path, line: str) -> None:
+    # a lone surrogate is a valid JSON escape but cannot be encoded as UTF-8 in the response
+    home = make_home(tmp_path)
+    write_transcript(home, "-home-gin-qwikfone", A, [line])
+    (session,) = list_sessions(settings(QWIK), home, None)
+    for value in (session.title, session.cwd or "", session.resume_command):
+        value.encode("utf-8")
+
+
+# REQ-SESSIONS-004
+def test_sessions_004_registry_text_with_a_lone_surrogate_is_replaced(tmp_path: Path) -> None:
+    home = make_home(tmp_path)
+    write_transcript(home, "-home-gin-qwikfone", A, [])
+    raw = '{"pid": ' + str(os.getpid()) + ', "sessionId": "' + A + '", "name": "\\ud800"}'
+    (home / "sessions" / "1.json").write_text(raw)
+    (session,) = list_sessions(settings(QWIK), home, None)
+    assert session.live is True
+    assert session.name is not None
+    session.name.encode("utf-8")
