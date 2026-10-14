@@ -160,3 +160,32 @@ def test_sessions_005_resume_command(tmp_path: Path, cwd: str | None, expected: 
         record["cwd"] = cwd
     write_transcript(home, "-home-gin-qwikfone", A, [record])
     assert list_sessions(settings(QWIK), home, None)[0].resume_command == expected
+
+
+# REQ-SESSIONS-004
+def test_sessions_004_malformed_registry_records_are_ignored(tmp_path: Path) -> None:
+    home = make_home(tmp_path)
+    write_transcript(home, "-home-gin-qwikfone", A, [])
+    (home / "sessions" / "1.json").write_text("[1]")
+    (home / "sessions" / "2.json").write_text("not json")
+    write_live(home, os.getpid(), A, name=5, status=["x"], kind={"a": 1})
+    session = list_sessions(settings(QWIK), home, None)[0]
+    assert session.live is True
+    assert (session.name, session.status, session.kind) == (None, None, None)
+
+
+# REQ-SESSIONS-003
+def test_sessions_003_deeply_nested_line_does_not_break_the_list(tmp_path: Path) -> None:
+    home = make_home(tmp_path)
+    write_transcript(
+        home, "-home-gin-qwikfone", A, ["[" * 100_000, {"type": "ai-title", "aiTitle": "ok"}]
+    )
+    assert list_sessions(settings(QWIK), home, None)[0].title == "ok"
+
+
+# REQ-SESSIONS-004
+def test_sessions_004_deeply_nested_registry_file_is_ignored(tmp_path: Path) -> None:
+    home = make_home(tmp_path)
+    write_transcript(home, "-home-gin-qwikfone", A, [])
+    (home / "sessions" / "deep.json").write_text("[" * 100_000)
+    assert list_sessions(settings(QWIK), home, None)[0].live is False

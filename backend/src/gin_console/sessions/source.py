@@ -39,10 +39,12 @@ def live_sessions(claude_home: Path) -> dict[str, dict[str, Any]]:
     for registry in (claude_home / "sessions").glob("*.json"):
         try:
             record = json.loads(registry.read_text())
-        except (OSError, ValueError):
+        except (OSError, ValueError, RecursionError):
+            continue
+        if not isinstance(record, dict):
             continue
         pid, session_id = record.get("pid"), record.get("sessionId")
-        if isinstance(pid, int) and isinstance(session_id, str) and Path(f"/proc/{pid}").exists():
+        if type(pid) is int and isinstance(session_id, str) and Path(f"/proc/{pid}").exists():
             live[session_id] = record
     return live
 
@@ -51,7 +53,7 @@ def _records(chunk: bytes) -> Iterator[dict[str, Any]]:
     for line in chunk.split(b"\n"):
         try:
             record = json.loads(line)
-        except ValueError:  # a line cut by the chunk edge, or not JSON
+        except (ValueError, RecursionError):  # cut by the chunk edge, not JSON, or too deep
             continue
         if isinstance(record, dict):
             yield record
@@ -81,6 +83,10 @@ def _first_user_text(records: Iterable[dict[str, Any]]) -> str | None:
         if isinstance(text, str) and text.strip():
             return text.strip()[:80]
     return None
+
+
+def _text(value: Any) -> str | None:
+    return value if isinstance(value, str) else None
 
 
 def _resume_command(session_id: str, cwd: str | None) -> str:
@@ -114,9 +120,9 @@ def _summarize(path: Path, project: str, live: dict[str, dict[str, Any]]) -> Ses
         modified=datetime.fromtimestamp(stat.st_mtime, tz=UTC),
         size=stat.st_size,
         live=registry is not None,
-        name=registry.get("name") if registry else None,
-        status=registry.get("status") if registry else None,
-        kind=registry.get("kind") if registry else None,
+        name=_text(registry.get("name")) if registry else None,
+        status=_text(registry.get("status")) if registry else None,
+        kind=_text(registry.get("kind")) if registry else None,
         resume_command=_resume_command(path.stem, cwd),
     )
 
