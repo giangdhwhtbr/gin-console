@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from gin_console.config import ProjectEntry, Settings
-from gin_console.sessions.models import SessionSummary
+from gin_console.sessions.models import Block, Message, MessagePage, SessionSummary
 
 EDGE_BYTES = 64 * 1024
 WORKTREE_INFIX = "--planning-worktrees-"
@@ -145,3 +145,89 @@ def list_sessions(
                     continue
     sessions.sort(key=lambda s: (not s.live, -s.modified.timestamp()))
     return sessions
+
+
+MAX_TEXT = 20_000
+
+
+def find_transcript(claude_home: Path, entry: ProjectEntry, session_id: str) -> Path | None:
+    if not _is_session_id(session_id):  # also rules out path separators and ".."
+        return None
+    for directory in project_dirs(claude_home, entry):
+        path = directory / f"{session_id}.jsonl"
+        if path.is_file():
+            return path
+    return None
+
+
+def _cut(text: str) -> tuple[str, bool]:
+    return (text[:MAX_TEXT], True) if len(text) > MAX_TEXT else (text, False)
+
+
+def _result_text(content: Any) -> str | None:
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = [
+            p["text"]
+            for p in content
+            if isinstance(p, dict) and p.get("type") == "text" and isinstance(p.get("text"), str)
+        ]
+        return "\n".join(parts)
+    return None
+
+
+def _block(raw: Any) -> Block | None:
+    if not isinstance(raw, dict):
+        return None
+    kind = raw.get("type")
+    body: Any
+    if kind == "text":
+        body = raw.get("text")
+    elif kind == "thinking":
+        body = raw.get("thinking")
+    elif kind == "tool_use":
+        try:
+            body = json.dumps(raw.get("input"), separators=(",", ":"), ensure_ascii=False)
+        except (TypeError, ValueError, RecursionError):
+            return None
+    elif kind == "tool_result":
+        body = _result_text(raw.get("content"))
+    else:
+        return None
+    if not isinstance(body, str):
+        return None
+    text, truncated = _cut(body)
+    if kind == "tool_use":
+        return Block(type=kind, name=str(raw.get("name", "")), input=text, truncated=truncated)
+    return Block(type=kind, text=text, truncated=truncated)
+
+
+def _message(line: str) -> Message | None:
+    try:
+        record = json.loads(line)
+    except (ValueError, RecursionError):
+        return None
+    if not isinstance(record, dict) or record.get("type") not in ("user", "assistant"):
+        return None
+    message = record.get("message")
+    content = message.get("content") if isinstance(message, dict) else None
+    raw_blocks = [{"type": "text", "text": content}] if isinstance(content, str) else content
+    blocks = [b for b in map(_block, raw_blocks) if b] if isinstance(raw_blocks, list) else []
+    return Message(role=record["type"], blocks=blocks) if blocks else None
+
+
+# simplified: every page re-reads the file from line 0; add an offset index only if a
+# transcript grows past tens of MB.
+def read_messages(path: Path, offset: int, limit: int) -> MessagePage:
+    items: list[Message] = []
+    with path.open("r", encoding="utf-8", errors="replace") as handle:
+        for number, line in enumerate(handle):
+            if number < offset:
+                continue
+            if len(items) == limit:
+                return MessagePage(items=items, next_offset=number)
+            message = _message(line)
+            if message is not None:
+                items.append(message)
+    return MessagePage(items=items, next_offset=None)
