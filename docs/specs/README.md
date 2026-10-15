@@ -9,3 +9,4 @@ Changes are proposed in `../changes/<epic-id>-<slug>/spec-delta.md` and merged h
 - [server](server/spec.md)
 - [ui](ui/spec.md)
 - [deploy](deploy/spec.md)
+- [sessions](sessions/spec.md)
