@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SessionSummary } from "./api";
@@ -38,6 +38,22 @@ function stubApi(routes: { messages: (offset: number) => Response; list?: () => 
   });
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
+}
+
+// First page (offset 0) answers at once with next_offset 3; the page at offset 3 stays pending
+// until `release` is called.
+function stubPendingSecondPage({ live }: { live: boolean }) {
+  let release: (response: Response) => void = () => undefined;
+  const pending = new Promise<Response>((resolve) => {
+    release = resolve;
+  });
+  const fetchMock = vi.fn((url: string) => {
+    if (url.includes("offset=3")) return pending;
+    if (url.includes("/messages")) return Promise.resolve(json(page([text("user", "one")], 3)));
+    return Promise.resolve(json([session({ live })]));
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return { fetchMock, release: (response: Response) => release(response) };
 }
 
 const block = (type: string, overrides: Record<string, unknown> = {}) => ({
@@ -207,4 +223,36 @@ describe("SessionLogPage", () => {
     await userEvent.click(screen.getByRole("button", { name: /retry/i }));
     expect(await screen.findByText("recovered")).toBeInTheDocument();
   });
+  // REQ-UI-013
+  it("REQ-UI-013 sends one request when Load more is double-clicked", async () => {
+    const { release, fetchMock } = stubPendingSecondPage({ live: false });
+    render(<SessionLogPage project="qwikfone" id={ID} />);
+    await userEvent.dblClick(await screen.findByRole("button", { name: "Load more" }));
+    await act(async () => {
+      release(json(page([text("user", "two")], null)));
+      await Promise.resolve();
+    });
+    expect(await screen.findByText("two")).toBeInTheDocument();
+    expect(screen.getAllByText("two")).toHaveLength(1);
+    const secondPage = fetchMock.mock.calls.filter(([url]) => url.includes("offset=3"));
+    expect(secondPage).toHaveLength(1);
+  });
+
+  // REQ-UI-013
+  it("REQ-UI-013 disables Load more and Refresh while a page request is pending", async () => {
+    const { release } = stubPendingSecondPage({ live: true });
+    render(<SessionLogPage project="qwikfone" id={ID} />);
+    await screen.findByText("Fix the bug");
+    await userEvent.click(await screen.findByRole("button", { name: "Load more" }));
+    expect(screen.getByRole("button", { name: "Load more" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeDisabled();
+    await act(async () => {
+      release(json(page([text("user", "two")], null)));
+      await Promise.resolve();
+    });
+    expect(await screen.findByText("two")).toBeInTheDocument();
+    expect(screen.getAllByText("one")).toHaveLength(1);
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeEnabled();
+  });
+
 });

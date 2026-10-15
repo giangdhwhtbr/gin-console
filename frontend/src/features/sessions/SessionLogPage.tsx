@@ -18,45 +18,50 @@ type State =
   | { status: "error"; message: string }
   | { status: "notfound" }
   | { status: "ok"; pages: Page[]; next: number | null; error: string | null };
-type Mode = "replace" | "append" | "replace-last";
+// "first" starts the log over; "page" puts the page at its offset (replacing it if it is already
+// there), so a repeated or refreshed request can never duplicate or drop a page.
+type Mode = "first" | "page";
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export function SessionLogPage({ project, id }: { project: string; id: string }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [summary, setSummary] = useState<SessionSummary | null>(null);
-  const lastParams = useRef<{ offset: number; mode: Mode }>({ offset: 0, mode: "replace" });
+  const [busy, setBusy] = useState(false);
+  const lastParams = useRef<{ offset: number; mode: Mode }>({ offset: 0, mode: "first" });
 
   const request = useCallback(
     (offset: number, mode: Mode) => {
       lastParams.current = { offset, mode };
-      void fetchMessages(project, id, offset).then(
-        (result) =>
-          setState((previous) => {
-            const page: Page = { offset, items: result.items };
-            const pages =
-              mode === "replace" || previous.status !== "ok"
-                ? [page]
-                : mode === "append"
-                  ? [...previous.pages, page]
-                  : [...previous.pages.slice(0, -1), page];
-            return { status: "ok", pages, next: result.next_offset, error: null };
-          }),
-        (error: unknown) =>
-          setState((previous) =>
-            error instanceof SessionNotFoundError
-              ? { status: "notfound" }
-              : previous.status === "ok"
-                ? { ...previous, error: messageOf(error) }
-                : { status: "error", message: messageOf(error) },
-          ),
-      );
+      void fetchMessages(project, id, offset)
+        .then(
+          (result) =>
+            setState((previous) => {
+              const page: Page = { offset, items: result.items };
+              const pages =
+                mode === "first" || previous.status !== "ok"
+                  ? [page]
+                  : previous.pages.some((p) => p.offset === offset)
+                    ? previous.pages.map((p) => (p.offset === offset ? page : p))
+                    : [...previous.pages, page];
+              return { status: "ok", pages, next: result.next_offset, error: null };
+            }),
+          (error: unknown) =>
+            setState((previous) =>
+              error instanceof SessionNotFoundError
+                ? { status: "notfound" }
+                : previous.status === "ok"
+                  ? { ...previous, error: messageOf(error) }
+                  : { status: "error", message: messageOf(error) },
+            ),
+        )
+        .finally(() => setBusy(false));
     },
     [project, id],
   );
 
   useEffect(() => {
-    request(0, "replace");
+    request(0, "first");
   }, [request]);
 
   useEffect(() => {
@@ -66,10 +71,17 @@ export function SessionLogPage({ project, id }: { project: string; id: string })
     );
   }, [project, id]);
 
+  // User-triggered requests: busy disables the buttons until the response is applied. The first
+  // load is covered by the "loading" state instead (and may not set state inside an effect).
+  const go = (offset: number, mode: Mode) => {
+    setBusy(true);
+    request(offset, mode);
+  };
+
   const retry = () => {
     if (state.status === "error") setState({ status: "loading" });
     const { offset, mode } = lastParams.current;
-    request(offset, mode);
+    go(offset, mode);
   };
 
   const errorMessage =
@@ -97,7 +109,7 @@ export function SessionLogPage({ project, id }: { project: string; id: string })
               <AlertTitle>Messages could not be loaded</AlertTitle>
               <AlertDescription className="flex flex-col items-start gap-2">
                 <span>{errorMessage}</span>
-                <Button variant="outline" size="sm" onClick={retry}>
+                <Button variant="outline" size="sm" disabled={busy} onClick={retry}>
                   Retry
                 </Button>
               </AlertDescription>
@@ -113,12 +125,20 @@ export function SessionLogPage({ project, id }: { project: string; id: string })
               {messages.length === 0 && <p className="text-muted-foreground">No messages.</p>}
               <div className="flex gap-2">
                 {state.next !== null && (
-                  <Button variant="outline" onClick={() => request(state.next ?? 0, "append")}>
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => go(state.next ?? 0, "page")}
+                  >
                     Load more
                   </Button>
                 )}
                 {summary?.live && last && (
-                  <Button variant="outline" onClick={() => request(last.offset, "replace-last")}>
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => go(last.offset, "page")}
+                  >
                     Refresh
                   </Button>
                 )}
