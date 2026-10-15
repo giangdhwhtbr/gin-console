@@ -25,4 +25,32 @@ describe("App routing", () => {
     await screen.findByText(/no projects configured/i);
     expect(window.location.pathname).toBe("/");
   });
+
+  // REQ-UI-012
+  it("REQ-UI-012 renders the session log page on /sessions/:project/:id and falls back on malformed route", async () => {
+    window.history.replaceState(null, "", "/sessions/qwikfone/11111111-1111-4111-8111-111111111111");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("/messages")) {
+          return Promise.resolve(json({ items: [], next_offset: null }));
+        }
+        return Promise.resolve(json([]));
+      }),
+    );
+    render(<App />);
+    await screen.findByRole("link", { name: "Back to sessions" });
+    expect(screen.getByText("No messages.")).toBeInTheDocument();
+
+    cleanup();
+    window.history.replaceState(null, "", "/sessions/%E0%A4%A");
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+
+    cleanup();
+    window.history.replaceState(null, "", "/sessions/%E0%A4%A/11111111-1111-4111-8111-111111111111");
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+  });
 });
+

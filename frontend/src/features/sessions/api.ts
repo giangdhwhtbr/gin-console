@@ -39,3 +39,52 @@ export async function fetchSessions(project?: string): Promise<SessionSummary[]>
   }
   return body;
 }
+
+export type Block = {
+  type: "text" | "thinking" | "tool_use" | "tool_result";
+  text: string | null;
+  name: string | null;
+  input: string | null;
+  truncated: boolean;
+};
+export type Message = { role: "user" | "assistant"; blocks: Block[] };
+export type MessagePage = { items: Message[]; next_offset: number | null };
+
+export class SessionNotFoundError extends Error {}
+
+const BLOCK_TYPES = ["text", "thinking", "tool_use", "tool_result"];
+
+function isBlock(value: unknown): value is Block {
+  if (typeof value !== "object" || value === null) return false;
+  return (
+    BLOCK_TYPES.includes(String(field(value, "type"))) &&
+    ["text", "name", "input"].every((k) => isStringOrNull(field(value, k))) &&
+    typeof field(value, "truncated") === "boolean"
+  );
+}
+
+function isMessage(value: unknown): value is Message {
+  if (typeof value !== "object" || value === null) return false;
+  const blocks = field(value, "blocks");
+  return (
+    ["user", "assistant"].includes(String(field(value, "role"))) &&
+    Array.isArray(blocks) &&
+    blocks.every(isBlock)
+  );
+}
+
+export async function fetchMessages(project: string, id: string, offset: number): Promise<MessagePage> {
+  const response = await fetch(
+    `/api/sessions/${encodeURIComponent(project)}/${encodeURIComponent(id)}/messages?offset=${offset}`,
+  );
+  if (response.status === 404) throw new SessionNotFoundError("Session not found");
+  if (!response.ok) throw new Error(`Could not load messages (HTTP ${response.status})`);
+  const body: unknown = await response.json();
+  const items = typeof body === "object" && body !== null ? field(body, "items") : undefined;
+  const next = typeof body === "object" && body !== null ? field(body, "next_offset") : undefined;
+  if (!Array.isArray(items) || !items.every(isMessage) || !(next === null || typeof next === "number")) {
+    throw new Error("Could not load messages (unexpected response)");
+  }
+  return { items, next_offset: next };
+}
+
