@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { fetchProjects, type Project } from "./api";
 import { ProjectCard } from "./ProjectCard";
 
@@ -30,18 +31,7 @@ export function ProjectsPage() {
     );
   }, []);
 
-  useEffect(() => {
-    load();
-    const refresh = () => {
-      if (document.visibilityState === "visible") load();
-    };
-    const timer = setInterval(refresh, REFRESH_MS);
-    document.addEventListener("visibilitychange", refresh);
-    return () => {
-      clearInterval(timer);
-      document.removeEventListener("visibilitychange", refresh);
-    };
-  }, [load]);
+  useVisibleInterval(load, REFRESH_MS);
 
   const retry = () => {
     if (state.status === "error") setState({ status: "loading" });
