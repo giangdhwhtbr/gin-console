@@ -1,10 +1,16 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { quota } from "@/features/quota/quotaFixtures";
+import { resetQuotaStore } from "@/features/quota/quotaStore";
 import { App } from "./App";
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+
+beforeEach(() => {
+  resetQuotaStore();
+});
 
 afterEach(() => {
   cleanup();
@@ -52,5 +58,25 @@ describe("App routing", () => {
     render(<App />);
     await screen.findByText(/no projects configured/i);
   });
+
+  // REQ-UI-015
+  it("REQ-UI-015 opens the quota page from the sidebar without a reload and follows back", async () => {
+    window.history.replaceState(null, "", "/");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) =>
+        Promise.resolve(url.includes("/api/quota") ? json(quota()) : json([])),
+      ),
+    );
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+    await userEvent.click(screen.getByRole("link", { name: "Quota" }));
+    expect(window.location.pathname).toBe("/quota");
+    expect(await screen.findByRole("heading", { name: "Quota" })).toBeInTheDocument();
+    act(() => window.history.back());
+    await screen.findByText(/no projects configured/i);
+    expect(window.location.pathname).toBe("/");
+  });
 });
+
 

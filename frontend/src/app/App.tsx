@@ -1,4 +1,5 @@
 import { ProjectsPage } from "@/features/projects/ProjectsPage";
+import { QuotaPage } from "@/features/quota/QuotaPage";
 import { SessionLogPage } from "@/features/sessions/SessionLogPage";
 import { SessionsPage } from "@/features/sessions/SessionsPage";
 import { Layout } from "./Layout";
@@ -23,6 +24,8 @@ export function App() {
         <SessionLogPage key={`${log.project}/${log.id}`} project={log.project} id={log.id} />
       ) : pathname === "/sessions" ? (
         <SessionsPage />
+      ) : pathname === "/quota" ? (
+        <QuotaPage />
       ) : (
         <ProjectsPage />
       )}

@@ -25,6 +25,12 @@ export function Layout({ children }: { children: ReactNode }) {
           >
             Sessions
           </Link>
+          <Link
+            to="/quota"
+            className={cn("rounded px-2 py-1", pathname === "/quota" && "bg-muted font-medium")}
+          >
+            Quota
+          </Link>
         </nav>
       </aside>
       <main className="min-w-0 flex-1 p-6">{children}</main>
