@@ -5,6 +5,7 @@ import os
 import re
 import select
 import shutil
+import signal
 import subprocess
 import tempfile
 import time
@@ -12,7 +13,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from importlib.metadata import version
 from pathlib import Path
-from typing import Any
+from typing import Any, TypeGuard
 
 from gin_console.quota.models import ClaudeQuota, ClaudeWindow, CodexQuota, CodexWindow
 
@@ -65,6 +66,7 @@ def run_claude_usage() -> str:
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
+                errors="replace",
                 timeout=COMMAND_TIMEOUT,
                 check=False,
             )
@@ -126,14 +128,27 @@ def run_codex_rate_limits(timeout: float = COMMAND_TIMEOUT) -> Any:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 bufsize=0,
+                # own process group: `codex` may be a wrapper that runs the real server as a child
+                start_new_session=True,
             )
         except OSError as exc:
             raise SourceError(f"codex failed: {exc.strerror}") from None
         try:
             return _codex_conversation(process, deadline)
         finally:
-            process.kill()
-            process.wait()
+            _end(process)
+
+
+def _end(process: "subprocess.Popen[bytes]") -> None:
+    """End the server and everything it started, whatever state the conversation was in."""
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except (ProcessLookupError, PermissionError):  # the group is already gone
+        process.kill()
+    for pipe in (process.stdin, process.stdout):
+        if pipe is not None:
+            pipe.close()
+    process.wait()
 
 
 def _codex_conversation(process: "subprocess.Popen[bytes]", deadline: float) -> Any:
@@ -156,7 +171,7 @@ def _codex_conversation(process: "subprocess.Popen[bytes]", deadline: float) -> 
                     message = json.loads(line)
                 except (ValueError, RecursionError):
                     continue
-                if isinstance(message, dict) and message.get("id") == request_id:
+                if _is_answer(message, request_id):
                     return message
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -175,6 +190,16 @@ def _codex_conversation(process: "subprocess.Popen[bytes]", deadline: float) -> 
     send({"method": "initialized"})
     send({"id": 2, "method": "account/rateLimits/read", "params": None})
     return _check(answer(2)).get("result")
+
+
+def _is_answer(message: Any, request_id: int) -> TypeGuard[dict[str, Any]]:
+    """A reply to our request: not a request or notification of the server, and a real int id."""
+    return (
+        isinstance(message, dict)
+        and "method" not in message
+        and type(message.get("id")) is int
+        and message["id"] == request_id
+    )
 
 
 def _check(reply: dict[str, Any]) -> dict[str, Any]:

@@ -4,6 +4,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -192,6 +193,13 @@ import json, os, sys, time
 mode = os.environ.get("FAKE_CODEX_MODE", "ok")
 with open(os.environ["FAKE_CODEX_PID"], "w") as handle:
     handle.write(str(os.getpid()))
+if os.environ.get("FAKE_CODEX_WRAP") == "1":
+    # like the Node wrapper of the real CLI: run the real server as a child with inherited stdio
+    import subprocess
+    child_env = dict(
+        os.environ, FAKE_CODEX_WRAP="0", FAKE_CODEX_PID=os.environ["FAKE_CODEX_PID"] + ".child"
+    )
+    sys.exit(subprocess.run([sys.executable, __file__] + sys.argv[1:], env=child_env).returncode)
 if mode == "exit":
     sys.exit(3)
 
@@ -208,8 +216,16 @@ for line in sys.stdin:
     message = json.loads(line)
     method = message.get("method")
     if method == "initialize":
+        if mode == "noise":
+            sys.stdout.write(json.dumps({{"id": True, "result": {{}}}}) + "\\n")
+            sys.stdout.flush()
         reply(message["id"], {{"userAgent": "fake"}})
     elif method == "account/rateLimits/read":
+        if mode == "noise":
+            # a request from the server that reuses our id and carries an error object
+            ping = {{"id": message["id"], "method": "server/ping", "error": {{"message": "boom"}}}}
+            sys.stdout.write(json.dumps(ping) + "\\n")
+            sys.stdout.flush()
         if mode == "silent":
             time.sleep(60)
         elif mode == "error":
@@ -231,6 +247,20 @@ def fake_codex(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> Path:
     monkeypatch.setenv("FAKE_CODEX_PID", str(tmp_path / "pid"))
     monkeypatch.setenv("FAKE_CODEX_PAYLOAD", json.dumps(LIVE))
     return tmp_path / "pid"
+
+
+def gone(pid_file: Path) -> bool:
+    """True once the process is gone or only a zombie waiting for its (orphaned) parent."""
+    pid = int(pid_file.read_text())
+    for _ in range(60):
+        try:
+            state = Path(f"/proc/{pid}/stat").read_text().rsplit(")", 1)[1].split()[0]
+        except FileNotFoundError:
+            return True
+        if state == "Z":
+            return True
+        time.sleep(0.05)
+    return False
 
 
 def ended(pid_file: Path) -> bool:
@@ -350,3 +380,51 @@ def test_quota_004_absurd_epoch_leaves_the_time_out(
     monkeypatch.setenv("FAKE_CODEX_PAYLOAD", json.dumps({"rateLimits": {"primary": window}}))
     codex = get_codex(run_codex_rate_limits, NOW)
     assert codex.primary is not None and codex.primary.resets_at is None
+
+
+# REQ-QUOTA-005
+def test_quota_005_the_whole_process_group_is_ended(
+    fake_codex: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The real `codex` is a Node wrapper that runs the native server as a child: killing only
+    # the wrapper would leave the server running.
+    monkeypatch.setenv("FAKE_CODEX_WRAP", "1")
+    monkeypatch.setenv("FAKE_CODEX_MODE", "silent")
+    with pytest.raises(SourceError, match="did not answer in time"):
+        run_codex_rate_limits(timeout=1.0)
+    assert gone(fake_codex)
+    assert gone(Path(str(fake_codex) + ".child"))
+
+
+# REQ-QUOTA-004
+def test_quota_004_a_wrapped_server_answers_and_is_ended(
+    fake_codex: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("FAKE_CODEX_WRAP", "1")
+    assert get_codex(run_codex_rate_limits, NOW).plan_type == "free"
+    assert gone(fake_codex)
+    assert gone(Path(str(fake_codex) + ".child"))
+
+
+# REQ-QUOTA-004
+def test_quota_004_messages_that_are_not_our_answer_are_ignored(
+    fake_codex: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # an `"id": true` reply (True == 1 in Python) and a server request that reuses our id
+    monkeypatch.setenv("FAKE_CODEX_MODE", "noise")
+    assert get_codex(run_codex_rate_limits, NOW).plan_type == "free"
+
+
+# REQ-QUOTA-003
+def test_quota_003_invalid_utf8_in_the_output_is_tolerated(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    binary = tmp_path / "bin" / "claude"
+    binary.parent.mkdir()
+    binary.write_text(
+        f"#!{sys.executable}\nimport sys\n"
+        f"sys.stdout.buffer.write(b'\\xff\\n' + {USAGE!r}.encode())\n"
+    )
+    binary.chmod(binary.stat().st_mode | stat.S_IEXEC)
+    monkeypatch.setenv("PATH", f"{binary.parent}{os.pathsep}{os.environ['PATH']}")
+    assert len(get_claude(run_claude_usage, NOW).windows) == 2
