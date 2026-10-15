@@ -1,3 +1,5 @@
+import { field, isString, isStringOrNull } from "@/lib/guards";
+
 export type SessionSummary = {
   id: string;
   project: string;
@@ -11,11 +13,6 @@ export type SessionSummary = {
   kind: string | null;
   resume_command: string;
 };
-
-// Reflect.get keeps the guards free of type assertions; the result is checked before use.
-const field = (value: object, key: string): unknown => Reflect.get(value, key);
-const isString = (value: unknown) => typeof value === "string";
-const isStringOrNull = (value: unknown) => value === null || typeof value === "string";
 
 function isSession(value: unknown): value is SessionSummary {
   if (typeof value !== "object" || value === null) return false;

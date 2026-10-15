@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { QuotaStrip } from "@/features/quota/QuotaStrip";
 import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { fetchProjects, type Project } from "./api";
 import { ProjectCard } from "./ProjectCard";
@@ -44,6 +45,7 @@ export function ProjectsPage() {
   return (
     <section className="flex flex-col gap-4">
       <h1 className="text-xl font-semibold">Projects</h1>
+      <QuotaStrip />
       {state.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}
       {errorMessage !== null && (
         <Alert variant="destructive">

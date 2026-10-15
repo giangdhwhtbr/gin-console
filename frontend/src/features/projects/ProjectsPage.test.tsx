@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Beads, Project, Workflow } from "./api";
 import { ProjectsPage } from "./ProjectsPage";
 
+vi.mock("@/features/quota/QuotaStrip", () => ({ QuotaStrip: () => null }));
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
