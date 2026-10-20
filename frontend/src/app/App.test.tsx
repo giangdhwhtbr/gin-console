@@ -136,6 +136,52 @@ describe("App routing", () => {
     const beadsLink = screen.getByRole("link", { name: "Beads" });
     expect(beadsLink).toHaveClass("bg-muted");
   });
+
+  // REQ-UI-022
+  it("REQ-UI-022 renders the bead page on /beads/:project/:id", async () => {
+    window.history.replaceState(null, "", "/beads/alpha/a-5");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("/api/beads/alpha/a-5")) {
+          return Promise.resolve(
+            json({
+              id: "a-5",
+              title: "Bead five",
+              status: "open",
+              priority: 1,
+              issue_type: "task",
+              labels: [],
+              owner: null,
+              assignee: null,
+              parent: null,
+              created_at: "2026-10-01T00:00:00Z",
+              updated_at: "2026-10-10T00:00:00Z",
+              dependency_count: 0,
+              dependent_count: 0,
+              comment_count: 0,
+              description: null,
+              dependencies: [],
+              dependents: [],
+              children: [],
+            }),
+          );
+        }
+        return Promise.resolve(json([]));
+      }),
+    );
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Bead five" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to beads" })).toHaveAttribute("href", "/beads?project=alpha");
+  });
+
+  // REQ-UI-022
+  it("REQ-UI-022 falls back to Projects page on undecodable bead route segment", async () => {
+    window.history.replaceState(null, "", "/beads/%E0%A4%A/a-5");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+  });
 });
 
 

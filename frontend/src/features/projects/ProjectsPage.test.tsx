@@ -118,33 +118,50 @@ describe("ProjectsPage", () => {
   });
 
   // REQ-UI-005
-  it("REQ-UI-005 links the project and its epics to Scotty in a new tab", async () => {
+  it("REQ-UI-005 links the project name to Scotty in a new tab and each epic to the console", async () => {
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          json([project({ name: "scotty", scotty_id: "scotty", scotty_url: "https://h/p/scotty", beads })]),
-        ),
+      vi.fn().mockResolvedValue(
+        json([project({ name: "scotty", scotty_id: "scotty", scotty_url: "https://h/p/scotty", beads })]),
+      ),
     );
     render(<ProjectsPage />);
     const card = await screen.findByRole("article", { name: "scotty" });
     const projectLink = within(card).getByRole("link", { name: "scotty" });
     expect(projectLink).toHaveAttribute("href", "https://h/p/scotty");
+    expect(projectLink).toHaveAttribute("target", "_blank");
+    expect(projectLink).toHaveAttribute("rel", "noopener noreferrer");
     const epicLink = within(card).getByRole("link", { name: "e1" });
-    expect(epicLink).toHaveAttribute("href", "https://h/p/scotty?bead=e1");
-    for (const link of [projectLink, epicLink]) {
-      expect(link).toHaveAttribute("target", "_blank");
-      expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    }
+    expect(epicLink).toHaveAttribute("href", "/beads/scotty/e1");
+    expect(epicLink).not.toHaveAttribute("target");
   });
 
   // REQ-UI-005
-  it("REQ-UI-005 renders no link without a Scotty URL", async () => {
+  it("REQ-UI-005 links epics to the console and leaves the name plain without a Scotty URL", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ beads })])));
     render(<ProjectsPage />);
-    await screen.findByRole("article", { name: "qwikfone" });
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    const card = await screen.findByRole("article", { name: "qwikfone" });
+    expect(within(card).getByRole("link", { name: "e1" })).toHaveAttribute("href", "/beads/qwikfone/e1");
+    expect(within(card).queryByRole("link", { name: "qwikfone" })).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-005
+  it("REQ-UI-005 encodes project name and epic id in the epic link", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        json([
+          project({
+            name: "my proj",
+            beads: { ...beads, epics: [{ id: "e/1", title: "Slash epic" }] },
+          }),
+        ]),
+      ),
+    );
+    render(<ProjectsPage />);
+    const card = await screen.findByRole("article", { name: "my proj" });
+    const epicLink = within(card).getByRole("link", { name: "e/1" });
+    expect(epicLink).toHaveAttribute("href", "/beads/my%20proj/e%2F1");
   });
 
   // REQ-UI-007

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { isBlockError, type Beads, type Project, type Workflow } from "./api";
 
@@ -27,7 +28,7 @@ function WorkflowBlock({ workflow }: { workflow: Workflow }) {
   );
 }
 
-function BeadsBlock({ beads, scottyUrl }: { beads: Beads; scottyUrl: string | null }) {
+function BeadsBlock({ beads, projectName }: { beads: Beads; projectName: string }) {
   const counts: [string, number][] = [
     ["open", beads.open],
     ["in progress", beads.in_progress],
@@ -47,11 +48,9 @@ function BeadsBlock({ beads, scottyUrl }: { beads: Beads; scottyUrl: string | nu
         <ul className="flex flex-col gap-1">
           {beads.epics.map((epic) => (
             <li key={epic.id}>
-              <MaybeLink
-                href={scottyUrl === null ? null : `${scottyUrl}?bead=${encodeURIComponent(epic.id)}`}
-              >
+              <Link to={`/beads/${encodeURIComponent(projectName)}/${encodeURIComponent(epic.id)}`}>
                 <span className="font-mono">{epic.id}</span>
-              </MaybeLink>{" "}
+              </Link>{" "}
               {epic.title}
             </li>
           ))}
@@ -84,7 +83,7 @@ export function ProjectCard({ project }: { project: Project }) {
         (isBlockError(beads) ? (
           <p className="text-sm text-destructive">{`beads: ${beads.error}`}</p>
         ) : (
-          <BeadsBlock beads={beads} scottyUrl={project.scotty_url} />
+          <BeadsBlock beads={beads} projectName={project.name} />
         ))}
     </article>
   );
