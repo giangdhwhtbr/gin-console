@@ -46,6 +46,7 @@ def run_json(
             env=_child_env(),
             capture_output=True,
             text=True,
+            errors="replace",  # a stray byte must not become an uncaught UnicodeDecodeError
             timeout=timeout,
             check=False,
         )

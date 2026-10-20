@@ -1,4 +1,7 @@
+import os
+import stat
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -266,3 +269,19 @@ def test_beads_002_an_unknown_id_at_dep_list_is_not_found() -> None:
 @pytest.mark.parametrize("value", ["a-1\n", "a-1 ", "\u0661", "a\u0661"])
 def test_beads_003_trailing_newline_and_non_ascii_digits_are_not_ids(value: str) -> None:
     assert valid_id(value) is False
+
+
+# REQ-BEADS-005
+def test_beads_005_invalid_utf8_in_the_output_is_tolerated(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # a bead written with a stray byte must not turn into an uncaught UnicodeDecodeError
+    binary = tmp_path / "bin" / "bd"
+    binary.parent.mkdir()
+    binary.write_text(
+        f"#!{sys.executable}\nimport sys\n"
+        'sys.stdout.buffer.write(b\'[{"id": "a-1", "title": "x\\xffy"}]\')\n'
+    )
+    binary.chmod(binary.stat().st_mode | stat.S_IEXEC)
+    monkeypatch.setenv("PATH", f"{binary.parent}{os.pathsep}{os.environ['PATH']}")
+    assert run_bd(["list"], tmp_path) == [{"id": "a-1", "title": "x\ufffdy"}]
