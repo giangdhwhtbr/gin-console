@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadDetail } from "./api";
@@ -107,6 +107,9 @@ describe("BeadDetailPage", () => {
     const blockedLink = screen.getByRole("link", { name: "a-6" });
     expect(blockedLink).toHaveAttribute("href", "/beads/alpha/a-6");
     expect(screen.getByText("Blocked title")).toBeInTheDocument();
+    const [depItem, blockedItem] = screen.getAllByRole("listitem");
+    expect(within(depItem).getByText("open")).toBeInTheDocument();
+    expect(within(blockedItem).getByText("closed")).toBeInTheDocument();
 
     cleanup();
     render(<BeadDetailPage project="my proj" id="a-5" />);

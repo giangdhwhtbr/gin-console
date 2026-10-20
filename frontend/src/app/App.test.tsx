@@ -182,6 +182,56 @@ describe("App routing", () => {
     render(<App />);
     await screen.findByText(/no projects configured/i);
   });
+  // REQ-UI-029
+  it("REQ-UI-029 a late response for the previous bead never replaces the current one", async () => {
+    window.history.replaceState(null, "", "/beads/alpha/a-5");
+    const detail = (id: string) =>
+      json({
+        id,
+        title: `Bead ${id}`,
+        status: "open",
+        priority: 1,
+        issue_type: "task",
+        labels: [],
+        owner: null,
+        assignee: null,
+        parent: null,
+        created_at: "2026-10-01T00:00:00Z",
+        updated_at: "2026-10-10T00:00:00Z",
+        dependency_count: 0,
+        dependent_count: 0,
+        comment_count: 0,
+        description: null,
+        dependencies: [],
+        dependents: [],
+        children: [],
+      });
+    let releaseFirst: (response: Response) => void = () => undefined;
+    const first = new Promise<Response>((resolve) => {
+      releaseFirst = resolve;
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("/api/beads/alpha/a-5")) return first;
+        if (url.includes("/api/beads/alpha/a-6")) return Promise.resolve(detail("a-6"));
+        return Promise.resolve(json([]));
+      }),
+    );
+    render(<App />);
+    act(() => {
+      window.history.pushState(null, "", "/beads/alpha/a-6");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    expect(await screen.findByRole("heading", { name: "Bead a-6" })).toBeInTheDocument();
+    await act(async () => {
+      releaseFirst(detail("a-5"));
+      await first;
+    });
+    expect(screen.getByRole("heading", { name: "Bead a-6" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Bead a-5" })).not.toBeInTheDocument();
+  });
+
 });
 
 
