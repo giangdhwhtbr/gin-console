@@ -73,3 +73,40 @@ def test_beads_004_errors_are_not_kept() -> None:
         with pytest.raises(RuntimeError):
             cache.get("k", fetch)
     assert len(runs) == 2
+
+
+# REQ-BEADS-004
+def test_beads_004_an_entry_is_timed_from_the_end_of_a_slow_fetch() -> None:
+    clock = Clock()
+    cache = KeyedCache[str, int](timedelta(seconds=5), clock)
+    runs: list[int] = []
+
+    def slow() -> int:
+        runs.append(1)
+        clock.now += timedelta(seconds=8)  # longer than the time the result is reused for
+        return len(runs)
+
+    assert cache.get("k", slow) == 1
+    assert cache.get("k", slow) == 1
+    assert len(runs) == 1
+
+
+# REQ-BEADS-004
+def test_beads_004_a_clock_that_steps_back_does_not_keep_an_entry_alive() -> None:
+    clock = Clock()
+    cache = KeyedCache[str, int](timedelta(seconds=5), clock)
+    fetch, runs = counting()
+    cache.get("k", fetch)
+    clock.now -= timedelta(hours=1)
+    cache.get("k", fetch)
+    assert len(runs) == 2
+
+
+# REQ-BEADS-004
+def test_beads_004_locks_of_keys_that_never_succeeded_do_not_pile_up() -> None:
+    cache = KeyedCache[str, int](timedelta(seconds=5), Clock())
+    fetch, _ = counting(fail=True)
+    for n in range(600):
+        with pytest.raises(RuntimeError):
+            cache.get(f"unknown-{n}", fetch)
+    assert cache.lock_count() < 300
