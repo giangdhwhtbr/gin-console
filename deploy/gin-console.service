@@ -6,6 +6,9 @@ StartLimitBurst=3
 
 [Service]
 WorkingDirectory=%h/gin-console
+# systemd gives user services a minimal PATH. The console runs bd, gin-workflow, claude and codex,
+# so list where they live on this host (edit it to match yours; `command -v <tool>` tells you).
+Environment=PATH=%h/.local/bin:%h/.npm-global/bin:/home/linuxbrew/.linuxbrew/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=%h/.local/bin/uv --directory %h/gin-console/backend run --frozen python -m gin_console
 Restart=on-failure
 RestartSec=5

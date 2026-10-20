@@ -16,6 +16,16 @@ systemctl --user enable --now gin-console
 sudo loginctl enable-linger gin
 ```
 
+### PATH of the service
+
+systemd starts user services with a minimal `PATH` (system directories only), not your shell's. The
+console runs `bd`, `gin-workflow`, `claude` and `codex`, so the unit sets `Environment=PATH=...`
+(`~/.local/bin`, `~/.npm-global/bin`, Homebrew's `bin`, then the system directories). Check each tool
+with `command -v bd gin-workflow claude codex` in your shell and edit that line of
+`~/.config/systemd/user/gin-console.service` if one lives elsewhere, then
+`systemctl --user daemon-reload && systemctl --user restart gin-console`. A tool that cannot be found
+shows up in the UI as "<tool> not found" (project cards, Quota page).
+
 ## Update
 
 ```bash
