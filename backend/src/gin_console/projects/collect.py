@@ -33,7 +33,12 @@ def _child_env() -> dict[str, str]:
     return env
 
 
-def _run_json(cmd: list[str], cwd: Path, json_on_failure: bool = False) -> Any:
+def run_json(
+    cmd: list[str],
+    cwd: Path,
+    json_on_failure: bool = False,
+    timeout: float = TIMEOUT_SECONDS,
+) -> Any:
     try:
         done = subprocess.run(
             cmd,
@@ -41,7 +46,7 @@ def _run_json(cmd: list[str], cwd: Path, json_on_failure: bool = False) -> Any:
             env=_child_env(),
             capture_output=True,
             text=True,
-            timeout=TIMEOUT_SECONDS,
+            timeout=timeout,
             check=False,
         )
     except FileNotFoundError:
@@ -64,7 +69,7 @@ def _run_json(cmd: list[str], cwd: Path, json_on_failure: bool = False) -> Any:
 def collect_workflow(path: Path) -> Workflow | BlockError:
     try:
         # state exits 1 for a finished workflow (decision "complete") but still prints JSON
-        data = _run_json(["gin-workflow", "state", "--format", "json"], path, json_on_failure=True)
+        data = run_json(["gin-workflow", "state", "--format", "json"], path, json_on_failure=True)
         return Workflow(stage=data["stage"], layout=data["project"]["layout"], gates=data["gates"])
     except CollectError as exc:
         return BlockError(error=str(exc))
@@ -74,11 +79,11 @@ def collect_workflow(path: Path) -> Workflow | BlockError:
 
 def collect_beads(path: Path) -> Beads | BlockError:
     try:
-        issues = _run_json(
+        issues = run_json(
             ["bd", "list", "--status", "open,in_progress", "--limit", "0", "--json"], path
         )
-        ready = _run_json(["bd", "ready", "--limit", "0", "--json"], path)
-        blocked = _run_json(["bd", "blocked", "--json"], path)
+        ready = run_json(["bd", "ready", "--limit", "0", "--json"], path)
+        blocked = run_json(["bd", "blocked", "--json"], path)
         ready_ids = {issue["id"] for issue in ready}
         return Beads(
             open=sum(issue["status"] == "open" for issue in issues),
