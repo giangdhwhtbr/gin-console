@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from gin_console.beads.models import BeadDetail, BeadSummary, Relation
 from gin_console.projects.collect import CollectError, run_json
+from gin_console.quota.source import clean
 
 BD_TIMEOUT = 30.0
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
@@ -71,7 +72,7 @@ def list_beads(run: BdRunner, cwd: Path, closed: bool) -> list[BeadSummary]:
 def _fail_on_error(data: Any) -> None:
     """`bd show` and `bd dep list` answer an unknown id with exit 1 and {"error": ...}."""
     if isinstance(data, dict) and "error" in data:
-        message = str(data["error"])
+        message = clean(str(data["error"]))  # it reaches response bodies: no lone surrogates
         if "no issue" in message:
             raise BeadNotFound(message)
         raise BeadsError(f"bd: {message[:200]}")

@@ -217,3 +217,52 @@ def test_beads_002_json_on_failure_lets_a_not_found_answer_through(
 ) -> None:
     fake_run(monkeypatch, finished('{"error": "no issues found"}', code=1))
     assert run_bd(["show"], CWD, json_on_failure=True) == {"error": "no issues found"}
+
+
+# REQ-BEADS-006
+@pytest.mark.parametrize(
+    ("answer", "error"),
+    [
+        ({"error": "x\ud800y"}, BeadsError),
+        ({"error": "no issue \ud800 found"}, BeadNotFound),
+    ],
+)
+def test_beads_006_error_messages_are_cleaned(
+    answer: dict[str, str], error: type[Exception]
+) -> None:
+    with pytest.raises(error) as caught:
+        get_bead(FakeBd(output=answer), CWD, "a-5")
+    str(caught.value).encode("utf-8")
+
+
+# REQ-BEADS-002
+def test_beads_002_a_malformed_relation_row_is_dropped_not_fatal() -> None:
+    shown = bead(
+        "a-5",
+        dependencies=[
+            related("a-4", "blocks"),
+            {"id": "a-3", "title": 3, "dependency_type": "blocks"},
+            "x",
+            {},
+        ],
+    )
+    detail = get_bead(FakeBd(shown={"a-5": shown}), CWD, "a-5")
+    assert [r.id for r in detail.dependencies] == ["a-4"]
+
+
+# REQ-BEADS-002
+def test_beads_002_an_unknown_id_at_dep_list_is_not_found() -> None:
+    class Flaky(FakeBd):
+        def __call__(self, args: list[str], cwd: Path, *, json_on_failure: bool = False) -> Any:
+            if args[0] == "dep":
+                return {"error": 'resolving a-5: no issue found matching "a-5"'}
+            return super().__call__(args, cwd, json_on_failure=json_on_failure)
+
+    with pytest.raises(BeadNotFound):
+        get_bead(Flaky(shown={"a-5": bead("a-5")}), CWD, "a-5")
+
+
+# REQ-BEADS-003
+@pytest.mark.parametrize("value", ["a-1\n", "a-1 ", "\u0661", "a\u0661"])
+def test_beads_003_trailing_newline_and_non_ascii_digits_are_not_ids(value: str) -> None:
+    assert valid_id(value) is False
