@@ -17,6 +17,15 @@ export function Layout({ children }: { children: ReactNode }) {
             Projects
           </Link>
           <Link
+            to="/beads"
+            className={cn(
+              "rounded px-2 py-1",
+              pathname.startsWith("/beads") && "bg-muted font-medium",
+            )}
+          >
+            Beads
+          </Link>
+          <Link
             to="/sessions"
             className={cn(
               "rounded px-2 py-1",

@@ -77,6 +77,65 @@ describe("App routing", () => {
     await screen.findByText(/no projects configured/i);
     expect(window.location.pathname).toBe("/");
   });
+
+  // REQ-UI-022
+  it("REQ-UI-022 opens the beads list from the sidebar without a reload and follows back", async () => {
+    window.history.replaceState(null, "", "/");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("/api/projects")) {
+          return Promise.resolve(
+            json([
+              {
+                name: "alpha",
+                path: "/home/gin/alpha",
+                scotty_id: null,
+                scotty_url: null,
+                exists: true,
+                workflow: null,
+                beads: null,
+              },
+            ]),
+          );
+        }
+        if (url.includes("/api/beads")) {
+          return Promise.resolve(json([]));
+        }
+        return Promise.resolve(json([]));
+      }),
+    );
+    render(<App />);
+    await screen.findByRole("heading", { name: "Projects" });
+    await userEvent.click(screen.getByRole("link", { name: "Beads" }));
+    expect(window.location.pathname).toBe("/beads");
+    expect(await screen.findByRole("heading", { name: "Beads" })).toBeInTheDocument();
+    act(() => window.history.back());
+    await screen.findByRole("heading", { name: "Projects" });
+    expect(window.location.pathname).toBe("/");
+  });
+
+  // REQ-UI-022
+  it("REQ-UI-022 falls back to Projects page on undecodable route segment and highlights sidebar link on /beads", async () => {
+    window.history.replaceState(null, "", "/beads/%E0%A4%A/x");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url.includes("/api/projects")) {
+          return Promise.resolve(json([]));
+        }
+        return Promise.resolve(json([]));
+      }),
+    );
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+
+    cleanup();
+    window.history.replaceState(null, "", "/beads");
+    render(<App />);
+    const beadsLink = screen.getByRole("link", { name: "Beads" });
+    expect(beadsLink).toHaveClass("bg-muted");
+  });
 });
 
 

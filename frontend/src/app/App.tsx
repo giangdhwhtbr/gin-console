@@ -1,3 +1,4 @@
+import { BeadsPage } from "@/features/beads/BeadsPage";
 import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { QuotaPage } from "@/features/quota/QuotaPage";
 import { SessionLogPage } from "@/features/sessions/SessionLogPage";
@@ -24,6 +25,8 @@ export function App() {
         <SessionLogPage key={`${log.project}/${log.id}`} project={log.project} id={log.id} />
       ) : pathname === "/sessions" ? (
         <SessionsPage />
+      ) : pathname === "/beads" ? (
+        <BeadsPage />
       ) : pathname === "/quota" ? (
         <QuotaPage />
       ) : (
