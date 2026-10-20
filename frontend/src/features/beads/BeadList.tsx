@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useVisibleInterval } from "@/lib/useVisibleInterval";
@@ -26,16 +26,23 @@ export function BeadList({
 }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const closed = filters.closed;
+  const latest = useRef(0);
 
   const load = useCallback(() => {
+    latest.current += 1;
+    const id = latest.current;
     void fetchBeads(project, closed).then(
-      (beads) => setState({ status: "ok", beads, error: null }),
-      (error: unknown) =>
+      (beads) => {
+        if (id === latest.current) setState({ status: "ok", beads, error: null });
+      },
+      (error: unknown) => {
+        if (id !== latest.current) return;
         setState((previous) =>
           previous.status === "ok"
             ? { ...previous, error: messageOf(error) }
             : { status: "error", message: messageOf(error) },
-        ),
+        );
+      },
     );
   }, [project, closed]);
 

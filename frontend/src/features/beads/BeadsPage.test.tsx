@@ -382,4 +382,64 @@ describe("BeadsPage", () => {
     await screen.findByText(maliciousTitle);
     expect(container.querySelector("script")).toBeNull();
   });
+  // REQ-UI-027
+  it("REQ-UI-027 a slow older response never overwrites a newer one", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    let releaseOld: (response: Response) => void = () => undefined;
+    const old = new Promise<Response>((resolve) => {
+      releaseOld = resolve;
+    });
+    let openCalls = 0;
+    stub((url) => {
+      if (url.searchParams.get("closed") === "1") {
+        return json([bead("o-1", { title: "Open one" }), bead("c-1", { title: "Closed one", status: "closed" })]);
+      }
+      openCalls += 1;
+      return openCalls === 1 ? json([bead("o-1", { title: "Open one" })]) : old;
+    });
+    render(<BeadsPage />);
+    await screen.findByText("Open one");
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange")); // a refresh that stays slow
+    });
+    await userEvent.click(screen.getByLabelText("Show closed"));
+    expect(await screen.findByText("Closed one")).toBeInTheDocument();
+    await act(async () => {
+      releaseOld(json([bead("o-1", { title: "Open one" })]));
+      await old;
+    });
+    expect(screen.getByText("Closed one")).toBeInTheDocument();
+  });
+
+  // REQ-UI-027
+  it("REQ-UI-027 a stale error never replaces newer data", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    let failOld: (response: Response) => void = () => undefined;
+    const old = new Promise<Response>((resolve) => {
+      failOld = resolve;
+    });
+    let calls = 0;
+    stub(() => {
+      calls += 1;
+      if (calls === 1) return json([bead("o-1", { title: "First" })]);
+      if (calls === 2) return old;
+      return json([bead("o-1", { title: "Newest" })]);
+    });
+    render(<BeadsPage />);
+    await screen.findByText("First");
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange")); // second request, slow
+    });
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange")); // third request, fast
+    });
+    await screen.findByText("Newest");
+    await act(async () => {
+      failOld(json({ error: "bd timed out" }, 502));
+      await old;
+    });
+    expect(screen.getByText("Newest")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
 });
