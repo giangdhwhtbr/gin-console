@@ -42,17 +42,22 @@ The Projects page SHALL show, for each project with `beads` data, the counts ope
 - THEN the card shows all four counts and the epic id and title
 
 ### REQ-UI-005: Scotty deep links
-WHERE a project has a `scotty_url`, the Projects page SHALL link the project name to it and each active epic to `<scotty_url>?bead=<id>`, in a new tab with `rel="noopener noreferrer"`, and SHALL render no link for a project without one.
+WHERE a project has a `scotty_url`, the Projects page SHALL link the project name to it in a new tab with `rel="noopener noreferrer"` and SHALL render no link for a project without one, and SHALL link each active epic to the console's own bead page `/beads/<project>/<id>` whether or not the project has a `scotty_url`.
 
-#### Scenario: Link present
-- GIVEN a project with `scotty_url` `https://h/p/scotty` and epic `scotty-1`
+#### Scenario: Project link present
+- GIVEN a project with `scotty_url` `https://h/p/scotty`
 - WHEN the Projects page loads
-- THEN the epic links to `https://h/p/scotty?bead=scotty-1`
+- THEN the project name links to `https://h/p/scotty` in a new tab
 
 #### Scenario: No Scotty id
 - GIVEN a project with `scotty_url` null
 - WHEN the Projects page loads
-- THEN the name and epics are plain text
+- THEN the name is plain text
+
+#### Scenario: Epics open the console's bead page
+- GIVEN a project named `scotty` with active epic `scotty-1`, with or without a `scotty_url`
+- WHEN the Projects page loads
+- THEN the epic links to `/beads/scotty/scotty-1` inside the console
 
 ### REQ-UI-006: Automatic refresh
 WHILE the page is visible, the Projects page SHALL reload `/api/projects` every 10 seconds without replacing the list by a loading state, and WHILE the page is hidden it SHALL not poll and SHALL reload when it becomes visible; IF a refresh fails, THEN it SHALL keep the last data and show the error with a retry button.
@@ -286,6 +291,130 @@ IF a side of the quota is an `{error}` object, THEN the page SHALL show its mess
 - GIVEN `codex` is `{"error": "codex not found"}` and `claude` has windows
 - WHEN the page is shown
 - THEN the Codex card shows "codex not found" and the Claude card shows its windows
+
+#### Scenario: Unexpected response
+- GIVEN the response is not the expected shape
+- WHEN the page loads
+- THEN an error and a retry button are shown, not a blank page
+
+### REQ-UI-022: Beads navigation
+The sidebar SHALL contain a "Beads" link, and the frontend SHALL show the bead list at `/beads` and a bead at `/beads/<project>/<id>` without a full reload, following the browser back and forward buttons, and a route segment that cannot be decoded SHALL show the Projects page.
+
+#### Scenario: Open the list
+- GIVEN the Projects page is shown
+- WHEN the user clicks "Beads"
+- THEN the URL is `/beads` and the bead list is shown without a reload
+
+#### Scenario: Back button
+- GIVEN the user opened a bead from the list
+- WHEN the user presses back
+- THEN the list is shown with the same filters
+
+### REQ-UI-023: Project choice
+The bead list SHALL offer the configured projects whose directory exists in a select kept in the `?project=` query, SHALL default to the first of them, and WHEN no project exists SHALL say that no projects are configured.
+
+#### Scenario: Default and choice
+- GIVEN two projects
+- WHEN the list opens without `?project=`
+- THEN the first project is selected and its beads are shown, and choosing the other changes the URL and the list
+
+#### Scenario: No projects
+- GIVEN `/api/projects` returns an empty list
+- WHEN the list opens
+- THEN it says no projects are configured
+
+### REQ-UI-024: Bead list
+The bead list SHALL show for each bead its id, a title linking to the bead, its type, status, priority written as `P<n>`, labels, assignee or owner, and last update, ordered by priority and then by last update, newest first, and SHALL show how many of the loaded beads match the current search and filters.
+
+#### Scenario: Row content and order
+- GIVEN a P2 bead updated yesterday and a P1 bead updated last week
+- WHEN the list loads
+- THEN the P1 bead is first, and both show id, title, type, status, `P<n>`, labels and update time
+
+#### Scenario: Count
+- GIVEN 83 loaded beads of which 5 match the filters
+- WHEN the list is shown
+- THEN it says 5 of 83
+
+#### Scenario: Empty
+- GIVEN no bead matches
+- WHEN the list is shown
+- THEN it says no beads match
+
+### REQ-UI-025: Search and filters
+The bead list SHALL offer a search box that matches the id, title and labels case-insensitively, and filters for status, priority, label and type, SHALL combine them with AND, and SHALL keep them in the URL query (`q`, `status`, `priority`, `label`, `type`) so that a reload or a shared link restores them.
+
+#### Scenario: Search
+- GIVEN beads titled "Fix login" and "Add search"
+- WHEN the user types "LOGIN"
+- THEN only "Fix login" remains
+
+#### Scenario: Combined filters
+- GIVEN open P1 beads and in-progress P1 beads
+- WHEN the user filters status "open" and priority "P1"
+- THEN only open P1 beads remain and the URL holds both filters
+
+#### Scenario: Restored from the URL
+- GIVEN the URL has `?project=a&status=open&q=fix`
+- WHEN the page loads
+- THEN the filters are applied and shown in their controls
+
+### REQ-UI-026: Closed beads
+The bead list SHALL leave closed beads out by default, SHALL offer a "Show closed" control kept in the URL as `closed=1` that requests the list with `closed=1`, and SHALL apply search and filters to the closed beads too.
+
+#### Scenario: Show closed
+- GIVEN the list shows 4 beads
+- WHEN the user turns on "Show closed"
+- THEN the list is requested with `closed=1` and shows all 8, and the URL has `closed=1`
+
+### REQ-UI-027: Bead list refresh
+WHILE the page is visible, the bead list SHALL reload every 10 seconds without replacing the list by a loading state, WHILE the page is hidden it SHALL not poll and SHALL reload when visible again, and IF a refresh fails, THEN it SHALL keep the last data and show the error with a retry button.
+
+#### Scenario: Silent refresh
+- GIVEN the list is shown and 10 seconds pass
+- WHEN it reloads
+- THEN the list stays on screen and shows the new values
+
+#### Scenario: Hidden tab
+- GIVEN the tab becomes hidden
+- WHEN 10 seconds pass
+- THEN no request is made, and one request is made when the tab becomes visible
+
+#### Scenario: Refresh failure
+- GIVEN the list is shown and the next refresh fails
+- WHEN the failure is received
+- THEN the old list stays visible with an error message and a retry button
+
+### REQ-UI-028: Bead detail
+The bead page SHALL show the bead's id, title, status, priority, type, labels, owner, assignee, creation and update times and comment count, its description as plain text with line breaks, its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with a progress bar of closed children over all children.
+
+#### Scenario: Fields and description
+- GIVEN a bead with a description containing `<script>` and Markdown
+- WHEN the page loads
+- THEN the characters are shown as typed and no element is created from them
+
+#### Scenario: Relations link inside the console
+- GIVEN a bead with one dependency
+- WHEN the page loads
+- THEN the dependency shows its id, title and status and links to `/beads/<project>/<its id>`
+
+#### Scenario: Epic progress
+- GIVEN an epic with 4 children of which 3 are closed
+- WHEN the page loads
+- THEN the children are listed and a progress bar reads 3 of 4
+
+### REQ-UI-029: Bead errors
+IF a request for the list or a bead fails, THEN the page SHALL show the error and a retry button that repeats the request, IF the server answers 404 for a bead, THEN the page SHALL say "Bead not found" with a link back to the list, and IF a response has an unexpected shape, THEN the page SHALL show an error instead of failing.
+
+#### Scenario: List error and retry
+- GIVEN the first list request fails and the second succeeds
+- WHEN the user clicks retry
+- THEN the error disappears and the list is shown
+
+#### Scenario: Unknown bead
+- GIVEN the server answers 404 for a bead
+- WHEN the bead page loads
+- THEN it says "Bead not found" and links back to the list
 
 #### Scenario: Unexpected response
 - GIVEN the response is not the expected shape

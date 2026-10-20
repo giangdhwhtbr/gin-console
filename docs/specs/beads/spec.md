@@ -1,0 +1,113 @@
+# Beads
+
+## Purpose
+
+## Requirements
+
+### REQ-BEADS-001: Bead list
+WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return the beads of that configured project, each with `id`, `title`, `status`, `priority`, `issue_type`, `labels`, `owner`, `assignee`, `parent`, `created_at`, `updated_at`, `dependency_count`, `dependent_count` and `comment_count` and without the description, SHALL leave out closed beads unless the request has `closed=1`, and SHALL respond 404 when the project is not configured or its directory does not exist.
+
+#### Scenario: Open beads by default
+- GIVEN a project with 3 open, 1 in-progress and 4 closed beads
+- WHEN a client requests `GET /api/beads?project=<name>`
+- THEN 4 beads are returned and none is closed
+
+#### Scenario: Closed beads on request
+- GIVEN the same project
+- WHEN a client requests `GET /api/beads?project=<name>&closed=1`
+- THEN all 8 beads are returned
+
+#### Scenario: Unknown project
+- GIVEN no project named `nope`
+- WHEN a client requests `GET /api/beads?project=nope`
+- THEN the response is 404
+
+#### Scenario: Missing directory
+- GIVEN a configured project whose directory does not exist
+- WHEN a client requests its beads
+- THEN the response is 404
+
+### REQ-BEADS-002: Bead detail
+WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return the bead with the fields of REQ-BEADS-001 plus `description`, `dependencies` and `dependents` (each with `id`, `title`, `status` and `type`, where `type` is `blocks` or `parent-child`) and, for an epic, `children` (each with `id`, `title`, `status`, closed children included), and SHALL respond 404 when the project or the bead does not exist.
+
+#### Scenario: Dependencies and dependents
+- GIVEN a bead blocked by one bead and blocking another
+- WHEN a client requests its detail
+- THEN `dependencies` lists the first with type `blocks` and `dependents` lists the second
+
+#### Scenario: Epic children
+- GIVEN an epic with 3 children, one of them closed
+- WHEN a client requests its detail
+- THEN `children` lists all 3 with their statuses
+
+#### Scenario: Unknown bead
+- GIVEN a configured project without a bead `x-1`
+- WHEN a client requests `GET /api/beads/<project>/x-1`
+- THEN the response is 404
+
+### REQ-BEADS-003: Safe, read-only commands
+The server SHALL run only read-only `bd` commands with fixed arguments in the project directory, SHALL accept a bead `id` only when it matches `[A-Za-z0-9][A-Za-z0-9._-]*` and respond 404 otherwise, SHALL treat any `closed` value other than `1` as absent without failing the request, and SHALL never create, update, close or delete a bead.
+
+#### Scenario: Option-like id
+- GIVEN a request for the bead `--help` or `../x`
+- WHEN the server handles it
+- THEN the response is 404 and no `bd` command ran
+
+#### Scenario: Odd closed value
+- GIVEN a request with `closed=../x` or `closed=true`
+- WHEN the server handles it
+- THEN the response is 200 and closed beads are left out
+
+### REQ-BEADS-004: Short-lived cache
+The server SHALL reuse a successful list for 5 seconds per project and closed setting and a successful detail for 5 seconds per project and bead, SHALL run the command for one key at most once at a time when requests overlap, and SHALL NOT keep an error result.
+
+#### Scenario: Reused
+- GIVEN a list fetched 2 seconds ago
+- WHEN the same list is requested
+- THEN `bd` is not run again
+
+#### Scenario: Expired
+- GIVEN a list fetched 6 seconds ago
+- WHEN the same list is requested
+- THEN `bd` runs again
+
+#### Scenario: Different key
+- GIVEN a list fetched without closed beads
+- WHEN the list with `closed=1` is requested
+- THEN `bd` runs for it
+
+#### Scenario: Overlapping requests
+- GIVEN two identical requests arrive while `bd` runs
+- WHEN both complete
+- THEN `bd` ran once
+
+#### Scenario: Errors are not kept
+- GIVEN the last run failed
+- WHEN the same request is made again
+- THEN `bd` runs again
+
+### REQ-BEADS-005: Failures
+IF `bd` is not found, times out after 30 seconds, exits with a non-zero status, prints invalid JSON or JSON of an unexpected shape, THEN the server SHALL respond 502 with a JSON body whose `error` says which happened, and SHALL leave out of a list any bead whose fields have the wrong types instead of failing the list.
+
+#### Scenario: bd missing
+- GIVEN no `bd` command can be found
+- WHEN a client requests a list
+- THEN the response is 502 and `error` says the command was not found
+
+#### Scenario: Timeout
+- GIVEN `bd` runs longer than 30 seconds
+- WHEN a client requests a list
+- THEN the response is 502 and `error` says it timed out
+
+#### Scenario: One malformed bead
+- GIVEN `bd` prints 3 beads of which one has a numeric `title`
+- WHEN a client requests the list
+- THEN the 2 valid beads are returned
+
+### REQ-BEADS-006: Clean strings
+The server SHALL replace lone surrogate characters in every string it returns.
+
+#### Scenario: Lone surrogate in a title
+- GIVEN a bead whose title contains a lone surrogate escape
+- WHEN a client requests the list and its detail
+- THEN both responses are 200 with the character replaced
