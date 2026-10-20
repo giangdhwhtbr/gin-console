@@ -7,8 +7,9 @@ const current = (): Location => ({
   search: window.location.search,
 });
 
-export function navigate(to: string): void {
-  window.history.pushState(null, "", to);
+export function navigate(to: string, options?: { replace?: boolean }): void {
+  if (options?.replace) window.history.replaceState(null, "", to);
+  else window.history.pushState(null, "", to);
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
