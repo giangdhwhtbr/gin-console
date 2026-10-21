@@ -85,15 +85,20 @@ The Done column SHALL show closed beads only while "Show closed" is on, ordered 
 - THEN Done is empty and tells how to show closed beads
 
 ### REQ-UI-033: Focus columns
-The Focus view SHALL show the columns In flight (status `in_progress` or `hooked`), Blocked (`blocked`) and Next up (`ready` with priority P0 or P1), each with its count, SHALL not cap In flight or Blocked, and SHALL order each by priority and then by last update, newest first.
+The Focus view SHALL show the columns In flight (status `in_progress` or `hooked`), Blocked (`blocked`) and Next up (`ready` with priority P0 or P1), each with its count, SHALL put a bead in the first of those columns that fits, SHALL not cap In flight or Blocked, and SHALL order each by priority and then by last update, newest first.
 
 #### Scenario: Columns
 - GIVEN an in-progress bead, a blocked bead, a ready P1 bead and a ready P3 bead
 - WHEN the Focus view is shown
 - THEN In flight, Blocked and Next up each hold one bead and the P3 bead is in no column
 
+#### Scenario: In progress and blocked
+- GIVEN an in-progress bead that `bd blocked` also lists
+- WHEN the Focus view is shown
+- THEN it is in In flight only
+
 ### REQ-UI-034: Group by assignee
-WHERE the user chooses Group by "Assignee" (kept in the URL as `group=assignee`), the Focus view SHALL show one row per assignee with the three columns inside it, ordered by assignee name, SHALL put beads without an assignee in a last row "No assignee", and SHALL show the original columns again for "None".
+WHERE the user chooses Group by "Assignee" (kept in the URL as `group=assignee`), the Focus view SHALL show one row per assignee that has a bead in the three columns, with those columns inside it, ordered by assignee name, SHALL put beads without an assignee in a last row "No assignee" (shown only when it has beads), and SHALL show the original columns again for "None".
 
 #### Scenario: Rows
 - GIVEN beads assigned to bob, to alice and to nobody
