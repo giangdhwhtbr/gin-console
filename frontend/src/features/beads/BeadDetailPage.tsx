@@ -5,7 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/features/quota/ProgressBar";
 import { BeadNotFoundError, fetchBead, type BeadDetail } from "./api";
+import { CommentList } from "./CommentList";
 import { RelationList } from "./RelationList";
+import { TextSection } from "./TextSection";
 
 type State =
   | { status: "loading" }
@@ -85,6 +87,7 @@ export function BeadDetailPage({ project, id }: { project: string; id: string })
               {[
                 bead.owner && `Owner ${bead.owner}`,
                 bead.assignee && `Assignee ${bead.assignee}`,
+                bead.created_by && `Created by ${bead.created_by}`,
                 `Created ${new Date(bead.created_at).toLocaleString()}`,
                 `Updated ${new Date(bead.updated_at).toLocaleString()}`,
                 `${bead.comment_count} comment${bead.comment_count === 1 ? "" : "s"}`,
@@ -98,6 +101,10 @@ export function BeadDetailPage({ project, id }: { project: string; id: string })
           ) : (
             <p className="whitespace-pre-wrap break-words">{bead.description}</p>
           )}
+          <TextSection title="Acceptance criteria" text={bead.acceptance_criteria} />
+          <TextSection title="Design" text={bead.design} />
+          <TextSection title="Notes" text={bead.notes} />
+          <TextSection title="Close reason" text={bead.close_reason} />
           <RelationList title="Depends on" project={project} items={bead.dependencies} />
           <RelationList title="Blocks" project={project} items={bead.dependents} />
           {total > 0 && (
@@ -107,6 +114,7 @@ export function BeadDetailPage({ project, id }: { project: string; id: string })
             </div>
           )}
           <RelationList title="Children" project={project} items={bead.children} />
+          {bead.comment_count > 0 && <CommentList project={project} id={bead.id} />}
         </>
       )}
     </section>

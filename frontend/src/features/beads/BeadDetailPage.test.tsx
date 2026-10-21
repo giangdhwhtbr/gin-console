@@ -1,11 +1,29 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { BeadDetail } from "./api";
+import type { BeadDetail, Comment } from "./api";
 import { BeadDetailPage } from "./BeadDetailPage";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+
+const stubFetch = (detail: BeadDetail, comments: () => Response | Promise<Response> = () => json([])) =>
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      return Promise.resolve(url.endsWith("/comments") ? comments() : json(detail));
+    }),
+  );
+
+const note = (id: string, overrides: Partial<Comment> = {}): Comment => ({
+  id,
+  author: "alice",
+  text: `Text of ${id}`,
+  created_at: "2026-10-05T10:00:00Z",
+  truncated: false,
+  ...overrides,
+});
 
 const beadDetail = (id: string, overrides: Partial<BeadDetail> = {}): BeadDetail => ({
   id,
@@ -21,7 +39,7 @@ const beadDetail = (id: string, overrides: Partial<BeadDetail> = {}): BeadDetail
   updated_at: "2026-10-10T12:00:00Z",
   dependency_count: 0,
   dependent_count: 0,
-  comment_count: 3,
+  comment_count: 0,
   closed_at: null,
   ready: false,
   blocked: false,
@@ -67,7 +85,7 @@ describe("BeadDetailPage", () => {
       comment_count: 3,
       description: rawDesc,
     });
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(bead))));
+    stubFetch(bead);
 
     const { container } = render(<BeadDetailPage project="alpha" id="a-5" />);
 
@@ -199,5 +217,192 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-5" />);
 
     expect(await screen.findByText("No description.")).toBeInTheDocument();
+  });
+
+  // REQ-UI-038
+  it("REQ-UI-038 sections and order", async () => {
+    const bead = beadDetail("a-5", {
+      created_by: "gin",
+      acceptance_criteria: "AC",
+      notes: "N",
+      close_reason: "R",
+      design: null,
+      comment_count: 0,
+    });
+    stubFetch(bead);
+
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    expect(screen.getByText(/Created by gin/)).toBeInTheDocument();
+
+    const headings = screen
+      .getAllByRole("heading", { level: 2 })
+      .map((h) => h.textContent)
+      .filter((title): title is string =>
+        ["Acceptance criteria", "Design", "Notes", "Close reason"].includes(title ?? ""),
+      );
+    expect(headings).toEqual(["Acceptance criteria", "Notes", "Close reason"]);
+    expect(screen.queryByRole("heading", { name: "Design" })).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-038
+  it("REQ-UI-038 plain text", async () => {
+    const rawDesign = "<script>window.hacked = 1</script> **bold**\nline two";
+    const bead = beadDetail("a-5", {
+      design: rawDesign,
+      comment_count: 0,
+    });
+    stubFetch(bead);
+
+    const { container } = render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    const designEl = screen.getByText((_, el) => el?.tagName === "P" && el.textContent === rawDesign);
+    expect(designEl).toBeInTheDocument();
+    expect(designEl).toHaveClass("whitespace-pre-wrap");
+    expect(container.querySelector("script")).toBeNull();
+    expect(container.querySelector("strong")).toBeNull();
+  });
+
+  // REQ-UI-038
+  it("REQ-UI-038 no author", async () => {
+    const bead = beadDetail("a-5", {
+      created_by: null,
+      comment_count: 0,
+    });
+    stubFetch(bead);
+
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    expect(screen.queryByText(/Created by/)).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-039
+  it("REQ-UI-039 comments listed", async () => {
+    const bead = beadDetail("a-5", { comment_count: 2 });
+    let releaseComments: (response: Response) => void = () => undefined;
+    const commentsPromise = new Promise<Response>((resolve) => {
+      releaseComments = resolve;
+    });
+
+    stubFetch(bead, () => commentsPromise);
+
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    expect(screen.getByText("Loading comments…")).toBeInTheDocument();
+
+    const c1 = note("c-1");
+    const c2 = note("c-2", { created_at: "2026-10-06T10:00:00Z" });
+
+    await act(async () => {
+      releaseComments(json([c2, c1]));
+      await commentsPromise;
+    });
+
+    expect(await screen.findByRole("heading", { name: "Comments (2)" })).toBeInTheDocument();
+    expect(screen.getByText("Text of c-2")).toBeInTheDocument();
+    expect(screen.getByText("Text of c-1")).toBeInTheDocument();
+    expect(
+      screen.getByText((content) =>
+        content.includes(`alice · ${new Date("2026-10-06T10:00:00Z").toLocaleString()}`),
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText((content) =>
+        content.includes(`alice · ${new Date("2026-10-05T10:00:00Z").toLocaleString()}`),
+      ),
+    ).toBeInTheDocument();
+  });
+
+  // REQ-UI-039
+  it("REQ-UI-039 none requested", async () => {
+    const bead = beadDetail("a-5", { comment_count: 0 });
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      return Promise.resolve(url.endsWith("/comments") ? json([]) : json(bead));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("heading", { name: /^Comments/ })).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-039
+  it("REQ-UI-039 plain text", async () => {
+    const bead = beadDetail("a-5", { comment_count: 1 });
+    const scriptText = "<script>window.hacked = 1</script>";
+    stubFetch(bead, () => json([note("c-1", { text: scriptText })]));
+
+    const { container } = render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Comments (1)" })).toBeInTheDocument();
+    expect(screen.getByText(scriptText)).toBeInTheDocument();
+    expect(container.querySelector("script")).toBeNull();
+  });
+
+  // REQ-UI-039
+  it("REQ-UI-039 truncated", async () => {
+    const bead = beadDetail("a-5", { comment_count: 2 });
+    stubFetch(bead, () => json([note("c-1", { truncated: true }), note("c-2", { truncated: false })]));
+
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Comments (2)" })).toBeInTheDocument();
+    expect(screen.getByText("Comment truncated")).toBeInTheDocument();
+    expect(screen.getAllByText("Comment truncated")).toHaveLength(1);
+  });
+
+  // REQ-UI-040
+  it("REQ-UI-040 failure and retry", async () => {
+    const bead = beadDetail("a-5", { comment_count: 1 });
+    let commentsCallCount = 0;
+    let beadCallCount = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.endsWith("/comments")) {
+          commentsCallCount++;
+          if (commentsCallCount === 1) {
+            return Promise.resolve(json({ error: "bd comments failed" }, 502));
+          }
+          return Promise.resolve(json([note("c-1")]));
+        }
+        beadCallCount++;
+        return Promise.resolve(json(bead));
+      }),
+    );
+
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("bd comments failed");
+
+    await userEvent.click(within(alert).getByRole("button", { name: /retry/i }));
+
+    expect(await screen.findByRole("heading", { name: "Comments (1)" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(beadCallCount).toBe(1);
+    expect(commentsCallCount).toBe(2);
+  });
+
+  // REQ-UI-040
+  it("REQ-UI-040 unexpected shape", async () => {
+    const bead = beadDetail("a-5", { comment_count: 1 });
+    stubFetch(bead, () => json({ x: 1 }));
+
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent(/unexpected response/i);
+    expect(within(alert).getByRole("button", { name: /retry/i })).toBeInTheDocument();
   });
 });

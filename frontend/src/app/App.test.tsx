@@ -248,6 +248,96 @@ describe("App routing", () => {
     expect(screen.queryByRole("heading", { name: "Bead a-5" })).not.toBeInTheDocument();
   });
 
+  // REQ-UI-040
+  it("REQ-UI-040 a late comments answer for the previous bead never replaces the current one", async () => {
+    window.history.replaceState(null, "", "/beads/alpha/a-5");
+    const detail = (id: string) =>
+      json({
+        id,
+        title: `Bead ${id}`,
+        status: "open",
+        priority: 1,
+        issue_type: "task",
+        labels: [],
+        owner: null,
+        assignee: null,
+        parent: null,
+        created_at: "2026-10-01T00:00:00Z",
+        updated_at: "2026-10-10T00:00:00Z",
+        dependency_count: 0,
+        dependent_count: 0,
+        comment_count: 1,
+        closed_at: null,
+        ready: false,
+        blocked: false,
+        created_by: null,
+        description: null,
+        design: null,
+        notes: null,
+        acceptance_criteria: null,
+        close_reason: null,
+        dependencies: [],
+        dependents: [],
+        children: [],
+      });
+    let releaseA5Comments: (response: Response) => void = () => undefined;
+    const a5Comments = new Promise<Response>((resolve) => {
+      releaseA5Comments = resolve;
+    });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes("/api/beads/alpha/a-5/comments")) return a5Comments;
+        if (url.includes("/api/beads/alpha/a-5")) return Promise.resolve(detail("a-5"));
+        if (url.includes("/api/beads/alpha/a-6/comments")) {
+          return Promise.resolve(
+            json([
+              {
+                id: "c-6",
+                author: "alice",
+                text: "Text of a-6",
+                created_at: "2026-10-06T10:00:00Z",
+                truncated: false,
+              },
+            ]),
+          );
+        }
+        if (url.includes("/api/beads/alpha/a-6")) return Promise.resolve(detail("a-6"));
+        return Promise.resolve(json([]));
+      }),
+    );
+
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Bead a-5" })).toBeInTheDocument();
+
+    act(() => {
+      window.history.pushState(null, "", "/beads/alpha/a-6");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+
+    expect(await screen.findByRole("heading", { name: "Bead a-6" })).toBeInTheDocument();
+    expect(await screen.findByText("Text of a-6")).toBeInTheDocument();
+
+    await act(async () => {
+      releaseA5Comments(
+        json([
+          {
+            id: "c-5",
+            author: "alice",
+            text: "Text of a-5",
+            created_at: "2026-10-05T10:00:00Z",
+            truncated: false,
+          },
+        ]),
+      );
+      await a5Comments;
+    });
+
+    expect(screen.getByText("Text of a-6")).toBeInTheDocument();
+    expect(screen.queryByText("Text of a-5")).not.toBeInTheDocument();
+  });
 });
 
 
