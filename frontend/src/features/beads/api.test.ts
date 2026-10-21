@@ -19,6 +19,9 @@ const sampleSummary = {
   dependency_count: 0,
   dependent_count: 0,
   comment_count: 0,
+  closed_at: null,
+  ready: false,
+  blocked: false,
 };
 
 const sampleDetail = {
@@ -82,6 +85,40 @@ describe("api", () => {
     );
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([missingTitle]))));
     await expect(fetchBeads("proj", false)).rejects.toThrow(/unexpected response/);
+  });
+
+  // REQ-UI-029: unexpected shape - item missing ready
+  it("REQ-UI-029 rejects when a bead is missing ready", async () => {
+    const missingReady = Object.fromEntries(
+      Object.entries(sampleSummary).filter(([key]) => key !== "ready"),
+    );
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([missingReady]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
+  });
+
+  // REQ-UI-029: unexpected shape - ready is not boolean
+  it("REQ-UI-029 rejects when a bead ready flag is a string", async () => {
+    const invalidReady = { ...sampleSummary, ready: "yes" };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([invalidReady]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
+  });
+
+  // REQ-UI-029: unexpected shape - closed_at is number
+  it("REQ-UI-029 rejects when closed_at is a number", async () => {
+    const invalidClosedAt = { ...sampleSummary, closed_at: 5 };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([invalidClosedAt]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
+  });
+
+  // REQ-UI-029: valid closed_at
+  it("REQ-UI-029 accepts closed_at as null or string", async () => {
+    const withNull = { ...sampleSummary, closed_at: null };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([withNull]))));
+    await expect(fetchBeads("proj", false)).resolves.toEqual([withNull]);
+
+    const withString = { ...sampleSummary, closed_at: "2026-10-15T00:00:00Z" };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([withString]))));
+    await expect(fetchBeads("proj", false)).resolves.toEqual([withString]);
   });
 
   // REQ-UI-029: 502 with error body

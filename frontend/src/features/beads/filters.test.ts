@@ -17,6 +17,9 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   dependency_count: 0,
   dependent_count: 0,
   comment_count: 0,
+  closed_at: null,
+  ready: false,
+  blocked: false,
   ...overrides,
 });
 
@@ -26,7 +29,51 @@ describe("filters", () => {
   // REQ-UI-025
   it("REQ-UI-025 restores every filter from the URL", () => {
     const f = parseFilters("?project=a&q=fix&status=open&priority=1&label=qa&type=bug&closed=1");
-    expect(f).toEqual({ project: "a", q: "fix", status: "open", priority: "1", label: "qa", type: "bug", closed: true });
+    expect(f).toEqual({
+      project: "a",
+      q: "fix",
+      status: "open",
+      priority: "1",
+      label: "qa",
+      type: "bug",
+      closed: true,
+      view: "list",
+      group: "",
+      finished: false,
+      lane: "",
+    });
+  });
+
+  // REQ-UI-030
+  it("REQ-UI-030 parses view from the URL", () => {
+    expect(parseFilters("?view=board").view).toBe("board");
+    expect(parseFilters("?view=graph").view).toBe("list");
+    expect(parseFilters("").view).toBe("list");
+  });
+
+  // REQ-UI-034
+  it("REQ-UI-034 parses group from the URL", () => {
+    expect(parseFilters("?group=assignee").group).toBe("assignee");
+    expect(parseFilters("?group=x").group).toBe("");
+  });
+
+  // REQ-UI-035
+  it("REQ-UI-035 parses finished from the URL", () => {
+    expect(parseFilters("?finished=1").finished).toBe(true);
+    expect(parseFilters("?finished=true").finished).toBe(false);
+  });
+
+  // REQ-UI-036
+  it("REQ-UI-036 parses lane from the URL", () => {
+    expect(parseFilters("?lane=frontend").lane).toBe("frontend");
+  });
+
+  // REQ-UI-030, REQ-UI-034, REQ-UI-035, REQ-UI-036
+  it("REQ-UI-030, REQ-UI-034, REQ-UI-035, REQ-UI-036 serializes view, group, finished and lane", () => {
+    const filters = { ...empty, view: "focus" as const, group: "assignee" as const, finished: true, lane: "a b" };
+    expect(filtersToSearch(filters)).toBe("?view=focus&group=assignee&finished=1&lane=a+b");
+    expect(filtersToSearch({ ...empty, view: "list" })).toBe("");
+    expect(parseFilters(filtersToSearch(filters))).toEqual(filters);
   });
 
   // REQ-UI-025

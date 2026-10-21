@@ -15,6 +15,9 @@ export type BeadSummary = {
   dependency_count: number;
   dependent_count: number;
   comment_count: number;
+  ready: boolean;
+  blocked: boolean;
+  closed_at: string | null;
 };
 export type Relation = { id: string; title: string; status: string; type: "blocks" | "parent-child" };
 export type BeadDetail = BeadSummary & {
@@ -33,10 +36,11 @@ function isSummary(value: unknown): value is BeadSummary {
   return (
     isObject(value) &&
     ["id", "title", "status", "issue_type", "created_at", "updated_at"].every((k) => isString(field(value, k))) &&
-    ["owner", "assignee", "parent"].every((k) => isStringOrNull(field(value, k))) &&
+    ["owner", "assignee", "parent", "closed_at"].every((k) => isStringOrNull(field(value, k))) &&
     ["priority", "dependency_count", "dependent_count", "comment_count"].every((k) =>
       isFiniteNumber(field(value, k)),
     ) &&
+    ["ready", "blocked"].every((k) => typeof field(value, k) === "boolean") &&
     isStringArray(field(value, "labels"))
   );
 }

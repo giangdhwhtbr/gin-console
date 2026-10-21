@@ -1,5 +1,8 @@
 import type { BeadSummary } from "./api";
 
+export const VIEWS = ["list", "board", "focus"] as const;
+export type View = (typeof VIEWS)[number];
+
 export type BeadFilters = {
   project: string;
   q: string;
@@ -8,6 +11,10 @@ export type BeadFilters = {
   label: string;
   type: string;
   closed: boolean;
+  view: View;
+  group: "" | "assignee";
+  finished: boolean;
+  lane: string;
 };
 
 export function parseFilters(search: string): BeadFilters {
@@ -20,6 +27,10 @@ export function parseFilters(search: string): BeadFilters {
     label: p.get("label") ?? "",
     type: p.get("type") ?? "",
     closed: p.get("closed") === "1",
+    view: VIEWS.find((view) => view === p.get("view")) ?? "list",
+    group: p.get("group") === "assignee" ? "assignee" : "",
+    finished: p.get("finished") === "1",
+    lane: p.get("lane") ?? "",
   };
 }
 
@@ -29,6 +40,10 @@ export function filtersToSearch(filters: BeadFilters): string {
     if (filters[key] !== "") p.set(key, filters[key]);
   }
   if (filters.closed) p.set("closed", "1");
+  if (filters.view !== "list") p.set("view", filters.view);
+  if (filters.group !== "") p.set("group", filters.group);
+  if (filters.finished) p.set("finished", "1");
+  if (filters.lane !== "") p.set("lane", filters.lane);
   const text = p.toString();
   return text === "" ? "" : `?${text}`;
 }
