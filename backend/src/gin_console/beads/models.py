@@ -25,6 +25,9 @@ class BeadSummary(BaseModel):
     dependency_count: int = 0
     dependent_count: int = 0
     comment_count: int = 0
+    closed_at: Text | None = None
+    ready: bool = False
+    blocked: bool = False
 
 
 class Relation(BaseModel):

@@ -27,6 +27,7 @@ _SUMMARY_KEYS = (
     "dependency_count",
     "dependent_count",
     "comment_count",
+    "closed_at",
 )
 
 
@@ -62,11 +63,30 @@ def _summary(raw: Any) -> BeadSummary | None:
         return None
 
 
+def _ids(data: Any, what: str) -> set[str]:
+    if not isinstance(data, list):
+        raise BeadsError(f"bd {what} output was not understood")
+    return {row["id"] for row in data if isinstance(row, dict) and isinstance(row.get("id"), str)}
+
+
 def list_beads(run: BdRunner, cwd: Path, closed: bool) -> list[BeadSummary]:
     data = run(["list", "--limit", "0", "--json", *(["--all"] if closed else [])], cwd)
     if not isinstance(data, list):
         raise BeadsError("bd list output was not understood")
-    return [bead for bead in map(_summary, data) if bead is not None]
+    # `bd ready` stops at 100 results unless told otherwise;
+    # both answers are only ever used as id sets
+    ready = _ids(run(["ready", "--limit", "0", "--json"], cwd), "ready")
+    blocked = _ids(run(["blocked", "--json"], cwd), "blocked")
+    return [
+        bead.model_copy(
+            update={
+                "ready": bead.id in ready,
+                "blocked": bead.id in blocked or bead.status == "blocked",
+            }
+        )
+        for bead in map(_summary, data)
+        if bead is not None
+    ]
 
 
 def _fail_on_error(data: Any) -> None:

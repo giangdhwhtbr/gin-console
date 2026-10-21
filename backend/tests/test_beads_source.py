@@ -26,7 +26,7 @@ def test_beads_001_list_arguments_and_closed_flag() -> None:
     assert [b.id for b in list_beads(fake, CWD, closed=False)] == ["a-1"]
     assert fake.calls[0] == (["list", "--limit", "0", "--json"], CWD)
     assert [b.id for b in list_beads(fake, CWD, closed=True)] == ["a-1", "a-2"]
-    assert fake.calls[1][0] == ["list", "--limit", "0", "--json", "--all"]
+    assert fake.calls[3][0] == ["list", "--limit", "0", "--json", "--all"]
 
 
 # REQ-BEADS-001
@@ -285,3 +285,56 @@ def test_beads_005_invalid_utf8_in_the_output_is_tolerated(
     binary.chmod(binary.stat().st_mode | stat.S_IEXEC)
     monkeypatch.setenv("PATH", f"{binary.parent}{os.pathsep}{os.environ['PATH']}")
     assert run_bd(["list"], tmp_path) == [{"id": "a-1", "title": "x\ufffdy"}]
+
+
+READY = ["ready", "--limit", "0", "--json"]
+
+
+# REQ-BEADS-007
+def test_beads_007_flags_and_closed_at() -> None:
+    fake = FakeBd(
+        [
+            bead("r-1"),
+            bead("b-1"),
+            bead("w-1", status="in_progress"),
+            bead("s-1", status="blocked"),
+            bead("c-1", status="closed", closed_at="2026-10-15T10:00:00Z"),
+        ],
+        ready=["r-1"],
+        blocked=["b-1"],
+    )
+    by_id = {b.id: b for b in list_beads(fake, CWD, closed=True)}
+    assert (by_id["r-1"].ready, by_id["r-1"].blocked) == (True, False)
+    assert (by_id["b-1"].ready, by_id["b-1"].blocked) == (False, True)
+    assert (by_id["w-1"].ready, by_id["w-1"].blocked) == (False, False)
+    assert by_id["s-1"].blocked is True  # status blocked, even if bd blocked does not list it
+    assert by_id["c-1"].closed_at == "2026-10-15T10:00:00Z"
+    assert by_id["r-1"].closed_at is None
+
+
+# REQ-BEADS-007
+def test_beads_007_commands_and_unknown_ids() -> None:
+    fake = FakeBd([bead("a-1")], ready=["a-1", "ghost"], blocked=["ghost"])
+    assert [b.id for b in list_beads(fake, CWD, closed=False)] == ["a-1"]
+    assert [call[0] for call in fake.calls] == [
+        ["list", "--limit", "0", "--json"],
+        READY,
+        ["blocked", "--json"],
+    ]
+
+
+# REQ-BEADS-007
+# REQ-BEADS-005
+@pytest.mark.parametrize("command", ["ready", "blocked"])
+@pytest.mark.parametrize("output", [{"x": 1}, "text", 5])
+def test_beads_007_unexpected_readiness_output(command: str, output: Any) -> None:
+    with pytest.raises(BeadsError, match="not understood"):
+        list_beads(FakeBd([bead("a-1")], bad={command: output}), CWD, closed=False)
+
+
+# REQ-BEADS-007
+@pytest.mark.parametrize("command", ["ready", "blocked"])
+def test_beads_007_a_failing_readiness_command_fails_the_list(command: str) -> None:
+    fake = FakeBd([bead("a-1")], failing={command: BeadsError(f"bd {command} failed")})
+    with pytest.raises(BeadsError, match=f"bd {command} failed"):
+        list_beads(fake, CWD, closed=False)

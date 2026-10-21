@@ -42,12 +42,20 @@ class FakeBd:
         up: dict[str, list[dict[str, Any]]] | None = None,
         failure: Exception | None = None,
         output: Any = None,
+        ready: list[str] | None = None,
+        blocked: list[str] | None = None,
+        failing: dict[str, Exception] | None = None,
+        bad: dict[str, Any] | None = None,
     ) -> None:
         self.beads = beads or []
         self.shown = shown or {}
         self.up = up or {}
         self.failure = failure
         self.output = output  # when set, every command returns exactly this
+        self.ready = ready or []
+        self.blocked = blocked or []
+        self.failing = failing or {}
+        self.bad = bad or {}
         self.calls: list[tuple[list[str], Path]] = []
 
     def __call__(self, args: list[str], cwd: Path, *, json_on_failure: bool = False) -> Any:
@@ -56,6 +64,14 @@ class FakeBd:
             raise self.failure
         if self.output is not None:
             return self.output
+        if args[0] in self.failing:
+            raise self.failing[args[0]]
+        if args[0] in self.bad:
+            return self.bad[args[0]]
+        if args[0] == "ready":
+            return [bead(ident) for ident in self.ready]
+        if args[0] == "blocked":
+            return [bead(ident) for ident in self.blocked]
         if args[0] == "list":
             everything = "--all" in args
             return [
