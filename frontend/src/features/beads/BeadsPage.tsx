@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjects, type Project } from "@/features/projects/api";
-import { BeadList } from "./BeadList";
+import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
 
 type Projects =
@@ -58,7 +58,7 @@ export function BeadsPage() {
               ))}
             </select>
           </label>
-          <BeadList key={selected} project={selected} filters={filters} onChange={change} />
+          <BeadsView key={selected} project={selected} filters={filters} onChange={change} />
         </>
       )}
     </section>

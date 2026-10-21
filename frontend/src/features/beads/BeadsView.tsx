@@ -5,7 +5,10 @@ import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { fetchBeads, type BeadSummary } from "./api";
 import { BeadFilterBar } from "./BeadFilterBar";
 import { BeadTable } from "./BeadTable";
+import { BoardView } from "./BoardView";
+import { inLane } from "./columns";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
+import { ViewTabs } from "./ViewTabs";
 
 type State =
   | { status: "loading" }
@@ -15,7 +18,7 @@ type State =
 const REFRESH_MS = 10_000;
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
-export function BeadList({
+export function BeadsView({
   project,
   filters,
   onChange,
@@ -56,6 +59,7 @@ export function BeadList({
   const errorMessage = state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
   const beads = state.status === "ok" ? state.beads : [];
   const shown = sortBeads(filterBeads(beads, filters));
+  const scoped = inLane(shown, filters.lane);
 
   return (
     <section className="flex flex-col gap-4">
@@ -73,13 +77,16 @@ export function BeadList({
       )}
       {state.status === "ok" && (
         <>
+          <ViewTabs filters={filters} onChange={onChange} />
           <BeadFilterBar filters={filters} options={optionsOf(beads)} onChange={onChange} />
           <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>
-          {shown.length === 0 ? (
-            <p className="text-muted-foreground">No beads match.</p>
-          ) : (
-            <BeadTable project={project} beads={shown} />
-          )}
+          {filters.view === "board" && <BoardView project={project} beads={scoped} filters={filters} />}
+          {filters.view === "list" &&
+            (shown.length === 0 ? (
+              <p className="text-muted-foreground">No beads match.</p>
+            ) : (
+              <BeadTable project={project} beads={shown} />
+            ))}
         </>
       )}
     </section>

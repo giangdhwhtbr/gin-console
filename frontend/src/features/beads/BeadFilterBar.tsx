@@ -17,6 +17,7 @@ export function BeadFilterBar({
   return (
     <div className="flex flex-wrap items-end gap-3">
       <input
+        id="bead-search"
         aria-label="Search"
         type="search"
         placeholder="Search id, title, label"
@@ -33,6 +34,9 @@ export function BeadFilterBar({
       />
       <FilterSelect label="Label" value={filters.label} options={options.labels.map(same)} onChange={(label) => set({ label })} />
       <FilterSelect label="Type" value={filters.type} options={options.types.map(same)} onChange={(type) => set({ type })} />
+      {filters.view !== "list" && (
+        <FilterSelect label="Lane" value={filters.lane} options={options.labels.map(same)} onChange={(lane) => set({ lane })} />
+      )}
       <label className="flex items-center gap-1 text-sm">
         <input type="checkbox" checked={filters.closed} onChange={(event) => set({ closed: event.target.checked })} />
         Show closed
