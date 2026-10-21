@@ -287,4 +287,17 @@ describe("FocusView", () => {
     const searchInput = screen.getByRole("searchbox", { name: "Search" });
     expect(searchInput).not.toHaveFocus();
   });
+  it("REQ-UI-037 arrow keys keep their default action when there is no card to move to", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stubBeads(() => json([]));
+    render(<BeadsPage />);
+    await screen.findByRole("region", { name: "Ready" });
+
+    for (const key of ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight"]) {
+      const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+      document.body.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(false);
+    }
+  });
+
 });

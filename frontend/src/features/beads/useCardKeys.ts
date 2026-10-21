@@ -5,12 +5,14 @@ const typing = (target: EventTarget | null) =>
 
 const cards = () => Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-card] a"));
 
-function move(step: 1 | -1) {
+/** Focus the next or previous card; false (and nothing done) when there is no card. */
+function move(step: 1 | -1): boolean {
   const list = cards();
-  if (list.length === 0) return;
   const at = list.findIndex((link) => link === document.activeElement);
   const next = at === -1 ? (step === 1 ? 0 : list.length - 1) : (at + step + list.length) % list.length;
-  list.at(next)?.focus();
+  const card = list.at(next);
+  card?.focus();
+  return card !== undefined;
 }
 
 /** `/` search, `Esc` leave search, arrows between cards; Enter opens the focused card link natively. */
@@ -30,11 +32,9 @@ export function useCardKeys(enabled: boolean, clearSearch: () => void): void {
         event.preventDefault();
         document.getElementById("bead-search")?.focus();
       } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-        event.preventDefault();
-        move(1);
+        if (move(1)) event.preventDefault();
       } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-        event.preventDefault();
-        move(-1);
+        if (move(-1)) event.preventDefault();
       }
     };
     document.addEventListener("keydown", onKey);
