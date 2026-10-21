@@ -8,6 +8,8 @@ import { BeadTable } from "./BeadTable";
 import { BoardView } from "./BoardView";
 import { inLane } from "./columns";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
+import { FocusView } from "./FocusView";
+import { useCardKeys } from "./useCardKeys";
 import { ViewTabs } from "./ViewTabs";
 
 type State =
@@ -27,6 +29,9 @@ export function BeadsView({
   filters: BeadFilters;
   onChange: (next: BeadFilters) => void;
 }) {
+  const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
+  useCardKeys(filters.view !== "list", clearSearch);
+
   const [state, setState] = useState<State>({ status: "loading" });
   const closed = filters.closed;
   const latest = useRef(0);
@@ -81,6 +86,9 @@ export function BeadsView({
           <BeadFilterBar filters={filters} options={optionsOf(beads)} onChange={onChange} />
           <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>
           {filters.view === "board" && <BoardView project={project} beads={scoped} filters={filters} />}
+          {filters.view === "focus" && (
+            <FocusView project={project} beads={scoped} filters={filters} onChange={onChange} />
+          )}
           {filters.view === "list" &&
             (shown.length === 0 ? (
               <p className="text-muted-foreground">No beads match.</p>
