@@ -134,3 +134,64 @@ WHEN a client requests the bead list, the server SHALL add to each bead `ready` 
 - GIVEN a list was returned less than 5 seconds ago
 - WHEN a client requests the same list
 - THEN none of the three commands runs again
+
+### REQ-BEADS-008: Bead comments
+WHEN a client requests `GET /api/beads/{project}/{id}/comments`, the server SHALL return the comments of that bead oldest first, each with `id`, `author`, `text`, `created_at` and `truncated`, SHALL cut a text longer than 20000 characters to 20000 and mark it `truncated`, SHALL leave out a comment whose fields have the wrong types, SHALL respond 404 when the project, the id or the bead does not exist, and SHALL respond 502 as in REQ-BEADS-005 when `bd` fails or answers in an unexpected shape.
+
+#### Scenario: Comments in order
+- GIVEN a bead with two comments written at different times
+- WHEN a client requests its comments
+- THEN both are returned oldest first with author, time and text, and `truncated` is false
+
+#### Scenario: Long comment
+- GIVEN a comment of 25000 characters
+- WHEN a client requests the comments
+- THEN its text has 20000 characters and `truncated` is true
+
+#### Scenario: No comments
+- GIVEN a bead without comments
+- WHEN a client requests its comments
+- THEN the response is an empty list
+
+#### Scenario: Malformed comment
+- GIVEN `bd` returns one comment whose `text` is a number and one valid comment
+- WHEN a client requests the comments
+- THEN only the valid comment is returned
+
+#### Scenario: Unknown bead or project
+- GIVEN no bead `x-1` and no project `nope`
+- WHEN a client requests `/api/beads/<project>/x-1/comments` or `/api/beads/nope/x-1/comments`
+- THEN the response is 404
+
+#### Scenario: Unsafe id
+- GIVEN a request for the comments of `--help` or `../x`
+- WHEN the server handles it
+- THEN the response is 404 and no `bd` command ran
+
+#### Scenario: bd fails
+- GIVEN `bd comments` exits with a non-zero status
+- WHEN a client requests the comments
+- THEN the response is 502 with an `error`, and the next request runs the command again
+
+#### Scenario: Cache
+- GIVEN the comments were returned less than 5 seconds ago
+- WHEN a client requests them again
+- THEN `bd` does not run again
+
+### REQ-BEADS-009: Author and text fields
+The server SHALL return `created_by` (null when `bd` has none) with every bead of the list and of the detail, and SHALL return with the bead detail the plain-text fields `design`, `notes`, `acceptance_criteria` and `close_reason`, each null when `bd` has none or it is empty.
+
+#### Scenario: Fields present
+- GIVEN a bead created by `gin` with a design, notes, acceptance criteria and a close reason
+- WHEN a client requests its detail
+- THEN `created_by` is `gin` and the four texts are returned
+
+#### Scenario: Fields absent
+- GIVEN a bead without notes and with an empty design
+- WHEN a client requests its detail
+- THEN `notes` and `design` are null
+
+#### Scenario: List rows
+- GIVEN a bead created by `gin`
+- WHEN a client requests the list
+- THEN its row has `created_by` `gin`
