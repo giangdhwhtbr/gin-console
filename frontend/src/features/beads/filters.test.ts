@@ -18,6 +18,7 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   dependent_count: 0,
   comment_count: 0,
   closed_at: null,
+  created_by: null,
   ready: false,
   blocked: false,
   ...overrides,

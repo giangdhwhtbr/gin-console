@@ -23,6 +23,7 @@ export const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSumm
   closed_at: null,
   ready: false,
   blocked: false,
+  created_by: null,
   ...overrides,
 });
 

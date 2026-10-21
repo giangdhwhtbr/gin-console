@@ -17,15 +17,21 @@ export type BeadSummary = {
   comment_count: number;
   ready: boolean;
   blocked: boolean;
+  created_by: string | null;
   closed_at: string | null;
 };
 export type Relation = { id: string; title: string; status: string; type: "blocks" | "parent-child" };
 export type BeadDetail = BeadSummary & {
   description: string | null;
+  design: string | null;
+  notes: string | null;
+  acceptance_criteria: string | null;
+  close_reason: string | null;
   dependencies: Relation[];
   dependents: Relation[];
   children: Relation[];
 };
+export type Comment = { id: string; author: string; text: string; created_at: string; truncated: boolean };
 
 export class BeadNotFoundError extends Error {}
 
@@ -36,7 +42,7 @@ function isSummary(value: unknown): value is BeadSummary {
   return (
     isObject(value) &&
     ["id", "title", "status", "issue_type", "created_at", "updated_at"].every((k) => isString(field(value, k))) &&
-    ["owner", "assignee", "parent", "closed_at"].every((k) => isStringOrNull(field(value, k))) &&
+    ["owner", "assignee", "parent", "closed_at", "created_by"].every((k) => isStringOrNull(field(value, k))) &&
     ["priority", "dependency_count", "dependent_count", "comment_count"].every((k) =>
       isFiniteNumber(field(value, k)),
     ) &&
@@ -58,8 +64,18 @@ const isRelations = (value: unknown) => Array.isArray(value) && value.every(isRe
 function isDetail(value: unknown): value is BeadDetail {
   return (
     isSummary(value) &&
-    isStringOrNull(field(value, "description")) &&
+    ["description", "design", "notes", "acceptance_criteria", "close_reason"].every((k) =>
+      isStringOrNull(field(value, k)),
+    ) &&
     ["dependencies", "dependents", "children"].every((k) => isRelations(field(value, k)))
+  );
+}
+
+function isComment(value: unknown): value is Comment {
+  return (
+    isObject(value) &&
+    ["id", "author", "text", "created_at"].every((k) => isString(field(value, k))) &&
+    typeof field(value, "truncated") === "boolean"
   );
 }
 
@@ -91,5 +107,17 @@ export async function fetchBead(project: string, id: string): Promise<BeadDetail
   if (!response.ok) throw await failure(response, "Bead");
   const body: unknown = await response.json();
   if (!isDetail(body)) throw new Error("Could not load the bead (unexpected response)");
+  return body;
+}
+
+export async function fetchComments(project: string, id: string): Promise<Comment[]> {
+  const response = await fetch(
+    `/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/comments`,
+  );
+  if (!response.ok) throw await failure(response, "Bead");
+  const body: unknown = await response.json();
+  if (!Array.isArray(body) || !body.every(isComment)) {
+    throw new Error("Could not load the comments (unexpected response)");
+  }
   return body;
 }

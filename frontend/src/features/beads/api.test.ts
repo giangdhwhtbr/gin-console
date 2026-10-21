@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BeadNotFoundError, fetchBead, fetchBeads } from "./api";
+import { BeadNotFoundError, fetchBead, fetchBeads, fetchComments } from "./api";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -22,14 +22,27 @@ const sampleSummary = {
   closed_at: null,
   ready: false,
   blocked: false,
+  created_by: null,
 };
 
 const sampleDetail = {
   ...sampleSummary,
   description: "Detailed description",
+  design: null,
+  notes: null,
+  acceptance_criteria: null,
+  close_reason: null,
   dependencies: [{ id: "b-1", title: "Dep", status: "open", type: "blocks" }],
   dependents: [],
   children: [],
+};
+
+const sampleComment = {
+  id: "c-1",
+  author: "alice",
+  text: "Sample comment",
+  created_at: "2026-10-01T00:00:00Z",
+  truncated: false,
 };
 
 afterEach(() => {
@@ -167,5 +180,121 @@ describe("api", () => {
     };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(invalidDetail))));
     await expect(fetchBead("p", "a-1")).rejects.toThrow(/unexpected response/);
+  });
+
+  // REQ-UI-038: summary missing created_by
+  it("REQ-UI-038 rejects when a bead is missing created_by", async () => {
+    const missingCreatedBy = Object.fromEntries(
+      Object.entries(sampleSummary).filter(([key]) => key !== "created_by"),
+    );
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([missingCreatedBy]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
+  });
+
+  // REQ-UI-038: summary created_by not string or null
+  it("REQ-UI-038 rejects when a bead created_by is a number", async () => {
+    const invalidCreatedBy = { ...sampleSummary, created_by: 5 };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([invalidCreatedBy]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
+  });
+
+  // REQ-UI-038: summary accepts created_by as null or string
+  it("REQ-UI-038 accepts created_by as null or string", async () => {
+    const withNull = { ...sampleSummary, created_by: null };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([withNull]))));
+    await expect(fetchBeads("proj", false)).resolves.toEqual([withNull]);
+
+    const withString = { ...sampleSummary, created_by: "alice" };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([withString]))));
+    await expect(fetchBeads("proj", false)).resolves.toEqual([withString]);
+  });
+
+  // REQ-UI-038: detail design is number
+  it("REQ-UI-038 rejects when bead detail design is a number", async () => {
+    const invalidDetail = { ...sampleDetail, design: 5 };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(invalidDetail))));
+    await expect(fetchBead("p", "a-1")).rejects.toThrow("Could not load the bead (unexpected response)");
+  });
+
+  // REQ-UI-038: detail missing notes, acceptance_criteria, or close_reason
+  it("REQ-UI-038 rejects when bead detail is missing notes, acceptance_criteria, or close_reason", async () => {
+    for (const fieldName of ["notes", "acceptance_criteria", "close_reason"] as const) {
+      const missingField = Object.fromEntries(
+        Object.entries(sampleDetail).filter(([key]) => key !== fieldName),
+      );
+      vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(missingField))));
+      await expect(fetchBead("p", "a-1")).rejects.toThrow("Could not load the bead (unexpected response)");
+    }
+  });
+
+  // REQ-UI-038: detail accepts four text fields as null or string
+  it("REQ-UI-038 accepts detail text fields as null or string", async () => {
+    const withNulls = {
+      ...sampleDetail,
+      design: null,
+      notes: null,
+      acceptance_criteria: null,
+      close_reason: null,
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(withNulls))));
+    await expect(fetchBead("p", "a-1")).resolves.toEqual(withNulls);
+
+    const withStrings = {
+      ...sampleDetail,
+      design: "Design text",
+      notes: "Notes text",
+      acceptance_criteria: "AC text",
+      close_reason: "Done",
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(withStrings))));
+    await expect(fetchBead("p", "a-1")).resolves.toEqual(withStrings);
+  });
+
+  // REQ-UI-039: fetchComments requests endpoint with URL encoding and returns parsed comments
+  it("REQ-UI-039 requests comments with URL encoding and returns parsed comments", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(json([sampleComment])));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await fetchComments("my proj", "a/1");
+    expect(fetchMock).toHaveBeenCalledWith("/api/beads/my%20proj/a%2F1/comments");
+    expect(result).toEqual([sampleComment]);
+  });
+
+  // REQ-UI-040: comments 404 throws BeadNotFoundError
+  it("REQ-UI-040 rejects with BeadNotFoundError when comments return 404", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({}, 404))));
+    await expect(fetchComments("proj", "a-1")).rejects.toBeInstanceOf(BeadNotFoundError);
+  });
+
+  // REQ-UI-040: comments 502 with error message
+  it("REQ-UI-040 rejects with error message on 502", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ error: "bd comments failed" }, 502))));
+    await expect(fetchComments("proj", "a-1")).rejects.toThrow("bd comments failed");
+  });
+
+  // REQ-UI-040: malformed comments responses
+  it("REQ-UI-040 rejects when comments response is not an array or has malformed comments", async () => {
+    // body {"x": 1}
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ x: 1 }))));
+    await expect(fetchComments("proj", "a-1")).rejects.toThrow("Could not load the comments (unexpected response)");
+
+    // non-array body
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json("not-an-array"))));
+    await expect(fetchComments("proj", "a-1")).rejects.toThrow("Could not load the comments (unexpected response)");
+
+    // item with truncated: "no"
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleComment, truncated: "no" }]))));
+    await expect(fetchComments("proj", "a-1")).rejects.toThrow("Could not load the comments (unexpected response)");
+
+    // item with text: 7
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleComment, text: 7 }]))));
+    await expect(fetchComments("proj", "a-1")).rejects.toThrow("Could not load the comments (unexpected response)");
+
+    // item with missing author
+    const missingAuthor = Object.fromEntries(
+      Object.entries(sampleComment).filter(([key]) => key !== "author"),
+    );
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([missingAuthor]))));
+    await expect(fetchComments("proj", "a-1")).rejects.toThrow("Could not load the comments (unexpected response)");
   });
 });
