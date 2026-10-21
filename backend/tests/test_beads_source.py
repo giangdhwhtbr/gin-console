@@ -6,12 +6,14 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_bd import FakeBd, bead, related
+from fake_bd import FakeBd, bead, comment, related
 
 from gin_console.beads.source import (
+    MAX_COMMENT_CHARS,
     BeadNotFound,
     BeadsError,
     get_bead,
+    get_comments,
     list_beads,
     run_bd,
     valid_id,
@@ -338,3 +340,105 @@ def test_beads_007_a_failing_readiness_command_fails_the_list(command: str) -> N
     fake = FakeBd([bead("a-1")], failing={command: BeadsError(f"bd {command} failed")})
     with pytest.raises(BeadsError, match=f"bd {command} failed"):
         list_beads(fake, CWD, closed=False)
+
+
+# REQ-BEADS-008
+def test_beads_008_comments_in_order_with_arguments() -> None:
+    first = comment("a-5", "first", created_at="2026-10-11T10:00:00Z")
+    second = comment("a-5", "second text", created_at="2026-10-12T10:00:00Z")
+    fake = FakeBd(shown={"a-5": bead("a-5")}, comments={"a-5": [first, second]})
+    comments = get_comments(fake, CWD, "a-5")
+    assert [c.text for c in comments] == ["first", "second text"]
+    assert comments[0].author == "me" and comments[0].created_at == "2026-10-11T10:00:00Z"
+    assert not comments[0].truncated
+    assert fake.calls == [(["comments", "--json", "--", "a-5"], CWD)]
+
+
+# REQ-BEADS-008
+def test_beads_008_long_comment_is_cut_and_marked() -> None:
+    long = comment("a-5", "x" * 25_000)
+    exact = comment("a-5", "y" * MAX_COMMENT_CHARS)
+    fake = FakeBd(shown={"a-5": bead("a-5")}, comments={"a-5": [long, exact]})
+    cut, whole = get_comments(fake, CWD, "a-5")
+    assert len(cut.text) == MAX_COMMENT_CHARS and cut.truncated
+    assert len(whole.text) == MAX_COMMENT_CHARS and not whole.truncated
+
+
+# REQ-BEADS-008
+def test_beads_008_no_comments_is_an_empty_list() -> None:
+    fake = FakeBd(shown={"a-5": bead("a-5")})
+    assert get_comments(fake, CWD, "a-5") == []
+
+
+# REQ-BEADS-008
+def test_beads_008_a_malformed_comment_is_dropped() -> None:
+    fake = FakeBd(
+        shown={"a-5": bead("a-5")},
+        comments={"a-5": [comment("a-5", "ok"), comment("a-5") | {"text": 7}, "x", {"id": "z"}]},
+    )
+    assert [c.text for c in get_comments(fake, CWD, "a-5")] == ["ok"]
+
+
+# REQ-BEADS-008
+def test_beads_008_unknown_bead_is_not_found() -> None:
+    with pytest.raises(BeadNotFound):
+        get_comments(FakeBd(), CWD, "x-1")
+
+
+# REQ-BEADS-008
+@pytest.mark.parametrize("ident", ["--help", "-x", "..", "a b", ""])
+def test_beads_008_an_invalid_id_never_reaches_bd(ident: str) -> None:
+    fake = FakeBd()
+    with pytest.raises(BeadNotFound):
+        get_comments(fake, CWD, ident)
+    assert fake.calls == []
+
+
+# REQ-BEADS-008
+# REQ-BEADS-005
+@pytest.mark.parametrize("output", [{"x": 1}, "text", 5])
+def test_beads_008_unexpected_output(output: Any) -> None:
+    with pytest.raises(BeadsError, match="not understood"):
+        get_comments(FakeBd(output=output), CWD, "a-5")
+
+
+# REQ-BEADS-008
+# REQ-BEADS-006
+def test_beads_008_lone_surrogates_are_replaced() -> None:
+    fake = FakeBd(
+        shown={"a-5": bead("a-5")},
+        comments={"a-5": [comment("a-5", "bad \ud800 text", author="a\udc00b")]},
+    )
+    (item,) = get_comments(fake, CWD, "a-5")
+    item.text.encode("utf-8")
+    item.author.encode("utf-8")
+
+
+# REQ-BEADS-009
+def test_beads_009_author_and_text_fields() -> None:
+    shown = bead(
+        "a-5",
+        created_by="gin",
+        design="the design",
+        notes="some notes",
+        acceptance_criteria="it works",
+        close_reason="done",
+    )
+    detail = get_bead(FakeBd(shown={"a-5": shown}), CWD, "a-5")
+    assert detail.created_by == "gin"
+    assert (detail.design, detail.notes) == ("the design", "some notes")
+    assert (detail.acceptance_criteria, detail.close_reason) == ("it works", "done")
+
+
+# REQ-BEADS-009
+def test_beads_009_absent_or_empty_texts_are_null() -> None:
+    detail = get_bead(FakeBd(shown={"a-5": bead("a-5", design="", created_by=None)}), CWD, "a-5")
+    assert detail.design is None and detail.notes is None
+    assert detail.acceptance_criteria is None and detail.close_reason is None
+    assert detail.created_by is None
+
+
+# REQ-BEADS-009
+def test_beads_009_list_rows_carry_created_by() -> None:
+    (row,) = list_beads(FakeBd([bead("a-1", created_by="gin")]), CWD, closed=False)
+    assert row.created_by == "gin"

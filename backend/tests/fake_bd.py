@@ -26,6 +26,18 @@ def bead(ident: str = "p-1", **overrides: Any) -> dict[str, Any]:
     return base
 
 
+def comment(ident: str, text: str = "hello", **overrides: Any) -> dict[str, Any]:
+    base: dict[str, Any] = {
+        "id": f"cmt-{ident}-{len(text)}",
+        "issue_id": ident,
+        "author": "me",
+        "text": text,
+        "created_at": "2026-10-12T10:00:00Z",
+    }
+    base.update(overrides)
+    return base
+
+
 def related(
     ident: str, kind: str, status: str = "open", title: str | None = None
 ) -> dict[str, Any]:
@@ -46,6 +58,7 @@ class FakeBd:
         blocked: list[str] | None = None,
         failing: dict[str, Exception] | None = None,
         bad: dict[str, Any] | None = None,
+        comments: dict[str, list[Any]] | None = None,
     ) -> None:
         self.beads = beads or []
         self.shown = shown or {}
@@ -56,6 +69,7 @@ class FakeBd:
         self.blocked = blocked or []
         self.failing = failing or {}
         self.bad = bad or {}
+        self.comments = comments or {}
         self.calls: list[tuple[list[str], Path]] = []
 
     def __call__(self, args: list[str], cwd: Path, *, json_on_failure: bool = False) -> Any:
@@ -86,4 +100,8 @@ class FakeBd:
             if ident not in self.shown:
                 return {"error": f'resolving {ident}: no issue found matching "{ident}"'}
             return self.up.get(ident, [])
+        if args[0] == "comments":
+            if ident not in self.shown and ident not in self.comments:
+                return {"error": f'resolving {ident}: no issue found matching "{ident}"'}
+            return self.comments.get(ident, [])
         raise AssertionError(f"unexpected bd arguments: {args}")

@@ -5,13 +5,14 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
-from gin_console.beads.models import BeadDetail, BeadSummary
+from gin_console.beads.models import BeadDetail, BeadSummary, Comment
 from gin_console.beads.service import KeyedCache
 from gin_console.beads.source import (
     BdRunner,
     BeadNotFound,
     BeadsError,
     get_bead,
+    get_comments,
     list_beads,
     valid_id,
 )
@@ -24,6 +25,7 @@ def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime
     router = APIRouter()
     lists = KeyedCache[tuple[str, bool], list[BeadSummary]](TTL, clock)
     details = KeyedCache[tuple[str, str], BeadDetail](TTL, clock)
+    comments = KeyedCache[tuple[str, str], list[Comment]](TTL, clock)
 
     def project_dir(name: str | None) -> Path:
         entry = next((p for p in settings.projects if p.name == name), None)
@@ -56,6 +58,18 @@ def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime
             raise HTTPException(status_code=404)
         try:
             return details.get((project, bead_id), lambda: get_bead(run, cwd, bead_id))
+        except BeadNotFound:
+            raise HTTPException(status_code=404) from None
+        except (BeadsError, RecursionError) as exc:
+            return failure(exc)
+
+    @router.get("/beads/{project}/{bead_id}/comments", response_model=list[Comment])
+    def get_bead_comments(project: str, bead_id: str) -> list[Comment] | JSONResponse:
+        cwd = project_dir(project)
+        if not valid_id(bead_id):
+            raise HTTPException(status_code=404)
+        try:
+            return comments.get((project, bead_id), lambda: get_comments(run, cwd, bead_id))
         except BeadNotFound:
             raise HTTPException(status_code=404) from None
         except (BeadsError, RecursionError) as exc:

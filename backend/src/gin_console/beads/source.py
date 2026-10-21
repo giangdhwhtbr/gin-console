@@ -6,11 +6,12 @@ from typing import Any, Protocol
 
 from pydantic import ValidationError
 
-from gin_console.beads.models import BeadDetail, BeadSummary, Relation
+from gin_console.beads.models import BeadDetail, BeadSummary, Comment, Relation
 from gin_console.projects.collect import CollectError, run_json
 from gin_console.quota.source import clean
 
 BD_TIMEOUT = 30.0
+MAX_COMMENT_CHARS = 20_000
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _SUMMARY_KEYS = (
     "id",
@@ -28,6 +29,7 @@ _SUMMARY_KEYS = (
     "dependent_count",
     "comment_count",
     "closed_at",
+    "created_by",
 )
 
 
@@ -130,6 +132,10 @@ def get_bead(run: BdRunner, cwd: Path, bead_id: str) -> BeadDetail:
             {
                 **{k: raw[k] for k in _SUMMARY_KEYS if k in raw},
                 "description": raw.get("description") or None,
+                "design": raw.get("design") or None,
+                "notes": raw.get("notes") or None,
+                "acceptance_criteria": raw.get("acceptance_criteria") or None,
+                "close_reason": raw.get("close_reason") or None,
                 "dependencies": _relations(raw.get("dependencies")),
                 "dependents": [r for r in above if r.type == "blocks"],
                 "children": [r for r in above if r.type == "parent-child"],
@@ -137,3 +143,27 @@ def get_bead(run: BdRunner, cwd: Path, bead_id: str) -> BeadDetail:
         )
     except ValidationError:
         raise BeadsError("bd show output was not understood") from None
+
+
+def _comment(raw: Any) -> Comment | None:
+    if not isinstance(raw, dict):
+        return None
+    try:
+        comment = Comment.model_validate(
+            {k: raw[k] for k in ("id", "author", "text", "created_at") if k in raw}
+        )
+    except ValidationError:
+        return None
+    if len(comment.text) <= MAX_COMMENT_CHARS:
+        return comment
+    return comment.model_copy(update={"text": comment.text[:MAX_COMMENT_CHARS], "truncated": True})
+
+
+def get_comments(run: BdRunner, cwd: Path, bead_id: str) -> list[Comment]:
+    if not valid_id(bead_id):
+        raise BeadNotFound(bead_id)
+    data = run(["comments", "--json", "--", bead_id], cwd, json_on_failure=True)
+    _fail_on_error(data)
+    if not isinstance(data, list):
+        raise BeadsError("bd comments output was not understood")
+    return [item for item in map(_comment, data) if item is not None]

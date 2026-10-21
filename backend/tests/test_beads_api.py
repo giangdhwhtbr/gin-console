@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_bd import FakeBd, bead, related
+from fake_bd import FakeBd, bead, comment, related
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -204,3 +204,79 @@ def test_beads_007_one_cache_entry_for_the_three_commands(tmp_path: Path) -> Non
     clock.now += timedelta(seconds=2)
     api.get("/api/beads", params={"project": "proj"})
     assert len(fake.calls) == 3
+
+
+# REQ-BEADS-008
+def test_beads_008_comments_over_http(tmp_path: Path) -> None:
+    fake = FakeBd(shown={"a-5": bead("a-5")}, comments={"a-5": [comment("a-5", "hi")]})
+    body = make(tmp_path, fake).get("/api/beads/proj/a-5/comments").json()
+    assert [(c["author"], c["text"], c["truncated"]) for c in body] == [("me", "hi", False)]
+    assert {"id", "author", "text", "created_at", "truncated"} == set(body[0])
+
+
+# REQ-BEADS-008
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/beads/proj/x-1/comments",
+        "/api/beads/nope/a-5/comments",
+        "/api/beads/gone/a-5/comments",
+    ],
+)
+def test_beads_008_unknown_bead_or_project_is_404(tmp_path: Path, path: str) -> None:
+    fake = FakeBd(shown={"a-5": bead("a-5")})
+    assert make(tmp_path, fake).get(path).status_code == 404
+
+
+# REQ-BEADS-008
+# REQ-BEADS-003
+@pytest.mark.parametrize("ident", ["--help", "-x", "..", "a%2Fb", "a%00b", ".a", "a%20b"])
+def test_beads_008_unsafe_ids_are_404_and_run_nothing(tmp_path: Path, ident: str) -> None:
+    fake = FakeBd(shown={"a-5": bead("a-5")})
+    assert make(tmp_path, fake).get(f"/api/beads/proj/{ident}/comments").status_code == 404
+    assert fake.calls == []
+
+
+# REQ-BEADS-008
+# REQ-BEADS-005
+def test_beads_008_failure_is_502_and_not_cached(tmp_path: Path) -> None:
+    fake = FakeBd(
+        shown={"a-5": bead("a-5")}, failing={"comments": BeadsError("bd comments failed")}
+    )
+    api = make(tmp_path, fake)
+    response = api.get("/api/beads/proj/a-5/comments")
+    assert response.status_code == 502 and "bd comments failed" in response.json()["error"]
+    fake.failing = {}
+    assert api.get("/api/beads/proj/a-5/comments").status_code == 200
+
+
+# REQ-BEADS-008
+def test_beads_008_unexpected_shape_is_502(tmp_path: Path) -> None:
+    api = make(tmp_path, FakeBd(shown={"a-5": bead("a-5")}, bad={"comments": {"x": 1}}))
+    assert api.get("/api/beads/proj/a-5/comments").status_code == 502
+
+
+# REQ-BEADS-008
+# REQ-BEADS-004
+def test_beads_008_cached_for_five_seconds(tmp_path: Path) -> None:
+    clock = Clock()
+    fake = FakeBd(shown={"a-5": bead("a-5")}, comments={"a-5": [comment("a-5")]})
+    api = make(tmp_path, fake, clock)
+    api.get("/api/beads/proj/a-5/comments")
+    clock.now += timedelta(seconds=2)
+    api.get("/api/beads/proj/a-5/comments")
+    assert len(fake.calls) == 1
+    clock.now += timedelta(seconds=4)
+    api.get("/api/beads/proj/a-5/comments")
+    assert len(fake.calls) == 2
+
+
+# REQ-BEADS-009
+def test_beads_009_fields_over_http(tmp_path: Path) -> None:
+    shown = bead("a-5", created_by="gin", design="D", notes="N")
+    api = make(tmp_path, FakeBd([bead("a-1", created_by="gin")], shown={"a-5": shown}))
+    detail = api.get("/api/beads/proj/a-5").json()
+    assert detail["created_by"] == "gin" and detail["design"] == "D" and detail["notes"] == "N"
+    assert detail["acceptance_criteria"] is None and detail["close_reason"] is None
+    rows = api.get("/api/beads", params={"project": "proj"}).json()
+    assert rows[0]["created_by"] == "gin"

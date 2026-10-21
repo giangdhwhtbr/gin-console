@@ -28,6 +28,7 @@ class BeadSummary(BaseModel):
     closed_at: Text | None = None
     ready: bool = False
     blocked: bool = False
+    created_by: Text | None = None
 
 
 class Relation(BaseModel):
@@ -39,8 +40,22 @@ class Relation(BaseModel):
     type: Literal["blocks", "parent-child"]
 
 
+class Comment(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    id: Text
+    author: Text
+    text: Text
+    created_at: Text
+    truncated: bool = False
+
+
 class BeadDetail(BeadSummary):
     description: Text | None = None
+    design: Text | None = None
+    notes: Text | None = None
+    acceptance_criteria: Text | None = None
+    close_reason: Text | None = None
     dependencies: list[Relation] = []
     dependents: list[Relation] = []
     children: list[Relation] = []
