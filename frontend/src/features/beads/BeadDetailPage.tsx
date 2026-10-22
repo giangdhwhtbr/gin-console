@@ -15,7 +15,7 @@ type State =
   | { status: "notfound" }
   | { status: "ok"; bead: BeadDetail };
 
-export function BeadDetailPage({ project, id }: { project: string; id: string }) {
+export function BeadDetailPage({ project, id, embedded = false }: { project: string; id: string; embedded?: boolean }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
 
@@ -35,7 +35,11 @@ export function BeadDetailPage({ project, id }: { project: string; id: string })
     setState({ status: "loading" });
     setAttempt((n) => n + 1);
   };
-  const back = (
+  const back = embedded ? (
+    <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`} className="text-sm underline underline-offset-2">
+      Open page
+    </Link>
+  ) : (
     <Link to={`/beads?project=${encodeURIComponent(project)}`} className="text-sm underline underline-offset-2">
       Back to beads
     </Link>

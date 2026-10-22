@@ -16,7 +16,7 @@ function move(step: 1 | -1): boolean {
 }
 
 /** `/` search, `Esc` leave search, arrows between cards; Enter opens the focused card link natively. */
-export function useCardKeys(enabled: boolean, clearSearch: () => void): void {
+export function useCardKeys(enabled: boolean, clearSearch: () => void, arrows = true): void {
   useEffect(() => {
     if (!enabled) return;
     const onKey = (event: KeyboardEvent) => {
@@ -31,13 +31,13 @@ export function useCardKeys(enabled: boolean, clearSearch: () => void): void {
       if (event.key === "/") {
         event.preventDefault();
         document.getElementById("bead-search")?.focus();
-      } else if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      } else if (arrows && (event.key === "ArrowDown" || event.key === "ArrowRight")) {
         if (move(1)) event.preventDefault();
-      } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      } else if (arrows && (event.key === "ArrowUp" || event.key === "ArrowLeft")) {
         if (move(-1)) event.preventDefault();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [enabled, clearSearch]);
+  }, [enabled, clearSearch, arrows]);
 }

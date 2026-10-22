@@ -1,8 +1,10 @@
 import { useState } from "react";
 import type { BeadSummary } from "./api";
+import { BeadDetailPage } from "./BeadDetailPage";
 import { inLane } from "./columns";
 import { filterBeads, type BeadFilters } from "./filters";
 import { allBranches, ancestorsOf, keepSet, treeIndex, treeRows } from "./tree";
+import { treeKeyDown } from "./treeKeys";
 import { TreeRow } from "./TreeRow";
 import { TreeToolbar } from "./TreeToolbar";
 
@@ -49,33 +51,52 @@ export function TreeView({
   const select = (id: string) => onChange({ ...filters, select: id });
 
   return (
-    <div className="flex flex-col gap-3">
-      <TreeToolbar
-        filters={filters}
-        onChange={onChange}
-        onExpandAll={() => setOpen(allBranches(index))}
-        onCollapseAll={() => setOpen(new Set())}
-      />
-      {rows.length === 0 ? (
-        <p className="text-muted-foreground">No beads match.</p>
-      ) : (
-        <ul role="tree" aria-label={`Beads of ${project}`} className="flex flex-col gap-1">
-          {rows.map((row) => (
-            <TreeRow
-              key={row.key}
-              row={row}
-              mode={filters.tree}
-              selected={row.bead.id === filters.select}
-              tabStop={row.key === tabStop}
-              onToggle={toggle}
-              onSelect={select}
-            />
-          ))}
-        </ul>
-      )}
-      {omitted > 0 && (
-        <p className="text-sm text-muted-foreground">{`${omitted}${walkLimited ? "+" : ""} more not shown`}</p>
-      )}
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-3">
+        <TreeToolbar
+          filters={filters}
+          onChange={onChange}
+          onExpandAll={() => setOpen(allBranches(index))}
+          onCollapseAll={() => setOpen(new Set())}
+        />
+        {rows.length === 0 ? (
+          <p className="text-muted-foreground">No beads match.</p>
+        ) : (
+          <ul
+            role="tree"
+            aria-label={`Beads of ${project}`}
+            onKeyDown={(event) => treeKeyDown(event, { toggle, select })}
+            className="flex flex-col gap-1"
+          >
+            {rows.map((row) => (
+              <TreeRow
+                key={row.key}
+                row={row}
+                mode={filters.tree}
+                selected={row.bead.id === filters.select}
+                tabStop={row.key === tabStop}
+                onToggle={toggle}
+                onSelect={select}
+              />
+            ))}
+          </ul>
+        )}
+        {omitted > 0 && (
+          <p className="text-sm text-muted-foreground">{`${omitted}${walkLimited ? "+" : ""} more not shown`}</p>
+        )}
+      </div>
+      <aside aria-label="Bead details" className="min-w-0 rounded border p-3">
+        {filters.select === "" ? (
+          <p className="text-muted-foreground">Select a bead to see its details</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {!rows.some((r) => r.bead.id === filters.select) && (
+              <p className="text-sm text-muted-foreground">Not in the current tree</p>
+            )}
+            <BeadDetailPage key={`${project}/${filters.select}`} project={project} id={filters.select} embedded />
+          </div>
+        )}
+      </aside>
     </div>
   );
 }

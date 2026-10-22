@@ -31,7 +31,7 @@ export function BeadsView({
   onChange: (next: BeadFilters) => void;
 }) {
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
-  useCardKeys(filters.view !== "list", clearSearch);
+  useCardKeys(filters.view !== "list", clearSearch, filters.view !== "tree");
 
   const [state, setState] = useState<State>({ status: "loading" });
   const closed = filters.closed;
