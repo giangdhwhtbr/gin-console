@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { VIEWS, type BeadFilters } from "./filters";
 
-const TITLES = { list: "List", board: "Board", focus: "Focus" } as const;
+const TITLES = { list: "List", board: "Board", focus: "Focus", tree: "Tree" } as const;
 
 export function ViewTabs({ filters, onChange }: { filters: BeadFilters; onChange: (next: BeadFilters) => void }) {
   return (

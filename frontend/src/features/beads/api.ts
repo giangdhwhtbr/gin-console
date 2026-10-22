@@ -18,6 +18,7 @@ export type BeadSummary = {
   ready: boolean;
   blocked: boolean;
   created_by: string | null;
+  blocked_by: string[];
   closed_at: string | null;
 };
 export type Relation = { id: string; title: string; status: string; type: "blocks" | "parent-child" };
@@ -47,7 +48,8 @@ function isSummary(value: unknown): value is BeadSummary {
       isFiniteNumber(field(value, k)),
     ) &&
     ["ready", "blocked"].every((k) => typeof field(value, k) === "boolean") &&
-    isStringArray(field(value, "labels"))
+    isStringArray(field(value, "labels")) &&
+    isStringArray(field(value, "blocked_by"))
   );
 }
 

@@ -21,6 +21,7 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   created_by: null,
   ready: false,
   blocked: false,
+  blocked_by: [],
   ...overrides,
 });
 
@@ -42,14 +43,38 @@ describe("filters", () => {
       group: "",
       finished: false,
       lane: "",
+      tree: "hierarchy",
+      select: "",
     });
   });
 
   // REQ-UI-030
   it("REQ-UI-030 parses view from the URL", () => {
     expect(parseFilters("?view=board").view).toBe("board");
+    expect(parseFilters("?view=tree").view).toBe("tree");
     expect(parseFilters("?view=graph").view).toBe("list");
     expect(parseFilters("").view).toBe("list");
+  });
+
+  // REQ-UI-042
+  it("REQ-UI-042 parses tree mode from the URL", () => {
+    expect(parseFilters("?tree=blocking").tree).toBe("blocking");
+    expect(parseFilters("?tree=x").tree).toBe("hierarchy");
+    expect(parseFilters("").tree).toBe("hierarchy");
+  });
+
+  // REQ-UI-045
+  it("REQ-UI-045 parses select from the URL", () => {
+    expect(parseFilters("?select=t-1").select).toBe("t-1");
+    expect(parseFilters("").select).toBe("");
+  });
+
+  // REQ-UI-030, REQ-UI-042, REQ-UI-045
+  it("REQ-UI-030, REQ-UI-042, REQ-UI-045 serializes tree view, mode and select", () => {
+    const filters = { ...empty, view: "tree" as const, tree: "blocking" as const, select: "a b" };
+    expect(filtersToSearch(filters)).toBe("?view=tree&tree=blocking&select=a+b");
+    expect(filtersToSearch({ ...empty, view: "tree", tree: "hierarchy", select: "" })).toBe("?view=tree");
+    expect(parseFilters(filtersToSearch(filters))).toEqual(filters);
   });
 
   // REQ-UI-034

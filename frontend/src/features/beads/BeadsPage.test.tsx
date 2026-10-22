@@ -27,6 +27,7 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   ready: false,
   blocked: false,
   created_by: null,
+  blocked_by: [],
   ...overrides,
 });
 
