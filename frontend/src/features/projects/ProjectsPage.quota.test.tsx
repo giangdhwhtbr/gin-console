@@ -17,8 +17,6 @@ describe("ProjectsPage with the quota strip", () => {
     const project = {
       name: "qwikfone",
       path: "/home/gin/qwikfone",
-      scotty_id: null,
-      scotty_url: null,
       exists: true,
       workflow: null,
       beads: null,

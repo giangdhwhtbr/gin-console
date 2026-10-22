@@ -39,11 +39,10 @@ systemctl --user restart gin-console
 
 ```bash
 tailscale serve --bg --https=8443 http://127.0.0.1:8700
-tailscale serve --https=443 --set-path=/bd off     # remove the redundant /bd path
 tailscale serve status
 ```
 
-Prefix with `sudo` if your user is not the Tailscale operator. Scotty stays at `/`.
+Prefix with `sudo` if your user is not the Tailscale operator.
 
 ## Logs
 

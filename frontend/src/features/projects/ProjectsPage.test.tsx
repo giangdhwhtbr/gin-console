@@ -12,8 +12,6 @@ const json = (body: unknown, status = 200) =>
 const project = (overrides: Partial<Project> = {}): Project => ({
   name: "qwikfone",
   path: "/home/gin/qwikfone",
-  scotty_id: null,
-  scotty_url: null,
   exists: true,
   workflow: null,
   beads: null,
@@ -118,31 +116,26 @@ describe("ProjectsPage", () => {
   });
 
   // REQ-UI-005
-  it("REQ-UI-005 links the project name to Scotty in a new tab and each epic to the console", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        json([project({ name: "scotty", scotty_id: "scotty", scotty_url: "https://h/p/scotty", beads })]),
-      ),
-    );
+  it("REQ-UI-005 links the project name to its beads page and each epic to the bead page", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ name: "scotty", beads })])));
     render(<ProjectsPage />);
     const card = await screen.findByRole("article", { name: "scotty" });
     const projectLink = within(card).getByRole("link", { name: "scotty" });
-    expect(projectLink).toHaveAttribute("href", "https://h/p/scotty");
-    expect(projectLink).toHaveAttribute("target", "_blank");
-    expect(projectLink).toHaveAttribute("rel", "noopener noreferrer");
+    expect(projectLink).toHaveAttribute("href", "/beads?project=scotty");
+    expect(projectLink).not.toHaveAttribute("target");
     const epicLink = within(card).getByRole("link", { name: "e1" });
     expect(epicLink).toHaveAttribute("href", "/beads/scotty/e1");
-    expect(epicLink).not.toHaveAttribute("target");
   });
 
   // REQ-UI-005
-  it("REQ-UI-005 links epics to the console and leaves the name plain without a Scotty URL", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ beads })])));
+  it("REQ-UI-005 encodes the project name in the project link", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ name: "a b" })])));
     render(<ProjectsPage />);
-    const card = await screen.findByRole("article", { name: "qwikfone" });
-    expect(within(card).getByRole("link", { name: "e1" })).toHaveAttribute("href", "/beads/qwikfone/e1");
-    expect(within(card).queryByRole("link", { name: "qwikfone" })).not.toBeInTheDocument();
+    const card = await screen.findByRole("article", { name: "a b" });
+    expect(within(card).getByRole("link", { name: "a b" })).toHaveAttribute(
+      "href",
+      "/beads?project=a%20b",
+    );
   });
 
   // REQ-UI-005

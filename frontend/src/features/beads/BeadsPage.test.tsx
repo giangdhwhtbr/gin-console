@@ -34,8 +34,6 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
 const project = (name: string, exists = true): Project => ({
   name,
   path: `/home/gin/${name}`,
-  scotty_id: null,
-  scotty_url: null,
   exists,
   workflow: null,
   beads: null,

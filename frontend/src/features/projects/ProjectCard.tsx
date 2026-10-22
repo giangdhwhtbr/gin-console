@@ -1,16 +1,6 @@
-import type { ReactNode } from "react";
 import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { isBlockError, type Beads, type Project, type Workflow } from "./api";
-
-function MaybeLink({ href, children }: { href: string | null; children: ReactNode }) {
-  if (href === null) return <>{children}</>;
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
-      {children}
-    </a>
-  );
-}
 
 const gateVariant = (state: string) =>
   state === "satisfied" ? "default" : state.startsWith("waived") ? "secondary" : "outline";
@@ -66,7 +56,12 @@ export function ProjectCard({ project }: { project: Project }) {
     <article aria-label={project.name} className="flex flex-col gap-3 rounded-lg border p-4">
       <header className="flex flex-wrap items-center gap-2">
         <h2 className="font-medium">
-          <MaybeLink href={project.scotty_url}>{project.name}</MaybeLink>
+          <Link
+            to={`/beads?project=${encodeURIComponent(project.name)}`}
+            className="underline underline-offset-2"
+          >
+            {project.name}
+          </Link>
         </h2>
         {!project.exists && <Badge variant="destructive">missing</Badge>}
         <span className="w-full break-all font-mono text-sm text-muted-foreground">

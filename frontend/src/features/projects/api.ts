@@ -17,8 +17,6 @@ export type Beads = {
 export type Project = {
   name: string;
   path: string;
-  scotty_id: string | null;
-  scotty_url: string | null;
   exists: boolean;
   workflow: Workflow | BlockError | null;
   beads: Beads | BlockError | null;
@@ -39,10 +37,6 @@ function isProject(value: unknown): value is Project {
     typeof value.name === "string" &&
     "path" in value &&
     typeof value.path === "string" &&
-    "scotty_id" in value &&
-    (typeof value.scotty_id === "string" || value.scotty_id === null) &&
-    "scotty_url" in value &&
-    (typeof value.scotty_url === "string" || value.scotty_url === null) &&
     "exists" in value &&
     typeof value.exists === "boolean" &&
     "workflow" in value &&

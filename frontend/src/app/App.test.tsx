@@ -90,8 +90,6 @@ describe("App routing", () => {
               {
                 name: "alpha",
                 path: "/home/gin/alpha",
-                scotty_id: null,
-                scotty_url: null,
                 exists: true,
                 workflow: null,
                 beads: null,
