@@ -27,8 +27,6 @@ class Beads(BaseModel):
 class Project(BaseModel):
     name: str
     path: str
-    scotty_id: str | None
-    scotty_url: str | None
     exists: bool
     workflow: Workflow | BlockError | None
     beads: Beads | BlockError | None

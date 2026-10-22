@@ -17,8 +17,6 @@ def build_router(settings: Settings) -> APIRouter:
         if not settings.projects:
             return []
         with ThreadPoolExecutor(max_workers=len(settings.projects)) as pool:
-            return list(
-                pool.map(lambda entry: build_project(entry, settings, collector), settings.projects)
-            )
+            return list(pool.map(lambda entry: build_project(entry, collector), settings.projects))
 
     return router

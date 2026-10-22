@@ -39,13 +39,11 @@ def test_config_002_valid_projects_in_order(tmp_path: Path) -> None:
     path = write(
         tmp_path,
         "projects:\n"
-        "  - {name: qwikfone, path: /home/gin/qwikfone, scotty_id: qwikfone}\n"
+        "  - {name: qwikfone, path: /home/gin/qwikfone}\n"
         "  - {name: scotty, path: /home/gin/scotty}\n",
     )
     settings = load_settings(path)
     assert [p.name for p in settings.projects] == ["qwikfone", "scotty"]
-    assert settings.projects[0].scotty_id == "qwikfone"
-    assert settings.projects[1].scotty_id is None
 
 
 # REQ-CONFIG-002
@@ -122,32 +120,15 @@ def test_effective_host_defaults_to_config() -> None:
     assert effective_host(settings, {HOST_ENV: ""}) == "127.0.0.1"
 
 
-# REQ-CONFIG-004
-def test_config_004_scotty_base_url_valid(tmp_path: Path) -> None:
-    path = write(tmp_path, "server: {scotty_base_url: 'https://host.example.ts.net'}\n")
-    assert load_settings(path).server.scotty_base_url == "https://host.example.ts.net"
-
-
-# REQ-CONFIG-004
-def test_config_004_scotty_base_url_defaults_to_none(tmp_path: Path) -> None:
-    assert load_settings(write(tmp_path, "projects: []\n")).server.scotty_base_url is None
-
-
-# REQ-CONFIG-004
-@pytest.mark.parametrize(
-    "value",
-    [
-        "host.example.ts.net",
-        "ftp://host",
-        "https://",
-        "https://host:notaport",
-        "https://host:99999",
-        "https://   ",
-        " https://host",
-        "https://:8443",
-    ],
-)
-def test_config_004_scotty_base_url_invalid(tmp_path: Path, value: str) -> None:
-    path = write(tmp_path, f"server: {{scotty_base_url: '{value}'}}\n")
+# REQ-CONFIG-005
+def test_config_005_old_base_url_is_refused(tmp_path: Path) -> None:
+    path = write(tmp_path, "server: {scotty_base_url: 'https://h'}\n")
     with pytest.raises(ConfigError, match="scotty_base_url"):
+        load_settings(path)
+
+
+# REQ-CONFIG-005
+def test_config_005_old_project_id_is_refused(tmp_path: Path) -> None:
+    path = write(tmp_path, "projects:\n  - {name: a, path: /a, scotty_id: a}\n")
+    with pytest.raises(ConfigError, match="scotty_id"):
         load_settings(path)

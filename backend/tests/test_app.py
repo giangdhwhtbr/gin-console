@@ -6,7 +6,7 @@ from fakes import Fake
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
-from gin_console.config import ProjectEntry, ServerSettings, Settings
+from gin_console.config import ProjectEntry, Settings
 
 WORKFLOW = {"stage": "plan", "layout": "sdd", "gates": {"requirement_confirmed": "satisfied"}}
 BEADS = {
@@ -22,14 +22,13 @@ def make_client(
     tmp_path: Path,
     projects: list[ProjectEntry],
     built: bool = True,
-    scotty_base_url: str | None = None,
 ) -> TestClient:
     static = tmp_path / "dist"
     static.mkdir()
     if built:
         (static / "index.html").write_text("<html>console</html>")
         (static / "app.js").write_text("console.log(1)")
-    settings = Settings(server=ServerSettings(scotty_base_url=scotty_base_url), projects=projects)
+    settings = Settings(projects=projects)
     return TestClient(create_app(settings, static_dir=static))
 
 
@@ -54,7 +53,7 @@ def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
     client = make_client(
         tmp_path,
         [
-            ProjectEntry(name="present", path=present, scotty_id="p"),
+            ProjectEntry(name="present", path=present),
             ProjectEntry(name="absent", path=tmp_path / "absent"),
         ],
     )
@@ -62,8 +61,6 @@ def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
         {
             "name": "present",
             "path": str(present),
-            "scotty_id": "p",
-            "scotty_url": None,
             "exists": True,
             "workflow": WORKFLOW,
             "beads": BEADS,
@@ -71,8 +68,6 @@ def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
         {
             "name": "absent",
             "path": str(tmp_path / "absent"),
-            "scotty_id": None,
-            "scotty_url": None,
             "exists": False,
             "workflow": None,
             "beads": None,
@@ -90,28 +85,11 @@ def test_server_003_path_appears_later(tmp_path: Path, fake: Fake) -> None:
 
 
 # REQ-SERVER-003
-def test_server_003_scotty_url(tmp_path: Path, fake: Fake) -> None:
+def test_server_003_no_scotty_fields(tmp_path: Path, fake: Fake) -> None:
     (tmp_path / "s").mkdir()
-    client = make_client(
-        tmp_path,
-        [ProjectEntry(name="s", path=tmp_path / "s", scotty_id="scotty")],
-        scotty_base_url="https://h/",
-    )
-    assert client.get("/api/projects").json()[0]["scotty_url"] == "https://h/p/scotty"
-
-
-# REQ-SERVER-003
-@pytest.mark.parametrize(("scotty_id", "base"), [(None, "https://h"), ("scotty", None)])
-def test_server_003_no_scotty_url(
-    tmp_path: Path, fake: Fake, scotty_id: str | None, base: str | None
-) -> None:
-    (tmp_path / "s").mkdir()
-    client = make_client(
-        tmp_path,
-        [ProjectEntry(name="s", path=tmp_path / "s", scotty_id=scotty_id)],
-        scotty_base_url=base,
-    )
-    assert client.get("/api/projects").json()[0]["scotty_url"] is None
+    client = make_client(tmp_path, [ProjectEntry(name="s", path=tmp_path / "s")])
+    entry = client.get("/api/projects").json()[0]
+    assert set(entry) == {"name", "path", "exists", "workflow", "beads"}
 
 
 # REQ-SERVER-007
