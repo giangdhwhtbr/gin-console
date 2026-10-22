@@ -62,7 +62,7 @@ export function epicsOf(beads: readonly BeadSummary[], showClosed: boolean): Epi
     .filter((b) => b.issue_type === "epic")
     .sort(byImportance)
     .map((epic) => {
-      const ids = descendantIds(shown, epic.id);
+      const ids = descendantIds(beads, epic.id);
       const tasks = shown.filter((b) => ids.has(b.id));
       return { epic, tasks: tasks.length, blocked: tasks.filter((b) => stateOf(b) === "blocked").length };
     });
@@ -71,11 +71,12 @@ export function epicsOf(beads: readonly BeadSummary[], showClosed: boolean): Epi
 export function graphOf(beads: readonly BeadSummary[], epicId: string, showClosed: boolean): Graph {
   const shown = visible(beads, showClosed);
   const byId = new Map(shown.map((b) => [b.id, b]));
-  const inside = descendantIds(shown, epicId);
+  const descendants = descendantIds(beads, epicId);
+  const inside = new Set([...descendants].filter((id) => byId.has(id)));
   const outside = new Set<string>();
   const edges: GraphEdge[] = [];
   for (const id of inside) {
-    for (const blocker of byId.get(id)?.blocked_by ?? []) {
+    for (const blocker of new Set(byId.get(id)?.blocked_by)) {
       if (blocker === id || !byId.has(blocker)) continue;
       if (!inside.has(blocker)) outside.add(blocker);
       edges.push({ from: blocker, to: id });

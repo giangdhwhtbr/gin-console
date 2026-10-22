@@ -95,4 +95,26 @@ describe("graph", () => {
     const { at } = place(g);
     expect(at.get("b")?.x).toBeGreaterThan(at.get("a")?.x ?? Infinity);
   });
+
+  it("REQ-UI-048 an open task under a closed task stays in the graph", () => {
+    const g = graphOf([epic, task("t-1", [], { status: "closed" }), bead("t-2", { parent: "t-1" })], "e", false);
+    expect(g.nodes.map((n) => n.bead.id)).toEqual(["t-2"]);
+    expect(epicsOf([epic, task("t-1", [], { status: "closed" }), bead("t-2", { parent: "t-1" })], false)[0]?.tasks).toBe(1);
+  });
+
+  it("REQ-UI-048 a repeated blocker gives one arrow and a self block gives none", () => {
+    const g = graphOf([epic, task("a"), task("b", ["a", "a", "b"])], "e", false);
+    expect(g.edges).toEqual([{ from: "a", to: "b" }]);
+    expect(g.cycle).toEqual([]);
+  });
+
+  it("REQ-UI-050 a cycle of three is reported in full", () => {
+    const g = graphOf([epic, task("a", ["c"]), task("b", ["a"]), task("c", ["b"])], "e", false);
+    expect(g.cycle).toEqual(["a", "b", "c"]);
+  });
+
+  it("REQ-UI-049 a closed blocker is not drawn while closed beads are hidden", () => {
+    const g = graphOf([epic, task("a", [], { status: "closed" }), task("b", ["a"]), task("c", ["b"])], "e", false);
+    expect(g.edges).toEqual([{ from: "b", to: "c" }]);
+  });
 });
