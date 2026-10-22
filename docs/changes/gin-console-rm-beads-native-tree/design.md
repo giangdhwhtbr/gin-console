@@ -1,0 +1,17 @@
+# Design: Dependency tree
+
+Epic: gin-console-rm-beads-native
+
+## Architecture
+- Backend (`beads/`): `BeadSummary` gains `blocked_by: list[Text] = []`. `source.py` reads the `dependencies` rows that `bd list --json` already prints (`{issue_id, depends_on_id, type, ...}`) and keeps the `depends_on_id` of rows whose type is `blocks` or `blocked-by`; a malformed row is skipped without dropping the bead; the other types (`parent-child`, which `parent` already covers, `related`, `discovered-from`, `supersedes`) are ignored. No new command, endpoint or cache entry; the detail endpoint is unchanged.
+- Frontend (`features/beads/`): `tree.ts` holds the pure rules: `buildTree(beads, mode)` returns the forest (Hierarchy by `parent`, Blocking by `blocked_by`), `filterTree` keeps matches and their ancestors, `visibleRows(forest, open)` flattens the shown nodes with their level, parent index and "also above" marks, with the 2000-node cap. `TreeView.tsx` renders the tree and the panel, `TreeRow.tsx` one node, `TreeToolbar.tsx` the Group switch and Expand all / Collapse all, `useTreeKeys.ts` the tree keyboard. `filters.ts` gains `tree` (`hierarchy` | `blocking`) and `select` next to `view`; `BeadsView.tsx` renders `TreeView` for `view=tree`. `BeadDetailPage` gains an `embedded` prop (no "Back to beads", an "Open page" link) and is mounted with `key={project/id}` in the panel, so a selection change remounts it and a late answer of the previous bead cannot replace the current one.
+- Why derive the tree in the browser: the list already carries every edge; a tree endpoint would add `bd` calls and a cache for nothing, and the same data feeds the filters.
+
+## Data Flow
+Browser polls `GET /api/beads` every 10 s (`blocked_by` on every row) -> `BeadsView` applies search, filters, lane and "Show closed" -> `buildTree` + `filterTree` -> `visibleRows` with the local open-set -> the tree; the selection (`select`) and mode (`tree`) live in the URL, the open-set is local state seeded from the roots, the selection's ancestors and, under a filter, every branch with a match. A refresh keeps the open-set and the selection by id.
+
+## Error Handling
+As in the other views: a failed refresh keeps the last data with an error and Retry; unknown `view`, `tree` or `select` values fall back to defaults; a selected id that is not loaded still opens its panel (the panel fetches the bead itself) with the note "Not in the current tree", and an unknown id shows the bead page's own "Bead not found". Cycles and repeated beads become "also above" leaves; the 2000-node cap is reported. Everything from `bd` is rendered as React text.
+
+## Testing
+Backend: fake runner with `dependencies` rows; `blocks` and `blocked-by` kept, other types ignored, malformed row skipped, empty list. Frontend (vitest): `tree.ts` unit tests (roots and parent not loaded, order, Blocking roots and unlock chains, diamond, cycle, 2000 cap, filter keeps ancestors, closed hidden); URL parsing of `tree` and `select` with unknown values; the Tree view (open and close, Expand all and Collapse all, progress, blocked by N, filters, lane, plain text); selection (URL, panel, restored after reload, not in the tree, Open page link, late comments after a selection change); keyboard and roles; switching view makes no request; refresh keeps the open-set and the selection. One real-host check of `blocked_by` on qwikfone (about 360 `blocks` edges over all beads).
