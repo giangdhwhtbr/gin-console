@@ -31,7 +31,7 @@ export function closedNewestFirst(beads: readonly BeadSummary[]): BeadSummary[] 
 
 const working = (bead: BeadSummary) => bead.status === "in_progress" || bead.status === "hooked";
 
-function boardColumn(bead: BeadSummary): BoardColumnKey | null {
+export function boardColumn(bead: BeadSummary): BoardColumnKey | null {
   if (bead.status === "deferred") return "backlog";
   if (bead.ready) return "ready";
   if (working(bead)) return "in_progress";
