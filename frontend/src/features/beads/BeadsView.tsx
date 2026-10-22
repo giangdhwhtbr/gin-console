@@ -9,6 +9,7 @@ import { BoardView } from "./BoardView";
 import { inLane } from "./columns";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
+import { GraphView } from "./GraphView";
 import { TreeView } from "./TreeView";
 import { useCardKeys } from "./useCardKeys";
 import { ViewTabs } from "./ViewTabs";
@@ -31,7 +32,7 @@ export function BeadsView({
   onChange: (next: BeadFilters) => void;
 }) {
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
-  useCardKeys(filters.view !== "list", clearSearch, filters.view !== "tree");
+  useCardKeys(filters.view !== "list", clearSearch, filters.view !== "tree" && filters.view !== "graph");
 
   const [state, setState] = useState<State>({ status: "loading" });
   const closed = filters.closed;
@@ -92,6 +93,9 @@ export function BeadsView({
           )}
           {filters.view === "tree" && (
             <TreeView project={project} beads={beads} filters={filters} onChange={onChange} />
+          )}
+          {filters.view === "graph" && (
+            <GraphView project={project} beads={beads} filters={filters} onChange={onChange} />
           )}
           {filters.view === "list" &&
             (shown.length === 0 ? (
