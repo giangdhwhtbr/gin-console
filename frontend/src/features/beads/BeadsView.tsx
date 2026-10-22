@@ -9,6 +9,7 @@ import { BoardView } from "./BoardView";
 import { inLane } from "./columns";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
+import { TreeView } from "./TreeView";
 import { useCardKeys } from "./useCardKeys";
 import { ViewTabs } from "./ViewTabs";
 
@@ -88,6 +89,9 @@ export function BeadsView({
           {filters.view === "board" && <BoardView project={project} beads={scoped} filters={filters} />}
           {filters.view === "focus" && (
             <FocusView project={project} beads={scoped} filters={filters} onChange={onChange} />
+          )}
+          {filters.view === "tree" && (
+            <TreeView project={project} beads={beads} filters={filters} onChange={onChange} />
           )}
           {filters.view === "list" &&
             (shown.length === 0 ? (
