@@ -195,3 +195,26 @@ The server SHALL return `created_by` (null when `bd` has none) with every bead o
 - GIVEN a bead created by `gin`
 - WHEN a client requests the list
 - THEN its row has `created_by` `gin`
+
+### REQ-BEADS-010: Blocking dependencies
+The server SHALL return with every bead of the list `blocked_by`, the ids of the beads that block it, taken from the dependencies `bd list` prints whose type is `blocks` or `blocked-by`, SHALL leave out dependencies of any other type, SHALL leave out a dependency whose fields have the wrong types without dropping the bead, and SHALL return an empty list for a bead without such dependencies.
+
+#### Scenario: Blocking ids
+- GIVEN a bead with a `blocks` dependency on `a-1` and a `blocked-by` dependency on `a-2`
+- WHEN a client requests the list
+- THEN its `blocked_by` is `a-1` and `a-2`
+
+#### Scenario: Other types ignored
+- GIVEN a bead with `parent-child`, `related` and `discovered-from` dependencies
+- WHEN a client requests the list
+- THEN its `blocked_by` is empty
+
+#### Scenario: Malformed dependency
+- GIVEN a bead with one dependency whose `depends_on_id` is a number and one valid `blocks` dependency
+- WHEN a client requests the list
+- THEN the bead is returned and its `blocked_by` holds only the valid one
+
+#### Scenario: No dependencies
+- GIVEN a bead without dependencies
+- WHEN a client requests the list
+- THEN its `blocked_by` is empty
