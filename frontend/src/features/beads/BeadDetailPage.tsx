@@ -99,6 +99,14 @@ export function BeadDetailPage({ project, id, embedded = false }: { project: str
                 .filter(Boolean)
                 .join(" · ")}
             </div>
+            {bead.issue_type === "epic" && (
+              <Link
+                to={`/beads?project=${encodeURIComponent(project)}&view=graph&epic=${encodeURIComponent(bead.id)}`}
+                className="text-sm underline underline-offset-2"
+              >
+                View graph
+              </Link>
+            )}
           </header>
           {bead.description === null ? (
             <p className="text-muted-foreground">No description.</p>

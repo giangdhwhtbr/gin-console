@@ -1,6 +1,6 @@
 import type { BeadSummary } from "./api";
 
-export const VIEWS = ["list", "board", "focus", "tree"] as const;
+export const VIEWS = ["list", "board", "focus", "tree", "graph"] as const;
 export type View = (typeof VIEWS)[number];
 
 export type BeadFilters = {
@@ -17,6 +17,7 @@ export type BeadFilters = {
   lane: string;
   tree: "hierarchy" | "blocking";
   select: string;
+  epic: string;
 };
 
 export function parseFilters(search: string): BeadFilters {
@@ -35,6 +36,7 @@ export function parseFilters(search: string): BeadFilters {
     lane: p.get("lane") ?? "",
     tree: p.get("tree") === "blocking" ? "blocking" : "hierarchy",
     select: p.get("select") ?? "",
+    epic: p.get("epic") ?? "",
   };
 }
 
@@ -50,6 +52,7 @@ export function filtersToSearch(filters: BeadFilters): string {
   if (filters.lane !== "") p.set("lane", filters.lane);
   if (filters.tree === "blocking") p.set("tree", "blocking");
   if (filters.select !== "") p.set("select", filters.select);
+  if (filters.epic !== "") p.set("epic", filters.epic);
   const text = p.toString();
   return text === "" ? "" : `?${text}`;
 }

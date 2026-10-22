@@ -47,7 +47,7 @@ describe("BoardView", () => {
     expect(await screen.findByRole("region", { name: "Ready" })).toBeInTheDocument();
     unmount();
 
-    window.history.replaceState(null, "", "/beads?project=alpha&view=graph");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=kanban");
     render(<BeadsPage />);
     expect(await screen.findByRole("table")).toBeInTheDocument();
   });

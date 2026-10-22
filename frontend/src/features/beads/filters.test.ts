@@ -45,14 +45,22 @@ describe("filters", () => {
       lane: "",
       tree: "hierarchy",
       select: "",
+      epic: "",
     });
+  });
+
+  it("REQ-UI-030 keeps the epic in the URL", () => {
+    const filters = parseFilters("?project=a&view=graph&epic=e-1&select=t-1");
+    expect(filters).toMatchObject({ view: "graph", epic: "e-1", select: "t-1" });
+    expect(filtersToSearch(filters)).toBe("?project=a&view=graph&select=t-1&epic=e-1");
   });
 
   // REQ-UI-030
   it("REQ-UI-030 parses view from the URL", () => {
     expect(parseFilters("?view=board").view).toBe("board");
     expect(parseFilters("?view=tree").view).toBe("tree");
-    expect(parseFilters("?view=graph").view).toBe("list");
+    expect(parseFilters("?view=graph").view).toBe("graph");
+    expect(parseFilters("?view=kanban").view).toBe("list");
     expect(parseFilters("").view).toBe("list");
   });
 

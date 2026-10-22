@@ -406,4 +406,18 @@ describe("BeadDetailPage", () => {
     expect(alert).toHaveTextContent(/unexpected response/i);
     expect(within(alert).getByRole("button", { name: /retry/i })).toBeInTheDocument();
   });
+
+  it("REQ-UI-053 an epic links to its graph, a task does not", async () => {
+    stubFetch(beadDetail("e-1", { issue_type: "epic" }));
+    render(<BeadDetailPage project="p" id="e-1" />);
+    expect(await screen.findByRole("link", { name: "View graph" })).toHaveAttribute(
+      "href",
+      "/beads?project=p&view=graph&epic=e-1",
+    );
+    cleanup();
+    stubFetch(beadDetail("t-1"));
+    render(<BeadDetailPage project="p" id="t-1" />);
+    await screen.findByText("Title t-1");
+    expect(screen.queryByRole("link", { name: "View graph" })).toBeNull();
+  });
 });

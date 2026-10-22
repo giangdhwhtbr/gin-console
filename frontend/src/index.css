@@ -6,6 +6,11 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    --color-state-ready: var(--state-ready);
+    --color-state-progress: var(--state-progress);
+    --color-state-blocked: var(--state-blocked);
+    --color-state-done: var(--state-done);
+    --color-state-deferred: var(--state-deferred);
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
     --color-sidebar-ring: var(--sidebar-ring);
@@ -49,6 +54,11 @@
 }
 
 :root {
+    --state-ready: #0f766e;
+    --state-progress: #4338ca;
+    --state-blocked: #b45309;
+    --state-done: #6b7280;
+    --state-deferred: #6b7280;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -84,6 +94,11 @@
 }
 
 .dark {
+    --state-ready: #2dd4bf;
+    --state-progress: #a5b4fc;
+    --state-blocked: #fbbf24;
+    --state-done: #9ca3af;
+    --state-deferred: #9ca3af;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
