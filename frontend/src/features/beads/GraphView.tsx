@@ -129,7 +129,7 @@ export function GraphView({
                 })}
               </div>
             </div>
-            <ul className="sr-only">
+            <ul aria-label="Dependencies" className="sr-only">
               {graph.edges.map((edge) => (
                 <li key={edgeKey(edge)}>{`${edge.to} is blocked by ${edge.from}`}</li>
               ))}

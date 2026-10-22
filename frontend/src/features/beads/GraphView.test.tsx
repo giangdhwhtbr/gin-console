@@ -79,7 +79,7 @@ describe("GraphView", () => {
   it("REQ-UI-054 lists every arrow as text", async () => {
     open("&epic=e-1", [epic, task("a"), task("b", ["a"])]);
     await screen.findByRole("button", { name: /Task a/ });
-    expect(screen.getByText("b is blocked by a")).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Dependencies" })).getByText("b is blocked by a")).toBeInTheDocument();
   });
 
   it("REQ-UI-051 selecting keeps select in the URL and highlights the chain", async () => {
@@ -112,7 +112,25 @@ describe("GraphView", () => {
   it("REQ-UI-052 keeps one node in the tab order", async () => {
     open("&epic=e-1", [epic, task("a"), task("b", ["a"])]);
     await screen.findByRole("button", { name: /Task a/ });
-    const nodes = screen.getAllByRole("button", { name: /^(?!All epics)/ }).filter((el) => el.hasAttribute("data-node"));
+    const nodes = screen.getAllByRole("button").filter((el) => el.hasAttribute("data-node"));
     expect(nodes.filter((el) => el.tabIndex === 0)).toHaveLength(1);
+  });
+
+  it("REQ-UI-047 choosing an epic puts it in the URL and All epics clears it", async () => {
+    open("", [epic, task("a")]);
+    await userEvent.click(await screen.findByRole("button", { name: /Epic One/ }));
+    expect(window.location.search).toContain("epic=e-1");
+    expect(await screen.findByRole("button", { name: /Task a/ })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "All epics" }));
+    expect(window.location.search).not.toContain("epic=");
+    expect(await screen.findByRole("button", { name: /Epic One/ })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-049 the full title is the node title", async () => {
+    open("&epic=e-1", [epic, task("a", [], { title: "A very long title that will be cut" })]);
+    expect(await screen.findByRole("button", { name: /A very long title/ })).toHaveAttribute(
+      "title",
+      "A very long title that will be cut",
+    );
   });
 });
