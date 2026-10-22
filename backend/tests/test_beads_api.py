@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_bd import FakeBd, bead, comment, related
+from fake_bd import FakeBd, bead, comment, dep, related
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -280,3 +280,11 @@ def test_beads_009_fields_over_http(tmp_path: Path) -> None:
     assert detail["acceptance_criteria"] is None and detail["close_reason"] is None
     rows = api.get("/api/beads", params={"project": "proj"}).json()
     assert rows[0]["created_by"] == "gin"
+
+
+# REQ-BEADS-010
+def test_beads_010_blocked_by_over_http(tmp_path: Path) -> None:
+    rows = [bead("a-1"), bead("a-2", dependencies=[dep("a-2", "a-1", "blocks")])]
+    body = make(tmp_path, FakeBd(rows)).get("/api/beads", params={"project": "proj"}).json()
+    by_id = {r["id"]: r for r in body}
+    assert by_id["a-1"]["blocked_by"] == [] and by_id["a-2"]["blocked_by"] == ["a-1"]

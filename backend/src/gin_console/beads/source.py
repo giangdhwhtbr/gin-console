@@ -56,11 +56,30 @@ def valid_id(value: str) -> bool:
     return _ID.fullmatch(value) is not None
 
 
+_BLOCKING = ("blocks", "blocked-by")
+
+
+def _blocked_by(rows: Any) -> list[str]:
+    """Ids a bead depends on as blockers; `bd list` prints rows {issue_id, depends_on_id, type}."""
+    ids: list[str] = []
+    for row in rows if isinstance(rows, list) else []:
+        if isinstance(row, dict) and row.get("type") in _BLOCKING:
+            target = row.get("depends_on_id")
+            if isinstance(target, str):
+                ids.append(target)
+    return list(dict.fromkeys(ids))
+
+
 def _summary(raw: Any) -> BeadSummary | None:
     if not isinstance(raw, dict):
         return None
     try:
-        return BeadSummary.model_validate({k: raw[k] for k in _SUMMARY_KEYS if k in raw})
+        return BeadSummary.model_validate(
+            {
+                **{k: raw[k] for k in _SUMMARY_KEYS if k in raw},
+                "blocked_by": _blocked_by(raw.get("dependencies")),
+            }
+        )
     except ValidationError:
         return None
 

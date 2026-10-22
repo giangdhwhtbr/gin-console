@@ -29,6 +29,7 @@ class BeadSummary(BaseModel):
     ready: bool = False
     blocked: bool = False
     created_by: Text | None = None
+    blocked_by: list[Text] = []
 
 
 class Relation(BaseModel):

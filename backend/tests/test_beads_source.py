@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_bd import FakeBd, bead, comment, related
+from fake_bd import FakeBd, bead, comment, dep, related
 
 from gin_console.beads.source import (
     MAX_COMMENT_CHARS,
@@ -442,3 +442,49 @@ def test_beads_009_absent_or_empty_texts_are_null() -> None:
 def test_beads_009_list_rows_carry_created_by() -> None:
     (row,) = list_beads(FakeBd([bead("a-1", created_by="gin")]), CWD, closed=False)
     assert row.created_by == "gin"
+
+
+# REQ-BEADS-010
+def test_beads_010_blocks_and_blocked_by_rows() -> None:
+    row = bead("a-5", dependencies=[dep("a-5", "a-1", "blocks"), dep("a-5", "a-2", "blocked-by")])
+    (summary,) = list_beads(FakeBd([row]), CWD, closed=False)
+    assert summary.blocked_by == ["a-1", "a-2"]
+
+
+# REQ-BEADS-010
+def test_beads_010_other_types_are_ignored() -> None:
+    row = bead(
+        "a-5",
+        dependencies=[
+            dep("a-5", "e-1", "parent-child"),
+            dep("a-5", "a-1", "related"),
+            dep("a-5", "a-2", "discovered-from"),
+            dep("a-5", "a-3", "supersedes"),
+        ],
+    )
+    (summary,) = list_beads(FakeBd([row]), CWD, closed=False)
+    assert summary.blocked_by == []
+
+
+# REQ-BEADS-010
+def test_beads_010_a_malformed_row_is_skipped_not_the_bead() -> None:
+    row = bead(
+        "a-5",
+        dependencies=[
+            {"issue_id": "a-5", "depends_on_id": 7, "type": "blocks"},
+            "x",
+            {"issue_id": "a-5", "type": "blocks"},
+            dep("a-5", "a-1", "blocks"),
+            dep("a-5", "a-1", "blocks"),
+        ],
+    )
+    (summary,) = list_beads(FakeBd([row]), CWD, closed=False)
+    assert summary.id == "a-5" and summary.blocked_by == ["a-1"]  # the duplicate is dropped too
+
+
+# REQ-BEADS-010
+@pytest.mark.parametrize("dependencies", [None, [], "text", {"x": 1}])
+def test_beads_010_no_or_odd_dependencies_give_an_empty_list(dependencies: Any) -> None:
+    extra = {} if dependencies is None else {"dependencies": dependencies}
+    (summary,) = list_beads(FakeBd([bead("a-5", **extra)]), CWD, closed=False)
+    assert summary.blocked_by == []

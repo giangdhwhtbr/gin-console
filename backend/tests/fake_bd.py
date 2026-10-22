@@ -44,6 +44,11 @@ def related(
     return bead(ident, status=status, title=title or f"Title of {ident}", dependency_type=kind)
 
 
+def dep(issue: str, target: str, kind: str) -> dict[str, Any]:
+    """A row of the `dependencies` list that `bd list --json` prints for a bead."""
+    return {"issue_id": issue, "depends_on_id": target, "type": kind}
+
+
 class FakeBd:
     """list: `beads`; show: `shown[id]` (a bead with its `dependencies`); dep list up: `up[id]`."""
 
