@@ -31,7 +31,7 @@ WHEN a client requests `GET /api/health`, the server SHALL respond 200 with `sta
 - THEN the response is 200 with `{"status": "ok", "version": "<app version>"}`
 
 ### REQ-SERVER-003: Projects endpoint
-WHEN a client requests `GET /api/projects`, the server SHALL return the configured projects in config order, each with `name`, `path`, `scotty_id`, `scotty_url` (`<server.scotty_base_url>/p/<scotty_id>`, or `null` when either is unset), `exists` reflecting whether `path` is a directory at request time, `workflow` and `beads`.
+WHEN a client requests `GET /api/projects`, the server SHALL return the configured projects in config order, each with `name`, `path`, `exists` reflecting whether `path` is a directory at request time, `workflow` and `beads`.
 
 #### Scenario: Existing and missing paths
 - GIVEN two configured projects, one whose path is a directory and one whose path does not exist
@@ -43,15 +43,10 @@ WHEN a client requests `GET /api/projects`, the server SHALL return the configur
 - WHEN the directory is created and a client requests `GET /api/projects`
 - THEN that project has `exists` true
 
-#### Scenario: Scotty URL
-- GIVEN `server.scotty_base_url` is `https://h` and a project has `scotty_id` `scotty`
+#### Scenario: No Scotty fields
+- GIVEN any configured project
 - WHEN a client requests `GET /api/projects`
-- THEN that project's `scotty_url` is `https://h/p/scotty`
-
-#### Scenario: No Scotty URL
-- GIVEN a project without `scotty_id`, or no `server.scotty_base_url`
-- WHEN a client requests `GET /api/projects`
-- THEN that project's `scotty_url` is `null`
+- THEN its entry has no `scotty_id` and no `scotty_url`
 
 ### REQ-SERVER-004: Frontend serving
 The server SHALL serve the built frontend from `frontend/dist` for non-API paths, falling back to `index.html`; unknown `/api/*` paths SHALL return 404, and IF `frontend/dist` has no `index.html`, THEN non-API paths SHALL return 503 with instructions to run `pnpm -C frontend build`.

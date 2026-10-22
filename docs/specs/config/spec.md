@@ -18,7 +18,7 @@ WHEN the console starts, the console SHALL read its config from the path in `GIN
 - THEN it loads the projects from that file and ignores the default location
 
 ### REQ-CONFIG-002: Project entries
-The config SHALL define `server.host`, `server.port`, and a `projects` list whose entries have a unique `name`, an absolute `path`, and an optional `scotty_id`.
+The config SHALL define `server.host`, `server.port`, and a `projects` list whose entries have a unique `name` and an absolute `path`.
 
 #### Scenario: Valid projects
 - GIVEN a config with two projects that have distinct names and absolute paths
@@ -48,15 +48,15 @@ IF the config file is missing, is not valid YAML, or violates the schema (duplic
 - WHEN the console starts
 - THEN it exits non-zero and the message names that project's `path` field
 
-### REQ-CONFIG-004: Scotty base URL
-WHERE `server.scotty_base_url` is set, the config SHALL accept it as an absolute `http` or `https` URL, and IF it is set to anything else, THEN the console SHALL exit with a non-zero status naming the field.
+### REQ-CONFIG-005: Removed Scotty settings
+IF the config has `server.scotty_base_url` or a project with `scotty_id`, THEN the console SHALL exit with a non-zero status and a message naming that key.
 
-#### Scenario: Valid base URL
-- GIVEN `server.scotty_base_url` is `https://host.example.ts.net`
-- WHEN the console starts
-- THEN it loads the config
-
-#### Scenario: Invalid base URL
-- GIVEN `server.scotty_base_url` is `host.example.ts.net` (no scheme)
+#### Scenario: Old base URL
+- GIVEN a config with `server.scotty_base_url` set
 - WHEN the console starts
 - THEN it exits non-zero and the message names `scotty_base_url`
+
+#### Scenario: Old project id
+- GIVEN a config with a project that has `scotty_id`
+- WHEN the console starts
+- THEN it exits non-zero and the message names `scotty_id`

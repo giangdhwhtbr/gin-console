@@ -41,21 +41,21 @@ The Projects page SHALL show, for each project with `beads` data, the counts ope
 - WHEN the Projects page loads
 - THEN the card shows all four counts and the epic id and title
 
-### REQ-UI-005: Scotty deep links
-WHERE a project has a `scotty_url`, the Projects page SHALL link the project name to it in a new tab with `rel="noopener noreferrer"` and SHALL render no link for a project without one, and SHALL link each active epic to the console's own bead page `/beads/<project>/<id>` whether or not the project has a `scotty_url`.
+### REQ-UI-005: Project links
+The Projects page SHALL link each project name to that project's Beads page `/beads?project=<name>` inside the console, in the same tab and without an external address, and SHALL link each active epic to the bead page `/beads/<project>/<id>`.
 
-#### Scenario: Project link present
-- GIVEN a project with `scotty_url` `https://h/p/scotty`
+#### Scenario: Project name opens its beads
+- GIVEN a project named `qwikfone`
 - WHEN the Projects page loads
-- THEN the project name links to `https://h/p/scotty` in a new tab
+- THEN the name links to `/beads?project=qwikfone`, without `target` and without an external address
 
-#### Scenario: No Scotty id
-- GIVEN a project with `scotty_url` null
+#### Scenario: Name needing encoding
+- GIVEN a project named `a b`
 - WHEN the Projects page loads
-- THEN the name is plain text
+- THEN the name links to `/beads?project=a%20b`
 
 #### Scenario: Epics open the console's bead page
-- GIVEN a project named `scotty` with active epic `scotty-1`, with or without a `scotty_url`
+- GIVEN a project named `scotty` with active epic `scotty-1`
 - WHEN the Projects page loads
 - THEN the epic links to `/beads/scotty/scotty-1` inside the console
 
