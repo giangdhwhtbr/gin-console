@@ -60,7 +60,7 @@ The frontend SHALL start in the theme the system prefers, SHALL offer a control 
 - THEN the theme changes and no error is shown
 
 ### REQ-UI-059: Colour tokens
-The frontend SHALL use a neutral cool palette whose only hues are the five status colours Ready, In progress, Blocked, Done and Deferred, defined for light and dark, SHALL show text with a contrast of at least 4.5:1 against its background and borders and control outlines with at least 3:1, and SHALL show priority with weight and the danger colour for P0 only, never with a further hue.
+The frontend SHALL use a neutral cool palette whose only hues are the five status colours Ready, In progress, Blocked, Done and Deferred, defined for light and dark, SHALL show text and status colours with a contrast of at least 4.5:1 against every surface (background, card and muted) they are drawn on, SHALL draw the outline of inputs, selects and other controls with at least 3:1 against their surface (separators and card borders are decoration and are not held to this), and SHALL show priority with weight and the danger colour for P0 only, never with a further hue.
 
 #### Scenario: Status colours exist in both themes
 - GIVEN the light theme and then the dark theme
@@ -68,9 +68,9 @@ The frontend SHALL use a neutral cool palette whose only hues are the five statu
 - THEN the colour is the one defined for that theme
 
 #### Scenario: Contrast
-- GIVEN any text or border colour of the palette
-- WHEN it is measured against its background in its theme
-- THEN text is at least 4.5:1 and a border is at least 3:1
+- GIVEN the palette of a theme
+- WHEN text, status colours and control outlines are measured against the surfaces they sit on
+- THEN text and status colours are at least 4.5:1 and control outlines at least 3:1
 
 ### REQ-UI-060: Typography
 The frontend SHALL set the interface in Geist and ids, paths and code in Geist Mono, SHALL use a text size of at least 16px in text inputs on screens narrower than 768px, and SHALL load both faces from the application itself, not from another site.

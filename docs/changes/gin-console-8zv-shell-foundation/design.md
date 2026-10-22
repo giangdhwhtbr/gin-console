@@ -28,7 +28,8 @@ Storage that throws (private window, blocked data) is ignored: the toggle still 
 | card | `#ffffff` | `#161b22` |
 | foreground | `#12161c` | `#e7eaf0` |
 | muted foreground | `#566072` | `#9aa4b2` |
-| border | `#cfd5de` | `#2c343f` |
+| border (separators, card edges: decoration) | `#cfd5de` | `#2c343f` |
+| input (outline of controls, at least 3:1) | `#7d8695` | `#667085` |
 | hover | `#eceff3` | `#1d242d` |
-| ready / progress / blocked / done | `#0f766e` `#4338ca` `#b45309` `#6b7280` | `#2dd4bf` `#a5b4fc` `#fbbf24` `#9ca3af` |
+| ready / progress / blocked / done and deferred | `#0f766e` `#4338ca` `#a3470a` `#5d6573` | `#2dd4bf` `#a5b4fc` `#fbbf24` `#9ca3af` |
 | danger (P0 chip) | `#b91c1c` | `#f87171` |
