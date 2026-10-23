@@ -19,6 +19,7 @@ const marked = () =>
 describe("Layout", () => {
   it("REQ-UI-055 has one Main navigation with the four links", () => {
     open("/");
+    expect(screen.getAllByRole("navigation")).toHaveLength(1);
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
     expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
       ["Projects", "/"],
@@ -36,6 +37,8 @@ describe("Layout", () => {
     ["/sessions/alpha/11111111-1111-4111-8111-111111111111", ["Sessions"]],
     ["/quota", ["Quota"]],
     ["/nowhere", []],
+    ["/beadsx", []],
+    ["/sessionsx", []],
   ])("REQ-UI-057 %s marks %j", (path, expected) => {
     open(path);
     expect(marked()).toEqual(expected);

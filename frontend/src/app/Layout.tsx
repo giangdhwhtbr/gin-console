@@ -7,8 +7,8 @@ import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { to: "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
-  { to: "/beads", label: "Beads", icon: ListChecks, current: (path: string) => path.startsWith("/beads") },
-  { to: "/sessions", label: "Sessions", icon: MessageSquare, current: (path: string) => path.startsWith("/sessions") },
+  { to: "/beads", label: "Beads", icon: ListChecks, current: (path: string) => path === "/beads" || path.startsWith("/beads/") },
+  { to: "/sessions", label: "Sessions", icon: MessageSquare, current: (path: string) => path === "/sessions" || path.startsWith("/sessions/") },
   { to: "/quota", label: "Quota", icon: Gauge, current: (path: string) => path === "/quota" },
 ] as const;
 
@@ -42,7 +42,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <Brand />
         <ThemeToggle />
       </header>
-      <aside className="md:flex md:w-20 md:shrink-0 md:flex-col md:gap-4 md:border-r md:bg-card md:px-2 md:py-4 lg:w-56 lg:px-3">
+      <div className="md:flex md:w-20 md:shrink-0 md:flex-col md:gap-4 md:border-r md:bg-card md:px-2 md:py-4 lg:w-56 lg:px-3">
         <div className="hidden justify-center px-2 py-1 md:flex lg:justify-start">
           <Brand wordClass="max-lg:hidden" />
         </div>
@@ -58,8 +58,8 @@ export function Layout({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <ThemeToggle className="hidden md:mt-auto md:flex" />
-      </aside>
-      <main className="min-w-0 flex-1 p-4 pb-24 md:p-6">{children}</main>
+      </div>
+      <main className="min-w-0 flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6">{children}</main>
     </div>
   );
 }
