@@ -124,8 +124,8 @@ describe("api", () => {
     await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
   });
 
-  // REQ-BEADS-010, REQ-UI-042
-  it("REQ-BEADS-010, REQ-UI-042 rejects when a bead is missing blocked_by", async () => {
+  // REQ-BEADS-010
+  it("REQ-BEADS-010 rejects when a bead is missing blocked_by", async () => {
     const missingBlockedBy = Object.fromEntries(
       Object.entries(sampleSummary).filter(([key]) => key !== "blocked_by"),
     );
@@ -133,8 +133,8 @@ describe("api", () => {
     await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
   });
 
-  // REQ-BEADS-010, REQ-UI-042
-  it("REQ-BEADS-010, REQ-UI-042 rejects when blocked_by is a string or non-string array", async () => {
+  // REQ-BEADS-010
+  it("REQ-BEADS-010 rejects when blocked_by is a string or non-string array", async () => {
     const stringBlockedBy = { ...sampleSummary, blocked_by: "a-1" };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([stringBlockedBy]))));
     await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
@@ -144,8 +144,8 @@ describe("api", () => {
     await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
   });
 
-  // REQ-BEADS-010, REQ-UI-042
-  it("REQ-BEADS-010, REQ-UI-042 accepts blocked_by as an array of strings", async () => {
+  // REQ-BEADS-010
+  it("REQ-BEADS-010 accepts blocked_by as an array of strings", async () => {
     const valid = { ...sampleSummary, blocked_by: ["a-1", "a-2"] };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([valid]))));
     await expect(fetchBeads("proj", false)).resolves.toEqual([valid]);

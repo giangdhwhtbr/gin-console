@@ -7,8 +7,13 @@ import { StateMark } from "./StateMark";
 import type { TreeRow } from "./tree";
 import { TypeBadge } from "./TypeBadge";
 
-/** One grid for the headings and the rows: title, state, type, priority, indicators, assignee, updated. */
-export const COLUMNS = "md:grid-cols-[minmax(0,1fr)_7.5rem_5.5rem_2.5rem_6rem_7rem_8rem]";
+/**
+ * One grid for the headings and the rows. The columns depend on the width of the list itself (a container
+ * query), not of the window, because the details panel takes a share of the window: under 42rem a row is two
+ * lines; from 42rem the columns title, state, type, priority and indicators; from 56rem also assignee and updated.
+ */
+export const COLUMNS =
+  "@2xl:grid-cols-[minmax(0,1fr)_7.5rem_5.5rem_2.5rem_6rem] @4xl:grid-cols-[minmax(0,1fr)_7.5rem_5.5rem_2.5rem_6rem_7rem_8rem]";
 
 export function ListRow({
   project,
@@ -41,7 +46,7 @@ export function ListRow({
         selected ? "border-foreground bg-muted" : "border-transparent hover:bg-muted/60",
       )}
     >
-      <div className="flex min-w-0 items-center gap-2" style={{ paddingLeft: `${row.level * 1.25}rem` }}>
+      <div className="flex min-w-0 items-center gap-2 overflow-hidden" style={{ paddingLeft: `${row.level * 1.25}rem` }}>
         {row.hasKids ? (
           <button
             type="button"
@@ -62,7 +67,7 @@ export function ListRow({
           <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
         </span>
         {bead.issue_type === "epic" && row.totalKids > 0 && (
-          <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground sm:flex">
+          <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground @xl:flex">
             <span className="h-1.5 w-12 overflow-hidden rounded bg-muted">
               <span
                 className="block h-full bg-foreground/60"
@@ -72,7 +77,7 @@ export function ListRow({
             {`${row.closedKids}/${row.totalKids} closed`}
           </span>
         )}
-        <span className="hidden shrink-0 items-center gap-1 md:flex">
+        <span className="hidden shrink-0 items-center gap-1 @3xl:flex">
           {bead.labels.slice(0, 3).map((label) => (
             <Badge key={label} variant="outline">
               {label}
@@ -80,7 +85,7 @@ export function ListRow({
           ))}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-8 md:contents">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-8 @2xl:contents @2xl:pl-0">
         <StateMark bead={bead} />
         <TypeBadge type={bead.issue_type} className="justify-self-start" />
         <span className="text-xs text-muted-foreground">{`P${bead.priority}`}</span>
@@ -88,8 +93,8 @@ export function ListRow({
           <CountBadge kind="comments" count={bead.comment_count} />
           <CountBadge kind="dependencies" count={bead.dependency_count} />
         </span>
-        <span className="truncate text-muted-foreground">{bead.assignee ?? bead.owner ?? ""}</span>
-        <span className="text-xs text-muted-foreground">{new Date(bead.updated_at).toLocaleDateString()}</span>
+        <span className="hidden truncate text-muted-foreground @4xl:block">{bead.assignee ?? bead.owner ?? ""}</span>
+        <span className="hidden text-xs text-muted-foreground @4xl:block">{new Date(bead.updated_at).toLocaleDateString()}</span>
       </div>
     </li>
   );

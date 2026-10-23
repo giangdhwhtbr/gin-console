@@ -64,7 +64,7 @@ export function ListView({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-      <div className="flex min-w-0 flex-col gap-3">
+      <div className="@container flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => remember(allBranches(index))}>
             Expand all
@@ -79,15 +79,15 @@ export function ListView({
           <>
             <div
               aria-hidden
-              className={cn("hidden gap-x-3 px-2 text-xs font-medium text-muted-foreground md:grid", COLUMNS)}
+              className={cn("hidden gap-x-3 px-2 text-xs font-medium text-muted-foreground @2xl:grid", COLUMNS)}
             >
               <span>Title</span>
               <span>State</span>
               <span>Type</span>
               <span>P</span>
               <span>Activity</span>
-              <span>Assignee</span>
-              <span>Updated</span>
+              <span className="hidden @4xl:block">Assignee</span>
+              <span className="hidden @4xl:block">Updated</span>
             </div>
             <ul
               role="tree"

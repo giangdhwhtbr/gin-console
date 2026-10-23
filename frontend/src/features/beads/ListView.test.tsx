@@ -322,4 +322,15 @@ describe("ListView", () => {
     await userEvent.keyboard("{Enter}");
     expect(window.location.pathname).toBe("/beads/alpha/t-1");
   });
+
+  it("REQ-UI-044 the columns follow the width of the list, not of the window", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() => json([bead("t-1", { title: "Task One", assignee: "alice" })]));
+    render(<BeadsPage />);
+    const row = await screen.findByRole("treeitem");
+    expect(row.parentElement?.parentElement).toHaveClass("@container");
+    expect(row).toHaveClass("@2xl:grid-cols-[minmax(0,1fr)_7.5rem_5.5rem_2.5rem_6rem]");
+    expect(within(row).getByText("alice")).toHaveClass("hidden", "@4xl:block");
+    expect(within(row).getByRole("link", { name: "Task One" }).closest("div")).toHaveClass("overflow-hidden");
+  });
 });
