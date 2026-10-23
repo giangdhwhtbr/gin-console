@@ -38,6 +38,13 @@ describe("theme", () => {
     expect(isDark()).toBe(false);
   });
 
+  it("REQ-UI-058 ignores a stored value that is neither light nor dark", () => {
+    prefersDark(true);
+    window.localStorage.setItem(THEME_KEY, "blue");
+    initTheme();
+    expect(isDark()).toBe(true);
+  });
+
   it("REQ-UI-058 switches, remembers and restores", async () => {
     prefersDark(false);
     initTheme();

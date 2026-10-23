@@ -41,6 +41,18 @@ describe("index.html theme script", () => {
     expect(dark()).toBe(false);
   });
 
+  it("REQ-UI-058 ignores a stored value that is neither light nor dark", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true }));
+    window.localStorage.setItem(THEME_KEY, "blue");
+    run();
+    expect(dark()).toBe(true);
+  });
+
+  it("REQ-UI-058 leaves no globals behind", () => {
+    run();
+    expect("stored" in window).toBe(false);
+  });
+
   it("REQ-UI-058 does not throw when storage refuses", () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new Error("denied");
