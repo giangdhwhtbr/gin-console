@@ -31,6 +31,7 @@ describe("BeadCard", () => {
 
   it("REQ-UI-065 a bare card has only the state and the type on its last line", () => {
     const li = card(bead("a-2"));
+    expect(screen.getByText("task")).toBeInTheDocument();
     expect(screen.queryByRole("img")).toBeNull();
     expect(li).not.toHaveTextContent(/0 comments|0 deps/);
   });
