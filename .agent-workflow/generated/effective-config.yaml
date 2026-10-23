@@ -29,13 +29,11 @@ project:
   stage: greenfield
   worktree: parallel
 provider_mode: single
+providers:
+  task_tracking: beads
 quick:
   max_files: 5
 routing:
-  circuit_breaker:
-    failure_threshold: 3
-  queue:
-    max_wait_seconds: 600
   review:
     allow_self_review_fallback: false
     independence: session
@@ -58,8 +56,6 @@ routing:
     review:
       preferred:
       - main_harness
-  worker:
-    max_retries: 2
 rules:
   packs:
   - core

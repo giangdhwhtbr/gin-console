@@ -24,9 +24,8 @@ fields:
   project.stage: repository config
   project.worktree: repository config
   provider_mode: repository config
+  providers.task_tracking: repository config
   quick.max_files: repository config
-  routing.circuit_breaker.failure_threshold: built-in defaults
-  routing.queue.max_wait_seconds: built-in defaults
   routing.review.allow_self_review_fallback: repository config
   routing.review.independence: repository config
   routing.review.max_cycles: repository config
@@ -37,7 +36,6 @@ fields:
   routing.roles.frontend.preferred: repository config
   routing.roles.general.preferred: repository config
   routing.roles.review.preferred: repository config
-  routing.worker.max_retries: built-in defaults
   rules.packs: repository config
   schema_version: repository config
   setup_cli_version: repository config

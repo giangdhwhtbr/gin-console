@@ -11,6 +11,8 @@ project:
   stage: greenfield
   worktree: parallel
 provider_mode: single
+providers:
+  task_tracking: beads
 quick:
   max_files: 5
 routing:
