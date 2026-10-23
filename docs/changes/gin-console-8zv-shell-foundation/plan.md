@@ -63,7 +63,7 @@ execution_strategy:
 ### Track 1: Tokens, fonts and title
 - **Dependencies**: none
 - **Requirements**: REQ-UI-059, REQ-UI-060, REQ-UI-062, REQ-UI-063
-- **Files**: modify `frontend/package.json` and `frontend/pnpm-lock.yaml`, `frontend/src/index.css`, `frontend/index.html:6`; create `frontend/src/app/tokens.test.ts`, `frontend/src/app/document.test.ts`
+- **Files**: modify `frontend/package.json` and `frontend/pnpm-lock.yaml`, `frontend/tsconfig.app.json` (add `"node"` to `types` so the tests may read files; found while executing, the jsdom `URL` cannot be given to `readFileSync` and `?raw` of a CSS file is empty under vitest), `frontend/src/index.css`, `frontend/index.html:6`; create `frontend/src/app/tokens.test.ts`, `frontend/src/app/document.test.ts`
 - **Provider role**: `frontend`
 - **Reasoning**: `medium`
 - **Acceptance criteria**: every colour pair of REQ-UI-059 passes its ratio in both themes (`tokens.test.ts`); the title is `gin-console`; Geist Mono is bundled and `font-mono` uses it; focus outline, 16px phone inputs and reduced motion rules exist.
@@ -76,9 +76,10 @@ execution_strategy:
 - [ ] **Step 2: Failing tests.** `frontend/src/app/tokens.test.ts`:
 ```ts
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const css = readFileSync(resolve(import.meta.dirname, "../index.css"), "utf8");
 
 /** The `--name: #rrggbb;` declarations of the first block that starts with `selector {`. */
 function tokens(selector: string): Record<string, string> {
@@ -136,9 +137,10 @@ describe.each([
 `frontend/src/app/document.test.ts`:
 ```ts
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const html = readFileSync(new URL("../../index.html", import.meta.url), "utf8");
+const html = readFileSync(resolve(import.meta.dirname, "../../index.html"), "utf8");
 
 describe("index.html", () => {
   it("REQ-UI-063 sets the document title", () => {
