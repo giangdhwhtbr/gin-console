@@ -32,4 +32,4 @@ Component tests for `CountBadge`, `TypeBadge`, `StateMark`, the three card forms
 | `--type-bug` | `#b91c1c` | `#f87171` |
 | `--type-feature` | `#be185d` | `#f472b6` |
 
-Each reaches 4.5:1 as text on background, card and muted in its theme (checked by `tokens.test.ts`; if one fails, change that value, not the threshold). The type pill is the colour as text on a tint of itself.
+Each reaches 4.5:1 as text on background, card and muted in its theme (checked by `tokens.test.ts`; if one fails, change that value, not the threshold). The type pill is the colour as text on an 8% tint of itself (`bg-type-epic/8`); `tokens.test.ts` also checks that text against the tint blended over each surface.
