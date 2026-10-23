@@ -3,7 +3,7 @@ import { useMemo, useSyncExternalStore } from "react";
 export const RETURN_KEY = "gin-console-beads-return";
 export type Saved = { search: string; open: Record<string, string[]> };
 
-const EMPTY: Saved = { search: "", open: {} };
+const empty = (): Saved => ({ search: "", open: {} }); // a fresh object each time: callers may not share it
 const listeners = new Set<() => void>();
 let memory: string | null = null; // what was set in this visit: wins over storage, which may refuse writes
 
@@ -20,6 +20,7 @@ function isLists(value: unknown): value is Record<string, string[]> {
   return (
     typeof value === "object" &&
     value !== null &&
+    !Array.isArray(value) &&
     Object.values(value).every((list) => Array.isArray(list) && list.every((id) => typeof id === "string"))
   );
 }
@@ -27,12 +28,12 @@ function isLists(value: unknown): value is Record<string, string[]> {
 function parse(text: string): Saved {
   try {
     const value: unknown = JSON.parse(text);
-    if (typeof value !== "object" || value === null) return EMPTY;
+    if (typeof value !== "object" || value === null) return empty();
     const search: unknown = Reflect.get(value, "search");
     const open: unknown = Reflect.get(value, "open");
-    return typeof search === "string" && isLists(open) ? { search, open } : EMPTY;
+    return typeof search === "string" && isLists(open) ? { search, open } : empty();
   } catch {
-    return EMPTY; // empty or damaged text
+    return empty(); // empty or damaged text
   }
 }
 

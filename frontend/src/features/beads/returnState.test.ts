@@ -35,10 +35,22 @@ describe("returnState", () => {
     expect(getReturn().search).toBe("?project=a&view=board");
   });
 
+  it("REQ-UI-073 clearReturn forgets the place and the branches", () => {
+    rememberSearch("?project=a");
+    rememberOpen("a", ["e-1"]);
+    clearReturn();
+    expect(getReturn()).toEqual({ search: "", open: {} });
+    expect(window.sessionStorage.getItem(RETURN_KEY)).toBeNull();
+  });
+
   it("REQ-UI-073 ignores damaged text in storage", () => {
     window.sessionStorage.setItem(RETURN_KEY, "{not json");
     expect(getReturn()).toEqual({ search: "", open: {} });
     window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ search: 3, open: {} }));
+    expect(getReturn()).toEqual({ search: "", open: {} });
+    window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ search: "", open: { a: [1] } }));
+    expect(getReturn()).toEqual({ search: "", open: {} });
+    window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ search: "", open: [["a"]] }));
     expect(getReturn()).toEqual({ search: "", open: {} });
   });
 });
