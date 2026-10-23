@@ -100,7 +100,7 @@ export function SessionLogPage({ project, id }: { project: string; id: string })
         <>
           <header className="flex flex-col items-start gap-1">
             <h1 className="text-xl font-semibold">{summary?.title ?? id}</h1>
-            {summary?.cwd && <span className="font-mono text-sm">{summary.cwd}</span>}
+            {summary?.cwd && <span className="break-all font-mono text-sm">{summary.cwd}</span>}
             {summary && <CopyResumeButton command={summary.resume_command} />}
           </header>
           {state.status === "loading" && <p className="text-muted-foreground">Loading messages…</p>}

@@ -9,3 +9,6 @@ Automated tests carry the REQ-ID in the test name or a comment. List here only m
 | TC-3 | REQ-UI-061 | manual | At 360px open Projects, Beads (List, Board, Focus, Tree), Sessions and Quota: no horizontal page scroll |
 | TC-4 | REQ-UI-060 | manual | At 390px focus a text input and a select: text is 16px and the browser does not zoom |
 | TC-5 | REQ-UI-062 | manual | Tab through each page: a focus indicator is always visible; with reduced motion on, nothing animates |
+
+## Evidence (2026-10-23)
+- TC-1 to TC-5: **not run by the agent** (no browser in the session). The user looked at the live UI on a phone and a laptop, gave feedback on other pages (recorded in epics gin-console-3yc, gin-console-8yg, gin-console-s77) and decided to close track gin-console-8zv.4 and ship. No pass or fail was recorded for these cases; the numbers behind TC-2 are covered by `tokens.test.ts`.
