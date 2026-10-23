@@ -166,7 +166,7 @@ WHEN a search, a filter or a lane is active, the List view SHALL show only the b
 
 ### REQ-UI-044: List rows
 <!-- base: a487117b8f048425b544414e2cea2c7e6634caf7efdb622845bc12e2772f08c1 -->
-The List view SHALL show for each row an open/close control when it has children, its id in the monospace face, its title as a link to `/beads/<project>/<id>`, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic how many of its direct children are closed with a progress bar, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", and SHALL draw a row on two lines under 768px.
+The List view SHALL show for each row an open/close control when it has children, its id in the monospace face, its title as a link to `/beads/<project>/<id>`, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic how many of its direct children are closed with a progress bar, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
 
 #### Scenario: Row content
 - GIVEN a blocked P1 bug assigned to alice with 2 comments
@@ -197,6 +197,11 @@ The List view SHALL show for each row an open/close control when it has children
 - GIVEN a window 390px wide
 - WHEN a row is shown
 - THEN the title is on the first line and the state, type and indicators on the second
+
+#### Scenario: Row limit
+- GIVEN 2100 root beads
+- WHEN the List view is shown
+- THEN 2000 rows are shown and a line says "100 more not shown"
 
 ### REQ-UI-045: Selection and detail panel
 <!-- base: c621195c701294514df1ae979248942da0a0b1964cde256853d3c0f7aa05af21 -->
@@ -265,4 +270,4 @@ The List view SHALL expose the hierarchy with `role="tree"` and each row with `r
 
 ### REQ-UI-042: Blocking tree
 <!-- base: a0f7c27769984f84f4ec2fea3d5c14c37767c61b5b8e9b4e2ef588b06c6e0d1d -->
-Reason: the Blocking mode goes with the Tree view, which the hierarchical List replaces; what blocks what is answered by the dependency graph of a bead (epic gin-console-s77), and a blocked bead keeps its "Blocked" state and its dependency indicator on every card and row.
+Reason: the Blocking mode goes with the Tree view, which the hierarchical List replaces (the 2000-row limit moves to REQ-UI-044); what blocks what is answered by the dependency graph of a bead (epic gin-console-s77), and a blocked bead keeps its "Blocked" state and its dependency indicator on every card and row.
