@@ -142,6 +142,24 @@ describe("Discussion", () => {
     expect(screen.getByRole("button", { name: "Show discussion (2)" })).toBeInTheDocument();
   });
 
+  it("REQ-UI-070 hides when only writing is refused", async () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("quota");
+    });
+    await open(2);
+    await userEvent.click(screen.getByRole("button", { name: "Hide discussion" }));
+    expect(screen.getByRole("button", { name: "Show discussion (2)" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-068 REQ-UI-070 the column classes follow the choice", async () => {
+    await open(2);
+    const panel = screen.getByRole("tabpanel", { name: "Discussion (2)" });
+    expect(panel).toHaveClass("lg:sticky", "lg:block", "lg:overflow-y-auto");
+    await userEvent.click(screen.getByRole("button", { name: "Hide discussion" }));
+    expect(screen.getByRole("tabpanel", { name: "Discussion (2)" })).toHaveClass("lg:hidden");
+    expect(screen.getByRole("button", { name: "Show discussion (2)" })).toHaveClass("hidden", "lg:inline-flex");
+  });
+
   it("REQ-UI-071 each comment is a block with the author in bold, the time and the text apart", async () => {
     await open(2);
     const authors = await screen.findAllByText("alice");

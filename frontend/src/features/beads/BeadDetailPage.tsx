@@ -99,7 +99,7 @@ export function BeadDetailPage({ project, id, embedded = false }: { project: str
             <div
               role={bead.comment_count > 0 ? "tabpanel" : undefined}
               id={bead.comment_count > 0 ? "panel-details" : undefined}
-              aria-label={bead.comment_count > 0 ? "Details" : undefined}
+              aria-labelledby={bead.comment_count > 0 ? "tab-details" : undefined}
               className={cn(
                 "flex flex-col gap-4",
                 bead.comment_count > 0 && tab !== "details" && cn("hidden", !embedded && "lg:flex"),
@@ -168,7 +168,8 @@ export function BeadDetailPage({ project, id, embedded = false }: { project: str
             <div
               role="tabpanel"
               id="panel-discussion"
-              aria-label="Discussion"
+              aria-labelledby="tab-discussion"
+              tabIndex={0}
               className={cn(
                 tab !== "discussion" && "hidden",
                 !embedded && !hidden && "lg:sticky lg:top-6 lg:block lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto",
