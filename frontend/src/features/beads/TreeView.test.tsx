@@ -225,7 +225,7 @@ describe("TreeView", () => {
 
     expect(within(k1).getByText("k-1")).toBeInTheDocument();
     expect(within(k1).getByText("Task 1")).toBeInTheDocument();
-    expect(within(k1).getByText("closed")).toBeInTheDocument();
+    expect(within(k1).getByText("Done")).toBeInTheDocument();
     expect(within(k1).getByText("P1")).toBeInTheDocument();
     expect(within(k1).getByText("task")).toBeInTheDocument();
 
@@ -300,5 +300,14 @@ describe("TreeView", () => {
     const t1After = within(treeAfter).getByRole("treeitem", { name: /t-1/ });
     expect(t1After).toBeInTheDocument();
     expect(t1After).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("REQ-UI-064 REQ-UI-066 tree rows show the state, the type pill and the indicators", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    stubBeads(() => json([bead("t-1", { title: "Task One", blocked: true, comment_count: 2 })]));
+    render(<BeadsPage />);
+    const row = await screen.findByRole("treeitem");
+    expect(within(row).getByText("Blocked")).toBeInTheDocument();
+    expect(within(row).getByRole("img", { name: "2 comments" })).toBeInTheDocument();
   });
 });

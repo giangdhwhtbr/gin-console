@@ -2,6 +2,9 @@ import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { BeadSummary } from "./api";
+import { CountBadge } from "./CountBadge";
+import { StateMark } from "./StateMark";
+import { TypeBadge } from "./TypeBadge";
 
 export function BeadTable({ project, beads }: { project: string; beads: readonly BeadSummary[] }) {
   return (
@@ -18,11 +21,17 @@ export function BeadTable({ project, beads }: { project: string; beads: readonly
           <TableRow key={bead.id}>
             <TableCell className="font-mono text-xs">{bead.id}</TableCell>
             <TableCell className="font-medium">
-              <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
+                <CountBadge kind="comments" count={bead.comment_count} />
+                <CountBadge kind="dependencies" count={bead.dependency_count} />
+              </div>
             </TableCell>
-            <TableCell>{bead.issue_type}</TableCell>
             <TableCell>
-              <Badge variant="secondary">{bead.status}</Badge>
+              <TypeBadge type={bead.issue_type} />
+            </TableCell>
+            <TableCell>
+              <StateMark bead={bead} />
             </TableCell>
             <TableCell>{`P${bead.priority}`}</TableCell>
             <TableCell className="space-x-1">

@@ -1,5 +1,7 @@
-import { Badge } from "@/components/ui/badge";
+import { CountBadge } from "./CountBadge";
+import { StateMark } from "./StateMark";
 import type { TreeMode, TreeRow as Row } from "./tree";
+import { TypeBadge } from "./TypeBadge";
 
 export function TreeRow({
   row,
@@ -46,9 +48,11 @@ export function TreeRow({
       )}
       <span className="font-mono text-xs">{bead.id}</span>
       <span className="font-medium">{bead.title}</span>
-      <Badge variant="secondary">{bead.status}</Badge>
+      <StateMark bead={bead} />
       <span>{`P${bead.priority}`}</span>
-      <span className="text-muted-foreground">{bead.issue_type}</span>
+      <TypeBadge type={bead.issue_type} />
+      <CountBadge kind="comments" count={bead.comment_count} />
+      <CountBadge kind="dependencies" count={bead.dependency_count} />
       {mode === "hierarchy" && bead.issue_type === "epic" && row.totalKids > 0 && (
         <span className="text-muted-foreground">{`${row.closedKids}/${row.totalKids} closed`}</span>
       )}

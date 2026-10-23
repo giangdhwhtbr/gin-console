@@ -116,6 +116,7 @@ describe("BeadsPage", () => {
       title: "P1 bead title",
       issue_type: "bug",
       status: "open",
+      ready: true,
       labels: ["core"],
       assignee: null,
       owner: "bob",
@@ -133,7 +134,7 @@ describe("BeadsPage", () => {
     const link1 = row1.getByRole("link", { name: "P1 bead title" });
     expect(link1).toHaveAttribute("href", "/beads/alpha/alpha-p1");
     expect(row1.getByText("bug")).toBeInTheDocument();
-    expect(row1.getByText("open")).toBeInTheDocument();
+    expect(row1.getByText("Ready")).toBeInTheDocument();
     expect(row1.getByText("P1")).toBeInTheDocument();
     expect(row1.getByText("core")).toBeInTheDocument();
     expect(row1.getByText("bob")).toBeInTheDocument();
@@ -144,7 +145,7 @@ describe("BeadsPage", () => {
     const link2 = row2.getByRole("link", { name: "P2 bead title" });
     expect(link2).toHaveAttribute("href", "/beads/alpha/alpha-p2");
     expect(row2.getByText("feature")).toBeInTheDocument();
-    expect(row2.getByText("in_progress")).toBeInTheDocument();
+    expect(row2.getByText("In progress")).toBeInTheDocument();
     expect(row2.getByText("P2")).toBeInTheDocument();
     expect(row2.getByText("ui")).toBeInTheDocument();
     expect(row2.getByText("design")).toBeInTheDocument();

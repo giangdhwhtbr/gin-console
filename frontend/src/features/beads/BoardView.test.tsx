@@ -129,8 +129,8 @@ describe("BoardView", () => {
     expect(within(ready).getByText("P1")).toBeInTheDocument();
     expect(within(ready).getByText("alice")).toBeInTheDocument();
     expect(within(ready).getByText("bug")).toBeInTheDocument();
-    expect(within(ready).getByText("2 deps")).toBeInTheDocument();
-    expect(within(ready).getByText("3 comments")).toBeInTheDocument();
+    expect(within(ready).getByRole("img", { name: "2 dependencies" })).toBeInTheDocument();
+    expect(within(ready).getByRole("img", { name: "3 comments" })).toBeInTheDocument();
 
     const link = within(ready).getByRole("link", { name: "Fix bug" });
     expect(link).toHaveAttribute("href", "/beads/alpha/r-1");
