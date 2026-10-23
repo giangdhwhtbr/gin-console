@@ -324,12 +324,12 @@ The bead list SHALL offer the configured projects whose directory exists in a se
 - THEN it says no projects are configured
 
 ### REQ-UI-024: Bead list
-The bead list SHALL show for each bead its id, a title linking to the bead, its type, status, priority written as `P<n>`, labels, assignee or owner, and last update, ordered by priority and then by last update, newest first, and SHALL show how many of the loaded beads match the current search and filters.
+The bead list SHALL show the loaded beads as an indented hierarchy as REQ-UI-041 describes, SHALL show for each bead the content REQ-UI-044 describes, and SHALL show how many of the loaded beads match the current search and filters.
 
-#### Scenario: Row content and order
-- GIVEN a P2 bead updated yesterday and a P1 bead updated last week
+#### Scenario: Hierarchy order
+- GIVEN a P2 root bead updated yesterday and a P1 root bead updated last week
 - WHEN the list loads
-- THEN the P1 bead is first, and both show id, title, type, status, `P<n>`, labels and update time
+- THEN the P1 bead is first, and both show id, title, state, type and `P<n>`
 
 #### Scenario: Count
 - GIVEN 83 loaded beads of which 5 match the filters
@@ -422,7 +422,7 @@ IF a request for the list or a bead fails, THEN the page SHALL show the error an
 - THEN an error and a retry button are shown, not a blank page
 
 ### REQ-UI-030: Views
-The Beads page SHALL offer the views List, Board, Focus, Tree and Graph kept in the URL as `view` (`list` when absent or unknown), SHALL load the beads once for all five views with the project, search, filters and "Show closed" of the list applying to each of them, and SHALL refresh them as in REQ-UI-027 without reloading the data when the view changes.
+The Beads page SHALL offer the views List, Board, Focus and Graph kept in the URL as `view` (`list` when absent or unknown), SHALL load the beads once for all four views with the project, search, filters and "Show closed" of the list applying to each of them, and SHALL refresh them as in REQ-UI-027 without reloading the data when the view changes.
 
 #### Scenario: Switch keeps filters
 - GIVEN the List view with the filter status "open" and the search "fix"
@@ -434,11 +434,6 @@ The Beads page SHALL offer the views List, Board, Focus, Tree and Graph kept in 
 - WHEN the page loads
 - THEN the Focus view is shown for project `a`
 
-#### Scenario: Tree view
-- GIVEN the URL has `?project=a&view=tree`
-- WHEN the page loads
-- THEN the Tree view is shown for project `a`
-
 #### Scenario: Graph view
 - GIVEN the URL has `?project=a&view=graph`
 - WHEN the page loads
@@ -448,6 +443,11 @@ The Beads page SHALL offer the views List, Board, Focus, Tree and Graph kept in 
 - GIVEN the URL has `view=kanban`
 - WHEN the page loads
 - THEN the List view is shown
+
+#### Scenario: Old Tree link
+- GIVEN the URL has `?project=a&view=tree`
+- WHEN the page loads
+- THEN the List view is shown and there is no Tree tab
 
 ### REQ-UI-031: Board columns
 The Board view SHALL show the columns Backlog (status `deferred`), Ready (`ready`), In Progress (status `in_progress` or `hooked`), Blocked (`blocked`) and Done (status `closed`), each with its number of beads, SHALL put a bead in the first of those columns that fits, SHALL leave out of the Board any bead that fits none, SHALL order a column by priority and then by last update, newest first, and SHALL show each bead as a card as REQ-UI-065 describes.
@@ -624,54 +624,26 @@ IF the comments request fails or its answer has an unexpected shape, THEN the di
 - WHEN the answer for `a-5` arrives
 - THEN `a-6` keeps its own comments
 
-### REQ-UI-041: Hierarchy tree
-WHILE the Tree view is in Hierarchy mode (the default), the Tree view SHALL show as roots the beads without a parent or whose parent is not among the loaded beads, SHALL show the beads whose `parent` is a node as that node's children, and SHALL order siblings by priority and then by last update, newest first.
+### REQ-UI-041: List hierarchy
+The List view SHALL show as roots the beads without a parent or whose parent is not among the loaded beads, SHALL show the beads whose `parent` is a row as that row's children, indented by level, and SHALL order siblings by priority and then by last update, newest first.
 
 #### Scenario: Roots and children
 - GIVEN an epic `e-1` with children `t-1` and `t-2`, and a bead `x-1` without a parent
-- WHEN the Tree view is shown
-- THEN the roots are `e-1` and `x-1` and `e-1` has the children `t-1` and `t-2`
+- WHEN the List view is shown
+- THEN the roots are `e-1` and `x-1` and `e-1` has the children `t-1` and `t-2` indented under it
 
 #### Scenario: Parent not loaded
 - GIVEN a bead whose parent is closed and "Show closed" is off
-- WHEN the Tree view is shown
+- WHEN the List view is shown
 - THEN that bead is a root
 
 #### Scenario: Order
 - GIVEN siblings of priority P2, P1 and P1 where one P1 sibling was updated later
-- WHEN the Tree view is shown
+- WHEN the List view is shown
 - THEN the later-updated P1, the other P1, then the P2 are listed
 
-### REQ-UI-042: Blocking tree
-WHILE the Tree view is in Blocking mode (kept in the URL as `tree=blocking`), the Tree view SHALL show as roots the beads that block at least one loaded bead and are blocked by none, SHALL show as a node's children the loaded beads whose `blocked_by` holds it, SHALL show a bead that is already above it on the same branch only as a leaf marked "also above", and SHALL show at most 2000 nodes, saying how many more are not shown.
-
-#### Scenario: What a bead unlocks
-- GIVEN `a-1` blocks `a-2`, and `a-2` blocks `a-3`
-- WHEN the Tree view is shown in Blocking mode
-- THEN the root is `a-1`, its child is `a-2` and the child of `a-2` is `a-3`
-
-#### Scenario: Blocked from two places
-- GIVEN `a-3` is blocked by both `a-1` and `a-2`
-- WHEN the Tree view is shown in Blocking mode
-- THEN `a-3` appears under `a-1` and under `a-2`
-
-#### Scenario: Cycle
-- GIVEN `a-1` blocks `a-2` and `a-2` blocks `a-1`
-- WHEN the Tree view is shown in Blocking mode
-- THEN the tree is finite and the repeated bead is a leaf marked "also above"
-
-#### Scenario: Too many nodes
-- GIVEN more than 2000 nodes would be shown
-- WHEN the Tree view is shown
-- THEN 2000 are shown and a line says how many more are not shown
-
-#### Scenario: Mode in the URL
-- GIVEN the URL has `?project=a&view=tree&tree=blocking`
-- WHEN the page loads
-- THEN the Tree view is shown in Blocking mode, and any other `tree` value gives Hierarchy mode
-
-### REQ-UI-043: Tree filters
-WHEN a search, a filter or a lane is active, the Tree view SHALL show only the beads that match them together with their ancestors in the tree, with every branch that leads to a match open, and SHALL leave out closed beads unless "Show closed" is on.
+### REQ-UI-043: List filters
+WHEN a search, a filter or a lane is active, the List view SHALL show only the beads that match them together with their ancestors in the hierarchy, with every branch that leads to a match open, and SHALL leave out closed beads unless "Show closed" is on.
 
 #### Scenario: Match with ancestors
 - GIVEN an epic with a child titled "Fix login" and another titled "Add search"
@@ -680,82 +652,102 @@ WHEN a search, a filter or a lane is active, the Tree view SHALL show only the b
 
 #### Scenario: Closed beads
 - GIVEN a closed child and "Show closed" off
-- WHEN the Tree view is shown
+- WHEN the List view is shown
 - THEN the closed child is not shown, and it is shown after "Show closed" is turned on
 
 #### Scenario: Lane
 - GIVEN beads labelled "frontend" and "backend" and the lane "frontend"
-- WHEN the Tree view is shown
+- WHEN the List view is shown
 - THEN only the "frontend" beads and their ancestors are shown
 
-### REQ-UI-044: Tree nodes
-The Tree view SHALL show for each node an open/close control when it has children, its id, its title, its status, `P<n>` and its type, SHALL show for an epic in Hierarchy mode how many of its direct children are closed, SHALL show "blocked by N" in Blocking mode for a bead with N loaded blockers, SHALL open only the root level at first, SHALL open and close a branch when its control is used, and SHALL offer "Expand all" and "Collapse all".
+### REQ-UI-044: List rows
+The List view SHALL show for each row an open/close control when it has children, its id in the monospace face, its title as a link to `/beads/<project>/<id>`, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic how many of its direct children are closed with a progress bar, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
+
+#### Scenario: Row content
+- GIVEN a blocked P1 bug assigned to alice with 2 comments
+- WHEN the List view is shown
+- THEN its row shows the id, the title link, "Blocked", the pill "bug", `P1`, a comment indicator 2 and alice
 
 #### Scenario: Open a branch
-- GIVEN the Tree view with a collapsed epic
+- GIVEN the List view with a collapsed epic
 - WHEN the user opens it
 - THEN its children are shown, and closing it hides them again
 
 #### Scenario: Expand all and collapse all
-- GIVEN a tree with several levels
+- GIVEN a hierarchy with several levels
 - WHEN the user chooses "Expand all", then "Collapse all"
 - THEN every branch opens, then only the roots are shown
 
 #### Scenario: Epic progress
 - GIVEN an epic with 5 children of which 3 are closed
-- WHEN the Tree view is shown with "Show closed" on
-- THEN the epic says "3/5 closed"
+- WHEN the List view is shown with "Show closed" on
+- THEN the epic says "3/5 closed" with a progress bar
 
 #### Scenario: Plain text
 - GIVEN a title containing `<script>x</script>`
-- WHEN the Tree view is shown
+- WHEN the List view is shown
 - THEN it appears as text and no `script` element exists
 
-### REQ-UI-045: Selection and detail panel
-WHEN the user clicks a node, the Tree view SHALL select it, keep its id in the URL as `select`, mark it selected, and show the bead in a panel beside the tree with the content of the bead page (fields, text sections, relations and comments), without the "Back to beads" link and with an "Open page" link to `/beads/<project>/<id>`; the panel SHALL say "Select a bead to see its details" when nothing is selected, SHALL keep showing a selected bead that is not in the current tree together with the note "Not in the current tree", and a reload SHALL restore the selection.
+#### Scenario: Two lines on a phone
+- GIVEN a window 390px wide
+- WHEN a row is shown
+- THEN the title is on the first line and the state, type and indicators on the second
 
-#### Scenario: Select a node
-- GIVEN the Tree view
+#### Scenario: Row limit
+- GIVEN 2100 root beads
+- WHEN the List view is shown
+- THEN 2000 rows are shown and a line says "100 more not shown"
+
+### REQ-UI-045: Selection and detail panel
+WHILE the window is 1024px wide or more and the user clicks a row, the List view SHALL select it, keep its id in the URL as `select`, mark it selected, and show the bead in a panel beside the list with the content of the bead page (fields, text sections, relations and the discussion), without the breadcrumb and with an "Open page" link to `/beads/<project>/<id>`, the panel SHALL say "Select a bead to see its details" when nothing is selected, SHALL keep showing a selected bead that is not in the current list together with the note "Not in the current list", and a reload SHALL restore the selection, and WHILE the window is narrower than 1024px a click on a row SHALL open the bead page.
+
+#### Scenario: Select a row
+- GIVEN the List view and a window 1280px wide
 - WHEN the user clicks the bead `t-1`
-- THEN the URL has `select=t-1`, the node is marked selected and the panel shows its title, text and comments
+- THEN the URL has `select=t-1`, the row is marked selected and the panel shows its title, text and discussion
 
 #### Scenario: Nothing selected
 - GIVEN the URL has no `select`
-- WHEN the Tree view is shown
+- WHEN the List view is shown
 - THEN the panel says "Select a bead to see its details"
 
 #### Scenario: Restored selection
-- GIVEN the URL has `view=tree&select=t-1`
+- GIVEN the URL has `view=list&select=t-1`
 - WHEN the page loads
 - THEN `t-1` is selected, its branch is open and the panel shows it
 
-#### Scenario: Selected bead not in the tree
+#### Scenario: Selected bead not in the list
 - GIVEN `t-1` is selected and a filter hides it
-- WHEN the Tree view is shown
-- THEN the panel still shows `t-1` with "Not in the current tree"
+- WHEN the List view is shown
+- THEN the panel still shows `t-1` with "Not in the current list"
 
 #### Scenario: Open page link
 - GIVEN a bead is selected
 - WHEN the panel is shown
-- THEN it has a link "Open page" to `/beads/<project>/t-1` and no "Back to beads" link
+- THEN it has a link "Open page" to `/beads/<project>/t-1` and no breadcrumb
 
 #### Scenario: Selection changes
 - GIVEN `t-1` is selected and its comments are loading
 - WHEN the user selects `t-2`
 - THEN the panel shows `t-2` and the late comments of `t-1` do not replace its comments
 
-### REQ-UI-046: Tree keyboard and roles
-The Tree view SHALL expose the tree with `role="tree"` and each node with `role="treeitem"`, `aria-level`, `aria-selected` and, when it has children, `aria-expanded`, and WHILE a node has focus the Up and Down arrows SHALL move focus to the previous and next shown node, Right SHALL open a closed branch and otherwise move to its first child, Left SHALL close an open branch and otherwise move to its parent, and `Enter` SHALL select the node.
+#### Scenario: Phone
+- GIVEN a window 390px wide
+- WHEN the user taps the row of `t-1`
+- THEN the bead page of `t-1` is shown
+
+### REQ-UI-046: List keyboard and roles
+The List view SHALL expose the hierarchy with `role="tree"` and each row with `role="treeitem"`, `aria-level`, `aria-selected` and, when it has children, `aria-expanded`, and WHILE a row has focus the Up and Down arrows SHALL move focus to the previous and next shown row, Right SHALL open a closed branch and otherwise move to its first child, Left SHALL close an open branch and otherwise move to its parent, and `Enter` SHALL select the row.
 
 #### Scenario: Roles
-- GIVEN the Tree view with an open epic
+- GIVEN the List view with an open epic
 - WHEN it is shown
 - THEN there is a tree, the epic is a treeitem with `aria-expanded` true and its children have a greater `aria-level`
 
 #### Scenario: Move
-- GIVEN focus is on the first node
+- GIVEN focus is on the first row
 - WHEN the user presses Down, then Up
-- THEN focus moves to the next shown node, then back
+- THEN focus moves to the next shown row, then back
 
 #### Scenario: Open and close
 - GIVEN focus is on a closed epic
@@ -763,9 +755,9 @@ The Tree view SHALL expose the tree with `role="tree"` and each node with `role=
 - THEN the branch opens and focus moves to its first child on a second Right, and Left closes it or moves to the parent
 
 #### Scenario: Select with Enter
-- GIVEN focus is on a node
+- GIVEN focus is on a row
 - WHEN the user presses `Enter`
-- THEN the node is selected
+- THEN the row is selected
 
 ### REQ-UI-047: Epic picker
 WHILE the Graph view is shown and `epic` does not name an epic of the loaded beads, the Graph view SHALL list the epics, each with its id, title, number of descendant tasks and number of those tasks that are blocked, and SHALL say "No epics" when there are none.
@@ -1131,3 +1123,77 @@ The discussion SHALL show each comment as a block of its own with a border, with
 - GIVEN a comment with a very long word
 - WHEN the discussion is shown
 - THEN the text wraps inside its block and the page does not scroll sideways
+
+### REQ-UI-072: Breadcrumb
+WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of the link "Beads" followed by the name of the view of the remembered place (REQ-UI-073) and, when a search, a status, priority, label, type or lane filter or "Show closed" is active, "· N filters" where N counts them, all as one link to the remembered place, then the parent of the bead as a link to its page when it has one, then the id of the bead marked `aria-current="page"`, and under 640px SHALL show only the first link.
+
+#### Scenario: Place and filters
+- GIVEN the Beads page was last at `?project=a&view=board&status=open&q=fix`
+- WHEN the bead page of `a-1` is shown
+- THEN the breadcrumb reads "Beads › Board · 2 filters" then `a-1`, and the first link goes to `/beads?project=a&view=board&status=open&q=fix`
+
+#### Scenario: Parent
+- GIVEN the bead `a-2` has the parent `a-1`
+- WHEN the bead page of `a-2` is shown
+- THEN the breadcrumb has a link `a-1` to `/beads/a/a-1` before `a-2`
+
+#### Scenario: No remembered place
+- GIVEN the Beads page was not shown in this tab
+- WHEN the bead page of `a-1` is shown
+- THEN the breadcrumb reads "Beads" then `a-1` and "Beads" goes to `/beads?project=a`
+
+#### Scenario: Details panel
+- GIVEN a bead shown in the details panel of the List view
+- WHEN the panel is shown
+- THEN it has no breadcrumb and keeps its "Open page" link
+
+#### Scenario: Phone
+- GIVEN a window 390px wide
+- WHEN the bead page is shown
+- THEN only the first link of the breadcrumb is shown
+
+### REQ-UI-073: Remembered place
+The Beads page SHALL remember its URL query for the current browser tab, SHALL use it for the first link of the breadcrumb when the remembered project is the project of the bead and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
+
+#### Scenario: Back to the Board with its filters
+- GIVEN the Board with the filter status "open" is shown
+- WHEN the user opens a card and then uses the first link of the breadcrumb
+- THEN the Board is shown with the filter status "open"
+
+#### Scenario: From bead to bead
+- GIVEN the user came from the Board with filters and opens a related bead from the bead page
+- WHEN the related bead is shown and the first link of the breadcrumb is used
+- THEN the Board with the same filters is shown
+
+#### Scenario: Other project
+- GIVEN the remembered place belongs to project `a`
+- WHEN the bead page of a bead of project `b` is shown
+- THEN the first link goes to `/beads?project=b`
+
+#### Scenario: Reload
+- GIVEN the Beads page was last at `view=focus` in this tab
+- WHEN the bead page is reloaded
+- THEN its breadcrumb still returns to the Focus view
+
+#### Scenario: Storage refused
+- GIVEN the browser throws when the place is stored
+- WHEN the user opens a bead and uses the breadcrumb
+- THEN the remembered place of this visit is used and no error is shown
+
+### REQ-UI-074: Remembered branches
+The List view SHALL remember for the current browser tab which branches of each project are open, SHALL open them again when the List is shown after another page, and SHALL ignore remembered ids that are not among the loaded beads.
+
+#### Scenario: Return to the List
+- GIVEN the user opened the epic `e-1` in the List and then visited a bead page
+- WHEN the List is shown again
+- THEN `e-1` is open
+
+#### Scenario: A bead is gone
+- GIVEN `e-9` was remembered as open and is no longer loaded
+- WHEN the List is shown
+- THEN no error is shown and the other remembered branches are open
+
+#### Scenario: Per project
+- GIVEN branches were opened in project `a`
+- WHEN the List of project `b` is shown
+- THEN only the root level of `b` is open
