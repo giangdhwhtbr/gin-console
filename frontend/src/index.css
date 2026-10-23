@@ -12,6 +12,9 @@
     --color-state-blocked: var(--state-blocked);
     --color-state-done: var(--state-done);
     --color-state-deferred: var(--state-deferred);
+    --color-type-epic: var(--type-epic);
+    --color-type-bug: var(--type-bug);
+    --color-type-feature: var(--type-feature);
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
     --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
@@ -89,10 +92,13 @@
     --sidebar-border: #cfd5de;
     --sidebar-ring: #12161c;
     --state-ready: #0f766e;
-    --state-progress: #4338ca;
+    --state-progress: #1d4ed8;
     --state-blocked: #a3470a;
     --state-done: #5d6573;
     --state-deferred: #5d6573;
+    --type-epic: #7e22ce;
+    --type-bug: #b91c1c;
+    --type-feature: #be185d;
 }
 
 .dark {
@@ -128,10 +134,13 @@
     --sidebar-border: #2c343f;
     --sidebar-ring: #e7eaf0;
     --state-ready: #2dd4bf;
-    --state-progress: #a5b4fc;
+    --state-progress: #93c5fd;
     --state-blocked: #fbbf24;
     --state-done: #9ca3af;
     --state-deferred: #9ca3af;
+    --type-epic: #c084fc;
+    --type-bug: #f87171;
+    --type-feature: #f472b6;
 }
 
 @layer base {

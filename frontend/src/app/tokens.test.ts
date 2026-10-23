@@ -26,6 +26,15 @@ function ratio(a: string, b: string): number {
 
 const SURFACES = ["background", "card", "muted"] as const;
 const STATUS = ["state-ready", "state-progress", "state-blocked", "state-done", "state-deferred"] as const;
+const TYPES = ["type-epic", "type-bug", "type-feature"] as const;
+
+function blend(fg: string, bg: string, alpha: number): string {
+  const channel = (i: number) =>
+    Math.round(parseInt(fg.slice(i, i + 2), 16) * alpha + parseInt(bg.slice(i, i + 2), 16) * (1 - alpha))
+      .toString(16)
+      .padStart(2, "0");
+  return `#${channel(1)}${channel(3)}${channel(5)}`;
+}
 
 describe.each([
   [":root", "light"],
@@ -46,6 +55,7 @@ describe.each([
       "primary-foreground",
       "destructive",
       ...STATUS,
+      ...TYPES,
     ]) {
       expect(t[key], key).toBeDefined();
     }
@@ -53,11 +63,20 @@ describe.each([
 
   it(`REQ-UI-059 ${name}: text and status colours reach 4.5:1 on every surface`, () => {
     for (const surface of SURFACES) {
-      for (const text of ["foreground", "muted-foreground", "destructive", ...STATUS]) {
+      for (const text of ["foreground", "muted-foreground", "destructive", ...STATUS, ...TYPES]) {
         expect(ratio(get(text), get(surface)), `${text} on ${surface}`).toBeGreaterThanOrEqual(4.5);
       }
     }
     expect(ratio(get("primary-foreground"), get("primary"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it(`REQ-UI-067 ${name}: a type colour reads on its own 8% tint over every surface`, () => {
+    for (const surface of SURFACES) {
+      for (const type of TYPES) {
+        const tint = blend(get(type), get(surface), 0.08);
+        expect(ratio(get(type), tint), `${type} on its tint over ${surface}`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 
   it(`REQ-UI-059 ${name}: control outlines and the focus ring reach 3:1`, () => {
