@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadDetail, BeadSummary, Comment } from "./api";
 import { bead, json, project } from "./beadFixtures";
 import { BeadsPage } from "./BeadsPage";
+import { clearReturn } from "./returnState";
 
 const makeDetail = (summary: BeadSummary, overrides: Partial<BeadDetail> = {}): BeadDetail => ({
   ...summary,
@@ -68,6 +69,7 @@ function stubTreeWithDetail(
 }
 
 beforeEach(() => {
+  clearReturn();
   window.history.replaceState(null, "", "/beads");
 });
 
@@ -78,9 +80,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("TreePanel", () => {
+describe("ListPanel", () => {
   it("REQ-UI-045 select shows the panel: clicking node selects and shows details and comments", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubTreeWithDetail(
       [bead("t-1", { title: "Task One", comment_count: 1 })],
       {
@@ -102,7 +104,7 @@ describe("TreePanel", () => {
   });
 
   it("REQ-UI-045 nothing selected: panel prompts to select a bead", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubTreeWithDetail([bead("t-1", { title: "Task One" })]);
     render(<BeadsPage />);
 
@@ -112,7 +114,7 @@ describe("TreePanel", () => {
   });
 
   it("REQ-UI-045 restored: URL selection restored at load and opens branch", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&select=t-1");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
     stubTreeWithDetail([
       bead("e-1", { issue_type: "epic", title: "Epic One" }),
       bead("t-1", { parent: "e-1", title: "Task One" }),
@@ -128,19 +130,19 @@ describe("TreePanel", () => {
     expect(await within(panel).findByRole("heading", { name: "Task One" })).toBeInTheDocument();
   });
 
-  it("REQ-UI-045 not in the tree: still shown with notice", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&select=t-1&q=zzz");
+  it("REQ-UI-045 not in the list: still shown with notice", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1&q=zzz");
     stubTreeWithDetail([bead("t-1", { title: "Task One" })]);
     render(<BeadsPage />);
 
     expect(await screen.findByText("No beads match.")).toBeInTheDocument();
     const panel = screen.getByRole("complementary", { name: "Bead details" });
-    expect(within(panel).getByText("Not in the current tree")).toBeInTheDocument();
+    expect(within(panel).getByText("Not in the current list")).toBeInTheDocument();
     expect(await within(panel).findByRole("heading", { name: "Task One" })).toBeInTheDocument();
   });
 
   it("REQ-UI-045 open page link: panel has Open page and no Back to beads", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&select=t-1");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
     stubTreeWithDetail([bead("t-1", { title: "Task One" })]);
     render(<BeadsPage />);
 
@@ -151,7 +153,7 @@ describe("TreePanel", () => {
   });
 
   it("REQ-UI-045 selection changes: late comments from previous selection do not appear", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     let resolveT1Comments: (c: Comment[]) => void = () => {};
     const t1CommentsPromise = new Promise<Comment[]>((resolve) => {
       resolveT1Comments = resolve;

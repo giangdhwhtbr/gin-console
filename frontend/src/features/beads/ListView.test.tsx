@@ -3,8 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bead, json, stubBeads } from "./beadFixtures";
 import { BeadsPage } from "./BeadsPage";
+import { clearReturn, rememberOpen } from "./returnState";
 
 beforeEach(() => {
+  clearReturn();
   window.history.replaceState(null, "", "/beads");
 });
 
@@ -15,31 +17,31 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("TreeView", () => {
-  it("REQ-UI-030 Tree view: initial load and switch from list", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+describe("ListView", () => {
+  it("REQ-UI-030 List view: shown by default and kept when switching from the Board", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
     stubBeads(() => json([bead("t-1", { title: "Test task" })]));
     render(<BeadsPage />);
     expect(await screen.findByRole("tree")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Tree" })).toBeNull();
 
     cleanup();
 
-    window.history.replaceState(null, "", "/beads?project=alpha&q=fix");
-    const fetchMock = stubBeads(() => json([bead("t-1", { title: "Fix login" })]));
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board&q=fix");
+    const fetchMock = stubBeads(() => json([bead("t-1", { title: "Fix login", ready: true })]));
     render(<BeadsPage />);
     expect(await screen.findByText("Fix login")).toBeInTheDocument();
 
     const callsBefore = fetchMock.mock.calls.length;
-    await userEvent.click(screen.getByRole("button", { name: "Tree" }));
+    await userEvent.click(screen.getByRole("button", { name: "List" }));
 
     expect(screen.getByRole("tree")).toBeInTheDocument();
-    expect(window.location.search).toContain("view=tree");
     expect(window.location.search).toContain("q=fix");
     expect(fetchMock.mock.calls.length).toBe(callsBefore);
   });
 
   it("REQ-UI-041 hierarchy: roots, children, unparented, and order", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
         bead("e-1", { issue_type: "epic", title: "Epic One" }),
@@ -77,69 +79,8 @@ describe("TreeView", () => {
     expect(within(tree).queryByRole("treeitem", { name: /t-1/ })).not.toBeInTheDocument();
   });
 
-  it("REQ-UI-042 blocking: unlocking, multi-blockers, cycle, and mode", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&tree=blocking");
-    stubBeads(() =>
-      json([
-        bead("a-1", { title: "Blocker Alpha" }),
-        bead("a-2", { title: "Middle Beta", blocked_by: ["a-1"] }),
-        bead("a-3", { title: "Leaf Gamma", blocked_by: ["a-1", "a-2"] }),
-        bead("c-1", { title: "Cycle One", blocked_by: ["c-2"] }),
-        bead("c-2", { title: "Cycle Two", blocked_by: ["c-1"] }),
-      ]),
-    );
-    render(<BeadsPage />);
-    const tree = await screen.findByRole("tree");
-
-    expect(within(tree).getByRole("treeitem", { name: /a-1/ })).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "Expand a-1" }));
-    const a2 = within(tree).getByRole("treeitem", { name: /a-2/ });
-    expect(a2).toBeInTheDocument();
-    expect(within(a2).getByText("blocked by 1")).toBeInTheDocument();
-
-    expect(within(tree).getByRole("treeitem", { name: /a-3/ })).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "Expand a-2" }));
-    const a3Nodes = within(tree).getAllByRole("treeitem", { name: /a-3/ });
-    expect(a3Nodes.length).toBeGreaterThanOrEqual(2);
-
-    const cycleRootButton =
-      screen.queryByRole("button", { name: "Expand c-1" }) ??
-      screen.getByRole("button", { name: "Expand c-2" });
-    await userEvent.click(cycleRootButton);
-    const cycleChildButton =
-      screen.queryByRole("button", { name: "Expand c-1" }) ??
-      screen.getByRole("button", { name: "Expand c-2" });
-    await userEvent.click(cycleChildButton);
-    expect(within(tree).getByText("also above")).toBeInTheDocument();
-
-    const hierarchyBtn = screen.getByRole("button", { name: "Hierarchy" });
-    const blockingBtn = screen.getByRole("button", { name: "Blocking" });
-    expect(blockingBtn).toHaveAttribute("aria-pressed", "true");
-    expect(hierarchyBtn).toHaveAttribute("aria-pressed", "false");
-
-    await userEvent.click(hierarchyBtn);
-    expect(window.location.search).not.toContain("tree=blocking");
-    expect(hierarchyBtn).toHaveAttribute("aria-pressed", "true");
-    expect(blockingBtn).toHaveAttribute("aria-pressed", "false");
-
-    await userEvent.click(blockingBtn);
-    expect(window.location.search).toContain("tree=blocking");
-    expect(blockingBtn).toHaveAttribute("aria-pressed", "true");
-  });
-
-  it("REQ-UI-042 blocking: unknown tree mode gives hierarchy", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&tree=unknown");
-    stubBeads(() => json([bead("t-1")]));
-    render(<BeadsPage />);
-    await screen.findByRole("tree");
-    expect(screen.getByRole("button", { name: "Hierarchy" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Blocking" })).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("REQ-UI-042 limit: 2100 root beads", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+  it("REQ-UI-044 row limit: 2100 root beads", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     const beads = Array.from({ length: 2100 }, (_, i) => bead(`r-${i}`, { title: `Root ${i}` }));
     stubBeads(() => json(beads));
     render(<BeadsPage />);
@@ -148,10 +89,10 @@ describe("TreeView", () => {
     const items = within(tree).getAllByRole("treeitem");
     expect(items).toHaveLength(2000);
     expect(screen.getByText("100 more not shown")).toBeInTheDocument();
-  });
+  }, 30_000); // 2000 full rows are slow to build in jsdom, much more so on a loaded machine
 
   it("REQ-UI-043 filters: match with ancestors, closed beads, and lane", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&q=login");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&q=login");
     stubBeads((url) => {
       const closed = url.searchParams.get("closed") === "1";
       const list = [
@@ -176,7 +117,7 @@ describe("TreeView", () => {
 
     cleanup();
 
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     render(<BeadsPage />);
     const tree2 = await screen.findByRole("tree");
 
@@ -190,7 +131,7 @@ describe("TreeView", () => {
 
     cleanup();
 
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&lane=frontend");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&lane=frontend");
     render(<BeadsPage />);
     const tree3 = await screen.findByRole("tree");
 
@@ -200,7 +141,7 @@ describe("TreeView", () => {
   });
 
   it("REQ-UI-044 rows: node fields, epic progress, expand/collapse all, and plain text", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&closed=1");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&closed=1");
     stubBeads(() =>
       json([
         bead("e-progress", { issue_type: "epic", title: "Progress Epic" }),
@@ -236,7 +177,7 @@ describe("TreeView", () => {
   });
 
   it("REQ-UI-045 selection: clicking updates URL and initial selection opens branch", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
         bead("e-1", { issue_type: "epic", title: "Epic 1" }),
@@ -251,7 +192,7 @@ describe("TreeView", () => {
     expect(t1).toHaveAttribute("aria-selected", "false");
 
     const historyLenBefore = window.history.length;
-    await userEvent.click(within(t1).getByText("Task 1"));
+    await userEvent.click(within(t1).getByText("t-1"));
 
     expect(t1).toHaveAttribute("aria-selected", "true");
     expect(window.location.search).toContain("select=t-1");
@@ -259,7 +200,7 @@ describe("TreeView", () => {
 
     cleanup();
 
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree&select=t-1");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
     render(<BeadsPage />);
     const tree2 = await screen.findByRole("tree");
 
@@ -270,7 +211,7 @@ describe("TreeView", () => {
 
   it("REQ-UI-045 refresh keeps state", async () => {
     vi.useFakeTimers();
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
         bead("e-1", { issue_type: "epic", title: "Epic 1" }),
@@ -289,7 +230,7 @@ describe("TreeView", () => {
     const t1 = within(tree).getByRole("treeitem", { name: /t-1/ });
     expect(t1).toBeInTheDocument();
 
-    fireEvent.click(within(t1).getByText("Task 1"));
+    fireEvent.click(within(t1).getByText("t-1"));
     expect(t1).toHaveAttribute("aria-selected", "true");
 
     await act(async () => {
@@ -303,11 +244,82 @@ describe("TreeView", () => {
   });
 
   it("REQ-UI-064 REQ-UI-066 tree rows show the state, the type pill and the indicators", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() => json([bead("t-1", { title: "Task One", blocked: true, comment_count: 2 })]));
     render(<BeadsPage />);
     const row = await screen.findByRole("treeitem");
     expect(within(row).getByText("Blocked")).toBeInTheDocument();
     expect(within(row).getByRole("img", { name: "2 comments" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-044 a row shows the id, title link, state, type, priority, indicators, assignee and three labels", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() =>
+      json([
+        bead("t-1", {
+          title: "Fix it",
+          blocked: true,
+          priority: 1,
+          issue_type: "bug",
+          assignee: "alice",
+          comment_count: 2,
+          labels: ["ui", "qa", "a", "b"],
+        }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const row = await screen.findByRole("treeitem");
+    expect(within(row).getByRole("link", { name: "Fix it" })).toHaveAttribute("href", "/beads/alpha/t-1");
+    expect(within(row).getByText("Blocked")).toBeInTheDocument();
+    expect(within(row).getByText("bug")).toHaveAttribute("data-type", "bug");
+    expect(within(row).getByText("P1")).toBeInTheDocument();
+    expect(within(row).getByRole("img", { name: "2 comments" })).toBeInTheDocument();
+    expect(within(row).getByText("alice")).toBeInTheDocument();
+    expect(within(row).getAllByText(/^(ui|qa|a)$/)).toHaveLength(3);
+    expect(within(row).queryByText("b")).toBeNull();
+  });
+
+  it("REQ-UI-045 under 1024px a click opens the bead page", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() => json([bead("t-1", { title: "Task One" })]));
+    render(<BeadsPage />);
+    await userEvent.click(await screen.findByRole("treeitem", { name: /t-1/ }));
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+  });
+
+  it("REQ-UI-074 the open branches come back", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() =>
+      json([bead("e-1", { issue_type: "epic", title: "Epic" }), bead("t-1", { parent: "e-1", title: "Child" })]),
+    );
+    render(<BeadsPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "Expand e-1" }));
+    expect(screen.getByText("Child")).toBeInTheDocument();
+    cleanup();
+    render(<BeadsPage />);
+    expect(await screen.findByText("Child")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-074 a remembered bead that is gone is ignored and other projects stay closed", async () => {
+    rememberOpen("alpha", ["e-9"]);
+    rememberOpen("beta", ["e-1"]);
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() =>
+      json([bead("e-1", { issue_type: "epic", title: "Epic" }), bead("t-1", { parent: "e-1", title: "Child" })]),
+    );
+    render(<BeadsPage />);
+    expect(await screen.findByText("Epic")).toBeInTheDocument();
+    expect(screen.queryByText("Child")).toBeNull();
+  });
+
+  it("REQ-UI-046 Enter on the title link follows the link instead of selecting", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() => json([bead("t-1", { title: "Task One" })]));
+    render(<BeadsPage />);
+    const link = await screen.findByRole("link", { name: "Task One" });
+    link.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
   });
 });

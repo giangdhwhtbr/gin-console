@@ -125,11 +125,11 @@ describe("BeadsPage", () => {
     render(<BeadsPage />);
     await screen.findByText("alpha-p1");
 
-    const rows = screen.getAllByRole("row");
-    expect(rows[1]).toHaveTextContent("alpha-p1");
-    expect(rows[2]).toHaveTextContent("alpha-p2");
+    const rows = screen.getAllByRole("treeitem");
+    expect(rows[0]).toHaveTextContent("alpha-p1");
+    expect(rows[1]).toHaveTextContent("alpha-p2");
 
-    const row1 = within(rows[1]);
+    const row1 = within(rows[0]);
     expect(row1.getByText("alpha-p1")).toBeInTheDocument();
     const link1 = row1.getByRole("link", { name: "P1 bead title" });
     expect(link1).toHaveAttribute("href", "/beads/alpha/alpha-p1");
@@ -138,9 +138,9 @@ describe("BeadsPage", () => {
     expect(row1.getByText("P1")).toBeInTheDocument();
     expect(row1.getByText("core")).toBeInTheDocument();
     expect(row1.getByText("bob")).toBeInTheDocument();
-    expect(row1.getByText(new Date(lastWeek).toLocaleString())).toBeInTheDocument();
+    expect(row1.getByText(new Date(lastWeek).toLocaleDateString())).toBeInTheDocument();
 
-    const row2 = within(rows[2]);
+    const row2 = within(rows[1]);
     expect(row2.getByText("alpha-p2")).toBeInTheDocument();
     const link2 = row2.getByRole("link", { name: "P2 bead title" });
     expect(link2).toHaveAttribute("href", "/beads/alpha/alpha-p2");
@@ -150,7 +150,7 @@ describe("BeadsPage", () => {
     expect(row2.getByText("ui")).toBeInTheDocument();
     expect(row2.getByText("design")).toBeInTheDocument();
     expect(row2.getByText("alice")).toBeInTheDocument();
-    expect(row2.getByText(new Date(yesterday).toLocaleString())).toBeInTheDocument();
+    expect(row2.getByText(new Date(yesterday).toLocaleDateString())).toBeInTheDocument();
   });
 
   // REQ-UI-024

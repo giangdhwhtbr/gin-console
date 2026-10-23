@@ -3,10 +3,7 @@ import type { BeadSummary } from "./api";
 export const TREE_LIMIT = 2000;
 const WALK_LIMIT = 100_000; // ponytail: a pathological DAG stops being counted here; the count then reads "N+ more"
 
-export type TreeMode = "hierarchy" | "blocking";
-
 export type TreeIndex = {
-  mode: TreeMode;
   byId: ReadonlyMap<string, BeadSummary>;
   roots: readonly BeadSummary[];
   kids: ReadonlyMap<string, readonly BeadSummary[]>;
@@ -19,10 +16,8 @@ export type TreeRow = {
   level: number;
   hasKids: boolean;
   open: boolean;
-  repeated: boolean; // already above on this branch: shown as a leaf
   totalKids: number;
   closedKids: number;
-  blockers: number; // loaded beads that block this one
 };
 
 export type TreeRows = { rows: TreeRow[]; omitted: number; walkLimited: boolean };
@@ -37,18 +32,16 @@ const push = (map: Map<string, string[]>, key: string, value: string) => {
   else list.push(value);
 };
 
-/** Index the beads as a forest: by `parent` (hierarchy) or by `blocked_by` (blocking). */
-export function treeIndex(beads: readonly BeadSummary[], mode: TreeMode): TreeIndex {
+/** Index the beads as a forest by `parent`. */
+export function treeIndex(beads: readonly BeadSummary[]): TreeIndex {
   const byId = new Map(beads.map((b) => [b.id, b]));
   const kidIds = new Map<string, string[]>();
   const parents = new Map<string, string[]>();
   for (const bead of beads) {
-    const upstream = mode === "hierarchy" ? (bead.parent === null ? [] : [bead.parent]) : bead.blocked_by;
-    for (const id of new Set(upstream)) {
-      if (id === bead.id || !byId.has(id)) continue;
-      push(kidIds, id, bead.id);
-      push(parents, bead.id, id);
-    }
+    const parent = bead.parent;
+    if (parent === null || parent === bead.id || !byId.has(parent)) continue;
+    push(kidIds, parent, bead.id);
+    push(parents, bead.id, parent);
   }
   const kids = new Map<string, BeadSummary[]>();
   for (const [id, childIds] of kidIds) {
@@ -58,7 +51,7 @@ export function treeIndex(beads: readonly BeadSummary[], mode: TreeMode): TreeIn
     );
   }
 
-  const shown = beads.filter((b) => mode === "hierarchy" || kids.has(b.id)).sort(byImportance);
+  const shown = [...beads].sort(byImportance);
   const roots = shown.filter((b) => !parents.has(b.id));
   const reached = new Set<string>();
   const reach = (start: BeadSummary) => {
@@ -77,7 +70,7 @@ export function treeIndex(beads: readonly BeadSummary[], mode: TreeMode): TreeIn
       reach(bead);
     }
   }
-  return { mode, byId, roots, kids, parents };
+  return { byId, roots, kids, parents };
 }
 
 /** The ids of the beads that have children: "Expand all". */
@@ -116,13 +109,13 @@ export function treeRows(
   let walkLimited = false;
 
   const visit = (bead: BeadSummary, level: number, path: readonly string[]) => {
+    if (path.includes(bead.id)) return; // a parent cycle: every bead shows once
     if (steps >= WALK_LIMIT) {
       walkLimited = true;
       return;
     }
     steps += 1;
-    const repeated = path.includes(bead.id);
-    const all = repeated ? [] : (index.kids.get(bead.id) ?? []);
+    const all = index.kids.get(bead.id) ?? [];
     const shownKids = keep === null ? all : all.filter((k) => keep.has(k.id));
     const isOpen = shownKids.length > 0 && open.has(bead.id);
     if (rows.length < TREE_LIMIT) {
@@ -132,10 +125,8 @@ export function treeRows(
         level,
         hasKids: shownKids.length > 0,
         open: isOpen,
-        repeated,
         totalKids: all.length,
         closedKids: all.filter((k) => k.status === "closed").length,
-        blockers: new Set(bead.blocked_by.filter((id) => index.byId.has(id) && id !== bead.id)).size,
       });
     } else {
       omitted += 1;

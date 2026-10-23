@@ -44,8 +44,10 @@ export function treeKeyDown(
       }
       break;
     case "Enter":
-      event.preventDefault();
-      actions.select(id);
+      if (event.target === item) {
+        event.preventDefault();
+        actions.select(id);
+      }
       break;
     default:
   }

@@ -260,20 +260,6 @@ describe("FocusView", () => {
     expect(searchInput).not.toHaveFocus();
   });
 
-  it("REQ-UI-037 keyboard shortcuts disabled on List view", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
-    stubBeads(() => json([bead("b-1", { title: "List bead" })]));
-    const user = userEvent.setup();
-    render(<BeadsPage />);
-
-    expect(await screen.findByRole("table")).toBeInTheDocument();
-    document.body.focus();
-
-    await user.keyboard("/");
-    const searchInput = screen.getByRole("searchbox", { name: "Search" });
-    expect(searchInput).not.toHaveFocus();
-  });
-
   it("REQ-UI-037 keyboard shortcuts ignored with modifier keys", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=board");
     stubBeads(() => json([bead("b-1", { title: "Card 1", ready: true })]));

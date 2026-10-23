@@ -3,8 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bead, json, stubBeads } from "./beadFixtures";
 import { BeadsPage } from "./BeadsPage";
+import { clearReturn } from "./returnState";
 
 beforeEach(() => {
+  clearReturn();
   window.history.replaceState(null, "", "/beads");
 });
 
@@ -15,9 +17,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("TreeKeys", () => {
+describe("ListKeys", () => {
   it("REQ-UI-046 roles: tree, treeitem, aria-expanded, and aria-level", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
         bead("e-1", { issue_type: "epic", title: "Epic One" }),
@@ -51,7 +53,7 @@ describe("TreeKeys", () => {
   });
 
   it("REQ-UI-046 move: ArrowDown and ArrowUp navigate between nodes", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
         bead("t-1", { title: "Task 1" }),
@@ -93,7 +95,7 @@ describe("TreeKeys", () => {
   });
 
   it("REQ-UI-046 open and close: ArrowRight opens and enters child, ArrowLeft leaves and closes", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
         bead("e-1", { issue_type: "epic", title: "Epic One" }),
@@ -131,7 +133,7 @@ describe("TreeKeys", () => {
   });
 
   it("REQ-UI-046 select with Enter: puts select in URL", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() => json([bead("t-1", { title: "Task One" })]));
     const user = userEvent.setup();
     render(<BeadsPage />);
@@ -146,7 +148,7 @@ describe("TreeKeys", () => {
   });
 
   it("REQ-UI-046 keys are the tree's own: tree does not take over arrows, / and Esc still work", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=tree");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() => json([bead("t-1", { title: "Task One" })]));
     const user = userEvent.setup();
     render(<BeadsPage />);

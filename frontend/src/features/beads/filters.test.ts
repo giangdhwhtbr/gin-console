@@ -43,7 +43,6 @@ describe("filters", () => {
       group: "",
       finished: false,
       lane: "",
-      tree: "hierarchy",
       select: "",
       epic: "",
     });
@@ -58,17 +57,10 @@ describe("filters", () => {
   // REQ-UI-030
   it("REQ-UI-030 parses view from the URL", () => {
     expect(parseFilters("?view=board").view).toBe("board");
-    expect(parseFilters("?view=tree").view).toBe("tree");
+    expect(parseFilters("?view=tree").view).toBe("list");
     expect(parseFilters("?view=graph").view).toBe("graph");
     expect(parseFilters("?view=kanban").view).toBe("list");
     expect(parseFilters("").view).toBe("list");
-  });
-
-  // REQ-UI-042
-  it("REQ-UI-042 parses tree mode from the URL", () => {
-    expect(parseFilters("?tree=blocking").tree).toBe("blocking");
-    expect(parseFilters("?tree=x").tree).toBe("hierarchy");
-    expect(parseFilters("").tree).toBe("hierarchy");
   });
 
   // REQ-UI-045
@@ -77,12 +69,17 @@ describe("filters", () => {
     expect(parseFilters("").select).toBe("");
   });
 
-  // REQ-UI-030, REQ-UI-042, REQ-UI-045
-  it("REQ-UI-030, REQ-UI-042, REQ-UI-045 serializes tree view, mode and select", () => {
-    const filters = { ...empty, view: "tree" as const, tree: "blocking" as const, select: "a b" };
-    expect(filtersToSearch(filters)).toBe("?view=tree&tree=blocking&select=a+b");
-    expect(filtersToSearch({ ...empty, view: "tree", tree: "hierarchy", select: "" })).toBe("?view=tree");
+  // REQ-UI-030, REQ-UI-045
+  it("REQ-UI-030, REQ-UI-045 serializes the view and select", () => {
+    const filters = { ...empty, view: "board" as const, select: "a b" };
+    expect(filtersToSearch(filters)).toBe("?view=board&select=a+b");
     expect(parseFilters(filtersToSearch(filters))).toEqual(filters);
+  });
+
+  // REQ-UI-030
+  it("REQ-UI-030 an old Tree link shows the List", () => {
+    expect(parseFilters("?view=tree").view).toBe("list");
+    expect(filtersToSearch(parseFilters("?view=list&tree=blocking"))).toBe("");
   });
 
   // REQ-UI-034

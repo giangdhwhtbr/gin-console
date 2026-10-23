@@ -4,13 +4,12 @@ import { Button } from "@/components/ui/button";
 import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { fetchBeads, type BeadSummary } from "./api";
 import { BeadFilterBar } from "./BeadFilterBar";
-import { BeadTable } from "./BeadTable";
 import { BoardView } from "./BoardView";
 import { inLane } from "./columns";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
 import { GraphView } from "./GraphView";
-import { TreeView } from "./TreeView";
+import { ListView } from "./ListView";
 import { useCardKeys } from "./useCardKeys";
 import { ViewTabs } from "./ViewTabs";
 
@@ -32,7 +31,7 @@ export function BeadsView({
   onChange: (next: BeadFilters) => void;
 }) {
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
-  useCardKeys(filters.view !== "list", clearSearch, filters.view !== "tree" && filters.view !== "graph");
+  useCardKeys(true, clearSearch, filters.view !== "list" && filters.view !== "graph");
 
   const [state, setState] = useState<State>({ status: "loading" });
   const closed = filters.closed;
@@ -91,18 +90,12 @@ export function BeadsView({
           {filters.view === "focus" && (
             <FocusView project={project} beads={scoped} filters={filters} onChange={onChange} />
           )}
-          {filters.view === "tree" && (
-            <TreeView project={project} beads={beads} filters={filters} onChange={onChange} />
-          )}
           {filters.view === "graph" && (
             <GraphView project={project} beads={beads} filters={filters} onChange={onChange} />
           )}
-          {filters.view === "list" &&
-            (shown.length === 0 ? (
-              <p className="text-muted-foreground">No beads match.</p>
-            ) : (
-              <BeadTable project={project} beads={shown} />
-            ))}
+          {filters.view === "list" && (
+            <ListView project={project} beads={beads} filters={filters} onChange={onChange} />
+          )}
         </>
       )}
     </section>

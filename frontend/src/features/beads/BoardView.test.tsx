@@ -49,7 +49,7 @@ describe("BoardView", () => {
 
     window.history.replaceState(null, "", "/beads?project=alpha&view=kanban");
     render(<BeadsPage />);
-    expect(await screen.findByRole("table")).toBeInTheDocument();
+    expect(await screen.findByRole("tree")).toBeInTheDocument();
   });
 
   it("REQ-UI-031 placement", async () => {
@@ -104,7 +104,7 @@ describe("BoardView", () => {
 
     await user.click(screen.getByRole("button", { name: "List" }));
     expect(await screen.findByRole("link", { name: "Pinned bead" })).toBeInTheDocument();
-    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByRole("tree")).toBeInTheDocument();
   });
 
   it("REQ-UI-031 card and link", async () => {
