@@ -303,19 +303,12 @@ describe("BeadDetailPage", () => {
       await commentsPromise;
     });
 
-    expect(await screen.findByRole("heading", { name: "Comments (2)" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Discussion (2)" })).toBeInTheDocument();
     expect(screen.getByText("Text of c-2")).toBeInTheDocument();
     expect(screen.getByText("Text of c-1")).toBeInTheDocument();
-    expect(
-      screen.getByText((content) =>
-        content.includes(`alice · ${new Date("2026-10-06T10:00:00Z").toLocaleString()}`),
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText((content) =>
-        content.includes(`alice · ${new Date("2026-10-05T10:00:00Z").toLocaleString()}`),
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getAllByText("alice")).toHaveLength(2);
+    expect(screen.getByText(new Date("2026-10-06T10:00:00Z").toLocaleString())).toBeInTheDocument();
+    expect(screen.getByText(new Date("2026-10-05T10:00:00Z").toLocaleString())).toBeInTheDocument();
   });
 
   // REQ-UI-039
@@ -342,7 +335,7 @@ describe("BeadDetailPage", () => {
 
     const { container } = render(<BeadDetailPage project="alpha" id="a-5" />);
 
-    expect(await screen.findByRole("heading", { name: "Comments (1)" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Discussion (1)" })).toBeInTheDocument();
     expect(screen.getByText(scriptText)).toBeInTheDocument();
     expect(container.querySelector("script")).toBeNull();
   });
@@ -354,7 +347,7 @@ describe("BeadDetailPage", () => {
 
     render(<BeadDetailPage project="alpha" id="a-5" />);
 
-    expect(await screen.findByRole("heading", { name: "Comments (2)" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Discussion (2)" })).toBeInTheDocument();
     expect(screen.getByText("Comment truncated")).toBeInTheDocument();
     expect(screen.getAllByText("Comment truncated")).toHaveLength(1);
   });
@@ -388,7 +381,7 @@ describe("BeadDetailPage", () => {
 
     await userEvent.click(within(alert).getByRole("button", { name: /retry/i }));
 
-    expect(await screen.findByRole("heading", { name: "Comments (1)" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Discussion (1)" })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(beadCallCount).toBe(1);
     expect(commentsCallCount).toBe(2);

@@ -26,8 +26,8 @@ export function CommentList({ project, id }: { project: string; id: string }) {
   };
 
   return (
-    <section aria-label="Comments" className="flex flex-col gap-3">
-      <h2 className="font-medium">{state.status === "ok" ? `Comments (${state.comments.length})` : "Comments"}</h2>
+    <section aria-label="Discussion" className="flex flex-col gap-3">
+      <h2 className="font-medium">{state.status === "ok" ? `Discussion (${state.comments.length})` : "Discussion"}</h2>
       {state.status === "loading" && <p className="text-muted-foreground">Loading comments…</p>}
       {state.status === "error" && (
         <Alert variant="destructive">
@@ -43,11 +43,12 @@ export function CommentList({ project, id }: { project: string; id: string }) {
       {state.status === "ok" && (
         <ul className="flex flex-col gap-3">
           {state.comments.map((comment) => (
-            <li key={comment.id} className="flex flex-col gap-1 rounded border p-2">
-              <div className="text-sm text-muted-foreground">
-                {`${comment.author} · ${new Date(comment.created_at).toLocaleString()}`}
+            <li key={comment.id} className="flex flex-col gap-1.5 rounded-lg border bg-card p-3">
+              <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                <span className="font-semibold">{comment.author}</span>
+                <span className="text-muted-foreground">{new Date(comment.created_at).toLocaleString()}</span>
               </div>
-              <p className="whitespace-pre-wrap break-words">{comment.text}</p>
+              <p className="whitespace-pre-wrap break-words text-sm">{comment.text}</p>
               {comment.truncated && <p className="text-xs text-muted-foreground">Comment truncated</p>}
             </li>
           ))}
