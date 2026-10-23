@@ -4,6 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjects, type Project } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
+import { rememberSearch } from "./returnState";
 
 type Projects =
   | { status: "loading" }
@@ -28,6 +29,11 @@ export function BeadsPage() {
   const names = projects.status === "ok" ? projects.names : [];
   // the default is not written back into the URL
   const selected = names.includes(filters.project) ? filters.project : (names[0] ?? "");
+
+  // the place the breadcrumb of a bead page returns to; the project is always in it, even when it is the default one
+  useEffect(() => {
+    if (selected !== "") rememberSearch(filtersToSearch({ ...parseFilters(search), project: selected }));
+  }, [search, selected]);
 
   return (
     <section className="flex flex-col gap-4">

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProgressBar } from "@/features/quota/ProgressBar";
 import { BeadNotFoundError, fetchBead, type BeadDetail } from "./api";
+import { Breadcrumb } from "./Breadcrumb";
 import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
 import { useDiscussionHidden } from "./discussion";
@@ -41,14 +42,13 @@ export function BeadDetailPage({ project, id, embedded = false }: { project: str
     setState({ status: "loading" });
     setAttempt((n) => n + 1);
   };
+  const parent = state.status === "ok" ? state.bead.parent : null;
   const back = embedded ? (
     <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`} className="text-sm underline underline-offset-2">
       Open page
     </Link>
   ) : (
-    <Link to={`/beads?project=${encodeURIComponent(project)}`} className="text-sm underline underline-offset-2">
-      Back to beads
-    </Link>
+    <Breadcrumb project={project} id={id} parent={parent} />
   );
 
   if (state.status === "notfound") {

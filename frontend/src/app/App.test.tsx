@@ -1,14 +1,16 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { quota } from "@/features/quota/quotaFixtures";
 import { resetQuotaStore } from "@/features/quota/quotaStore";
+import { clearReturn } from "@/features/beads/returnState";
 import { App } from "./App";
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
 
 beforeEach(() => {
+  clearReturn();
   resetQuotaStore();
 });
 
@@ -179,7 +181,10 @@ describe("App routing", () => {
     );
     render(<App />);
     expect(await screen.findByRole("heading", { name: "Bead five" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Back to beads" })).toHaveAttribute("href", "/beads?project=alpha");
+    expect(within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("link", { name: "Beads" })).toHaveAttribute(
+      "href",
+      "/beads?project=alpha",
+    );
   });
 
   // REQ-UI-022

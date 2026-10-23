@@ -91,7 +91,9 @@ describe("BeadDetailPage", () => {
     const { container } = render(<BeadDetailPage project="alpha" id="a-5" />);
 
     expect(await screen.findByRole("heading", { name: "Bead five" })).toBeInTheDocument();
-    expect(screen.getByText("a-5")).toBeInTheDocument();
+    const header = screen.getByRole("heading", { name: "Bead five" }).closest("header");
+    if (header === null) throw new Error("the bead header is missing");
+    expect(within(header).getByText("a-5")).toBeInTheDocument();
     expect(screen.getByText("open")).toBeInTheDocument();
     expect(screen.getByText("P1")).toBeInTheDocument();
     expect(screen.getByText("task")).toBeInTheDocument();
@@ -134,7 +136,9 @@ describe("BeadDetailPage", () => {
     const blockedLink = screen.getByRole("link", { name: "a-6" });
     expect(blockedLink).toHaveAttribute("href", "/beads/alpha/a-6");
     expect(screen.getByText("Blocked title")).toBeInTheDocument();
-    const [depItem, blockedItem] = screen.getAllByRole("listitem");
+    const depItem = depLink.closest("li");
+    const blockedItem = blockedLink.closest("li");
+    if (depItem === null || blockedItem === null) throw new Error("the relation items are missing");
     expect(within(depItem).getByText("open")).toBeInTheDocument();
     expect(within(blockedItem).getByText("closed")).toBeInTheDocument();
 
@@ -182,7 +186,7 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-404" />);
 
     expect(await screen.findByText("Bead not found")).toBeInTheDocument();
-    const backLink = screen.getByRole("link", { name: "Back to beads" });
+    const backLink = within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole("link", { name: "Beads" });
     expect(backLink).toHaveAttribute("href", "/beads?project=alpha");
   });
 
