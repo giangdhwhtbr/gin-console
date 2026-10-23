@@ -114,7 +114,7 @@ describe("App routing", () => {
   });
 
   // REQ-UI-022
-  it("REQ-UI-022 falls back to Projects page on undecodable route segment and highlights sidebar link on /beads", async () => {
+  it("REQ-UI-022 falls back to Projects page on undecodable route segment and marks the Beads link on /beads", async () => {
     window.history.replaceState(null, "", "/beads/%E0%A4%A/x");
     vi.stubGlobal(
       "fetch",
@@ -132,7 +132,7 @@ describe("App routing", () => {
     window.history.replaceState(null, "", "/beads");
     render(<App />);
     const beadsLink = screen.getByRole("link", { name: "Beads" });
-    expect(beadsLink).toHaveClass("bg-muted");
+    expect(beadsLink).toHaveAttribute("aria-current", "page");
   });
 
   // REQ-UI-022
