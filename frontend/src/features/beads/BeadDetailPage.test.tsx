@@ -404,17 +404,18 @@ describe("BeadDetailPage", () => {
     expect(within(alert).getByRole("button", { name: /retry/i })).toBeInTheDocument();
   });
 
-  it("REQ-UI-053 an epic links to its graph, a task does not", async () => {
-    stubFetch(beadDetail("e-1", { issue_type: "epic" }));
+  it("REQ-UI-053 View dependencies for a bead with children or a blocks relation only", async () => {
+    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [{ id: "t", title: "T", status: "open", type: "parent-child" }] }));
     render(<BeadDetailPage project="p" id="e-1" />);
-    expect(await screen.findByRole("link", { name: "View graph" })).toHaveAttribute(
-      "href",
-      "/beads?project=p&view=graph&epic=e-1",
-    );
+    expect(await screen.findByRole("link", { name: "View dependencies" })).toHaveAttribute("href", "/beads/p/e-1/graph");
     cleanup();
-    stubFetch(beadDetail("t-1"));
+    stubFetch(beadDetail("t-1", { dependencies: [{ id: "x", title: "X", status: "open", type: "blocks" }] }));
     render(<BeadDetailPage project="p" id="t-1" />);
-    await screen.findByText("Title t-1");
-    expect(screen.queryByRole("link", { name: "View graph" })).toBeNull();
+    expect(await screen.findByRole("link", { name: "View dependencies" })).toBeInTheDocument();
+    cleanup();
+    stubFetch(beadDetail("t-2"));
+    render(<BeadDetailPage project="p" id="t-2" />);
+    await screen.findByText("Title t-2");
+    expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();
   });
 });

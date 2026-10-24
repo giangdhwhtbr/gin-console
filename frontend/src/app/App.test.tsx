@@ -187,6 +187,19 @@ describe("App routing", () => {
     );
   });
 
+  it("REQ-UI-075 renders the Dependencies page on /beads/:project/graph and /beads/:project/:id/graph", async () => {
+    const fetchMock = vi.fn<(url: string) => Promise<Response>>(() => Promise.resolve(json([])));
+    vi.stubGlobal("fetch", fetchMock);
+    for (const path of ["/beads/alpha/graph", "/beads/alpha/a-5/graph"]) {
+      window.history.replaceState(null, "", path);
+      render(<App />);
+      const crumb = within(await screen.findByRole("navigation", { name: "Breadcrumb" }));
+      expect(crumb.getByText("Dependencies")).toBeInTheDocument();
+      cleanup();
+    }
+    expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/api/beads/alpha/graph"))).toBe(false);
+  });
+
   // REQ-UI-022
   it("REQ-UI-022 falls back to Projects page on undecodable bead route segment", async () => {
     window.history.replaceState(null, "", "/beads/%E0%A4%A/a-5");

@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ProgressBar } from "@/features/quota/ProgressBar";
 import { BeadNotFoundError, fetchBead, type BeadDetail } from "./api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
+import { graphPath } from "./graph";
 import { useDiscussionHidden } from "./discussion";
 import { RelationList } from "./RelationList";
 import { SIDE_PANEL } from "./side-panel";
@@ -136,12 +137,10 @@ export function BeadDetailPage({ project, id, embedded = false }: { project: str
                       .filter(Boolean)
                       .join(" · ")}
                   </div>
-                  {bead.issue_type === "epic" && (
-                    <Link
-                      to={`/beads?project=${encodeURIComponent(project)}&view=graph&epic=${encodeURIComponent(bead.id)}`}
-                      className="text-sm underline underline-offset-2"
-                    >
-                      View graph
+                  {(bead.children.length > 0 ||
+                    [...bead.dependencies, ...bead.dependents].some((r) => r.type === "blocks")) && (
+                    <Link to={graphPath(project, bead.id)} className={cn(buttonVariants({ size: "sm" }), "self-start")}>
+                      View dependencies
                     </Link>
                   )}
                 </header>

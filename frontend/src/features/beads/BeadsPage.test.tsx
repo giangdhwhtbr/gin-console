@@ -90,6 +90,21 @@ describe("BeadsPage", () => {
     expect(window.location.search).toBe("?project=omega");
   });
 
+  it("REQ-UI-081 the project picker is followed by a Dependencies link", async () => {
+    stub(() => json([bead("a-1")]));
+    render(<BeadsPage />);
+    expect(await screen.findByRole("link", { name: "Dependencies" })).toHaveAttribute("href", "/beads/alpha/graph");
+  });
+
+  it("REQ-UI-030 view=graph shows the List and there is no Graph tab", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=graph");
+    stub(() => json([bead("a-1")]));
+    render(<BeadsPage />);
+    await screen.findByText("Title a-1");
+    expect(screen.getByRole("button", { name: "List" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("button", { name: "Graph" })).toBeNull();
+  });
+
   // REQ-UI-023
   it("REQ-UI-023 no projects", async () => {
     stub(() => json([]), []);

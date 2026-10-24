@@ -44,21 +44,20 @@ describe("filters", () => {
       finished: false,
       lane: "",
       select: "",
-      epic: "",
     });
   });
 
-  it("REQ-UI-030 keeps the epic in the URL", () => {
+  it("REQ-UI-030 old Graph links fall back to the List and lose the epic", () => {
     const filters = parseFilters("?project=a&view=graph&epic=e-1&select=t-1");
-    expect(filters).toMatchObject({ view: "graph", epic: "e-1", select: "t-1" });
-    expect(filtersToSearch(filters)).toBe("?project=a&view=graph&select=t-1&epic=e-1");
+    expect(filters.view).toBe("list");
+    expect(filtersToSearch(filters)).toBe("?project=a&select=t-1");
   });
 
   // REQ-UI-030
   it("REQ-UI-030 parses view from the URL", () => {
     expect(parseFilters("?view=board").view).toBe("board");
     expect(parseFilters("?view=tree").view).toBe("list");
-    expect(parseFilters("?view=graph").view).toBe("graph");
+    expect(parseFilters("?view=graph").view).toBe("list");
     expect(parseFilters("?view=kanban").view).toBe("list");
     expect(parseFilters("").view).toBe("list");
   });

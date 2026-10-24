@@ -54,4 +54,9 @@ describe("Breadcrumb", () => {
     expect(items[1]).toHaveClass("hidden", "sm:flex");
     expect(items[2]).toHaveClass("hidden", "sm:flex");
   });
+
+  it("REQ-UI-072 the project Dependencies page ends with Dependencies", () => {
+    render(<Breadcrumb project="a" id="" parent={null} graph={[]} />);
+    expect(crumb().getByText("Dependencies")).toHaveAttribute("aria-current", "page");
+  });
 });

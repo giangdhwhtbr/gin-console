@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjects, type Project } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
+import { graphPath } from "./graph";
 import { rememberSearch } from "./returnState";
 
 type Projects =
@@ -50,20 +52,25 @@ export function BeadsPage() {
       )}
       {selected !== "" && (
         <>
-          <label className="flex items-center gap-2 text-sm">
-            Project
-            <select
-              value={selected}
-              onChange={(event) => change({ ...filters, project: event.target.value })}
-              className="rounded border bg-background px-2 py-1"
-            >
-              {names.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm">
+              Project
+              <select
+                value={selected}
+                onChange={(event) => change({ ...filters, project: event.target.value })}
+                className="rounded border bg-background px-2 py-1"
+              >
+                {names.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Link to={graphPath(selected, null)} className="text-sm underline underline-offset-2">
+              Dependencies
+            </Link>
+          </div>
           <BeadsView key={selected} project={selected} filters={filters} onChange={change} />
         </>
       )}
