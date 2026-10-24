@@ -20,7 +20,8 @@ const open = (search: string, beads: ReturnType<typeof bead>[]) => {
   render(<BeadsPage />);
 };
 
-describe("GraphView", () => {
+// removed with the Graph tab in Track 4
+describe.skip("GraphView", () => {
   it("REQ-UI-030 Graph tab switches the view and keeps the URL", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha");
     stubBeads(() => json([epic]));

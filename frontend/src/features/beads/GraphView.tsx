@@ -5,7 +5,7 @@ import type { BeadSummary } from "./api";
 import { BeadDetailPage } from "./BeadDetailPage";
 import type { BeadFilters } from "./filters";
 import { GraphNodeButton } from "./GraphNode";
-import { chainOf, edgeKey, edgePath, epicsOf, graphOf, place, step } from "./graph";
+import { chainOf, edgeKey, edgePath, graphFor, place, step } from "./graph";
 
 const KEYS = ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"] as const;
 
@@ -20,32 +20,10 @@ export function GraphView({
   filters: BeadFilters;
   onChange: (next: BeadFilters) => void;
 }) {
-  const epics = epicsOf(beads, filters.closed);
-  const chosen = epics.find((row) => row.epic.id === filters.epic);
+  const chosen = beads.find((b) => b.id === filters.epic && b.issue_type === "epic");
+  if (chosen === undefined) return <p className="text-muted-foreground">No epics</p>;
 
-  if (chosen === undefined) {
-    return epics.length === 0 ? (
-      <p className="text-muted-foreground">No epics</p>
-    ) : (
-      <ul aria-label="Epics" className="flex flex-col gap-2">
-        {epics.map(({ epic, tasks, blocked }) => (
-          <li key={epic.id}>
-            <Button
-              variant="outline"
-              className="h-auto w-full justify-start gap-3 py-2"
-              onClick={() => onChange({ ...filters, epic: epic.id, select: "" })}
-            >
-              <span className="font-mono">{epic.id}</span>
-              <span>{epic.title}</span>
-              <span className="ml-auto text-muted-foreground">{`${tasks} tasks · ${blocked} blocked`}</span>
-            </Button>
-          </li>
-        ))}
-      </ul>
-    );
-  }
-
-  const graph = graphOf(beads, chosen.epic.id, filters.closed);
+  const graph = graphFor(beads, chosen.id, { hideDone: !filters.closed, onlyLinked: false });
   const { at, width, height } = place(graph);
   const chain = at.has(filters.select) ? chainOf(graph, filters.select) : null;
   const tabStop = at.has(filters.select) ? filters.select : graph.nodes[0]?.bead.id;
@@ -71,7 +49,7 @@ export function GraphView({
           <Button variant="outline" size="sm" onClick={() => onChange({ ...filters, epic: "", select: "" })}>
             All epics
           </Button>
-          <h2 className="font-medium">{`${chosen.epic.id} ${chosen.epic.title}`}</h2>
+          <h2 className="font-medium">{`${chosen.id} ${chosen.title}`}</h2>
         </div>
         {graph.cycle.length > 0 && (
           <p role="status" className="text-sm text-state-blocked">{`Dependency cycle between ${graph.cycle.join(", ")}`}</p>

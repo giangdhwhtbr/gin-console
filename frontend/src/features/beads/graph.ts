@@ -26,63 +26,104 @@ export function stateOf(bead: BeadSummary): GraphState {
   }
 }
 
-export type GraphNode = { bead: BeadSummary; external: boolean; layer: number };
-export type GraphEdge = { from: string; to: string };
-export type Graph = { nodes: GraphNode[]; edges: GraphEdge[]; cycle: string[] };
-export type EpicRow = { epic: BeadSummary; tasks: number; blocked: number };
+export type Link = { from: string; to: string };
+export type GraphEdge = Link & { links: Link[] };
+export type GraphNode = {
+  bead: BeadSummary;
+  external: boolean;
+  layer: number;
+  order: number;
+  done: number;
+  total: number;
+};
+export type Graph = { nodes: GraphNode[]; edges: GraphEdge[]; cycle: string[]; unlinked: number };
+export type GraphOptions = { hideDone: boolean; onlyLinked: boolean };
+export type StepKey = "ArrowRight" | "ArrowLeft" | "ArrowUp" | "ArrowDown";
 
-export const edgeKey = (edge: GraphEdge) => `${edge.from}>${edge.to}`;
+export const edgeKey = (edge: Link) => `${edge.from}>${edge.to}`;
 
-const visible = (beads: readonly BeadSummary[], showClosed: boolean) =>
-  beads.filter((b) => showClosed || b.status !== "closed");
-
-function descendantIds(beads: readonly BeadSummary[], rootId: string): Set<string> {
-  const children = new Map<string, string[]>();
-  for (const b of beads) {
-    if (b.parent !== null) children.set(b.parent, [...(children.get(b.parent) ?? []), b.id]);
-  }
-  const found = new Set<string>();
-  const queue = [rootId];
-  for (let id = queue.pop(); id !== undefined; id = queue.pop()) {
-    for (const child of children.get(id) ?? []) {
-      if (child !== rootId && !found.has(child)) {
-        found.add(child);
-        queue.push(child);
-      }
-    }
-  }
-  return found;
-}
+const enc = encodeURIComponent;
+export const graphPath = (project: string, id: string | null) =>
+  id === null ? `/beads/${enc(project)}/graph` : `/beads/${enc(project)}/${enc(id)}/graph`;
 
 const byImportance = (a: BeadSummary, b: BeadSummary) => a.priority - b.priority || a.id.localeCompare(b.id);
+const isDone = (b: BeadSummary) => b.status === "closed";
+const indexOf = (beads: readonly BeadSummary[]) => new Map(beads.map((b) => [b.id, b]));
 
-export function epicsOf(beads: readonly BeadSummary[], showClosed: boolean): EpicRow[] {
-  const shown = visible(beads, showClosed);
-  return shown
-    .filter((b) => b.issue_type === "epic")
-    .sort(byImportance)
-    .map((epic) => {
-      const ids = descendantIds(beads, epic.id);
-      const tasks = shown.filter((b) => ids.has(b.id));
-      return { epic, tasks: tasks.length, blocked: tasks.filter((b) => stateOf(b) === "blocked").length };
-    });
+/** The parent of a bead when it is loaded; a bead whose parent is missing counts as top-level. */
+const parentOf = (byId: ReadonlyMap<string, BeadSummary>, b: BeadSummary) =>
+  b.parent !== null && byId.has(b.parent) ? b.parent : null;
+
+export const hasChildren = (beads: readonly BeadSummary[], id: string) => beads.some((b) => b.parent === id);
+
+/** "n of m done" over the direct children of each bead; the key "" holds the beads without a parent. */
+export function progressOf(beads: readonly BeadSummary[]): Map<string, { done: number; total: number }> {
+  const byId = indexOf(beads);
+  const counts = new Map<string, { done: number; total: number }>();
+  for (const b of beads) {
+    const key = parentOf(byId, b) ?? "";
+    const c = counts.get(key) ?? { done: 0, total: 0 };
+    counts.set(key, { done: c.done + (isDone(b) ? 1 : 0), total: c.total + 1 });
+  }
+  return counts;
 }
 
-export function graphOf(beads: readonly BeadSummary[], epicId: string, showClosed: boolean): Graph {
-  const shown = visible(beads, showClosed);
-  const byId = new Map(shown.map((b) => [b.id, b]));
-  const descendants = descendantIds(beads, epicId);
-  const inside = new Set([...descendants].filter((id) => byId.has(id)));
-  const outside = new Set<string>();
-  const edges: GraphEdge[] = [];
-  for (const id of inside) {
-    for (const blocker of new Set(byId.get(id)?.blocked_by)) {
-      if (blocker === id || !byId.has(blocker)) continue;
-      if (!inside.has(blocker)) outside.add(blocker);
-      edges.push({ from: blocker, to: id });
-    }
+/** The ancestors of a bead from the top, stopping at a parent loop. */
+export function ancestorsOf(beads: readonly BeadSummary[], id: string): string[] {
+  const byId = indexOf(beads);
+  const up: string[] = [];
+  const seen = new Set([id]);
+  for (let b = byId.get(id); b !== undefined; ) {
+    const parent = parentOf(byId, b);
+    if (parent === null || seen.has(parent)) break;
+    seen.add(parent);
+    up.push(parent);
+    b = byId.get(parent);
   }
+  return up.reverse();
+}
 
+export function relationsOf(beads: readonly BeadSummary[], id: string) {
+  const byId = indexOf(beads);
+  const blockers = [...new Set(byId.get(id)?.blocked_by ?? [])].flatMap((x) => byId.get(x) ?? []);
+  const blocked = beads.filter((b) => b.id !== id && b.blocked_by.includes(id));
+  return { blockers: blockers.sort(byImportance), blocked: blocked.sort(byImportance) };
+}
+
+/** For each bead, the direct child of the scope (`null`: the project) that holds it, or null when it is not under the scope. */
+function holders(byId: ReadonlyMap<string, BeadSummary>, scope: string | null): (id: string) => string | null {
+  const memo = new Map<string, string | null>();
+  return (start) => {
+    const path: string[] = [];
+    let found: string | null = null;
+    for (let id: string | null = start; id !== null; ) {
+      const known = memo.get(id);
+      if (known !== undefined) {
+        found = known;
+        break;
+      }
+      const b = byId.get(id);
+      if (b === undefined || path.includes(id)) break; // unknown bead or a parent loop
+      path.push(id);
+      const parent = parentOf(byId, b);
+      if (parent === scope) {
+        found = id;
+        break;
+      }
+      id = parent;
+    }
+    for (const id of path) memo.set(id, found);
+    return found;
+  };
+}
+
+function layout(
+  byId: ReadonlyMap<string, BeadSummary>,
+  ids: readonly string[],
+  external: ReadonlySet<string>,
+  edges: readonly Link[],
+  progress: ReadonlyMap<string, { done: number; total: number }>,
+): Pick<Graph, "nodes" | "cycle"> {
   const blockers = new Map<string, string[]>();
   for (const e of edges) blockers.set(e.to, [...(blockers.get(e.to) ?? []), e.from]);
   const layer = new Map<string, number>();
@@ -103,16 +144,62 @@ export function graphOf(beads: readonly BeadSummary[], epicId: string, showClose
     return d;
   };
 
-  const nodes = [...inside, ...outside]
-    .flatMap((id) => {
-      const bead = byId.get(id);
-      return bead === undefined ? [] : [{ bead, external: !inside.has(id), layer: depth(id) }];
-    })
-    .sort((a, b) => a.layer - b.layer || byImportance(a.bead, b.bead));
-  return { nodes, edges, cycle: [...cycle].sort() };
+  const rows: BeadSummary[][] = [];
+  for (const id of new Set(ids)) {
+    const b = byId.get(id);
+    if (b !== undefined) (rows[depth(id)] ??= []).push(b);
+  }
+  // simplified: one downward barycenter sweep; add upward sweeps if large graphs still cross too much
+  const order = new Map<string, number>();
+  const nodes: GraphNode[] = [];
+  for (const [d, row = []] of rows.entries()) {
+    const bary = new Map(
+      row.map((b) => {
+        const at = (blockers.get(b.id) ?? []).flatMap((x) => order.get(x) ?? []);
+        return [b.id, at.length === 0 ? -1 : at.reduce((sum, p) => sum + p, 0) / at.length];
+      }),
+    );
+    row.sort((a, b) => (bary.get(a.id) ?? -1) - (bary.get(b.id) ?? -1) || byImportance(a, b));
+    row.forEach((b, i) => {
+      order.set(b.id, i);
+      const { done, total } = progress.get(b.id) ?? { done: 0, total: 0 };
+      nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total });
+    });
+  }
+  return { nodes, cycle: [...cycle].sort() };
 }
 
-function reach(edges: readonly GraphEdge[], start: string, forward: boolean): Set<string> {
+export function scopeGraph(beads: readonly BeadSummary[], scope: string | null, options: GraphOptions): Graph {
+  const byId = indexOf(beads);
+  const holder = holders(byId, scope);
+  const kept = (id: string) => {
+    const b = byId.get(id);
+    return b !== undefined && !(options.hideDone && isDone(b));
+  };
+  const merged = new Map<string, GraphEdge>();
+  for (const b of beads) {
+    for (const x of new Set(b.blocked_by)) {
+      if (x === b.id || x === scope || b.id === scope || !kept(x) || !kept(b.id)) continue;
+      const hx = holder(x);
+      const hb = holder(b.id);
+      if (hx === hb) continue; // inside one node, or both outside the scope
+      const link = { from: hx ?? x, to: hb ?? b.id };
+      if (!kept(link.from) || !kept(link.to)) continue;
+      const edge = merged.get(edgeKey(link)) ?? { ...link, links: [] };
+      edge.links.push({ from: x, to: b.id });
+      merged.set(edgeKey(link), edge);
+    }
+  }
+  const edges = [...merged.values()];
+  const linked = new Set(edges.flatMap((e) => [e.from, e.to]));
+  const inside = beads.filter((b) => holder(b.id) === b.id && kept(b.id)).map((b) => b.id);
+  const shown = options.onlyLinked ? inside.filter((id) => linked.has(id)) : inside;
+  const external = new Set([...linked].filter((id) => holder(id) === null));
+  const { nodes, cycle } = layout(byId, [...shown, ...external], external, edges, progressOf(beads));
+  return { nodes, edges, cycle, unlinked: inside.length - shown.length };
+}
+
+function reach(edges: readonly Link[], start: string, forward: boolean): Set<string> {
   const found = new Set<string>();
   const queue = [start];
   for (let id = queue.pop(); id !== undefined; id = queue.pop()) {
@@ -127,6 +214,29 @@ function reach(edges: readonly GraphEdge[], start: string, forward: boolean): Se
   return found;
 }
 
+export function neighbourhoodOf(
+  beads: readonly BeadSummary[],
+  id: string,
+  options: Pick<GraphOptions, "hideDone">,
+): Graph {
+  const byId = indexOf(beads);
+  const kept = (x: string) => {
+    const b = byId.get(x);
+    return b !== undefined && (x === id || !(options.hideDone && isDone(b)));
+  };
+  const links = beads.flatMap((b) =>
+    [...new Set(b.blocked_by)].filter((x) => x !== b.id && kept(x) && kept(b.id)).map((x) => ({ from: x, to: b.id })),
+  );
+  const drawn = new Set([id, ...reach(links, id, false), ...reach(links, id, true)]);
+  const edges = links.filter((l) => drawn.has(l.from) && drawn.has(l.to)).map((l) => ({ ...l, links: [l] }));
+  const { nodes, cycle } = layout(byId, [...drawn], new Set(), edges, progressOf(beads));
+  return { nodes, edges, cycle, unlinked: 0 };
+}
+
+/** The graph of the project or of a bead with children, else the neighbourhood of the bead. */
+export const graphFor = (beads: readonly BeadSummary[], scope: string | null, options: GraphOptions): Graph =>
+  scope === null || hasChildren(beads, scope) ? scopeGraph(beads, scope, options) : neighbourhoodOf(beads, scope, options);
+
 /** The node, all its direct and indirect blockers and blocked beads, and the arrows inside either side. */
 export function chainOf(graph: Graph, id: string): { nodes: Set<string>; edges: Set<string> } {
   const up = new Set([id, ...reach(graph.edges, id, false)]);
@@ -135,45 +245,40 @@ export function chainOf(graph: Graph, id: string): { nodes: Set<string>; edges: 
   return { nodes: new Set([...up, ...down]), edges: new Set(edges.map(edgeKey)) };
 }
 
-export function step(
-  graph: Graph,
-  id: string,
-  key: "ArrowRight" | "ArrowLeft" | "ArrowUp" | "ArrowDown",
-): string | null {
-  if (key === "ArrowRight") return graph.edges.find((e) => e.from === id)?.to ?? null;
-  if (key === "ArrowLeft") return graph.edges.find((e) => e.to === id)?.from ?? null;
+export function step(graph: Graph, id: string, key: StepKey): string | null {
+  if (key === "ArrowDown") return graph.edges.find((e) => e.from === id)?.to ?? null;
+  if (key === "ArrowUp") return graph.edges.find((e) => e.to === id)?.from ?? null;
   const node = graph.nodes.find((n) => n.bead.id === id);
   if (node === undefined) return null;
-  const column = graph.nodes.filter((n) => n.layer === node.layer);
-  const at = column.findIndex((n) => n.bead.id === id);
-  return column[at + (key === "ArrowDown" ? 1 : -1)]?.bead.id ?? null;
+  const order = node.order + (key === "ArrowRight" ? 1 : -1);
+  return graph.nodes.find((n) => n.layer === node.layer && n.order === order)?.bead.id ?? null;
 }
 
-export const NODE = { w: 176, h: 56, gapX: 72, gapY: 16, pad: 16 } as const;
+export const NODE = { w: 184, h: 64, gapX: 24, gapY: 56, pad: 16 } as const;
 export type Placed = { x: number; y: number };
 
 export function place(graph: Graph): { at: Map<string, Placed>; width: number; height: number } {
-  const rows = new Map<number, number>();
   const at = new Map<string, Placed>();
+  let columns = 0;
+  let rows = 0;
   for (const n of graph.nodes) {
-    const row = rows.get(n.layer) ?? 0;
-    rows.set(n.layer, row + 1);
-    at.set(n.bead.id, { x: NODE.pad + n.layer * (NODE.w + NODE.gapX), y: NODE.pad + row * (NODE.h + NODE.gapY) });
+    at.set(n.bead.id, { x: NODE.pad + n.order * (NODE.w + NODE.gapX), y: NODE.pad + n.layer * (NODE.h + NODE.gapY) });
+    columns = Math.max(columns, n.order + 1);
+    rows = Math.max(rows, n.layer + 1);
   }
-  const columns = Math.max(0, ...rows.keys()) + 1;
-  const tallest = Math.max(1, ...rows.values());
   return {
     at,
-    width: NODE.pad * 2 + columns * NODE.w + (columns - 1) * NODE.gapX,
-    height: NODE.pad * 2 + tallest * NODE.h + (tallest - 1) * NODE.gapY,
+    width: NODE.pad * 2 + columns * NODE.w + Math.max(0, columns - 1) * NODE.gapX,
+    height: NODE.pad * 2 + rows * NODE.h + Math.max(0, rows - 1) * NODE.gapY,
   };
 }
 
+/** From the bottom middle of the blocker to the top middle of the blocked node. */
 export function edgePath(from: Placed, to: Placed): string {
-  const x1 = from.x + NODE.w;
-  const y1 = from.y + NODE.h / 2;
-  const x2 = to.x;
-  const y2 = to.y + NODE.h / 2;
-  const mid = (x1 + x2) / 2;
-  return `M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`;
+  const x1 = from.x + NODE.w / 2;
+  const y1 = from.y + NODE.h;
+  const x2 = to.x + NODE.w / 2;
+  const y2 = to.y;
+  const mid = (y1 + y2) / 2;
+  return `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
 }
