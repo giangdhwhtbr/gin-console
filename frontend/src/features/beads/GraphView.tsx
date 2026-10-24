@@ -102,6 +102,7 @@ export function GraphView({
                       dimmed={chain !== null && !chain.nodes.has(node.bead.id)}
                       tabStop={node.bead.id === tabStop}
                       onSelect={select}
+                      onOpen={() => undefined}
                     />
                   );
                 })}
