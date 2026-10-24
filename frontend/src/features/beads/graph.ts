@@ -128,16 +128,13 @@ function layout(
   for (const e of edges) blockers.set(e.to, [...(blockers.get(e.to) ?? []), e.from]);
   const layer = new Map<string, number>();
   const stack: string[] = [];
-  const cycle = new Set<string>();
   const depth = (id: string): number => {
     const known = layer.get(id);
     if (known !== undefined) return known;
     stack.push(id);
     let d = 0;
     for (const blocker of blockers.get(id) ?? []) {
-      const at = stack.indexOf(blocker);
-      if (at !== -1) stack.slice(at).forEach((member) => cycle.add(member));
-      else d = Math.max(d, depth(blocker) + 1);
+      if (!stack.includes(blocker)) d = Math.max(d, depth(blocker) + 1);
     }
     stack.pop();
     layer.set(id, d);
@@ -166,7 +163,9 @@ function layout(
       nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total });
     });
   }
-  return { nodes, cycle: [...cycle].sort() };
+  // simplified: one reach per node, O(n·e); use Tarjan if graphs grow large
+  const cycle = [...new Set(ids)].filter((id) => reach(edges, id, true).has(id));
+  return { nodes, cycle: cycle.sort() };
 }
 
 export function scopeGraph(beads: readonly BeadSummary[], scope: string | null, options: GraphOptions): Graph {

@@ -69,6 +69,11 @@ describe("scope graph", () => {
     expect(g.cycle).toEqual(["e-1", "e-2"]);
   });
 
+  it("REQ-UI-050 a cycle names every bead on it, also through a cross edge", () => {
+    const beads = [epic("e"), task("v", "e", ["u", "w"]), task("u", "e", ["v"]), task("w", "e", ["u"])];
+    expect(scopeGraph(beads, "e", OFF).cycle).toEqual(["u", "v", "w"]);
+  });
+
   it("REQ-UI-050 outside beads are drawn on both sides and marked external", () => {
     const beads = [epic("e-1"), epic("e-2"), task("t-1", "e-1", ["x-9"]), task("x-9", "e-2"), task("x-8", "e-2", ["t-1"])];
     const g = scopeGraph(beads, "e-1", OFF);
