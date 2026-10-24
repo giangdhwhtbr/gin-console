@@ -11,6 +11,7 @@ import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
 import { useDiscussionHidden } from "./discussion";
 import { RelationList } from "./RelationList";
+import { SIDE_PANEL } from "./side-panel";
 import { TextSection } from "./TextSection";
 import { TypeBadge } from "./TypeBadge";
 
@@ -172,7 +173,7 @@ export function BeadDetailPage({ project, id, embedded = false }: { project: str
               tabIndex={0}
               className={cn(
                 tab !== "discussion" && "hidden",
-                !embedded && !hidden && "lg:sticky lg:top-6 lg:block lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto",
+                !embedded && !hidden && cn("lg:block", SIDE_PANEL),
                 !embedded && hidden && "lg:hidden",
               )}
             >

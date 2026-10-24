@@ -113,6 +113,17 @@ describe("ListPanel", () => {
     expect(within(panel).getByText("Select a bead to see its details")).toBeInTheDocument();
   });
 
+  it("REQ-UI-078 the details panel stays in view, scrolls by itself and takes focus", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubTreeWithDetail([bead("t-1", { title: "Task One" })]);
+    render(<BeadsPage />);
+
+    expect(await screen.findByRole("tree")).toBeInTheDocument();
+    const panel = screen.getByRole("complementary", { name: "Bead details" });
+    expect(panel).toHaveClass("lg:sticky", "lg:max-h-[calc(100dvh-3rem)]", "lg:overflow-y-auto", "lg:overscroll-contain");
+    expect(panel).toHaveAttribute("tabindex", "0");
+  });
+
   it("REQ-UI-045 restored: URL selection restored at load and opens branch", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
     stubTreeWithDetail([

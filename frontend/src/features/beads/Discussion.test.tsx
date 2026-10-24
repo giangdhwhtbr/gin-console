@@ -160,6 +160,13 @@ describe("Discussion", () => {
     expect(screen.getByRole("button", { name: "Show discussion (2)" })).toHaveClass("hidden", "lg:inline-flex");
   });
 
+  it("REQ-UI-078 the discussion column stays in view and scrolls by itself", async () => {
+    await open(2);
+    const column = screen.getByRole("tabpanel", { name: "Discussion (2)" });
+    expect(column).toHaveClass("lg:sticky", "lg:max-h-[calc(100dvh-3rem)]", "lg:overflow-y-auto", "lg:overscroll-contain");
+    expect(column).toHaveAttribute("tabindex", "0");
+  });
+
   it("REQ-UI-071 each comment is a block with the author in bold, the time and the text apart", async () => {
     await open(2);
     const authors = await screen.findAllByText("alice");

@@ -8,6 +8,7 @@ import { inLane } from "./columns";
 import { filterBeads, type BeadFilters } from "./filters";
 import { COLUMNS, ListRow } from "./ListRow";
 import { getReturn, rememberOpen } from "./returnState";
+import { SIDE_PANEL } from "./side-panel";
 import { allBranches, ancestorsOf, keepSet, treeIndex, treeRows } from "./tree";
 import { treeKeyDown } from "./treeKeys";
 import { useWide } from "./useWide";
@@ -113,7 +114,7 @@ export function ListView({
           <p className="text-sm text-muted-foreground">{`${omitted}${walkLimited ? "+" : ""} more not shown`}</p>
         )}
       </div>
-      <aside aria-label="Bead details" className="hidden min-w-0 rounded border p-3 lg:block">
+      <aside aria-label="Bead details" tabIndex={0} className={cn("hidden min-w-0 rounded border p-3 lg:block", SIDE_PANEL)}>
         {filters.select === "" ? (
           <p className="text-muted-foreground">Select a bead to see its details</p>
         ) : (
