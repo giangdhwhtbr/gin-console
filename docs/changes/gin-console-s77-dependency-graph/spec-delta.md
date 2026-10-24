@@ -317,7 +317,7 @@ WHEN the Dependencies page of a bead opens, it SHALL select the bead being viewe
 
 ### REQ-UI-052: Graph keyboard
 <!-- base: 538db500efc449e1ecbcb2ea0f2189ccd824265a4c404aa822cd1bee0f5ec6f2 -->
-WHILE a node has focus, the Dependencies page SHALL move focus along the arrows with ArrowDown to a blocked bead and ArrowUp to a blocker, and to the previous or next node of the same layer with ArrowLeft and ArrowRight, SHALL select the bead being viewed again on Escape, and SHALL keep a single node in the tab order; and under 1024px it SHALL offer the buttons "n blockers" and "n blocked" for the selected bead that move the selection along the arrows.
+WHILE a node has focus, the Dependencies page SHALL move focus along the arrows with ArrowDown to a blocked bead and ArrowUp to a blocker, and to the previous or next node of the same layer with ArrowLeft and ArrowRight, SHALL select the bead being viewed again on Escape, or nothing on the project page, and SHALL keep a single node in the tab order; and under 1024px it SHALL offer the buttons "n blockers" and "n blocked" for the selected bead that move the selection along the arrows.
 
 #### Scenario: Follow an arrow
 - GIVEN `a`→`b` and focus on `a`
