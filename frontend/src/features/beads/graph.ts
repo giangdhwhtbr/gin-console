@@ -117,6 +117,52 @@ function holders(byId: ReadonlyMap<string, BeadSummary>, scope: string | null): 
   };
 }
 
+function cycleNodes(edges: readonly Link[]): string[] {
+  const inDegree = new Map<string, number>();
+  const outDegree = new Map<string, number>();
+  const outAdj = new Map<string, string[]>();
+  const inAdj = new Map<string, string[]>();
+
+  const all = new Set<string>();
+  for (const e of edges) {
+    all.add(e.from);
+    all.add(e.to);
+    outDegree.set(e.from, (outDegree.get(e.from) ?? 0) + 1);
+    inDegree.set(e.to, (inDegree.get(e.to) ?? 0) + 1);
+    const outs = outAdj.get(e.from) ?? [];
+    outs.push(e.to);
+    outAdj.set(e.from, outs);
+    const ins = inAdj.get(e.to) ?? [];
+    ins.push(e.from);
+    inAdj.set(e.to, ins);
+  }
+
+  const active = new Set(all);
+  const queue: string[] = [];
+  for (const id of active) {
+    if ((inDegree.get(id) ?? 0) === 0 || (outDegree.get(id) ?? 0) === 0) {
+      queue.push(id);
+    }
+  }
+
+  for (let id = queue.pop(); id !== undefined; id = queue.pop()) {
+    if (!active.has(id)) continue;
+    active.delete(id);
+    for (const to of outAdj.get(id) ?? []) {
+      const cur = (inDegree.get(to) ?? 0) - 1;
+      inDegree.set(to, cur);
+      if (cur === 0 && active.has(to)) queue.push(to);
+    }
+    for (const from of inAdj.get(id) ?? []) {
+      const cur = (outDegree.get(from) ?? 0) - 1;
+      outDegree.set(from, cur);
+      if (cur === 0 && active.has(from)) queue.push(from);
+    }
+  }
+
+  return [...active].sort();
+}
+
 function layout(
   byId: ReadonlyMap<string, BeadSummary>,
   ids: readonly string[],
@@ -127,24 +173,43 @@ function layout(
   const blockers = new Map<string, string[]>();
   for (const e of edges) blockers.set(e.to, [...(blockers.get(e.to) ?? []), e.from]);
   const layer = new Map<string, number>();
-  const stack: string[] = [];
-  const depth = (id: string): number => {
-    const known = layer.get(id);
-    if (known !== undefined) return known;
-    stack.push(id);
-    let d = 0;
-    for (const blocker of blockers.get(id) ?? []) {
-      if (!stack.includes(blocker)) d = Math.max(d, depth(blocker) + 1);
+
+  for (const startId of new Set(ids)) {
+    if (layer.has(startId)) continue;
+    const dfsStack: { id: string; blockers: readonly string[]; index: number; maxDepth: number }[] = [];
+    const inStack = new Set<string>();
+
+    dfsStack.push({ id: startId, blockers: blockers.get(startId) ?? [], index: 0, maxDepth: 0 });
+    inStack.add(startId);
+
+    while (dfsStack.length > 0) {
+      const top = dfsStack[dfsStack.length - 1];
+      if (top.index < top.blockers.length) {
+        const blocker = top.blockers[top.index++];
+        if (inStack.has(blocker)) continue;
+        const known = layer.get(blocker);
+        if (known !== undefined) {
+          top.maxDepth = Math.max(top.maxDepth, known + 1);
+        } else {
+          inStack.add(blocker);
+          dfsStack.push({ id: blocker, blockers: blockers.get(blocker) ?? [], index: 0, maxDepth: 0 });
+        }
+      } else {
+        inStack.delete(top.id);
+        layer.set(top.id, top.maxDepth);
+        dfsStack.pop();
+        if (dfsStack.length > 0) {
+          const parent = dfsStack[dfsStack.length - 1];
+          parent.maxDepth = Math.max(parent.maxDepth, top.maxDepth + 1);
+        }
+      }
     }
-    stack.pop();
-    layer.set(id, d);
-    return d;
-  };
+  }
 
   const rows: BeadSummary[][] = [];
   for (const id of new Set(ids)) {
     const b = byId.get(id);
-    if (b !== undefined) (rows[depth(id)] ??= []).push(b);
+    if (b !== undefined) (rows[layer.get(id) ?? 0] ??= []).push(b);
   }
   // simplified: one downward barycenter sweep; add upward sweeps if large graphs still cross too much
   const order = new Map<string, number>();
@@ -163,9 +228,7 @@ function layout(
       nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total });
     });
   }
-  // simplified: one reach per node, O(n·e); use Tarjan if graphs grow large
-  const cycle = [...new Set(ids)].filter((id) => reach(edges, id, true).has(id));
-  return { nodes, cycle: cycle.sort() };
+  return { nodes, cycle: cycleNodes(edges) };
 }
 
 export function scopeGraph(beads: readonly BeadSummary[], scope: string | null, options: GraphOptions): Graph {
@@ -199,12 +262,18 @@ export function scopeGraph(beads: readonly BeadSummary[], scope: string | null, 
 }
 
 function reach(edges: readonly Link[], start: string, forward: boolean): Set<string> {
+  const adj = new Map<string, string[]>();
+  for (const e of edges) {
+    const [near, far] = forward ? [e.from, e.to] : [e.to, e.from];
+    const list = adj.get(near);
+    if (list === undefined) adj.set(near, [far]);
+    else list.push(far);
+  }
   const found = new Set<string>();
   const queue = [start];
   for (let id = queue.pop(); id !== undefined; id = queue.pop()) {
-    for (const e of edges) {
-      const [near, far] = forward ? [e.from, e.to] : [e.to, e.from];
-      if (near === id && !found.has(far)) {
+    for (const far of adj.get(id) ?? []) {
+      if (!found.has(far)) {
         found.add(far);
         queue.push(far);
       }

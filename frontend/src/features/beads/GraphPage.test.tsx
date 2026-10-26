@@ -119,6 +119,14 @@ describe("GraphPage", () => {
     expect(window.history.length).toBe(before + 1);
   });
 
+  it("REQ-UI-080 Back restores select and scope bead panel has no View dependencies link", async () => {
+    open("/beads/p/e/graph", [epic("e"), task("a", "e"), task("b", "e", ["a"])]);
+    await node("a");
+    expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();
+    await userEvent.click(await node("a"));
+    expect(window.location.search).toBe("?select=a");
+  });
+
   it("REQ-UI-052 under 1024px the jump buttons move along the arrows", async () => {
     open("/beads/p/b/graph?select=b", [task("a", null), task("c", null), task("b", null, ["a", "c"]), task("d", null, ["b"])]);
     await node("b");

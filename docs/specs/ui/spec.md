@@ -1289,7 +1289,7 @@ The frontend SHALL show the Dependencies page of a scope, the project at `/beads
 - THEN the error and a Retry button are shown, and the last graph stays when a later refresh fails
 
 ### REQ-UI-076: Closed beads and Hide done
-The Dependencies page SHALL draw closed beads whatever "Show closed" of the Beads page says, and SHALL offer a switch "Hide done", off at first, that leaves out the closed beads and the arrows to them.
+The Dependencies page SHALL draw closed beads whatever "Show closed" of the Beads page says, SHALL offer a switch "Hide done", off at first, that leaves out the closed beads and the arrows to them, and SHALL drop a lifted arrow between two open nodes when the underlying relation has a closed end.
 
 #### Scenario: Closed epic
 - GIVEN a closed epic whose tasks are all closed and "Show closed" off on the Beads page
@@ -1300,6 +1300,11 @@ The Dependencies page SHALL draw closed beads whatever "Show closed" of the Bead
 - GIVEN an epic with a closed task `a` and an open task `b` blocked by `a`
 - WHEN the user turns on "Hide done"
 - THEN `a` and the arrow from it are not drawn, and `b` is
+
+#### Scenario: Lifted arrow with closed end
+- GIVEN open epics `e-1` and `e-2`, where task `b` under `e-2` is blocked by closed task `a` under `e-1`
+- WHEN the user turns on "Hide done"
+- THEN `e-1` and `e-2` are drawn, but the lifted arrow between them is not drawn
 
 ### REQ-UI-077: Zoom
 The Dependencies page SHALL offer the buttons "Zoom in" and "Zoom out" that change the scale by 10% between 40% and 200%, the button "Fit to view" that scales the graph to fit the canvas without going above 100%, and the current scale as a percentage, SHALL start fitted, SHALL zoom with the wheel while `Ctrl` or `⌘` is held, SHALL let the user pan with the scroll bars of the canvas and the usual scrolling gestures, and SHALL not remember the scale.

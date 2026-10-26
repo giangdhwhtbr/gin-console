@@ -417,5 +417,10 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="p" id="t-2" />);
     await screen.findByText("Title t-2");
     expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();
+    cleanup();
+    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [{ id: "t", title: "T", status: "open", type: "parent-child" }] }));
+    render(<BeadDetailPage project="p" id="e-1" graphScope="e-1" />);
+    await screen.findByText("Title e-1");
+    expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();
   });
 });

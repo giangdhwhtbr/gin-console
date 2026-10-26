@@ -72,11 +72,13 @@ describe("GraphCanvas", () => {
     box(5000, 5000);
     show();
     const canvas = screen.getByTestId("graph-canvas");
-    fireEvent.wheel(canvas, { deltaY: -100 });
+    expect(fireEvent.wheel(canvas, { deltaY: -100 })).toBe(true);
     expect(zoom().getByText("100%")).toBeInTheDocument();
-    fireEvent.wheel(canvas, { deltaY: -100, ctrlKey: true });
+    expect(fireEvent.wheel(canvas, { deltaY: 0, ctrlKey: true })).toBe(true);
+    expect(zoom().getByText("100%")).toBeInTheDocument();
+    expect(fireEvent.wheel(canvas, { deltaY: -100, ctrlKey: true })).toBe(false);
     expect(zoom().getByText("110%")).toBeInTheDocument();
-    fireEvent.wheel(canvas, { deltaY: 100, metaKey: true });
+    expect(fireEvent.wheel(canvas, { deltaY: 100, metaKey: true })).toBe(false);
     expect(zoom().getByText("100%")).toBeInTheDocument();
   });
 
@@ -97,6 +99,10 @@ describe("GraphCanvas", () => {
     expect(within(list).getByText("e-2 is blocked by e-1")).toBeInTheDocument();
     expect(within(list).getByText("y is blocked by x")).toBeInTheDocument();
     expect(screen.getByText("2 links")).toBeInTheDocument();
+    cleanup();
+    const noEdges = scopeGraph([epic("e-1"), task("t", "e-1")], "e-1", OFF);
+    show(noEdges);
+    expect(screen.queryByRole("list", { name: "Dependencies" })).toBeNull();
   });
 
   it("REQ-UI-052 arrows follow the arrows, Escape asks to reselect, one node in the tab order", async () => {

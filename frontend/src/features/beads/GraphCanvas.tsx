@@ -42,9 +42,10 @@ export function GraphCanvas({
     const el = box.current;
     if (el === null) return;
     const wheel = (event: WheelEvent) => {
-      if (!event.ctrlKey && !event.metaKey) return;
+      if ((!event.ctrlKey && !event.metaKey) || event.deltaY === 0) return;
       event.preventDefault();
-      setScale((s) => clamp(s + (event.deltaY < 0 ? ZOOM.step : -ZOOM.step)));
+      const delta = Math.abs(event.deltaY) < 10 ? -event.deltaY * 0.01 : (event.deltaY < 0 ? ZOOM.step : -ZOOM.step);
+      setScale((s) => clamp(s + delta));
     };
     el.addEventListener("wheel", wheel, { passive: false });
     return () => el.removeEventListener("wheel", wheel);
@@ -133,20 +134,22 @@ export function GraphCanvas({
           </div>
         </div>
       </div>
-      <ul aria-label="Dependencies" className="sr-only">
-        {graph.edges.map((edge) => (
-          <li key={edgeKey(edge)}>
-            <span>{`${edge.to} is blocked by ${edge.from}`}</span>
-            {edge.links.some((l) => edgeKey(l) !== edgeKey(edge)) && (
-              <ul>
-                {edge.links.map((l) => (
-                  <li key={edgeKey(l)}>{`${l.to} is blocked by ${l.from}`}</li>
-                ))}
-              </ul>
-            )}
-          </li>
-        ))}
-      </ul>
+      {graph.edges.length > 0 && (
+        <ul aria-label="Dependencies" className="sr-only">
+          {graph.edges.map((edge) => (
+            <li key={edgeKey(edge)}>
+              <span>{`${edge.to} is blocked by ${edge.from}`}</span>
+              {edge.links.some((l) => edgeKey(l) !== edgeKey(edge)) && (
+                <ul>
+                  {edge.links.map((l) => (
+                    <li key={edgeKey(l)}>{`${l.to} is blocked by ${l.from}`}</li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

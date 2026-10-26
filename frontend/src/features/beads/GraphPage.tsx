@@ -132,7 +132,7 @@ export function GraphPage({ project, id }: { project: string; id: string | null 
           {selected === "" ? (
             <p className="text-muted-foreground">Select a bead to see its details</p>
           ) : (
-            <BeadDetailPage key={`${project}/${selected}`} project={project} id={selected} embedded />
+            <BeadDetailPage key={`${project}/${selected}`} project={project} id={selected} embedded graphScope={id} />
           )}
         </aside>
       </div>

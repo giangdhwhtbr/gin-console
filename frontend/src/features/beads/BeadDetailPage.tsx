@@ -22,7 +22,17 @@ type State =
   | { status: "notfound" }
   | { status: "ok"; bead: BeadDetail };
 
-export function BeadDetailPage({ project, id, embedded = false }: { project: string; id: string; embedded?: boolean }) {
+export function BeadDetailPage({
+  project,
+  id,
+  embedded = false,
+  graphScope,
+}: {
+  project: string;
+  id: string;
+  embedded?: boolean;
+  graphScope?: string | null;
+}) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [tab, setTab] = useState<DetailTab>("details");
@@ -137,8 +147,9 @@ export function BeadDetailPage({ project, id, embedded = false }: { project: str
                       .filter(Boolean)
                       .join(" · ")}
                   </div>
-                  {(bead.children.length > 0 ||
-                    [...bead.dependencies, ...bead.dependents].some((r) => r.type === "blocks")) && (
+                  {bead.id !== graphScope &&
+                    (bead.children.length > 0 ||
+                      [...bead.dependencies, ...bead.dependents].some((r) => r.type === "blocks")) && (
                     <Link to={graphPath(project, bead.id)} className={cn(buttonVariants({ size: "sm" }), "self-start")}>
                       View dependencies
                     </Link>
