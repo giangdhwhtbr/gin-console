@@ -19,6 +19,7 @@ export function LabelsPopover({
       <div className="inline-flex rounded border bg-muted p-0.5">
         <button
           type="button"
+          aria-pressed={mode === "any"}
           onClick={() => onModeChange("any")}
           className={`rounded px-2 py-0.5 text-xs font-medium cursor-pointer transition-colors ${
             mode === "any"
@@ -30,6 +31,7 @@ export function LabelsPopover({
         </button>
         <button
           type="button"
+          aria-pressed={mode === "all"}
           onClick={() => onModeChange("all")}
           className={`rounded px-2 py-0.5 text-xs font-medium cursor-pointer transition-colors ${
             mode === "all"

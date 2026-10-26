@@ -40,11 +40,11 @@ export function MultiSelectPopover({
       >
         <span>{label}</span>
         {count > 0 && (
-          <span className="rounded bg-primary/15 px-1.5 py-0.2 text-xs font-semibold text-primary">
+          <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
             {count}
           </span>
         )}
-        <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+        <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner sideOffset={4} className="z-50">

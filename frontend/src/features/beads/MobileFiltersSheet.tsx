@@ -26,10 +26,10 @@ export function MobileFiltersSheet({
         aria-label={activeCount > 0 ? `Filters ${activeCount}` : "Filters"}
         className="inline-flex items-center gap-1.5 rounded border bg-background px-3 py-1 text-sm font-medium hover:bg-muted cursor-pointer transition-colors"
       >
-        <SlidersHorizontal className="h-4 w-4 opacity-70" />
+        <SlidersHorizontal className="h-4 w-4 opacity-70" aria-hidden="true" />
         <span>Filters</span>
         {activeCount > 0 && (
-          <span className="rounded bg-primary/15 px-1.5 py-0.2 text-xs font-semibold text-primary">
+          <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
             {activeCount}
           </span>
         )}
@@ -43,7 +43,7 @@ export function MobileFiltersSheet({
               aria-label="Close"
               className="rounded p-1 text-muted-foreground hover:text-foreground cursor-pointer"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden="true" />
             </Dialog.Close>
           </div>
 
@@ -58,6 +58,7 @@ export function MobileFiltersSheet({
                     <button
                       key={status}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => onChange({ status: toggleArrayItem(filters.status, status) })}
                       className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                         selected
@@ -83,6 +84,7 @@ export function MobileFiltersSheet({
                     <button
                       key={strP}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => onChange({ priority: toggleArrayItem(filters.priority, strP) })}
                       className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                         selected
@@ -105,6 +107,7 @@ export function MobileFiltersSheet({
                   <div className="inline-flex rounded border bg-muted p-0.5 text-xs">
                     <button
                       type="button"
+                      aria-pressed={filters.labelMode === "any"}
                       onClick={() => onChange({ labelMode: "any" })}
                       className={`rounded px-1.5 py-0.5 cursor-pointer font-medium ${
                         filters.labelMode === "any"
@@ -116,6 +119,7 @@ export function MobileFiltersSheet({
                     </button>
                     <button
                       type="button"
+                      aria-pressed={filters.labelMode === "all"}
                       onClick={() => onChange({ labelMode: "all" })}
                       className={`rounded px-1.5 py-0.5 cursor-pointer font-medium ${
                         filters.labelMode === "all"
@@ -134,6 +138,7 @@ export function MobileFiltersSheet({
                       <button
                         key={lbl}
                         type="button"
+                        aria-pressed={selected}
                         onClick={() => onChange({ label: toggleArrayItem(filters.label, lbl) })}
                         className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                           selected
@@ -160,6 +165,7 @@ export function MobileFiltersSheet({
                     <button
                       key={assignee}
                       type="button"
+                      aria-pressed={selected}
                       onClick={() => onChange({ assignee: toggleArrayItem(filters.assignee, assignee) })}
                       className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                         selected
@@ -181,6 +187,7 @@ export function MobileFiltersSheet({
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
+                    aria-pressed={filters.sprint === ""}
                     onClick={() => onChange({ sprint: "" })}
                     className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                       filters.sprint === ""
@@ -192,6 +199,7 @@ export function MobileFiltersSheet({
                   </button>
                   <button
                     type="button"
+                    aria-pressed={filters.sprint === "none"}
                     onClick={() => onChange({ sprint: "none" })}
                     className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                       filters.sprint === "none"
@@ -205,6 +213,7 @@ export function MobileFiltersSheet({
                     <button
                       key={sprint}
                       type="button"
+                      aria-pressed={filters.sprint === sprint}
                       onClick={() => onChange({ sprint })}
                       className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                         filters.sprint === sprint
@@ -226,6 +235,7 @@ export function MobileFiltersSheet({
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
+                    aria-pressed={filters.type === ""}
                     onClick={() => onChange({ type: "" })}
                     className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                       filters.type === ""
@@ -239,6 +249,7 @@ export function MobileFiltersSheet({
                     <button
                       key={type}
                       type="button"
+                      aria-pressed={filters.type === type}
                       onClick={() => onChange({ type })}
                       className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
                         filters.type === type

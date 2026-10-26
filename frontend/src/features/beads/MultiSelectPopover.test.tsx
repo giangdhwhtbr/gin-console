@@ -64,7 +64,7 @@ describe("LabelsPopover", () => {
   ];
 
   // REQ-UI-085
-  it("REQ-UI-085 offers Any and All match mode switch", async () => {
+  it("REQ-UI-085 offers Any and All match mode switch with aria-pressed", async () => {
     const user = userEvent.setup();
     const onValuesChange = vi.fn();
     const onModeChange = vi.fn();
@@ -82,11 +82,13 @@ describe("LabelsPopover", () => {
     // Open labels popover
     await user.click(screen.getByRole("button", { name: /Labels 1/i }));
 
-    // Verify Any and All buttons exist
+    // Verify Any and All buttons exist with correct aria-pressed
     const anyBtn = screen.getByRole("button", { name: "Any" });
     const allBtn = screen.getByRole("button", { name: "All" });
     expect(anyBtn).toBeInTheDocument();
     expect(allBtn).toBeInTheDocument();
+    expect(anyBtn).toHaveAttribute("aria-pressed", "true");
+    expect(allBtn).toHaveAttribute("aria-pressed", "false");
 
     // Click All
     await user.click(allBtn);
@@ -126,5 +128,32 @@ describe("MobileFiltersSheet", () => {
     const clearBtn = screen.getByRole("button", { name: "Clear all" });
     await user.click(clearBtn);
     expect(onClear).toHaveBeenCalled();
+  });
+
+  // REQ-UI-084
+  it("REQ-UI-084 exposes aria-pressed and invokes onChange when options are toggled in sheet", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const onClear = vi.fn();
+
+    render(<MobileFiltersSheet filters={filters} options={options} onChange={onChange} onClear={onClear} />);
+
+    // Open sheet
+    await user.click(screen.getByRole("button", { name: /Filters/i }));
+
+    // Status option 'open' is selected, 'closed' is not
+    const openBtn = screen.getByRole("button", { name: "open" });
+    const closedBtn = screen.getByRole("button", { name: "closed" });
+    expect(openBtn).toHaveAttribute("aria-pressed", "true");
+    expect(closedBtn).toHaveAttribute("aria-pressed", "false");
+
+    // Click closed
+    await user.click(closedBtn);
+    expect(onChange).toHaveBeenCalledWith({ status: ["open", "in_progress", "closed"] });
+
+    // Click open to toggle off
+    onChange.mockClear();
+    await user.click(openBtn);
+    expect(onChange).toHaveBeenCalledWith({ status: ["in_progress"] });
   });
 });
