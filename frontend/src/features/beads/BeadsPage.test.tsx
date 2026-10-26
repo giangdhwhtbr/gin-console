@@ -210,8 +210,16 @@ describe("BeadsPage", () => {
     expect(window.location.search).toContain("q=LOGIN");
     expect(window.history.length).toBe(historyLenBefore);
 
-    await userEvent.selectOptions(screen.getByLabelText("Status"), "open");
-    await userEvent.selectOptions(screen.getByLabelText("Priority"), "1");
+    // Open Status popover and check 'open'
+    await userEvent.click(screen.getByRole("button", { name: "Status" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "open" }));
+    await userEvent.click(screen.getByRole("button", { name: "Status 1" }));
+
+    // Open Priority popover and check 'P1'
+    await userEvent.click(screen.getByRole("button", { name: "Priority" }));
+    await userEvent.click(screen.getByRole("checkbox", { name: "P1" }));
+    await userEvent.click(screen.getByRole("button", { name: "Priority 1" }));
+
     expect(screen.getByText("Fix login")).toBeInTheDocument();
     expect(screen.queryByText("Login crash")).not.toBeInTheDocument();
     expect(window.location.search).toContain("status=open");
@@ -222,8 +230,8 @@ describe("BeadsPage", () => {
     expect(screen.getByText("Add search")).toBeInTheDocument();
     expect(screen.getByText("Login crash")).toBeInTheDocument();
     expect(screen.getByLabelText("Search")).toHaveValue("");
-    expect(screen.getByLabelText("Status")).toHaveValue("");
-    expect(screen.getByLabelText("Priority")).toHaveValue("");
+    expect(screen.getByRole("button", { name: "Status" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Priority" })).toBeInTheDocument();
   });
 
   // REQ-UI-025
@@ -239,7 +247,7 @@ describe("BeadsPage", () => {
     expect(screen.queryByText("Fix crash")).not.toBeInTheDocument();
     expect(screen.queryByText("Add auth")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Search")).toHaveValue("fix");
-    expect(screen.getByLabelText("Status")).toHaveValue("open");
+    expect(screen.getByRole("button", { name: "Status 1" })).toBeInTheDocument();
   });
 
   // REQ-UI-026

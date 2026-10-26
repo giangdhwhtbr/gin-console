@@ -240,27 +240,34 @@ describe("BoardView", () => {
     // REQ-UI-036: Lane filter is removed
     expect(screen.queryByLabelText("Lane")).toBeNull();
 
-    // REQ-UI-082: Assignee filter
-    const assigneeSelect = screen.getByLabelText("Assignee");
-    const assigneeOptions = within(assigneeSelect).getAllByRole("option").map((o) => o.textContent);
-    expect(assigneeOptions).toEqual(["All", "Unassigned", "alice", "bob"]);
+    // REQ-UI-082, REQ-UI-084: Assignee multi-select popover
+    const assigneeBtn = screen.getByRole("button", { name: "Assignee" });
+    await user.click(assigneeBtn);
 
-    await user.selectOptions(assigneeSelect, "alice");
+    const aliceCheckbox = screen.getByRole("checkbox", { name: "alice" });
+    await user.click(aliceCheckbox);
     expect(window.location.search).toContain("assignee=alice");
     expect(screen.getByText("Frontend epic")).toBeInTheDocument();
     expect(screen.queryByText("Frontend track")).toBeNull();
 
-    await user.selectOptions(assigneeSelect, "unassigned");
-    expect(window.location.search).toContain("assignee=unassigned");
-    expect(screen.getByText("Unassigned task")).toBeInTheDocument();
-    expect(screen.queryByText("Frontend epic")).toBeNull();
+    // Multi-select bob as well
+    const bobCheckbox = screen.getByRole("checkbox", { name: "bob" });
+    await user.click(bobCheckbox);
+    expect(window.location.search).toContain("assignee=alice%2Cbob");
+    expect(screen.getByText("Frontend epic")).toBeInTheDocument();
+    expect(screen.getByText("Frontend track")).toBeInTheDocument();
 
-    await user.selectOptions(assigneeSelect, "");
+    // Clear assignee selection
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    expect(window.location.search).not.toContain("assignee=");
 
-    // REQ-UI-083: Sprint filter
+    // Close popover
+    await user.click(screen.getByRole("button", { name: "Assignee" }));
+
+    // REQ-UI-083: Sprint filter offers All, No sprint, and sprint names
     const sprintSelect = screen.getByLabelText("Sprint");
     const sprintOptions = within(sprintSelect).getAllByRole("option").map((o) => o.textContent);
-    expect(sprintOptions).toEqual(["All", "sprint-1"]);
+    expect(sprintOptions).toEqual(["All", "No sprint", "sprint-1"]);
 
     await user.selectOptions(sprintSelect, "sprint-1");
     expect(window.location.search).toContain("sprint=sprint-1");
@@ -269,9 +276,26 @@ describe("BoardView", () => {
     expect(screen.getByText("Completed sprint task")).toBeInTheDocument();
     expect(screen.queryByText("Unassigned task")).toBeNull();
 
+    // Select No sprint
+    await user.selectOptions(sprintSelect, "none");
+    expect(window.location.search).toContain("sprint=none");
+    expect(screen.getByText("Unassigned task")).toBeInTheDocument();
+    expect(screen.queryByText("Frontend epic")).toBeNull();
+
     // REQ-UI-025: Clear filters resets assignee and sprint
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(window.location.search).not.toContain("sprint=");
     expect(window.location.search).not.toContain("assignee=");
+  });
+
+  it("REQ-UI-083 hides Sprint control when no loaded beads contain sprint labels", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stubBeads(() =>
+      json([bead("task-1", { title: "Simple task", labels: ["ui"], ready: true })]),
+    );
+    render(<BeadsPage />);
+
+    expect(await screen.findByText("Simple task")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Sprint")).toBeNull();
   });
 });

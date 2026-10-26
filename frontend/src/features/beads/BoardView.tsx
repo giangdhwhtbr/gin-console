@@ -17,7 +17,11 @@ export function BoardView({ project, beads, filters }: { project: string; beads:
             beads={columns.done}
             limit={DONE_LIMIT}
             allLabel={(total) => `Show all ${total}`}
-            empty={filters.closed || filters.sprint !== "" ? "No beads" : "Turn on Show closed to see closed beads"}
+            empty={
+              filters.closed || (filters.sprint !== "" && filters.sprint !== "none")
+                ? "No beads"
+                : "Turn on Show closed to see closed beads"
+            }
           />
         ) : (
           <BoardColumn key={key} title={title} project={project} beads={columns[key]} />

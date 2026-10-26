@@ -44,7 +44,11 @@ export function FocusView({
           beads={closedNewestFirst(beads)}
           limit={FINISHED_LIMIT}
           allLabel={(total) => `Show all ${total} completed`}
-          empty={filters.closed || filters.sprint !== "" ? "No beads" : "Turn on Show closed to see closed beads"}
+          empty={
+            filters.closed || (filters.sprint !== "" && filters.sprint !== "none")
+              ? "No beads"
+              : "Turn on Show closed to see closed beads"
+          }
         />
       )}
     </div>

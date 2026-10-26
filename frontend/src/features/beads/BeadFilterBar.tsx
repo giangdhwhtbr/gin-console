@@ -1,5 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { FilterSelect } from "./FilterSelect";
+import { LabelsPopover } from "./LabelsPopover";
+import { MobileFiltersSheet } from "./MobileFiltersSheet";
+import { MultiSelectPopover } from "./MultiSelectPopover";
 import type { BeadFilters, BeadOptions } from "./filters";
 
 const same = (value: string) => ({ value, label: value });
@@ -14,8 +17,26 @@ export function BeadFilterBar({
   onChange: (next: BeadFilters) => void;
 }) {
   const set = (patch: Partial<BeadFilters>) => onChange({ ...filters, ...patch });
+
+  const clearFilters = () =>
+    set({
+      q: "",
+      status: [],
+      priority: [],
+      label: [],
+      labelMode: "any",
+      type: "",
+      assignee: [],
+      sprint: "",
+    });
+
+  const sprintOptions =
+    options.sprints.length > 0
+      ? [{ value: "none", label: "No sprint" }, ...options.sprints.map(same)]
+      : [];
+
   return (
-    <div className="flex flex-wrap items-end gap-3">
+    <div className="flex flex-wrap items-center gap-2">
       <input
         id="bead-search"
         aria-label="Search"
@@ -23,59 +44,70 @@ export function BeadFilterBar({
         placeholder="Search id, title, label"
         value={filters.q}
         onChange={(event) => set({ q: event.target.value })}
-        className="rounded border bg-background px-2 py-1 text-sm"
+        className="rounded border bg-background px-2.5 py-1 text-sm h-8"
       />
-      <FilterSelect
-        label="Status"
-        value={filters.status[0] ?? ""}
-        options={options.statuses.map(same)}
-        onChange={(status) => set({ status: status ? [status] : [] })}
-      />
-      <FilterSelect
-        label="Priority"
-        value={filters.priority[0] ?? ""}
-        options={options.priorities.map((p) => ({ value: String(p), label: `P${p}` }))}
-        onChange={(priority) => set({ priority: priority ? [priority] : [] })}
-      />
-      <FilterSelect
-        label="Label"
-        value={filters.label[0] ?? ""}
-        options={options.labels.map(same)}
-        onChange={(label) => set({ label: label ? [label] : [] })}
-      />
-      <FilterSelect label="Type" value={filters.type} options={options.types.map(same)} onChange={(type) => set({ type })} />
-      <FilterSelect
-        label="Assignee"
-        value={filters.assignee[0] ?? ""}
-        options={options.assignees.map((a) => ({ value: a, label: a === "unassigned" ? "Unassigned" : a }))}
-        onChange={(assignee) => set({ assignee: assignee ? [assignee] : [] })}
-      />
-      <FilterSelect
-        label="Sprint"
-        value={filters.sprint}
-        options={options.sprints.map(same)}
-        onChange={(sprint) => set({ sprint })}
-      />
-      <label className="flex items-center gap-1 text-sm">
-        <input type="checkbox" checked={filters.closed} onChange={(event) => set({ closed: event.target.checked })} />
-        Show closed
-      </label>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() =>
-          set({
-            q: "",
-            status: [],
-            priority: [],
-            label: [],
-            labelMode: "any",
-            type: "",
-            assignee: [],
-            sprint: "",
-          })
-        }
-      >
+
+      {/* Mobile view: single Filters drawer button */}
+      <div className="flex md:hidden items-center gap-2">
+        <MobileFiltersSheet filters={filters} options={options} onChange={set} onClear={clearFilters} />
+      </div>
+
+      {/* Desktop view: individual button popovers */}
+      <div className="hidden md:flex flex-wrap items-center gap-2">
+        <MultiSelectPopover
+          label="Status"
+          values={filters.status}
+          options={options.statuses.map(same)}
+          onChange={(status) => set({ status })}
+        />
+        <MultiSelectPopover
+          label="Priority"
+          values={filters.priority}
+          options={options.priorities.map((p) => ({ value: String(p), label: `P${p}` }))}
+          onChange={(priority) => set({ priority })}
+        />
+        <LabelsPopover
+          values={filters.label}
+          options={options.labels.map(same)}
+          mode={filters.labelMode}
+          onValuesChange={(label) => set({ label })}
+          onModeChange={(labelMode) => set({ labelMode })}
+        />
+        <FilterSelect
+          label="Type"
+          value={filters.type}
+          options={options.types.map(same)}
+          onChange={(type) => set({ type })}
+        />
+        <MultiSelectPopover
+          label="Assignee"
+          values={filters.assignee}
+          options={options.assignees.map((a) => ({
+            value: a,
+            label: a === "unassigned" ? "Unassigned" : a,
+          }))}
+          onChange={(assignee) => set({ assignee })}
+        />
+        {options.sprints.length > 0 && (
+          <FilterSelect
+            label="Sprint"
+            value={filters.sprint}
+            options={sprintOptions}
+            onChange={(sprint) => set({ sprint })}
+          />
+        )}
+        <label className="flex items-center gap-1.5 text-sm cursor-pointer ml-1 select-none">
+          <input
+            type="checkbox"
+            checked={filters.closed}
+            onChange={(event) => set({ closed: event.target.checked })}
+            className="rounded border"
+          />
+          <span>Show closed</span>
+        </label>
+      </div>
+
+      <Button variant="outline" size="sm" onClick={clearFilters} className="h-8">
         Clear filters
       </Button>
     </div>

@@ -25,7 +25,9 @@ export function ListView({
 }) {
   const wide = useWide();
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(getReturn().open[project] ?? []));
-  const base = beads.filter((b) => filters.closed || filters.sprint !== "" || b.status !== "closed");
+  const base = beads.filter(
+    (b) => filters.closed || (filters.sprint !== "" && filters.sprint !== "none") || b.status !== "closed",
+  );
   const index = treeIndex(base);
   const filtering =
     filters.q.trim() !== "" ||

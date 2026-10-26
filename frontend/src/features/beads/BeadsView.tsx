@@ -22,7 +22,7 @@ export function BeadsView({
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
   useCardKeys(true, clearSearch, filters.view !== "list");
 
-  const { state, retry } = useBeads(project, filters.closed || filters.sprint !== "");
+  const { state, retry } = useBeads(project, filters.closed || (filters.sprint !== "" && filters.sprint !== "none"));
 
   const errorMessage = state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
   const beads = state.status === "ok" ? state.beads : [];
