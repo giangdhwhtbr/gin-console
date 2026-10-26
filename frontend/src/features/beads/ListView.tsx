@@ -29,11 +29,11 @@ export function ListView({
   const index = treeIndex(base);
   const filtering =
     filters.q.trim() !== "" ||
-    filters.status !== "" ||
-    filters.priority !== "" ||
-    filters.label !== "" ||
+    filters.status.length > 0 ||
+    filters.priority.length > 0 ||
+    filters.label.length > 0 ||
     filters.type !== "" ||
-    filters.assignee !== "" ||
+    filters.assignee.length > 0 ||
     filters.sprint !== "";
   const keep = filtering
     ? keepSet(index, new Set(filterBeads(beads, filters).map((b) => b.id)))

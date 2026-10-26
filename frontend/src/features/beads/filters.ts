@@ -6,17 +6,26 @@ export type View = (typeof VIEWS)[number];
 export type BeadFilters = {
   project: string;
   q: string;
-  status: string;
-  priority: string;
-  label: string;
+  status: string[];
+  priority: string[];
+  label: string[];
+  labelMode: "any" | "all";
   type: string;
   closed: boolean;
   view: View;
   group: "" | "assignee";
   finished: boolean;
-  assignee: string;
+  assignee: string[];
   sprint: string;
   select: string;
+};
+
+const parseArray = (value: string | null): string[] => {
+  if (!value) return [];
+  return value
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
 };
 
 export function parseFilters(search: string): BeadFilters {
@@ -24,15 +33,16 @@ export function parseFilters(search: string): BeadFilters {
   return {
     project: p.get("project") ?? "",
     q: p.get("q") ?? "",
-    status: p.get("status") ?? "",
-    priority: p.get("priority") ?? "",
-    label: p.get("label") ?? "",
+    status: parseArray(p.get("status")),
+    priority: parseArray(p.get("priority")),
+    label: parseArray(p.get("label")),
+    labelMode: p.get("label_mode") === "all" ? "all" : "any",
     type: p.get("type") ?? "",
     closed: p.get("closed") === "1",
     view: VIEWS.find((view) => view === p.get("view")) ?? "list",
     group: p.get("group") === "assignee" ? "assignee" : "",
     finished: p.get("finished") === "1",
-    assignee: p.get("assignee") ?? "",
+    assignee: parseArray(p.get("assignee")),
     sprint: p.get("sprint") ?? "",
     select: p.get("select") ?? "",
   };
@@ -40,14 +50,18 @@ export function parseFilters(search: string): BeadFilters {
 
 export function filtersToSearch(filters: BeadFilters): string {
   const p = new URLSearchParams();
-  for (const key of ["project", "q", "status", "priority", "label", "type"] as const) {
-    if (filters[key] !== "") p.set(key, filters[key]);
-  }
+  if (filters.project !== "") p.set("project", filters.project);
+  if (filters.q !== "") p.set("q", filters.q);
+  if (filters.status.length > 0) p.set("status", filters.status.join(","));
+  if (filters.priority.length > 0) p.set("priority", filters.priority.join(","));
+  if (filters.label.length > 0) p.set("label", filters.label.join(","));
+  if (filters.labelMode === "all") p.set("label_mode", "all");
+  if (filters.type !== "") p.set("type", filters.type);
   if (filters.closed) p.set("closed", "1");
   if (filters.view !== "list") p.set("view", filters.view);
   if (filters.group !== "") p.set("group", filters.group);
   if (filters.finished) p.set("finished", "1");
-  if (filters.assignee !== "") p.set("assignee", filters.assignee);
+  if (filters.assignee.length > 0) p.set("assignee", filters.assignee.join(","));
   if (filters.sprint !== "") p.set("sprint", filters.sprint);
   if (filters.select !== "") p.set("select", filters.select);
   const text = p.toString();
@@ -57,8 +71,9 @@ export function filtersToSearch(filters: BeadFilters): string {
 export function filterBeads(beads: readonly BeadSummary[], filters: BeadFilters): BeadSummary[] {
   const needle = filters.q.trim().toLowerCase();
   const sprintMap = new Map<string, string[]>();
+  const sprintRegex = /^sprint:(.+)$/;
+
   if (filters.sprint !== "") {
-    const sprintRegex = /^sprint:(.+)$/;
     for (const bead of beads) {
       const sps: string[] = [];
       for (const label of bead.labels) {
@@ -78,29 +93,43 @@ export function filterBeads(beads: readonly BeadSummary[], filters: BeadFilters)
     ) {
       return false;
     }
-    if (filters.status !== "" && bead.status !== filters.status) return false;
-    if (filters.priority !== "" && String(bead.priority) !== filters.priority) return false;
-    if (filters.label !== "" && !bead.labels.includes(filters.label)) return false;
-    if (filters.type !== "" && bead.issue_type !== filters.type) return false;
+    if (filters.status.length > 0 && !filters.status.includes(bead.status)) return false;
+    if (filters.priority.length > 0 && !filters.priority.includes(String(bead.priority))) return false;
 
-    // Assignee filter
-    if (filters.assignee !== "") {
-      if (filters.assignee === "unassigned") {
-        if (bead.assignee !== null && bead.assignee !== "") return false;
-      } else if (bead.assignee !== filters.assignee) {
-        return false;
+    // Label filter with Any / All matching
+    if (filters.label.length > 0) {
+      if (filters.labelMode === "all") {
+        if (!filters.label.every((l) => bead.labels.includes(l))) return false;
+      } else {
+        if (!filters.label.some((l) => bead.labels.includes(l))) return false;
       }
     }
 
-    // Sprint filter
-    if (filters.sprint !== "") {
+    if (filters.type !== "" && bead.issue_type !== filters.type) return false;
+
+    // Assignee filter: matches if bead matches ANY selected assignee
+    if (filters.assignee.length > 0) {
+      const match = filters.assignee.some((a) =>
+        a === "unassigned" ? !bead.assignee || bead.assignee === "" : bead.assignee === a,
+      );
+      if (!match) return false;
+    }
+
+    // Sprint filter:
+    if (filters.sprint === "none") {
+      const hasDirectSprint = bead.labels.some((l) => sprintRegex.test(l));
+      const hasParentSprint = Boolean(bead.parent && sprintMap.has(bead.parent));
+      if (hasDirectSprint || hasParentSprint) return false;
+    } else if (filters.sprint !== "") {
       const hasDirectSprint = bead.labels.includes(`sprint:${filters.sprint}`);
       const hasParentSprint = Boolean(bead.parent && sprintMap.get(bead.parent)?.includes(filters.sprint));
       if (!hasDirectSprint && !hasParentSprint) return false;
     }
 
-    // Closed filter: show closed if explicitly requested OR if filtering by sprint
-    if (!filters.closed && filters.sprint === "" && bead.status === "closed") {
+    // Closed filter:
+    // Show closed if filters.closed is true OR if filtering by a named sprint (not "none")
+    const showClosedForSprint = filters.sprint !== "" && filters.sprint !== "none";
+    if (!filters.closed && !showClosedForSprint && bead.status === "closed") {
       return false;
     }
 
@@ -129,18 +158,24 @@ export function optionsOf(beads: readonly BeadSummary[]) {
 
   const sprintRegex = /^sprint:(.+)$/;
   const rawSprints: string[] = [];
+  const nonSprintLabels: string[] = [];
   for (const bead of beads) {
     for (const label of bead.labels) {
       const match = sprintRegex.exec(label);
-      if (match) rawSprints.push(match[1]);
+      if (match) {
+        rawSprints.push(match[1]);
+      } else {
+        nonSprintLabels.push(label);
+      }
     }
   }
   const sprints = unique(rawSprints, (a, b) => b.localeCompare(a, undefined, { numeric: true }));
+  const labels = unique(nonSprintLabels, text);
 
   return {
     statuses: unique(beads.map((b) => b.status), text),
     priorities: unique(beads.map((b) => b.priority), (a, b) => a - b),
-    labels: unique(beads.flatMap((b) => b.labels), text),
+    labels,
     types: unique(beads.map((b) => b.issue_type), text),
     assignees,
     sprints,

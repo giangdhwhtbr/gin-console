@@ -9,15 +9,16 @@ const enc = encodeURIComponent;
 /** How many of the search, the status, priority, label, type, assignee and sprint filters and "Show closed" are on. */
 export function activeFilters(filters: BeadFilters): number {
   const set = [
-    filters.q.trim(),
-    filters.status,
-    filters.priority,
-    filters.label,
-    filters.type,
-    filters.assignee,
-    filters.sprint,
+    filters.q.trim() !== "",
+    filters.status.length > 0,
+    filters.priority.length > 0,
+    filters.label.length > 0,
+    filters.type !== "",
+    filters.assignee.length > 0,
+    filters.sprint !== "",
+    filters.closed,
   ];
-  return set.filter((value) => value !== "").length + (filters.closed ? 1 : 0);
+  return set.filter(Boolean).length;
 }
 
 export function Breadcrumb({

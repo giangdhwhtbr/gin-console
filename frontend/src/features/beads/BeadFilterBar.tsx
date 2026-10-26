@@ -25,20 +25,30 @@ export function BeadFilterBar({
         onChange={(event) => set({ q: event.target.value })}
         className="rounded border bg-background px-2 py-1 text-sm"
       />
-      <FilterSelect label="Status" value={filters.status} options={options.statuses.map(same)} onChange={(status) => set({ status })} />
+      <FilterSelect
+        label="Status"
+        value={filters.status[0] ?? ""}
+        options={options.statuses.map(same)}
+        onChange={(status) => set({ status: status ? [status] : [] })}
+      />
       <FilterSelect
         label="Priority"
-        value={filters.priority}
+        value={filters.priority[0] ?? ""}
         options={options.priorities.map((p) => ({ value: String(p), label: `P${p}` }))}
-        onChange={(priority) => set({ priority })}
+        onChange={(priority) => set({ priority: priority ? [priority] : [] })}
       />
-      <FilterSelect label="Label" value={filters.label} options={options.labels.map(same)} onChange={(label) => set({ label })} />
+      <FilterSelect
+        label="Label"
+        value={filters.label[0] ?? ""}
+        options={options.labels.map(same)}
+        onChange={(label) => set({ label: label ? [label] : [] })}
+      />
       <FilterSelect label="Type" value={filters.type} options={options.types.map(same)} onChange={(type) => set({ type })} />
       <FilterSelect
         label="Assignee"
-        value={filters.assignee}
+        value={filters.assignee[0] ?? ""}
         options={options.assignees.map((a) => ({ value: a, label: a === "unassigned" ? "Unassigned" : a }))}
-        onChange={(assignee) => set({ assignee })}
+        onChange={(assignee) => set({ assignee: assignee ? [assignee] : [] })}
       />
       <FilterSelect
         label="Sprint"
@@ -53,7 +63,18 @@ export function BeadFilterBar({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => set({ q: "", status: "", priority: "", label: "", type: "", assignee: "", sprint: "" })}
+        onClick={() =>
+          set({
+            q: "",
+            status: [],
+            priority: [],
+            label: [],
+            labelMode: "any",
+            type: "",
+            assignee: [],
+            sprint: "",
+          })
+        }
       >
         Clear filters
       </Button>
