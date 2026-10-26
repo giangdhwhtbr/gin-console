@@ -149,3 +149,16 @@ The server SHALL run only the fixed commands of REQ-QUOTA-002 and REQ-QUOTA-004 
 - GIVEN the Claude command prints a lone surrogate escape in text that reaches `raw`
 - WHEN the quota is requested
 - THEN the response is 200 with the character replaced
+
+### REQ-QUOTA-008: Windows quota process handling
+WHERE the server runs on Windows, the server SHALL read Codex app-server responses using non-blocking pipe reading without calling socket-only `select.select()`, and SHALL terminate child process trees using Windows process termination rather than `os.killpg()`.
+
+#### Scenario: Codex JSON-RPC reader on Windows
+- GIVEN `sys.platform` is `"win32"`
+- WHEN `_codex_conversation` reads responses from the Codex app-server subprocess
+- THEN it does not call `select.select()` on the stdout pipe and returns valid responses before deadline
+
+#### Scenario: Codex process termination on Windows
+- GIVEN `sys.platform` is `"win32"` and a Codex subprocess is active
+- WHEN `_end(process)` is called
+- THEN it terminates the process tree without calling `os.killpg()`

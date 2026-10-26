@@ -117,3 +117,16 @@ The server SHALL reuse a project's collected `workflow` and `beads` data for 5 s
 - GIVEN two requests arrive while the commands for a project are running
 - WHEN both complete
 - THEN the commands ran once for that project
+
+### REQ-SERVER-009: Windows script execution and environment
+WHERE the server runs on Windows, the server SHALL sanitize `PATH` in `_child_env` by stripping `Scripts` under `VIRTUAL_ENV` rather than `bin`, and SHALL invoke `gin-workflow` via `bash` (locating `bash.exe` via `PATH` or the standard Git for Windows installation path).
+
+#### Scenario: Child environment on Windows
+- GIVEN `sys.platform` is `"win32"` and `VIRTUAL_ENV` is set in the environment
+- WHEN `_child_env()` is called
+- THEN the sanitized `PATH` does not contain the virtualenv's `Scripts` directory
+
+#### Scenario: gin-workflow dispatch on Windows
+- GIVEN `sys.platform` is `"win32"` and a command starts with `"gin-workflow"`
+- WHEN the command is prepared for subprocess execution
+- THEN it is executed via `bash` with the script arguments preserved

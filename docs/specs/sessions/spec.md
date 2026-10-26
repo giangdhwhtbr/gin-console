@@ -117,3 +117,16 @@ The server SHALL accept a session `id` only in UUID form, SHALL locate the trans
 - GIVEN a well-formed id that has no transcript
 - WHEN a client requests its messages
 - THEN the response is 404
+
+### REQ-SESSIONS-009: Windows session inspection and path matching
+WHERE the server runs on Windows, the server SHALL determine session process liveness via the Windows process API rather than `/proc/{pid}`, and SHALL normalize Windows drive letters and path separators when matching Claude session project directories.
+
+#### Scenario: Windows live session detection
+- GIVEN `sys.platform` is `"win32"` and a session registry record contains an integer `pid`
+- WHEN live sessions are inspected
+- THEN process liveness is checked via the Windows process API rather than `/proc/{pid}`
+
+#### Scenario: Windows project path matching
+- GIVEN a project path on Windows with a drive letter and backslashes
+- WHEN `project_dirs` searches for corresponding Claude project directories
+- THEN the path is encoded with backslashes and drive separators normalized to hyphens
