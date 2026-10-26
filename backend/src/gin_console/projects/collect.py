@@ -2,7 +2,9 @@
 
 import json
 import os
+import shutil
 import subprocess
+import sys
 import threading
 import time
 from collections.abc import Callable
@@ -27,10 +29,34 @@ def _child_env() -> dict[str, str]:
     env = dict(os.environ)
     venv = env.pop("VIRTUAL_ENV", None)
     if venv and "PATH" in env:
+        targets = {
+            os.path.join(venv, "Scripts"),
+            os.path.join(venv, "bin"),
+            f"{venv}/Scripts",
+            f"{venv}\\Scripts",
+            f"{venv}/bin",
+            f"{venv}\\bin",
+        }
         env["PATH"] = os.pathsep.join(
-            entry for entry in env["PATH"].split(os.pathsep) if entry != os.path.join(venv, "bin")
+            entry for entry in env["PATH"].split(os.pathsep) if entry not in targets
         )
     return env
+
+
+def _resolve_cmd(cmd: list[str]) -> list[str]:
+    """Adapt commands on Windows where shell scripts cannot be spawned directly."""
+    if not cmd:
+        return cmd
+    if sys.platform == "win32" and cmd[0] == "gin-workflow":
+        bash = shutil.which("bash") or shutil.which("bash.exe")
+        if not bash:
+            default_git_bash = Path(r"C:\Program Files\Git\bin\bash.exe")
+            if default_git_bash.is_file():
+                bash = str(default_git_bash)
+        if bash:
+            gw = shutil.which("gin-workflow") or "gin-workflow"
+            return [bash, gw, *cmd[1:]]
+    return cmd
 
 
 def run_json(
@@ -39,9 +65,10 @@ def run_json(
     json_on_failure: bool = False,
     timeout: float = TIMEOUT_SECONDS,
 ) -> Any:
+    exec_cmd = _resolve_cmd(cmd)
     try:
         done = subprocess.run(
-            cmd,
+            exec_cmd,
             cwd=cwd,
             env=_child_env(),
             capture_output=True,

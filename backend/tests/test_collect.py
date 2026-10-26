@@ -1,3 +1,4 @@
+import os
 import subprocess
 import threading
 import time
@@ -167,3 +168,63 @@ def test_server_008_overlapping_requests_run_once(
     for thread in threads:
         thread.join()
     assert len(fake.calls) == 4  # state, list, ready, blocked: once
+
+
+# REQ-SERVER-009
+def test_server_009_child_env_strips_scripts_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    from gin_console.projects.collect import _child_env
+
+    monkeypatch.setattr(os, "pathsep", ";")
+    monkeypatch.setenv("VIRTUAL_ENV", r"C:\project\.venv")
+    monkeypatch.setenv(
+        "PATH",
+        r"C:\project\.venv\Scripts;C:\Windows\System32"
+    )
+    env = _child_env()
+    assert r"C:\project\.venv\Scripts" not in env["PATH"].split(";")
+    assert r"C:\Windows\System32" in env["PATH"].split(";")
+    assert "VIRTUAL_ENV" not in env
+
+
+# REQ-SERVER-009
+def test_server_009_gin_workflow_dispatches_via_bash_on_windows(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import sys
+
+    from gin_console.projects.collect import _resolve_cmd, run_json
+
+    monkeypatch.setattr(sys, "platform", "win32")
+
+    def fake_which(name: str) -> str | None:
+        if "bash" in name:
+            return r"C:\Git\bin\bash.exe"
+        if "gin-workflow" in name:
+            return r"C:\bin\gin-workflow"
+        return None
+
+    monkeypatch.setattr("shutil.which", fake_which)
+
+    resolved = _resolve_cmd(["gin-workflow", "state", "--format", "json"])
+    assert resolved == [r"C:\Git\bin\bash.exe", r"C:\bin\gin-workflow", "state", "--format", "json"]
+
+    # Verify that run_json invokes the resolved command
+    called_cmd: list[list[str]] = []
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        called_cmd.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="{}", stderr="")
+
+    patch(monkeypatch, fake_run)
+    run_json(["gin-workflow", "state"], tmp_path)
+    assert called_cmd == [[r"C:\Git\bin\bash.exe", r"C:\bin\gin-workflow", "state"]]
+
+
+# REQ-SERVER-009
+def test_server_009_gin_workflow_cmd_exists() -> None:
+    # Verify scripts/gin-workflow.cmd exists in the repository
+    cmd_file = Path(__file__).resolve().parents[2] / "scripts" / "gin-workflow.cmd"
+    assert cmd_file.is_file()
+    content = cmd_file.read_text()
+    assert "bash" in content.lower()
+
