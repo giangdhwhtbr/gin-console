@@ -428,3 +428,47 @@ def test_quota_003_invalid_utf8_in_the_output_is_tolerated(
     binary.chmod(binary.stat().st_mode | stat.S_IEXEC)
     monkeypatch.setenv("PATH", f"{binary.parent}{os.pathsep}{os.environ['PATH']}")
     assert len(get_claude(run_claude_usage, NOW).windows) == 2
+
+
+# REQ-QUOTA-008
+def test_quota_008_end_process_on_windows(monkeypatch: pytest.MonkeyPatch) -> None:
+    import sys
+
+    from gin_console.quota.source import _end
+
+    monkeypatch.setattr(sys, "platform", "win32")
+
+    taskkill_calls: list[list[str]] = []
+
+    def fake_subprocess_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        taskkill_calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(subprocess, "run", fake_subprocess_run)
+
+    class MockProcess:
+        pid = 1234
+        stdin = None
+        stdout = None
+
+        def kill(self) -> None:
+            pass
+
+        def wait(self) -> None:
+            pass
+
+    mock_proc = MockProcess()
+    _end(mock_proc)  # type: ignore[arg-type]
+    assert taskkill_calls == [["taskkill", "/F", "/T", "/PID", "1234"]]
+
+
+# REQ-QUOTA-008
+def test_quota_008_codex_conversation_without_select(
+    fake_codex: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import select
+    # Ensure select.select is not called by deleting it during the test
+    monkeypatch.delattr(select, "select", raising=False)
+    codex = get_codex(run_codex_rate_limits, NOW)
+    assert codex.plan_type == "free"
+

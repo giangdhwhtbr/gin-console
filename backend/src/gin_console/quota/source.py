@@ -2,12 +2,14 @@
 
 import json
 import os
+import queue
 import re
-import select
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
+import threading
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
@@ -141,10 +143,20 @@ def run_codex_rate_limits(timeout: float = COMMAND_TIMEOUT) -> Any:
 
 def _end(process: "subprocess.Popen[bytes]") -> None:
     """End the server and everything it started, whatever state the conversation was in."""
-    try:
-        os.killpg(process.pid, signal.SIGKILL)
-    except (ProcessLookupError, PermissionError):  # the group is already gone
-        process.kill()
+    if sys.platform == "win32":
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(process.pid)],
+                capture_output=True,
+                check=False,
+            )
+        except OSError:
+            process.kill()
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):  # the group is already gone
+            process.kill()
     for pipe in (process.stdin, process.stdout):
         if pipe is not None:
             pipe.close()
@@ -154,6 +166,22 @@ def _end(process: "subprocess.Popen[bytes]") -> None:
 def _codex_conversation(process: "subprocess.Popen[bytes]", deadline: float) -> Any:
     assert process.stdin is not None and process.stdout is not None
     stdin, stdout = process.stdin, process.stdout
+    chunks: queue.Queue[bytes | None] = queue.Queue()
+
+    def reader() -> None:
+        try:
+            while True:
+                chunk = os.read(stdout.fileno(), 65536)
+                if not chunk:
+                    chunks.put(None)
+                    break
+                chunks.put(chunk)
+        except (OSError, ValueError):
+            chunks.put(None)
+
+    worker = threading.Thread(target=reader, daemon=True)
+    worker.start()
+
     buffer = b""
 
     def send(message: dict[str, Any]) -> None:
@@ -176,11 +204,11 @@ def _codex_conversation(process: "subprocess.Popen[bytes]", deadline: float) -> 
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 raise SourceError("codex did not answer in time")
-            ready, _, _ = select.select([stdout], [], [], remaining)
-            if not ready:
-                raise SourceError("codex did not answer in time")
-            chunk = os.read(stdout.fileno(), 65536)
-            if not chunk:
+            try:
+                chunk = chunks.get(timeout=remaining)
+            except queue.Empty:
+                raise SourceError("codex did not answer in time") from None
+            if chunk is None:
                 raise SourceError("codex exited before answering")
             buffer += chunk
 
