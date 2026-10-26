@@ -28,9 +28,9 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
 const empty = parseFilters("");
 
 describe("filters", () => {
-  // REQ-UI-025
+  // REQ-UI-025, REQ-UI-082, REQ-UI-083
   it("REQ-UI-025 restores every filter from the URL", () => {
-    const f = parseFilters("?project=a&q=fix&status=open&priority=1&label=qa&type=bug&closed=1");
+    const f = parseFilters("?project=a&q=fix&status=open&priority=1&label=qa&type=bug&assignee=alice&sprint=1&closed=1");
     expect(f).toEqual({
       project: "a",
       q: "fix",
@@ -42,6 +42,8 @@ describe("filters", () => {
       view: "list",
       group: "",
       finished: false,
+      assignee: "alice",
+      sprint: "1",
       lane: "",
       select: "",
     });
@@ -93,15 +95,24 @@ describe("filters", () => {
     expect(parseFilters("?finished=true").finished).toBe(false);
   });
 
-  // REQ-UI-036
-  it("REQ-UI-036 parses lane from the URL", () => {
-    expect(parseFilters("?lane=frontend").lane).toBe("frontend");
+  // REQ-UI-082, REQ-UI-083
+  it("REQ-UI-082, REQ-UI-083 parses assignee and sprint from URL", () => {
+    const f = parseFilters("?assignee=alice%40example.com&sprint=sprint-1");
+    expect(f.assignee).toBe("alice@example.com");
+    expect(f.sprint).toBe("sprint-1");
   });
 
-  // REQ-UI-030, REQ-UI-034, REQ-UI-035, REQ-UI-036
-  it("REQ-UI-030, REQ-UI-034, REQ-UI-035, REQ-UI-036 serializes view, group, finished and lane", () => {
-    const filters = { ...empty, view: "focus" as const, group: "assignee" as const, finished: true, lane: "a b" };
-    expect(filtersToSearch(filters)).toBe("?view=focus&group=assignee&finished=1&lane=a+b");
+  // REQ-UI-030, REQ-UI-034, REQ-UI-035, REQ-UI-082, REQ-UI-083
+  it("REQ-UI-030, REQ-UI-034, REQ-UI-035, REQ-UI-082, REQ-UI-083 serializes view, group, finished, assignee and sprint", () => {
+    const filters = {
+      ...empty,
+      view: "focus" as const,
+      group: "assignee" as const,
+      finished: true,
+      assignee: "alice",
+      sprint: "sprint 1",
+    };
+    expect(filtersToSearch(filters)).toBe("?view=focus&group=assignee&finished=1&assignee=alice&sprint=sprint+1");
     expect(filtersToSearch({ ...empty, view: "list" })).toBe("");
     expect(parseFilters(filtersToSearch(filters))).toEqual(filters);
   });
@@ -169,17 +180,71 @@ describe("filters", () => {
     expect(beads.map((b) => b.id)).toEqual(["old-p2", "new-p2", "p1"]); // the input is not mutated
   });
 
-  // REQ-UI-025
-  it("REQ-UI-025 offers the values that exist as filter options", () => {
+  // REQ-UI-025, REQ-UI-082, REQ-UI-083
+  it("REQ-UI-025 offers the values that exist as filter options, including assignees and sprints", () => {
     const options = optionsOf([
-      bead("1", { status: "open", labels: ["b", "a"], priority: 3, issue_type: "bug" }),
-      bead("2", { status: "in_progress", labels: ["a"], priority: 1, issue_type: "task" }),
+      bead("1", { status: "open", labels: ["b", "a", "sprint:1"], priority: 3, issue_type: "bug", assignee: "bob" }),
+      bead("2", { status: "in_progress", labels: ["a", "sprint:10"], priority: 1, issue_type: "task", assignee: "alice" }),
+      bead("3", { status: "open", labels: ["sprint:2"], priority: 2, issue_type: "task", assignee: null }),
     ]);
     expect(options).toEqual({
       statuses: ["in_progress", "open"],
-      priorities: [1, 3],
-      labels: ["a", "b"],
+      priorities: [1, 2, 3],
+      labels: ["a", "b", "sprint:1", "sprint:10", "sprint:2"],
       types: ["bug", "task"],
+      assignees: ["unassigned", "alice", "bob"],
+      sprints: ["10", "2", "1"],
     });
+  });
+
+  // REQ-UI-082
+  it("REQ-UI-082 optionsOf excludes unassigned when all beads have an assignee", () => {
+    const options = optionsOf([
+      bead("1", { assignee: "bob" }),
+      bead("2", { assignee: "alice" }),
+    ]);
+    expect(options.assignees).toEqual(["alice", "bob"]);
+  });
+
+  // REQ-UI-082
+  it("REQ-UI-082 filterBeads filters by specific assignee and unassigned", () => {
+    const beads = [
+      bead("1", { assignee: "alice" }),
+      bead("2", { assignee: "bob" }),
+      bead("3", { assignee: null }),
+    ];
+    expect(filterBeads(beads, { ...empty, assignee: "alice" }).map((b) => b.id)).toEqual(["1"]);
+    expect(filterBeads(beads, { ...empty, assignee: "bob" }).map((b) => b.id)).toEqual(["2"]);
+    expect(filterBeads(beads, { ...empty, assignee: "unassigned" }).map((b) => b.id)).toEqual(["3"]);
+  });
+
+  // REQ-UI-083
+  it("REQ-UI-083 filterBeads filters by sprint matching directly or via parent epic", () => {
+    const beads = [
+      bead("epic-1", { labels: ["sprint:sprint-1"] }),
+      bead("track-1.1", { parent: "epic-1", labels: ["track:1"] }),
+      bead("epic-2", { labels: ["sprint:sprint-2"] }),
+      bead("track-2.1", { parent: "epic-2", labels: [] }),
+      bead("task-solo", { labels: ["sprint:sprint-1"] }),
+    ];
+    expect(filterBeads(beads, { ...empty, sprint: "sprint-1" }).map((b) => b.id)).toEqual([
+      "epic-1",
+      "track-1.1",
+      "task-solo",
+    ]);
+    expect(filterBeads(beads, { ...empty, sprint: "sprint-2" }).map((b) => b.id)).toEqual([
+      "epic-2",
+      "track-2.1",
+    ]);
+  });
+
+  // REQ-UI-083
+  it("REQ-UI-083 filterBeads includes closed beads for active sprint even when closed is off", () => {
+    const beads = [
+      bead("1", { status: "closed", labels: ["sprint:old"] }),
+      bead("2", { status: "closed", labels: ["sprint:other"] }),
+      bead("3", { status: "open", labels: ["sprint:old"] }),
+    ];
+    expect(filterBeads(beads, { ...empty, sprint: "old" }).map((b) => b.id)).toEqual(["1", "3"]);
   });
 });

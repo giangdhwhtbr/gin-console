@@ -90,6 +90,9 @@ export function focusRows(beads: readonly BeadSummary[], group: "" | "assignee")
   return rows.filter((row) => hasWork(row.columns));
 }
 
+/**
+ * @deprecated Removed in REQ-UI-036; retained for backward compatibility until Track 2 migrates call sites in BeadsView and ListView.
+ */
 export function inLane(beads: readonly BeadSummary[], lane: string): BeadSummary[] {
   return lane === "" ? [...beads] : beads.filter((b) => b.labels.includes(lane));
 }
