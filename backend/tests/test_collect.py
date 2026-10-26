@@ -175,13 +175,14 @@ def test_server_009_child_env_strips_scripts_on_windows(monkeypatch: pytest.Monk
     from gin_console.projects.collect import _child_env
 
     monkeypatch.setattr(os, "pathsep", ";")
-    monkeypatch.setenv("VIRTUAL_ENV", r"C:\project\.venv")
+    # Test case-insensitivity on Windows (c:\ vs C:\, scripts vs Scripts)
+    monkeypatch.setenv("VIRTUAL_ENV", r"c:\project\.venv")
     monkeypatch.setenv(
         "PATH",
-        r"C:\project\.venv\Scripts;C:\Windows\System32"
+        r"C:\project\.venv\scripts;C:\Windows\System32"
     )
     env = _child_env()
-    assert r"C:\project\.venv\Scripts" not in env["PATH"].split(";")
+    assert r"C:\project\.venv\scripts" not in env["PATH"].split(";")
     assert r"C:\Windows\System32" in env["PATH"].split(";")
     assert "VIRTUAL_ENV" not in env
 
@@ -199,14 +200,20 @@ def test_server_009_gin_workflow_dispatches_via_bash_on_windows(
     def fake_which(name: str) -> str | None:
         if "bash" in name:
             return r"C:\Git\bin\bash.exe"
-        if "gin-workflow" in name:
-            return r"C:\bin\gin-workflow"
         return None
 
     monkeypatch.setattr("shutil.which", fake_which)
 
     resolved = _resolve_cmd(["gin-workflow", "state", "--format", "json"])
-    assert resolved == [r"C:\Git\bin\bash.exe", r"C:\bin\gin-workflow", "state", "--format", "json"]
+    assert resolved == [
+        r"C:\Git\bin\bash.exe",
+        "-c",
+        'gin-workflow "$@"',
+        "_",
+        "state",
+        "--format",
+        "json",
+    ]
 
     # Verify that run_json invokes the resolved command
     called_cmd: list[list[str]] = []
@@ -217,7 +224,7 @@ def test_server_009_gin_workflow_dispatches_via_bash_on_windows(
 
     patch(monkeypatch, fake_run)
     run_json(["gin-workflow", "state"], tmp_path)
-    assert called_cmd == [[r"C:\Git\bin\bash.exe", r"C:\bin\gin-workflow", "state"]]
+    assert called_cmd == [[r"C:\Git\bin\bash.exe", "-c", 'gin-workflow "$@"', "_", "state"]]
 
 
 # REQ-SERVER-009

@@ -23,24 +23,44 @@ class CollectError(Exception):
     """A command failed; the message is shown to the operator in the UI."""
 
 
+def _normalize_entry(p: str, is_win: bool) -> str:
+    cleaned = p.replace("\\", "/") if is_win else p
+    norm = os.path.normpath(cleaned)
+    return norm.lower() if is_win else norm
+
+
 def _child_env() -> dict[str, str]:
     """Environment without the console's own venv: gin-workflow's `env python3` shebang must
     resolve to the system Python, which has its dependencies, not ours."""
     env = dict(os.environ)
     venv = env.pop("VIRTUAL_ENV", None)
     if venv and "PATH" in env:
+        is_win = sys.platform == "win32" or "\\" in venv or (len(venv) >= 2 and venv[1] == ":")
         targets = {
-            os.path.join(venv, "Scripts"),
-            os.path.join(venv, "bin"),
-            f"{venv}/Scripts",
-            f"{venv}\\Scripts",
-            f"{venv}/bin",
-            f"{venv}\\bin",
+            _normalize_entry(f"{venv}/{sub}", is_win)
+            for sub in ("Scripts", "bin")
         }
         env["PATH"] = os.pathsep.join(
-            entry for entry in env["PATH"].split(os.pathsep) if entry not in targets
+            entry
+            for entry in env["PATH"].split(os.pathsep)
+            if _normalize_entry(entry, is_win) not in targets
         )
     return env
+
+
+def _find_bash() -> str | None:
+    """Find bash executable on Windows, checking PATH and common Git install locations."""
+    bash = shutil.which("bash") or shutil.which("bash.exe")
+    if bash:
+        return bash
+    for env_var in ("ProgramFiles", "ProgramFiles(x86)"):
+        base = os.environ.get(env_var)
+        if base:
+            for sub in (("Git", "bin", "bash.exe"), ("Git", "usr", "bin", "bash.exe")):
+                candidate = Path(base).joinpath(*sub)
+                if candidate.is_file():
+                    return str(candidate)
+    return None
 
 
 def _resolve_cmd(cmd: list[str]) -> list[str]:
@@ -48,14 +68,9 @@ def _resolve_cmd(cmd: list[str]) -> list[str]:
     if not cmd:
         return cmd
     if sys.platform == "win32" and cmd[0] == "gin-workflow":
-        bash = shutil.which("bash") or shutil.which("bash.exe")
-        if not bash:
-            default_git_bash = Path(r"C:\Program Files\Git\bin\bash.exe")
-            if default_git_bash.is_file():
-                bash = str(default_git_bash)
+        bash = _find_bash()
         if bash:
-            gw = shutil.which("gin-workflow") or "gin-workflow"
-            return [bash, gw, *cmd[1:]]
+            return [bash, "-c", 'gin-workflow "$@"', "_", *cmd[1:]]
     return cmd
 
 
