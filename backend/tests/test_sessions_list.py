@@ -1,5 +1,7 @@
+import json
 import os
 from pathlib import Path
+from typing import Any
 
 import pytest
 from claude_home import DEAD_PID, A, B, C, make_home, write_live, write_transcript
@@ -219,3 +221,63 @@ def test_sessions_004_registry_text_with_a_lone_surrogate_is_replaced(tmp_path: 
     assert session.live is True
     assert session.name is not None
     session.name.encode("utf-8")
+
+
+# REQ-SESSIONS-009
+def test_sessions_009_windows_project_dirs_encoding(tmp_path: Path) -> None:
+    from gin_console.sessions.source import project_dirs
+
+    home = make_home(tmp_path)
+    win_project = ProjectEntry(name="win-app", path=Path(r"C:\Users\gin\my-app"))
+    # Claude encodes C:\Users\gin\my-app as C--Users-gin-my-app
+    write_transcript(home, "C--Users-gin-my-app", A, [])
+    write_transcript(home, "C--Users-gin-my-app--planning-worktrees-win-app-t1", B, [])
+
+    dirs = project_dirs(home, win_project)
+    assert len(dirs) == 2
+    assert [d.name for d in dirs] == [
+        "C--Users-gin-my-app",
+        "C--Users-gin-my-app--planning-worktrees-win-app-t1",
+    ]
+
+
+# REQ-SESSIONS-009
+def test_sessions_009_windows_live_session_detection(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import ctypes
+    import sys
+
+    from gin_console.sessions.source import _is_pid_alive, live_sessions
+
+    monkeypatch.setattr(sys, "platform", "win32")
+
+    class FakeKernel32:
+        def OpenProcess(self, flags: int, inherit: bool, pid: int) -> int | None:
+            if pid == 5555:
+                return 12345
+            return 0
+
+        def GetExitCodeProcess(self, handle: int, byref_code: Any) -> int:
+            if handle == 12345:
+                byref_code._obj.value = 259  # STILL_ACTIVE
+                return 1
+            return 0
+
+        def CloseHandle(self, handle: int) -> int:
+            return 1
+
+    fake_windll = type("FakeWinDLL", (), {"kernel32": FakeKernel32()})()
+    monkeypatch.setattr(ctypes, "windll", fake_windll, raising=False)
+
+    assert _is_pid_alive(5555) is True
+    assert _is_pid_alive(6666) is False
+
+    home = make_home(tmp_path)
+    (home / "sessions" / "live.json").write_text(json.dumps({"pid": 5555, "sessionId": A}))
+    (home / "sessions" / "dead.json").write_text(json.dumps({"pid": 6666, "sessionId": B}))
+
+    live = live_sessions(home)
+    assert A in live
+    assert B not in live
+

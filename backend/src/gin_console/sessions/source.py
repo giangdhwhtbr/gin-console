@@ -3,6 +3,7 @@
 import json
 import re
 import shlex
+import sys
 from collections.abc import Iterable, Iterator
 from datetime import UTC, datetime
 from pathlib import Path
@@ -13,12 +14,35 @@ from gin_console.sessions.models import Block, Message, MessagePage, SessionSumm
 
 EDGE_BYTES = 64 * 1024
 WORKTREE_INFIX = "--planning-worktrees-"
-_ENCODE = str.maketrans({"/": "-", ".": "-"})
+_ENCODE = str.maketrans({"/": "-", ".": "-", "\\": "-", ":": "-"})
 _SESSION_ID = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 
 def _is_session_id(value: str) -> bool:
     return _SESSION_ID.fullmatch(value) is not None
+
+
+def _is_pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if sys.platform == "win32":
+        import ctypes
+
+        kernel32 = getattr(ctypes, "windll", None)
+        if kernel32 is None:
+            return False
+        k32 = kernel32.kernel32
+        handle = k32.OpenProcess(0x1000, False, pid)
+        if handle:
+            exit_code = ctypes.c_ulong()
+            if k32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                is_active = exit_code.value == 259
+                k32.CloseHandle(handle)
+                return is_active
+            k32.CloseHandle(handle)
+            return True
+        return False
+    return Path(f"/proc/{pid}").exists()
 
 
 def project_dirs(claude_home: Path, entry: ProjectEntry) -> list[Path]:
@@ -44,7 +68,7 @@ def live_sessions(claude_home: Path) -> dict[str, dict[str, Any]]:
         if not isinstance(record, dict):
             continue
         pid, session_id = record.get("pid"), record.get("sessionId")
-        if type(pid) is int and isinstance(session_id, str) and Path(f"/proc/{pid}").exists():
+        if type(pid) is int and isinstance(session_id, str) and _is_pid_alive(pid):
             live[session_id] = record
     return live
 

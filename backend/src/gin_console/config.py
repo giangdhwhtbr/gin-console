@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ipaddress
 from collections.abc import Mapping
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
@@ -34,7 +34,7 @@ class ProjectEntry(BaseModel):
     @field_validator("path")
     @classmethod
     def _absolute(cls, value: Path) -> Path:
-        if not value.is_absolute():
+        if not (value.is_absolute() or PureWindowsPath(value).is_absolute()):
             raise ValueError("must be an absolute path")
         return value
 
