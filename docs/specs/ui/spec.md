@@ -342,7 +342,7 @@ The bead list SHALL show the loaded beads as an indented hierarchy as REQ-UI-041
 - THEN it says no beads match
 
 ### REQ-UI-025: Search and filters
-The bead list SHALL offer a search box that matches the id, title and labels case-insensitively, and filters for status, priority, label and type, SHALL combine them with AND, and SHALL keep them in the URL query (`q`, `status`, `priority`, `label`, `type`) so that a reload or a shared link restores them.
+The bead list SHALL offer a search box that matches the id, title and labels case-insensitively, and filters for status, priority, label, type, assignee and sprint, SHALL combine them with AND, and SHALL keep them in the URL query (`q`, `status`, `priority`, `label`, `type`, `assignee`, `sprint`) so that a reload or a shared link restores them.
 
 #### Scenario: Search
 - GIVEN beads titled "Fix login" and "Add search"
@@ -355,7 +355,7 @@ The bead list SHALL offer a search box that matches the id, title and labels cas
 - THEN only open P1 beads remain and the URL holds both filters
 
 #### Scenario: Restored from the URL
-- GIVEN the URL has `?project=a&status=open&q=fix`
+- GIVEN the URL has `?project=a&status=open&q=fix&assignee=alice&sprint=1`
 - WHEN the page loads
 - THEN the filters are applied and shown in their controls
 
@@ -512,7 +512,7 @@ WHERE the user chooses Group by "Assignee" (kept in the URL as `group=assignee`)
 - THEN the ungrouped columns return and the URL has no `group`
 
 ### REQ-UI-035: Recently finished
-WHERE the user turns on "Recently finished" (kept in the URL as `finished=1`), the Focus view SHALL add a column with the 7 most recently closed beads that match the current search, filters and lane, newest first, SHALL say how many are shown out of how many match, and SHALL offer "Show all N completed" and "Show latest 7".
+WHERE the user turns on "Recently finished" (kept in the URL as `finished=1`), the Focus view SHALL add a column with the 7 most recently closed beads that match the current search and filters, newest first, SHALL say how many are shown out of how many match, and SHALL offer "Show all N completed" and "Show latest 7".
 
 #### Scenario: Latest seven
 - GIVEN 12 closed beads match and "Show closed" is on
@@ -528,19 +528,6 @@ WHERE the user turns on "Recently finished" (kept in the URL as `finished=1`), t
 - GIVEN "Show closed" is off
 - WHEN the user turns on "Recently finished"
 - THEN the page turns "Show closed" on so that the column has data
-
-### REQ-UI-036: Lane
-The Board and Focus views SHALL offer a "Lane" select listing every label of the loaded beads and "All", kept in the URL as `lane`, and SHALL show only the beads that carry the chosen label, applied together with search and filters.
-
-#### Scenario: Lane
-- GIVEN beads labelled "frontend" and "backend"
-- WHEN the user chooses the lane "frontend"
-- THEN only the "frontend" beads remain on the Board and in Focus, and the URL has `lane=frontend`
-
-#### Scenario: Unknown lane
-- GIVEN the URL has `lane=gone` and no bead has that label
-- WHEN the page loads
-- THEN the views are empty and the lane select still shows "gone" so that the user can clear it
 
 ### REQ-UI-037: Keyboard
 WHILE the Board or Focus view is shown and no text field has focus, `/` SHALL move focus to the search box, the arrow keys SHALL move focus between the cards, and `Enter` SHALL open the focused card; WHILE the search box has focus, `Esc` SHALL clear it when it has text and otherwise leave it.
@@ -638,7 +625,7 @@ The List view SHALL show as roots the beads without a parent or whose parent is 
 - THEN the later-updated P1, the other P1, then the P2 are listed
 
 ### REQ-UI-043: List filters
-WHEN a search, a filter or a lane is active, the List view SHALL show only the beads that match them together with their ancestors in the hierarchy, with every branch that leads to a match open, and SHALL leave out closed beads unless "Show closed" is on.
+WHEN a search or a filter is active, the List view SHALL show only the beads that match them together with their ancestors in the hierarchy, with every branch that leads to a match open, and SHALL leave out closed beads unless "Show closed" is on or a sprint filter is active.
 
 #### Scenario: Match with ancestors
 - GIVEN an epic with a child titled "Fix login" and another titled "Add search"
@@ -650,10 +637,10 @@ WHEN a search, a filter or a lane is active, the List view SHALL show only the b
 - WHEN the List view is shown
 - THEN the closed child is not shown, and it is shown after "Show closed" is turned on
 
-#### Scenario: Lane
-- GIVEN beads labelled "frontend" and "backend" and the lane "frontend"
-- WHEN the List view is shown
-- THEN only the "frontend" beads and their ancestors are shown
+#### Scenario: Filter by assignee
+- GIVEN an epic with children assigned to "alice" and "bob"
+- WHEN the user filters by assignee "alice"
+- THEN the epic and the child assigned to "alice" are shown, and the child assigned to "bob" is not
 
 ### REQ-UI-044: List rows
 The List view SHALL show for each row an open/close control when it has children, its id in the monospace face, its title as a link to `/beads/<project>/<id>`, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic how many of its direct children are closed with a progress bar, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
@@ -1152,7 +1139,7 @@ The discussion SHALL show each comment as a block of its own with a border, with
 - THEN the text wraps inside its block and the page does not scroll sideways
 
 ### REQ-UI-072: Breadcrumb
-WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of the link "Beads" followed by the name of the view of the remembered place (REQ-UI-073) and, when a search, a status, priority, label, type or lane filter or "Show closed" is active, "· N filters" where N counts them, all as one link to the remembered place, then the parent of the bead as a link to its page when it has one, then the id of the bead marked `aria-current="page"`, or, on a Dependencies page, after the link to the remembered place, "Dependencies" as a link to the project page, then every ancestor of the scope bead from the top as a link to its Dependencies page, then the id of the scope bead, with the last item marked `aria-current="page"`, and under 640px SHALL show only the first link.
+WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of the link "Beads" followed by the name of the view of the remembered place (REQ-UI-073) and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, "· N filters" where N counts them, all as one link to the remembered place, then the parent of the bead as a link to its page when it has one, then the id of the bead marked `aria-current="page"`, or, on a Dependencies page, after the link to the remembered place, "Dependencies" as a link to the project page, then every ancestor of the scope bead from the top as a link to its Dependencies page, then the id of the scope bead, with the last item marked `aria-current="page"`, and under 640px SHALL show only the first link.
 
 #### Scenario: Place and filters
 - GIVEN the Beads page was last at `?project=a&view=board&status=open&q=fix`
@@ -1173,21 +1160,6 @@ WHEN a bead is shown as a page, not as the details panel of another view, the be
 - GIVEN a bead shown in the details panel of the List view
 - WHEN the panel is shown
 - THEN it has no breadcrumb and keeps its "Open page" link
-
-#### Scenario: Dependencies page
-- GIVEN `a-3` under `a-2` under `a-1`
-- WHEN the Dependencies page of `a-3` is shown
-- THEN the breadcrumb reads "Beads", "Dependencies" linking to `/beads/a/graph`, `a-1` and `a-2` linking to their Dependencies pages, and `a-3` as the current page
-
-#### Scenario: Project Dependencies page
-- GIVEN the Dependencies page of project `a`
-- WHEN it is shown
-- THEN the breadcrumb ends with "Dependencies" as the current page
-
-#### Scenario: Phone
-- GIVEN a window 390px wide
-- WHEN the bead page is shown
-- THEN only the first link of the breadcrumb is shown
 
 ### REQ-UI-073: Remembered place
 The Beads page SHALL remember its URL query for the current browser tab, SHALL use it for the first link of the breadcrumb when the remembered project is the project of the bead and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
@@ -1410,3 +1382,29 @@ The Beads page SHALL offer the link "Dependencies" next to the project picker to
 - GIVEN an epic with an unlinked task
 - WHEN its page is shown
 - THEN the unlinked task is drawn and "Only linked" is off
+
+### REQ-UI-082: Assignee filter
+The bead filter bar SHALL offer an "Assignee" select listing "All", "Unassigned" (when any loaded bead has no assignee), and every unique assignee of the loaded beads sorted alphabetically, kept in the URL query as `assignee`, and SHALL show only the beads whose assignee matches the chosen value (or beads with no assignee when "Unassigned" is chosen).
+
+#### Scenario: Filter by assignee
+- GIVEN beads assigned to "alice@example.com" and "bob@example.com"
+- WHEN the user selects assignee "alice@example.com"
+- THEN only beads assigned to "alice@example.com" remain visible and the URL query contains `assignee=alice%40example.com`
+
+#### Scenario: Filter unassigned beads
+- GIVEN beads assigned to "alice@example.com" and beads without an assignee
+- WHEN the user selects assignee "Unassigned"
+- THEN only beads without an assignee remain visible and the URL query contains `assignee=unassigned`
+
+### REQ-UI-083: Sprint filter and past sprint visibility
+The bead filter bar SHALL offer a "Sprint" select listing "All" and every unique sprint name extracted from `sprint:<name>` labels among the loaded beads sorted in descending alphanumeric order, kept in the URL query as `sprint`, and SHALL show only the beads that directly carry `sprint:<name>` or whose parent epic carries `sprint:<name>`; WHILE a sprint filter is selected, closed beads SHALL be fetched and displayed for that sprint without requiring "Show closed" to be checked.
+
+#### Scenario: Filter by sprint with direct and parent inheritance
+- GIVEN an epic with label "sprint:sprint-1" and a child task without direct sprint label, and another epic with label "sprint:sprint-2"
+- WHEN the user selects sprint "sprint-1"
+- THEN the "sprint-1" epic and its child task remain visible, while the "sprint-2" epic is hidden, and the URL query contains `sprint=sprint-1`
+
+#### Scenario: Past sprint closed beads visibility
+- GIVEN a previous sprint "sprint-0" where all beads are closed, and "Show closed" is off
+- WHEN the user selects sprint "sprint-0"
+- THEN the closed beads for "sprint-0" are fetched and displayed on the board
