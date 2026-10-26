@@ -6,9 +6,17 @@ import { useReturn } from "./returnState";
 const VIEW_NAME: Record<string, string> = { list: "List", board: "Board", focus: "Focus" };
 const enc = encodeURIComponent;
 
-/** How many of the search, the status, priority, label, type and lane filters and "Show closed" are on. */
+/** How many of the search, the status, priority, label, type, assignee and sprint filters and "Show closed" are on. */
 export function activeFilters(filters: BeadFilters): number {
-  const set = [filters.q.trim(), filters.status, filters.priority, filters.label, filters.type, filters.lane];
+  const set = [
+    filters.q.trim(),
+    filters.status,
+    filters.priority,
+    filters.label,
+    filters.type,
+    filters.assignee,
+    filters.sprint,
+  ];
   return set.filter((value) => value !== "").length + (filters.closed ? 1 : 0);
 }
 

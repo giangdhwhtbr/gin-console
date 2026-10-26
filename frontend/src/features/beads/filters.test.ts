@@ -44,7 +44,6 @@ describe("filters", () => {
       finished: false,
       assignee: "alice",
       sprint: "1",
-      lane: "",
       select: "",
     });
   });

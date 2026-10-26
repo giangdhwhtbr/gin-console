@@ -16,7 +16,6 @@ export type BeadFilters = {
   finished: boolean;
   assignee: string;
   sprint: string;
-  lane: string;
   select: string;
 };
 
@@ -35,7 +34,6 @@ export function parseFilters(search: string): BeadFilters {
     finished: p.get("finished") === "1",
     assignee: p.get("assignee") ?? "",
     sprint: p.get("sprint") ?? "",
-    lane: p.get("lane") ?? "",
     select: p.get("select") ?? "",
   };
 }
@@ -49,7 +47,6 @@ export function filtersToSearch(filters: BeadFilters): string {
   if (filters.view !== "list") p.set("view", filters.view);
   if (filters.group !== "") p.set("group", filters.group);
   if (filters.finished) p.set("finished", "1");
-  if (filters.lane !== "") p.set("lane", filters.lane);
   if (filters.assignee !== "") p.set("assignee", filters.assignee);
   if (filters.sprint !== "") p.set("sprint", filters.sprint);
   if (filters.select !== "") p.set("select", filters.select);

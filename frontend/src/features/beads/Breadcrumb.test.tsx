@@ -41,6 +41,12 @@ describe("Breadcrumb", () => {
     expect(crumb().getByRole("link", { name: "Beads › List · 1 filter" })).toBeInTheDocument();
   });
 
+  it("REQ-UI-072 counts assignee and sprint in active filters", () => {
+    rememberSearch("?project=a&view=board&assignee=alice&sprint=1");
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads › Board · 2 filters" })).toBeInTheDocument();
+  });
+
   it("REQ-UI-072 a remembered view that no longer exists shows the List", () => {
     rememberSearch("?project=a&view=tree");
     render(<Breadcrumb project="a" id="a-1" parent={null} />);

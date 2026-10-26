@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { BeadDetailPage } from "./BeadDetailPage";
-import { inLane } from "./columns";
 import { filterBeads, type BeadFilters } from "./filters";
 import { COLUMNS, ListRow } from "./ListRow";
 import { getReturn, rememberOpen } from "./returnState";
@@ -26,7 +25,7 @@ export function ListView({
 }) {
   const wide = useWide();
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(getReturn().open[project] ?? []));
-  const base = beads.filter((b) => filters.closed || b.status !== "closed");
+  const base = beads.filter((b) => filters.closed || filters.sprint !== "" || b.status !== "closed");
   const index = treeIndex(base);
   const filtering =
     filters.q.trim() !== "" ||
@@ -34,9 +33,10 @@ export function ListView({
     filters.priority !== "" ||
     filters.label !== "" ||
     filters.type !== "" ||
-    filters.lane !== "";
+    filters.assignee !== "" ||
+    filters.sprint !== "";
   const keep = filtering
-    ? keepSet(index, new Set(inLane(filterBeads(beads, filters), filters.lane).map((b) => b.id)))
+    ? keepSet(index, new Set(filterBeads(beads, filters).map((b) => b.id)))
     : null;
   // a branch is open when the user opened it, when it leads to a match, or when it holds the selection
   const shownOpen = new Set<string>([

@@ -3,7 +3,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { BeadFilterBar } from "./BeadFilterBar";
 import { BoardView } from "./BoardView";
-import { inLane } from "./columns";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
 import { ListView } from "./ListView";
@@ -23,12 +22,11 @@ export function BeadsView({
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
   useCardKeys(true, clearSearch, filters.view !== "list");
 
-  const { state, retry } = useBeads(project, filters.closed);
+  const { state, retry } = useBeads(project, filters.closed || filters.sprint !== "");
 
   const errorMessage = state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
   const beads = state.status === "ok" ? state.beads : [];
   const shown = sortBeads(filterBeads(beads, filters));
-  const scoped = inLane(shown, filters.lane);
 
   return (
     <section className="flex flex-col gap-4">
@@ -49,9 +47,9 @@ export function BeadsView({
           <ViewTabs filters={filters} onChange={onChange} />
           <BeadFilterBar filters={filters} options={optionsOf(beads)} onChange={onChange} />
           <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>
-          {filters.view === "board" && <BoardView project={project} beads={scoped} filters={filters} />}
+          {filters.view === "board" && <BoardView project={project} beads={shown} filters={filters} />}
           {filters.view === "focus" && (
-            <FocusView project={project} beads={scoped} filters={filters} onChange={onChange} />
+            <FocusView project={project} beads={shown} filters={filters} onChange={onChange} />
           )}
           {filters.view === "list" && (
             <ListView project={project} beads={beads} filters={filters} onChange={onChange} />

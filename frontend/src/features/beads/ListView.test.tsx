@@ -91,7 +91,7 @@ describe("ListView", () => {
     expect(screen.getByText("100 more not shown")).toBeInTheDocument();
   }, 30_000); // 2000 full rows are slow to build in jsdom, much more so on a loaded machine
 
-  it("REQ-UI-043 filters: match with ancestors, closed beads, and lane", async () => {
+  it("REQ-UI-043 filters: match with ancestors, closed beads, assignee, and sprint", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list&q=login");
     stubBeads((url) => {
       const closed = url.searchParams.get("closed") === "1";
@@ -102,9 +102,11 @@ describe("ListView", () => {
         bead("e-2", { issue_type: "epic", title: "Epic Closed" }),
         bead("t-open", { parent: "e-2", title: "Open task" }),
         bead("t-closed", { parent: "e-2", title: "Closed task", status: "closed" }),
-        bead("e-3", { issue_type: "epic", title: "Epic Lanes" }),
-        bead("t-fe", { parent: "e-3", title: "Frontend task", labels: ["frontend"] }),
-        bead("t-be", { parent: "e-3", title: "Backend task", labels: ["backend"] }),
+        bead("e-3", { issue_type: "epic", title: "Epic Assignees" }),
+        bead("t-fe", { parent: "e-3", title: "Frontend task", assignee: "alice" }),
+        bead("t-be", { parent: "e-3", title: "Backend task", assignee: "bob" }),
+        bead("e-4", { issue_type: "epic", title: "Epic Sprints", labels: ["sprint:sprint-1"] }),
+        bead("t-closed-sprint", { parent: "e-4", title: "Closed Sprint task", status: "closed" }),
       ];
       return json(closed ? list : list.filter((b) => b.status !== "closed"));
     });
@@ -131,13 +133,22 @@ describe("ListView", () => {
 
     cleanup();
 
-    window.history.replaceState(null, "", "/beads?project=alpha&view=list&lane=frontend");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&assignee=alice");
     render(<BeadsPage />);
     const tree3 = await screen.findByRole("tree");
 
     expect(within(tree3).getByRole("treeitem", { name: /e-3/ })).toBeInTheDocument();
     expect(within(tree3).getByRole("treeitem", { name: /t-fe/ })).toBeInTheDocument();
     expect(within(tree3).queryByRole("treeitem", { name: /t-be/ })).not.toBeInTheDocument();
+
+    cleanup();
+
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&sprint=sprint-1");
+    render(<BeadsPage />);
+    const tree4 = await screen.findByRole("tree");
+
+    expect(within(tree4).getByRole("treeitem", { name: /e-4/ })).toBeInTheDocument();
+    expect(within(tree4).getByRole("treeitem", { name: /t-closed-sprint/ })).toBeInTheDocument();
   });
 
   it("REQ-UI-044 rows: node fields, epic progress, expand/collapse all, and plain text", async () => {

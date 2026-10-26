@@ -34,14 +34,27 @@ export function BeadFilterBar({
       />
       <FilterSelect label="Label" value={filters.label} options={options.labels.map(same)} onChange={(label) => set({ label })} />
       <FilterSelect label="Type" value={filters.type} options={options.types.map(same)} onChange={(type) => set({ type })} />
-      {filters.view !== "list" && (
-        <FilterSelect label="Lane" value={filters.lane} options={options.labels.map(same)} onChange={(lane) => set({ lane })} />
-      )}
+      <FilterSelect
+        label="Assignee"
+        value={filters.assignee}
+        options={options.assignees.map((a) => ({ value: a, label: a === "unassigned" ? "Unassigned" : a }))}
+        onChange={(assignee) => set({ assignee })}
+      />
+      <FilterSelect
+        label="Sprint"
+        value={filters.sprint}
+        options={options.sprints.map(same)}
+        onChange={(sprint) => set({ sprint })}
+      />
       <label className="flex items-center gap-1 text-sm">
         <input type="checkbox" checked={filters.closed} onChange={(event) => set({ closed: event.target.checked })} />
         Show closed
       </label>
-      <Button variant="outline" size="sm" onClick={() => set({ q: "", status: "", priority: "", label: "", type: "" })}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => set({ q: "", status: "", priority: "", label: "", type: "", assignee: "", sprint: "" })}
+      >
         Clear filters
       </Button>
     </div>

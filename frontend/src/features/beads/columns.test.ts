@@ -5,7 +5,6 @@ import {
   closedNewestFirst,
   focusColumns,
   focusRows,
-  inLane,
 } from "./columns";
 
 const ids = (beads: { id: string }[]) => beads.map((b) => b.id);
@@ -97,13 +96,5 @@ describe("columns", () => {
     expect(focusRows([], "")).toEqual([
       { title: null, columns: { in_flight: [], blocked: [], next_up: [] } },
     ]);
-  });
-
-  // REQ-UI-036
-  it("REQ-UI-036 inLane keeps the beads with the label; an empty lane keeps all", () => {
-    const beads = [bead("a", { labels: ["frontend"] }), bead("b", { labels: ["backend"] })];
-    expect(ids(inLane(beads, "frontend"))).toEqual(["a"]);
-    expect(ids(inLane(beads, ""))).toEqual(["a", "b"]);
-    expect(inLane(beads, "gone")).toEqual([]);
   });
 });
