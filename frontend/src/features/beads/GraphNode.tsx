@@ -34,16 +34,16 @@ export function GraphNodeButton({
       onDoubleClick={() => onOpen(node.bead.id)}
       style={{ left: at.x, top: at.y, width: NODE.w, height: NODE.h }}
       className={cn(
-        "absolute flex flex-col justify-center gap-0.5 rounded border bg-card px-2 text-left text-xs transition-opacity motion-reduce:transition-none",
+        "absolute flex flex-col justify-center overflow-hidden gap-0.5 rounded border bg-card px-2 text-left text-xs transition-opacity motion-reduce:transition-none",
         stateEdge(state),
         node.external && "border-dashed opacity-60",
         dimmed && "opacity-30",
         selected && "ring-2 ring-ring",
       )}
     >
-      <span className="flex items-center justify-between font-mono text-muted-foreground">
-        <span>{node.bead.id}</span>
-        <span>{`P${node.bead.priority}`}</span>
+      <span className="flex items-center justify-between gap-1 font-mono text-muted-foreground">
+        <span className="min-w-0 truncate" title={node.bead.id}>{node.bead.id}</span>
+        <span className="shrink-0">{`P${node.bead.priority}`}</span>
       </span>
       <span className="truncate text-sm font-medium text-card-foreground">{node.bead.title}</span>
       <span className="flex items-center gap-2">

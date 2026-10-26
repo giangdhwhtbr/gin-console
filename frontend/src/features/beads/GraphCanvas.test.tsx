@@ -119,4 +119,16 @@ describe("GraphCanvas", () => {
     expect(node("a")).toHaveAttribute("data-dimmed", "false");
     expect(node("c")).toHaveAttribute("data-dimmed", "true");
   });
+
+  it("REQ-UI-048 long bead ID is truncated on a single line and title is displayed", () => {
+    const longId = "gin-console-rm-more-harnesses";
+    const g = scopeGraph([epic(longId, { title: "More harnesses long title" })], null, OFF);
+    show(g);
+    const btn = node(longId);
+    expect(btn).toHaveClass("overflow-hidden");
+    const idSpan = within(btn).getByTitle(longId);
+    expect(idSpan).toHaveClass("truncate");
+    expect(idSpan).toHaveClass("min-w-0");
+    expect(within(btn).getByText("More harnesses long title")).toHaveClass("truncate");
+  });
 });
