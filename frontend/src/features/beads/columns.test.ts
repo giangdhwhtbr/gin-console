@@ -91,6 +91,16 @@ describe("columns", () => {
     expect(ids(rows[2]?.columns.next_up ?? []).sort()).toEqual(["3", "4"]);
   });
 
+  it("focusRows uses owner as fallback when assignee is not set", () => {
+    const rows = focusRows(
+      [
+        bead("1", { assignee: null, owner: "dave", status: "in_progress" }),
+      ],
+      "assignee",
+    );
+    expect(rows.map((r) => r.title)).toEqual(["dave"]);
+  });
+
   // REQ-UI-034
   it("REQ-UI-034 without grouping there is one untitled row, even when empty", () => {
     expect(focusRows([], "")).toEqual([

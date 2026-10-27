@@ -21,7 +21,9 @@ export function BeadCard({ project, bead }: { project: string; bead: BeadSummary
         <TypeBadge type={bead.issue_type} />
         <CountBadge kind="comments" count={bead.comment_count} />
         <CountBadge kind="dependencies" count={bead.dependency_count} />
-        {(bead.assignee ?? "") !== "" && <span className="text-muted-foreground">{bead.assignee}</span>}
+        {(bead.assignee ?? bead.owner ?? "") !== "" && (
+          <span className="text-muted-foreground">{bead.assignee ?? bead.owner}</span>
+        )}
       </div>
     </li>
   );

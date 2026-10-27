@@ -39,4 +39,9 @@ describe("BeadCard", () => {
   it("REQ-UI-064 the left edge has the colour of the state", () => {
     expect(card(bead("a-3", { blocked: true }))).toHaveClass("border-l-4", "border-l-state-blocked");
   });
+
+  it("shows owner as assignee fallback on the card", () => {
+    card(bead("a-4", { assignee: null, owner: "bob" }));
+    expect(screen.getByText("bob")).toBeInTheDocument();
+  });
 });

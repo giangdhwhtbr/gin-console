@@ -149,6 +149,21 @@ describe("ListView", () => {
 
     expect(within(tree4).getByRole("treeitem", { name: /e-4/ })).toBeInTheDocument();
     expect(within(tree4).getByRole("treeitem", { name: /t-closed-sprint/ })).toBeInTheDocument();
+
+    cleanup();
+
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&status=ready");
+    stubBeads(() =>
+      json([
+        bead("e-state", { issue_type: "epic", title: "State Epic" }),
+        bead("t-ready", { parent: "e-state", title: "Ready task", status: "open", ready: true }),
+        bead("t-blocked", { parent: "e-state", title: "Blocked task", status: "open", blocked: true }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const treeState = await screen.findByRole("tree");
+    expect(within(treeState).getByRole("treeitem", { name: /t-ready/ })).toBeInTheDocument();
+    expect(within(treeState).queryByRole("treeitem", { name: /t-blocked/ })).not.toBeInTheDocument();
   });
 
   it("REQ-UI-044 rows: node fields, epic progress, expand/collapse all, and plain text", async () => {

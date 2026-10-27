@@ -76,7 +76,7 @@ export function focusColumns(beads: readonly BeadSummary[]): Record<FocusColumnK
 
 export type FocusRow = { title: string | null; columns: Record<FocusColumnKey, BeadSummary[]> };
 
-const assigneeOf = (bead: BeadSummary) => (bead.assignee ?? "").trim();
+const assigneeOf = (bead: BeadSummary) => (bead.assignee ?? bead.owner ?? "").trim();
 const hasWork = (columns: Record<FocusColumnKey, BeadSummary[]>) => Object.values(columns).some((l) => l.length > 0);
 
 export function focusRows(beads: readonly BeadSummary[], group: "" | "assignee"): FocusRow[] {

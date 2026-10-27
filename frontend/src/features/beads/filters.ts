@@ -68,6 +68,16 @@ export function filtersToSearch(filters: BeadFilters): string {
   return text === "" ? "" : `?${text}`;
 }
 
+export const effectiveAssignee = (bead: BeadSummary): string | null => {
+  const val =
+    bead.assignee && bead.assignee.trim() !== ""
+      ? bead.assignee
+      : bead.owner && bead.owner.trim() !== ""
+        ? bead.owner
+        : null;
+  return val ? val.trim() : null;
+};
+
 export function filterBeads(beads: readonly BeadSummary[], filters: BeadFilters): BeadSummary[] {
   const needle = filters.q.trim().toLowerCase();
   const sprintMap = new Map<string, string[]>();
@@ -93,7 +103,15 @@ export function filterBeads(beads: readonly BeadSummary[], filters: BeadFilters)
     ) {
       return false;
     }
-    if (filters.status.length > 0 && !filters.status.includes(bead.status)) return false;
+    if (filters.status.length > 0) {
+      const match = filters.status.some((s) => {
+        if (bead.status === s) return true;
+        if (s === "ready" && bead.ready) return true;
+        if (s === "blocked" && bead.blocked) return true;
+        return false;
+      });
+      if (!match) return false;
+    }
     if (filters.priority.length > 0 && !filters.priority.includes(String(bead.priority))) return false;
 
     // Label filter with Any / All matching
@@ -109,8 +127,9 @@ export function filterBeads(beads: readonly BeadSummary[], filters: BeadFilters)
 
     // Assignee filter: matches if bead matches ANY selected assignee
     if (filters.assignee.length > 0) {
+      const assigned = effectiveAssignee(bead);
       const match = filters.assignee.some((a) =>
-        a === "unassigned" ? !bead.assignee || bead.assignee === "" : bead.assignee === a,
+        a === "unassigned" ? !assigned : assigned === a,
       );
       if (!match) return false;
     }
@@ -150,11 +169,19 @@ export function optionsOf(beads: readonly BeadSummary[]) {
   const text = (a: string, b: string) => a.localeCompare(b);
 
   const rawAssignees = beads
-    .map((b) => b.assignee)
-    .filter((a): a is string => typeof a === "string" && a !== "");
+    .map(effectiveAssignee)
+    .filter((a): a is string => a !== null);
   const sortedAssignees = unique(rawAssignees, text);
-  const hasUnassigned = beads.some((b) => !b.assignee);
+  const hasUnassigned = beads.some((b) => !effectiveAssignee(b));
   const assignees = hasUnassigned ? ["unassigned", ...sortedAssignees] : sortedAssignees;
+
+  const rawStatuses: string[] = [];
+  for (const b of beads) {
+    if (b.status) rawStatuses.push(b.status);
+    if (b.ready) rawStatuses.push("ready");
+    if (b.blocked) rawStatuses.push("blocked");
+  }
+  const statuses = unique(rawStatuses, text);
 
   const sprintRegex = /^sprint:(.+)$/;
   const rawSprints: string[] = [];
@@ -173,7 +200,7 @@ export function optionsOf(beads: readonly BeadSummary[]) {
   const labels = unique(nonSprintLabels, text);
 
   return {
-    statuses: unique(beads.map((b) => b.status), text),
+    statuses,
     priorities: unique(beads.map((b) => b.priority), (a, b) => a - b),
     labels,
     types: unique(beads.map((b) => b.issue_type), text),

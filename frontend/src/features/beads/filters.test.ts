@@ -253,6 +253,35 @@ describe("filters", () => {
     expect(filterBeads(beads, { ...empty, assignee: ["unassigned", "carol"] }).map((b) => b.id)).toEqual(["3", "4"]);
   });
 
+  it("optionsOf and filterBeads support owner as fallback when assignee is not set", () => {
+    const beads = [
+      bead("1", { assignee: null, owner: "owner-alice" }),
+      bead("2", { assignee: "assigned-bob", owner: "owner-bob" }),
+      bead("3", { assignee: null, owner: null }),
+    ];
+    const options = optionsOf(beads);
+    expect(options.assignees).toEqual(["unassigned", "assigned-bob", "owner-alice"]);
+
+    expect(filterBeads(beads, { ...empty, assignee: ["owner-alice"] }).map((b) => b.id)).toEqual(["1"]);
+    expect(filterBeads(beads, { ...empty, assignee: ["assigned-bob"] }).map((b) => b.id)).toEqual(["2"]);
+    expect(filterBeads(beads, { ...empty, assignee: ["unassigned"] }).map((b) => b.id)).toEqual(["3"]);
+  });
+
+  it("optionsOf and filterBeads support ready and blocked state filtering for open beads", () => {
+    const beads = [
+      bead("1", { status: "open", ready: true, blocked: false }),
+      bead("2", { status: "open", ready: false, blocked: true }),
+      bead("3", { status: "open", ready: false, blocked: false }),
+    ];
+    const options = optionsOf(beads);
+    expect(options.statuses).toEqual(["blocked", "open", "ready"]);
+
+    expect(filterBeads(beads, { ...empty, status: ["ready"] }).map((b) => b.id)).toEqual(["1"]);
+    expect(filterBeads(beads, { ...empty, status: ["blocked"] }).map((b) => b.id)).toEqual(["2"]);
+    expect(filterBeads(beads, { ...empty, status: ["ready", "blocked"] }).map((b) => b.id)).toEqual(["1", "2"]);
+    expect(filterBeads(beads, { ...empty, status: ["open"] }).map((b) => b.id)).toEqual(["1", "2", "3"]);
+  });
+
   // REQ-UI-085
   it("REQ-UI-085 filterBeads matches 'Any' vs 'All' labels", () => {
     const beads = [
