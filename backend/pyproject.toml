@@ -1,6 +1,6 @@
 [project]
 name = "gin-console"
-version = "0.1.0"
+version = "0.1.1"
 description = "Console for gin-workflow projects"
 requires-python = ">=3.12"
 dependencies = [

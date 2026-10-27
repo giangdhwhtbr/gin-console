@@ -175,7 +175,7 @@ def effective_host(settings: Settings, env: Mapping[str, str]) -> str
 - **Provider role**: `backend`
 - **Reasoning**: `medium`
 - **Model class**: `standard_impl`
-- **Acceptance criteria**: `docker compose build` succeeds on the arm64 host; `scripts/docker-smoke.sh` exits 0 against the running stack and covers TC-1..TC-5; a build with a `gh_token` secret leaves no token in the image (TC-6); the systemd service keeps running on `:8700` untouched until the user stops it for the Docker run.
+- **Acceptance criteria**: `docker compose build` succeeds on the arm64 host; `scripts/docker-smoke.sh` exits 0 against the running stack and covers TC-1..TC-5; the systemd service keeps running on `:8700` untouched until the user stops it for the Docker run.
 - **Estimated complexity**: medium
 
 **Steps**
@@ -228,13 +228,8 @@ def effective_host(settings: Settings, env: Mapping[str, str]) -> str
 
    RUN npm install -g @beads/bd@${BD_VERSION} @anthropic-ai/claude-code@${CLAUDE_VERSION} @openai/codex@${CODEX_VERSION}
 
-   # gin-workflow: pinned ref; a private repo authenticates through the gh_token BuildKit secret
-   RUN --mount=type=secret,id=gh_token \
-       auth=""; \
-       if [ -s /run/secrets/gh_token ]; then \
-         auth="http.extraHeader=Authorization: Basic $(printf 'x-access-token:%s' "$(cat /run/secrets/gh_token)" | base64 -w0)"; \
-       fi; \
-       git ${auth:+-c "$auth"} clone --depth 1 --branch "${GIN_WORKFLOW_REF}" "${GIN_WORKFLOW_REPO}" /tmp/gw \
+   # gin-workflow: pinned ref
+   RUN git clone --depth 1 --branch "${GIN_WORKFLOW_REF}" "${GIN_WORKFLOW_REPO}" /tmp/gw \
     && cp -r /tmp/gw/plugins/gin-workflow/src/scripts /opt/gin-workflow \
     && chmod +x /opt/gin-workflow/gin-workflow \
     && ln -s /opt/gin-workflow/gin-workflow /usr/local/bin/gin-workflow \
@@ -264,7 +259,6 @@ def effective_host(settings: Settings, env: Mapping[str, str]) -> str
            APP_UID: ${APP_UID:-1002}
            APP_GID: ${APP_GID:-1002}
            GIN_WORKFLOW_REF: ${GIN_WORKFLOW_REF:-v1.4.2}
-         secrets: [gh_token]
        image: gin-console:local
        user: "${APP_UID:-1002}:${APP_GID:-1002}"
        restart: on-failure:3
@@ -279,12 +273,7 @@ def effective_host(settings: Settings, env: Mapping[str, str]) -> str
          - ${HOME}/.claude:${HOME}/.claude:ro
          - ${HOME}/.codex:${HOME}/.codex:ro
          # project directories: see docker-compose.override.example.yml
-
-   secrets:
-     gh_token:
-       environment: GH_TOKEN
    ```
-   If `GH_TOKEN` is unset, `docker compose build` fails on the missing secret. Mitigation in step 4: `scripts/docker-smoke.sh` and the README run `GH_TOKEN="${GH_TOKEN:-}" docker compose build`; an empty value gives an empty secret file, and the Dockerfile's `-s` test skips the header.
 4. Create `docker-compose.override.example.yml`:
    ```yaml
    # Copy to docker-compose.override.yml (git-ignored) and list every project from config.yaml.
@@ -329,10 +318,10 @@ def effective_host(settings: Settings, env: Mapping[str, str]) -> str
    if curl -s -m 3 -o /dev/null "http://$ip:8700/"; then fail "reachable on $ip:8700"; fi
    echo "docker smoke: ok"
    ```
-7. Build and run: stop the systemd service for the check (`systemctl --user stop gin-console`), `cp docker-compose.override.example.yml docker-compose.override.yml`, then `GH_TOKEN="${GH_TOKEN:-}" docker compose build` and `docker compose up -d`; run `scripts/docker-smoke.sh` and expect `docker smoke: ok`. Fix any failing step (expected risks: `@beads/bd` postinstall binary for arm64, `HOME` mount paths, `bd` Dolt lock on the mounted project). Keep the failing output as evidence in the bead notes.
+7. Build and run: stop the systemd service for the check (`systemctl --user stop gin-console`), `cp docker-compose.override.example.yml docker-compose.override.yml`, then `docker compose build` and `docker compose up -d`; run `scripts/docker-smoke.sh` and expect `docker smoke: ok`. Fix any failing step (expected risks: `@beads/bd` postinstall binary for arm64, `HOME` mount paths, `bd` Dolt lock on the mounted project). Keep the failing output as evidence in the bead notes.
 8. TC-5 second half: with the container running, `tailscale serve status` already points `:8443` at `127.0.0.1:8700`; open `https://instance-20260515-2304.tail5ca54e.ts.net:8443` from a tailnet device (user step) and confirm the Projects page.
-9. TC-6: build once with `GH_TOKEN=sentinel-token-123 docker compose build --no-cache`, then run `docker history --no-trunc gin-console:local | grep -c sentinel-token-123` (expect 0) and `docker run --rm gin-console:local sh -c 'grep -r sentinel-token-123 /opt /app /home /etc /usr/local 2>/dev/null | wc -l'` (expect 0). Rebuild afterwards without the sentinel.
-10. Add a `## Docker` section to `deploy/README.md`: prerequisites (Docker with Compose and BuildKit), `cp .env.example .env`, `cp docker-compose.override.example.yml docker-compose.override.yml` and list projects, `GH_TOKEN` note for a private `gin-workflow` repo, `docker compose build && docker compose up -d`, `scripts/docker-smoke.sh`, `docker compose logs -f`, the `tailscale serve` command (unchanged), and a warning that Docker and the systemd service share port 8700.
+9. Build smoke check: build once with `docker compose build --no-cache`.
+10. Add a `## Docker` section to `deploy/README.md`: prerequisites (Docker with Compose and BuildKit), `cp .env.example .env`, `cp docker-compose.override.example.yml docker-compose.override.yml` and list projects, `docker compose build && docker compose up -d`, `scripts/docker-smoke.sh`, `docker compose logs -f`, the `tailscale serve` command (unchanged), and a warning that Docker and the systemd service share port 8700.
 11. Restart the systemd service afterwards (`docker compose down && systemctl --user start gin-console`) unless the user chooses Docker as the running mode.
 12. Commit: `feat(deploy): add Dockerfile, compose, and smoke script`.
 

@@ -43,7 +43,7 @@ def fake(monkeypatch: pytest.MonkeyPatch) -> Fake:
 def test_server_002_health(tmp_path: Path) -> None:
     response = make_client(tmp_path, []).get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "version": "0.1.0"}
+    assert response.json() == {"status": "ok", "version": "0.1.1"}
 
 
 # REQ-SERVER-003

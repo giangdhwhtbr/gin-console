@@ -6,7 +6,6 @@ services:
         APP_UID: ${APP_UID:-1002}
         APP_GID: ${APP_GID:-1002}
         GIN_WORKFLOW_REF: ${GIN_WORKFLOW_REF:-v1.4.2}
-      secrets: [gh_token]
     image: gin-console:local
     user: "${APP_UID:-1002}:${APP_GID:-1002}"
     restart: on-failure:3
@@ -21,7 +20,3 @@ services:
       - ${HOME}/.claude:${HOME}/.claude:ro
       - ${HOME}/.codex:${HOME}/.codex:ro
       # project directories: see docker-compose.override.example.yml
-
-secrets:
-  gh_token:
-    environment: GH_TOKEN

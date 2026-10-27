@@ -57,8 +57,8 @@ An alternative to the systemd service. Both use port 8700, so run only one at a 
 ```bash
 cp .env.example .env                                           # uid/gid, gin-workflow ref
 cp docker-compose.override.example.yml docker-compose.override.yml   # list every project from config.yaml
-GH_TOKEN="${GH_TOKEN:-}" docker compose build                  # GH_TOKEN only if the gin-workflow repo is private
-GH_TOKEN="${GH_TOKEN:-}" docker compose up -d
+docker compose build
+docker compose up -d
 scripts/docker-smoke.sh
 docker compose logs -f
 ```

@@ -35,13 +35,8 @@ COPY --from=bd /out/bd /usr/local/bin/bd
 
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_VERSION} @openai/codex@${CODEX_VERSION}
 
-# gin-workflow: pinned ref; a private repo authenticates through the gh_token BuildKit secret
-RUN --mount=type=secret,id=gh_token \
-    auth=""; \
-    if [ -s /run/secrets/gh_token ]; then \
-      auth="http.extraHeader=Authorization: Basic $(printf 'x-access-token:%s' "$(cat /run/secrets/gh_token)" | base64 -w0)"; \
-    fi; \
-    git ${auth:+-c "$auth"} clone --depth 1 --branch "${GIN_WORKFLOW_REF}" "${GIN_WORKFLOW_REPO}" /tmp/gw \
+# gin-workflow: pinned ref
+RUN git clone --depth 1 --branch "${GIN_WORKFLOW_REF}" "${GIN_WORKFLOW_REPO}" /tmp/gw \
  && cp -r /tmp/gw/plugins/gin-workflow/src/scripts /opt/gin-workflow \
  && chmod +x /opt/gin-workflow/gin-workflow \
  && ln -s /opt/gin-workflow/gin-workflow /usr/local/bin/gin-workflow \
