@@ -50,7 +50,7 @@ export function GanttChart({ project, plan, preview }: { project: string; plan: 
   }
   return (
     <figure aria-label="Schedule" className={cn("flex flex-col gap-2 rounded border bg-card", preview && "border-dashed")}>
-      <div ref={scroller} className="overflow-x-auto">
+      <div ref={scroller} className="isolate overflow-x-auto">
         <div className="relative" style={{ width: label + axis.width }}>
           <div aria-hidden className="absolute inset-y-0" style={{ left: label }}>
             {axis.columns

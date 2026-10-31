@@ -291,7 +291,7 @@ execution_strategy:
 - [ ] **Step 6: Verify.** Run `pnpm -C frontend test --run`, `pnpm -C frontend typecheck`, `pnpm -C frontend lint` and `pnpm -C frontend build`. Expected: all exit 0. Commit on the feature branch: `feat(milestones): list epics not in a milestone (gin-console-l69)`.
 
 ### Track 2: Look at it in a browser
-- **Dependencies**: Track 1
+- **Dependencies**: Track 1, Track 3
 - **Requirements**: REQ-MILESTONE-UI-010 (manual evidence)
 - **Files**:
   - Modify `docs/changes/gin-console-l69-unassigned-epics/05-tests.md` (TC-1 evidence)
@@ -306,9 +306,34 @@ execution_strategy:
 - [ ] **Step 1: Prepare the run.** Run `pnpm -C frontend build`, then `uv run --directory backend -m gin_console`, and open `http://127.0.0.1:8700/milestones`. Print `bd -C <project> list --type epic --no-parent --json` and `bd -C <project> list --type epic --no-parent --all --json` for the person to compare against.
 - [ ] **Step 2: Record.** Write what the person reports in TC-1's evidence column (for example "ok, laptop + phone, light + dark, 2026-11-02, project gin-console"), or "not run: <reason>".
 
+### Track 3: Milestones mobile layout fixes
+- **Dependencies**: none
+- **Requirements**: REQ-MILESTONE-UI-001, REQ-MILESTONE-UI-003 (layout of already-required behavior; manual evidence in TC-2 and TC-3)
+- **Files**:
+  - Modify `frontend/src/features/milestones/MilestonesPage.tsx:113` (mobile row grid)
+  - Modify `frontend/src/features/milestones/GanttChart.tsx:53` (Gantt scroller stacking context)
+  - Modify `docs/changes/gin-console-l69-unassigned-epics/05-tests.md` (TC-2, TC-3)
+- **Provider role**: `frontend`
+- **Model:** `haiku`
+- **Effort:** `low`
+- **Why:** two one-class CSS edits whose cause is already traced; no logic changes.
+- **Acceptance criteria**: on a phone-width viewport, the milestone row shows status, title, period, progress and warnings without overlap or word-by-word wrapping, and the Gantt scrolls under the bottom nav. The frontend verify commands pass.
+- **Estimated complexity**: low
+
+Added 2026-10-31 after the first phone check (scope change approved by the user). The bugs come from gin-console-djg, and the phone recheck of TC-1 covers the same page. jsdom computes neither grid layout nor stacking, so the evidence is manual (TC-2, TC-3) and no unit test asserts class names.
+
+- [ ] **Step 1: Row grid.** In `MilestonesPage.tsx`, `Row`'s `li` changes `grid-cols-[minmax(0,1fr)_auto]` to `grid-cols-[auto_minmax(0,1fr)]`. On mobile, status and period then sit in the left column at their natural width, and title and progress take the rest; `md:` columns are unchanged.
+- [ ] **Step 2: Gantt stacking.** In `GanttChart.tsx`, the scroller `<div ref={scroller} className="overflow-x-auto">` becomes `className="isolate overflow-x-auto"`. Its sticky `z-10` label column and header then stack inside the chart and no longer paint over the fixed bottom nav (`Layout.tsx:52`, `z-10`, earlier in the DOM).
+- [ ] **Step 3: Manual cases.** Add to `05-tests.md`:
+  ```markdown
+  | TC-2 | REQ-MILESTONE-UI-001 | manual | Phone width: each milestone row shows status, title, period, progress and warnings without overlap or word-by-word wrapping | |
+  | TC-3 | REQ-MILESTONE-UI-003 | manual | Phone width: scrolling the Gantt keeps the bottom nav on top; no epic row or label shows over it | |
+  ```
+- [ ] **Step 4: Verify.** `pnpm -C frontend test --run`, `typecheck`, `lint` and `build` exit 0. Commit `fix(milestones): mobile row grid and Gantt under bottom nav (gin-console-l69.3)`.
+
 ## Integration
 - **Branch**: `feat/gin-console-l69-unassigned-epics`, cut from `spec/gin-console-l69-unassigned-epics`, which holds the change folder.
-- **Merge strategy**: sequential. Track 1, then Track 2.
+- **Merge strategy**: sequential. Track 1, then Track 3, then Track 2 (the browser check covers both).
 
 ## Validation
 - [ ] `pnpm -C frontend test --run`, `pnpm -C frontend typecheck`, `pnpm -C frontend lint` and `pnpm -C frontend build` pass.

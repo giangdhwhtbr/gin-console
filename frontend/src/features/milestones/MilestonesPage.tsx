@@ -110,7 +110,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
   return (
     <li
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-3 py-2",
+        "grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1 px-3 py-2",
         COLUMNS,
         m.status === "closed" && "text-muted-foreground",
       )}
