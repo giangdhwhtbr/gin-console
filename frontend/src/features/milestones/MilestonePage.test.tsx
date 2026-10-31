@@ -130,8 +130,8 @@ describe("MilestonePage", () => {
     expect(document.querySelectorAll("[data-bead]")).toHaveLength(0);
   });
 
-  it("REQ-MILESTONE-UI-004 an impossible ?start= date is ignored: no banner, the current plan", async () => {
-    open(detail([epicPlan("e-a")]), undefined, "?start=2026-02-31");
+  it.each(["2026-02-31", "2026-13-45", "2026-00-10"])("REQ-MILESTONE-UI-004 an impossible ?start=%s is ignored: no banner, the current plan", async (date) => {
+    open(detail([epicPlan("e-a")]), undefined, `?start=${date}`);
     expect(beads(await row("e-a"))).toEqual(["2026-11-02", "2026-11-03", "2026-11-04"]);
     expect(screen.queryByText(/Preview from/)).toBeNull();
   });

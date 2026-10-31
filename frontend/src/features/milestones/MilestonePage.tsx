@@ -16,7 +16,8 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 export function MilestonePage({ project, id }: { project: string; id: string }) {
   const { search } = useLocation();
   const asked = new URLSearchParams(search).get("start");
-  const start = asked !== null && ISO.test(asked) && isoOf(dayOf(asked)) === asked ? asked : null;
+  const day = asked !== null && ISO.test(asked) ? dayOf(asked) : NaN; // month 13 gives NaN, Feb 31 rolls over
+  const start = !Number.isNaN(day) && isoOf(day) === asked ? asked : null;
   const current = useCallback(() => fetchMilestone(project, id, null), [project, id]);
   const preview = useCallback(
     () => (start === null ? Promise.resolve(null) : fetchMilestone(project, id, start)),
