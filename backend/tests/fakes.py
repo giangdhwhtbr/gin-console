@@ -24,11 +24,13 @@ class Fake:
         self,
         fail: dict[str, Exception | int] | None = None,
         issues: list[dict[str, str]] | None = None,
+        ready: list[dict[str, str]] | None = None,
     ) -> None:
         self.calls: list[list[str]] = []
         self.envs: list[dict[str, str]] = []
         self.fail = fail or {}
         self.issues = ISSUES if issues is None else issues
+        self.ready = READY if ready is None else ready
 
     def __call__(self, cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
         self.calls.append(cmd)
@@ -41,7 +43,7 @@ class Fake:
         outputs: dict[str, Any] = {
             "state": STATE,
             "list": self.issues,
-            "ready": READY,
+            "ready": self.ready,
             "blocked": BLOCKED,
         }
         return subprocess.CompletedProcess(cmd, 0, json.dumps(outputs[cmd[1]]), "")

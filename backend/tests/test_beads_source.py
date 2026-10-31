@@ -488,3 +488,11 @@ def test_beads_010_no_or_odd_dependencies_give_an_empty_list(dependencies: Any) 
     extra = {} if dependencies is None else {"dependencies": dependencies}
     (summary,) = list_beads(FakeBd([bead("a-5", **extra)]), CWD, closed=False)
     assert summary.blocked_by == []
+
+
+# REQ-BEADS-007
+# REQ-MILESTONE-UI-007
+def test_beads_007_milestone_is_never_ready() -> None:
+    fake = FakeBd([bead("m-1", issue_type="milestone"), bead("r-1")], ready=["m-1", "r-1"])
+    by_id = {b.id: b for b in list_beads(fake, CWD, closed=False)}
+    assert (by_id["m-1"].ready, by_id["r-1"].ready) == (False, True)
