@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { json } from "@/features/beads/beadFixtures";
+import { bead, json } from "@/features/beads/beadFixtures";
 import type { MilestoneDetail } from "./api";
 import { detail, epicPlan, stubMilestones } from "./milestoneFixtures";
 import { MilestonePage } from "./MilestonePage";
@@ -161,5 +161,33 @@ describe("MilestonePage", () => {
     open(detail([], { finish: null }));
     expect(await screen.findByText(/No epics in this milestone/)).toBeInTheDocument();
     expect(within(document.body).getByText("/roadmap --milestone m-1")).toBeInTheDocument();
+  });
+
+  const graphBeads = [
+    bead("m-1", { issue_type: "milestone" }),
+    bead("m-2", { issue_type: "milestone" }),
+    bead("e-a", { issue_type: "epic", parent: "m-1", blocked_by: ["e-x"] }),
+    bead("e-b", { issue_type: "epic", parent: "m-1", blocked_by: ["e-a"] }),
+    bead("e-x", { issue_type: "epic", parent: "m-2" }),
+  ];
+  const graphNode = (id: string) => screen.findByRole("button", { name: new RegExp(`^${id}`) });
+
+  it("REQ-MILESTONE-UI-002 graph: the milestone's epics with their edge, outside epics external", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m-1?tab=graph");
+    stubMilestones(() => json(detail([epicPlan("e-a"), epicPlan("e-b")])), graphBeads);
+    render(<MilestonePage project="alpha" id="m-1" />);
+    expect(await graphNode("e-a")).toHaveAttribute("data-external", "false");
+    expect(await graphNode("e-b")).toHaveAttribute("data-external", "false");
+    expect(await graphNode("e-x")).toHaveAttribute("data-external", "true");
+    expect(screen.queryByRole("button", { name: /^m-1/ })).toBeNull();
+    expect(screen.getByText("Dashed nodes are outside this milestone.")).toBeInTheDocument();
+  });
+
+  it("REQ-MILESTONE-UI-002 the tabs switch between Gantt and Graph in the URL", async () => {
+    open(detail([epicPlan("e-a")]));
+    await userEvent.click(await screen.findByRole("tab", { name: "Graph" }));
+    expect(window.location.search).toBe("?tab=graph");
+    await userEvent.click(screen.getByRole("tab", { name: "Gantt" }));
+    expect(window.location.search).toBe("");
   });
 });

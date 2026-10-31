@@ -2,14 +2,22 @@ import { ArrowLeft } from "lucide-react";
 import { useCallback, useState } from "react";
 import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
+import { Tabs } from "@/components/Tabs";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
 import { plural, shortDate } from "./format";
 import { dayOf, isoOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
+import { MilestoneGraph } from "./MilestoneGraph";
 import { MilestoneStatus } from "./MilestoneStatus";
 import { useLoad } from "./useLoad";
+
+const TABS = [
+  { value: "gantt", label: "Gantt" },
+  { value: "graph", label: "Graph" },
+] as const;
+type Tab = (typeof TABS)[number]["value"];
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -17,6 +25,7 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
   const { search } = useLocation();
   const asked = new URLSearchParams(search).get("start");
   const day = asked !== null && ISO.test(asked) ? dayOf(asked) : NaN; // month 13 gives NaN, Feb 31 rolls over
+  const tab: Tab = new URLSearchParams(search).get("tab") === "graph" ? "graph" : "gantt";
   const start = !Number.isNaN(day) && isoOf(day) === asked ? asked : null;
   const current = useCallback(() => fetchMilestone(project, id, null), [project, id]);
   const preview = useCallback(
@@ -25,7 +34,7 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
   );
   const base = useLoad(current, true);
   const shown = useLoad<MilestoneDetail | null>(preview, false);
-  const pick = (next: string | null) => navigate(milestonePath(project, id, "gantt", next), { replace: true });
+  const pick = (next: string | null) => navigate(milestonePath(project, id, tab, next), { replace: true });
 
   return (
     <section className="flex flex-col gap-4">
@@ -41,14 +50,21 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
           {base.state.error !== null && (
             <p role="status" className="text-sm text-destructive">{`Refresh failed: ${base.state.error.message}`}</p>
           )}
-          <GanttTab
-            project={project}
-            plan={base.state.data}
-            start={start}
-            preview={shown.state}
-            onRetryPreview={shown.retry}
-            onStart={pick}
-          />
+          <Tabs tabs={TABS} tab={tab} onChange={(next) => navigate(milestonePath(project, id, next, start), { replace: true })} label="Milestone views" />
+          <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+            {tab === "gantt" ? (
+              <GanttTab
+                project={project}
+                plan={base.state.data}
+                start={start}
+                preview={shown.state}
+                onRetryPreview={shown.retry}
+                onStart={pick}
+              />
+            ) : (
+              <MilestoneGraph project={project} id={id} />
+            )}
+          </div>
         </>
       )}
     </section>
