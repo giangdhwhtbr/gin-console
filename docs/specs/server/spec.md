@@ -75,7 +75,7 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - THEN that project's `workflow` has `stage` `discuss` and the five gates with their states
 
 ### REQ-SERVER-006: Beads summary per project
-WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id` and `title`, taken from read-only `bd` commands run in the project directory.
+WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id` and `title`, taken from read-only `bd` commands run in the project directory, where `ready` never counts a bead of type `milestone`.
 
 #### Scenario: Counts and active epics
 - GIVEN a project with 3 open, 1 in_progress and 2 ready issues, one in_progress epic and one ready open epic
@@ -86,6 +86,11 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - GIVEN a project with no in_progress epic and no ready open epic
 - WHEN a client requests `GET /api/projects`
 - THEN `beads.epics` is an empty list
+
+#### Scenario: Milestone not counted as ready
+- GIVEN a project with 2 ready issues and an open milestone without blockers that `bd ready` lists
+- WHEN a client requests `GET /api/projects`
+- THEN `beads.ready` is 2
 
 ### REQ-SERVER-007: Per-block errors
 IF a `gin-workflow` or `bd` command for a project is missing, times out, exits non-zero, or prints invalid JSON, THEN the server SHALL set that block (`workflow` or `beads`) to an object whose only content is an `error` message, and SHALL leave the other block and the other projects unaffected; for a project whose `exists` is false the server SHALL run no command and return both blocks as `null`.

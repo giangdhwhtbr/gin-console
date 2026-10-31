@@ -893,12 +893,12 @@ The Dependencies page SHALL expose the graph to assistive technology with a visu
 - THEN the highlight changes without a transition
 
 ### REQ-UI-055: Main navigation
-The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads (`/beads`), Sessions (`/sessions`) and Quota (`/quota`).
+The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads (`/beads`), Milestones (`/milestones`), Sessions (`/sessions`) and Quota (`/quota`).
 
-#### Scenario: Four links
+#### Scenario: Five links
 - GIVEN any page is shown
 - WHEN the page loads
-- THEN the "Main" navigation holds the links Projects, Beads, Sessions and Quota, one each
+- THEN the "Main" navigation holds the links Projects, Beads, Milestones, Sessions and Quota, one each
 
 ### REQ-UI-056: Responsive navigation
 The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with an icon and a label per link while the window is narrower than 768px, an icon rail with a label under each icon from 768px up to 1023px, and a sidebar with an icon and a label per link from 1024px, and SHALL be the same element in every case.
@@ -919,12 +919,17 @@ The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with 
 - THEN the navigation is a sidebar at the left with the label beside each icon
 
 ### REQ-UI-057: Current destination
-The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight, treating `/beads`, `/beads/<project>/<id>` as Beads and `/sessions`, `/sessions/<project>/<id>` as Sessions, and SHALL mark no other link.
+The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight, treating `/beads`, `/beads/<project>/<id>` as Beads, `/milestones`, `/milestones/<project>/<id>` as Milestones and `/sessions`, `/sessions/<project>/<id>` as Sessions, and SHALL mark no other link.
 
 #### Scenario: Bead page
 - GIVEN the URL is `/beads/alpha/a-1`
 - WHEN the page loads
 - THEN only the Beads link has `aria-current="page"`
+
+#### Scenario: Milestone page
+- GIVEN the URL is `/milestones/alpha/m-1`
+- WHEN the page loads
+- THEN only the Milestones link has `aria-current="page"`
 
 #### Scenario: Change page
 - GIVEN the Projects page is shown
