@@ -22,6 +22,11 @@ TTL_SECONDS = 5.0
 class CollectError(Exception):
     """A command failed; the message is shown to the operator in the UI."""
 
+    def __init__(self, message: str, returncode: int | None = None, stderr: str = "") -> None:
+        super().__init__(message)
+        self.returncode = returncode
+        self.stderr = stderr  # the full stderr: the message keeps only its first 200 characters
+
 
 def _normalize_entry(p: str, is_win: bool) -> str:
     cleaned = p.replace("\\", "/") if is_win else p
@@ -99,7 +104,11 @@ def run_json(
     except OSError as exc:  # e.g. PermissionError on the command or the project directory
         raise CollectError(f"{cmd[0]} failed: {exc.strerror}") from None
     if done.returncode != 0 and not json_on_failure:
-        raise CollectError(f"{cmd[0]} exited {done.returncode}: {done.stderr.strip()[:200]}")
+        raise CollectError(
+            f"{cmd[0]} exited {done.returncode}: {done.stderr.strip()[:200]}",
+            done.returncode,
+            done.stderr,
+        )
     try:
         return json.loads(done.stdout)
     except ValueError:
