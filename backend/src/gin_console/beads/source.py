@@ -101,7 +101,7 @@ def list_beads(run: BdRunner, cwd: Path, closed: bool) -> list[BeadSummary]:
     return [
         bead.model_copy(
             update={
-                "ready": bead.id in ready,
+                "ready": bead.id in ready and bead.issue_type != "milestone",
                 "blocked": bead.id in blocked or bead.status == "blocked",
             }
         )

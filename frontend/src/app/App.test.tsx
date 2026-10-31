@@ -20,6 +20,25 @@ afterEach(() => {
 });
 
 describe("App routing", () => {
+  it("REQ-UI-055 opens Milestones from the sidebar without a reload", async () => {
+    window.history.replaceState(null, "", "/");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+    await userEvent.click(screen.getByRole("link", { name: "Milestones" }));
+    expect(window.location.pathname).toBe("/milestones");
+    expect(await screen.findByRole("heading", { name: "Milestones" })).toBeInTheDocument();
+  });
+
+  // REQ-UI-057
+  it("REQ-UI-057 renders the milestone page on /milestones/:project/:id and marks Milestones", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m-1");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ error: "no milestone command", cause: "outdated" }))));
+    render(<App />);
+    expect(await screen.findByRole("link", { name: "Milestones in alpha" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Milestones" })).toHaveAttribute("aria-current", "page");
+  });
+
   // REQ-UI-008
   it("REQ-UI-008 opens the list from the sidebar without a reload and follows back", async () => {
     window.history.replaceState(null, "", "/");
