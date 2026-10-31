@@ -105,6 +105,33 @@ describe("BeadsPage", () => {
     expect(screen.queryByRole("button", { name: "Graph" })).toBeNull();
   });
 
+  it("REQ-MILESTONE-UI-009 list view: milestone not listed and its epics are roots", async () => {
+    stub(() =>
+      json([
+        bead("m-1", { issue_type: "milestone", title: "Milestone M1" }),
+        bead("e-a", { parent: "m-1" }),
+        bead("e-b", { parent: "m-1" }),
+      ]),
+    );
+    render(<BeadsPage />);
+    await screen.findByText("e-a");
+
+    expect(screen.queryByText("m-1")).toBeNull();
+    const rows = screen.getAllByRole("treeitem");
+    expect(rows).toHaveLength(2);
+    rows.forEach((row) => expect(row).toHaveAttribute("aria-level", "1"));
+  });
+
+  it("REQ-MILESTONE-UI-009 board view: open epic is on the board and milestone is in no column", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stub(() => json([bead("m-1", { issue_type: "milestone", title: "Milestone M1" }), bead("e-a", { title: "Epic A", issue_type: "epic", parent: "m-1", ready: true })]));
+    render(<BeadsPage />);
+
+    const ready = await screen.findByRole("region", { name: "Ready" });
+    expect(within(ready).getByText("Epic A")).toBeInTheDocument();
+    expect(screen.queryByText("Milestone M1")).toBeNull();
+  });
+
   // REQ-UI-023
   it("REQ-UI-023 no projects", async () => {
     stub(() => json([]), []);

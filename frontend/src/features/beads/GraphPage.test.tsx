@@ -49,6 +49,17 @@ describe("GraphPage", () => {
     expect(screen.queryByRole("button", { name: /^a/ })).toBeNull();
   });
 
+  it("REQ-MILESTONE-UI-006 the project graph keeps epics under a milestone and leaves the milestone out", async () => {
+    open("/beads/p/graph", [
+      bead("m-1", { issue_type: "milestone" }),
+      epic("e-a", { parent: "m-1" }),
+      epic("e-b", { parent: "m-1", blocked_by: ["e-a"] }),
+    ]);
+    expect(await node("e-a")).toBeInTheDocument();
+    expect(await node("e-b")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^m-1/ })).toBeNull();
+  });
+
   it("REQ-UI-075 the heading bar links the scope bead's blockers to their pages", async () => {
     open("/beads/p/e-2/graph", [epic("e-1"), epic("e-2", { blocked_by: ["e-1"] }), task("t", "e-2")]);
     await node("t");
