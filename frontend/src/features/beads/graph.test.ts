@@ -57,6 +57,13 @@ describe("scope graph", () => {
     expect(arrows(scopeGraph(beads, "e-1", OFF))).toEqual(["a>b:1"]);
   });
 
+  it("REQ-MILESTONE-UI-006 epics whose milestone parent is not loaded are top-level with their edge", () => {
+    const beads = [epic("e-a", { parent: "m-1" }), epic("e-b", { parent: "m-1", blocked_by: ["e-a"] })];
+    const g = scopeGraph(beads, null, OFF);
+    expect(ids(g)).toEqual(["e-a", "e-b"]);
+    expect(arrows(g)).toEqual(["e-a>e-b:1"]);
+  });
+
   it("REQ-UI-079 a relation of the scope bead itself is left out", () => {
     const beads = [epic("e-1", { blocked_by: ["a"] }), task("a", "e-1"), task("b", "e-1")];
     expect(scopeGraph(beads, "e-1", OFF).edges).toEqual([]);
