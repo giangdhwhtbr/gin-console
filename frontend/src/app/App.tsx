@@ -1,6 +1,7 @@
 import { BeadDetailPage } from "@/features/beads/BeadDetailPage";
 import { BeadsPage } from "@/features/beads/BeadsPage";
 import { GraphPage } from "@/features/beads/GraphPage";
+import { MilestonesPage } from "@/features/milestones/MilestonesPage";
 import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { QuotaPage } from "@/features/quota/QuotaPage";
 import { SessionLogPage } from "@/features/sessions/SessionLogPage";
@@ -55,6 +56,8 @@ export function App() {
         <SessionsPage />
       ) : pathname === "/beads" ? (
         <BeadsPage />
+      ) : pathname === "/milestones" ? (
+        <MilestonesPage />
       ) : pathname === "/quota" ? (
         <QuotaPage />
       ) : (
