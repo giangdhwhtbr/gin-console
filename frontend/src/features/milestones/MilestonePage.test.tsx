@@ -11,7 +11,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function open(current: MilestoneDetail, preview: (start: string) => Response = (start) => json({ ...current, schedule_start: start, preview: true }), search = "") {
+function open(current: MilestoneDetail, preview: (start: string) => Response | Promise<Response> = (start) => json({ ...current, schedule_start: start, preview: true }), search = "") {
   window.history.replaceState(null, "", `/milestones/alpha/m-1${search}`);
   const fetchMock = stubMilestones((url) => {
     const start = url.searchParams.get("start");
@@ -98,6 +98,42 @@ describe("MilestonePage", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Reset" }));
     expect(window.location.search).toBe("");
     await waitFor(() => expect(screen.queryByText(/Preview from/)).toBeNull());
+  });
+
+  it("REQ-MILESTONE-UI-004 preview loading: the banner shows and no plan is drawn", async () => {
+    open(detail([epicPlan("e-a")]), () => new Promise<Response>(() => undefined), "?start=2026-11-16");
+    expect(await screen.findByText(/Preview from Mon 16 Nov\./)).toBeInTheDocument();
+    expect(screen.getByText("Loading preview…")).toBeInTheDocument();
+    expect(document.querySelectorAll("[data-bead]")).toHaveLength(0);
+  });
+
+  const later = (start: string) =>
+    json(detail([epicPlan("e-a", { planned_start: "2026-11-16", planned_end: "2026-11-18" })], { schedule_start: start, preview: true }));
+
+  it("REQ-MILESTONE-UI-004 picking a second date never draws the first preview under it", async () => {
+    open(detail([epicPlan("e-a")]), (start) => (start === "2026-11-16" ? later(start) : new Promise<Response>(() => undefined)), "?start=2026-11-16");
+    await waitFor(() => expect(document.querySelectorAll("[data-bead]").length).toBeGreaterThan(0));
+    fireEvent.change(screen.getByLabelText("Kick-start date"), { target: { value: "2026-11-23" } });
+    expect(await screen.findByText(/Preview from Mon 23 Nov\./)).toBeInTheDocument();
+    expect(document.querySelectorAll("[data-bead]")).toHaveLength(0);
+  });
+
+  it("REQ-MILESTONE-UI-004 a second date that fails shows the error and no bars", async () => {
+    open(
+      detail([epicPlan("e-a")]),
+      (start) => (start === "2026-11-16" ? later(start) : json({ error: "dependency cycle: A -> B -> A", cause: null }, 502)),
+      "?start=2026-11-16",
+    );
+    await waitFor(() => expect(document.querySelectorAll("[data-bead]").length).toBeGreaterThan(0));
+    fireEvent.change(screen.getByLabelText("Kick-start date"), { target: { value: "2026-11-23" } });
+    expect(await screen.findByText("dependency cycle: A -> B -> A")).toBeInTheDocument();
+    expect(document.querySelectorAll("[data-bead]")).toHaveLength(0);
+  });
+
+  it("REQ-MILESTONE-UI-004 an impossible ?start= date is ignored: no banner, the current plan", async () => {
+    open(detail([epicPlan("e-a")]), undefined, "?start=2026-02-31");
+    expect(beads(await row("e-a"))).toEqual(["2026-11-02", "2026-11-03", "2026-11-04"]);
+    expect(screen.queryByText(/Preview from/)).toBeNull();
   });
 
   it.each(["active", "closed"])("REQ-MILESTONE-UI-004 %s milestone: no picker", async (status) => {

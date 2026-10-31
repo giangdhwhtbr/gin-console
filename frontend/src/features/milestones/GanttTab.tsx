@@ -25,8 +25,9 @@ export function GanttTab({
   const pickable = plan.status === "planned" || plan.status === "scheduled";
   const previewing = pickable && start !== null;
   const failed = previewing && preview.status === "error";
-  const previewPlan = previewing && preview.status === "ok" ? preview.data : null;
-  const busy = previewing && (preview.status === "loading" || (preview.status === "ok" && preview.stale));
+  // a preview never draws the current plan or an earlier preview: only a fresh answer for this date
+  const fresh = preview.status === "ok" && !preview.stale ? preview.data : null;
+  const shown = previewing ? fresh : plan;
   return (
     <div className="flex flex-col gap-3">
       {pickable && (
@@ -36,7 +37,6 @@ export function GanttTab({
             <input
               type="date"
               value={start ?? plan.kickoff ?? plan.start}
-              disabled={busy}
               onChange={(event) => onStart(event.target.value === "" ? null : event.target.value)}
               className="rounded border bg-background px-2 py-1"
             />
@@ -56,8 +56,12 @@ export function GanttTab({
       )}
       {failed ? (
         <MilestoneError error={preview.error} onRetry={onRetryPreview} />
+      ) : shown === null ? (
+        <p aria-busy className="text-muted-foreground">
+          Loading preview…
+        </p>
       ) : (
-        <GanttChart project={project} plan={previewPlan ?? plan} preview={previewing} busy={busy} />
+        <GanttChart project={project} plan={shown} preview={previewing} />
       )}
     </div>
   );

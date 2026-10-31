@@ -5,6 +5,7 @@ import { navigate, useLocation } from "@/app/route";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
 import { plural, shortDate } from "./format";
+import { dayOf, isoOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
@@ -15,7 +16,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 export function MilestonePage({ project, id }: { project: string; id: string }) {
   const { search } = useLocation();
   const asked = new URLSearchParams(search).get("start");
-  const start = asked !== null && ISO.test(asked) ? asked : null;
+  const start = asked !== null && ISO.test(asked) && isoOf(dayOf(asked)) === asked ? asked : null;
   const current = useCallback(() => fetchMilestone(project, id, null), [project, id]);
   const preview = useCallback(
     () => (start === null ? Promise.resolve(null) : fetchMilestone(project, id, start)),

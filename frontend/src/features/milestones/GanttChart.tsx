@@ -25,7 +25,7 @@ const lookOf = (status: string) => (isLook(status) ? LOOK[status] : LOOK.open);
 const enc = encodeURIComponent;
 
 /** REQ-MILESTONE-UI-003: each epic as beads on a thread, one bead per working day; weekends narrow. */
-export function GanttChart({ project, plan, preview, busy }: { project: string; plan: MilestoneDetail; preview: boolean; busy: boolean }) {
+export function GanttChart({ project, plan, preview }: { project: string; plan: MilestoneDetail; preview: boolean }) {
   const wide = useWide();
   const label = wide ? 256 : 160;
   const axis = axisOf(plan, wide ? 28 : 20);
@@ -49,7 +49,7 @@ export function GanttChart({ project, plan, preview, busy }: { project: string; 
     );
   }
   return (
-    <figure aria-label="Schedule" aria-busy={busy} className={cn("flex flex-col gap-2 rounded border bg-card", preview && "border-dashed", busy && "opacity-60")}>
+    <figure aria-label="Schedule" className={cn("flex flex-col gap-2 rounded border bg-card", preview && "border-dashed")}>
       <div ref={scroller} className="overflow-x-auto">
         <div className="relative" style={{ width: label + axis.width }}>
           <div aria-hidden className="absolute inset-y-0" style={{ left: label }}>
