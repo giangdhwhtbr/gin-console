@@ -242,7 +242,7 @@ uv run --directory backend mypy
 pnpm -C frontend test
 
 # Type checking and lint
-pnpm -C frontend check
+pnpm -C frontend typecheck
 pnpm -C frontend lint
 ```
 
