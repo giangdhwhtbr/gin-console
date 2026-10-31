@@ -54,14 +54,14 @@ export const detail = (epics: EpicPlan[], overrides: Partial<MilestoneDetail> = 
   ...overrides,
 });
 
-/** Stub `fetch`: `/api/projects` lists "alpha", `/api/milestones…` goes to `handler`, `/api/beads` returns `beads`. */
-export function stubMilestones(handler: (url: URL) => Response | Promise<Response>, beads: BeadSummary[] = []) {
+/** Stub `fetch`: `/api/projects` lists "alpha", `/api/milestones…` goes to `handler`, `/api/beads` returns `beads` (or what `beads(url)` answers). */
+export function stubMilestones(handler: (url: URL) => Response | Promise<Response>, beads: BeadSummary[] | ((url: URL) => Response) = []) {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const url = new URL(text, "http://localhost");
     if (url.pathname === "/api/projects") return Promise.resolve(json([project("alpha")]));
     if (url.pathname.startsWith("/api/milestones")) return Promise.resolve(handler(url));
-    if (url.pathname === "/api/beads") return Promise.resolve(json(beads));
+    if (url.pathname === "/api/beads") return Promise.resolve(typeof beads === "function" ? beads(url) : json(beads));
     return Promise.resolve(json({}, 404));
   });
   vi.stubGlobal("fetch", fetchMock);

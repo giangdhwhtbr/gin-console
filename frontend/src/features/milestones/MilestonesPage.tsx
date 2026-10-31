@@ -10,6 +10,7 @@ import { CopyCommand } from "./CopyCommand";
 import { plural, shortDate } from "./format";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
+import { UnassignedEpics } from "./UnassignedEpics";
 import { useLoad } from "./useLoad";
 
 type Projects = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; names: string[] };
@@ -73,16 +74,11 @@ function MilestoneTable({ project }: { project: string }) {
   const { state, retry } = useLoad(fetcher, true);
   if (state.status === "loading") return <p className="text-muted-foreground">Loading milestones…</p>;
   if (state.status === "error") return <MilestoneError error={state.error} onRetry={retry} />;
-  const { milestones, unassigned_epics: unassigned, today } = state.data;
+  const { milestones, today } = state.data;
   const rows = [...milestones].sort((a, b) => rank(a.status) - rank(b.status) || a.start.localeCompare(b.start));
   return (
     <div className="flex flex-col gap-3">
       {state.error !== null && <p role="status" className="text-sm text-destructive">{`Refresh failed: ${state.error.message}`}</p>}
-      {unassigned > 0 && (
-        <p className="text-sm">
-          {`${plural(unassigned, "roadmap epic")} ${unassigned === 1 ? "isn't" : "aren't"} in a milestone yet. Add them with /roadmap --milestone <id>.`}
-        </p>
-      )}
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-2 text-sm">
           <p>{`No milestones in ${project} yet. Create one with:`}</p>
@@ -102,6 +98,7 @@ function MilestoneTable({ project }: { project: string }) {
           ))}
         </ul>
       )}
+      <UnassignedEpics project={project} />
     </div>
   );
 }

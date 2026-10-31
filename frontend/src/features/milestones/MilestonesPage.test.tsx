@@ -1,6 +1,7 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { json } from "@/features/beads/beadFixtures";
+import { bead, json } from "@/features/beads/beadFixtures";
 import { entry, list, stubMilestones } from "./milestoneFixtures";
 import { MilestonesPage } from "./MilestonesPage";
 
@@ -9,9 +10,9 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function open(body: Response) {
+function open(body: Response, beads: Parameters<typeof stubMilestones>[1] = []) {
   window.history.replaceState(null, "", "/milestones?project=alpha");
-  stubMilestones(() => body);
+  stubMilestones(() => body, beads);
   render(<MilestonesPage />);
 }
 const rowOf = async (title: string) => (await screen.findByRole("link", { name: title })).closest("li") ?? document.body;
@@ -40,9 +41,58 @@ describe("MilestonesPage", () => {
     expect(screen.getByRole("link", { name: "Beta" })).toHaveAttribute("href", "/milestones/alpha/m-1");
   });
 
-  it("REQ-MILESTONE-UI-001 shows the epics not yet in a milestone", async () => {
-    open(json(list([entry("m-1")], { unassigned_epics: 4 })));
-    expect(await screen.findByText(/4 roadmap epics aren't in a milestone yet/)).toBeInTheDocument();
+  it("REQ-MILESTONE-UI-001 does not show the unassigned_epics count", async () => {
+    open(json(list([entry("m-1", { title: "Beta" })], { unassigned_epics: 4 })));
+    await rowOf("Beta");
+    expect(screen.queryByText(/roadmap epics? (isn't|aren't) in a milestone/)).toBeNull();
+  });
+
+  const epic = (id: string, overrides: Parameters<typeof bead>[1] = {}) => bead(id, { issue_type: "epic", title: `Epic ${id}`, ...overrides });
+
+  it("REQ-MILESTONE-UI-010 lists the epics without a parent, with links and a matching count", async () => {
+    open(json(list([entry("m-1")])), [
+      epic("e-a", { labels: ["roadmap"] }),
+      epic("e-b"),
+      epic("e-c", { parent: "m-1" }),
+      epic("e-d", { parent: "e-a" }),
+      bead("t-1", { title: "Task t-1" }),
+    ]);
+    expect(await screen.findByRole("heading", { name: "Epics not in a milestone (2)" })).toBeInTheDocument();
+    const section = within(screen.getByRole("list", { name: "Epics not in a milestone" }));
+    expect(section.getAllByRole("listitem")).toHaveLength(2);
+    expect(section.getByRole("link", { name: "Epic e-a" })).toHaveAttribute("href", "/beads/alpha/e-a");
+    expect(section.getByRole("link", { name: "Epic e-b" })).toHaveAttribute("href", "/beads/alpha/e-b");
+    expect(section.getByText("roadmap")).toBeInTheDocument();
+    expect(screen.getByText("Add them with /roadmap --milestone <id>.")).toBeInTheDocument();
+  });
+
+  it("REQ-MILESTONE-UI-010 Show closed fetches closed beads and lists closed epics dimmed", async () => {
+    const fetchMock = stubMilestones(() => json(list([entry("m-1")])), [epic("e-a"), epic("e-e", { status: "closed" })]);
+    window.history.replaceState(null, "", "/milestones?project=alpha");
+    render(<MilestonesPage />);
+    expect(await screen.findByRole("heading", { name: "Epics not in a milestone (1)" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("checkbox", { name: "Show closed" }));
+    expect(await screen.findByRole("heading", { name: "Epics not in a milestone (2)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Epic e-e" }).closest("li")).toHaveClass("text-muted-foreground");
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([input]) => typeof input === "string" && input.includes("/api/beads?project=alpha&closed=1"))).toBe(true),
+    );
+  });
+
+  it("REQ-MILESTONE-UI-010 says every epic is in a milestone when none is left", async () => {
+    open(json(list([entry("m-1")])), [epic("e-c", { parent: "m-1" })]);
+    expect(await screen.findByRole("heading", { name: "Epics not in a milestone (0)" })).toBeInTheDocument();
+    expect(screen.getByText("Every epic is in a milestone.")).toBeInTheDocument();
+  });
+
+  it("REQ-MILESTONE-UI-010 a beads failure stays in the section and Retry refetches", async () => {
+    let fail = true;
+    open(json(list([entry("m-1", { title: "Beta" })])), () => (fail ? json({ error: "bd failed" }, 502) : json([epic("e-a")])));
+    expect(await screen.findByText("Epics couldn't be loaded")).toBeInTheDocument();
+    expect(await rowOf("Beta")).toBeInTheDocument();
+    fail = false;
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("heading", { name: "Epics not in a milestone (1)" })).toBeInTheDocument();
   });
 
   it("REQ-MILESTONE-UI-001 shows a list entry's error in place of progress and warnings", async () => {
