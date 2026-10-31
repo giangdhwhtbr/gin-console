@@ -1,4 +1,4 @@
-import { Gauge, LayoutGrid, ListChecks, MessageSquare } from "lucide-react";
+import { Flag, Gauge, LayoutGrid, ListChecks, MessageSquare } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "./Link";
@@ -8,6 +8,7 @@ import { ThemeToggle } from "./ThemeToggle";
 const NAV = [
   { to: "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
   { to: "/beads", label: "Beads", icon: ListChecks, current: (path: string) => path === "/beads" || path.startsWith("/beads/") },
+  { to: "/milestones", label: "Milestones", icon: Flag, current: (path: string) => path === "/milestones" || path.startsWith("/milestones/") },
   { to: "/sessions", label: "Sessions", icon: MessageSquare, current: (path: string) => path === "/sessions" || path.startsWith("/sessions/") },
   { to: "/quota", label: "Quota", icon: Gauge, current: (path: string) => path === "/quota" },
 ] as const;

@@ -20,6 +20,16 @@ afterEach(() => {
 });
 
 describe("App routing", () => {
+  it("REQ-UI-055 opens Milestones from the sidebar without a reload", async () => {
+    window.history.replaceState(null, "", "/");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+    await userEvent.click(screen.getByRole("link", { name: "Milestones" }));
+    expect(window.location.pathname).toBe("/milestones");
+    expect(await screen.findByRole("heading", { name: "Milestones" })).toBeInTheDocument();
+  });
+
   // REQ-UI-008
   it("REQ-UI-008 opens the list from the sidebar without a reload and follows back", async () => {
     window.history.replaceState(null, "", "/");
