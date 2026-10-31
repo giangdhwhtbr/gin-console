@@ -1,9 +1,10 @@
 import { useEffect } from "react";
 
-/** Run `callback` now and every `ms` while the page is visible; run it again when it becomes visible. */
-export function useVisibleInterval(callback: () => void, ms: number): void {
+/** Run `callback` now and, unless `ms` is null, every `ms` while the page is visible and again when it becomes visible. */
+export function useVisibleInterval(callback: () => void, ms: number | null): void {
   useEffect(() => {
     callback();
+    if (ms === null) return;
     const tick = () => {
       if (document.visibilityState === "visible") callback();
     };
