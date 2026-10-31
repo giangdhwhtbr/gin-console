@@ -113,12 +113,17 @@ The server SHALL replace lone surrogate characters in every string it returns.
 - THEN both responses are 200 with the character replaced
 
 ### REQ-BEADS-007: Readiness and closing time
-WHEN a client requests the bead list, the server SHALL add to each bead `ready` (true when `bd ready` lists it), `blocked` (true when `bd blocked` lists it or its status is `blocked`) and `closed_at` (the time it was closed, absent for a bead that is not closed), SHALL ignore ids that `bd ready` or `bd blocked` list but `bd list` does not, SHALL use the same 5-second cache entry for all three commands, and IF `bd ready` or `bd blocked` fails or prints an unexpected shape, THEN SHALL respond 502 as in REQ-BEADS-005 instead of returning wrong flags.
+WHEN a client requests the bead list, the server SHALL add to each bead `ready` (true when `bd ready` lists it and its type is not `milestone`), `blocked` (true when `bd blocked` lists it or its status is `blocked`) and `closed_at` (the time it was closed, absent for a bead that is not closed), SHALL ignore ids that `bd ready` or `bd blocked` list but `bd list` does not, SHALL use the same 5-second cache entry for all three commands, and IF `bd ready` or `bd blocked` fails or prints an unexpected shape, THEN SHALL respond 502 as in REQ-BEADS-005 instead of returning wrong flags.
 
 #### Scenario: Flags
 - GIVEN an open unblocked bead, an open bead with an unfinished blocker, an in-progress bead and a closed bead
 - WHEN a client requests the list with `closed=1`
 - THEN the first has `ready` true, the second `blocked` true, the third both false, and the fourth has `closed_at`
+
+#### Scenario: Milestone is never ready
+- GIVEN an open milestone without blockers that `bd ready` lists
+- WHEN a client requests the list
+- THEN the milestone has `ready` false
 
 #### Scenario: Unknown id is ignored
 - GIVEN `bd ready` lists an id that `bd list` does not

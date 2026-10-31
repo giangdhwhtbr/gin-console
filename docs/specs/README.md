@@ -12,3 +12,4 @@ Changes are proposed in `../changes/<epic-id>-<slug>/spec-delta.md` and merged h
 - [sessions](sessions/spec.md)
 - [quota](quota/spec.md)
 - [beads](beads/spec.md)
+- [milestone-ui](milestone-ui/spec.md)
