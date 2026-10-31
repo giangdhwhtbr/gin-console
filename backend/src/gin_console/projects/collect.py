@@ -134,7 +134,12 @@ def collect_beads(path: Path) -> Beads | BlockError:
         issues = run_json(
             ["bd", "list", "--status", "open,in_progress", "--limit", "0", "--json"], path
         )
-        ready = run_json(["bd", "ready", "--limit", "0", "--json"], path)
+        # a milestone is not work, even when nothing blocks it (REQ-MILESTONE-UI-007)
+        ready = [
+            issue
+            for issue in run_json(["bd", "ready", "--limit", "0", "--json"], path)
+            if not (isinstance(issue, dict) and issue.get("issue_type") == "milestone")
+        ]
         blocked = run_json(["bd", "blocked", "--json"], path)
         ready_ids = {issue["id"] for issue in ready}
         return Beads(

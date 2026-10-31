@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fakes import Fake
+from fakes import ISSUES, READY, Fake
 
 from gin_console.projects.collect import Collector
 from gin_console.projects.models import Beads, BlockError, Workflow
@@ -235,3 +235,21 @@ def test_server_009_gin_workflow_cmd_exists() -> None:
     content = cmd_file.read_text()
     assert "bash" in content.lower()
 
+
+# REQ-SERVER-006
+# REQ-MILESTONE-UI-007
+def test_server_006_milestone_not_counted_as_ready(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    milestone = {"id": "m1", "title": "M", "issue_type": "milestone", "status": "open"}
+    patch(
+        monkeypatch,
+        Fake(
+            issues=[*ISSUES, milestone],
+            ready=[*READY, {"id": "m1", "issue_type": "milestone"}],
+        ),
+    )
+    _, result = Collector().get("p", tmp_path)
+    beads = beads_of(result)
+    assert beads.ready == 2
+    assert [e.id for e in beads.epics] == ["e1", "e2"]
