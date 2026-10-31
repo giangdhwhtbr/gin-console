@@ -202,4 +202,32 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - WHEN a client requests `GET /api/projects`
 - THEN `beads.ready` is 2
 
+### REQ-UI-055: Main navigation
+<!-- base: 97592ceb8a2a4a25c90a4898448e38068b706d9d31f39bbe36c81daccf3410c3 -->
+The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads (`/beads`), Milestones (`/milestones`), Sessions (`/sessions`) and Quota (`/quota`).
+
+#### Scenario: Five links
+- GIVEN any page is shown
+- WHEN the page loads
+- THEN the "Main" navigation holds the links Projects, Beads, Milestones, Sessions and Quota, one each
+
+### REQ-UI-057: Current destination
+<!-- base: a8fa59c6e5e5e1e0f7113b8abce7d955cb70da81bbeefca7ae2294332c9b96fd -->
+The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight, treating `/beads`, `/beads/<project>/<id>` as Beads, `/milestones`, `/milestones/<project>/<id>` as Milestones and `/sessions`, `/sessions/<project>/<id>` as Sessions, and SHALL mark no other link.
+
+#### Scenario: Bead page
+- GIVEN the URL is `/beads/alpha/a-1`
+- WHEN the page loads
+- THEN only the Beads link has `aria-current="page"`
+
+#### Scenario: Milestone page
+- GIVEN the URL is `/milestones/alpha/m-1`
+- WHEN the page loads
+- THEN only the Milestones link has `aria-current="page"`
+
+#### Scenario: Change page
+- GIVEN the Projects page is shown
+- WHEN the user clicks "Quota"
+- THEN only the Quota link has `aria-current="page"`
+
 ## REMOVED

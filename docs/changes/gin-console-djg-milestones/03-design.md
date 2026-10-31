@@ -63,7 +63,7 @@ Milestones                                         [ gin-workflow ▾ ]
 ```
 
 - Order: active, scheduled, planned, then closed, each group by `start`. Closed rows use `--muted-foreground` text.
-- The whole row is a link to the milestone page and is keyboard focusable. The title is the link text, and the id sits beside it in mono.
+- The title links to the milestone page; the id sits beside it in mono.
 - Period: `start – end`. When `kickoff` is set, it reads "Kicks off 4 Jan" with the period on a second line. Dates use short day-month form, adding the year only when it is not the year of `today`.
 - Epics: the existing quota `ProgressBar` shape (thin track) with "2 of 6" in tabular figures.
 - Warnings: a `TriangleAlert` icon and count in `--state-blocked`, or an em dash for none.
@@ -106,7 +106,7 @@ Kick-start date [ 2026-11-16 ▾ ]  Reset
    19–25 Nov · 5d        │                                         ┃
  ○ gw-rm-c  Reports      │                              ○━○ ░ ○━○━┃━○━○
    26 Nov–3 Dec · 6d     │                                         ┃
-   ⚠ 2 days past the end   ⚠ Blocked by gw-rm-y (in Public launch)
+   ⚠ 2 working days past the end   ⚠ Blocked by gw-rm-y (in gw-ab4)
  ◌ gw-rm-d  Docs         │ ◌                                        ┃
    16 Nov · no estimate  │                                          ┃
    ⚠ No estimate
@@ -116,10 +116,10 @@ Kick-start date [ 2026-11-16 ▾ ]  Reset
   - The status icon (shape and color) and the id in mono, then the title, truncated with the full title in `title`.
   - A second line with the dates and "Nd" estimate in text, so every bar has a text equivalent.
   - Warning lines underneath as plain sentences in `--state-blocked` with `TriangleAlert`:
-    - "2 days past the end"
+    - "2 working days past the end"
     - "Late: should have finished 4 Nov"
     - "No estimate"
-    - "Blocked by gw-rm-y (in Public launch)", or "(not in a milestone)"; the blocking id links to its bead page.
+    - "Blocked by gw-rm-y (in gw-ab4)", or "(not in a milestone)"; the `show` JSON gives the milestone id only, so the line names the id.
 - Timeline:
   - Day columns are 28px on desktop and 20px under md; weekend columns are 8px.
   - Two-row axis: months, then day numbers.
