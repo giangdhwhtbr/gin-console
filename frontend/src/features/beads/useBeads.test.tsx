@@ -23,7 +23,7 @@ describe("useBeads", () => {
     expect(await idsOf()).toEqual(["e-a"]);
   });
 
-  it("REQ-MILESTONE-UI-002 keeps them when asked, for the milestone Graph tab", async () => {
+  it("keeps milestone beads when keepMilestones is true", async () => {
     expect(await idsOf(true)).toEqual(["m-1", "e-a"]);
   });
 });
