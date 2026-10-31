@@ -180,6 +180,14 @@ def test_beads_007_flags_over_http(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-007
+# REQ-MILESTONE-UI-007
+def test_beads_007_milestone_is_never_ready_over_http(tmp_path: Path) -> None:
+    fake = FakeBd([bead("m-1", issue_type="milestone"), bead("r-1")], ready=["m-1", "r-1"])
+    body = make(tmp_path, fake).get("/api/beads", params={"project": "proj"}).json()
+    assert {b["id"]: b["ready"] for b in body} == {"m-1": False, "r-1": True}
+
+
+# REQ-BEADS-007
 # REQ-BEADS-005
 def test_beads_007_a_failing_readiness_command_is_502_and_not_cached(tmp_path: Path) -> None:
     fake = FakeBd(FOUR, failing={"blocked": BeadsError("bd blocked failed")})
