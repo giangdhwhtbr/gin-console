@@ -16,6 +16,7 @@ const makeDetail = (summary: BeadSummary, overrides: Partial<BeadDetail> = {}): 
   dependencies: [],
   dependents: [],
   children: [],
+  bugs: [],
   ...overrides,
 });
 
@@ -47,6 +48,7 @@ function stubTreeWithDetail(
     const detailPrefix = "/api/beads/alpha/";
     if (url.pathname.startsWith(detailPrefix)) {
       const rest = url.pathname.slice(detailPrefix.length);
+      if (rest.endsWith("/reopens")) return Promise.resolve(json({ reopens: 0 }));
       if (!rest.includes("/")) {
         const id = decodeURIComponent(rest);
         const found = beadsList.find((b) => b.id === id) ?? bead(id);

@@ -7,12 +7,18 @@ import { BeadDetailPage } from "./BeadDetailPage";
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-const stubFetch = (detail: BeadDetail, comments: () => Response | Promise<Response> = () => json([])) =>
+const stubFetch = (
+  detail: BeadDetail,
+  comments: () => Response | Promise<Response> = () => json([]),
+  reopens: () => Response | Promise<Response> = () => json({ reopens: 0 }),
+) =>
   vi.stubGlobal(
     "fetch",
     vi.fn((input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-      return Promise.resolve(url.endsWith("/comments") ? comments() : json(detail));
+      if (url.endsWith("/comments")) return Promise.resolve(comments());
+      if (url.endsWith("/reopens")) return Promise.resolve(reopens());
+      return Promise.resolve(json(detail));
     }),
   );
 
@@ -53,6 +59,7 @@ const beadDetail = (id: string, overrides: Partial<BeadDetail> = {}): BeadDetail
   dependencies: [],
   dependents: [],
   children: [],
+  bugs: [],
   ...overrides,
 });
 
@@ -68,6 +75,92 @@ afterEach(() => {
 });
 
 describe("BeadDetailPage", () => {
+  const bug = (id: string, status = "open") => ({ id, title: `Bug ${id}`, status, type: "discovered-from" as const });
+
+  // REQ-UI-086
+  it("REQ-UI-086 bugs found", async () => {
+    stubFetch(beadDetail("a-5", { bugs: [bug("b-1"), bug("b-2", "closed")] }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Bugs found" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "b-1" })).toHaveAttribute("href", "/beads/alpha/b-1");
+    expect(screen.getByRole("link", { name: "b-2" })).toHaveAttribute("href", "/beads/alpha/b-2");
+    expect(screen.getByText("Bug b-1")).toBeInTheDocument();
+  });
+
+  // REQ-UI-086
+  it("REQ-UI-086 no bugs", async () => {
+    stubFetch(beadDetail("a-5"));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Bugs found" })).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-086
+  it("REQ-UI-086 reopened", async () => {
+    stubFetch(beadDetail("a-5"), undefined, () => json({ reopens: 2 }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByText(/Reopened 2 times/)).toBeInTheDocument();
+  });
+
+  // REQ-UI-086
+  it("REQ-UI-086 reopened once", async () => {
+    stubFetch(beadDetail("a-5"), undefined, () => json({ reopens: 1 }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByText(/Reopened 1 time$/)).toBeInTheDocument();
+  });
+
+  // REQ-UI-086
+  it("REQ-UI-086 not reopened or still loading", async () => {
+    stubFetch(beadDetail("a-5"), undefined, () => new Promise<Response>(() => undefined));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    expect(screen.queryByText(/Reopen/)).not.toBeInTheDocument();
+    cleanup();
+    stubFetch(beadDetail("a-5"), undefined, () => json({ reopens: 0 }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    await act(async () => {}); // let the reopens answer arrive
+    expect(screen.queryByText(/Reopen/)).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-086
+  it("REQ-UI-086 reopens fail", async () => {
+    let answer = json({ error: "bd history failed" }, 502);
+    stubFetch(beadDetail("a-5"), undefined, () => answer);
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByText(/Reopens unavailable: bd history failed/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    answer = json({ reopens: 1 });
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByText(/Reopened 1 time$/)).toBeInTheDocument();
+  });
+
+  // REQ-UI-086
+  it("REQ-UI-086 late answer", async () => {
+    let releaseA5: (response: Response) => void = () => undefined;
+    const a5 = new Promise<Response>((resolve) => {
+      releaseA5 = resolve;
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.endsWith("/a-5/reopens")) return a5;
+        if (url.endsWith("/reopens")) return Promise.resolve(json({ reopens: 0 }));
+        return Promise.resolve(json(beadDetail(url.endsWith("a-6") ? "a-6" : "a-5")));
+      }),
+    );
+    const { rerender } = render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    rerender(<BeadDetailPage project="alpha" id="a-6" />);
+    expect(await screen.findByRole("heading", { name: "Title a-6" })).toBeInTheDocument();
+    await act(async () => {
+      releaseA5(json({ reopens: 3 }));
+      await a5;
+    });
+    expect(screen.queryByText(/Reopened 3 times/)).not.toBeInTheDocument();
+  });
+
   // REQ-UI-028
   it("REQ-UI-028 shows fields and description as plain text", async () => {
     const created_at = "2026-10-01T12:00:00Z";
@@ -318,8 +411,11 @@ describe("BeadDetailPage", () => {
   // REQ-UI-039
   it("REQ-UI-039 none requested", async () => {
     const bead = beadDetail("a-5", { comment_count: 0 });
+    const urls: string[] = [];
     const fetchMock = vi.fn((input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      urls.push(url);
+      if (url.endsWith("/reopens")) return Promise.resolve(json({ reopens: 0 }));
       return Promise.resolve(url.endsWith("/comments") ? json([]) : json(bead));
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -327,7 +423,7 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-5" />);
 
     expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(urls.filter((url) => url.endsWith("/comments"))).toEqual([]);
     expect(screen.queryByRole("heading", { name: /^Comments/ })).not.toBeInTheDocument();
   });
 
@@ -372,6 +468,7 @@ describe("BeadDetailPage", () => {
           }
           return Promise.resolve(json([note("c-1")]));
         }
+        if (url.endsWith("/reopens")) return Promise.resolve(json({ reopens: 0 }));
         beadCallCount++;
         return Promise.resolve(json(bead));
       }),

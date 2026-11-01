@@ -11,6 +11,7 @@ import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
 import { graphPath } from "./graph";
 import { useDiscussionHidden } from "./discussion";
+import { Reopens } from "./Reopens";
 import { RelationList } from "./RelationList";
 import { SIDE_PANEL } from "./side-panel";
 import { TextSection } from "./TextSection";
@@ -146,6 +147,7 @@ export function BeadDetailPage({
                     ]
                       .filter(Boolean)
                       .join(" · ")}
+                    <Reopens key={bead.id} project={project} id={bead.id} />
                   </div>
                   {bead.id !== graphScope &&
                     (bead.children.length > 0 ||
@@ -166,6 +168,7 @@ export function BeadDetailPage({
                 <TextSection title="Close reason" text={bead.close_reason} />
                 <RelationList title="Depends on" project={project} items={bead.dependencies} />
                 <RelationList title="Blocks" project={project} items={bead.dependents} />
+                <RelationList title="Bugs found" project={project} items={bead.bugs} />
                 {total > 0 && (
                   <div className="flex flex-col gap-2">
                     <ProgressBar label="Children closed" percent={(closed / total) * 100} />

@@ -25,6 +25,7 @@ function stub() {
       }
       if (url.pathname === "/api/beads") return Promise.resolve(json(list));
       if (url.pathname.endsWith("/comments")) return Promise.resolve(json([]));
+      if (url.pathname.endsWith("/reopens")) return Promise.resolve(json({ reopens: 0 }));
       return Promise.resolve(
         json({
           ...list[0],
@@ -36,6 +37,7 @@ function stub() {
           dependencies: [],
           dependents: [],
           children: [],
+          bugs: [],
         }),
       );
     }),

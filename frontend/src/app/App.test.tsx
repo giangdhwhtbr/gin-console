@@ -162,6 +162,9 @@ describe("App routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((url: string) => {
+        if (url.includes("/api/beads/alpha/a-5/reopens") || url.includes("/api/beads/alpha/a-6/reopens")) {
+          return Promise.resolve(json({ reopens: 0 }));
+        }
         if (url.includes("/api/beads/alpha/a-5")) {
           return Promise.resolve(
             json({
@@ -192,6 +195,7 @@ describe("App routing", () => {
               dependencies: [],
               dependents: [],
               children: [],
+              bugs: [],
             }),
           );
         }
@@ -258,6 +262,7 @@ describe("App routing", () => {
         dependencies: [],
         dependents: [],
         children: [],
+        bugs: [],
       });
     let releaseFirst: (response: Response) => void = () => undefined;
     const first = new Promise<Response>((resolve) => {
@@ -266,6 +271,9 @@ describe("App routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((url: string) => {
+        if (url.includes("/api/beads/alpha/a-5/reopens") || url.includes("/api/beads/alpha/a-6/reopens")) {
+          return Promise.resolve(json({ reopens: 0 }));
+        }
         if (url.includes("/api/beads/alpha/a-5")) return first;
         if (url.includes("/api/beads/alpha/a-6")) return Promise.resolve(detail("a-6"));
         return Promise.resolve(json([]));
@@ -317,6 +325,7 @@ describe("App routing", () => {
         dependencies: [],
         dependents: [],
         children: [],
+        bugs: [],
       });
     let releaseA5Comments: (response: Response) => void = () => undefined;
     const a5Comments = new Promise<Response>((resolve) => {
@@ -327,6 +336,9 @@ describe("App routing", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes("/api/beads/alpha/a-5/reopens") || url.includes("/api/beads/alpha/a-6/reopens")) {
+          return Promise.resolve(json({ reopens: 0 }));
+        }
         if (url.includes("/api/beads/alpha/a-5/comments")) return a5Comments;
         if (url.includes("/api/beads/alpha/a-5")) return Promise.resolve(detail("a-5"));
         if (url.includes("/api/beads/alpha/a-6/comments")) {

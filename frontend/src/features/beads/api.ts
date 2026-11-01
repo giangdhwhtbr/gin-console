@@ -21,7 +21,7 @@ export type BeadSummary = {
   blocked_by: string[];
   closed_at: string | null;
 };
-export type Relation = { id: string; title: string; status: string; type: "blocks" | "parent-child" };
+export type Relation = { id: string; title: string; status: string; type: "blocks" | "parent-child" | "discovered-from" };
 export type BeadDetail = BeadSummary & {
   description: string | null;
   design: string | null;
@@ -31,6 +31,7 @@ export type BeadDetail = BeadSummary & {
   dependencies: Relation[];
   dependents: Relation[];
   children: Relation[];
+  bugs: Relation[];
 };
 export type Comment = { id: string; author: string; text: string; created_at: string; truncated: boolean };
 
@@ -57,7 +58,7 @@ function isRelation(value: unknown): value is Relation {
   return (
     isObject(value) &&
     ["id", "title", "status"].every((k) => isString(field(value, k))) &&
-    ["blocks", "parent-child"].includes(String(field(value, "type")))
+    ["blocks", "parent-child", "discovered-from"].includes(String(field(value, "type")))
   );
 }
 
@@ -69,7 +70,7 @@ function isDetail(value: unknown): value is BeadDetail {
     ["description", "design", "notes", "acceptance_criteria", "close_reason"].every((k) =>
       isStringOrNull(field(value, k)),
     ) &&
-    ["dependencies", "dependents", "children"].every((k) => isRelations(field(value, k)))
+    ["dependencies", "dependents", "children", "bugs"].every((k) => isRelations(field(value, k)))
   );
 }
 
@@ -122,4 +123,15 @@ export async function fetchComments(project: string, id: string): Promise<Commen
     throw new Error("Could not load the comments (unexpected response)");
   }
   return body;
+}
+
+export async function fetchReopens(project: string, id: string): Promise<number> {
+  const response = await fetch(`/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/reopens`);
+  if (!response.ok) throw await failure(response, "Bead");
+  const body: unknown = await response.json();
+  const reopens = isObject(body) ? field(body, "reopens") : undefined;
+  if (typeof reopens !== "number" || !Number.isInteger(reopens) || reopens < 0) {
+    throw new Error("Could not load the reopens (unexpected response)");
+  }
+  return reopens;
 }
