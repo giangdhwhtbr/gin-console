@@ -28,7 +28,7 @@ WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return 
 - THEN the response is 404
 
 ### REQ-BEADS-002: Bead detail
-WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return the bead with the fields of REQ-BEADS-001 plus `description`, `dependencies` and `dependents` (each with `id`, `title`, `status` and `type`, where `type` is `blocks` or `parent-child`) and, for an epic, `children` (each with `id`, `title`, `status`, closed children included), and SHALL respond 404 when the project or the bead does not exist.
+WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return the bead with the fields of REQ-BEADS-001 plus `description`, `dependencies` and `dependents` (each with `id`, `title`, `status` and `type`, where `type` is `blocks` or `parent-child`), `bugs` (each bead of type `bug` that has a `discovered-from` dependency on this bead, open or closed, with `id`, `title`, `status` and `type` `discovered-from`) and, for an epic, `children` (each with `id`, `title`, `status`, closed children included), and SHALL respond 404 when the project or the bead does not exist.
 
 #### Scenario: Dependencies and dependents
 - GIVEN a bead blocked by one bead and blocking another
@@ -39,6 +39,11 @@ WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return 
 - GIVEN an epic with 3 children, one of them closed
 - WHEN a client requests its detail
 - THEN `children` lists all 3 with their statuses
+
+#### Scenario: Bugs found
+- GIVEN a bead with an open bug, a closed bug and an epic that each have a `discovered-from` dependency on it
+- WHEN a client requests its detail
+- THEN `bugs` lists the two bugs with type `discovered-from` and not the epic, and neither appears in `dependents` or `children`
 
 #### Scenario: Unknown bead
 - GIVEN a configured project without a bead `x-1`
@@ -223,3 +228,36 @@ The server SHALL return with every bead of the list `blocked_by`, the ids of the
 - GIVEN a bead without dependencies
 - WHEN a client requests the list
 - THEN its `blocked_by` is empty
+
+### REQ-BEADS-011: Bead reopens
+WHEN a client requests `GET /api/beads/{project}/{id}/reopens`, the server SHALL return `{"reopens": N}`, where N counts, over the snapshots of `bd history <id> --json` from oldest to newest, each snapshot with status `closed` directly followed by one with another status, SHALL run `bd history` again for that bead only when its `updated_at` differs from the one of the last count, SHALL respond 404 when the project, the id or the bead does not exist, and SHALL respond 502 as in REQ-BEADS-005 when `bd` fails or answers in an unexpected shape, without keeping that error.
+
+#### Scenario: reopened twice
+- GIVEN a bead whose history, oldest first, has the statuses open, in_progress, closed, closed, open, closed, in_progress, closed
+- WHEN a client requests its reopens
+- THEN the response is `{"reopens": 2}`
+
+#### Scenario: never reopened
+- GIVEN a bead whose history has the statuses open, in_progress, closed, closed
+- WHEN a client requests its reopens
+- THEN the response is `{"reopens": 0}`
+
+#### Scenario: unchanged bead
+- GIVEN the reopens of a bead were counted and its `updated_at` has not changed since
+- WHEN a client requests its reopens again, after more than 5 seconds
+- THEN `bd history` does not run again and the same count is returned
+
+#### Scenario: changed bead
+- GIVEN the reopens of a bead were counted and its `updated_at` changed since
+- WHEN a client requests its reopens
+- THEN `bd history` runs again
+
+#### Scenario: unknown bead or unsafe id
+- GIVEN no bead `x-1`, no project `nope`, and the id `--help`
+- WHEN a client requests `/api/beads/<project>/x-1/reopens`, `/api/beads/nope/x-1/reopens` or `/api/beads/<project>/--help/reopens`
+- THEN the response is 404, and for `--help` no `bd` command ran
+
+#### Scenario: bd history fails
+- GIVEN `bd history` exits with a non-zero status
+- WHEN a client requests the reopens
+- THEN the response is 502 with an `error`, and the next request runs `bd history` again

@@ -1444,3 +1444,44 @@ The bead filter bar SHALL offer a "Labels" multi-select popover listing every un
 - GIVEN a bead with labels ["ui", "backend"] and a bead with label ["ui"]
 - WHEN the user selects labels "ui" and "backend" with match mode "All"
 - THEN only the bead with both labels remains visible and the URL query contains `label=ui,backend&label_mode=all`
+
+### REQ-UI-086: Bugs and reopens on the bead page
+The bead page and the List detail panel SHALL list under "Bugs found" the `bugs` of the bead (each with id, title and status, linking to that bead in the same project) and show nothing when there are none, SHALL request the reopens of REQ-BEADS-011 after the bead is shown and, when the count is above 0, add "Reopened 1 time" or "Reopened N times" to the line with the creation and update times, SHALL show nothing about reopens while they load or when the count is 0, IF the reopens request fails or its answer has an unexpected shape, THEN SHALL show "Reopens unavailable" with the error and a Retry button that repeats only that request while the rest of the page stays shown, and a late reopens answer for a bead that is no longer shown SHALL NOT be shown for the bead now shown.
+
+#### Scenario: bugs found
+- GIVEN a bead with an open bug and a closed bug that each have a `discovered-from` dependency on it
+- WHEN the bead page is shown
+- THEN "Bugs found" lists both with their id, title and status, each linking to `/beads/<project>/<its id>`
+
+#### Scenario: no bugs
+- GIVEN a bead whose `bugs` is empty
+- WHEN the bead page is shown
+- THEN there is no "Bugs found" section
+
+#### Scenario: reopened
+- GIVEN a bead whose reopens answer is `{"reopens": 2}`
+- WHEN the bead page is shown
+- THEN the line with the creation and update times includes "Reopened 2 times"
+
+#### Scenario: not reopened or still loading
+- GIVEN a bead whose reopens answer is `{"reopens": 0}`, or has not arrived yet
+- WHEN the bead page is shown
+- THEN the page shows no text about reopens and no 0
+
+#### Scenario: reopens fail
+- GIVEN the reopens request answers 502 with `bd history failed`
+- WHEN the bead page is shown
+- THEN the bead fields stay shown, "Reopens unavailable" shows `bd history failed` and Retry, and Retry requests the reopens again
+
+#### Scenario: late answer
+- GIVEN the reopens of bead `a-5` are still loading and the user opens bead `a-6`
+- WHEN the answer for `a-5` arrives
+- THEN the page of `a-6` does not show it
+
+### REQ-UI-087: Quality signals in the bug color
+The "Reopened 1 time" or "Reopened N times" text of REQ-UI-086 and the "Bugs found" heading SHALL be shown in the bug color (the `type-bug` theme token used by the bug type badge), in light and dark, while the " · " separator, the bug rows and the "Reopens unavailable" error keep the default text color.
+
+#### Scenario: highlighted signals
+- GIVEN a bead with one bug found whose reopens answer is `{"reopens": 1}`
+- WHEN the bead page is shown
+- THEN "Reopened 1 time" and the "Bugs found" heading use the `type-bug` color and the separator and bug rows do not
