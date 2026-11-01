@@ -20,6 +20,7 @@ from gin_console.projects.router import build_router as build_projects_router
 from gin_console.quota.router import build_router as build_quota_router
 from gin_console.quota.service import utc_now
 from gin_console.quota.source import run_claude_usage, run_codex_rate_limits
+from gin_console.reports.router import build_router as build_reports_router
 from gin_console.sessions.router import build_router as build_sessions_router
 
 # backend/src/gin_console/app.py -> repository root is parents[3]
@@ -51,6 +52,7 @@ def create_app(
     api.include_router(build_quota_router(run_claude, run_codex, clock))
     api.include_router(build_beads_router(settings, run_bd, clock))
     api.include_router(build_milestones_router(settings, run_gw, clock))
+    api.include_router(build_reports_router(settings, run_bd, clock))
 
     @api.api_route("/{rest:path}", methods=_METHODS)
     def api_not_found(rest: str) -> None:
