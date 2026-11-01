@@ -6,7 +6,7 @@ import { Tabs } from "@/components/Tabs";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
 import { plural, shortDate } from "./format";
-import { dayOf, isoOf } from "./gantt";
+import { dayOf, isoOf, zoomOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneGraph } from "./MilestoneGraph";
@@ -23,9 +23,11 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
 export function MilestonePage({ project, id }: { project: string; id: string }) {
   const { search } = useLocation();
-  const asked = new URLSearchParams(search).get("start");
+  const params = new URLSearchParams(search);
+  const asked = params.get("start");
   const day = asked !== null && ISO.test(asked) ? dayOf(asked) : NaN; // month 13 gives NaN, Feb 31 rolls over
-  const tab: Tab = new URLSearchParams(search).get("tab") === "graph" ? "graph" : "gantt";
+  const tab: Tab = params.get("tab") === "graph" ? "graph" : "gantt";
+  const zoom = zoomOf(params.get("zoom"));
   const start = !Number.isNaN(day) && isoOf(day) === asked ? asked : null;
   const current = useCallback(() => fetchMilestone(project, id, null), [project, id]);
   const preview = useCallback(
@@ -34,7 +36,7 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
   );
   const base = useLoad(current, true);
   const shown = useLoad<MilestoneDetail | null>(preview, false);
-  const pick = (next: string | null) => navigate(milestonePath(project, id, tab, next), { replace: true });
+  const pick = (next: string | null) => navigate(milestonePath(project, id, tab, next, zoom), { replace: true });
 
   return (
     <section className="flex flex-col gap-4">
@@ -50,16 +52,18 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
           {base.state.error !== null && (
             <p role="status" className="text-sm text-destructive">{`Refresh failed: ${base.state.error.message}`}</p>
           )}
-          <Tabs tabs={TABS} tab={tab} onChange={(next) => navigate(milestonePath(project, id, next, start), { replace: true })} label="Milestone views" />
+          <Tabs tabs={TABS} tab={tab} onChange={(next) => navigate(milestonePath(project, id, next, start, zoom), { replace: true })} label="Milestone views" />
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
             {tab === "gantt" ? (
               <GanttTab
                 project={project}
                 plan={base.state.data}
                 start={start}
+                zoom={zoom}
                 preview={shown.state}
                 onRetryPreview={shown.retry}
                 onStart={pick}
+                onZoom={(next) => navigate(milestonePath(project, id, tab, start, next), { replace: true })}
               />
             ) : (
               <MilestoneGraph project={project} id={id} />

@@ -1,4 +1,5 @@
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
+import type { Zoom } from "./gantt";
 
 export type Cause = "outdated" | "tracking" | "schema";
 export type MilestoneEntry = {
@@ -145,10 +146,11 @@ export async function fetchMilestone(project: string, id: string, start: string 
 
 export const milestonesPath = (project: string) => `/milestones?project=${enc(project)}`;
 
-export function milestonePath(project: string, id: string, tab: "gantt" | "graph" = "gantt", start: string | null = null) {
+export function milestonePath(project: string, id: string, tab: "gantt" | "graph" = "gantt", start: string | null = null, zoom: Zoom = "all") {
   const query = new URLSearchParams();
   if (tab === "graph") query.set("tab", "graph");
   if (start !== null) query.set("start", start);
+  if (zoom !== "all") query.set("zoom", zoom);
   const search = query.toString();
   return `/milestones/${enc(project)}/${enc(id)}${search === "" ? "" : `?${search}`}`;
 }

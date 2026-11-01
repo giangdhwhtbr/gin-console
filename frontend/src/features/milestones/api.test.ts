@@ -33,5 +33,7 @@ describe("milestones api", () => {
   it("builds milestone paths", () => {
     expect(milestonePath("al pha", "m-1")).toBe("/milestones/al%20pha/m-1");
     expect(milestonePath("alpha", "m-1", "graph", "2026-11-16")).toBe("/milestones/alpha/m-1?tab=graph&start=2026-11-16");
+    expect(milestonePath("alpha", "m-1", "gantt", null, "2w")).toBe("/milestones/alpha/m-1?zoom=2w"); // REQ-MILESTONE-UI-011
+    expect(milestonePath("alpha", "m-1", "gantt", null, "all")).toBe("/milestones/alpha/m-1");
   });
 });

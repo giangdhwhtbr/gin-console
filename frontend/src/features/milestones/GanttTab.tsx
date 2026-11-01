@@ -1,27 +1,40 @@
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
+import type { BeadSummary } from "@/features/beads/api";
+import { useBeads } from "@/features/beads/useBeads";
 import type { MilestoneDetail } from "./api";
 import { CopyCommand } from "./CopyCommand";
 import { shortDate, weekday } from "./format";
+import { childrenOf, type Zoom } from "./gantt";
 import { GanttChart } from "./GanttChart";
 import { MilestoneError } from "./MilestoneError";
 import type { LoadState } from "./useLoad";
 
-/** REQ-MILESTONE-UI-003 and -004: the current plan, or a read-only preview from a picked kick-start date. */
+const NO_CHILDREN: ReadonlyMap<string, readonly BeadSummary[]> = new Map();
+
+/** REQ-MILESTONE-UI-003 and -004: the current plan, or a read-only preview from a picked kick-start date.
+ *  REQ-MILESTONE-UI-015: the project's beads, open and closed, give each epic its children; none while loading or failed. */
 export function GanttTab({
   project,
   plan,
   start,
+  zoom,
   preview,
   onRetryPreview,
   onStart,
+  onZoom,
 }: {
   project: string;
   plan: MilestoneDetail;
   start: string | null;
+  zoom: Zoom;
   preview: LoadState<MilestoneDetail | null>;
   onRetryPreview: () => void;
   onStart: (date: string | null) => void;
+  onZoom: (zoom: Zoom) => void;
 }) {
+  const { state: beads } = useBeads(project, true);
+  const childBeads = useMemo(() => (beads.status === "ok" ? childrenOf(beads.beads) : NO_CHILDREN), [beads]);
   const pickable = plan.status === "planned" || plan.status === "scheduled";
   const previewing = pickable && start !== null;
   const failed = previewing && preview.status === "error";
@@ -61,7 +74,7 @@ export function GanttTab({
           Loading preview…
         </p>
       ) : (
-        <GanttChart project={project} plan={shown} preview={previewing} />
+        <GanttChart project={project} plan={shown} preview={previewing} zoom={zoom} onZoom={onZoom} childBeads={childBeads} />
       )}
     </div>
   );
