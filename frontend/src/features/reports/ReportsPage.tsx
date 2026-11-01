@@ -5,7 +5,11 @@ import { Button } from "@/components/ui/button";
 import { fetchProjects, type Project } from "@/features/projects/api";
 import { fetchReport, type Report } from "./api";
 import { PERIODS, parseReportSearch, reportSearch, type ReportFilters } from "./filters";
+import { CoverageSection } from "./CoverageSection";
+import { DeliverySection } from "./DeliverySection";
 import { KpiRow } from "./KpiRow";
+import { QualitySection } from "./QualitySection";
+import { UsageSection } from "./UsageSection";
 
 type Projects =
   | { status: "loading" }
@@ -149,7 +153,12 @@ export function ReportsPage() {
                 </Alert>
               )}
               <KpiRow totals={loaded.report.totals} />
-              <div data-testid="report-sections" className="flex flex-col gap-8" />
+              <div data-testid="report-sections" className="flex flex-col gap-8">
+                <UsageSection usage={loaded.report.usage} project={loaded.report.project} />
+                <DeliverySection delivery={loaded.report.delivery} />
+                <QualitySection quality={loaded.report.quality} />
+                <CoverageSection coverage={loaded.report.coverage} errors={loaded.report.errors} />
+              </div>
             </>
           )}
         </>

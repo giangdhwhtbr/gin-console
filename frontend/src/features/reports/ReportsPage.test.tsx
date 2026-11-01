@@ -37,7 +37,7 @@ describe("ReportsPage", () => {
     window.history.replaceState(null, "", "/reports?project=all&days=7");
     const mock = stub();
     render(<ReportsPage />);
-    await screen.findByText("Tokens");
+    await screen.findAllByText("Tokens");
     expect(screen.getByLabelText("Project")).toHaveValue("all");
     expect(screen.getByRole("option", { name: "All projects" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "7 days" })).toHaveAttribute("aria-pressed", "true");
@@ -47,21 +47,21 @@ describe("ReportsPage", () => {
   it("REQ-UI-088 defaults to the first project and changes the period", async () => {
     const mock = stub();
     render(<ReportsPage />);
-    await screen.findByText("Tokens");
+    await screen.findAllByText("Tokens");
     expect(requested(mock)).toContain("/api/reports?project=alpha&days=30");
     await userEvent.click(screen.getByRole("button", { name: "90 days" }));
     expect(window.location.search).toBe("?project=alpha&days=90");
-    await screen.findByText("Tokens");
+    await screen.findAllByText("Tokens");
     expect(requested(mock)).toContain("/api/reports?project=alpha&days=90");
   });
 
   it("REQ-UI-088 filters by sprint", async () => {
     const mock = stub();
     render(<ReportsPage />);
-    await screen.findByText("Tokens");
+    await screen.findAllByText("Tokens");
     await userEvent.type(screen.getByLabelText("Sprint"), "s7{Enter}");
     expect(window.location.search).toBe("?project=alpha&days=30&sprint=s7");
-    await screen.findByText("Tokens");
+    await screen.findAllByText("Tokens");
     expect(requested(mock)).toContain("/api/reports?project=alpha&days=30&sprint=s7");
   });
 
@@ -69,10 +69,10 @@ describe("ReportsPage", () => {
     stub();
     render(<ReportsPage />);
     for (const label of ["Tokens", "Estimated cost", "Closed beads", "Tokens per bead", "Rework rate"]) {
-      expect(await screen.findByText(label)).toBeInTheDocument();
+      expect((await screen.findAllByText(label)).length).toBeGreaterThan(0);
     }
-    expect(screen.getByText("$12.34")).toBeInTheDocument();
-    expect(screen.getByText("25%")).toBeInTheDocument();
+    expect(screen.getAllByText("$12.34").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("25%").length).toBeGreaterThan(0);
     expect(screen.getByTestId("report-sections")).toBeInTheDocument();
   });
 
@@ -101,7 +101,7 @@ describe("ReportsPage", () => {
   it("REQ-UI-093 warns about a partial failure and still shows the KPI row", async () => {
     stub(() => json(report({ errors: [{ project: "beta", error: "bd failed" }] })));
     render(<ReportsPage />);
-    expect(await screen.findByText(/beta: bd failed/)).toBeInTheDocument();
+    expect((await screen.findAllByText(/beta: bd failed/)).length).toBeGreaterThan(0);
     expect(screen.getByText("Some projects could not be read")).toBeInTheDocument();
     expect(screen.getByText("Closed beads")).toBeInTheDocument();
   });
