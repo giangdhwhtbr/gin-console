@@ -21,7 +21,11 @@ export function usePan(ref: RefObject<HTMLElement | null>) {
       if (!dragged && Math.abs(dx) <= THRESHOLD) return;
       if (!dragged) {
         dragged = true;
-        el.setPointerCapture?.(event.pointerId);
+        try {
+          el.setPointerCapture?.(event.pointerId);
+        } catch {
+          // the pointer is no longer active; panning works without capture
+        }
         el.dataset.panning = "";
       }
       el.scrollLeft = start.left - dx;
