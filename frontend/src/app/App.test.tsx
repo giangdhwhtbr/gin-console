@@ -55,6 +55,15 @@ describe("App routing", () => {
     expect(window.location.pathname).toBe("/");
   });
 
+  // REQ-UI-008
+  it("REQ-UI-008 loads the session list directly by URL without a Sessions link", async () => {
+    window.history.replaceState(null, "", "/sessions");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    render(<App />);
+    await screen.findByText(/no sessions found/i);
+    expect(screen.queryByRole("link", { name: "Sessions" })).toBeNull();
+  });
+
   // REQ-UI-012
   it("REQ-UI-012 renders the session log page on /sessions/:project/:id and falls back on malformed route", async () => {
     window.history.replaceState(null, "", "/sessions/qwikfone/11111111-1111-4111-8111-111111111111");

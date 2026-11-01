@@ -17,18 +17,21 @@ const marked = () =>
     .map((link) => link.textContent);
 
 describe("Layout", () => {
-  it("REQ-UI-055 has one Main navigation with the five links", () => {
-    open("/");
-    expect(screen.getAllByRole("navigation")).toHaveLength(1);
-    expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
-    expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
-      ["Projects", "/"],
-      ["Beads", "/beads"],
-      ["Milestones", "/milestones"],
-      ["Reports", "/reports"],
-      ["Quota", "/quota"],
-    ]);
-  });
+  it.each(["/", "/beads", "/sessions", "/reports"])(
+    "REQ-UI-055 has one Main navigation with the five links on %s",
+    (path) => {
+      open(path);
+      expect(screen.getAllByRole("navigation")).toHaveLength(1);
+      expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
+      expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+        ["Projects", "/"],
+        ["Beads", "/beads"],
+        ["Milestones", "/milestones"],
+        ["Reports", "/reports"],
+        ["Quota", "/quota"],
+      ]);
+    },
+  );
 
   it.each([
     ["/", ["Projects"]],
@@ -38,6 +41,7 @@ describe("Layout", () => {
     ["/milestones/alpha/m-1", ["Milestones"]],
     ["/milestonesx", []],
     ["/sessions", []],
+    ["/sessionsx", []],
     ["/sessions/alpha/11111111-1111-4111-8111-111111111111", []],
     ["/reports", ["Reports"]],
     ["/reportsx", []],
