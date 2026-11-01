@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BeadDetailPage } from "@/features/beads/BeadDetailPage";
 import { BeadsPage } from "@/features/beads/BeadsPage";
 import { GraphPage } from "@/features/beads/GraphPage";
@@ -9,6 +10,8 @@ import { SessionLogPage } from "@/features/sessions/SessionLogPage";
 import { SessionsPage } from "@/features/sessions/SessionsPage";
 import { Layout } from "./Layout";
 import { useLocation } from "./route";
+
+const ReportsPage = lazy(() => import("@/features/reports/ReportsPage").then((m) => ({ default: m.ReportsPage })));
 
 function logRoute(pathname: string): { project: string; id: string } | null {
   const match = /^\/sessions\/([^/]+)\/([^/]+)$/.exec(pathname);
@@ -74,6 +77,10 @@ export function App() {
         <MilestonesPage />
       ) : pathname === "/quota" ? (
         <QuotaPage />
+      ) : pathname === "/reports" ? (
+        <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+          <ReportsPage />
+        </Suspense>
       ) : (
         <ProjectsPage />
       )}
