@@ -50,7 +50,10 @@ def dep(issue: str, target: str, kind: str) -> dict[str, Any]:
 
 
 class FakeBd:
-    """list: `beads`; show: `shown[id]` (a bead with its `dependencies`); dep list up: `up[id]`."""
+    """list: `beads`; show: `shown[id]` (a bead with its `dependencies`); dep list up: `up[id]`.
+
+    history: `history[id]`, statuses oldest first.
+    """
 
     def __init__(
         self,
@@ -64,6 +67,7 @@ class FakeBd:
         failing: dict[str, Exception] | None = None,
         bad: dict[str, Any] | None = None,
         comments: dict[str, list[Any]] | None = None,
+        history: dict[str, list[str]] | None = None,
     ) -> None:
         self.beads = beads or []
         self.shown = shown or {}
@@ -75,6 +79,7 @@ class FakeBd:
         self.failing = failing or {}
         self.bad = bad or {}
         self.comments = comments or {}
+        self.history = history or {}
         self.calls: list[tuple[list[str], Path]] = []
 
     def __call__(self, args: list[str], cwd: Path, *, json_on_failure: bool = False) -> Any:
@@ -109,4 +114,12 @@ class FakeBd:
             if ident not in self.shown and ident not in self.comments:
                 return {"error": f'resolving {ident}: no issue found matching "{ident}"'}
             return self.comments.get(ident, [])
+        if args[0] == "history":
+            if ident not in self.history:
+                return None  # what bd prints, with exit 0, for an unknown id
+            snapshots = [
+                {"CommitHash": f"c{n}", "Issue": {**bead(ident), "status": status}}
+                for n, status in enumerate(self.history[ident])
+            ]
+            return snapshots[::-1]  # bd prints the newest snapshot first
         raise AssertionError(f"unexpected bd arguments: {args}")

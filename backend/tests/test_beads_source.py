@@ -12,6 +12,7 @@ from gin_console.beads.source import (
     MAX_COMMENT_CHARS,
     BeadNotFound,
     BeadsError,
+    count_reopens,
     get_bead,
     get_comments,
     list_beads,
@@ -496,3 +497,51 @@ def test_beads_007_milestone_is_never_ready() -> None:
     fake = FakeBd([bead("m-1", issue_type="milestone"), bead("r-1")], ready=["m-1", "r-1"])
     by_id = {b.id: b for b in list_beads(fake, CWD, closed=False)}
     assert (by_id["m-1"].ready, by_id["r-1"].ready) == (False, True)
+
+
+# REQ-BEADS-002
+def test_beads_002_bugs_found() -> None:
+    shown = bead("a-5", dependencies=[related("a-0", "discovered-from")])
+    up = {
+        "a-5": [
+            {**related("b-1", "discovered-from"), "issue_type": "bug"},
+            {**related("b-2", "discovered-from", status="closed"), "issue_type": "bug"},
+            {**related("e-1", "discovered-from"), "issue_type": "epic"},
+            related("a-6", "blocks"),
+        ]
+    }
+    detail = get_bead(FakeBd(shown={"a-5": shown}, up=up), CWD, "a-5")
+    assert [(r.id, r.status, r.type) for r in detail.bugs] == [
+        ("b-1", "open", "discovered-from"),
+        ("b-2", "closed", "discovered-from"),
+    ]
+    assert [r.id for r in detail.dependents] == ["a-6"]
+    assert detail.children == [] and detail.dependencies == []
+
+
+# REQ-BEADS-011
+@pytest.mark.parametrize(
+    ("statuses", "expected"),
+    [
+        (["open", "in_progress", "closed", "closed", "open", "closed", "in_progress", "closed"], 2),
+        (["open", "in_progress", "closed", "closed"], 0),
+        (["open"], 0),
+    ],
+)
+def test_beads_011_counts_closed_then_not_closed(statuses: list[str], expected: int) -> None:
+    fake = FakeBd(history={"a-5": statuses})
+    assert count_reopens(fake, CWD, "a-5") == expected
+    assert fake.calls == [(["history", "--json", "--", "a-5"], CWD)]
+
+
+# REQ-BEADS-011
+def test_beads_011_unknown_bead() -> None:
+    with pytest.raises(BeadNotFound):
+        count_reopens(FakeBd(), CWD, "x-1")
+
+
+# REQ-BEADS-011
+@pytest.mark.parametrize("output", [{"x": 1}, [{"Issue": {}}], [{"Issue": {"status": 3}}], ["x"]])
+def test_beads_011_unexpected_shape(output: object) -> None:
+    with pytest.raises(BeadsError):
+        count_reopens(FakeBd(bad={"history": output}), CWD, "a-5")

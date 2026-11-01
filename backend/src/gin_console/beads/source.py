@@ -1,6 +1,7 @@
 """Beads of a project, read through the `bd` CLI; the only module that knows its JSON."""
 
 import re
+from itertools import pairwise
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -155,9 +156,20 @@ def get_bead(run: BdRunner, cwd: Path, bead_id: str) -> BeadDetail:
                 "notes": raw.get("notes") or None,
                 "acceptance_criteria": raw.get("acceptance_criteria") or None,
                 "close_reason": raw.get("close_reason") or None,
-                "dependencies": _relations(raw.get("dependencies")),
+                "dependencies": [
+                    r for r in _relations(raw.get("dependencies")) if r.type != "discovered-from"
+                ],
                 "dependents": [r for r in above if r.type == "blocks"],
                 "children": [r for r in above if r.type == "parent-child"],
+                "bugs": _relations(
+                    [
+                        row
+                        for row in up
+                        if isinstance(row, dict)
+                        and row.get("dependency_type") == "discovered-from"
+                        and row.get("issue_type") == "bug"
+                    ]
+                ),
             }
         )
     except ValidationError:
@@ -186,3 +198,23 @@ def get_comments(run: BdRunner, cwd: Path, bead_id: str) -> list[Comment]:
     if not isinstance(data, list):
         raise BeadsError("bd comments output was not understood")
     return [item for item in map(_comment, data) if item is not None]
+
+
+def count_reopens(run: BdRunner, cwd: Path, bead_id: str) -> int:
+    """Times the bead went from closed to another status, as gin-workflow's `quality()` counts."""
+    if not valid_id(bead_id):
+        raise BeadNotFound(bead_id)
+    data = run(["history", "--json", "--", bead_id], cwd, json_on_failure=True)
+    _fail_on_error(data)
+    if data is None or data == []:  # bd answers an unknown id with `null` and exit 0
+        raise BeadNotFound(bead_id)
+    if not isinstance(data, list):
+        raise BeadsError("bd history output was not understood")
+    statuses: list[str] = []
+    for row in reversed(data):  # bd prints the newest snapshot first
+        issue = row.get("Issue") if isinstance(row, dict) else None
+        status = issue.get("status") if isinstance(issue, dict) else None
+        if not isinstance(status, str):
+            raise BeadsError("bd history output was not understood")
+        statuses.append(status)
+    return sum(1 for before, after in pairwise(statuses) if before == "closed" != after)

@@ -38,7 +38,7 @@ class Relation(BaseModel):
     id: Text
     title: Text
     status: Text
-    type: Literal["blocks", "parent-child"]
+    type: Literal["blocks", "parent-child", "discovered-from"]
 
 
 class Comment(BaseModel):
@@ -60,3 +60,10 @@ class BeadDetail(BeadSummary):
     dependencies: list[Relation] = []
     dependents: list[Relation] = []
     children: list[Relation] = []
+    bugs: list[Relation] = []
+
+
+class Reopens(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    reopens: int

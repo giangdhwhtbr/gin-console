@@ -104,10 +104,19 @@ def test_beads_003_odd_closed_values_mean_not_closed(tmp_path: Path, closed: str
 # REQ-BEADS-003
 def test_beads_003_only_read_only_commands_run(tmp_path: Path) -> None:
     fake = FakeBd(FOUR, shown={"a-1": bead("a-1")})
+    fake.history = {"a-1": ["open"]}
     api = make(tmp_path, fake)
     api.get("/api/beads", params={"project": "proj"})
     api.get("/api/beads/proj/a-1")
-    assert {call[0][0] for call in fake.calls} <= {"list", "show", "dep", "ready", "blocked"}
+    api.get("/api/beads/proj/a-1/reopens")
+    assert {call[0][0] for call in fake.calls} <= {
+        "list",
+        "show",
+        "dep",
+        "ready",
+        "blocked",
+        "history",
+    }
     assert all(call[1] == tmp_path / "proj" for call in fake.calls)
 
 
@@ -277,6 +286,91 @@ def test_beads_008_cached_for_five_seconds(tmp_path: Path) -> None:
     clock.now += timedelta(seconds=4)
     api.get("/api/beads/proj/a-5/comments")
     assert len(fake.calls) == 2
+
+
+def history_calls(fake: FakeBd) -> int:
+    return sum(1 for call in fake.calls if call[0][0] == "history")
+
+
+# REQ-BEADS-011
+def test_beads_011_reopens_over_http(tmp_path: Path) -> None:
+    statuses = "open in_progress closed closed open closed in_progress closed".split()
+    fake = FakeBd(shown={"a-5": bead("a-5")}, history={"a-5": statuses})
+    assert make(tmp_path, fake).get("/api/beads/proj/a-5/reopens").json() == {"reopens": 2}
+
+
+# REQ-BEADS-011
+def test_beads_011_unchanged_bead_is_not_counted_again(tmp_path: Path) -> None:
+    clock = Clock()
+    fake = FakeBd(shown={"a-5": bead("a-5")}, history={"a-5": ["closed", "open"]})
+    api = make(tmp_path, fake, clock)
+    assert api.get("/api/beads/proj/a-5/reopens").json() == {"reopens": 1}
+    clock.now += timedelta(seconds=6)  # past the 5 s detail cache: bd show runs, history does not
+    assert api.get("/api/beads/proj/a-5/reopens").json() == {"reopens": 1}
+    assert history_calls(fake) == 1
+
+
+# REQ-BEADS-011
+def test_beads_011_changed_bead_is_counted_again(tmp_path: Path) -> None:
+    clock = Clock()
+    fake = FakeBd(shown={"a-5": bead("a-5")}, history={"a-5": ["closed", "open"]})
+    api = make(tmp_path, fake, clock)
+    api.get("/api/beads/proj/a-5/reopens")
+    fake.shown["a-5"] = bead("a-5", updated_at="2026-10-13T10:00:00Z")
+    fake.history["a-5"] = ["closed", "open", "closed", "open"]
+    clock.now += timedelta(seconds=6)
+    assert api.get("/api/beads/proj/a-5/reopens").json() == {"reopens": 2}
+    assert history_calls(fake) == 2
+
+
+# REQ-BEADS-011
+@pytest.mark.parametrize(
+    "path",
+    ["/api/beads/proj/x-1/reopens", "/api/beads/nope/a-5/reopens", "/api/beads/gone/a-5/reopens"],
+)
+def test_beads_011_unknown_bead_or_project_is_404(tmp_path: Path, path: str) -> None:
+    fake = FakeBd(shown={"a-5": bead("a-5")}, history={"a-5": ["open"]})
+    assert make(tmp_path, fake).get(path).status_code == 404
+
+
+# REQ-BEADS-011
+# REQ-BEADS-003
+@pytest.mark.parametrize("ident", ["--help", "-x", "..", "a%2Fb", "a%00b", ".a", "a%20b"])
+def test_beads_011_unsafe_ids_are_404_and_run_nothing(tmp_path: Path, ident: str) -> None:
+    fake = FakeBd(shown={"a-5": bead("a-5")})
+    assert make(tmp_path, fake).get(f"/api/beads/proj/{ident}/reopens").status_code == 404
+    assert fake.calls == []
+
+
+# REQ-BEADS-011
+# REQ-BEADS-005
+def test_beads_011_failure_is_502_and_not_kept(tmp_path: Path) -> None:
+    fake = FakeBd(
+        shown={"a-5": bead("a-5")},
+        history={"a-5": ["open"]},
+        failing={"history": BeadsError("bd history failed")},
+    )
+    api = make(tmp_path, fake)
+    response = api.get("/api/beads/proj/a-5/reopens")
+    assert response.status_code == 502 and "bd history failed" in response.json()["error"]
+    fake.failing = {}
+    assert api.get("/api/beads/proj/a-5/reopens").json() == {"reopens": 0}
+
+
+# REQ-BEADS-011
+def test_beads_011_unexpected_shape_is_502(tmp_path: Path) -> None:
+    fake = FakeBd(shown={"a-5": bead("a-5")}, bad={"history": {"x": 1}})
+    assert make(tmp_path, fake).get("/api/beads/proj/a-5/reopens").status_code == 502
+
+
+# REQ-BEADS-002
+def test_beads_002_bugs_over_http(tmp_path: Path) -> None:
+    up = {"a-5": [{**related("b-1", "discovered-from"), "issue_type": "bug"}]}
+    fake = FakeBd(shown={"a-5": bead("a-5")}, up=up)
+    bugs = make(tmp_path, fake).get("/api/beads/proj/a-5").json()["bugs"]
+    assert bugs == [
+        {"id": "b-1", "title": "Title of b-1", "status": "open", "type": "discovered-from"}
+    ]
 
 
 # REQ-BEADS-009
