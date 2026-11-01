@@ -2,6 +2,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import pytest
 from fake_bd import FakeBd
 from report_beads import closed, row, usage
 
@@ -63,6 +64,37 @@ def test_reports_002_own_shares_sum_to_the_epic_total() -> None:
         ]
     )
     assert r.totals.tokens == 1500
+    assert {s.stage: s.tokens for s in r.usage.stages} == {
+        "discuss": 900,
+        "execute": 450,
+        "review": 150,
+    }
+
+
+def test_reports_002_epic_cost_roles_and_quality_are_reduced_by_its_children() -> None:
+    r = report(
+        [
+            closed(
+                "e-1",
+                ago(2),
+                issue_type="epic",
+                assignee="ann",
+                ai=usage(100, cost=1.0, reopens=2),
+            ),
+            closed(
+                "e-1.1", ago(2), parent="e-1", assignee="bob", ai=usage(40, cost=0.4, reopens=1)
+            ),
+        ]
+    )
+    own = {b.id: b for b in r.usage.beads}
+    assert own["e-1"].tokens == 60 and own["e-1"].cost == pytest.approx(0.6)
+    assert own["e-1.1"].cost == pytest.approx(0.4)
+    [model_row] = r.usage.models
+    assert model_row.tokens == 100 and model_row.cost == pytest.approx(1.0)
+    ann, bob = r.quality.members
+    assert (ann.key, ann.reopens, bob.key, bob.reopens) == ("ann", 1, "bob", 1)
+    [epic_quality] = r.quality.epics
+    assert epic_quality.reopens == 2
 
 
 def test_reports_002_unpriced_model_has_no_cost() -> None:
@@ -158,6 +190,18 @@ def test_reports_003_top_ten_epics_and_beads() -> None:
     assert r.usage.epics[0].id == "e-11" and r.usage.beads[0].tokens == 1200
 
 
+def test_reports_003_nested_epics_roll_up() -> None:
+    r = report(
+        [
+            closed("e-1", ago(2), issue_type="epic", ai=usage(300)),
+            closed("e-2", ago(2), issue_type="epic", parent="e-1", ai=usage(200)),
+            closed("t-1", ago(2), parent="e-2", ai=usage(100)),
+        ]
+    )
+    assert {e.id: e.tokens for e in r.usage.epics} == {"e-1": 300, "e-2": 200}
+    assert {q.key: q.beads for q in r.quality.epics} == {"e-1": 3, "e-2": 2}
+
+
 # REQ-REPORTS-004
 def test_reports_004_percentiles() -> None:
     rows = [
@@ -184,6 +228,16 @@ def test_reports_004_weeks() -> None:
     assert r.delivery.weeks[0].counts == {"bug": 1}
 
 
+def test_reports_004_weeks_use_utc_dates() -> None:
+    # 05:00+07:00 on 2 Nov is still 1 Nov in UTC, the day "now" is on
+    now = datetime(2026, 11, 1, 23, 0, tzinfo=UTC)
+    beads = read_beads(FakeBd([closed("a-1", "2026-11-02T05:00:00+07:00")]), Path("."), "alpha")
+    r = build_report(beads, now=now, project="alpha", days=7, sprint=None, errors=[])
+    weeks = {w.week: w.counts for w in r.delivery.weeks}
+    assert weeks["2026-W44"] == {"task": 1}
+    assert "2026-W45" not in weeks
+
+
 def test_reports_004_work_in_progress() -> None:
     r = report(
         [
@@ -191,10 +245,16 @@ def test_reports_004_work_in_progress() -> None:
             row("a-2", status="in_progress", assignee="ann", started_at=ago(2)),
             row("a-3", status="in_progress", assignee="bob", updated_at=ago(5)),
             closed("a-4", ago(1), assignee="ann", started_at=ago(3)),
+            row("a-5", status="in_progress", assignee="cat", started_at=ago(60)),
         ]
     )
-    assert r.delivery.wip == [WipRow(member="ann", count=2), WipRow(member="bob", count=1)]
+    assert r.delivery.wip == [
+        WipRow(member="ann", count=2),
+        WipRow(member="bob", count=1),
+        WipRow(member="cat", count=1),
+    ]
     assert [(b.id, b.age_days) for b in r.delivery.oldest] == [
+        ("a-5", 60.0),
         ("a-1", 10.0),
         ("a-3", 5.0),
         ("a-2", 2.0),
@@ -212,12 +272,24 @@ def test_reports_004_estimate_against_working_days() -> None:
                 created_at="2026-10-19T09:00:00Z",
             ),
             closed("e-2", "2026-10-27T17:00:00Z", issue_type="epic"),
+            closed(
+                "e-3",
+                "2026-10-27T17:00:00Z",
+                issue_type="epic",
+                estimated_minutes=480,
+                created_at="2026-10-01T09:00:00Z",
+                started_at="2026-10-26T09:00:00Z",
+            ),
         ]
     )
-    [estimate] = r.delivery.estimates
-    assert estimate == EstimateRow(
-        project="alpha", id="e-1", title="Title of e-1", estimate_days=5.0, actual_days=7
-    )
+    assert r.delivery.estimates == [
+        EstimateRow(
+            project="alpha", id="e-1", title="Title of e-1", estimate_days=5.0, actual_days=7
+        ),
+        EstimateRow(
+            project="alpha", id="e-3", title="Title of e-3", estimate_days=1.0, actual_days=2
+        ),
+    ]
 
 
 # REQ-REPORTS-005
@@ -275,3 +347,17 @@ def test_reports_006_unpriced_unassigned_share_and_sources() -> None:
     assert r.coverage.unpriced == ["m"]
     assert r.coverage.unassigned_share == 0.25
     assert [s.id for s in r.coverage.sources] == ["a-2"]
+
+
+def test_reports_006_sprint_lists_open_unreadable_usage() -> None:
+    r = report(
+        [
+            row("a-1", issue_type="epic", labels=["sprint:s7"]),
+            row("a-1.1", parent="a-1", ai="nope"),
+            row("a-1.2", parent="a-1"),
+            row("a-2", ai="nope"),
+        ],
+        sprint="s7",
+    )
+    assert [(c.id, c.detail) for c in r.coverage.invalid] == [("a-1.1", "unreadable")]
+    assert r.coverage.not_collected == []

@@ -3,7 +3,7 @@
 import statistics
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import NamedTuple
 
 from gin_console.reports.models import (
@@ -152,8 +152,9 @@ class _Tree:
             parent = current.parent
             current = self.index.get((current.project, parent)) if parent else None
 
-    def epic_of(self, bead: ReportBead) -> ReportBead | None:
-        return next((b for b in self._lineage(bead) if b.issue_type == "epic"), None)
+    def epics_of(self, bead: ReportBead) -> list[ReportBead]:
+        """Every epic in the bead's lineage: itself when it is one, then its epic ancestors."""
+        return [b for b in self._lineage(bead) if b.issue_type == "epic"]
 
     def under(self, bead: ReportBead, roots: set[Key]) -> bool:
         return any(_key(b) in roots for b in self._lineage(bead))
@@ -251,8 +252,7 @@ def _member_usage(name: str, closed: list[ReportBead], rows: list[Measured]) -> 
 def _by_epic(tree: _Tree, measured: list[Measured]) -> dict[Key, list[Measured]]:
     groups: dict[Key, list[Measured]] = defaultdict(list)
     for m in measured:
-        epic = tree.epic_of(m.bead)
-        if epic is not None:
+        for epic in tree.epics_of(m.bead):
             groups[_key(epic)].append(m)
     return groups
 
@@ -346,11 +346,13 @@ def _delivery(
 ) -> DeliverySection:
     counts: dict[str, Counter[str]] = defaultdict(Counter)
     for bead in closed:
-        counts[_week(_closed_at(bead).date())][bead.issue_type] += 1
+        counts[_week(_closed_at(bead).astimezone(UTC).date())][bead.issue_type] += 1
     if sprint is None:
-        weeks = _weeks((now - timedelta(days=days)).date(), now.date())
+        weeks = _weeks(
+            (now - timedelta(days=days)).astimezone(UTC).date(), now.astimezone(UTC).date()
+        )
     else:
-        dates = [_closed_at(b).date() for b in closed]
+        dates = [_closed_at(b).astimezone(UTC).date() for b in closed]
         weeks = _weeks(min(dates), max(dates)) if dates else []
     active = [b for b in scope if b.status == "in_progress"]
     per_member = Counter(member_of(b) for b in active)
@@ -435,7 +437,9 @@ def _quality(tree: _Tree, measured: list[Measured]) -> QualitySection:
     return QualitySection(members=members, epics=epics, points=points)
 
 
-def _coverage(closed: list[ReportBead], measured: list[Measured]) -> Coverage:
+def _coverage(
+    closed: list[ReportBead], selected: list[ReportBead], measured: list[Measured]
+) -> Coverage:
     total = sum(tokens_of(m.own) for m in measured)
     unassigned = sum(tokens_of(m.own) for m in measured if member_of(m.bead) == UNASSIGNED)
     return Coverage(
@@ -451,7 +455,7 @@ def _coverage(closed: list[ReportBead], measured: list[Measured]) -> Coverage:
         ],
         invalid=[
             CoverageBead(project=b.project, id=b.id, title=b.title, detail=b.usage_problem)
-            for b in closed
+            for b in selected
             if b.usage_problem is not None
         ],
         unpriced=sorted({name for m in measured for name in m.raw.unpriced}),
@@ -509,6 +513,6 @@ def build_report(
         usage=_usage(tree, closed, measured),
         delivery=_delivery(scope, closed, now, days, sprint),
         quality=_quality(tree, measured),
-        coverage=_coverage(closed, measured),
+        coverage=_coverage(closed, scope if sprint is not None else closed, measured),
         errors=errors,
     )
