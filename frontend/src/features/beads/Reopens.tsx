@@ -33,7 +33,12 @@ export function Reopens({ project, id }: { project: string; id: string }) {
     );
   }
   if (state.status === "ok" && state.reopens > 0) {
-    return <span>{` · Reopened ${state.reopens} ${state.reopens === 1 ? "time" : "times"}`}</span>;
+    return (
+      <span>
+        {" · "}
+        <span className="text-type-bug">{`Reopened ${state.reopens} ${state.reopens === 1 ? "time" : "times"}`}</span>
+      </span>
+    );
   }
   return null;
 }

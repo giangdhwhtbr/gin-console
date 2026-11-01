@@ -168,7 +168,7 @@ export function BeadDetailPage({
                 <TextSection title="Close reason" text={bead.close_reason} />
                 <RelationList title="Depends on" project={project} items={bead.dependencies} />
                 <RelationList title="Blocks" project={project} items={bead.dependents} />
-                <RelationList title="Bugs found" project={project} items={bead.bugs} />
+                <RelationList title="Bugs found" titleClassName="text-type-bug" project={project} items={bead.bugs} />
                 {total > 0 && (
                   <div className="flex flex-col gap-2">
                     <ProgressBar label="Children closed" percent={(closed / total) * 100} />

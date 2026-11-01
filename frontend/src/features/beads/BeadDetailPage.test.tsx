@@ -109,6 +109,21 @@ describe("BeadDetailPage", () => {
     expect(await screen.findByText(/Reopened 1 time$/)).toBeInTheDocument();
   });
 
+  // REQ-UI-087
+  it("REQ-UI-087 highlighted signals", async () => {
+    const blocker = { id: "d-1", title: "Dep", status: "open", type: "blocks" as const };
+    stubFetch(beadDetail("a-5", { bugs: [bug("b-1")], dependencies: [blocker] }), undefined, () =>
+      json({ reopens: 1 }),
+    );
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    const reopened = await screen.findByText("Reopened 1 time");
+    expect(reopened).toHaveClass("text-type-bug");
+    expect(reopened.parentElement).not.toHaveClass("text-type-bug");
+    expect(screen.getByRole("heading", { name: "Bugs found" })).toHaveClass("text-type-bug");
+    expect(screen.getByText("Bug b-1")).not.toHaveClass("text-type-bug");
+    expect(screen.getByRole("heading", { name: "Depends on" })).not.toHaveClass("text-type-bug");
+  });
+
   // REQ-UI-086
   it("REQ-UI-086 not reopened or still loading", async () => {
     stubFetch(beadDetail("a-5"), undefined, () => new Promise<Response>(() => undefined));
