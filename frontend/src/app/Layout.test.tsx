@@ -25,7 +25,7 @@ describe("Layout", () => {
       ["Projects", "/"],
       ["Beads", "/beads"],
       ["Milestones", "/milestones"],
-      ["Sessions", "/sessions"],
+      ["Reports", "/reports"],
       ["Quota", "/quota"],
     ]);
   });
@@ -37,12 +37,13 @@ describe("Layout", () => {
     ["/milestones", ["Milestones"]],
     ["/milestones/alpha/m-1", ["Milestones"]],
     ["/milestonesx", []],
-    ["/sessions", ["Sessions"]],
-    ["/sessions/alpha/11111111-1111-4111-8111-111111111111", ["Sessions"]],
+    ["/sessions", []],
+    ["/sessions/alpha/11111111-1111-4111-8111-111111111111", []],
+    ["/reports", ["Reports"]],
+    ["/reportsx", []],
     ["/quota", ["Quota"]],
     ["/nowhere", []],
     ["/beadsx", []],
-    ["/sessionsx", []],
   ])("REQ-UI-057 %s marks %j", (path, expected) => {
     open(path);
     expect(marked()).toEqual(expected);

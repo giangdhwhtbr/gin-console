@@ -5,6 +5,7 @@ import { quota } from "@/features/quota/quotaFixtures";
 import { resetQuotaStore } from "@/features/quota/quotaStore";
 import { clearReturn } from "@/features/beads/returnState";
 import { App } from "./App";
+import { navigate } from "./route";
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -40,14 +41,15 @@ describe("App routing", () => {
   });
 
   // REQ-UI-008
-  it("REQ-UI-008 opens the list from the sidebar without a reload and follows back", async () => {
+  it("REQ-UI-008 opens the session list by URL without a Sessions link and follows back", async () => {
     window.history.replaceState(null, "", "/");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     render(<App />);
     await screen.findByText(/no projects configured/i);
-    await userEvent.click(screen.getByRole("link", { name: "Sessions" }));
+    act(() => navigate("/sessions"));
     expect(window.location.pathname).toBe("/sessions");
     await screen.findByText(/no sessions found/i);
+    expect(screen.queryByRole("link", { name: "Sessions" })).toBeNull();
     act(() => window.history.back());
     await screen.findByText(/no projects configured/i);
     expect(window.location.pathname).toBe("/");
