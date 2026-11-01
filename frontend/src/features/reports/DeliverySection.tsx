@@ -2,7 +2,7 @@ import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "rec
 import { Link } from "@/app/Link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { DeliverySection as Delivery, TimeRow } from "./api";
-import { ChartBox } from "./ChartBox";
+import { ChartBox, legendText } from "./ChartBox";
 import { TYPES, present, typeColor } from "./colors";
 import { beadPath, formatDays } from "./format";
 
@@ -59,7 +59,7 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
           <XAxis dataKey="week" tick={tick} />
           <YAxis allowDecimals={false} tick={tick} />
           <Tooltip contentStyle={tooltipStyle} />
-          {types.length >= 2 && <Legend />}
+          {types.length >= 2 && <Legend formatter={legendText} />}
           {types.map((type, i) => (
             <Bar
               key={type}

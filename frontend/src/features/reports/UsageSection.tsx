@@ -3,7 +3,7 @@ import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { UsageSection as Usage } from "./api";
-import { ChartBox } from "./ChartBox";
+import { ChartBox, legendText } from "./ChartBox";
 import { STAGES, present, stageColor } from "./colors";
 import { beadPath, formatCost, formatPercent, formatTokens } from "./format";
 
@@ -45,7 +45,7 @@ export function UsageSection({ usage, project }: { usage: Usage; project: string
           <XAxis type="number" tickFormatter={formatTokens} tick={tick} />
           <YAxis type="category" dataKey="member" tick={tick} />
           <Tooltip contentStyle={tooltipStyle} />
-          {memberStages.length >= 2 && <Legend />}
+          {memberStages.length >= 2 && <Legend formatter={legendText} />}
           {memberStages.map((stage, i) => (
             <Bar
               key={stage}
@@ -131,7 +131,7 @@ export function UsageSection({ usage, project }: { usage: Usage; project: string
           <XAxis type="number" hide />
           <YAxis type="category" dataKey="name" hide />
           <Tooltip contentStyle={tooltipStyle} />
-          {stageNames.length >= 2 && <Legend />}
+          {stageNames.length >= 2 && <Legend formatter={legendText} />}
           {stageNames.map((stage) => (
             <Bar
               key={stage}

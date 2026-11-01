@@ -78,7 +78,7 @@ const table = (title: string, rows: QualityRow[], linkKeys: boolean) => (
 );
 
 export function QualitySection({ quality }: { quality: Quality }) {
-  if (quality.points.length === 0) {
+  if (quality.points.length + quality.members.length + quality.epics.length === 0) {
     return (
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold">Quality and rework</h2>
@@ -91,16 +91,45 @@ export function QualitySection({ quality }: { quality: Quality }) {
       <h2 className="text-lg font-semibold">Quality and rework</h2>
       {table("By member", quality.members, false)}
       {table("By epic", quality.epics, true)}
-      <h3 className="font-medium">Tokens vs rework per bead</h3>
-      <ChartBox height={280}>
-        <ScatterChart>
-          <CartesianGrid stroke="var(--color-border)" />
-          <XAxis type="number" dataKey="tokens" name="Tokens" tickFormatter={formatTokens} tick={tick} />
-          <YAxis type="number" dataKey="rework" name="Rework" allowDecimals={false} tick={tick} />
-          <Tooltip contentStyle={tooltipStyle} content={<PointTip />} />
-          <Scatter data={quality.points} fill="var(--color-series-1)" onClick={openPoint} isAnimationActive={false} />
-        </ScatterChart>
-      </ChartBox>
+      {quality.points.length > 0 && (
+        <>
+          <h3 className="font-medium">Tokens vs rework per bead</h3>
+          <ChartBox height={280}>
+            <ScatterChart>
+              <CartesianGrid stroke="var(--color-border)" />
+              <XAxis type="number" dataKey="tokens" name="Tokens" tickFormatter={formatTokens} tick={tick} />
+              <YAxis type="number" dataKey="rework" name="Rework" allowDecimals={false} tick={tick} />
+              <Tooltip contentStyle={tooltipStyle} content={<PointTip />} />
+              <Scatter data={quality.points} fill="var(--color-series-1)" onClick={openPoint} isAnimationActive={false} />
+            </ScatterChart>
+          </ChartBox>
+          <h3 className="font-medium">Beads by rework</h3>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Bead</TableHead>
+                <TableHead>Tokens</TableHead>
+                <TableHead>Rework</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {[...quality.points]
+                .sort((a, b) => b.rework - a.rework || b.tokens - a.tokens)
+                .map((p) => (
+                  <TableRow key={`${p.project}/${p.id}`}>
+                    <TableCell>
+                      <Link to={beadPath(p.project, p.id)} className="underline">
+                        {p.id} — {p.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{formatTokens(p.tokens)}</TableCell>
+                    <TableCell>{p.rework}</TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </>
+      )}
     </section>
   );
 }

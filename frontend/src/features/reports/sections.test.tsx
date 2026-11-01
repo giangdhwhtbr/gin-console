@@ -32,6 +32,9 @@ describe("report sections", () => {
     const legend = container.querySelector(".recharts-legend-wrapper");
     expect(legend?.textContent).toContain("execute");
     expect(legend?.textContent).toContain("review");
+    const labels = container.querySelectorAll(".recharts-legend-item-text");
+    expect(labels.length).toBeGreaterThan(0);
+    labels.forEach((l) => expect(l.querySelector("span.text-foreground")).not.toBeNull());
     expect(screen.getByRole("row", { name: /ann 4 51\.1M \$12\.34 12\.8M 90%/ })).toBeTruthy();
   });
 
@@ -89,6 +92,20 @@ describe("report sections", () => {
     expect(symbol).not.toBeNull();
     fireEvent.click(symbol?.firstElementChild ?? symbol ?? container);
     expect(window.location.pathname).toBe("/beads/alpha/a-3");
+  });
+
+  it("REQ-UI-091 beads by rework table links to the bead", () => {
+    const r = report({ quality: { members: [], epics: [], points: [{ project: "alpha", id: "a-3", title: "T", tokens: 100, rework: 2 }] } });
+    render(<QualitySection quality={r.quality} />);
+    expect(screen.getByRole("link", { name: "a-3 — T" }).getAttribute("href")).toBe("/beads/alpha/a-3");
+  });
+
+  it("REQ-UI-093 member rows without points still show the table and no chart", () => {
+    const row = { key: "ann", project: null, title: null, beads: 1, reopens: 0, bugs: 0, review_cycles: 0, rejections: 0, waivers: 0, findings: { critical: 0, important: 0, minor: 0, suggestion: 0 }, rework_rate: 0 };
+    const { container } = render(<QualitySection quality={{ members: [row], epics: [], points: [] }} />);
+    expect(screen.getByText("ann")).toBeTruthy();
+    expect(screen.queryByText("No data in this period")).toBeNull();
+    expect(container.querySelector(".recharts-surface")).toBeNull();
   });
 
   it("REQ-UI-092 coverage: copy command, unpriced, unassigned, sources, fixed note", () => {
