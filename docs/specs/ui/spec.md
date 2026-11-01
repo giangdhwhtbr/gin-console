@@ -86,12 +86,12 @@ IF a project's `workflow` or `beads` is an object with `error`, THEN the Project
 - THEN the card shows `bd not found` and the workflow stage
 
 ### REQ-UI-008: Sessions navigation
-The "Main" navigation SHALL contain a "Sessions" link, and the frontend SHALL show the Projects page at `/`, the session list at `/sessions` and the session log at `/sessions/<project>/<id>`, changing page without a full reload and following the browser back and forward buttons.
+The frontend SHALL show the Projects page at `/`, the session list at `/sessions` and the session log at `/sessions/<project>/<id>`, changing page without a full reload and following the browser back and forward buttons, while the "Main" navigation holds no Sessions link.
 
-#### Scenario: Open the list
+#### Scenario: Open the list by URL
 - GIVEN the Projects page is shown
-- WHEN the user clicks "Sessions"
-- THEN the URL is `/sessions` and the session list is shown without a reload
+- WHEN the user opens `/sessions`
+- THEN the session list is shown and the "Main" navigation has no "Sessions" link
 
 #### Scenario: Back button
 - GIVEN the user opened a session log from the list
@@ -893,12 +893,12 @@ The Dependencies page SHALL expose the graph to assistive technology with a visu
 - THEN the highlight changes without a transition
 
 ### REQ-UI-055: Main navigation
-The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads (`/beads`), Milestones (`/milestones`), Sessions (`/sessions`) and Quota (`/quota`).
+The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads (`/beads`), Milestones (`/milestones`), Reports (`/reports`) and Quota (`/quota`), in that order.
 
 #### Scenario: Five links
 - GIVEN any page is shown
 - WHEN the page loads
-- THEN the "Main" navigation holds the links Projects, Beads, Milestones, Sessions and Quota, one each
+- THEN the "Main" navigation holds the links Projects, Beads, Milestones, Reports and Quota, one each, and no Sessions link
 
 ### REQ-UI-056: Responsive navigation
 The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with an icon and a label per link while the window is narrower than 768px, an icon rail with a label under each icon from 768px up to 1023px, and a sidebar with an icon and a label per link from 1024px, and SHALL be the same element in every case.
@@ -919,7 +919,7 @@ The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with 
 - THEN the navigation is a sidebar at the left with the label beside each icon
 
 ### REQ-UI-057: Current destination
-The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight, treating `/beads`, `/beads/<project>/<id>` as Beads, `/milestones`, `/milestones/<project>/<id>` as Milestones and `/sessions`, `/sessions/<project>/<id>` as Sessions, and SHALL mark no other link.
+The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight, treating `/beads`, `/beads/<project>/<id>` as Beads, `/milestones`, `/milestones/<project>/<id>` as Milestones and `/reports` as Reports, SHALL mark no link on `/sessions` and `/sessions/<project>/<id>`, and SHALL mark no other link.
 
 #### Scenario: Bead page
 - GIVEN the URL is `/beads/alpha/a-1`
@@ -930,6 +930,16 @@ The "Main" navigation SHALL mark the link of the page being shown with `aria-cur
 - GIVEN the URL is `/milestones/alpha/m-1`
 - WHEN the page loads
 - THEN only the Milestones link has `aria-current="page"`
+
+#### Scenario: Reports page
+- GIVEN the URL is `/reports?project=alpha`
+- WHEN the page loads
+- THEN only the Reports link has `aria-current="page"`
+
+#### Scenario: Session page
+- GIVEN the URL is `/sessions/alpha/s-1`
+- WHEN the page loads
+- THEN no link has `aria-current="page"`
 
 #### Scenario: Change page
 - GIVEN the Projects page is shown
@@ -1485,3 +1495,61 @@ The "Reopened 1 time" or "Reopened N times" text of REQ-UI-086 and the "Bugs fou
 - GIVEN a bead with one bug found whose reopens answer is `{"reopens": 1}`
 - WHEN the bead page is shown
 - THEN "Reopened 1 time" and the "Bugs found" heading use the `type-bug` color and the separator and bug rows do not
+
+### REQ-UI-088: Reports page
+The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk, with a project choice (each configured project and "All projects", default the first project), a period choice (7, 30 or 90 days, default 30) and a sprint field, SHALL keep the choices in the URL query so that reload, back and a shared link show the same report, SHALL show a KPI row with the totals of REQ-REPORTS-003, and SHALL label every cost "estimated" and show "no price" where a cost is absent.
+
+#### Scenario: shared link
+- GIVEN the URL `/reports?project=all&days=7`
+- WHEN the page loads
+- THEN "All projects" and 7 days are selected and the report for them is requested
+
+#### Scenario: change period
+- GIVEN the Reports page for `alpha` and 30 days
+- WHEN the user picks 90 days
+- THEN the URL becomes `/reports?project=alpha&days=90` without a reload and the report is requested again
+
+### REQ-UI-089: AI usage view
+The Reports page SHALL show the AI usage section as a horizontal bar chart of tokens per member stacked by stage with a table of the member rows, a table of the top epics (with budget status when present, each linking to its bead page) and of the top beads, a 100% bar of tokens per stage, and a table of tokens and cost per model and role.
+
+#### Scenario: members
+- GIVEN a report with members `ann` and `Unassigned`
+- WHEN the page is shown
+- THEN the chart has one bar each, stacked by stage, and the table shows their beads, tokens, cost, tokens per bead and cache ratio
+
+### REQ-UI-090: Delivery flow view
+The Reports page SHALL show beads closed per ISO week as a column chart stacked by type, the cycle and lead time medians and p85 per type and per member as tables, the in-progress count per member with the 5 oldest in-progress beads and their age in days, each linking to its bead page, and the estimate table of REQ-REPORTS-004 when it has rows.
+
+#### Scenario: no estimates
+- GIVEN a report without estimated epics
+- WHEN the page is shown
+- THEN no estimate table is shown
+
+### REQ-UI-091: Quality view
+The Reports page SHALL show the quality counts per member and per epic as tables, and the points of REQ-REPORTS-005 as a scatter plot of tokens against rework whose points name the bead on hover and focus and open its bead page on click.
+
+#### Scenario: open a point
+- GIVEN a point for bead `a-3` of project `alpha`
+- WHEN the user clicks it
+- THEN the page `/beads/alpha/a-3` is shown
+
+### REQ-UI-092: Data coverage view
+The Reports page SHALL show the data coverage of REQ-REPORTS-006, each not-collected bead with a button that copies its `gin-workflow usage collect` command, and the fixed note "Estimates from local Claude Code and Codex logs on the machine that collected them. Antigravity and OpenCode are not measured."
+
+#### Scenario: copy command
+- GIVEN coverage lists `a-9` as not collected
+- WHEN the user presses its copy button
+- THEN the clipboard holds `gin-workflow usage collect --bead a-9`
+
+### REQ-UI-093: Report states
+The Reports page SHALL show a loading state while the report loads, SHALL show "No data in this period" in a section that has no rows instead of an empty chart, IF the report request fails, THEN SHALL show the error with a Retry button, SHALL show a warning naming each project under `errors` while showing the rest, and SHALL NOT show a late answer for filters that are no longer selected.
+
+#### Scenario: partial failure
+- GIVEN the answer for "All projects" has `errors` holding `beta`
+- WHEN the page is shown
+- THEN a warning names `beta` and its error and the sections show the other projects
+
+#### Scenario: late answer
+- GIVEN the report for 30 days is loading and the user picks 7 days
+- WHEN the answer for 30 days arrives
+- THEN the page does not show it
