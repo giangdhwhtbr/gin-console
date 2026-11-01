@@ -523,15 +523,34 @@ execution_strategy:
 - [ ] **Step 2:** The person checks TC-1: `gin-workflow-wd1t` shows "Reopened 1 time"; a bead never reopened (for example `gin-console-l69`) shows nothing about reopens; `gin-console-djg` shows no "Bugs found"; reopening the same bead page does not rerun `bd history` (the second load is instant).
 - [ ] **Step 3:** Record the result in the TC-1 evidence cell and commit `docs(specs): record gin-console-le3 manual check (gin-console-le3.3)`. Stop the console started in Step 1.
 
+### Track 4: Bug color for reopens and bugs found
+- **Dependencies**: Track 3
+- **Requirements**: REQ-UI-087
+- **Files**:
+  - Modify `frontend/src/features/beads/Reopens.tsx`, `frontend/src/features/beads/RelationList.tsx`, `frontend/src/features/beads/BeadDetailPage.tsx`
+  - Modify the Reopens and bead page tests under `frontend/src/features/beads/`
+  - Modify `docs/changes/gin-console-le3-quality-signals/05-tests.md` (TC-2 evidence)
+- **Provider role**: `frontend`
+- **Why:** added after TC-1 at the person's request: both signals read as plain text and are easy to miss.
+- **Human gate**: a person runs TC-2 on a laptop and a phone, in light and dark.
+- **Acceptance criteria**: tests for REQ-UI-087 pass; frontend checks pass; TC-2 has dated evidence.
+- **Estimated complexity**: low
+
+- [ ] **Step 1:** Test first (REQ-UI-087): the reopened text carries `text-type-bug` and the separator does not; the "Bugs found" heading carries `text-type-bug` and "Depends on" does not.
+- [ ] **Step 2:** `Reopens` wraps only the "Reopened …" words in a `text-type-bug` span. `RelationList` takes an optional `titleClassName`; the bead page passes `text-type-bug` for "Bugs found" only.
+- [ ] **Step 3:** Run `pnpm -C frontend test --run`, `typecheck`, `lint`, `build`. Commit `feat(beads): bug color for reopens and bugs found (gin-console-le3.4)`.
+- [ ] **Step 4:** Serve the build, the person checks TC-2, record the evidence and commit `docs(specs): record gin-console-le3 bug color check (gin-console-le3.4)`.
+
 ## Integration
 - **Branch**: `feat/gin-console-le3-quality-signals`, cut from `spec/gin-console-le3-quality-signals`
-- **Merge strategy**: sequential (Track 1 → Track 2 → Track 3)
+- **Merge strategy**: sequential (Track 1 → Track 2 → Track 3 → Track 4)
 
 ## Validation
 - [ ] `uv run --directory backend pytest`, `ruff check .`, `mypy` pass
 - [ ] `pnpm -C frontend test --run`, `typecheck`, `lint`, `build` pass
 - [ ] `gin-workflow specs trace --change gin-console-le3` reports every REQ covered
 - [ ] TC-1 passed on laptop and phone, light and dark
+- [ ] TC-2 passed on laptop and phone, light and dark
 
 ## Notes
 - `Model:` and `Effort:` are chosen from the main harness catalog using the route rubric.

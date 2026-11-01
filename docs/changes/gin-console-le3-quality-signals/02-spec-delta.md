@@ -68,6 +68,14 @@ The bead page and the List detail panel SHALL list under "Bugs found" the `bugs`
 - WHEN the answer for `a-5` arrives
 - THEN the page of `a-6` does not show it
 
+### REQ-UI-087: Quality signals in the bug color
+The "Reopened 1 time" or "Reopened N times" text of REQ-UI-086 and the "Bugs found" heading SHALL be shown in the bug color (the `type-bug` theme token used by the bug type badge), in light and dark, while the " · " separator, the bug rows and the "Reopens unavailable" error keep the default text color.
+
+#### Scenario: highlighted signals
+- GIVEN a bead with one bug found whose reopens answer is `{"reopens": 1}`
+- WHEN the bead page is shown
+- THEN "Reopened 1 time" and the "Bugs found" heading use the `type-bug` color and the separator and bug rows do not
+
 ## MODIFIED
 
 ### REQ-BEADS-002: Bead detail
