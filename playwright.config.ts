@@ -13,6 +13,9 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     ...devices['Desktop Chrome'],
+    // Gantt bars slide and the chart scrolls smoothly unless motion is reduced; specs that measure
+    // positions would otherwise read them mid-animation (flaky on CI).
+    reducedMotion: 'reduce',
   },
   webServer: {
     command: 'uv run --directory backend -m gin_console',
