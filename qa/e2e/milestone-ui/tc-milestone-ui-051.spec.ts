@@ -12,6 +12,9 @@ test('TC-MILESTONE-UI-051: Whole milestone does not pan', async ({ page, ev }) =
     { start: '2026-11-02', end: '2026-11-13', finish: '2026-11-13', schedule_start: '2026-11-02' },
   );
   await stubApi(page, { milestone: { M1: plan } });
+  // Bars slide (motion-safe transition) when the chart takes its measured width; without motion the
+  // position settles at once, so a drift seen below can only come from a pan.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const schedule = page.getByRole('figure', { name: 'Schedule' });
 
   await ev.step('1. Open /milestones/P/M1', async () => {
@@ -23,7 +26,14 @@ test('TC-MILESTONE-UI-051: Whole milestone does not pan', async ({ page, ev }) =
   await ev.step('2. Drag the chart to the left by 100 px', async () => {
     const scroller = schedule.locator('[data-scroller]');
     const bead = schedule.locator('[data-bead="2026-11-09"]').first();
-    const beadBefore = (await bead.boundingBox())!;
+    // The chart width follows a ResizeObserver: take the reference position once it holds between two reads.
+    let beadBefore = (await bead.boundingBox())!;
+    await expect.poll(async () => {
+      const now = (await bead.boundingBox())!;
+      const settled = now.x === beadBefore.x;
+      beadBefore = now;
+      return settled;
+    }).toBe(true);
     const box = (await scroller.boundingBox())!;
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 2;
