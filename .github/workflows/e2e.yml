@@ -1,0 +1,61 @@
+name: e2e
+
+# Runs the gin-qa Playwright specs (qa/e2e) once a pull request is merged into master and keeps the
+# per-step evidence (screenshots, aria snapshots, result.json) as a workflow artifact.
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EVIDENCE: qa/evidence/pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - uses: astral-sh/setup-uv@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            frontend/pnpm-lock.yaml
+
+      - name: Install
+        run: |
+          uv --directory backend sync
+          pnpm -C frontend install --frozen-lockfile
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+
+      - name: Build UI
+        run: pnpm -C frontend build
+
+      # Same as `gin-qa e2e run`: GIN_QA_RUN_DIR makes qa/e2e/evidence.ts record every step.
+      - name: Run e2e
+        run: pnpm exec playwright test --output "$EVIDENCE/playwright"
+        env:
+          GIN_QA_RUN_DIR: ${{ github.workspace }}/${{ env.EVIDENCE }}
+
+      - name: Upload evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence-pr-${{ github.event.pull_request.number }}
+          path: ${{ env.EVIDENCE }}
+          if-no-files-found: warn
+          # GitHub deletes the artifact automatically once it expires.
+          retention-days: 14

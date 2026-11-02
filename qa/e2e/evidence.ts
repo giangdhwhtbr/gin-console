@@ -1,0 +1,120 @@
+// Evidence fixture for gin-qa e2e specs. This file belongs to the repository: change it freely,
+// but keep result.json's shape, which `gin-qa e2e check --run` and `gin-qa e2e export` read.
+//
+// A spec starts with `// TC: <TC-ID>@<hash8>` (written by `gin-qa e2e pin`) and wraps each test
+// case step in `ev.step`. Under `gin-qa e2e run` (GIN_QA_RUN_DIR set) every step leaves a
+// screenshot, an ARIA snapshot (NN.aria.yml), and the page URL, and the test leaves
+// <run>/<tc-id>/result.json (<run>/<tc-id>/<project>/ for a named Playwright project, so
+// projects never overwrite each other). Without it the fixture records nothing. ARIA snapshots need
+// @playwright/test 1.49 or later; on older versions `snapshot` is null.
+import { test as base, expect } from '@playwright/test';
+import { createHash } from 'node:crypto';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
+type StepResult = {
+  n: number;
+  title: string;
+  status: 'passed' | 'failed';
+  screenshot: string | null;
+  snapshot: string | null;
+  url: string;
+  error: string | null;
+};
+
+export type Evidence = {
+  step: (title: string, body: () => Promise<void>) => Promise<void>;
+};
+
+const HEADER = /^\/\/ TC: (TC-[A-Z][A-Z0-9-]*-\d{3,})@([0-9a-f]{8})$/;
+
+const ANSI = /\u001b\[[0-9;]*m/g; // Playwright colors its assertion messages
+
+function firstLine(error: unknown): string {
+  const text = error instanceof Error ? error.message : String(error);
+  return text.replace(ANSI, '').split('\n')[0].slice(0, 300);
+}
+
+// Readable and unique: 'Desktop Chrome' -> desktop-chrome-<first 6 hex of sha256('Desktop Chrome')>.
+function projectFolder(name: string): string {
+  const slug = name.toLowerCase().replace(/[^a-z0-9_-]+/g, '-');
+  return `${slug}-${createHash('sha256').update(name).digest('hex').slice(0, 6)}`;
+}
+
+export const test = base.extend<{ ev: Evidence }>({
+  ev: async ({ page }, use, testInfo) => {
+    const header = HEADER.exec(fs.readFileSync(testInfo.file, 'utf8').split(/\r?\n/)[0]);
+    const runDir = process.env.GIN_QA_RUN_DIR;
+    const project = testInfo.project.name;
+    const caseDir = runDir && header ? path.join(runDir, header[1].toLowerCase()) : null;
+    const tcDir = caseDir && project ? path.join(caseDir, projectFolder(project)) : caseDir;
+    if (tcDir) {
+      fs.mkdirSync(tcDir, { recursive: true });
+      // A retry starts clean; the unnamed project's folder also holds the named projects' folders, so only files go.
+      for (const entry of fs.readdirSync(tcDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) fs.rmSync(path.join(tcDir, entry.name), { force: true });
+      }
+    }
+    const steps: StepResult[] = [];
+    const started = new Date().toISOString();
+
+    await use({
+      step: (title, body) =>
+        base.step(title, async () => {
+          const n = steps.length + 1;
+          let failure: unknown = null;
+          try {
+            await body();
+          } catch (error) {
+            failure = error;
+          }
+          let screenshot: string | null = null;
+          let snapshot: string | null = null;
+          if (tcDir) {
+            const prefix = String(n).padStart(2, '0');
+            try {
+              await page.screenshot({ path: path.join(tcDir, `${prefix}.png`), fullPage: true });
+              screenshot = `${prefix}.png`;
+            } catch {
+              screenshot = null;
+            }
+            try {
+              const aria = await page.locator('body').ariaSnapshot({ timeout: 5000 });
+              fs.writeFileSync(path.join(tcDir, `${prefix}.aria.yml`), aria + '\n');
+              snapshot = `${prefix}.aria.yml`;
+            } catch {
+              snapshot = null;
+            }
+          }
+          steps.push({
+            n,
+            title,
+            status: failure ? 'failed' : 'passed',
+            screenshot,
+            snapshot,
+            url: page.url(),
+            error: failure ? firstLine(failure) : null,
+          });
+          if (failure) throw failure;
+        }),
+    });
+
+    if (!tcDir || !header) return;
+    const stepFailed = steps.some((step) => step.status === 'failed');
+    const failed = stepFailed || testInfo.status !== testInfo.expectedStatus;
+    const outside = failed && !stepFailed ? firstLine(testInfo.error?.message ?? testInfo.status) : null;
+    const result = {
+      tc: header[1],
+      tc_hash8: header[2],
+      project: project || null,
+      status: failed ? 'failed' : 'passed',
+      started,
+      finished: new Date().toISOString(),
+      error: outside,
+      steps,
+    };
+    fs.writeFileSync(path.join(tcDir, 'result.json'), JSON.stringify(result, null, 2) + '\n');
+  },
+});
+
+export { expect };
