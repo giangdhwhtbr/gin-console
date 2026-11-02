@@ -1,0 +1,5 @@
+# gin-console config for the e2e webServer (playwright.config.ts): specs stub /api/*, so no projects.
+server:
+  host: 127.0.0.1
+  port: 8701
+projects: []

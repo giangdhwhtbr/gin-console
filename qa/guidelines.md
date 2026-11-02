@@ -13,4 +13,5 @@ Rules for writing test cases in this repository. `/gin-qa:cases` reads this file
 - Playwright: `@playwright/test` 1.49 or later (the evidence fixture records ARIA snapshots).
 - Locators: prefer `getByRole` with the accessible name; use `getByTestId` only when no stable name exists.
 - Sign-in: none (the console has no authentication).
-- Test data: preconditions describe what `gin-workflow` and `bd` report; specs stub the matching `/api/*` responses with `page.route` instead of relying on real projects.
+- Test data: preconditions describe what `gin-workflow` and `bd` report; specs stub the matching `/api/*` responses instead of relying on real projects. Use `stubApi` and the builders in `qa/e2e/support/api.ts` (`import { … } from '../support/api'`); `qa/e2e/milestone-ui/tc-milestone-ui-001.spec.ts` is an example. Project names in URLs are the stubbed ones (default `P`).
+- Server: `playwright.config.ts` serves the built UI on `http://127.0.0.1:8701` with `qa/e2e/gin-console.yaml` (no projects) and reuses a server already running there. Run `pnpm -C frontend build` after UI changes.

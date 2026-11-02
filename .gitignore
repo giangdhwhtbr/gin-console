@@ -19,3 +19,7 @@ __pycache__/
 .env
 docker-compose.override.yml
 .beads
+/qa/evidence/
+/node_modules/
+/test-results/
+/playwright-report/
