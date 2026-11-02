@@ -12,9 +12,6 @@ test('TC-MILESTONE-UI-051: Whole milestone does not pan', async ({ page, ev }) =
     { start: '2026-11-02', end: '2026-11-13', finish: '2026-11-13', schedule_start: '2026-11-02' },
   );
   await stubApi(page, { milestone: { M1: plan } });
-  // Bars slide (motion-safe transition) when the chart takes its measured width; without motion the
-  // position settles at once, so a drift seen below can only come from a pan.
-  await page.emulateMedia({ reducedMotion: 'reduce' });
   const schedule = page.getByRole('figure', { name: 'Schedule' });
 
   await ev.step('1. Open /milestones/P/M1', async () => {
