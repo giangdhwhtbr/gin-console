@@ -100,7 +100,7 @@ export function QualitySection({ quality }: { quality: Quality }) {
               <XAxis type="number" dataKey="tokens" name="Tokens" tickFormatter={formatTokens} tick={tick} />
               <YAxis type="number" dataKey="rework" name="Rework" allowDecimals={false} tick={tick} />
               <Tooltip contentStyle={tooltipStyle} content={<PointTip />} />
-              <Scatter data={quality.points} fill="var(--color-series-1)" onClick={openPoint} isAnimationActive={false} />
+              <Scatter data={quality.points} fill="var(--series-1)" onClick={openPoint} isAnimationActive={false} />
             </ScatterChart>
           </ChartBox>
           <h3 className="font-medium">Beads by rework</h3>

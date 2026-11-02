@@ -6,6 +6,7 @@ The Reports page (`frontend/src/features/reports/`) draws its charts with Rechar
 ## Decision/Solution
 - Recharts' default legend colors each label with its series color (`entry.color`), so the text fails the "text in text tokens" rule and loses contrast. Every `<Legend>` takes `formatter={legendText}` from `ChartBox.tsx`, which wraps the label in `span.text-foreground`; `sections.test.tsx` (REQ-UI-089) asserts it.
 - jsdom has no layout, so `ResponsiveContainer` measures 0 and draws nothing. `ChartBox` passes `initialDimension={{ width: 640, height }}`, which makes the charts render in vitest without stubbing Recharts.
+- Tailwind 4 emits a `@theme` variable (`--color-*`) only when its full name appears in the sources, so `var(--color-series-${n})` built at run time pointed at undefined variables and the SVG fell back to black. Chart colors name the plain `--series-N` variables declared in `:root` and `.dark` (`colors.ts`); `colors.test.ts` checks every slot against `index.css`.
 - Scatter points are reachable only with a mouse; each scatter has a table of the same beads with links (`QualitySection.tsx`, "Beads by rework", REQ-UI-091).
 
 ## Consequences

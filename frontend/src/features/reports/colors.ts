@@ -6,7 +6,7 @@ const MUTED = "var(--color-muted-foreground)";
 // color follows the entity in its fixed slot, never its rank in the data
 const colorIn = (order: readonly string[], name: string): string => {
   const index = order.indexOf(name);
-  return index === -1 ? MUTED : `var(--color-series-${index + 1})`;
+  return index === -1 ? MUTED : `var(--series-${index + 1})`;
 };
 
 export const stageColor = (stage: string): string => colorIn(STAGES, stage);
