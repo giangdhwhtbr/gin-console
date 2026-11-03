@@ -3,7 +3,7 @@
 ## ADDED
 
 ### REQ-UI-094: Collapsible sidebar
-From 1024px the frontend SHALL show, at the bottom of the "Main" navigation's sidebar, a control that collapses the sidebar and expands it again, with an accessible name saying which it does ("Collapse sidebar" or "Expand sidebar") and `aria-expanded` telling whether the sidebar is expanded, and SHALL NOT show the control below 1024px. WHILE the sidebar is collapsed, the frontend SHALL draw it as the icon rail of REQ-UI-056 with the brand mark without its word and the theme control as an icon. The frontend SHALL start with the sidebar expanded, SHALL keep the choice in the browser and use it on the next visit, and IF the browser refuses to store the choice, THEN SHALL still collapse and expand the sidebar for the current visit without an error.
+From 1024px the frontend SHALL show, at the top of the "Main" navigation's sidebar next to the theme control, a control that collapses the sidebar and expands it again, with an accessible name saying which it does ("Collapse sidebar" or "Expand sidebar") and `aria-expanded` telling whether the sidebar is expanded, and SHALL NOT show the control below 1024px. From 768px the frontend SHALL show the theme control and the collapse control as icons at the top of the navigation column, on one row with the brand mark while the sidebar is expanded and under the brand mark on the icon rail, so that both are visible without scrolling the page. WHILE the sidebar is collapsed, the frontend SHALL draw it as the icon rail of REQ-UI-056 with the brand mark without its word. The frontend SHALL start with the sidebar expanded, SHALL keep the choice in the browser and use it on the next visit, and IF the browser refuses to store the choice, THEN SHALL still collapse and expand the sidebar for the current visit without an error.
 
 #### Scenario: Collapse
 - GIVEN a window 1280px wide with the sidebar expanded
@@ -30,10 +30,15 @@ From 1024px the frontend SHALL show, at the bottom of the "Main" navigation's si
 - WHEN the user presses "Collapse sidebar"
 - THEN the sidebar collapses and no error is shown
 
+#### Scenario: Controls at the top
+- GIVEN a window 1280px wide and a page taller than the window
+- WHEN the page loads
+- THEN the theme and collapse controls are shown on the brand mark's row, above the links, without scrolling
+
 #### Scenario: Narrow window
 - GIVEN a window 820px wide
 - WHEN any page is shown
-- THEN no collapse control is shown
+- THEN no collapse control is shown and the theme control is under the brand mark, above the links
 
 ## MODIFIED
 

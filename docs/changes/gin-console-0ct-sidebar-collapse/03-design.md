@@ -6,8 +6,9 @@ Epic: gin-console-0ct
 This change touches only the frontend shell in `frontend/src/app/`. Nothing changes in the backend, and no dependency is added (`lucide-react` already has `PanelLeftClose` and `PanelLeftOpen`).
 
 - `Layout.tsx` owns the collapsed state: a `useState` whose initializer reads the key `gin-console-sidebar` from `localStorage` (`"collapsed"` collapses; anything else, or a refused read, expands). Toggling writes the key, inside `try/catch` like `theme.ts`.
-- While collapsed, `Layout` leaves out the `lg:` classes of the sidebar column, the brand word, the links (`LINK`) and the theme control, so from 1024px the `md:` rail styles apply. Expanded, the classes stay exactly as today. `ThemeToggle` takes a prop to drop its `lg:` label for this.
-- The collapse button sits under `ThemeToggle`, is `hidden lg:flex`, and uses the same button classes as `ThemeToggle`: icon plus "Collapse sidebar" expanded, icon only collapsed. Its `aria-label` is "Collapse sidebar" or "Expand sidebar", with `aria-expanded`.
+- While collapsed, `Layout` leaves out the `lg:` classes of the sidebar column, the brand word, the links (`LINK`) and the theme control, so from 1024px the `md:` rail styles apply. Expanded, the classes stay exactly as today. `ThemeToggle` has no wide form any more.
+- The theme and collapse controls sit at the top of the column, in the brand row: `flex-col` on the icon rail (brand mark, then the two icons side by side), `lg:flex-row lg:justify-between` on the expanded sidebar (brand mark and word, then the two icons). They used to sit at the bottom (`md:mt-auto`), which is off-screen on a long page because the column grows with the page (change of 2026-11-03).
+- Both controls are icon-only 32px buttons from 768px (44px in the phone top bar) sharing `ICON_BUTTON` from `ThemeToggle.tsx`; the visible "Switch to dark" label goes, the accessible names stay. The collapse button is `hidden lg:flex`; its `aria-label` is "Collapse sidebar" or "Expand sidebar", with `aria-expanded`.
 - No script in `index.html`: the navigation is rendered by React, and the state is read before the first render, so the wrong width is never painted.
 - No transition on the width, so REQ-UI-062 (reduced motion) needs no special case.
 
@@ -22,7 +23,7 @@ This change touches only the frontend shell in `frontend/src/app/`. Nothing chan
 
 ## Testing
 - vitest `Layout.test.tsx`, each case named with its REQ-ID:
-  - REQ-UI-094: the button starts as "Collapse sidebar" with `aria-expanded="true"`; pressing it gives "Expand sidebar" with `aria-expanded="false"` and stores `collapsed`; a render with `collapsed` stored starts collapsed; with `localStorage.setItem` throwing, pressing still toggles.
+  - REQ-UI-094: the theme and collapse controls come before the "Main" navigation in the document; the button starts as "Collapse sidebar" with `aria-expanded="true"`; pressing it gives "Expand sidebar" with `aria-expanded="false"` and stores `collapsed`; a render with `collapsed` stored starts collapsed; with `localStorage.setItem` throwing, pressing still toggles.
   - REQ-UI-055 and REQ-UI-057: the existing cases run again with the sidebar collapsed (one "Main" navigation, five links, current page marked).
 - jsdom has no layout, so the widths at 820px and 1280px are checked by hand (`05-tests.md`).
 - `pnpm -C frontend test --run`, `typecheck`, `lint` and `build` must pass.

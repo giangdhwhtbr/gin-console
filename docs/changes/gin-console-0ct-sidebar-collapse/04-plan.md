@@ -55,7 +55,7 @@ Unclear requirements never raise the model or effort.
 - Rationale: smallest change inside the component that already owns the navigation. The code below was built and checked in a scratch worktree on 2026-11-02 against `6e12739`: 507 frontend tests, typecheck, lint and build pass; a headless Chromium on the built app showed the collapsed column at 80px at 1280px, the choice kept after reload, and no button at 820px.
 
 ## Scope
-- In scope: `frontend/src/app/Layout.tsx`, `frontend/src/app/ThemeToggle.tsx`, `frontend/src/app/Layout.test.tsx`, and the evidence of TC-1 to TC-3 in `05-tests.md`.
+- In scope (Tracks 1 and 3): `frontend/src/app/Layout.tsx`, `frontend/src/app/ThemeToggle.tsx`, `frontend/src/app/Layout.test.tsx`, and the evidence of TC-1 to TC-3 in `05-tests.md`.
 - Out of scope: the backend, other pages, the living specs (updated at archive), the e2e specs and their recorded ARIA evidence under `qa/`.
 
 ## Execution Strategy
@@ -65,7 +65,7 @@ execution_strategy:
   mode: direct
   workers:
     mode: sequential
-  rationale: Track 2 checks the build of Track 1 in a browser, so the tracks run one after another.
+  rationale: Track 3 changes the files of Track 1 and Track 2 checks the build of both in a browser, so the tracks run one after another.
 ```
 
 ## Tasks
@@ -325,8 +325,166 @@ index a4b90f9..8adc1e1 100644
 
 - [ ] **Step 6: Commit.** `git add frontend/src/app/Layout.tsx frontend/src/app/ThemeToggle.tsx frontend/src/app/Layout.test.tsx` and commit `feat(ui): collapse the sidebar to the icon rail (gin-console-0ct.1)`.
 
-### Track 2: Check the sidebar in a browser
+### Track 3: Sidebar controls at the top
 - **Dependencies**: Track 1
+- **Requirements**: REQ-UI-094, REQ-UI-056
+- **Files**:
+  - Modify `frontend/src/app/ThemeToggle.tsx:1-26` (replace `RAIL_BUTTON`/`RAIL_BUTTON_WIDE` and the `wide` prop with `ICON_BUTTON`; drop the visible label)
+  - Modify `frontend/src/app/Layout.tsx:6,46,82-110` (import; brand word `whitespace-nowrap`; theme and collapse controls in the brand row; remove the bottom block)
+  - Test `frontend/src/app/Layout.test.tsx` (one case before the collapsed-navigation case)
+- **Provider role**: `frontend`
+- **Model:** `sonnet`
+- **Effort:** `low`
+- **Why:** a class and markup move inside the same two components, with the exact diffs and test given below.
+- **Acceptance criteria**: the new `Layout.test.tsx` case (REQ-UI-094, controls above the navigation) and all existing frontend tests pass (52 files, 508 tests); `pnpm -C frontend typecheck`, `lint` and `build` pass.
+- **Estimated complexity**: low
+
+Added 2026-11-03 at the user's request, after Track 1 shipped with the controls at the bottom of the column: the column grows with the page, so on a long page they were off-screen. The code below was built and checked in a scratch worktree against `25a2b7e`: 508 tests, typecheck, lint and build pass; headless Chromium screenshots at 1280px (expanded and collapsed, light and dark), 820px and 390px show the icons on the brand row, "gin-console" on one line, and the icons under the brand mark on the rail.
+
+**Interfaces produced** (replace those of Track 1 in `ThemeToggle.tsx`):
+```ts
+// frontend/src/app/ThemeToggle.tsx
+export const ICON_BUTTON: string; // 44px icon button, 32px from 768px
+export function ThemeToggle(): JSX.Element;
+```
+
+- [ ] **Step 1: Write the failing test.** Save this diff to a file and run `git apply <file>` from the repo root:
+
+```diff
+diff --git a/frontend/src/app/Layout.test.tsx b/frontend/src/app/Layout.test.tsx
+index 01db701..4402255 100644
+--- a/frontend/src/app/Layout.test.tsx
++++ b/frontend/src/app/Layout.test.tsx
+@@ -105,6 +105,14 @@ describe("Layout", () => {
+     expect(sidebarToggle()).toHaveAccessibleName("Expand sidebar");
+   });
+ 
++  it("REQ-UI-094 puts the theme and collapse controls above the navigation", () => {
++    open("/");
++    const [, sidebarTheme] = screen.getAllByRole("button", { name: /Switch to (dark|light) theme/ });
++    for (const control of [sidebarTheme, sidebarToggle()]) {
++      expect(control.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
++    }
++  });
++
+   it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the five links when collapsed", () => {
+     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+     open("/beads");
+```
+
+- [ ] **Step 2: Run it and see it fail.** `pnpm -C frontend test --run src/app/Layout.test.tsx` fails the new case: the controls come after the navigation.
+
+- [ ] **Step 3: Implement.** Save this diff to a file and run `git apply <file>` from the repo root:
+
+```diff
+diff --git a/frontend/src/app/Layout.tsx b/frontend/src/app/Layout.tsx
+index 1491d0b..1d3b218 100644
+--- a/frontend/src/app/Layout.tsx
++++ b/frontend/src/app/Layout.tsx
+@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
+ import { cn } from "@/lib/utils";
+ import { Link } from "./Link";
+ import { useLocation } from "./route";
+-import { RAIL_BUTTON, RAIL_BUTTON_WIDE, ThemeToggle } from "./ThemeToggle";
++import { ICON_BUTTON, ThemeToggle } from "./ThemeToggle";
+ 
+ const NAV = [
+   { to: "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
+@@ -41,7 +41,7 @@ function Brand({ wordClass }: { wordClass?: string }) {
+         <circle cx="15" cy="6" r="4.5" className="fill-state-progress" />
+         <circle cx="25" cy="6" r="4.5" className="fill-state-blocked" />
+       </svg>
+-      <span className={cn("text-sm font-semibold", wordClass)}>gin-console</span>
++      <span className={cn("whitespace-nowrap text-sm font-semibold", wordClass)}>gin-console</span>
+     </span>
+   );
+ }
+@@ -71,8 +71,21 @@ export function Layout({ children }: { children: ReactNode }) {
+           wide && "lg:w-56 lg:px-3",
+         )}
+       >
+-        <div className={cn("hidden justify-center px-2 py-1 md:flex", wide && "lg:justify-start")}>
++        <div className={cn("hidden items-center gap-2 md:flex md:flex-col", wide && "lg:flex-row lg:justify-between lg:gap-1 lg:pl-2")}>
+           <Brand wordClass={wide ? "max-lg:hidden" : "hidden"} />
++          <div className="flex">
++            <ThemeToggle />
++            <button
++              type="button"
++              onClick={toggle}
++              aria-expanded={wide}
++              aria-label={wide ? "Collapse sidebar" : "Expand sidebar"}
++              title={wide ? "Collapse sidebar" : "Expand sidebar"}
++              className={cn(ICON_BUTTON, "hidden lg:flex")}
++            >
++              <ToggleIcon aria-hidden className="size-5" />
++            </button>
++          </div>
+         </div>
+         <nav
+           aria-label="Main"
+@@ -85,20 +98,6 @@ export function Layout({ children }: { children: ReactNode }) {
+             </Link>
+           ))}
+         </nav>
+-        <div className="hidden md:mt-auto md:flex md:flex-col md:gap-1">
+-          <ThemeToggle wide={wide} />
+-          <button
+-            type="button"
+-            onClick={toggle}
+-            aria-expanded={wide}
+-            aria-label={wide ? "Collapse sidebar" : "Expand sidebar"}
+-            title={wide ? "Collapse sidebar" : "Expand sidebar"}
+-            className={cn(RAIL_BUTTON, wide && RAIL_BUTTON_WIDE, "hidden lg:flex")}
+-          >
+-            <ToggleIcon aria-hidden className="size-5" />
+-            <span className={cn("hidden", wide && "lg:inline")}>Collapse sidebar</span>
+-          </button>
+-        </div>
+       </div>
+       <main className="min-w-0 flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6">{children}</main>
+     </div>
+diff --git a/frontend/src/app/ThemeToggle.tsx b/frontend/src/app/ThemeToggle.tsx
+index 8adc1e1..faff0f5 100644
+--- a/frontend/src/app/ThemeToggle.tsx
++++ b/frontend/src/app/ThemeToggle.tsx
+@@ -1,13 +1,11 @@
+ import { Moon, Sun } from "lucide-react";
+-import { cn } from "@/lib/utils";
+ import { useTheme } from "./theme";
+ 
+-/** A sidebar button: icon only up to 1023px, icon and label from 1024px unless the sidebar is collapsed. */
+-export const RAIL_BUTTON =
+-  "flex size-11 items-center justify-center gap-3 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground md:size-10";
+-export const RAIL_BUTTON_WIDE = "lg:h-10 lg:w-full lg:justify-start lg:px-3 lg:text-sm lg:font-medium";
++/** An icon button of the top bar or the sidebar's control row: 44px on phones, 32px from 768px. */
++export const ICON_BUTTON =
++  "flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground md:size-8";
+ 
+-export function ThemeToggle({ className, wide = true }: { className?: string; wide?: boolean }) {
++export function ThemeToggle() {
+   const [theme, toggle] = useTheme();
+   const next = theme === "dark" ? "light" : "dark";
+   const Icon = theme === "dark" ? Sun : Moon;
+@@ -17,10 +15,9 @@ export function ThemeToggle({ className, wide = true }: { className?: string; wi
+       onClick={toggle}
+       aria-label={`Switch to ${next} theme`}
+       title={`Switch to ${next} theme`}
+-      className={cn(RAIL_BUTTON, wide && RAIL_BUTTON_WIDE, className)}
++      className={ICON_BUTTON}
+     >
+       <Icon aria-hidden className="size-5" />
+-      <span className={cn("hidden", wide && "lg:inline")}>{`Switch to ${next}`}</span>
+     </button>
+   );
+ }
+```
+
+- [ ] **Step 4: Run every frontend check.** `pnpm -C frontend test --run` (52 files, 508 tests pass), `pnpm -C frontend typecheck`, `pnpm -C frontend lint` and `pnpm -C frontend build` exit 0.
+
+- [ ] **Step 5: Commit.** `git add frontend/src/app/Layout.tsx frontend/src/app/ThemeToggle.tsx frontend/src/app/Layout.test.tsx` and commit `feat(ui): move the sidebar controls to the top (gin-console-0ct.3)`.
+
+### Track 2: Check the sidebar in a browser
+- **Dependencies**: Track 3
 - **Requirements**: REQ-UI-094, REQ-UI-056
 - **Files**:
   - Modify `docs/changes/gin-console-0ct-sidebar-collapse/05-tests.md` (TC-1 to TC-3 evidence)
@@ -338,14 +496,14 @@ index a4b90f9..8adc1e1 100644
 - **Acceptance criteria**: TC-1 to TC-3 have dated evidence naming the build checked and the result.
 - **Estimated complexity**: low
 
-- [ ] **Step 1:** Deploy the branch to the Tailscale console (bd memory `deploy-to-tailscale-for-ui-verification`): `git -C /home/gin/gin-fam/gin-console merge --ff-only feat/sidebar-collapse`, `pnpm -C /home/gin/gin-fam/gin-console/frontend install --frozen-lockfile`, `pnpm -C /home/gin/gin-fam/gin-console/frontend build`, `systemctl --user restart gin-console`, `systemctl --user is-active gin-console` (prints `active`), `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8700/api/health` (prints `200`). Report the rollback command (`git -C /home/gin/gin-fam/gin-console reset --hard <previous HEAD>` then rebuild and restart).
+- [ ] **Step 1:** Deploy the branch to the Tailscale console (bd memory `deploy-to-tailscale-for-ui-verification`): `git -C /home/gin/gin-fam/gin-console merge --ff-only feat/sidebar-collapse-impl`, `pnpm -C /home/gin/gin-fam/gin-console/frontend install --frozen-lockfile`, `pnpm -C /home/gin/gin-fam/gin-console/frontend build`, `systemctl --user restart gin-console`, `systemctl --user is-active gin-console` (prints `active`), `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8700/api/health` (prints `200`). Report the rollback command (`git -C /home/gin/gin-fam/gin-console reset --hard <previous HEAD>` then rebuild and restart).
 - [ ] **Step 2:** The person checks TC-1 at 1280px, light and dark: "Collapse sidebar" turns the sidebar into the 80px rail with the label under each icon and the brand mark without its word; "Expand sidebar" restores the 224px sidebar; the current page stays marked; Tab reaches the button with a visible focus ring.
 - [ ] **Step 3:** The person checks TC-2: collapse, reload, the sidebar is still collapsed; and TC-3: at 820px and 390px there is no collapse button and the rail and tab bar look as before.
 - [ ] **Step 4:** Record the results in the TC-1 to TC-3 evidence cells and commit `docs(specs): record gin-console-0ct sidebar check (gin-console-0ct.2)`.
 
 ## Integration
 - **Branch**: `feat/sidebar-collapse` (holds the spec commit `6e12739`)
-- **Merge strategy**: sequential (Track 1 → Track 2)
+- **Merge strategy**: sequential (Track 1 → Track 3 → Track 2)
 
 ## Validation
 - [ ] `pnpm -C frontend test --run`, `typecheck`, `lint`, `build` pass
@@ -355,5 +513,5 @@ index a4b90f9..8adc1e1 100644
 ## Notes
 - `Model:` and `Effort:` are chosen from the main harness catalog using the route rubric.
 - The diffs apply to `6e12739` and were checked in a scratch worktree on 2026-11-02 (see Recommended Approach).
-- The theme and collapse buttons sit at the left of the 80px rail, as the theme button already does on the tablet rail today; the collapsed rail matches the tablet rail exactly. Centring both is a separate visual fix if wanted.
+- Track 1 put the theme and collapse controls at the bottom of the column, labelled from 1024px; Track 3 (2026-11-03, user request) moves both to the brand row as icons, which also centres them on the rail.
 - The Parent Bead `gin-console-0ct` stays open until a human-confirmed merge; track beads close after tests and review pass.
