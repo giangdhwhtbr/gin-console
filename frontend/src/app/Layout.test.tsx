@@ -1,15 +1,20 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
-import { Layout } from "./Layout";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { Layout, SIDEBAR_KEY } from "./Layout";
 
-afterEach(cleanup);
+beforeEach(() => window.localStorage.clear());
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 const open = (path: string) => {
   window.history.replaceState(null, "", path);
   render(<Layout>page</Layout>);
 };
 const nav = () => screen.getByRole("navigation", { name: "Main" });
+const sidebarToggle = () => screen.getByRole("button", { name: /(Collapse|Expand) sidebar/ });
 const marked = () =>
   within(nav())
     .getAllByRole("link")
@@ -62,5 +67,49 @@ describe("Layout", () => {
   it("REQ-UI-062 offers the theme control", () => {
     open("/");
     expect(screen.getAllByRole("button", { name: /Switch to (dark|light) theme/ }).length).toBeGreaterThan(0);
+  });
+
+  it("REQ-UI-094 starts expanded when nothing is stored", () => {
+    open("/");
+    expect(sidebarToggle()).toHaveAccessibleName("Collapse sidebar");
+    expect(sidebarToggle()).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("REQ-UI-094 collapses, stores the choice, and expands again", async () => {
+    open("/");
+    await userEvent.click(sidebarToggle());
+    expect(sidebarToggle()).toHaveAccessibleName("Expand sidebar");
+    expect(sidebarToggle()).toHaveAttribute("aria-expanded", "false");
+    expect(window.localStorage.getItem(SIDEBAR_KEY)).toBe("collapsed");
+    await userEvent.click(sidebarToggle());
+    expect(sidebarToggle()).toHaveAccessibleName("Collapse sidebar");
+    expect(window.localStorage.getItem(SIDEBAR_KEY)).toBe("expanded");
+  });
+
+  it("REQ-UI-094 starts collapsed when the choice is stored", () => {
+    window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+    open("/");
+    expect(sidebarToggle()).toHaveAccessibleName("Expand sidebar");
+  });
+
+  it("REQ-UI-094 toggles for this visit when storage is refused", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("denied");
+    });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("denied");
+    });
+    open("/");
+    expect(sidebarToggle()).toHaveAccessibleName("Collapse sidebar");
+    await userEvent.click(sidebarToggle());
+    expect(sidebarToggle()).toHaveAccessibleName("Expand sidebar");
+  });
+
+  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the five links when collapsed", () => {
+    window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+    open("/beads");
+    expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
+    expect(within(nav()).getAllByRole("link")).toHaveLength(5);
+    expect(marked()).toEqual(["Beads"]);
   });
 });
