@@ -3,7 +3,7 @@ import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "./Link";
 import { useLocation } from "./route";
-import { RAIL_BUTTON, RAIL_BUTTON_WIDE, ThemeToggle } from "./ThemeToggle";
+import { ICON_BUTTON, ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { to: "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
@@ -41,7 +41,7 @@ function Brand({ wordClass }: { wordClass?: string }) {
         <circle cx="15" cy="6" r="4.5" className="fill-state-progress" />
         <circle cx="25" cy="6" r="4.5" className="fill-state-blocked" />
       </svg>
-      <span className={cn("text-sm font-semibold", wordClass)}>gin-console</span>
+      <span className={cn("whitespace-nowrap text-sm font-semibold", wordClass)}>gin-console</span>
     </span>
   );
 }
@@ -71,8 +71,21 @@ export function Layout({ children }: { children: ReactNode }) {
           wide && "lg:w-56 lg:px-3",
         )}
       >
-        <div className={cn("hidden justify-center px-2 py-1 md:flex", wide && "lg:justify-start")}>
+        <div className={cn("hidden items-center gap-2 md:flex md:flex-col", wide && "lg:flex-row lg:justify-between lg:gap-1 lg:pl-2")}>
           <Brand wordClass={wide ? "max-lg:hidden" : "hidden"} />
+          <div className="flex">
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={toggle}
+              aria-expanded={wide}
+              aria-label={wide ? "Collapse sidebar" : "Expand sidebar"}
+              title={wide ? "Collapse sidebar" : "Expand sidebar"}
+              className={cn(ICON_BUTTON, "hidden lg:flex")}
+            >
+              <ToggleIcon aria-hidden className="size-5" />
+            </button>
+          </div>
         </div>
         <nav
           aria-label="Main"
@@ -85,20 +98,6 @@ export function Layout({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="hidden md:mt-auto md:flex md:flex-col md:gap-1">
-          <ThemeToggle wide={wide} />
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={wide}
-            aria-label={wide ? "Collapse sidebar" : "Expand sidebar"}
-            title={wide ? "Collapse sidebar" : "Expand sidebar"}
-            className={cn(RAIL_BUTTON, wide && RAIL_BUTTON_WIDE, "hidden lg:flex")}
-          >
-            <ToggleIcon aria-hidden className="size-5" />
-            <span className={cn("hidden", wide && "lg:inline")}>Collapse sidebar</span>
-          </button>
-        </div>
       </div>
       <main className="min-w-0 flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6">{children}</main>
     </div>

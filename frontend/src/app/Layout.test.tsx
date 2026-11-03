@@ -105,6 +105,14 @@ describe("Layout", () => {
     expect(sidebarToggle()).toHaveAccessibleName("Expand sidebar");
   });
 
+  it("REQ-UI-094 puts the theme and collapse controls above the navigation", () => {
+    open("/");
+    const [, sidebarTheme] = screen.getAllByRole("button", { name: /Switch to (dark|light) theme/ });
+    for (const control of [sidebarTheme, sidebarToggle()]) {
+      expect(control.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
   it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the five links when collapsed", () => {
     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
     open("/beads");
