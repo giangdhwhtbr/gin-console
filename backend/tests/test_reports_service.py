@@ -202,6 +202,26 @@ def test_reports_003_nested_epics_roll_up() -> None:
     assert {q.key: q.beads for q in r.quality.epics} == {"e-1": 3, "e-2": 2}
 
 
+def test_reports_003_total_cache_ratio() -> None:
+    a = usage(100)
+    a["models"]["m"] = {
+        "input": 100,
+        "output": 0,
+        "cache_read": 300,
+        "cache_write": 0,
+        "cost": None,
+    }
+    b = usage(100)
+    b["models"]["m"] = {"input": 100, "output": 0, "cache_read": 0, "cache_write": 0, "cost": None}
+    r = report([closed("a-1", ago(2), ai=a), closed("a-2", ago(2), ai=b)])
+    assert r.totals.cache_ratio == 0.6
+
+
+def test_reports_003_total_cache_ratio_absent_without_reads() -> None:
+    r = report([closed("a-1", ago(2), ai=usage(100))])
+    assert r.totals.cache_ratio is None
+
+
 # REQ-REPORTS-004
 def test_reports_004_percentiles() -> None:
     rows = [
@@ -220,6 +240,25 @@ def test_reports_004_missing_start_and_inverted_times() -> None:
     inverted = report([closed("a-1", ago(5), started_at=ago(1), created_at=ago(9))])
     assert inverted.delivery.by_type[0].cycle is None
     assert inverted.delivery.by_type[0].lead is not None
+
+
+def test_reports_004_overall_over_all_types() -> None:
+    r = report(
+        [
+            closed("a-1", ago(5), started_at=ago(6), created_at=ago(6)),
+            closed("b-1", ago(5), issue_type="bug", started_at=ago(8), created_at=ago(8)),
+        ]
+    )
+    overall = r.delivery.overall
+    assert overall.key == "all"
+    assert overall.cycle is not None and (overall.cycle.n, overall.cycle.median) == (2, 2.0)
+    assert overall.lead is not None and overall.lead.median == 2.0
+
+
+def test_reports_004_overall_absent_when_nothing_closed() -> None:
+    r = report([row("a-1", status="open")])
+    assert r.delivery.overall.key == "all"
+    assert r.delivery.overall.cycle is None and r.delivery.overall.lead is None
 
 
 def test_reports_004_weeks() -> None:

@@ -62,6 +62,14 @@ def test_reports_001_default_period_is_30_days(tmp_path: Path) -> None:
     assert body["days"] == 30
 
 
+# REQ-REPORTS-003, REQ-REPORTS-004
+def test_reports_003_004_new_fields_in_json(tmp_path: Path) -> None:
+    fake = FakeBd([closed("a-1", 3)])
+    body = make(tmp_path, {"alpha": fake}).get("/api/reports", params={"project": "alpha"}).json()
+    assert "cache_ratio" in body["totals"]
+    assert body["delivery"]["overall"]["key"] == "all"
+
+
 # REQ-REPORTS-001
 def test_reports_001_sprint_takes_the_labelled_epic_tree(tmp_path: Path) -> None:
     fake = FakeBd(

@@ -219,6 +219,11 @@ def _stage_order(stage: str) -> tuple[int, str]:
     return (STAGES.index(stage), "") if stage in STAGES else (len(STAGES), stage)
 
 
+def _cache_ratio(models: list[Tokens]) -> float | None:
+    read_side = sum(t.input + t.cache_read + t.cache_write for t in models)
+    return round(sum(t.cache_read for t in models) / read_side, 4) if read_side else None
+
+
 def _totals(closed: list[ReportBead], measured: list[Measured]) -> Totals:
     tokens = sum(tokens_of(m.own) for m in measured)
     return Totals(
@@ -226,6 +231,7 @@ def _totals(closed: list[ReportBead], measured: list[Measured]) -> Totals:
         cost=_cost(t.cost for m in measured for t in m.own.models.values()),
         closed=len(closed),
         tokens_per_bead=round(tokens / len(measured), 1) if measured else None,
+        cache_ratio=_cache_ratio([t for m in measured for t in m.own.models.values()]),
         rework_rate=_rate([m.own.quality for m in measured]),
     )
 
@@ -233,7 +239,6 @@ def _totals(closed: list[ReportBead], measured: list[Measured]) -> Totals:
 def _member_usage(name: str, closed: list[ReportBead], rows: list[Measured]) -> MemberUsage:
     tokens = sum(tokens_of(m.own) for m in rows)
     models = [t for m in rows for t in m.own.models.values()]
-    read_side = sum(t.input + t.cache_read + t.cache_write for t in models)
     stages: dict[str, int] = defaultdict(int)
     for m in rows:
         for stage, value in m.own.stages.items():
@@ -244,7 +249,7 @@ def _member_usage(name: str, closed: list[ReportBead], rows: list[Measured]) -> 
         tokens=tokens,
         cost=_cost(t.cost for t in models),
         tokens_per_bead=round(tokens / len(rows), 1) if rows else None,
-        cache_ratio=round(sum(t.cache_read for t in models) / read_side, 4) if read_side else None,
+        cache_ratio=_cache_ratio(models),
         stages=dict(stages),
     )
 
@@ -372,6 +377,7 @@ def _delivery(
         weeks=[WeekRow(week=w, counts=dict(counts.get(w, Counter()))) for w in weeks],
         by_type=_times(closed, lambda b: b.issue_type),
         by_member=_times(closed, member_of),
+        overall=(_times(closed, lambda _: "all") or [TimeRow(key="all", cycle=None, lead=None)])[0],
         wip=[
             WipRow(member=m, count=c)
             for m, c in sorted(per_member.items(), key=lambda x: (-x[1], x[0]))

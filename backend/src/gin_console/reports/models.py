@@ -83,6 +83,7 @@ class Totals(BaseModel):
     cost: float | None
     closed: int
     tokens_per_bead: float | None
+    cache_ratio: float | None
     rework_rate: float | None
 
 
@@ -185,6 +186,7 @@ class DeliverySection(BaseModel):
     weeks: list[WeekRow]
     by_type: list[TimeRow]
     by_member: list[TimeRow]
+    overall: TimeRow
     wip: list[WipRow]
     oldest: list[WipBead]
     estimates: list[EstimateRow]

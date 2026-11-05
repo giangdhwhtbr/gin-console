@@ -41,10 +41,7 @@ def _child_env() -> dict[str, str]:
     venv = env.pop("VIRTUAL_ENV", None)
     if venv and "PATH" in env:
         is_win = sys.platform == "win32" or "\\" in venv or (len(venv) >= 2 and venv[1] == ":")
-        targets = {
-            _normalize_entry(f"{venv}/{sub}", is_win)
-            for sub in ("Scripts", "bin")
-        }
+        targets = {_normalize_entry(f"{venv}/{sub}", is_win) for sub in ("Scripts", "bin")}
         env["PATH"] = os.pathsep.join(
             entry
             for entry in env["PATH"].split(os.pathsep)
