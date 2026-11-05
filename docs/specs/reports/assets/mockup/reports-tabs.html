@@ -1,0 +1,842 @@
+<title>gin-console Reports</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app shell (sidebar + main) > page header with project > tab bar where each tab carries its own headline > per-tab filters > tab body.
+   Tokens are the console's own (frontend/src/index.css); the burndown verdict is the one loud element. */
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --fg: #12161c; --muted: #eceff3; --muted-fg: #566072;
+  --border: #cfd5de; --grid: #e4e8ee; --ring: #12161c;
+  --ideal: #7d8695; --scope: #566072;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+  --ready: #0f766e; --progress: #1d4ed8; --warn: #a3470a; --warn-bg: #fdf1e7; --done: #5d6573; --bad: #b91c1c; --bad-bg: #fdecec;
+  --ok: #0f766e; --ok-bg: #e6f4f2;
+  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e1217; --card: #161b22; --fg: #e7eaf0; --muted: #1d242d; --muted-fg: #9aa4b2;
+  --border: #2c343f; --grid: #222a33; --ring: #e7eaf0; --ideal: #667085; --scope: #9aa4b2;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --ready: #2dd4bf; --progress: #93c5fd; --warn: #fbbf24; --warn-bg: #2b2210; --done: #9ca3af; --bad: #f87171; --bad-bg: #2d1717;
+  --ok: #2dd4bf; --ok-bg: #0f2724; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0e1217; --card: #161b22; --fg: #e7eaf0; --muted: #1d242d; --muted-fg: #9aa4b2;
+  --border: #2c343f; --grid: #222a33; --ring: #e7eaf0; --ideal: #667085; --scope: #9aa4b2;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --ready: #2dd4bf; --progress: #93c5fd; --warn: #fbbf24; --warn-bg: #2b2210; --done: #9ca3af; --bad: #f87171; --bad-bg: #2d1717;
+  --ok: #2dd4bf; --ok-bg: #0f2724; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font); }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+h1 { font-size: 20px; font-weight: 600; }
+h2 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+.dim { color: var(--muted-fg); }
+.small { font-size: 12.5px; }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+button, select, input { font: inherit; color: inherit; }
+
+/* mockup-only controls */
+.mock { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding-block: 8px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px dashed var(--border); background: var(--muted); font-size: 12.5px; color: var(--muted-fg); }
+.mock strong { color: var(--fg); font-weight: 500; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--card); }
+.seg button { border: 0; background: none; padding: 3px 9px; cursor: pointer; font-size: 12.5px; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+
+/* shell */
+.app { display: grid; grid-template-columns: 196px minmax(0, 1fr); min-height: 100vh; }
+.side { border-right: 1px solid var(--border); background: var(--card); padding-block: 16px; padding-right: 12px;
+  padding-left: max(12px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 2px; }
+.brand { font-weight: 600; padding: 4px 10px 14px; }
+.nav { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 7px; text-decoration: none; color: var(--muted-fg); }
+.nav svg { width: 16px; height: 16px; }
+.nav[aria-current="page"] { background: var(--muted); color: var(--fg); font-weight: 500; }
+main { min-width: 0; padding-block: 24px 64px; padding-left: 28px; padding-right: max(28px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 20px; max-width: 1240px; }
+@media (max-width: 767px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .side { display: none; }
+  main { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-top: 16px; }
+}
+
+.head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+.field { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted-fg); }
+select, .input { border: 1px solid var(--border); background: var(--card); border-radius: 7px; padding: 5px 8px; color: var(--fg); }
+
+/* tabs carrying their headline */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: thin; }
+.tab { border: 0; background: none; cursor: pointer; text-align: left; padding: 8px 14px 10px; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; display: flex; flex-direction: column; gap: 1px; white-space: nowrap; border-radius: 6px 6px 0 0; }
+.tab:hover { background: var(--muted); }
+.tab .name { font-weight: 500; color: var(--muted-fg); }
+.tab .line { font-size: 12.5px; color: var(--muted-fg); display: inline-flex; align-items: center; gap: 4px; }
+.tab[aria-selected="true"] { border-bottom-color: var(--fg); }
+.tab[aria-selected="true"] .name { color: var(--fg); }
+.line.warn { color: var(--warn); }
+.line svg { width: 12px; height: 12px; }
+
+.panel { display: flex; flex-direction: column; gap: 28px; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.filters .seg button { padding: 4px 10px; font-size: 13px; }
+
+/* chips: state as icon + word */
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 500; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.chip svg { width: 12px; height: 12px; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); }
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.bad { color: var(--bad); background: var(--bad-bg); }
+.chip.plain { color: var(--muted-fg); background: var(--muted); }
+.chip.prog { color: var(--progress); background: var(--muted); }
+
+/* the burndown block */
+.verdict { display: flex; flex-direction: column; gap: 8px; max-width: 64ch; }
+.verdict p { font-size: 22px; line-height: 1.3; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+.verdict .sub { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.burn { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .burn { grid-template-columns: minmax(0, 1fr); } }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted-fg); margin-bottom: 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key { width: 18px; height: 0; border-top: 2px solid; display: inline-block; }
+.key.dash { border-top-style: dashed; }
+.key.box { width: 10px; height: 10px; border: 0; border-radius: 2px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--muted-fg); font-size: 11.5px; font-family: var(--font); }
+.chart text.ink { fill: var(--fg); font-weight: 500; paint-order: stroke; stroke: var(--bg); stroke-width: 4px; stroke-linejoin: round; }
+.facts { margin: 0; display: flex; flex-direction: column; border-top: 1px solid var(--border); }
+.facts div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); align-items: baseline; }
+.facts dt { color: var(--muted-fg); font-size: 13px; }
+.facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.facts dd small { font-weight: 400; color: var(--muted-fg); font-size: 12.5px; }
+.facts dd.warn { color: var(--warn); }
+
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 28px; }
+.grid2.even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+@media (max-width: 900px) { .grid2, .grid2.even { grid-template-columns: minmax(0, 1fr); } }
+.block { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.block-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; justify-content: space-between; }
+
+/* KPI strip: numbers as a quiet line, not tiles */
+.strip { display: flex; flex-wrap: wrap; gap: 8px 40px; padding-bottom: 4px; }
+.strip div { display: flex; flex-direction: column; }
+.strip .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.strip .l { font-size: 12.5px; color: var(--muted-fg); }
+
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 500; color: var(--muted-fg); font-size: 12.5px; padding: 6px 10px 6px 0; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+.title-cell { display: flex; flex-direction: column; min-width: 0; }
+.meter { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+.meter .track { flex: 1; height: 6px; border-radius: 3px; background: var(--muted); overflow: hidden; display: flex; }
+.meter .fill { height: 100%; background: var(--s1); border-radius: 3px; }
+.meter .fill.over { background: var(--warn); }
+
+.empty { border: 1px dashed var(--border); border-radius: var(--radius); padding: 28px; display: flex; flex-direction: column; gap: 12px; max-width: 640px; }
+.alert { border: 1px solid var(--bad); background: var(--bad-bg); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
+.alert strong { color: var(--bad); }
+.cmd { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); background: var(--card); border-radius: 7px; padding: 4px 4px 4px 10px; max-width: 100%; }
+.cmd code { font-family: var(--mono); font-size: 12.5px; overflow-x: auto; white-space: nowrap; }
+.cmd button { border: 1px solid var(--border); background: var(--muted); border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 12px; }
+.note { font-size: 12.5px; color: var(--muted-fg); max-width: 72ch; }
+
+.cov { display: flex; flex-direction: column; gap: 22px; }
+.cov section { display: flex; flex-direction: column; gap: 8px; }
+.cov h2 { display: flex; gap: 8px; align-items: center; }
+.count { font-size: 12px; font-weight: 500; color: var(--muted-fg); background: var(--muted); border-radius: 999px; padding: 0 7px; }
+
+.tip { position: fixed; z-index: 20; pointer-events: none; background: var(--card); color: var(--fg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 6px 20px rgb(0 0 0 / 0.12); min-width: 140px; }
+.tip b { display: block; margin-bottom: 4px; font-weight: 600; }
+.tip .row { display: flex; justify-content: space-between; gap: 16px; font-variant-numeric: tabular-nums; }
+.tip .row span:first-child { color: var(--muted-fg); display: inline-flex; align-items: center; gap: 6px; }
+.tip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+@media (prefers-reduced-motion: no-preference) { .chart .grow { transition: opacity .15s; } }
+</style>
+
+<div class="mock" role="region" aria-label="Mockup controls">
+  <strong>Mockup controls</strong><span>(not part of the design)</span>
+  <span>Milestone state</span>
+  <span class="seg" id="mock-state">
+    <button data-v="active" aria-pressed="true">Active</button><button data-v="planned">Planned</button><button data-v="closed">Closed</button><button data-v="none">No milestones</button><button data-v="unavailable">Unavailable</button>
+  </span>
+  <span>Theme</span>
+  <span class="seg" id="mock-theme"><button data-v="" aria-pressed="true">System</button><button data-v="light">Light</button><button data-v="dark">Dark</button></span>
+</div>
+
+<div class="app">
+  <nav class="side" aria-label="Main">
+    <div class="brand">gin-console</div>
+    <a class="nav" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>Projects</a>
+    <a class="nav" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 4l1.5 1.5L6 3M2 11l1.5 1.5L6 10M8.5 4.5H14M8.5 11.5H14"/></svg>Beads</a>
+    <a class="nav" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 14V2.5M3 3h9l-2 3 2 3H3"/></svg>Milestones</a>
+    <a class="nav" href="#" aria-current="page"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 2v12h12M5 11V8M8 11V5M11 11V7"/></svg>Reports</a>
+    <a class="nav" href="#"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.5 11a5.5 5.5 0 1 1 11 0M8 11l3-3.5"/></svg>Quota</a>
+  </nav>
+
+  <main>
+    <header class="head">
+      <div>
+        <h1>Reports</h1>
+        <p class="small dim">Generated Thu 5 Nov at 14:02. Sample data.</p>
+      </div>
+      <label class="field" for="project">Project
+        <select id="project"><option>gin-console</option><option>gin-workflow</option><option>All projects</option></select>
+      </label>
+    </header>
+
+    <div class="tabs" role="tablist" aria-label="Report">
+      <button class="tab" role="tab" id="tab-milestones" aria-controls="panel-milestones" data-tab="milestones"><span class="name">Milestones</span><span class="line" id="hl-milestones"></span></button>
+      <button class="tab" role="tab" id="tab-delivery" aria-controls="panel-delivery" data-tab="delivery"><span class="name">Delivery</span><span class="line">41 beads closed</span></button>
+      <button class="tab" role="tab" id="tab-usage" aria-controls="panel-usage" data-tab="usage"><span class="name">AI usage</span><span class="line">12.4M tokens, $38.20</span></button>
+      <button class="tab" role="tab" id="tab-quality" aria-controls="panel-quality" data-tab="quality"><span class="name">Quality</span><span class="line">9% rework</span></button>
+      <button class="tab" role="tab" id="tab-coverage" aria-controls="panel-coverage" data-tab="coverage"><span class="name">Data coverage</span><span class="line warn"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1.5l4.8 8.5H1.2z M6 5v2.2 M6 8.6v.1"/></svg>5 gaps</span></button>
+    </div>
+
+    <section class="panel" role="tabpanel" id="panel-milestones" aria-labelledby="tab-milestones"></section>
+    <section class="panel" role="tabpanel" id="panel-delivery" aria-labelledby="tab-delivery" hidden></section>
+    <section class="panel" role="tabpanel" id="panel-usage" aria-labelledby="tab-usage" hidden></section>
+    <section class="panel" role="tabpanel" id="panel-quality" aria-labelledby="tab-quality" hidden></section>
+    <section class="panel" role="tabpanel" id="panel-coverage" aria-labelledby="tab-coverage" hidden></section>
+  </main>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const S = (i) => `var(--s${i + 1})`;
+const STAGES = ["discuss", "plan", "orchestrate", "execute", "review", "verify", "ship", "quick"];
+const TYPES = ["task", "feature", "bug", "epic", "chore", "decision"];
+const fmt = (d) => d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const fmtShort = (d) => d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+const tok = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(n));
+const days = (n) => (n === 1 ? "1 working day" : `${n} working days`);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const ICON = {
+  warn: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1.5l4.8 8.5H1.2z M6 5v2.2 M6 8.6v.1"/></svg>',
+  ok: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 6.2l2.3 2.3 4.7-5"/></svg>',
+  clock: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6" cy="6" r="4.5"/><path d="M6 3.5V6l1.8 1.2"/></svg>',
+  dot: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="6" cy="6" r="4.5"/><circle cx="6" cy="6" r="1.6" fill="currentColor"/></svg>',
+  block: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6" cy="6" r="4.5"/><path d="M3 9l6-6"/></svg>',
+};
+
+function workdays(startISO, n) {
+  const out = []; const d = new Date(startISO + "T00:00:00");
+  while (out.length < n) { const w = d.getDay(); if (w !== 0 && w !== 6) out.push(new Date(d)); d.setDate(d.getDate() + 1); }
+  return out;
+}
+
+/* ---------- tooltip ---------- */
+const tip = $("#tip");
+function showTip(e, html) {
+  tip.innerHTML = html; tip.hidden = false;
+  const r = tip.getBoundingClientRect(); let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+const row = (label, value, color) => `<div class="row"><span>${color ? `<i style="background:${color}"></i>` : ""}${label}</span><span>${value}</span></div>`;
+
+/* ---------- sample data ---------- */
+const MS = {
+  active: { id: "gin-console-m4", title: "Beta readiness", status: "active", start: "2026-10-19", days: 25, scope0: 36, added: { 6: 4, 11: 3 },
+    closes: [0, 1, 1, 0, 2, 1, 0, 2, 0, 2, 2, 2, 2, 2],
+    epics: [
+      ["gin-console-r7t", "Report tabs", 8, 8, "2026-10-30", "closed", null],
+      ["gin-console-b2n", "Milestone burndown", 5, 9, "2026-11-12", "in_progress", null],
+      ["gin-console-q4s", "Session search", 3, 8, "2026-11-13", "in_progress", ["overflow", 2]],
+      ["gin-console-w1x", "Quota alerts", 1, 7, "2026-11-18", "in_progress", null],
+      ["gin-console-k9d", "Windows installer", 0, 6, "2026-11-20", "blocked", ["external", "gin-workflow-rm-win"]],
+      ["gin-console-d3f", "Docs refresh", 0, 5, "2026-11-20", "open", null],
+    ],
+    members: [["ann", 6, 2], ["bao", 5, 1], ["chi", 4, 2], ["duc", 2, 1]] },
+  planned: { id: "gin-console-m5", title: "Release 1.0", status: "planned", start: "2026-11-23", days: 20, scope0: 30, added: {}, closes: [],
+    epics: [
+      ["gin-console-p1a", "Packaging and install", 0, 7, "2026-11-27", "open", null],
+      ["gin-console-p2b", "Settings page", 0, 6, "2026-12-03", "open", null],
+      ["gin-console-p3c", "Access control", 0, 9, "2026-12-11", "open", ["external", "gin-workflow-rm-auth"]],
+      ["gin-console-p4d", "Release notes", 0, 8, "2026-12-18", "open", null],
+    ], members: [] },
+  closed: { id: "gin-console-m3", title: "Milestones UI", status: "closed", start: "2026-10-05", days: 20, scope0: 34, added: { 4: 3, 9: 2 },
+    closes: [2, 2, 2, 2, 2, 3, 1, 2, 2, 2, 1, 2, 3, 2, 2, 1, 2, 3, 1, 1, 1],
+    epics: [
+      ["gin-console-djg", "Milestones list and page", 12, 12, "2026-10-14", "closed", null],
+      ["gin-console-38i", "Gantt zoom", 9, 9, "2026-10-22", "closed", null],
+      ["gin-console-l69", "Unassigned epics", 6, 6, "2026-10-23", "closed", null],
+      ["gin-console-s9e", "Gantt child beads", 12, 12, "2026-11-02", "closed", null],
+    ],
+    members: [["ann", 13, 0], ["bao", 11, 0], ["chi", 9, 0], ["duc", 6, 0]] },
+};
+const HISTORY = [
+  { title: "Shell foundation", end: "Fri 25 Sep", finish: "Tue 29 Sep", slip: 2, scope: [28, 31], closed: 31, pace: 1.6 },
+  { title: "Beads native", end: "Fri 16 Oct", finish: "Thu 15 Oct", slip: -1, scope: [40, 44], closed: 44, pace: 2.2 },
+  { title: "Milestones UI", end: "Fri 30 Oct", finish: "Mon 2 Nov", slip: 1, scope: [34, 39], closed: 39, pace: 1.9 },
+];
+
+function model(m) {
+  const dates = workdays(m.start, m.days + 20);
+  const scope = [], rem = [], added = [];
+  let s = m.scope0, c = 0;
+  m.closes.forEach((n, i) => { const a = m.added[i] || 0; s += a; c += n; scope.push(s); rem.push(s - c); added.push(a); });
+  const endIdx = m.days - 1;
+  const out = { m, dates, scope, rem, added, endIdx, scopeNow: s, closedNow: c };
+  if (m.status === "active") {
+    const t = m.closes.length - 1; out.t = t;
+    out.pace = m.closes.slice(-5).reduce((a, b) => a + b, 0) / 5;
+    out.projIdx = t + Math.ceil(rem[t] / out.pace);
+    out.late = out.projIdx - endIdx;
+    out.left = endIdx - t;
+    out.needed = rem[t] / out.left;
+    out.domain = Math.max(m.days, out.projIdx + 1) + 1;
+  } else if (m.status === "closed") {
+    out.finishIdx = m.closes.length - 1; out.late = out.finishIdx - endIdx; out.domain = Math.max(m.days, out.finishIdx + 1);
+  } else { out.domain = m.days; }
+  return out;
+}
+
+/* ---------- state ---------- */
+let mockState = "active";
+let tab = "milestones";
+const timeBy = { cycle: "type" };
+
+/* ---------- milestones tab ---------- */
+function headline(st) {
+  if (st === "none") return '<span class="dim">No milestones</span>';
+  if (st === "unavailable") return `<span class="line warn">${ICON.warn}Unavailable</span>`;
+  const md = model(MS[st]);
+  if (st === "planned") return `Starts ${fmtShort(md.dates[0])}`;
+  if (st === "closed") return md.late > 0 ? `Finished ${days(md.late).replace("working ", "")} late` : "Finished on time";
+  return md.late > 0 ? `<span class="line warn">${ICON.warn}Beta readiness ${md.late} days late</span>` : "Beta readiness on track";
+}
+
+function verdictHTML(md) {
+  const { m, dates } = md;
+  if (m.status === "planned") return `<p>${m.title} starts on ${fmt(dates[0])} with ${m.scope0} beads in scope and ${m.days} working days to finish them.</p>
+    <div class="sub"><span class="chip plain">${ICON.clock}Planned</span><span class="small dim">${fmt(dates[0])} to ${fmt(dates[md.endIdx])}</span></div>`;
+  if (m.status === "closed") return `<p>${m.title} finished on ${fmt(dates[md.finishIdx])}, ${days(md.late)} after its end date.</p>
+    <div class="sub"><span class="chip plain">${ICON.ok}Closed</span><span class="chip warn">${ICON.warn}${md.late} day late</span><span class="small dim">${fmt(dates[0])} to ${fmt(dates[md.endIdx])}</span></div>`;
+  const late = md.late > 0;
+  return `<p>At the current pace, ${m.title} finishes on ${fmt(dates[md.projIdx])}, ${late ? `${days(md.late)} after` : `${days(-md.late)} before`} its end date.</p>
+    <div class="sub">${late ? `<span class="chip warn">${ICON.warn}Late by ${md.late} days</span>` : `<span class="chip ok">${ICON.ok}On track</span>`}
+    <span class="chip prog">${ICON.dot}Active</span><span class="small dim">${fmt(dates[0])} to ${fmt(dates[md.endIdx])}</span></div>`;
+}
+
+function factsHTML(md) {
+  const { m } = md;
+  if (m.status === "planned") return `
+    <div><dt>Beads in scope</dt><dd>${m.scope0}</dd></div>
+    <div><dt>Working days</dt><dd>${m.days}</dd></div>
+    <div><dt>Pace needed</dt><dd>${(m.scope0 / m.days).toFixed(1)} <small>beads/day</small></dd></div>
+    <div><dt>Pace in the last milestone</dt><dd>1.9 <small>beads/day</small></dd></div>`;
+  if (m.status === "closed") return `
+    <div><dt>Beads closed</dt><dd>${md.closedNow}</dd></div>
+    <div><dt>Scope added</dt><dd>+${md.scopeNow - m.scope0} <small>(${Math.round(((md.scopeNow - m.scope0) / m.scope0) * 100)}%)</small></dd></div>
+    <div><dt>Average pace</dt><dd>${(md.closedNow / (md.finishIdx + 1)).toFixed(1)} <small>beads/day</small></dd></div>
+    <div><dt>Finished</dt><dd class="warn">${md.late} day late</dd></div>`;
+  const t = md.t;
+  return `
+    <div><dt>Remaining</dt><dd>${md.rem[t]} <small>of ${md.scopeNow} beads</small></dd></div>
+    <div><dt>Scope added since start</dt><dd>+${md.scopeNow - m.scope0}</dd></div>
+    <div><dt>Working days left</dt><dd>${md.left}</dd></div>
+    <div><dt>Pace, last 5 working days</dt><dd>${md.pace.toFixed(1)} <small>beads/day</small></dd></div>
+    <div><dt>Pace needed to finish on time</dt><dd class="${md.needed > md.pace ? "warn" : ""}">${md.needed.toFixed(1)} <small>beads/day</small></dd></div>`;
+}
+
+function epicStatus(e) {
+  const [, , closed, total, , status, warning] = e;
+  if (status === "closed" || closed === total) return `<span class="chip plain">${ICON.ok}Done</span>`;
+  if (warning && warning[0] === "overflow") return `<span class="chip warn">${ICON.warn}Late by ${warning[1]} days</span>`;
+  if (warning && warning[0] === "external") return `<span class="chip warn">${ICON.block}Waits on ${esc(warning[1])}</span>`;
+  if (status === "in_progress") return `<span class="chip prog">${ICON.dot}In progress</span>`;
+  return `<span class="chip plain">${ICON.clock}Not started</span>`;
+}
+
+function renderMilestones() {
+  const p = $("#panel-milestones");
+  $("#hl-milestones").innerHTML = headline(mockState);
+  if (mockState === "none") {
+    p.innerHTML = `<div class="empty"><h2>gin-console has no milestones yet</h2>
+      <p class="dim">A milestone groups roadmap epics under a start and end date. Create one in the project, then come back here to follow its burndown.</p>
+      ${cmd("gin-workflow milestone create")}</div>`;
+    return;
+  }
+  if (mockState === "unavailable") {
+    p.innerHTML = `<div class="alert" role="alert"><strong>Milestones need a newer gin-workflow</strong>
+      <p>The installed gin-workflow has no <span class="mono">milestone</span> command. Run the installer, then reload this page.</p>
+      ${cmd("gin-workflow/install.sh")}</div>
+      <p class="note">The other tabs do not depend on milestones and keep working.</p>`;
+    return;
+  }
+  const md = model(MS[mockState]);
+  const m = md.m;
+  p.innerHTML = `
+    <div class="filters">
+      <label class="field" for="ms">Milestone
+        <select id="ms">
+          <optgroup label="Active"><option value="active">Beta readiness</option></optgroup>
+          <optgroup label="Planned"><option value="planned">Release 1.0</option></optgroup>
+          <optgroup label="Closed"><option value="closed">Milestones UI</option></optgroup>
+        </select>
+      </label>
+      <a class="small" href="#">Open the milestone's Gantt</a>
+    </div>
+    <div class="verdict">${verdictHTML(md)}</div>
+    <div class="burn">
+      <figure style="margin:0" class="block">
+        <figcaption class="block-head"><h2>Burndown</h2><span class="small dim">Open beads under the milestone's epics, per working day</span></figcaption>
+        <div class="legend" id="burn-legend"></div>
+        <div class="chart" id="burn-chart" role="img" aria-label="Burndown chart of ${esc(m.title)}"></div>
+      </figure>
+      <dl class="facts">${factsHTML(md)}</dl>
+    </div>
+    <div class="grid2">
+      <section class="block">
+        <div class="block-head"><h2>Epics in this milestone</h2><span class="small dim">${md.closedNow} of ${md.scopeNow} beads closed</span></div>
+        <div class="scroll"><table>
+          <thead><tr><th>Epic</th><th>Progress</th><th>Planned end</th><th>Status</th></tr></thead>
+          <tbody>${m.epics.map((e) => `<tr>
+            <td><div class="title-cell"><a href="#">${esc(e[1])}</a><span class="mono dim">${e[0]}</span></div></td>
+            <td><div class="meter"><span class="track"><span class="fill" style="width:${(e[2] / e[3]) * 100}%"></span></span><span class="num small">${e[2]}/${e[3]}</span></div></td>
+            <td class="num">${fmtShort(new Date(e[4] + "T00:00:00"))}</td>
+            <td>${epicStatus(e)}</td></tr>`).join("")}</tbody>
+        </table></div>
+      </section>
+      <section class="block">
+        <div class="block-head"><h2>Closed by member</h2><span class="small dim">${m.status === "planned" ? "" : "Beads in this milestone"}</span></div>
+        ${m.members.length ? `<div class="chart" id="member-chart"></div>
+          <p class="note">In progress now: ${m.members.filter((x) => x[2] > 0).map((x) => `${x[0]} ${x[2]}`).join(", ") || "none"}.</p>`
+          : `<p class="dim">Nothing closed yet. Members appear once the milestone starts.</p>`}
+      </section>
+    </div>
+    <section class="block">
+      <div class="block-head"><h2>Milestones compared</h2><span class="small dim">Closed milestones of gin-console, oldest first</span></div>
+      <div class="grid2 even">
+        <div class="block"><h3 class="small dim" style="font-weight:500">Pace, beads closed per working day</h3><div class="chart" id="pace-chart"></div></div>
+        <div class="scroll"><table>
+          <thead><tr><th>Milestone</th><th>End</th><th>Finished</th><th class="r">Slip</th><th class="r">Scope added</th></tr></thead>
+          <tbody>${HISTORY.map((h) => `<tr><td><a href="#">${h.title}</a></td><td class="num">${h.end}</td><td class="num">${h.finish}</td>
+            <td class="r">${h.slip > 0 ? `<span class="chip warn">${ICON.warn}${h.slip}d late</span>` : `<span class="chip ok">${ICON.ok}${-h.slip}d early</span>`}</td>
+            <td class="r">+${h.scope[1] - h.scope[0]} <span class="dim">(${Math.round(((h.scope[1] - h.scope[0]) / h.scope[0]) * 100)}%)</span></td></tr>`).join("")}</tbody>
+        </table></div>
+      </div>
+    </section>`;
+  $("#ms").value = mockState;
+  $("#ms").addEventListener("change", (e) => setState(e.target.value));
+  drawBurn(md);
+  if (m.members.length) hbars($("#member-chart"), m.members.map((x) => ({ label: x[0], values: { closed: x[1] } })), ["closed"], () => S(0), { unit: "beads" });
+  const paceRows = HISTORY.map((h) => ({ label: h.title, values: { pace: h.pace } }));
+  if (m.status === "active") paceRows.push({ label: "Current, so far", values: { pace: +(md.closedNow / (md.t + 1)).toFixed(1) }, faded: true });
+  columns($("#pace-chart"), paceRows, ["pace"], () => S(0), { height: 200, labels: true, unit: "beads/day" });
+}
+
+function drawBurn(md) {
+  const { m, dates, rem, scope } = md;
+  const box = $("#burn-chart");
+  const W = Math.max(280, box.clientWidth || 640), H = W < 560 ? 240 : 320;
+  const L = 34, R = 14, T = 24, B = 30, iw = W - L - R, ih = H - T - B;
+  const D = md.domain;
+  const x = (p) => L + (p / D) * iw;
+  const maxScope = Math.max(m.scope0, ...scope);
+  const ymax = Math.ceil((maxScope + 2) / 10) * 10;
+  const y = (v) => T + ih * (1 - v / ymax);
+  let g = "";
+  for (let v = 0; v <= ymax; v += 10) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+  // weekly ticks on Mondays
+  for (let i = 0; i < D; i++) if (i === 0 || dates[i].getDay() === 1) g += `<line x1="${x(i)}" x2="${x(i)}" y1="${T + ih}" y2="${T + ih + 4}" stroke="var(--border)"/><text x="${x(i)}" y="${H - 8}" text-anchor="${i === 0 ? "start" : "middle"}">${fmtShort(dates[i])}</text>`;
+  // end line
+  const xe = x(md.endIdx + 1);
+  g += `<line x1="${xe}" x2="${xe}" y1="${T - 6}" y2="${T + ih}" stroke="var(--fg)" stroke-width="1"/><text x="${xe - 4}" y="${T - 10}" text-anchor="end" class="ink">End ${fmtShort(dates[md.endIdx])}</text>`;
+  // ideal
+  g += `<line x1="${x(0)}" y1="${y(m.scope0)}" x2="${xe}" y2="${y(0)}" stroke="var(--ideal)" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+  const legend = [];
+  if (m.status === "planned") {
+    g += `<line x1="${x(0)}" x2="${xe}" y1="${y(m.scope0)}" y2="${y(m.scope0)}" stroke="var(--scope)" stroke-width="1"/>`;
+    g += `<text x="${x(D / 2)}" y="${y(ymax * 0.15)}" text-anchor="middle">The burndown starts on ${fmt(dates[0])}</text>`;
+    legend.push(["Scope", "var(--scope)", ""], ["Ideal", "var(--ideal)", "dash"]);
+  } else {
+    // scope step line
+    let sp = `M${x(0)},${y(m.scope0)}`;
+    scope.forEach((s, i) => { sp += ` L${x(i)},${y(s)} L${x(i + 1)},${y(s)}`; });
+    g += `<path d="${sp}" fill="none" stroke="var(--scope)" stroke-width="1"/>`;
+    md.added.forEach((a, i) => { if (a) g += `<text x="${x(i) + 4}" y="${y(scope[i]) - 6}" class="ink">+${a}</text>`; });
+    // remaining area + line
+    const pts = [[x(0), y(m.scope0)], ...rem.map((r, i) => [x(i + 1), y(r)])];
+    const last = pts[pts.length - 1];
+    g += `<path d="M${pts.map((p) => p.join(",")).join(" L")} L${last[0]},${y(0)} L${x(0)},${y(0)} Z" fill="var(--s1)" opacity=".10"/>`;
+    g += `<polyline points="${pts.map((p) => p.join(",")).join(" ")}" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    legend.push(["Remaining", "var(--s1)", ""], ["Scope", "var(--scope)", ""], ["Ideal", "var(--ideal)", "dash"]);
+    if (m.status === "active") {
+      const xt = x(md.t + 1), xp = x(md.projIdx + 1);
+      g += `<line x1="${xt}" x2="${xp}" y1="${y(rem[md.t])}" y2="${y(0)}" stroke="var(--s1)" stroke-width="2" stroke-dasharray="2 4" stroke-linecap="round"/>`;
+      g += `<line x1="${xt}" x2="${xt}" y1="${T}" y2="${T + ih}" stroke="var(--border)"/><text x="${xt - 4}" y="${T + ih - 6}" text-anchor="end">Today</text>`;
+      g += `<circle cx="${xt}" cy="${y(rem[md.t])}" r="4.5" fill="var(--s1)" stroke="var(--card)" stroke-width="2"/>`;
+      g += `<text x="${xt + 8}" y="${y(rem[md.t]) - 8}" class="ink">${rem[md.t]} left</text>`;
+      g += `<circle cx="${xp}" cy="${y(0)}" r="4.5" fill="var(--card)" stroke="var(--warn)" stroke-width="2"/>`;
+      g += `<line x1="${xp}" x2="${xp}" y1="${T + 8}" y2="${y(0) - 6}" stroke="var(--warn)" stroke-width="1" stroke-dasharray="2 3"/>`;
+      g += `<text x="${xp + 4}" y="${T + 12}" text-anchor="${xp > W - R - 110 ? "end" : "start"}" dx="${xp > W - R - 110 ? -8 : 0}" class="ink">Projected ${fmtShort(dates[md.projIdx])}</text>`;
+      legend.push(["Projected", "var(--s1)", "dash"]);
+    } else {
+      const xf = x(md.finishIdx + 1);
+      g += `<circle cx="${xf}" cy="${y(0)}" r="4.5" fill="var(--s1)" stroke="var(--card)" stroke-width="2"/>`;
+      g += `<text x="${Math.min(xf, W - R)}" y="${y(0) - 10}" text-anchor="end" class="ink">Finished ${fmtShort(dates[md.finishIdx])}</text>`;
+    }
+  }
+  g += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--border)"/>`;
+  g += `<g id="hover"></g><rect id="hit" x="${L}" y="${T}" width="${iw}" height="${ih}" fill="transparent"/>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
+  $("#burn-legend").innerHTML = legend.map(([n, c, k]) => `<span><i class="key ${k}" style="border-color:${c}"></i>${n}</span>`).join("");
+  // hover: one column per working day
+  const ideal = (p) => Math.max(0, m.scope0 * (1 - p / (md.endIdx + 1)));
+  const hit = $("#hit", box), hov = $("#hover", box);
+  hit.addEventListener("pointermove", (e) => {
+    const r = box.getBoundingClientRect(); const px = ((e.clientX - r.left) / r.width) * W;
+    const i = Math.min(D - 1, Math.max(0, Math.floor(((px - L) / iw) * D)));
+    const cx = x(i + 1);
+    let html = `<b>${fmt(dates[i])}</b>`;
+    let dot = "";
+    if (i < rem.length) {
+      html += row("Remaining", rem[i], "var(--s1)") + row("Closed", m.closes[i]) + row("Added", md.added[i] ? "+" + md.added[i] : 0) + row("Ideal", ideal(i + 1).toFixed(1));
+      dot = `<circle cx="${cx}" cy="${y(rem[i])}" r="4.5" fill="var(--s1)" stroke="var(--card)" stroke-width="2"/>`;
+    } else {
+      html += row("Ideal", ideal(i + 1).toFixed(1));
+      if (m.status === "active" && i <= md.projIdx) html += row("Projected", Math.max(0, rem[md.t] - md.pace * (i - md.t)).toFixed(1), "var(--s1)");
+      if (m.status === "planned") html += row("Scope", m.scope0);
+    }
+    hov.innerHTML = `<line x1="${cx}" x2="${cx}" y1="${T}" y2="${T + ih}" stroke="var(--muted-fg)" stroke-width="1"/>${dot}`;
+    showTip(e, html);
+  });
+  hit.addEventListener("pointerleave", () => { hov.innerHTML = ""; hideTip(); });
+}
+
+/* ---------- generic charts ---------- */
+function hbars(box, rows, keys, color, opt = {}) {
+  const W = Math.max(260, box.clientWidth || 400), rowH = 30, L = Math.min(150, W * 0.32), R = 44, T = 4;
+  const H = T + rows.length * rowH + 4;
+  const tot = (r) => keys.reduce((a, k) => a + (r.values[k] || 0), 0);
+  const max = Math.max(...rows.map(tot));
+  const sx = (v) => (v / max) * (W - L - R);
+  let g = "";
+  rows.forEach((r, ri) => {
+    const yy = T + ri * rowH + 7; let acc = L;
+    g += `<text x="${L - 10}" y="${yy + 12}" text-anchor="end" class="ink">${esc(r.label)}</text>`;
+    keys.forEach((k, ki) => {
+      const v = r.values[k] || 0; if (!v) return; const w = sx(v);
+      const lastK = keys.slice(ki + 1).every((k2) => !(r.values[k2] > 0));
+      g += `<path data-r="${ri}" d="${barPath(acc, yy, Math.max(1, w - (lastK ? 0 : 2)), 16, lastK)}" fill="${color(k)}"/>`;
+      acc += w;
+    });
+    g += `<text x="${acc + 6}" y="${yy + 12}">${opt.fmt ? opt.fmt(tot(r)) : tot(r)}</text>`;
+    g += `<rect data-r="${ri}" x="0" y="${T + ri * rowH}" width="${W}" height="${rowH}" fill="transparent"/>`;
+  });
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
+  $$("rect[data-r]", box).forEach((el) => {
+    el.addEventListener("pointermove", (e) => {
+      const r = rows[+el.dataset.r];
+      showTip(e, `<b>${esc(r.label)}</b>` + keys.filter((k) => r.values[k]).map((k) => row(keys.length > 1 ? k : opt.unit || k, opt.fmt ? opt.fmt(r.values[k]) : r.values[k], keys.length > 1 ? color(k) : null)).join("") + (keys.length > 1 ? row("Total", opt.fmt ? opt.fmt(tot(r)) : tot(r)) : ""));
+    });
+    el.addEventListener("pointerleave", hideTip);
+  });
+}
+// horizontal bar: square at baseline, 4px round at the data end
+function barPath(x0, y0, w, h, round) {
+  const r = round ? Math.min(4, w, h / 2) : 0;
+  return `M${x0},${y0} H${x0 + w - r} Q${x0 + w},${y0} ${x0 + w},${y0 + r} V${y0 + h - r} Q${x0 + w},${y0 + h} ${x0 + w - r},${y0 + h} H${x0} Z`;
+}
+function colPath(x0, yTop, w, h, round) {
+  const r = round ? Math.min(4, w / 2, h) : 0; const yb = yTop + h;
+  return `M${x0},${yb} V${yTop + r} Q${x0},${yTop} ${x0 + r},${yTop} H${x0 + w - r} Q${x0 + w},${yTop} ${x0 + w},${yTop + r} V${yb} Z`;
+}
+function columns(box, rows, keys, color, opt = {}) {
+  const W = Math.max(260, box.clientWidth || 400), H = opt.height || 240, L = 30, R = 8, T = 18, B = 34;
+  const iw = W - L - R, ih = H - T - B;
+  const tot = (r) => keys.reduce((a, k) => a + (r.values[k] || 0), 0);
+  const raw = Math.max(...rows.map(tot)); const step = raw <= 3 ? 0.5 : raw <= 12 ? 2 : 5;
+  const ymax = Math.ceil(raw / step) * step;
+  const y = (v) => T + ih * (1 - v / ymax);
+  const band = iw / rows.length, bw = Math.min(28, band * 0.6);
+  let g = "";
+  for (let v = 0; v <= ymax + 1e-9; v += step) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${+v.toFixed(1)}</text>`;
+  rows.forEach((r, ri) => {
+    const x0 = L + ri * band + (band - bw) / 2; let acc = 0;
+    const present = keys.filter((k) => r.values[k] > 0);
+    present.forEach((k, ki) => {
+      const v = r.values[k]; const h = (v / ymax) * ih; const top = y(acc + v);
+      const lastK = ki === present.length - 1;
+      g += `<path d="${colPath(x0, top + (ki ? 0 : 0), bw, Math.max(1, h - (lastK ? 0 : 2)), lastK)}" fill="${color(k)}" ${r.faded ? 'opacity=".45"' : ""}/>`;
+      acc += v;
+    });
+    if (opt.labels) g += `<text x="${x0 + bw / 2}" y="${y(acc) - 6}" text-anchor="middle" class="ink">${acc}</text>`;
+    const lab = r.label.length > 16 && band < 120 ? r.label.slice(0, 14) + "…" : r.label;
+    g += `<text x="${x0 + bw / 2}" y="${H - 14}" text-anchor="middle">${esc(lab)}</text>`;
+    g += `<rect data-r="${ri}" x="${L + ri * band}" y="${T}" width="${band}" height="${ih}" fill="transparent"/>`;
+  });
+  g += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--border)"/>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
+  $$("rect[data-r]", box).forEach((el) => {
+    el.addEventListener("pointermove", (e) => {
+      const r = rows[+el.dataset.r];
+      showTip(e, `<b>${esc(r.label)}</b>` + keys.filter((k) => r.values[k]).map((k) => row(keys.length > 1 ? k : opt.unit || k, r.values[k], keys.length > 1 ? color(k) : null)).join("") + (keys.length > 1 ? row("Total", tot(r)) : ""));
+    });
+    el.addEventListener("pointerleave", hideTip);
+  });
+}
+function legendHTML(keys, color) {
+  return `<div class="legend">${keys.map((k) => `<span><i class="key box" style="background:${color(k)}"></i>${k}</span>`).join("")}</div>`;
+}
+function ranges(box, rows) {
+  const W = Math.max(260, box.clientWidth || 400), rowH = 28, L = 96, R = 40, T = 4, B = 22;
+  const H = T + rows.length * rowH + B;
+  const max = Math.ceil(Math.max(...rows.map((r) => r.p85)));
+  const sx = (v) => L + (v / max) * (W - L - R);
+  let g = "";
+  const step = max > 8 ? 2 : 1;
+  for (let v = 0; v <= max; v += step) g += `<line x1="${sx(v)}" x2="${sx(v)}" y1="${T}" y2="${H - B}" stroke="var(--grid)"/><text x="${sx(v)}" y="${H - 6}" text-anchor="middle">${v}d</text>`;
+  rows.forEach((r, i) => {
+    const yy = T + i * rowH + rowH / 2;
+    g += `<text x="${L - 10}" y="${yy + 4}" text-anchor="end" class="ink">${esc(r.label)}</text>`;
+    g += `<line x1="${sx(r.median)}" x2="${sx(r.p85)}" y1="${yy}" y2="${yy}" stroke="var(--s1)" stroke-width="2" stroke-linecap="round" opacity=".55"/>`;
+    g += `<line x1="${sx(r.p85)}" x2="${sx(r.p85)}" y1="${yy - 5}" y2="${yy + 5}" stroke="var(--s1)" stroke-width="2"/>`;
+    g += `<circle cx="${sx(r.median)}" cy="${yy}" r="4.5" fill="var(--s1)" stroke="var(--card)" stroke-width="2"/>`;
+    g += `<rect data-r="${i}" x="0" y="${T + i * rowH}" width="${W}" height="${rowH}" fill="transparent"/>`;
+  });
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
+  $$("rect[data-r]", box).forEach((el) => {
+    el.addEventListener("pointermove", (e) => { const r = rows[+el.dataset.r]; showTip(e, `<b>${esc(r.label)}</b>${row("Median", r.median + " d")}${row("85th percentile", r.p85 + " d")}${row("Beads", r.n)}`); });
+    el.addEventListener("pointerleave", hideTip);
+  });
+}
+function scatter(box, pts) {
+  const W = Math.max(260, box.clientWidth || 400), H = 260, L = 34, R = 12, T = 12, B = 30;
+  const xmax = 800000, ymax = 4.5;
+  const sx = (v) => L + (v / xmax) * (W - L - R), sy = (v) => T + (H - T - B) * (1 - v / ymax);
+  let g = "";
+  for (let v = 0; v <= 4; v++) g += `<line x1="${L}" x2="${W - R}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--grid)"/><text x="${L - 8}" y="${sy(v) + 4}" text-anchor="end">${v}</text>`;
+  for (let v = 0; v <= xmax; v += 200000) g += `<text x="${sx(v)}" y="${H - 8}" text-anchor="middle">${tok(v)}</text>`;
+  pts.forEach((p, i) => { g += `<circle data-i="${i}" cx="${sx(p.tokens)}" cy="${sy(p.rework + p.j)}" r="5" fill="${p.rework ? "var(--s2)" : "var(--s1)"}" stroke="var(--card)" stroke-width="2"/>`; });
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}">${g}</svg>`;
+  $$("circle[data-i]", box).forEach((el) => {
+    el.addEventListener("pointermove", (e) => { const p = pts[+el.dataset.i]; showTip(e, `<b>${p.id}</b><div class="small dim" style="margin-bottom:4px">${esc(p.title)}</div>${row("Tokens", tok(p.tokens))}${row("Rework", p.rework)}`); });
+    el.addEventListener("pointerleave", hideTip);
+  });
+}
+function cmd(text) { return `<span class="cmd"><code>${esc(text)}</code><button type="button" data-copy="${esc(text)}">Copy</button></span>`; }
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-copy]"); if (!b) return;
+  const done = () => { b.textContent = "Copied"; setTimeout(() => (b.textContent = "Copy"), 1200); };
+  try { navigator.clipboard.writeText(b.dataset.copy).then(done, () => {}); } catch { /* select fallback not needed in mockup */ }
+});
+
+/* ---------- period filters shared by the four period tabs ---------- */
+let period = 30;
+function periodFilters() {
+  return `<div class="filters">
+    <span class="seg" role="group" aria-label="Period">${[7, 30, 90].map((d) => `<button type="button" data-period="${d}" aria-pressed="${d === period}">${d} days</button>`).join("")}</span>
+    <input class="input" aria-label="Sprint" placeholder="Sprint" size="10">
+    <span class="small dim">Beads closed in the last ${period} days, or the epics of a sprint</span>
+  </div>`;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-period]"); if (!b) return;
+  period = +b.dataset.period; renderTab();
+});
+
+/* ---------- delivery ---------- */
+const WEEKS = [
+  { label: "W41", values: { task: 5, feature: 2, bug: 1, chore: 1 } },
+  { label: "W42", values: { task: 6, feature: 1, bug: 2, epic: 1 } },
+  { label: "W43", values: { task: 4, feature: 2, bug: 1, chore: 1 } },
+  { label: "W44", values: { task: 7, feature: 1, bug: 1, epic: 1 } },
+  { label: "W45", values: { task: 3, bug: 1 } },
+];
+const TIME = {
+  type: { cycle: [["task", 0.6, 1.8, 25], ["feature", 1.8, 3.5, 6], ["bug", 0.4, 1.1, 6], ["epic", 6.5, 9.0, 2], ["chore", 0.2, 0.4, 2]],
+    lead: [["task", 1.4, 4.2, 25], ["feature", 3.2, 6.0, 6], ["bug", 0.9, 2.7, 6], ["epic", 9.1, 12.4, 2], ["chore", 0.5, 1.0, 2]] },
+  member: { cycle: [["ann", 0.7, 2.4, 13], ["bao", 0.9, 2.9, 11], ["chi", 0.6, 3.6, 10], ["duc", 1.1, 4.0, 7]],
+    lead: [["ann", 1.6, 4.8, 13], ["bao", 2.0, 5.5, 11], ["chi", 1.9, 6.1, 10], ["duc", 2.4, 7.2, 7]] },
+};
+function renderDelivery() {
+  const keys = TYPES.filter((t) => WEEKS.some((w) => w.values[t]));
+  const tc = (t) => S(TYPES.indexOf(t));
+  $("#panel-delivery").innerHTML = `${periodFilters()}
+    <div class="strip">
+      <div><span class="v">41</span><span class="l">Beads closed</span></div>
+      <div><span class="v">0.7 d</span><span class="l">Median cycle time</span></div>
+      <div><span class="v">1.6 d</span><span class="l">Median lead time</span></div>
+      <div><span class="v">6</span><span class="l">In progress now</span></div>
+    </div>
+    <section class="block"><div class="block-head"><h2>Closed per week</h2><span class="small dim">By bead type, ISO weeks</span></div>
+      ${legendHTML(keys, tc)}<div class="chart" id="weeks-chart"></div></section>
+    <section class="block">
+      <div class="block-head"><h2>Cycle and lead time</h2>
+        <span class="seg" role="group" aria-label="Group by"><button type="button" data-by="type" aria-pressed="${timeBy.cycle === "type"}">By type</button><button type="button" data-by="member" aria-pressed="${timeBy.cycle === "member"}">By member</button></span></div>
+      <p class="note">Dot is the median, the end tick is the 85th percentile. Cycle runs from start to close, lead from creation to close.</p>
+      <div class="grid2 even">
+        <div class="block"><h3 class="small dim" style="font-weight:500">Cycle time</h3><div class="chart" id="cycle-chart"></div></div>
+        <div class="block"><h3 class="small dim" style="font-weight:500">Lead time</h3><div class="chart" id="lead-chart"></div></div>
+      </div></section>
+    <div class="grid2">
+      <section class="block"><div class="block-head"><h2>Oldest in progress</h2><span class="small dim">Whatever the period</span></div>
+        <div class="scroll"><table><thead><tr><th>Bead</th><th>Assignee</th><th class="r">Age</th></tr></thead><tbody>
+        ${[["gin-console-k9d.2", "Sign the Windows build", "duc", 9.5], ["gin-console-q4s.3", "Index session transcripts", "chi", 6.0], ["gin-console-b2n.4", "Burndown projection", "ann", 3.5], ["gin-console-w1x.1", "Quota threshold config", "bao", 2.0], ["gin-console-q4s.5", "Search result paging", "chi", 1.5]]
+          .map((b) => `<tr><td><div class="title-cell"><a href="#">${b[1]}</a><span class="mono dim">${b[0]}</span></div></td><td>${b[2]}</td><td class="r">${b[3]} d</td></tr>`).join("")}
+        </tbody></table></div></section>
+      <section class="block"><div class="block-head"><h2>In progress by member</h2></div><div class="chart" id="wip-chart"></div></section>
+    </div>
+    <section class="block"><div class="block-head"><h2>Estimate and actual</h2><span class="small dim">Closed epics with an estimate, in working days</span></div>
+      <div class="scroll"><table><thead><tr><th>Epic</th><th class="r">Estimate</th><th class="r">Actual</th><th class="r">Difference</th></tr></thead><tbody>
+      ${[["gin-console-r7t", "Report tabs", 5, 7], ["gin-console-l69", "Unassigned epics", 3, 3], ["gin-console-38i", "Gantt zoom", 4, 6]]
+        .map((e) => `<tr><td><div class="title-cell"><a href="#">${e[1]}</a><span class="mono dim">${e[0]}</span></div></td><td class="r">${e[2]}</td><td class="r">${e[3]}</td><td class="r">${e[3] > e[2] ? `<span class="chip warn">${ICON.warn}+${e[3] - e[2]} d</span>` : `<span class="chip ok">${ICON.ok}on estimate</span>`}</td></tr>`).join("")}
+      </tbody></table></div></section>`;
+  columns($("#weeks-chart"), WEEKS, keys, tc, { height: 240, labels: true });
+  const t = TIME[timeBy.cycle];
+  ranges($("#cycle-chart"), t.cycle.map(([label, median, p85, n]) => ({ label, median, p85, n })));
+  ranges($("#lead-chart"), t.lead.map(([label, median, p85, n]) => ({ label, median, p85, n })));
+  hbars($("#wip-chart"), [["ann", 2], ["chi", 2], ["bao", 1], ["duc", 1]].map(([label, v]) => ({ label, values: { wip: v } })), ["wip"], () => S(0), { unit: "In progress" });
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-by]"); if (!b) return; timeBy.cycle = b.dataset.by; renderDelivery();
+});
+
+/* ---------- AI usage ---------- */
+const USAGE = [
+  ["ann", [0.3, 0.6, 0.2, 2.1, 0.5, 0.3, 0.1, 0.2]],
+  ["bao", [0.2, 0.4, 0.1, 1.7, 0.4, 0.2, 0.1, 0.1]],
+  ["chi", [0.2, 0.3, 0.1, 1.5, 0.4, 0.2, 0.0, 0.1]],
+  ["duc", [0.1, 0.2, 0.1, 0.8, 0.2, 0.1, 0.0, 0.1]],
+  ["Unassigned", [0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.3]],
+];
+function renderUsage() {
+  const sc = (k) => S(STAGES.indexOf(k));
+  const stageTot = STAGES.map((_, i) => USAGE.reduce((a, u) => a + u[1][i], 0));
+  const all = stageTot.reduce((a, b) => a + b, 0);
+  $("#panel-usage").innerHTML = `${periodFilters()}
+    <div class="strip">
+      <div><span class="v">12.4M</span><span class="l">Tokens</span></div>
+      <div><span class="v">$38.20</span><span class="l">Estimated cost</span></div>
+      <div><span class="v">302k</span><span class="l">Tokens per closed bead</span></div>
+      <div><span class="v">71%</span><span class="l">Cache reads</span></div>
+    </div>
+    <section class="block"><div class="block-head"><h2>Tokens by member and stage</h2><span class="small dim">Own share of each closed bead</span></div>
+      ${legendHTML(STAGES, sc)}<div class="chart" id="usage-chart"></div></section>
+    <section class="block"><div class="block-head"><h2>Stage share</h2></div>
+      <div style="display:flex;height:22px;border-radius:5px;overflow:hidden;gap:2px">${STAGES.map((s, i) => stageTot[i] ? `<span title="${s} ${Math.round((stageTot[i] / all) * 100)}%" style="flex:${stageTot[i]};background:${sc(s)}"></span>` : "").join("")}</div>
+      <p class="small dim">${STAGES.map((s, i) => stageTot[i] ? `${s} ${Math.round((stageTot[i] / all) * 100)}%` : "").filter(Boolean).join(", ")}</p></section>
+    <div class="grid2">
+      <section class="block"><div class="block-head"><h2>Top epics</h2><span class="small dim">Own share plus descendants</span></div>
+        <div class="scroll"><table><thead><tr><th>Epic</th><th class="r">Tokens</th><th>Budget</th><th class="r">Children</th></tr></thead><tbody>
+        ${[["gin-console-b2n", "Milestone burndown", 2.4, 3.0, "5/9"], ["gin-console-r7t", "Report tabs", 2.1, 1.8, "8/8"], ["gin-console-q4s", "Session search", 1.6, 2.5, "3/8"], ["gin-console-w1x", "Quota alerts", 0.9, null, "1/7"], ["gin-console-38i", "Gantt zoom", 0.8, 1.0, "9/9"]]
+          .map((e) => `<tr><td><div class="title-cell"><a href="#">${e[1]}</a><span class="mono dim">${e[0]}</span></div></td><td class="r">${e[2]}M</td>
+          <td>${e[3] ? `<div class="meter"><span class="track"><span class="fill ${e[2] > e[3] ? "over" : ""}" style="width:${Math.min(100, (e[2] / e[3]) * 100)}%"></span></span><span class="num small">${Math.round((e[2] / e[3]) * 100)}%</span></div>` : '<span class="dim small">No budget</span>'}</td>
+          <td class="r">${e[4]}</td></tr>`).join("")}
+        </tbody></table></div></section>
+      <section class="block"><div class="block-head"><h2>Models</h2></div>
+        <div class="scroll"><table><thead><tr><th>Model</th><th>Role</th><th class="r">Tokens</th><th class="r">Cost</th></tr></thead><tbody>
+          <tr><td class="mono">claude-opus-5-5</td><td>executor</td><td class="r">7.9M</td><td class="r">$29.10</td></tr>
+          <tr><td class="mono">claude-sonnet-5-5</td><td>reviewer</td><td class="r">3.6M</td><td class="r">$8.40</td></tr>
+          <tr><td class="mono">claude-haiku-5-5</td><td>scout</td><td class="r">0.7M</td><td class="r">$0.70</td></tr>
+          <tr><td class="mono">gpt-5-codex</td><td>reviewer</td><td class="r">0.2M</td><td class="r dim">Not priced</td></tr>
+        </tbody></table></div></section>
+    </div>`;
+  hbars($("#usage-chart"), USAGE.map(([label, v]) => ({ label, values: Object.fromEntries(STAGES.map((s, i) => [s, v[i] * 1e6])) })), STAGES, sc, { fmt: tok });
+}
+
+/* ---------- quality ---------- */
+function renderQuality() {
+  const pts = []; let seed = 7; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+  for (let i = 0; i < 38; i++) { const rework = rnd() < 0.78 ? 0 : rnd() < 0.6 ? 1 : rnd() < 0.6 ? 2 : 3; pts.push({ id: `gin-console-${(i * 37 + 101).toString(36)}`, title: ["Fix tab focus order", "Burndown hover", "Session index", "Quota parser", "Copy button"][i % 5], tokens: Math.round(60000 + rnd() * 520000 + rework * 60000), rework, j: (rnd() - 0.5) * 0.3 }); }
+  $("#panel-quality").innerHTML = `${periodFilters()}
+    <div class="strip">
+      <div><span class="v">9%</span><span class="l">Rework rate</span></div>
+      <div><span class="v">3</span><span class="l">Reopens</span></div>
+      <div><span class="v">2</span><span class="l">Bugs found later</span></div>
+      <div><span class="v">1.4</span><span class="l">Review cycles per bead</span></div>
+    </div>
+    <section class="block"><div class="block-head"><h2>Tokens and rework per bead</h2><span class="small dim">Rework counts reopens, bugs and rejections</span></div>
+      <div class="legend"><span><i class="key box" style="background:var(--s1);border-radius:50%"></i>No rework</span><span><i class="key box" style="background:var(--s2);border-radius:50%"></i>Some rework</span></div>
+      <div class="chart" id="scatter-chart"></div></section>
+    <div class="grid2">
+      <section class="block"><div class="block-head"><h2>Rework by member</h2></div>
+        <div class="scroll"><table><thead><tr><th>Member</th><th class="r">Reopens</th><th class="r">Bugs</th><th class="r">Review cycles</th><th class="r">Rejections</th><th class="r">Rework rate</th></tr></thead><tbody>
+        ${[["ann", 1, 0, 1.2, 1, "7%"], ["bao", 1, 1, 1.5, 0, "12%"], ["chi", 1, 1, 1.6, 2, "13%"], ["duc", 0, 0, 1.3, 0, "0%"]].map((r) => `<tr><td>${r[0]}</td>${r.slice(1).map((v) => `<td class="r">${v}</td>`).join("")}</tr>`).join("")}
+        </tbody></table></div></section>
+      <section class="block"><div class="block-head"><h2>Review findings</h2><span class="small dim">By severity</span></div>
+        <dl class="facts">
+          <div><dt>Critical</dt><dd>1</dd></div><div><dt>Important</dt><dd>6</dd></div>
+          <div><dt>Minor</dt><dd>14</dd></div><div><dt>Suggestion</dt><dd>22</dd></div><div><dt>Waivers</dt><dd>2</dd></div>
+        </dl></section>
+    </div>`;
+  scatter($("#scatter-chart"), pts);
+}
+
+/* ---------- coverage ---------- */
+function renderCoverage() {
+  $("#panel-coverage").innerHTML = `${periodFilters()}
+    <p class="note">These gaps leave beads out of the other tabs. Fix them in the project, then reload the report.</p>
+    <div class="cov">
+      <section><h2>Not collected <span class="count">3</span></h2>
+        <p class="small dim">Closed beads without AI usage. Run the command in the project to collect it.</p>
+        <div class="scroll"><table><tbody>
+        ${["gin-console-b2n.1", "gin-console-r7t.6", "gin-console-l69.2"].map((id) => `<tr><td class="mono"><a href="#">${id}</a></td><td>${cmd(`gin-workflow usage collect --bead ${id}`)}</td></tr>`).join("")}
+        </tbody></table></div></section>
+      <section><h2>Unreadable usage <span class="count">1</span></h2>
+        <table><tbody><tr><td class="mono"><a href="#">gin-console-q4s.1</a></td><td class="dim">ai_usage version 2 is not supported</td></tr></tbody></table></section>
+      <section><h2>Models without a price <span class="count">1</span></h2>
+        <p><span class="mono">gpt-5-codex</span> <span class="dim">counts tokens but no cost.</span></p></section>
+      <section><h2>Incomplete logs <span class="count">0</span></h2><p class="dim">Every collected bead read its session logs fully.</p></section>
+      <section><h2>Projects that failed <span class="count">0</span></h2><p class="dim">Every project answered.</p></section>
+      <p class="small dim">4% of tokens have no assignee and show under Unassigned.</p>
+    </div>`;
+}
+
+/* ---------- tabs ---------- */
+const RENDER = { milestones: renderMilestones, delivery: renderDelivery, usage: renderUsage, quality: renderQuality, coverage: renderCoverage };
+const TABS = Object.keys(RENDER);
+function renderTab() { RENDER[tab](); }
+function select(name, focus) {
+  if (!TABS.includes(name)) name = "milestones";
+  tab = name;
+  $$(".tab").forEach((b) => { const on = b.dataset.tab === name; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+  $$(".panel").forEach((p) => { p.hidden = p.id !== "panel-" + name; });
+  hideTip(); renderTab();
+  if (location.hash.slice(1) !== name) history.replaceState(null, "", "#" + name);
+}
+$$(".tab").forEach((b) => b.addEventListener("click", () => select(b.dataset.tab)));
+$(".tabs").addEventListener("keydown", (e) => {
+  const i = TABS.indexOf(tab);
+  if (e.key === "ArrowRight") select(TABS[(i + 1) % TABS.length], true);
+  else if (e.key === "ArrowLeft") select(TABS[(i - 1 + TABS.length) % TABS.length], true);
+  else return; e.preventDefault();
+});
+addEventListener("hashchange", () => select(location.hash.slice(1)));
+
+function setState(v) {
+  mockState = v;
+  $$("#mock-state button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.v === v));
+  $("#hl-milestones").innerHTML = headline(v);
+  if (tab === "milestones") renderMilestones();
+}
+$$("#mock-state button").forEach((b) => b.addEventListener("click", () => setState(b.dataset.v)));
+$$("#mock-theme button").forEach((b) => b.addEventListener("click", () => {
+  $$("#mock-theme button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+  if (b.dataset.v) document.documentElement.dataset.theme = b.dataset.v; else delete document.documentElement.dataset.theme;
+}));
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(renderTab, 120); });
+
+$("#hl-milestones").innerHTML = headline(mockState);
+select(location.hash.slice(1) || "milestones");
+</script>
