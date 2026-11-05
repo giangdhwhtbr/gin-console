@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { DeliverySection as Delivery, Report } from "./api";
+import type { DeliverySection as Delivery, QualityRow, Report } from "./api";
 import { CoverageSection } from "./CoverageSection";
 import { DeliverySection } from "./DeliverySection";
 import { QualitySection } from "./QualitySection";
@@ -100,6 +100,11 @@ describe("report sections", () => {
     expect(screen.getByText("−2 d")).not.toHaveClass("text-state-blocked");
   });
 
+  const qrow = (key: string, over: Partial<QualityRow> = {}): QualityRow => ({
+    key, project: null, title: null, beads: 1, reopens: 0, bugs: 0, review_cycles: 0, rejections: 0, waivers: 0,
+    findings: { critical: 0, important: 0, minor: 0, suggestion: 0 }, rework_rate: 0, ...over,
+  });
+
   it("REQ-UI-091 clicking a point opens its bead page", () => {
     const r = report({ quality: { members: [], epics: [], points: [{ project: "alpha", id: "a-3", title: "T", tokens: 100, rework: 2 }] } });
     const { container } = render(<QualitySection quality={r.quality} />);
@@ -109,21 +114,36 @@ describe("report sections", () => {
     expect(window.location.pathname).toBe("/beads/alpha/a-3");
   });
 
-  it("REQ-UI-091 beads by rework table links to the bead", () => {
-    const r = report({ quality: { members: [], epics: [], points: [{ project: "alpha", id: "a-3", title: "T", tokens: 100, rework: 2 }] } });
-    render(<QualitySection quality={r.quality} />);
-    expect(screen.getByRole("link", { name: "a-3 — T" }).getAttribute("href")).toBe("/beads/alpha/a-3");
+  it("REQ-UI-091 two point colors with a legend, member table and findings", () => {
+    const points = [
+      { project: "alpha", id: "a-1", title: "Clean", tokens: 100, rework: 0 },
+      { project: "alpha", id: "a-2", title: "Reworked", tokens: 200, rework: 1 },
+    ];
+    const members = [
+      qrow("ann", { beads: 4, reopens: 1, review_cycles: 5, rework_rate: 0.25, findings: { critical: 1, important: 2, minor: 0, suggestion: 3 }, waivers: 1 }),
+      qrow("bao", { beads: 1, bugs: 1, review_cycles: 1, findings: { critical: 0, important: 1, minor: 4, suggestion: 0 } }),
+    ];
+    const { container } = render(<QualitySection quality={{ members, epics: [], points }} />);
+    const legend = container.querySelector(".recharts-legend-wrapper");
+    expect(legend?.textContent).toContain("No rework");
+    expect(legend?.textContent).toContain("Some rework");
+    expect(screen.getByRole("row", { name: /ann 1 0 1\.3 0 25%/ })).toBeTruthy();
+    const findings = screen.getByRole("region", { name: "Review findings" });
+    expect(within(findings).getByText("Critical").nextElementSibling?.textContent).toBe("1");
+    expect(within(findings).getByText("Important").nextElementSibling?.textContent).toBe("3");
+    expect(within(findings).getByText("Minor").nextElementSibling?.textContent).toBe("4");
+    expect(within(findings).getByText("Waivers").nextElementSibling?.textContent).toBe("1");
+    expect(screen.queryByText("By epic")).toBeNull();
   });
 
   it("REQ-UI-093 member rows without points still show the table and no chart", () => {
-    const row = { key: "ann", project: null, title: null, beads: 1, reopens: 0, bugs: 0, review_cycles: 0, rejections: 0, waivers: 0, findings: { critical: 0, important: 0, minor: 0, suggestion: 0 }, rework_rate: 0 };
-    const { container } = render(<QualitySection quality={{ members: [row], epics: [], points: [] }} />);
+    const { container } = render(<QualitySection quality={{ members: [qrow("ann")], epics: [], points: [] }} />);
     expect(screen.getByText("ann")).toBeTruthy();
     expect(screen.queryByText("No data in this period")).toBeNull();
     expect(container.querySelector(".recharts-surface")).toBeNull();
   });
 
-  it("REQ-UI-092 coverage: copy command, unpriced, unassigned, sources, fixed note", () => {
+  it("REQ-UI-092 coverage blocks with counts, copy command, unassigned share and fixed note", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { clipboard: { writeText } });
     const coverage = {
@@ -136,13 +156,25 @@ describe("report sections", () => {
     render(<CoverageSection coverage={coverage} errors={[{ project: "beta", error: "boom" }]} />);
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));
     expect(writeText).toHaveBeenCalledWith("gin-workflow usage collect --bead a-9");
-    expect(screen.getByText(/Models without a price: m1, m2/)).toBeTruthy();
-    expect(screen.getByText("Unassigned share of tokens: 25%")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "a-9" }).getAttribute("href")).toBe("/beads/alpha/a-9");
+    expect(screen.getByRole("heading", { name: "Not collected 1" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Unreadable usage 0" })).toBeTruthy();
+    expect(screen.getByText("Every AI usage record is readable.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Models without a price 2" })).toBeTruthy();
+    expect(screen.getByText("m1")).toBeTruthy();
     expect(screen.getByText(/a-5, claude: missing, skipped lines: 3/)).toBeTruthy();
     expect(screen.getByText("beta: boom")).toBeTruthy();
+    expect(screen.getByText("25% of tokens have no assignee and show under Unassigned.")).toBeTruthy();
     expect(
       screen.getByText("Estimates from local Claude Code and Codex logs on the machine that collected them. Antigravity and OpenCode are not measured."),
     ).toBeTruthy();
+  });
+
+  it("REQ-UI-092 a block with no gap says so", () => {
+    render(<CoverageSection coverage={report().coverage} errors={[]} />);
+    expect(screen.getByRole("heading", { name: "Projects that failed 0" })).toBeTruthy();
+    expect(screen.getByText("Every project answered.")).toBeTruthy();
+    expect(screen.queryByText(/of tokens have no assignee/)).toBeNull();
   });
 
   it("REQ-UI-093 empty sections say so and draw no chart", () => {
