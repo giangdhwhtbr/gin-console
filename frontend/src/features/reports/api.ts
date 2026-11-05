@@ -6,6 +6,7 @@ export type Totals = {
   cost: number | null;
   closed: number;
   tokens_per_bead: number | null;
+  cache_ratio: number | null;
   rework_rate: number | null;
 };
 export type MemberUsage = {
@@ -66,6 +67,7 @@ export type DeliverySection = {
   weeks: WeekRow[];
   by_type: TimeRow[];
   by_member: TimeRow[];
+  overall: TimeRow;
   wip: WipRow[];
   oldest: WipBead[];
   estimates: EstimateRow[];
@@ -153,7 +155,7 @@ async function failure(response: Response): Promise<Error> {
   return new Error(detail);
 }
 
-export async function fetchReport(filters: ReportFilters): Promise<Report> {
+export async function fetchReport(filters: Pick<ReportFilters, "project" | "days" | "sprint">): Promise<Report> {
   const params = new URLSearchParams({ project: filters.project, days: String(filters.days) });
   if (filters.sprint !== "") params.set("sprint", filters.sprint);
   const response = await fetch(`/api/reports?${params.toString()}`);

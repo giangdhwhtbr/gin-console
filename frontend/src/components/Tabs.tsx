@@ -1,7 +1,7 @@
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type TabItem<T extends string> = { value: T; label: string };
+export type TabItem<T extends string> = { value: T; label: string; hint?: ReactNode };
 
 /** A tab list: one tab stop, Left and Right move and select (wrapping); ids `tab-<value>` control `panel-<value>`. */
 export function Tabs<T extends string>({
@@ -26,8 +26,8 @@ export function Tabs<T extends string>({
     event.currentTarget.parentElement?.querySelector<HTMLElement>(`#tab-${next}`)?.focus();
   };
   return (
-    <div role="tablist" aria-label={label} className={cn("flex gap-2 border-b", className)}>
-      {tabs.map(({ value, label: text }) => (
+    <div role="tablist" aria-label={label} className={cn("flex gap-2 overflow-x-auto border-b", className)}>
+      {tabs.map(({ value, label: text, hint }) => (
         <button
           key={value}
           type="button"
@@ -39,11 +39,18 @@ export function Tabs<T extends string>({
           onClick={() => onChange(value)}
           onKeyDown={move}
           className={cn(
-            "min-h-11 border-b-2 px-3 text-sm font-medium md:min-h-9",
+            "min-h-11 shrink-0 whitespace-nowrap text-left border-b-2 px-3 text-sm font-medium md:min-h-9",
             tab === value ? "border-foreground text-foreground" : "border-transparent text-muted-foreground",
           )}
         >
-          {text}
+          {hint === undefined ? (
+            text
+          ) : (
+            <span className="flex flex-col items-start py-2">
+              <span>{text}</span>
+              <span className="text-xs font-normal text-muted-foreground">{hint}</span>
+            </span>
+          )}
         </button>
       ))}
     </div>
