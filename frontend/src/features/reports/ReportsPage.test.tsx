@@ -20,6 +20,7 @@ const stub = (handler: (url: URL) => Response | Promise<Response> = () => json(r
   return mock;
 };
 const requested = (mock: ReturnType<typeof stub>) => mock.mock.calls.map(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.href : input.url));
+const bead = (id: string) => ({ project: "alpha", id, title: id, detail: "" });
 const withTokens = (tokens: number): Report => {
   const base = report();
   return report({ totals: { ...base.totals, tokens } });
@@ -120,6 +121,40 @@ describe("ReportsPage", () => {
     expect(screen.getByRole("tab", { name: /AI usage\s*51\.1M tokens, \$12\.34/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Quality\s*25% rework/ })).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: /Data coverage\s*2 gaps/ })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-095 flags coverage gaps with a warning icon", async () => {
+    const base = report();
+    stub(() => json(report({ coverage: { ...base.coverage, not_collected: ["a", "b", "c"].map(bead), invalid: [bead("x")], unpriced: ["m1"] } })));
+    render(<ReportsPage />);
+    const tab = await screen.findByRole("tab", { name: /Data coverage\s*5 gaps/ });
+    expect(tab.querySelector("svg")).not.toBeNull();
+  });
+
+  it("REQ-UI-095 shows no warning icon at 0 gaps", async () => {
+    stub();
+    render(<ReportsPage />);
+    const tab = await screen.findByRole("tab", { name: /Data coverage\s*0 gaps/ });
+    expect(tab.querySelector("svg")).toBeNull();
+  });
+
+  it("REQ-UI-095 shows no headline after a failed load", async () => {
+    stub(() => json({ error: "boom" }, 502));
+    render(<ReportsPage />);
+    await screen.findByText("boom");
+    for (const name of ["Delivery", "AI usage", "Quality", "Data coverage"]) {
+      expect(screen.getByRole("tab", { name })).toBeInTheDocument();
+    }
+  });
+
+  it("REQ-UI-095 keeps the sprint across a tab change", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&days=30&sprint=s7");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    await userEvent.click(screen.getByRole("tab", { name: /^Quality/ }));
+    expect(window.location.search).toBe("?project=alpha&days=30&sprint=s7&tab=quality");
+    expect(screen.getByLabelText("Sprint")).toHaveValue("s7");
   });
 
   it("REQ-UI-095 moves between tabs with the arrow keys", async () => {
