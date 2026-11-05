@@ -15,7 +15,7 @@ afterEach(() => {
 const usageOf = (r: Report) => <UsageSection usage={r.usage} project={r.project} />;
 
 describe("report sections", () => {
-  it("REQ-UI-089 members chart has a bar per member and a legend per stage, with a table", () => {
+  it("REQ-UI-089 member bars carry each member's figures", () => {
     const base = report();
     const m = base.usage.members[0];
     const r = report({
@@ -23,66 +23,81 @@ describe("report sections", () => {
         ...base.usage,
         members: [
           { ...m, member: "ann", stages: { execute: 30, review: 10 } },
-          { ...m, member: "Unassigned", stages: { execute: 5 } },
+          { ...m, member: "Unassigned", closed: 1, tokens: 50, cost: null, tokens_per_bead: 50, cache_ratio: null, stages: { execute: 5 } },
         ],
       },
     });
-    const { container } = render(usageOf(r));
-    expect(container.querySelectorAll(".recharts-bar-rectangle").length).toBeGreaterThanOrEqual(2);
-    const legend = container.querySelector(".recharts-legend-wrapper");
-    expect(legend?.textContent).toContain("execute");
-    expect(legend?.textContent).toContain("review");
-    const labels = container.querySelectorAll(".recharts-legend-item-text");
-    expect(labels.length).toBeGreaterThan(0);
-    labels.forEach((l) => expect(l.querySelector("span.text-foreground")).not.toBeNull());
-    expect(screen.getByRole("row", { name: /ann 4 51\.1M \$12\.34 12\.8M 90%/ })).toBeTruthy();
+    render(usageOf(r));
+    expect(screen.getByLabelText("ann: 4 beads closed, 51.1M tokens, $12.34 estimated, 12.8M tokens per bead, 90% cache reads")).toHaveAttribute("tabindex", "0");
+    expect(screen.getByLabelText(/^Unassigned: 1 beads closed, 50 tokens, no price estimated/)).toBeTruthy();
+    expect(screen.getByText("execute")).toBeTruthy();
+    expect(screen.getByText("review")).toBeTruthy();
   });
 
-  it("REQ-UI-089 epic table links, shows children and budget; top beads listed", () => {
+  it("REQ-UI-089 epic budget meter, no budget, no price; top beads listed", () => {
     const base = report();
     const e = base.usage.epics[0];
     const r = report({
-      usage: { ...base.usage, epics: [{ ...e, children: 4, closed_children: 3, budget: { budget_usd: 20, cost: 12, status: "ok" } }] },
+      usage: {
+        ...base.usage,
+        epics: [
+          { ...e, id: "a-1", title: "Over", children: 4, closed_children: 3, budget: { budget_usd: 10, cost: 11.7, status: "over" } },
+          { ...e, id: "a-2", title: "Free", budget: null },
+          { ...e, id: "a-3", title: "Unpriced", budget: { budget_usd: 10, cost: null, status: "ok" } },
+        ],
+      },
     });
     render(usageOf(r));
-    expect(screen.getByRole("link", { name: /Epic one/ }).getAttribute("href")).toBe("/beads/alpha/a-1");
+    const meter = screen.getByRole("meter");
+    expect(meter).toHaveAttribute("aria-valuenow", "117");
+    expect(screen.getByText("117%")).toHaveClass("text-state-blocked");
+    expect(screen.getByRole("link", { name: /Over/ }).getAttribute("href")).toBe("/beads/alpha/a-1");
     expect(screen.getByText("3/4")).toBeTruthy();
-    expect(screen.getByText(/ok \$12\.00 of \$20/)).toBeTruthy();
+    expect(within(screen.getByRole("row", { name: /a-2 — Free/ })).getByText("No budget")).toBeTruthy();
+    expect(within(screen.getByRole("row", { name: /a-3 — Unpriced/ })).getByText("no price")).toBeTruthy();
     expect(screen.getByText(/a-2 — Bead two/)).toBeTruthy();
   });
 
-  it("REQ-UI-089 stage share names each stage with its percentage; model table columns", () => {
+  it("REQ-UI-089 stage share as text; model table", () => {
     render(usageOf(report()));
-    expect(screen.getByText("implement — 78% (40M)")).toBeTruthy();
-    expect(screen.getByText("review — 22% (11.1M)")).toBeTruthy();
-    expect(screen.getByRole("columnheader", { name: "Cache write" })).toBeTruthy();
-    expect(screen.getByRole("row", { name: /opus developer 1 2 3 4 10 \$1\.00/ })).toBeTruthy();
+    expect(screen.getByText("implement 78%, review 22%")).toBeTruthy();
+    expect(screen.getByRole("row", { name: /opus developer 10 \$1\.00/ })).toBeTruthy();
   });
 
-  it("REQ-UI-090 delivery: weeks, cycle tables, WIP and estimates", () => {
+  it("REQ-UI-090 delivery: weeks, ranges by type and member, in progress, oldest", () => {
     const base = report();
-    const stat = { n: 3, median: 2, p85: 4 };
     const d: Delivery = {
       ...base.delivery,
       weeks: [
         { week: "2026-W43", counts: { task: 1, bug: 2 } },
         { week: "2026-W44", counts: { task: 3 } },
       ],
-      by_type: [{ key: "task", cycle: stat, lead: null }],
-      by_member: [{ key: "ann", cycle: stat, lead: { n: 3, median: 5, p85: 6 } }],
+      by_type: [{ key: "task", cycle: { n: 3, median: 2, p85: 4 }, lead: null }],
+      by_member: [{ key: "ann", cycle: { n: 3, median: 1.5, p85: 4 }, lead: { n: 3, median: 5, p85: 6 } }],
       wip: [{ member: "ann", count: 2 }],
       oldest: [{ project: "alpha", id: "a-7", title: "Old", assignee: "ann", age_days: 10 }],
     };
-    const { container, rerender } = render(<DeliverySection delivery={d} />);
+    const { container } = render(<DeliverySection delivery={d} />);
     expect(container.querySelectorAll(".recharts-bar").length).toBeGreaterThan(0);
-    expect(screen.getByRole("row", { name: /task 3 2\.0 d 4\.0 d — —/ })).toBeTruthy();
-    expect(screen.getByRole("row", { name: "ann 2" })).toBeTruthy();
+    expect(screen.getByLabelText("task: 3 beads, median 2.0 d, 85th percentile 4.0 d")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "By member" }));
+    expect(screen.getByRole("button", { name: "By member" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("ann: 3 beads, median 1.5 d, 85th percentile 4.0 d")).toBeTruthy();
+    expect(screen.getByLabelText("ann: 3 beads, median 5.0 d, 85th percentile 6.0 d")).toBeTruthy();
+    expect(screen.getByLabelText("ann: 2 in progress")).toBeTruthy();
     const old = screen.getByRole("row", { name: /a-7/ });
     expect(within(old).getByText("10.0 d")).toBeTruthy();
     expect(within(old).getByRole("link").getAttribute("href")).toBe("/beads/alpha/a-7");
-    expect(screen.queryByText("Estimate vs actual")).toBeNull();
-    rerender(<DeliverySection delivery={{ ...d, estimates: [{ project: "alpha", id: "e-1", title: "E", estimate_days: 5, actual_days: 6 }] }} />);
-    expect(screen.getByText("Estimate vs actual")).toBeTruthy();
+    expect(screen.queryByText("Estimate and actual")).toBeNull();
+  });
+
+  it("REQ-UI-090 estimate table with difference chips", () => {
+    const base = report();
+    const est = (id: string, actual: number) => ({ project: "alpha", id, title: id, estimate_days: 5, actual_days: actual });
+    render(<DeliverySection delivery={{ ...base.delivery, estimates: [est("e-1", 7), est("e-2", 3)] }} />);
+    expect(screen.getByText("Estimate and actual")).toBeTruthy();
+    expect(screen.getByText("+2 d")).toHaveClass("text-state-blocked");
+    expect(screen.getByText("−2 d")).not.toHaveClass("text-state-blocked");
   });
 
   it("REQ-UI-091 clicking a point opens its bead page", () => {

@@ -1,10 +1,16 @@
+import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { Link } from "@/app/Link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { DeliverySection as Delivery, TimeRow } from "./api";
+import { cn } from "@/lib/utils";
+import type { DeliverySection as Delivery, Stat, TimeRow } from "./api";
+import { BarRows } from "./BarRows";
 import { ChartBox, legendText } from "./ChartBox";
 import { TYPES, present, typeColor } from "./colors";
-import { beadPath, formatDays } from "./format";
+import { beadPath, estimateDiff, formatDays } from "./format";
+import { RangeChart, type Range } from "./RangeChart";
 
 const tick = { fill: "var(--color-muted-foreground)" };
 const tooltipStyle = { background: "var(--color-popover)", border: "1px solid var(--color-border)" };
@@ -18,129 +24,129 @@ const heads = (names: string[]) => (
   </TableHeader>
 );
 
-const timeTable = (title: string, rows: TimeRow[]) => (
-  <>
-    <h3 className="font-medium">{title}</h3>
-    <Table>
-      {heads(["Key", "Beads", "Cycle median", "Cycle p85", "Lead median", "Lead p85"])}
-      <TableBody>
-        {rows.map((r) => (
-          <TableRow key={r.key}>
-            <TableCell>{r.key}</TableCell>
-            <TableCell>{r.cycle?.n ?? r.lead?.n ?? 0}</TableCell>
-            <TableCell>{formatDays(r.cycle?.median ?? null)}</TableCell>
-            <TableCell>{formatDays(r.cycle?.p85 ?? null)}</TableCell>
-            <TableCell>{formatDays(r.lead?.median ?? null)}</TableCell>
-            <TableCell>{formatDays(r.lead?.p85 ?? null)}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </>
-);
+const rangesOf = (rows: TimeRow[], pick: (r: TimeRow) => Stat | null): Range[] =>
+  rows.flatMap((r) => {
+    const s = pick(r);
+    return s === null ? [] : [{ key: r.key, ...s }];
+  });
 
 export function DeliverySection({ delivery }: { delivery: Delivery }) {
+  const [by, setBy] = useState<"type" | "member">("type");
   const types = present(TYPES, delivery.weeks.flatMap((w) => Object.keys(w.counts)));
   if (!delivery.weeks.some((w) => Object.values(w.counts).some((n) => n > 0))) {
-    return (
-      <section className="flex flex-col gap-3">
-        <h2 className="text-lg font-semibold">Delivery flow</h2>
-        <p className="text-muted-foreground">No data in this period</p>
-      </section>
-    );
+    return <p className="text-muted-foreground">No data in this period</p>;
   }
+  const times = by === "type" ? delivery.by_type : delivery.by_member;
   return (
-    <section className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold">Delivery flow</h2>
-      <h3 className="font-medium">Closed beads per week</h3>
-      <ChartBox height={240}>
-        <BarChart data={delivery.weeks.map((w) => ({ week: w.week, ...w.counts }))}>
-          <CartesianGrid stroke="var(--color-border)" />
-          <XAxis dataKey="week" tick={tick} />
-          <YAxis allowDecimals={false} tick={tick} />
-          <Tooltip contentStyle={tooltipStyle} />
-          {types.length >= 2 && <Legend formatter={legendText} />}
-          {types.map((type, i) => (
-            <Bar
-              key={type}
-              dataKey={type}
-              stackId="w"
-              fill={typeColor(type)}
-              stroke="var(--color-background)"
-              strokeWidth={2}
-              radius={i === types.length - 1 ? [4, 4, 0, 0] : 0}
-              isAnimationActive={false}
+    <div className="flex flex-col gap-8">
+      <section className="flex flex-col gap-3">
+        <h2 className="font-semibold">Closed per week</h2>
+        <ChartBox height={240}>
+          <BarChart data={delivery.weeks.map((w) => ({ week: w.week, ...w.counts }))}>
+            <CartesianGrid stroke="var(--color-border)" />
+            <XAxis dataKey="week" tick={tick} />
+            <YAxis allowDecimals={false} tick={tick} />
+            <Tooltip contentStyle={tooltipStyle} />
+            {types.length >= 2 && <Legend formatter={legendText} />}
+            {types.map((type, i) => (
+              <Bar
+                key={type}
+                dataKey={type}
+                stackId="w"
+                fill={typeColor(type)}
+                stroke="var(--color-background)"
+                strokeWidth={2}
+                radius={i === types.length - 1 ? [4, 4, 0, 0] : 0}
+                isAnimationActive={false}
+              />
+            ))}
+          </BarChart>
+        </ChartBox>
+      </section>
+      <section className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold">Cycle and lead time</h2>
+          <div role="group" aria-label="Group times" className="flex gap-1">
+            {(["type", "member"] as const).map((value) => (
+              <Button key={value} type="button" size="sm" variant={by === value ? "default" : "outline"} aria-pressed={by === value} onClick={() => setBy(value)}>
+                {value === "type" ? "By type" : "By member"}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground">Dot is the median, the end tick is the 85th percentile. Cycle runs from start to close, lead from creation to close.</p>
+        <div className="grid gap-6 md:grid-cols-2">
+          <RangeChart title="Cycle time" ranges={rangesOf(times, (r) => r.cycle)} />
+          <RangeChart title="Lead time" ranges={rangesOf(times, (r) => r.lead)} />
+        </div>
+      </section>
+      <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
+        <section className="flex min-w-0 flex-col gap-3">
+          <h2 className="font-semibold">Oldest in progress</h2>
+          {delivery.oldest.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nothing in progress</p>
+          ) : (
+            <Table>
+              {heads(["Bead", "Assignee", "Age"])}
+              <TableBody>
+                {delivery.oldest.map((b) => (
+                  <TableRow key={`${b.project}/${b.id}`}>
+                    <TableCell>
+                      <Link to={beadPath(b.project, b.id)} className="underline">
+                        {b.id} — {b.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{b.assignee ?? "Unassigned"}</TableCell>
+                    <TableCell>{formatDays(b.age_days)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </section>
+        <section className="flex min-w-0 flex-col gap-3">
+          <h2 className="font-semibold">In progress by member</h2>
+          {delivery.wip.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nothing in progress</p>
+          ) : (
+            <BarRows
+              rows={delivery.wip.map((w) => ({
+                key: w.member,
+                segments: [{ name: "In progress", value: w.count, color: "var(--series-1)" }],
+                total: String(w.count),
+                detail: `${w.count} in progress`,
+              }))}
             />
-          ))}
-        </BarChart>
-      </ChartBox>
-      <Table>
-        {heads(["Week", ...types])}
-        <TableBody>
-          {delivery.weeks.map((w) => (
-            <TableRow key={w.week}>
-              <TableCell>{w.week}</TableCell>
-              {types.map((t) => (
-                <TableCell key={t}>{w.counts[t] ?? 0}</TableCell>
-              ))}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      {timeTable("Cycle and lead time by type", delivery.by_type)}
-      {timeTable("Cycle and lead time by member", delivery.by_member)}
-
-      <h3 className="font-medium">Work in progress</h3>
-      <Table>
-        {heads(["Member", "In progress"])}
-        <TableBody>
-          {delivery.wip.map((w) => (
-            <TableRow key={w.member}>
-              <TableCell>{w.member}</TableCell>
-              <TableCell>{w.count}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      <h3 className="font-medium">Oldest in progress</h3>
-      <Table>
-        {heads(["Bead", "Assignee", "Age"])}
-        <TableBody>
-          {delivery.oldest.map((b) => (
-            <TableRow key={`${b.project}/${b.id}`}>
-              <TableCell>
-                <Link to={beadPath(b.project, b.id)} className="underline">
-                  {b.id} — {b.title}
-                </Link>
-              </TableCell>
-              <TableCell>{b.assignee ?? "Unassigned"}</TableCell>
-              <TableCell>{formatDays(b.age_days)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-
+          )}
+        </section>
+      </div>
       {delivery.estimates.length > 0 && (
-        <>
-          <h3 className="font-medium">Estimate vs actual</h3>
+        <section className="flex flex-col gap-3">
+          <h2 className="font-semibold">Estimate and actual</h2>
           <Table>
-            {heads(["Epic", "Estimate (days)", "Actual (working days)"])}
+            {heads(["Epic", "Estimate (working days)", "Actual (working days)", "Difference"])}
             <TableBody>
-              {delivery.estimates.map((e) => (
-                <TableRow key={`${e.project}/${e.id}`}>
-                  <TableCell>
-                    <Link to={beadPath(e.project, e.id)} className="underline">
-                      {e.id} — {e.title}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{e.estimate_days}</TableCell>
-                  <TableCell>{e.actual_days}</TableCell>
-                </TableRow>
-              ))}
+              {delivery.estimates.map((e) => {
+                const diff = estimateDiff(e.estimate_days, e.actual_days);
+                return (
+                  <TableRow key={`${e.project}/${e.id}`}>
+                    <TableCell>
+                      <Link to={beadPath(e.project, e.id)} className="underline">
+                        {e.id} — {e.title}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{e.estimate_days}</TableCell>
+                    <TableCell>{e.actual_days}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={cn(diff.late && "text-state-blocked")}>{diff.text}</Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
-        </>
+        </section>
       )}
-    </section>
+    </div>
   );
 }
