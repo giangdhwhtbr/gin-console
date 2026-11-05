@@ -46,7 +46,13 @@ The server SHALL read `metadata.ai_usage` (a JSON string or object with `version
 - THEN its tokens count and its cost is absent, not 0
 
 ### REQ-REPORTS-003: AI usage section
-The report SHALL hold, over the own shares of the selected closed beads: totals (tokens, cost, closed beads, tokens per closed bead, rework rate of REQ-REPORTS-005), one row per member keyed by `assignee` (beads without one under `Unassigned`) with closed beads, tokens, cost, tokens per closed bead, tokens per stage and cache ratio `cache_read / (input + cache_read + cache_write)`, the 10 epics with the most tokens (an epic's own share plus those of its selected descendants, with its project, `ai_usage.budget` when present, and its closed and total children), the 10 beads with the largest own share, tokens and cost per stage, and tokens and cost per model and role.
+The report SHALL hold the following, over the own shares of the selected closed beads:
+- Totals: tokens, cost, closed beads, tokens per closed bead, the cache ratio `cache_read / (input + cache_read + cache_write)` summed over the models of every own share (absent when the denominator is 0), and the rework rate of REQ-REPORTS-005.
+- One row per member, keyed by `assignee` (beads without one fall under `Unassigned`). Each row holds closed beads, tokens, cost, tokens per closed bead, tokens per stage, and the cache ratio.
+- The 10 epics with the most tokens. An epic's tokens are its own share plus those of its selected descendants. Each epic row holds its project, `ai_usage.budget` when present, and its closed and total children.
+- The 10 beads with the largest own share.
+- Tokens and cost per stage.
+- Tokens and cost per model and role.
 
 #### Scenario: member rows
 - GIVEN `ann` closed two beads of 100 and 300 tokens and an unassigned bead of 50 tokens closed
@@ -58,8 +64,17 @@ The report SHALL hold, over the own shares of the selected closed beads: totals 
 - WHEN the report is built
 - THEN `a-1` is in the epic list with 400 tokens and 2 of 2 children closed
 
+#### Scenario: total cache ratio
+- GIVEN two closed beads whose own shares hold model tokens of input 100, cache_read 300, cache_write 0, and input 100, cache_read 0, cache_write 0
+- WHEN the report is built
+- THEN `totals.cache_ratio` is 0.6
+
 ### REQ-REPORTS-004: Delivery flow section
-The report SHALL hold beads closed per ISO week by `issue_type`, median and 85th percentile cycle time (`started_at` to `closed_at`) and lead time (`created_at` to `closed_at`) in days per `issue_type` and per member, leaving a bead out of a time when a timestamp is missing or the close is before the start, the in-progress beads per member and the 5 oldest by `started_at` (else `updated_at`) whatever the period, and for each selected closed epic with `estimated_minutes` its estimate in working days (`estimated_minutes / 480`) against the weekdays from its `started_at` (else `created_at`) to its `closed_at`, both dates counted.
+The report SHALL hold:
+- Beads closed per ISO week, by `issue_type`.
+- The median and 85th percentile cycle time (`started_at` to `closed_at`) and lead time (`created_at` to `closed_at`), in days, per `issue_type`, per member, and over all selected closed beads together (`overall`). A time SHALL leave a bead out when a timestamp is missing or the close is before the start. Within a row, a time SHALL be absent when no bead has it.
+- The in-progress beads per member, and the 5 oldest by `started_at` (else `updated_at`), whatever the period.
+- For each selected closed epic with `estimated_minutes`: its estimate in working days (`estimated_minutes / 480`), against the weekdays from its `started_at` (else `created_at`) to its `closed_at`, both dates counted.
 
 #### Scenario: percentiles
 - GIVEN five closed tasks with cycle times of 1, 2, 3, 4 and 10 days
@@ -75,6 +90,16 @@ The report SHALL hold beads closed per ISO week by `issue_type`, median and 85th
 - GIVEN an epic with `estimated_minutes` 2400 created on a Monday and closed on the Tuesday of the next week
 - WHEN the report is built
 - THEN it shows 5 estimated and 7 actual working days
+
+#### Scenario: overall
+- GIVEN a closed task with cycle time 1 day and a closed bug with cycle time 3 days
+- WHEN the report is built
+- THEN `overall` holds a cycle median of 2 days over 2 beads
+
+#### Scenario: nothing closed
+- GIVEN no closed bead in the period
+- WHEN the report is built
+- THEN `overall` has no cycle time and no lead time
 
 ### REQ-REPORTS-005: Quality section
 The report SHALL hold, from the own shares of `ai_usage.quality`, per member and per epic of REQ-REPORTS-003: reopens, bugs, review cycles, rejections, findings by severity (critical, important, minor, suggestion), waivers and the rework rate (the share of beads with `ai_usage` that have reopens or bugs above 0), and one point per selected closed non-epic bead with `ai_usage` holding its id, project, title, tokens and rework (reopens + bugs + rejections).
