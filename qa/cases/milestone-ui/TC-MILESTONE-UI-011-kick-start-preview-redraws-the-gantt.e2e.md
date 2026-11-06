@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-011: Kick-start preview redraws the Gantt from the picked date
 REQ: REQ-MILESTONE-UI-004@ed8c64e1
 Priority: high
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - planned milestone M1 of project P

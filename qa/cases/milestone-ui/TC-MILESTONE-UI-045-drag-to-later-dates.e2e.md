@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-045: Drag to later dates
 REQ: REQ-MILESTONE-UI-012@a4f22671
 Priority: high
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - milestone M1 zoomed to `1 week` with 2026-11-02 to 2026-11-08 in view

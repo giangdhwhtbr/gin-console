@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-005: Graph tab shows epics and their dependency edge
 REQ: REQ-MILESTONE-UI-002@d40b9a33
 Priority: high
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - milestone M1 of project P with epics A and B, B depending on A

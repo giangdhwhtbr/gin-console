@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-044: Zoom kept with the preview
 REQ: REQ-MILESTONE-UI-011@83b54b5c
 Priority: medium
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - planned milestone M1

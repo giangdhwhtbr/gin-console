@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-048: Step by a period
 REQ: REQ-MILESTONE-UI-012@a4f22671
 Priority: high
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - milestone M1 zoomed to `2 weeks` with 2026-11-02 to 2026-11-15 in view

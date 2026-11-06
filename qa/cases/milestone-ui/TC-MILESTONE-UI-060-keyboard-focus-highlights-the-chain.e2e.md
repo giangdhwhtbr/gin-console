@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-060: Keyboard focus highlights the chain
 REQ: REQ-MILESTONE-UI-014@d417b46f
 Priority: low
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - epics A, B, C, D in M1 where B depends on A, C depends on B, and D has no dependency

@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-052: Days in view kept when the plan refreshes
 REQ: REQ-MILESTONE-UI-012@a4f22671
 Priority: low
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - milestone M1 zoomed to `1 week`

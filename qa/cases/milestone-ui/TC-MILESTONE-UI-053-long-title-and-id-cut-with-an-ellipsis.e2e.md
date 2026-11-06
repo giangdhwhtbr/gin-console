@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-053: Long title and id cut with an ellipsis on a phone
 REQ: REQ-MILESTONE-UI-013@707f050a
 Priority: medium
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - epic `gin-workflow-rm-process-hygiene` titled "Process hygiene: consistent skills, rules that bind where it matters"

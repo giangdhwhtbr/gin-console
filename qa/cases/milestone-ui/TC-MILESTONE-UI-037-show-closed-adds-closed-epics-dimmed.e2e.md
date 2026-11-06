@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-037: Show closed adds closed epics dimmed
 REQ: REQ-MILESTONE-UI-010@870a452a
 Priority: medium
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - project P with open epic A and closed epic E, both without a parent

@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-041: Two weeks starts on the Monday of today
 REQ: REQ-MILESTONE-UI-011@83b54b5c
 Priority: high
+Result: blocked
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - milestone M1 whose plan spans 2026-11-02 to 2026-11-27 and `today: 2026-11-11`

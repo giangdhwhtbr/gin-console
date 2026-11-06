@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-002: Kickoff date shown when set
 REQ: REQ-MILESTONE-UI-001@b8f53ca9
 Priority: low
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - project P whose `milestone list` reports planned M2 with `kickoff: 2026-11-16`

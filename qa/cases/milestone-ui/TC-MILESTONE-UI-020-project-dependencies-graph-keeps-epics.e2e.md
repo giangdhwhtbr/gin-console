@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-020: Project Dependencies graph keeps epics under a milestone
 REQ: REQ-MILESTONE-UI-006@3025db15
 Priority: high
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - epics A and B of project P, B depending on A, both children of milestone M1

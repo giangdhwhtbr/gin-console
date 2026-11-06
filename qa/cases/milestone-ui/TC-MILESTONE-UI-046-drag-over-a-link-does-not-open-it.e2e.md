@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-046: Drag over a link does not open it
 REQ: REQ-MILESTONE-UI-012@a4f22671
 Priority: high
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - milestone M1 zoomed to `1 week`

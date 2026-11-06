@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-015: Failed preview shows the error and no bars
 REQ: REQ-MILESTONE-UI-004@ed8c64e1
 Priority: high
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - planned milestone M1 whose `show --start 2026-11-16` exits 1

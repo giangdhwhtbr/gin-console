@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-004: Schedule error replaces progress and warnings
 REQ: REQ-MILESTONE-UI-001@b8f53ca9
 Priority: high
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - project P whose `milestone list` reports M1 normally and M2 with `error` "dependency cycle: A -> B -> A"

@@ -1,6 +1,8 @@
 # TC-MILESTONE-UI-018: Unknown schema is reported and nothing is listed
 REQ: REQ-MILESTONE-UI-005@3ee8a9e1
 Priority: medium
+Result: passed
+Run: qa/evidence/2026-11-06T04-18-00
 
 Preconditions:
 - project P whose `milestone list` reports `schema: 2` (API responds 502 with `cause: "schema"`)
