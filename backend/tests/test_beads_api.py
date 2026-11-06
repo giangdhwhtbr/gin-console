@@ -1,9 +1,11 @@
+import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import pytest
 from fake_bd import FakeBd, bead, comment, dep, related
+from fakes import Fake
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -194,6 +196,23 @@ def test_beads_007_milestone_is_never_ready_over_http(tmp_path: Path) -> None:
     fake = FakeBd([bead("m-1", issue_type="milestone"), bead("r-1")], ready=["m-1", "r-1"])
     body = make(tmp_path, fake).get("/api/beads", params={"project": "proj"}).json()
     assert {b["id"]: b["ready"] for b in body} == {"m-1": False, "r-1": True}
+
+
+# REQ-MILESTONE-UI-007
+# TC: TC-MILESTONE-UI-021@70bd69aa
+def test_tc_milestone_ui_021_open_milestone_without_blockers_is_not_ready_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    milestone = {"id": "m1", "title": "M1", "issue_type": "milestone", "status": "open"}
+    task = {"id": "t1", "title": "T", "issue_type": "task", "status": "open"}
+    monkeypatch.setattr(subprocess, "run", Fake(issues=[milestone, task], ready=[milestone, task]))
+    api = make(
+        tmp_path, FakeBd([bead("m1", issue_type="milestone"), bead("t1")], ready=["m1", "t1"])
+    )
+    project = next(p for p in api.get("/api/projects").json() if p["name"] == "proj")
+    assert project["beads"]["ready"] == 1
+    rows = api.get("/api/beads", params={"project": "proj"}).json()
+    assert {b["id"]: b["ready"] for b in rows} == {"m1": False, "t1": True}
 
 
 # REQ-BEADS-007
