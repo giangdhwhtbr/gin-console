@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 import { json, project } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
-import type { EpicPlan, MilestoneDetail, MilestoneEntry, MilestoneList } from "./api";
+import type { EpicPlan, Forecast, MilestoneDetail, MilestoneEntry, MilestoneList } from "./api";
 
 export const entry = (id: string, overrides: Partial<MilestoneEntry> = {}): MilestoneEntry => ({
   id,
@@ -14,6 +14,7 @@ export const entry = (id: string, overrides: Partial<MilestoneEntry> = {}): Mile
   epics: { total: 6, closed: 0 },
   warnings: 0,
   error: null,
+  lanes: null,
   ...overrides,
 });
 
@@ -21,6 +22,19 @@ export const list = (milestones: MilestoneEntry[], overrides: Partial<MilestoneL
   milestones,
   unassigned_epics: 0,
   today: "2026-10-29",
+  forecast: null,
+  ...overrides,
+});
+
+export const forecast = (overrides: Partial<Forecast> = {}): Forecast => ({
+  deadline: "2026-12-31",
+  lanes: 2,
+  start: "2026-11-08",
+  finish: "2026-12-23",
+  overflow_days: 0,
+  open_epics: 5,
+  unestimated: 0,
+  error: null,
   ...overrides,
 });
 
@@ -51,6 +65,7 @@ export const detail = (epics: EpicPlan[], overrides: Partial<MilestoneDetail> = 
   finish: "2026-11-04",
   overflow_days: 0,
   epics,
+  lanes: null,
   ...overrides,
 });
 
