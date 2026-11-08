@@ -386,12 +386,23 @@ WHILE the page is visible, the bead list SHALL reload every 10 seconds without r
 - THEN the old list stays visible with an error message and a retry button
 
 ### REQ-UI-028: Bead detail
-The bead page SHALL show the bead's id, title, status, priority, type, labels, owner, assignee, creation and update times and comment count, its description as plain text with line breaks, its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with a progress bar of closed children over all children.
+The bead page SHALL show the bead's id, title, status, priority, type, labels, owner, assignee, creation and update times and comment count, its description rendered as GitHub-flavored Markdown (headings, emphasis, lists, task lists, inline code, code blocks, tables, block quotes and links), its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with a progress bar of closed children over all children. Raw HTML in the description SHALL be shown as text and SHALL NOT create elements, a link SHALL open in a new tab with `rel="noreferrer"`, and a link whose URL is not `http`, `https` or `mailto` SHALL be shown as text.
+Source: `assets/2026-11-08/mockup/index.html#bead-detail`
 
-#### Scenario: Fields and description
-- GIVEN a bead with a description containing `<script>` and Markdown
+#### Scenario: Markdown description
+- GIVEN a bead whose description is `## Change` followed by `1. Format **dates**` and a fenced code block
 - WHEN the page loads
-- THEN the characters are shown as typed and no element is created from them
+- THEN the description shows a heading "Change", a numbered list item with "dates" in bold, and a code block
+
+#### Scenario: Raw HTML stays text
+- GIVEN a bead with a description containing `<script>x</script>` and `<img src=x onerror=alert(1)>`
+- WHEN the page loads
+- THEN both appear as text and no `script` or `img` element exists in the description
+
+#### Scenario: Unsafe link
+- GIVEN a bead with a description containing `[run](javascript:alert(1))` and `[docs](https://example.com)`
+- WHEN the page loads
+- THEN "run" is not a link, and "docs" links to `https://example.com` in a new tab
 
 #### Scenario: Relations link inside the console
 - GIVEN a bead with one dependency
@@ -548,17 +559,18 @@ WHILE the Board or Focus view is shown and no text field has focus, `/` SHALL mo
 - THEN the text is cleared, and a second `Esc` leaves the box
 
 ### REQ-UI-038: Created by and text sections
-The bead page SHALL show "Created by" with the `created_by` name, and SHALL show the sections Acceptance criteria, Design, Notes and Close reason in that order, each only when it has content, as plain text with line breaks.
+The bead page SHALL show "Created by" with the `created_by` name, and SHALL show the sections Acceptance criteria, Design, Notes and Close reason in that order, each only when it has content, rendered as Markdown under the rules of REQ-UI-028.
+Source: `assets/2026-11-08/mockup/index.html#bead-detail`
 
 #### Scenario: Sections with content
 - GIVEN a bead with acceptance criteria, notes and a close reason but no design
 - WHEN the bead page is shown
 - THEN it shows "Created by", Acceptance criteria, Notes and Close reason in that order and no Design section
 
-#### Scenario: Plain text
-- GIVEN a design containing `<script>x</script>` and `**bold**`
+#### Scenario: Markdown sections
+- GIVEN acceptance criteria `- [ ] Local time` and a design containing `<script>x</script>` and `**bold**`
 - WHEN the bead page is shown
-- THEN both appear as text and no `script` or `strong` element exists
+- THEN the acceptance criteria show an unchecked, disabled checkbox before "Local time", "bold" is in a `strong` element, and `<script>x</script>` appears as text with no `script` element
 
 #### Scenario: No author
 - GIVEN a bead whose `created_by` is null

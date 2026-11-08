@@ -5,12 +5,23 @@
 ## Requirements
 
 ### REQ-MILESTONE-UI-001: Milestones list
-gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), epic progress, and warning count, from `gin-workflow milestone list --all --json`, SHALL show a list entry's `error` in place of its progress and warnings, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
+gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), lanes, forecast finish, epic progress, and warning count, from `gin-workflow milestone list --all --json`. Lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" when the entry's `finish` is set, in the warning color when it is after the entry's `end`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
+Source: `assets/2026-11-08/mockup/index.html#milestones`
 
 #### Scenario: list
 - GIVEN project P whose gin-workflow reports milestones M1 (active) and M2 (planned)
 - WHEN the user opens Milestones for P
-- THEN both milestones are listed with their status, period, progress, and warning count
+- THEN both milestones are listed with their status, period, lanes, progress, and warning count
+
+#### Scenario: lanes and finish
+- GIVEN project P whose `milestone list` reports M1 with `lanes: 2`, `end: 2026-11-12`, `finish: 2026-11-23`, and M2 with `lanes: 1`, `end: 2026-12-04`, `finish: 2026-12-01`
+- WHEN the user opens Milestones for P
+- THEN M1 shows "2 lanes" and "Finishes 23 Nov" in the warning color, and M2 shows "1 lane" and "Finishes 1 Dec" without it
+
+#### Scenario: older gin-workflow
+- GIVEN project P whose `milestone list` entries have no `lanes` key
+- WHEN the user opens Milestones for P
+- THEN each row shows "–" for lanes and the rest of the row as before
 
 #### Scenario: unassigned count not shown
 - GIVEN project P whose `milestone list` reports `unassigned_epics: 4`
@@ -36,12 +47,17 @@ gin-console SHALL show, on a milestone's page, a Graph tab with the milestone's 
 - THEN X is shown as an external node with an edge to A
 
 ### REQ-MILESTONE-UI-003: Milestone Gantt tab
-gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per epic from `planned_start` to `planned_end` of `gin-workflow milestone show --json`, colored by bead status, with a line at the JSON `today` date, a line at the milestone `end`, and each epic's warnings.
+gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per epic from `planned_start` to `planned_end` of `gin-workflow milestone show --json`, as gin-workflow scheduled them on the milestone's lanes and without rescheduling them, colored by bead status, with a line at the JSON `today` date, a line at the milestone `end`, and each epic's warnings.
 
 #### Scenario: overflow shown
 - GIVEN milestone M1 whose `show` output gives epic A warning `overflow` of 2 days
 - WHEN the user opens the Gantt tab of M1
 - THEN A's bar extends past the end line and A shows an overflow warning of 2 days
+
+#### Scenario: lane-bound dates
+- GIVEN milestone M1 with `lanes: 1` whose `show` output places independent epics A on 2026-11-09 to 2026-11-10 and B on 2026-11-11 to 2026-11-12
+- WHEN the user opens the Gantt tab of M1
+- THEN B's bar starts on 2026-11-11, after A's bar ends, and not alongside A
 
 #### Scenario: today from the JSON
 - GIVEN milestone M1 whose `show` output has `today: 2026-11-04`
@@ -106,12 +122,22 @@ gin-console SHALL exclude beads of type `milestone` from the ready work it colle
 - THEN M1 is not counted or flagged as ready
 
 ### REQ-MILESTONE-UI-008: Milestones API
-WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin-workflow milestone list --all --json` or `gin-workflow milestone show <id> [--start <date>] --json` run in the project directory, SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
+WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin-workflow milestone list --all --json` or `gin-workflow milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast` and the `lanes` of each list entry and of the shown milestone, with `null` for each of them that the output lacks. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
 
 #### Scenario: list
 - GIVEN project P whose `milestone list --all --json` prints schema 1 with M1
 - WHEN a client requests `GET /api/milestones?project=P`
 - THEN the response is 200 with M1, `unassigned_epics`, and `today`
+
+#### Scenario: forecast and lanes
+- GIVEN project P whose `milestone list` prints M1 with `lanes: 2` and a `forecast` with `deadline: 2026-12-31`, `lanes: 1`, `start: 2026-11-08`, `finish: 2026-12-23`, `overflow_days: 0`, `open_epics: 5`, `unestimated: 1`, `error: null`
+- WHEN a client requests `GET /api/milestones?project=P`
+- THEN the response carries M1 with `lanes: 2` and that `forecast` unchanged
+
+#### Scenario: output from an older gin-workflow
+- GIVEN project P whose `milestone list` prints schema 1 without `forecast` and without `lanes`, and whose `milestone show M1` prints no `lanes`
+- WHEN a client requests the list and M1
+- THEN both responses are 200, the list has `forecast: null` and M1 entry `lanes: null`, and M1 has `lanes: null`
 
 #### Scenario: preview not cached
 - GIVEN a request for M1 with `start=2026-11-16` answered less than 5 seconds ago
@@ -286,3 +312,62 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 
 ## Diagrams
 - [Milestones forecast](diagrams/milestones-forecast-activity.md)
+
+### REQ-MILESTONE-UI-016: Project forecast card
+WHEN the Milestones list of a project has a non-null `forecast`, gin-console SHALL show a forecast card above the milestone list with:
+- the forecast `finish` ("Finishes <date>"), or "No estimate: every open epic is unestimated" when `finish` is null;
+- the `deadline` and how `finish` compares with it:
+  - "<n> working days past the deadline" in the warning color when `overflow_days` is above 0;
+  - "on the deadline" when `finish` equals `deadline`;
+  - "<n> working days spare" otherwise. `<n>` counts the days Monday to Friday after `finish` up to and including `deadline`, the same count as gin-workflow `workdays_after`.
+  - The comparison is left out when `finish` is null.
+- "No deadline" when `deadline` is null, with the roadmap line `- Deadline: YYYY-MM-DD` to add;
+- the default lanes (`lanes`), the open epic count (`open_epics`), and the unestimated epic count (`unestimated`), with a warning mark when `unestimated` is above 0;
+- the forecast `error`, when set, in the destructive color, with the other figures still shown.
+Source: `assets/2026-11-08/mockup/index.html#milestones`
+
+The page SHALL NOT show the card when `forecast` is null or missing.
+
+#### Scenario: on time with a deadline
+- GIVEN project P whose `milestone list` reports forecast `finish: 2026-12-23`, `deadline: 2026-12-31`, `overflow_days: 0`, `lanes: 2`, `open_epics: 5`, `unestimated: 0`
+- WHEN the user opens Milestones for P
+- THEN the card reads "Finishes 23 Dec", "6 working days spare", "2 lanes", "5 open epics", and "0 unestimated" without a warning mark
+
+#### Scenario: past the deadline
+- GIVEN project P whose forecast has `finish: 2027-01-07`, `deadline: 2026-12-31`, `overflow_days: 5`
+- WHEN the user opens Milestones for P
+- THEN the card reads "5 working days past the deadline" in the warning color
+
+#### Scenario: no deadline
+- GIVEN project P whose forecast has `deadline: null` and `finish: 2026-11-20`
+- WHEN the user opens Milestones for P
+- THEN the card reads "Finishes 20 Nov" and "No deadline", and shows `- Deadline: YYYY-MM-DD` as the line to add to the roadmap
+
+#### Scenario: every epic unestimated
+- GIVEN project P whose forecast has `finish: null`, `open_epics: 2`, `unestimated: 2`
+- WHEN the user opens Milestones for P
+- THEN the card reads "No estimate: every open epic is unestimated" and "2 unestimated" with a warning mark, and shows no deadline comparison
+
+#### Scenario: forecast error
+- GIVEN project P whose forecast has `error: "Deadline: soon is not a date (YYYY-MM-DD)"`, `deadline: null`, `finish: 2026-11-20`
+- WHEN the user opens Milestones for P
+- THEN the card shows that error in the destructive color and still reads "Finishes 20 Nov"
+
+#### Scenario: no forecast
+- GIVEN project P whose `milestone list` reports `forecast: null`, or no `forecast` key
+- WHEN the user opens Milestones for P
+- THEN no forecast card is shown and the milestone list is shown as before
+
+### REQ-MILESTONE-UI-017: Lanes on the milestone page
+WHEN a milestone's `show` output has `lanes`, gin-console SHALL show "<n> lanes" ("1 lane" when `<n>` is 1) in the milestone page header next to the finish line, and SHALL show nothing in its place when `lanes` is missing.
+Source: `assets/2026-11-08/mockup/index.html#milestone`
+
+#### Scenario: lanes shown
+- GIVEN milestone M1 whose `show` output has `lanes: 2`
+- WHEN the user opens M1
+- THEN the header shows "2 lanes"
+
+#### Scenario: older gin-workflow
+- GIVEN milestone M1 whose `show` output has no `lanes` key
+- WHEN the user opens M1
+- THEN the header shows no lane count and the rest of the header is unchanged
