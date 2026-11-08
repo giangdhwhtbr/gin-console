@@ -79,6 +79,7 @@ describe("gantt", () => {
       "Late: should have finished 4 Nov",
     ]);
     expect(warningLines(epicPlan("a", { warnings: [{ code: "unestimated", days: null }] }), today)).toEqual(["No estimate"]);
+    expect(warningLines(epicPlan("a", { warnings: [{ code: "spec_not_ready", days: null }] }), today)).toEqual(["Spec not confirmed"]);
     const blocked = epicPlan("a", {
       warnings: [{ code: "external_blocker", days: null }],
       external_depends_on: [

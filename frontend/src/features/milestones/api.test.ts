@@ -50,6 +50,15 @@ describe("milestones api", () => {
     expect((await fetchMilestone("alpha", "m-1", null)).lanes).toBeNull();
   });
 
+  it("REQ-MILESTONE-UI-008 spec_confirmed: missing becomes null, a non-boolean is refused", async () => {
+    const bare = Object.fromEntries(Object.entries(epicPlan("e-a")).filter(([k]) => k !== "spec_confirmed"));
+    stubMilestones(() => json(detail([bare as unknown as ReturnType<typeof epicPlan>, epicPlan("e-b", { spec_confirmed: true })])));
+    const epics = (await fetchMilestone("alpha", "m-1", null)).epics;
+    expect(epics.map((e) => e.spec_confirmed)).toEqual([null, true]);
+    stubMilestones(() => json(detail([{ ...epicPlan("e-a"), spec_confirmed: "yes" } as unknown as ReturnType<typeof epicPlan>])));
+    await expect(fetchMilestone("alpha", "m-1", null)).rejects.toThrow("unexpected response");
+  });
+
   it("REQ-MILESTONE-UI-008 refuses a malformed forecast", async () => {
     stubMilestones(() => json(list([], { forecast: { ...forecast(), lanes: "two" } as unknown as Forecast })));
     await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");

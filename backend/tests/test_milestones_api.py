@@ -286,3 +286,22 @@ def test_milestone_ui_008_older_output_answers_null(tmp_path: Path) -> None:
 def test_milestone_ui_008_forecast_null(tmp_path: Path) -> None:
     api = make(tmp_path, FakeGw({"list": {**LIST, "forecast": None}, "show": SHOW}))
     assert api.get("/api/milestones", params={"project": "proj"}).json()["forecast"] is None
+
+
+def _show_with(epic_extra: dict[str, Any]) -> dict[str, Any]:
+    return {**SHOW, "epics": [{**SHOW["epics"][0], **epic_extra}]}
+
+
+# REQ-MILESTONE-UI-008
+@pytest.mark.parametrize("value", [True, False])
+def test_milestone_ui_008_spec_confirmed_passes_through(tmp_path: Path, value: bool) -> None:
+    api = make(tmp_path, FakeGw({"list": LIST, "show": _show_with({"spec_confirmed": value})}))
+    body = api.get("/api/milestones/proj/gw-ab1").json()
+    assert body["epics"][0]["spec_confirmed"] is value
+
+
+# REQ-MILESTONE-UI-008
+def test_milestone_ui_008_spec_confirmed_missing_is_null(tmp_path: Path) -> None:
+    epic = {k: v for k, v in SHOW["epics"][0].items() if k != "spec_confirmed"}
+    api = make(tmp_path, FakeGw({"list": LIST, "show": {**SHOW, "epics": [epic]}}))
+    assert api.get("/api/milestones/proj/gw-ab1").json()["epics"][0]["spec_confirmed"] is None

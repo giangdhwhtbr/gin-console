@@ -255,6 +255,23 @@ describe("BeadDetailPage", () => {
     expect(depLinkEncoded).toHaveAttribute("href", "/beads/my%20proj/a-4");
   });
 
+  it("REQ-UI-028 epic with a Complexity line shows a badge; others do not", async () => {
+    const show = async (bead: ReturnType<typeof beadDetail>) => {
+      cleanup();
+      vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(bead))));
+      render(<BeadDetailPage project="alpha" id={bead.id} />);
+      await screen.findByRole("heading", { name: `Title ${bead.id}` });
+    };
+    await show(beadDetail("e-1", { issue_type: "epic", description: "Why\nComplexity: high (cross-repo)" }));
+    expect(screen.getByText("Complexity: high", { selector: "[data-slot=badge]" })).toHaveClass("text-state-blocked");
+    await show(beadDetail("e-2", { issue_type: "epic", description: "Complexity: low (small)" }));
+    expect(screen.getByText("Complexity: low", { selector: "[data-slot=badge]" })).toHaveClass("text-muted-foreground");
+    await show(beadDetail("e-3", { issue_type: "epic", description: "No label" }));
+    expect(screen.queryByText(/^Complexity:/, { selector: "[data-slot=badge]" })).not.toBeInTheDocument();
+    await show(beadDetail("t-1", { issue_type: "task", description: "Complexity: high" }));
+    expect(screen.queryByText("Complexity: high", { selector: "[data-slot=badge]" })).not.toBeInTheDocument();
+  });
+
   // REQ-UI-028
   it("REQ-UI-028 shows epic progress and children, or omits them when absent", async () => {
     const epic = beadDetail("e-1", {

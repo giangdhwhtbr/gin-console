@@ -21,6 +21,14 @@ const MONTH = detail([epicPlan("e-a", { planned_start: "2026-11-02", planned_end
 });
 
 describe("GanttChart", () => {
+  it("REQ-MILESTONE-UI-003 the epic row shows spec readiness: confirmed, missing, or nothing when unknown", () => {
+    draw(detail([epicPlan("e-a", { spec_confirmed: true }), epicPlan("e-b", { spec_confirmed: false }), epicPlan("e-c")]));
+    expect(epicRow("e-a")).toHaveTextContent("Spec confirmed");
+    expect(epicRow("e-a")).not.toHaveTextContent("No confirmed spec");
+    expect(epicRow("e-b")).toHaveTextContent("No confirmed spec");
+    expect(epicRow("e-c")).not.toHaveTextContent(/spec/i);
+  });
+
   it("REQ-MILESTONE-UI-011 today outside the plan: one week opens on the Monday of the plan's first day", () => {
     draw(
       detail([epicPlan("e-a", { planned_start: "2026-11-04", planned_end: "2026-11-06" })], {

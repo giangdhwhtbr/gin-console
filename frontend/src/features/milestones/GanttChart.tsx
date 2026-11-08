@@ -1,4 +1,4 @@
-import { Ban, Check, ChevronLeft, ChevronRight, Circle, CircleDot, Clock, TriangleAlert } from "lucide-react";
+import { Ban, Check, ChevronLeft, ChevronRight, Circle, CircleDot, Clock, FileCheck, TriangleAlert } from "lucide-react";
 import { useId, useLayoutEffect, useRef, useState, type RefObject, type UIEvent } from "react";
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
@@ -401,6 +401,13 @@ function EpicRow({
             </span>
             <span className="min-w-0 truncate lg:shrink-0">{`${periodOf(epic.planned_start, epic.planned_end, today)}, ${unestimated ? "no estimate" : `${epic.estimate_days}d`}`}</span>
             {kids.length > 0 && <span className="min-w-0 truncate lg:shrink-0">{`${closed}/${kids.length} closed`}</span>}
+            {epic.spec_confirmed === true && (
+              <span className="flex min-w-0 items-center gap-1 truncate text-state-ready lg:shrink-0">
+                <FileCheck aria-hidden className="size-3 flex-none" />
+                Spec confirmed
+              </span>
+            )}
+            {epic.spec_confirmed === false && <span className="min-w-0 truncate text-muted-foreground lg:shrink-0">No confirmed spec</span>}
           </span>
           {warningLines(epic, today).map((text) => (
             <span key={text} title={text} className="flex min-w-0 items-center gap-1 pl-[26px] text-xs text-state-blocked">

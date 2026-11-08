@@ -48,6 +48,7 @@ export const epicPlan = (id: string, overrides: Partial<EpicPlan> = {}): EpicPla
   depends_on: [],
   external_depends_on: [],
   warnings: [],
+  spec_confirmed: null,
   ...overrides,
 });
 

@@ -71,6 +71,7 @@ class EpicPlan(BaseModel):
     depends_on: list[Text]
     external_depends_on: list[ExternalDependency]
     warnings: list[EpicWarning]
+    spec_confirmed: bool | None = None
 
 
 class MilestoneDetail(BaseModel):

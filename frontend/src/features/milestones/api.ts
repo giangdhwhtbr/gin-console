@@ -38,6 +38,7 @@ export type EpicPlan = {
   depends_on: string[];
   external_depends_on: ExternalDependency[];
   warnings: EpicWarning[];
+  spec_confirmed: boolean | null;
 };
 export type MilestoneDetail = {
   id: string;
@@ -112,6 +113,8 @@ const isWarning = (value: unknown) =>
 const isExternal = (value: unknown) =>
   isObject(value) && isString(field(value, "id")) && isStringOrNull(field(value, "milestone"));
 
+const isSpecConfirmed = (value: unknown) => value === undefined || value === null || typeof value === "boolean";
+
 function isEpic(value: unknown): value is EpicPlan {
   return (
     isObject(value) &&
@@ -119,7 +122,8 @@ function isEpic(value: unknown): value is EpicPlan {
     isNumberOrNull(field(value, "estimate_days")) &&
     every(field(value, "depends_on"), isString) &&
     every(field(value, "external_depends_on"), isExternal) &&
-    every(field(value, "warnings"), isWarning)
+    every(field(value, "warnings"), isWarning) &&
+    isSpecConfirmed(field(value, "spec_confirmed"))
   );
 }
 
@@ -166,7 +170,7 @@ export async function fetchMilestone(project: string, id: string, start: string 
   if (!response.ok) throw await failure(response, "Milestone");
   const body: unknown = await response.json();
   if (!isDetail(body)) throw new MilestonesError("Could not load the milestone (unexpected response)");
-  return { ...body, lanes: body.lanes ?? null };
+  return { ...body, lanes: body.lanes ?? null, epics: body.epics.map((e) => ({ ...e, spec_confirmed: e.spec_confirmed ?? null })) };
 }
 
 export const milestonesPath = (project: string) => `/milestones?project=${enc(project)}`;

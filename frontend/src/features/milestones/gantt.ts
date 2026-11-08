@@ -95,6 +95,8 @@ export function warningLines(epic: EpicPlan, today: string): string[] {
         return [`Late: should have finished ${shortDate(epic.planned_end, today)}`];
       case "unestimated":
         return ["No estimate"];
+      case "spec_not_ready":
+        return ["Spec not confirmed"];
       case "external_blocker":
         return epic.external_depends_on.map(
           (d) => `Blocked by ${d.id} (${d.milestone === null ? "not in a milestone" : `in ${d.milestone}`})`,

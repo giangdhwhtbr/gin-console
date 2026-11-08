@@ -16,6 +16,7 @@ import { Reopens } from "./Reopens";
 import { RelationList } from "./RelationList";
 import { SIDE_PANEL } from "./side-panel";
 import { TextSection } from "./TextSection";
+import { complexityOf } from "./complexity";
 import { TypeBadge } from "./TypeBadge";
 
 type State =
@@ -74,6 +75,7 @@ export function BeadDetailPage({
     );
   }
   const bead = state.status === "ok" ? state.bead : null;
+  const complexity = bead?.issue_type === "epic" ? complexityOf(bead.description) : null;
   const closed = bead?.children.filter((c) => c.status === "closed").length ?? 0;
   const total = bead?.children.length ?? 0;
 
@@ -131,6 +133,11 @@ export function BeadDetailPage({
                     <Badge variant="secondary">{bead.status}</Badge>
                     <span>{`P${bead.priority}`}</span>
                     <TypeBadge type={bead.issue_type} />
+                    {complexity !== null && (
+                      <Badge variant="outline" className={cn(complexity === "high" ? "text-state-blocked" : "text-muted-foreground")}>
+                        {`Complexity: ${complexity}`}
+                      </Badge>
+                    )}
                     {bead.labels.map((label) => (
                       <Badge key={label} variant="outline">
                         {label}
