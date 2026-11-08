@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup: Markdown in bead details (gin-console-cl0)</title>
+<style>
+  :root {
+    --background:#f6f7f9; --foreground:#12161c; --card:#fff; --muted:#eceff3; --muted-foreground:#566072;
+    --border:#cfd5de; --destructive:#b91c1c; --state-ready:#0f766e; --state-progress:#1d4ed8;
+    --state-blocked:#a3470a; --state-done:#5d6573; --type-epic:#7e22ce; --sidebar:#fff; --accent:#eceff3;
+  }
+  .dark {
+    --background:#0e1217; --foreground:#e7eaf0; --card:#161b22; --muted:#1d242d; --muted-foreground:#9aa4b2;
+    --border:#2c343f; --destructive:#f87171; --state-ready:#2dd4bf; --state-progress:#93c5fd;
+    --state-blocked:#fbbf24; --state-done:#9ca3af; --type-epic:#c084fc; --sidebar:#11161c; --accent:#1d242d;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Geist Variable','Geist',ui-sans-serif,system-ui,sans-serif; background:var(--background); color:var(--foreground); font-size:14px; line-height:1.45; }
+  .mono { font-family:'Geist Mono Variable','Geist Mono',ui-monospace,monospace; }
+  .muted { color:var(--muted-foreground); }
+  .warn { color:var(--state-blocked); }
+  .err { color:var(--destructive); }
+  .controls { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:8px 16px; background:#fde68a; color:#3b2f00; font-size:12px; border-bottom:1px solid #d6b84a; }
+  .controls select, .controls button { font:inherit; padding:2px 6px; }
+  .shell { display:grid; grid-template-columns:224px 1fr; min-height:calc(100vh - 37px); }
+  aside { background:var(--sidebar); border-right:1px solid var(--border); padding:20px 12px; }
+  .brand { display:flex; gap:8px; align-items:center; font-weight:600; padding:0 8px 18px; }
+  .dots i { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:2px; }
+  nav a { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:var(--muted-foreground); text-decoration:none; margin-bottom:4px; }
+  nav a.on { background:var(--accent); color:var(--foreground); font-weight:600; }
+  main { padding:24px; max-width:1100px; }
+  h1 { font-size:20px; margin:0; font-weight:600; }
+  h2 { font-size:15px; margin:0; font-weight:600; }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .between { justify-content:space-between; }
+  .stack { display:flex; flex-direction:column; gap:16px; }
+  select.ui { border:1px solid var(--border); background:var(--background); color:inherit; border-radius:6px; padding:4px 8px; font:inherit; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; }
+  /* forecast card */
+  .fc { padding:14px 16px; display:grid; grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr)); gap:16px; align-items:start; }
+  .fc .label { font-size:12px; color:var(--muted-foreground); }
+  .fc .big { font-size:18px; font-weight:600; }
+  .fc .sub { font-size:13px; }
+  .fc .err-line { grid-column:1/-1; font-size:13px; display:flex; gap:6px; align-items:center; border-top:1px solid var(--border); padding-top:10px; }
+  .code { font-family:'Geist Mono',ui-monospace,monospace; font-size:12px; background:var(--muted); border-radius:4px; padding:1px 6px; }
+  /* list */
+  .grid { display:grid; grid-template-columns:8rem minmax(0,1fr) 12rem 5rem 9rem 7rem; gap:12px; align-items:center; padding:9px 12px; }
+  .list > .grid + .grid { border-top:1px solid var(--border); }
+  .head { font-size:13px; color:var(--muted-foreground); }
+  .badge { display:inline-flex; align-items:center; gap:6px; font-size:13px; }
+  .badge::before { content:""; width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .s-active { color:var(--state-progress); } .s-planned { color:var(--state-ready); } .s-closed { color:var(--state-done); } .s-scheduled { color:var(--type-epic); }
+  .bar { height:6px; width:64px; border-radius:4px; background:var(--muted); overflow:hidden; display:inline-block; }
+  .bar span { display:block; height:100%; background:var(--state-done); }
+  a.link { color:inherit; font-weight:500; text-decoration:none; } a.link:hover { text-decoration:underline; }
+  .new { outline:2px dashed #e0a800; outline-offset:2px; border-radius:4px; }
+  .legend { font-size:12px; color:var(--muted-foreground); }
+  .legend .new { padding:0 4px; }
+  /* gantt sketch */
+  .gantt { padding:12px; }
+  .g-row { display:grid; grid-template-columns:14rem 1fr; align-items:center; gap:8px; height:30px; }
+  .g-track { position:relative; height:100%; background:repeating-linear-gradient(90deg,transparent 0 calc(100%/10 - 1px),var(--border) calc(100%/10 - 1px) calc(100%/10)); }
+  .g-bar { position:absolute; top:7px; height:16px; border-radius:4px; }
+  .g-end { position:absolute; top:0; bottom:0; width:2px; background:var(--destructive); }
+  .g-axis { display:grid; grid-template-columns:repeat(10,1fr); font-size:11px; color:var(--muted-foreground); }
+  [data-screen] { display:none; } [data-screen].show { display:block; }
+  @media (max-width:800px) {
+    .shell { grid-template-columns:1fr; } aside { display:none; }
+    .fc { grid-template-columns:1fr 1fr; } .fc > :first-child { grid-column:1/-1; }
+    .grid { grid-template-columns:auto minmax(0,1fr); } .grid.head { display:none; }
+  }
+
+  .md { max-width:72ch; }
+  .md > :first-child { margin-top:0; }
+  .md h1,.md h2,.md h3 { font-size:15px; font-weight:600; margin:16px 0 6px; }
+  .md p { margin:0 0 10px; }
+  .md ul,.md ol { margin:0 0 10px; padding-left:22px; }
+  .md li { margin:2px 0; }
+  .md code { font-family:'Geist Mono',ui-monospace,monospace; font-size:12.5px; background:var(--muted); border-radius:4px; padding:1px 5px; }
+  .md pre { background:var(--muted); border-radius:6px; padding:10px 12px; overflow-x:auto; margin:0 0 10px; }
+  .md pre code { background:none; padding:0; }
+  .md a { color:var(--state-progress); text-decoration:underline; text-underline-offset:2px; }
+  .md table { border-collapse:collapse; margin:0 0 10px; font-size:13px; }
+  .md th,.md td { border:1px solid var(--border); padding:4px 8px; text-align:left; }
+  .md blockquote { margin:0 0 10px; padding-left:10px; border-left:3px solid var(--border); color:var(--muted-foreground); }
+  .md input[type=checkbox] { margin-right:6px; }
+  .md .task { list-style:none; margin-left:-18px; }
+  .pill { font-size:12px; border-radius:999px; padding:1px 8px; background:var(--muted); }
+  .compare { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:900px){ .compare { grid-template-columns:1fr; } }
+</style></head>
+<body>
+<div class="controls"><strong>Mockup controls</strong>
+  <button id="theme" type="button">Toggle dark</button>
+  <label><input id="before" type="checkbox"> Show today's plain text beside it</label>
+  <span>Sample bead text. Dashed outline = new in this change.</span></div>
+<div class="shell">
+  <aside><div class="brand"><span class="dots"><i style="background:#0f766e"></i><i style="background:#1d4ed8"></i><i style="background:#a3470a"></i></span>gin-console</div>
+    <nav><a href="#">Projects</a><a class="on" href="#">Beads</a><a href="#">Milestones</a><a href="#">Reports</a><a href="#">Quota</a></nav></aside>
+  <main id="bead-detail" class="stack">
+    <div class="muted"><a class="link" href="#" style="font-weight:400;text-decoration:underline">Beads</a> › gin-console-x1y</div>
+    <header class="stack" style="gap:4px">
+      <h1>Quota card shows reset time in the user's timezone</h1>
+      <div class="row" style="gap:6px"><span class="mono">gin-console-x1y</span><span class="pill">open</span><span>P2</span><span class="pill" style="color:var(--type-epic)">feature</span></div>
+      <div class="muted" style="font-size:13px">Owner giangdhwhtbr · Created 11/8/2026, 1:42 PM · 0 comments</div>
+    </header>
+    <div class="compare" id="cmp">
+      <div class="md new" aria-label="Description">
+        <h2>Problem</h2>
+        <p>The quota card prints the reset time in <strong>UTC</strong>, so <code>resets_at</code> reads 5 hours off for most users.</p>
+        <h2>Change</h2>
+        <ol><li>Format <code>resets_at</code> with the browser's timezone.</li><li>Keep the ISO value in the tooltip.</li><li>See <a href="#">ADR 0004</a> for the date rules.</li></ol>
+        <pre><code>uv run --directory backend pytest tests/test_quota.py -k reset</code></pre>
+        <table><thead><tr><th>CLI</th><th>Field</th></tr></thead><tbody><tr><td>claude</td><td><code>resets_at</code></td></tr><tr><td>codex</td><td><code>reset_after_seconds</code></td></tr></tbody></table>
+        <blockquote>Raised in review of gin-console-38i.</blockquote>
+      </div>
+      <div id="plain" style="display:none">
+        <div class="label muted" style="font-size:12px;margin-bottom:6px">Today (plain text)</div>
+        <p style="white-space:pre-wrap;margin:0" class="mono" ></p>
+      </div>
+    </div>
+    <div>
+      <h2 style="margin-bottom:6px">Acceptance criteria</h2>
+      <div class="md new">
+        <ul><li class="task"><input type="checkbox" disabled>Reset time shows in local time on the quota card</li><li class="task"><input type="checkbox" disabled checked>Tooltip keeps the ISO value</li></ul>
+      </div>
+    </div>
+    <div>
+      <h2 style="margin-bottom:6px">Notes</h2>
+      <div class="md new"><p>Raw HTML such as <code>&lt;script&gt;</code> in a bead is shown as text, never run. Links open in a new tab.</p></div>
+    </div>
+  </main>
+</div>
+<script>
+  const raw = `## Problem\nThe quota card prints the reset time in **UTC**, so \`resets_at\` reads 5 hours off for most users.\n\n## Change\n1. Format \`resets_at\` with the browser's timezone.\n2. Keep the ISO value in the tooltip.\n3. See [ADR 0004](docs/adr/0004.md) for the date rules.\n\n\`\`\`\nuv run --directory backend pytest tests/test_quota.py -k reset\n\`\`\`\n\n| CLI | Field |\n|---|---|\n| claude | \`resets_at\` |\n| codex | \`reset_after_seconds\` |\n\n> Raised in review of gin-console-38i.`;
+  document.querySelector('#plain p').textContent = raw.replace(/\\n/g, "\n");
+  document.getElementById('theme').onclick = () => document.documentElement.classList.toggle('dark');
+  document.getElementById('before').onchange = (e) => { document.getElementById('plain').style.display = e.target.checked ? '' : 'none'; };
+</script>
+</body></html>

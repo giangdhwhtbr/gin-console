@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { json } from "@/features/beads/beadFixtures";
-import { fetchMilestone, fetchMilestones, milestonePath, MilestonesError } from "./api";
-import { detail, entry, epicPlan, list, stubMilestones } from "./milestoneFixtures";
+import { fetchMilestone, fetchMilestones, milestonePath, MilestonesError, type Forecast } from "./api";
+import { detail, entry, epicPlan, forecast, list, stubMilestones } from "./milestoneFixtures";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -27,6 +27,31 @@ describe("milestones api", () => {
 
   it("REQ-MILESTONE-UI-008 refuses an unexpected shape", async () => {
     stubMilestones(() => json({ milestones: [{ id: 1 }], unassigned_epics: 0, today: "2026-10-29" }));
+    await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");
+  });
+
+  it("REQ-MILESTONE-UI-008 reads forecast and lanes", async () => {
+    stubMilestones(() => json(list([entry("m-1", { lanes: 2 })], { forecast: forecast() })));
+    const body = await fetchMilestones("alpha");
+    expect(body.forecast?.finish).toBe("2026-12-23");
+    expect(body.milestones[0].lanes).toBe(2);
+  });
+
+  it("REQ-MILESTONE-UI-008 older output: missing forecast and lanes become null", async () => {
+    const without = (x: object, key: string) => Object.fromEntries(Object.entries(x).filter(([k]) => k !== key));
+    stubMilestones((url) =>
+      url.pathname.endsWith("/m-1")
+        ? json(without(detail([epicPlan("e-a")]), "lanes"))
+        : json({ ...without(list([]), "forecast"), milestones: [without(entry("m-1"), "lanes")] }),
+    );
+    const body = await fetchMilestones("alpha");
+    expect(body.forecast).toBeNull();
+    expect(body.milestones[0].lanes).toBeNull();
+    expect((await fetchMilestone("alpha", "m-1", null)).lanes).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-008 refuses a malformed forecast", async () => {
+    stubMilestones(() => json(list([], { forecast: { ...forecast(), lanes: "two" } as unknown as Forecast })));
     await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");
   });
 

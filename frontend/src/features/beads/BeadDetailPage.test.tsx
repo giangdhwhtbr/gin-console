@@ -177,10 +177,10 @@ describe("BeadDetailPage", () => {
   });
 
   // REQ-UI-028
-  it("REQ-UI-028 shows fields and description as plain text", async () => {
+  it("REQ-UI-028 shows fields and the description as Markdown", async () => {
     const created_at = "2026-10-01T12:00:00Z";
     const updated_at = "2026-10-10T12:00:00Z";
-    const rawDesc = "<script>window.hacked = 1</script> **bold**\nsecond line";
+    const rawDesc = "**bold** <script>window.hacked = 1</script>\nsecond line";
     const bead = beadDetail("a-5", {
       title: "Bead five",
       status: "open",
@@ -218,11 +218,9 @@ describe("BeadDetailPage", () => {
     );
     expect(meta).toBeInTheDocument();
 
-    const descEl = screen.getByText((_, el) => el?.tagName === "P" && el.textContent === rawDesc);
-    expect(descEl).toBeInTheDocument();
-    expect(descEl).toHaveClass("whitespace-pre-wrap");
+    expect(await screen.findByText("bold", { selector: "strong" })).toBeInTheDocument();
+    expect(screen.getByText(/<script>window\.hacked = 1<\/script>/)).toBeInTheDocument();
     expect(container.querySelector("script")).toBeNull();
-    expect(container.querySelector("strong")).toBeNull();
   });
 
   // REQ-UI-028
@@ -360,22 +358,18 @@ describe("BeadDetailPage", () => {
   });
 
   // REQ-UI-038
-  it("REQ-UI-038 plain text", async () => {
-    const rawDesign = "<script>window.hacked = 1</script> **bold**\nline two";
+  it("REQ-UI-038 markdown sections", async () => {
     const bead = beadDetail("a-5", {
-      design: rawDesign,
+      acceptance_criteria: "- [ ] Local time",
+      design: "**bold** <script>window.hacked = 1</script>\nline two",
       comment_count: 0,
     });
     stubFetch(bead);
-
     const { container } = render(<BeadDetailPage project="alpha" id="a-5" />);
-
-    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
-    const designEl = screen.getByText((_, el) => el?.tagName === "P" && el.textContent === rawDesign);
-    expect(designEl).toBeInTheDocument();
-    expect(designEl).toHaveClass("whitespace-pre-wrap");
+    expect(await screen.findByText("bold", { selector: "strong" })).toBeInTheDocument();
+    expect(await screen.findByRole("checkbox")).toBeDisabled();
+    expect(screen.getByText(/<script>window\.hacked = 1<\/script>/)).toBeInTheDocument();
     expect(container.querySelector("script")).toBeNull();
-    expect(container.querySelector("strong")).toBeNull();
   });
 
   // REQ-UI-038

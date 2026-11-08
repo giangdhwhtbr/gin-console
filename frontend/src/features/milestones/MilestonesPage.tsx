@@ -7,6 +7,7 @@ import { fetchProjects, type Project } from "@/features/projects/api";
 import { cn } from "@/lib/utils";
 import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
+import { ForecastCard } from "./ForecastCard";
 import { plural, shortDate } from "./format";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
@@ -17,7 +18,7 @@ type Projects = { status: "loading" } | { status: "error"; message: string } | {
 
 const ORDER = ["active", "scheduled", "planned", "closed"];
 const rank = (status: string) => (ORDER.includes(status) ? ORDER.indexOf(status) : ORDER.length);
-const COLUMNS = "md:grid-cols-[8rem_minmax(0,1fr)_11rem_9rem_7rem]";
+const COLUMNS = "md:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_9rem_7rem]";
 
 export function MilestonesPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
@@ -74,11 +75,12 @@ function MilestoneTable({ project }: { project: string }) {
   const { state, retry } = useLoad(fetcher, true);
   if (state.status === "loading") return <p className="text-muted-foreground">Loading milestones…</p>;
   if (state.status === "error") return <MilestoneError error={state.error} onRetry={retry} />;
-  const { milestones, today } = state.data;
+  const { milestones, today, forecast } = state.data;
   const rows = [...milestones].sort((a, b) => rank(a.status) - rank(b.status) || a.start.localeCompare(b.start));
   return (
     <div className="flex flex-col gap-3">
       {state.error !== null && <p role="status" className="text-sm text-destructive">{`Refresh failed: ${state.error.message}`}</p>}
+      <ForecastCard forecast={forecast} today={today} />
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-2 text-sm">
           <p>{`No milestones in ${project} yet. Create one with:`}</p>
@@ -90,6 +92,7 @@ function MilestoneTable({ project }: { project: string }) {
             <span>Status</span>
             <span>Milestone</span>
             <span>Period</span>
+            <span>Lanes</span>
             <span>Epics</span>
             <span>Warnings</span>
           </li>
@@ -125,7 +128,11 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
       <span className="flex flex-col text-sm">
         {m.kickoff !== null && <span>{`Kicks off ${date(m.kickoff)}`}</span>}
         <span className={cn(m.kickoff !== null && "text-muted-foreground")}>{`${date(m.start)} – ${date(m.end)}`}</span>
+        {m.finish !== null && (
+          <span className={cn(m.finish > m.end ? "text-state-blocked" : "text-muted-foreground")}>{`Finishes ${date(m.finish)}`}</span>
+        )}
       </span>
+      <span className="text-sm">{m.lanes === null ? "–" : plural(m.lanes, "lane")}</span>
       {m.error !== null ? (
         <span className="col-span-2 text-sm text-destructive">{m.error}</span>
       ) : (

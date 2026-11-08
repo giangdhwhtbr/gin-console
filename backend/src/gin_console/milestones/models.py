@@ -1,4 +1,8 @@
-"""`gin-workflow milestone list|show --json`, schema 1, as the console serves it."""
+"""
+`gin-workflow milestone list|show --json`, schema 1, as the console serves it;
+`forecast` and `lanes` are null from a gin-workflow before
+milestone-forecast.
+"""
 
 from typing import Annotated
 
@@ -26,12 +30,25 @@ class MilestoneEntry(BaseModel):
     epics: EpicCount
     warnings: int | None
     error: Text | None
+    lanes: int | None = None
+
+
+class Forecast(BaseModel):
+    deadline: IsoDate | None
+    lanes: int
+    start: IsoDate
+    finish: IsoDate | None
+    overflow_days: int
+    open_epics: int
+    unestimated: int
+    error: Text | None
 
 
 class MilestoneList(BaseModel):
     milestones: list[MilestoneEntry]
     unassigned_epics: int
     today: IsoDate
+    forecast: Forecast | None = None
 
 
 class EpicWarning(BaseModel):
@@ -70,3 +87,4 @@ class MilestoneDetail(BaseModel):
     finish: IsoDate | None
     overflow_days: int
     epics: list[EpicPlan]
+    lanes: int | None = None

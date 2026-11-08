@@ -13,8 +13,19 @@ export type MilestoneEntry = {
   epics: { total: number; closed: number };
   warnings: number | null;
   error: string | null;
+  lanes: number | null;
 };
-export type MilestoneList = { milestones: MilestoneEntry[]; unassigned_epics: number; today: string };
+export type Forecast = {
+  deadline: string | null;
+  lanes: number;
+  start: string;
+  finish: string | null;
+  overflow_days: number;
+  open_epics: number;
+  unestimated: number;
+  error: string | null;
+};
+export type MilestoneList = { milestones: MilestoneEntry[]; unassigned_epics: number; today: string; forecast: Forecast | null };
 export type EpicWarning = { code: string; days: number | null };
 export type ExternalDependency = { id: string; milestone: string | null };
 export type EpicPlan = {
@@ -42,6 +53,7 @@ export type MilestoneDetail = {
   finish: string | null;
   overflow_days: number;
   epics: EpicPlan[];
+  lanes: number | null;
 };
 
 /** A failed milestones request; `kind` names a known cause the page explains with its fix. */
@@ -59,7 +71,17 @@ const isObject = (value: unknown): value is object => typeof value === "object" 
 const strings = (value: object, keys: readonly string[]) => keys.every((k) => isString(field(value, k)));
 const stringsOrNull = (value: object, keys: readonly string[]) => keys.every((k) => isStringOrNull(field(value, k)));
 const isNumberOrNull = (value: unknown) => value === null || isFiniteNumber(value);
+const isLanes = (value: unknown) => value === undefined || isNumberOrNull(value);
 const every = (value: unknown, check: (item: unknown) => boolean) => Array.isArray(value) && value.every(check);
+
+function isForecast(value: unknown): value is Forecast {
+  return (
+    isObject(value) &&
+    isString(field(value, "start")) &&
+    stringsOrNull(value, ["deadline", "finish", "error"]) &&
+    ["lanes", "overflow_days", "open_epics", "unestimated"].every((k) => isFiniteNumber(field(value, k)))
+  );
+}
 
 function isEntry(value: unknown): value is MilestoneEntry {
   if (!isObject(value)) return false;
@@ -70,7 +92,8 @@ function isEntry(value: unknown): value is MilestoneEntry {
     isNumberOrNull(field(value, "warnings")) &&
     isObject(epics) &&
     isFiniteNumber(field(epics, "total")) &&
-    isFiniteNumber(field(epics, "closed"))
+    isFiniteNumber(field(epics, "closed")) &&
+    isLanes(field(value, "lanes"))
   );
 }
 
@@ -79,7 +102,8 @@ function isList(value: unknown): value is MilestoneList {
     isObject(value) &&
     every(field(value, "milestones"), isEntry) &&
     isFiniteNumber(field(value, "unassigned_epics")) &&
-    isString(field(value, "today"))
+    isString(field(value, "today")) &&
+    (field(value, "forecast") === undefined || field(value, "forecast") === null || isForecast(field(value, "forecast")))
   );
 }
 
@@ -106,7 +130,8 @@ function isDetail(value: unknown): value is MilestoneDetail {
     stringsOrNull(value, ["kickoff", "finish"]) &&
     typeof field(value, "preview") === "boolean" &&
     isFiniteNumber(field(value, "overflow_days")) &&
-    every(field(value, "epics"), isEpic)
+    every(field(value, "epics"), isEpic) &&
+    isLanes(field(value, "lanes"))
   );
 }
 
@@ -132,7 +157,7 @@ export async function fetchMilestones(project: string): Promise<MilestoneList> {
   if (!response.ok) throw await failure(response, "Project");
   const body: unknown = await response.json();
   if (!isList(body)) throw new MilestonesError("Could not load milestones (unexpected response)");
-  return body;
+  return { ...body, forecast: body.forecast ?? null, milestones: body.milestones.map((m) => ({ ...m, lanes: m.lanes ?? null })) };
 }
 
 export async function fetchMilestone(project: string, id: string, start: string | null): Promise<MilestoneDetail> {
@@ -141,7 +166,7 @@ export async function fetchMilestone(project: string, id: string, start: string 
   if (!response.ok) throw await failure(response, "Milestone");
   const body: unknown = await response.json();
   if (!isDetail(body)) throw new MilestonesError("Could not load the milestone (unexpected response)");
-  return body;
+  return { ...body, lanes: body.lanes ?? null };
 }
 
 export const milestonesPath = (project: string) => `/milestones?project=${enc(project)}`;

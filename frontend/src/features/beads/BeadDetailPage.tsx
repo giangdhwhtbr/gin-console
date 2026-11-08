@@ -10,6 +10,7 @@ import { Breadcrumb } from "./Breadcrumb";
 import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
 import { graphPath } from "./graph";
+import { MarkdownText } from "./MarkdownText";
 import { useDiscussionHidden } from "./discussion";
 import { Reopens } from "./Reopens";
 import { RelationList } from "./RelationList";
@@ -160,7 +161,7 @@ export function BeadDetailPage({
                 {bead.description === null ? (
                   <p className="text-muted-foreground">No description.</p>
                 ) : (
-                  <p className="whitespace-pre-wrap break-words">{bead.description}</p>
+                  <MarkdownText text={bead.description} />
                 )}
                 <TextSection title="Acceptance criteria" text={bead.acceptance_criteria} />
                 <TextSection title="Design" text={bead.design} />

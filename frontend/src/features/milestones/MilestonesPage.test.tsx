@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from "@testing-library/react
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bead, json } from "@/features/beads/beadFixtures";
-import { entry, list, stubMilestones } from "./milestoneFixtures";
+import { entry, forecast, list, stubMilestones } from "./milestoneFixtures";
 import { MilestonesPage } from "./MilestonesPage";
 
 afterEach(() => {
@@ -132,5 +132,43 @@ describe("MilestonesPage", () => {
     open(json({ error: "gin-workflow reports milestone schema 2", cause: "schema" }, 502));
     expect(await screen.findByText("gin-workflow reports milestone schema 2")).toBeInTheDocument();
     expect(screen.queryByRole("list", { name: "Milestones" })).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-016 shows the forecast card above the list", async () => {
+    open(json(list([entry("m-1", { title: "Beta" })], { forecast: forecast(), today: "2026-11-08" })));
+    const card = await screen.findByRole("region", { name: "Project forecast" });
+    const listEl = screen.getByRole("list", { name: "Milestones" });
+    expect(card.compareDocumentPosition(listEl) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("REQ-MILESTONE-UI-016 no card without a forecast", async () => {
+    open(json(list([entry("m-1", { title: "Beta" })])));
+    await rowOf("Beta");
+    expect(screen.queryByRole("region", { name: "Project forecast" })).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-001 lanes and finish", async () => {
+    open(
+      json(
+        list(
+          [
+            entry("m-1", { title: "Beta", lanes: 2, start: "2026-11-02", end: "2026-11-12", finish: "2026-11-23" }),
+            entry("m-2", { title: "Hardening", lanes: 1, start: "2026-11-16", end: "2026-12-04", finish: "2026-12-01" }),
+          ],
+          { today: "2026-11-08" },
+        ),
+      ),
+    );
+    const beta = await rowOf("Beta");
+    expect(beta).toHaveTextContent("2 lanes");
+    expect(within(beta).getByText("Finishes 23 Nov")).toHaveClass("text-state-blocked");
+    const hardening = await rowOf("Hardening");
+    expect(hardening).toHaveTextContent("1 lane");
+    expect(within(hardening).getByText("Finishes 1 Dec")).not.toHaveClass("text-state-blocked");
+  });
+
+  it("REQ-MILESTONE-UI-001 older gin-workflow: a dash for lanes", async () => {
+    open(json(list([entry("m-1", { title: "Beta", lanes: null })])));
+    expect(within(await rowOf("Beta")).getByText("–")).toBeInTheDocument();
   });
 });
