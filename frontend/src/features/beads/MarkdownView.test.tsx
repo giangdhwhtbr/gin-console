@@ -43,6 +43,28 @@ describe("MarkdownView", () => {
     expect(container.querySelector("br")).not.toBeNull();
   });
 
+  it("REQ-UI-028 unsafe URLs in links and images never reach href or src", () => {
+    const md = [
+      "![x](javascript:alert(1))",
+      "[a](JaVaScRiPt:alert(1))",
+      "[b]( javascript:alert(1))",
+      "[c](//evil.com)",
+      "[d](data:text/html,x)",
+      "[e](vbscript:x)",
+      "[f](&#106;avascript:alert(1))",
+      "[g][ref]",
+      "![y](https://e.com/a.png)",
+      "",
+      "[ref]: javascript:alert(1)",
+    ].join("\n\n");
+    const { container } = render(<MarkdownView text={md} />);
+    for (const a of container.querySelectorAll("a")) {
+      expect(a.getAttribute("href") ?? "").toMatch(/^(https?:|mailto:)/i);
+    }
+    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src") ?? "");
+    expect(srcs.filter((src) => src !== "")).toEqual(["https://e.com/a.png"]);
+  });
+
   it("safeUrl keeps http, https and mailto only", () => {
     expect(["https://a", "http://a", "mailto:a@b", "javascript:x", "/beads", "docs/a.md"].map(safeUrl)).toEqual([
       "https://a",
