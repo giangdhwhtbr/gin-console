@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup: Milestones forecast and lanes (gin-console-cl0)</title>
+<style>
+  :root {
+    --background:#f6f7f9; --foreground:#12161c; --card:#fff; --muted:#eceff3; --muted-foreground:#566072;
+    --border:#cfd5de; --destructive:#b91c1c; --state-ready:#0f766e; --state-progress:#1d4ed8;
+    --state-blocked:#a3470a; --state-done:#5d6573; --type-epic:#7e22ce; --sidebar:#fff; --accent:#eceff3;
+  }
+  .dark {
+    --background:#0e1217; --foreground:#e7eaf0; --card:#161b22; --muted:#1d242d; --muted-foreground:#9aa4b2;
+    --border:#2c343f; --destructive:#f87171; --state-ready:#2dd4bf; --state-progress:#93c5fd;
+    --state-blocked:#fbbf24; --state-done:#9ca3af; --type-epic:#c084fc; --sidebar:#11161c; --accent:#1d242d;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Geist Variable','Geist',ui-sans-serif,system-ui,sans-serif; background:var(--background); color:var(--foreground); font-size:14px; line-height:1.45; }
+  .mono { font-family:'Geist Mono Variable','Geist Mono',ui-monospace,monospace; }
+  .muted { color:var(--muted-foreground); }
+  .warn { color:var(--state-blocked); }
+  .err { color:var(--destructive); }
+  .controls { position:sticky; top:0; z-index:5; display:flex; flex-wrap:wrap; gap:12px; align-items:center; padding:8px 16px; background:#fde68a; color:#3b2f00; font-size:12px; border-bottom:1px solid #d6b84a; }
+  .controls select, .controls button { font:inherit; padding:2px 6px; }
+  .shell { display:grid; grid-template-columns:224px 1fr; min-height:calc(100vh - 37px); }
+  aside { background:var(--sidebar); border-right:1px solid var(--border); padding:20px 12px; }
+  .brand { display:flex; gap:8px; align-items:center; font-weight:600; padding:0 8px 18px; }
+  .dots i { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:2px; }
+  nav a { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; color:var(--muted-foreground); text-decoration:none; margin-bottom:4px; }
+  nav a.on { background:var(--accent); color:var(--foreground); font-weight:600; }
+  main { padding:24px; max-width:1100px; }
+  h1 { font-size:20px; margin:0; font-weight:600; }
+  h2 { font-size:15px; margin:0; font-weight:600; }
+  .row { display:flex; flex-wrap:wrap; align-items:center; gap:12px; }
+  .between { justify-content:space-between; }
+  .stack { display:flex; flex-direction:column; gap:16px; }
+  select.ui { border:1px solid var(--border); background:var(--background); color:inherit; border-radius:6px; padding:4px 8px; font:inherit; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; }
+  /* forecast card */
+  .fc { padding:14px 16px; display:grid; grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr)); gap:16px; align-items:start; }
+  .fc .label { font-size:12px; color:var(--muted-foreground); }
+  .fc .big { font-size:18px; font-weight:600; }
+  .fc .sub { font-size:13px; }
+  .fc .err-line { grid-column:1/-1; font-size:13px; display:flex; gap:6px; align-items:center; border-top:1px solid var(--border); padding-top:10px; }
+  .code { font-family:'Geist Mono',ui-monospace,monospace; font-size:12px; background:var(--muted); border-radius:4px; padding:1px 6px; }
+  /* list */
+  .grid { display:grid; grid-template-columns:8rem minmax(0,1fr) 12rem 5rem 9rem 7rem; gap:12px; align-items:center; padding:9px 12px; }
+  .list > .grid + .grid { border-top:1px solid var(--border); }
+  .head { font-size:13px; color:var(--muted-foreground); }
+  .badge { display:inline-flex; align-items:center; gap:6px; font-size:13px; }
+  .badge::before { content:""; width:8px; height:8px; border-radius:50%; background:currentColor; }
+  .s-active { color:var(--state-progress); } .s-planned { color:var(--state-ready); } .s-closed { color:var(--state-done); } .s-scheduled { color:var(--type-epic); }
+  .bar { height:6px; width:64px; border-radius:4px; background:var(--muted); overflow:hidden; display:inline-block; }
+  .bar span { display:block; height:100%; background:var(--state-done); }
+  a.link { color:inherit; font-weight:500; text-decoration:none; } a.link:hover { text-decoration:underline; }
+  .new { outline:2px dashed #e0a800; outline-offset:2px; border-radius:4px; }
+  .legend { font-size:12px; color:var(--muted-foreground); }
+  .legend .new { padding:0 4px; }
+  /* gantt sketch */
+  .gantt { padding:12px; }
+  .g-row { display:grid; grid-template-columns:14rem 1fr; align-items:center; gap:8px; height:30px; }
+  .g-track { position:relative; height:100%; background:repeating-linear-gradient(90deg,transparent 0 calc(100%/10 - 1px),var(--border) calc(100%/10 - 1px) calc(100%/10)); }
+  .g-bar { position:absolute; top:7px; height:16px; border-radius:4px; }
+  .g-end { position:absolute; top:0; bottom:0; width:2px; background:var(--destructive); }
+  .g-axis { display:grid; grid-template-columns:repeat(10,1fr); font-size:11px; color:var(--muted-foreground); }
+  [data-screen] { display:none; } [data-screen].show { display:block; }
+  @media (max-width:800px) {
+    .shell { grid-template-columns:1fr; } aside { display:none; }
+    .fc { grid-template-columns:1fr 1fr; } .fc > :first-child { grid-column:1/-1; }
+    .grid { grid-template-columns:auto minmax(0,1fr); } .grid.head { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="controls" aria-label="Mockup controls (not part of the design)">
+  <strong>Mockup controls</strong>
+  <label>Screen
+    <select id="screen">
+      <option value="milestones">Milestones list (#milestones)</option>
+      <option value="milestone">Milestone page (#milestone)</option>
+    </select>
+  </label>
+  <label>Forecast state
+    <select id="state">
+      <option value="spare">On time, deadline set (spare days)</option>
+      <option value="late">Past the deadline</option>
+      <option value="ondeadline">On the deadline</option>
+      <option value="nodeadline">No deadline</option>
+      <option value="unestimated">Every open epic unestimated</option>
+      <option value="error">Forecast error (bad Deadline line)</option>
+      <option value="old">Older gin-workflow (no forecast, no lanes)</option>
+    </select>
+  </label>
+  <button id="theme" type="button">Toggle dark</button>
+  <span>Dashed outline = new in this change.</span>
+</div>
+
+<div class="shell">
+  <aside>
+    <div class="brand"><span class="dots"><i style="background:#0f766e"></i><i style="background:#1d4ed8"></i><i style="background:#a3470a"></i></span>gin-console</div>
+    <nav>
+      <a href="#">Projects</a><a href="#">Beads</a><a class="on" href="#">Milestones</a><a href="#">Reports</a><a href="#">Quota</a>
+    </nav>
+  </aside>
+  <main>
+    <!-- Screen: list -->
+    <section id="milestones" data-screen="milestones" class="stack">
+      <div class="row between">
+        <h1>Milestones</h1>
+        <label class="row" style="gap:8px">Project <select class="ui"><option>gin-workflow</option></select></label>
+      </div>
+      <div id="forecast"></div>
+      <div class="card list" role="list" aria-label="Milestones">
+        <div class="grid head"><span>Status</span><span>Milestone</span><span>Period</span><span class="lanes-h">Lanes</span><span>Epics</span><span>Warnings</span></div>
+        <div id="rows"></div>
+      </div>
+      <div class="card" style="padding:12px 14px">
+        <h2>Epics not in a milestone</h2>
+        <p class="muted" style="margin:6px 0 0">Unchanged (REQ-MILESTONE-UI-010).</p>
+      </div>
+    </section>
+
+    <!-- Screen: milestone page -->
+    <section id="milestone" data-screen="milestone" class="stack">
+      <div class="muted"><a class="link" href="#milestones" style="font-weight:400">Milestones</a> › gin-workflow-96sx</div>
+      <header class="stack" style="gap:4px">
+        <div class="row between"><h1>gin-workflow enhancement</h1><span class="mono muted">gin-workflow-96sx</span></div>
+        <div class="row" style="gap:16px">
+          <span class="badge s-planned">planned</span>
+          <span>5 Nov – 12 Nov</span>
+          <span class="warn">Finishes 23 Nov, 7 working days past the end</span>
+          <span id="hdr-lanes" class="new">1 lane</span>
+        </div>
+      </header>
+      <div class="row" style="gap:20px; border-bottom:1px solid var(--border)">
+        <span style="padding:6px 0; border-bottom:2px solid var(--foreground); font-weight:600">Gantt</span>
+        <span class="muted" style="padding:6px 0">Graph</span>
+      </div>
+      <div class="card gantt">
+        <p class="legend" style="margin:0 0 8px">Unchanged chart. With 1 lane, gin-workflow places independent epics one after another, so the bars no longer overlap (REQ-MILESTONE-UI-003). Dates are drawn as given.</p>
+        <div class="g-row"><span></span><div class="g-axis"><span>10</span><span>11</span><span>12</span><span>13</span><span>16</span><span>17</span><span>18</span><span>19</span><span>20</span><span>23</span></div></div>
+        <div class="g-row"><span class="mono">gin-workflow-a1 · CLI flags</span><div class="g-track"><div class="g-bar" style="left:0;width:20%;background:var(--state-progress)"></div><div class="g-end" style="left:30%"></div></div></div>
+        <div class="g-row"><span class="mono">gin-workflow-b2 · Docs</span><div class="g-track"><div class="g-bar" style="left:20%;width:20%;background:var(--state-ready)"></div><div class="g-end" style="left:30%"></div></div></div>
+        <div class="g-row"><span class="mono">gin-workflow-c3 · Tests</span><div class="g-track"><div class="g-bar" style="left:40%;width:30%;background:var(--state-ready)"></div><div class="g-end" style="left:30%"></div></div></div>
+        <div class="g-row"><span class="mono">gin-workflow-d4 · Release <span class="warn">⚠ overflow 7d</span></span><div class="g-track"><div class="g-bar" style="left:70%;width:30%;background:var(--state-ready)"></div><div class="g-end" style="left:30%"></div></div></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+  const today = "2026-11-08";
+  const M = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const d = (iso) => { const [y,m,dd] = iso.split("-").map(Number); return `${dd} ${M[m-1]}${iso.slice(0,4) === today.slice(0,4) ? "" : " " + y}`; };
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  // Mon-Fri days in (a, b], as gin-workflow workdays_after
+  const workdaysAfter = (a, b) => { let n = 0; const t = new Date(a + "T00:00:00Z"); const e = new Date(b + "T00:00:00Z");
+    for (t.setUTCDate(t.getUTCDate() + 1); t <= e; t.setUTCDate(t.getUTCDate() + 1)) n += t.getUTCDay() % 6 !== 0; return n; };
+
+  const base = { lanes: 1, start: today, open_epics: 9, unestimated: 0, error: null };
+  const states = {
+    spare:       { ...base, deadline: "2026-12-31", finish: "2026-12-23", overflow_days: 0 },
+    late:        { ...base, deadline: "2026-12-31", finish: "2027-01-07", overflow_days: 5, unestimated: 2 },
+    ondeadline:  { ...base, deadline: "2026-12-31", finish: "2026-12-31", overflow_days: 0 },
+    nodeadline:  { ...base, deadline: null, finish: "2026-11-20", overflow_days: 0 },
+    unestimated: { ...base, deadline: "2026-12-31", finish: null, overflow_days: 0, open_epics: 2, unestimated: 2 },
+    error:       { ...base, deadline: null, finish: "2026-11-20", overflow_days: 0, error: "Deadline: soon is not a date (YYYY-MM-DD)" },
+    old:         undefined,
+  };
+  const milestones = [
+    { id: "gin-workflow-96sx", title: "gin-workflow enhancement", status: "active", start: "2026-11-05", end: "2026-11-12", lanes: 1, finish: "2026-11-23", epics: { total: 9, closed: 6 }, warnings: 6 },
+    { id: "gin-workflow-k2p0", title: "Team mode v2", status: "planned", start: "2026-11-16", end: "2026-12-04", lanes: 2, finish: "2026-12-01", epics: { total: 5, closed: 0 }, warnings: 0 },
+    { id: "gin-workflow-7xq1", title: "Orchestrator providers", status: "closed", start: "2026-10-12", end: "2026-10-30", lanes: 2, finish: null, epics: { total: 4, closed: 4 }, warnings: 0 },
+  ];
+
+  function forecastCard(f) {
+    if (!f) return "";
+    let finish, compare = "";
+    if (f.finish === null) finish = `<div class="big">No estimate</div><div class="sub muted">Every open epic is unestimated</div>`;
+    else {
+      finish = `<div class="big">Finishes ${d(f.finish)}</div>`;
+      if (f.deadline === null) compare = `<div class="sub">No deadline · add <span class="code">- Deadline: YYYY-MM-DD</span> to the roadmap</div>`;
+      else if (f.overflow_days > 0) compare = `<div class="sub warn">⚠ ${plural(f.overflow_days, "working day")} past the deadline (${d(f.deadline)})</div>`;
+      else if (f.finish === f.deadline) compare = `<div class="sub">On the deadline (${d(f.deadline)})</div>`;
+      else compare = `<div class="sub" style="color:var(--state-ready)">${plural(workdaysAfter(f.finish, f.deadline), "working day")} spare before ${d(f.deadline)}</div>`;
+    }
+    if (f.finish === null && f.deadline !== null) compare = `<div class="sub muted">Deadline ${d(f.deadline)}</div>`;
+    return `<div class="card fc new" aria-label="Project forecast">
+      <div><div class="label">Project forecast · open roadmap epics</div>${finish}${compare}</div>
+      <div><div class="label">Default lanes</div><div class="big">${f.lanes}</div><div class="sub muted">for epics outside milestones</div></div>
+      <div><div class="label">Open epics</div><div class="big">${f.open_epics}</div></div>
+      <div><div class="label">Unestimated</div><div class="big ${f.unestimated > 0 ? "warn" : ""}">${f.unestimated > 0 ? "⚠ " : ""}${f.unestimated}</div>${f.unestimated > 0 ? `<div class="sub muted">not in the finish date</div>` : ""}</div>
+      ${f.error ? `<div class="err-line err">✕ ${f.error}</div>` : ""}
+    </div>`;
+  }
+  function rows(old) {
+    return milestones.map((m) => {
+      const late = m.finish && m.finish > m.end;
+      const pct = (100 * m.epics.closed) / m.epics.total;
+      const lanes = old ? `<span class="muted">–</span>` : `<span class="new">${plural(m.lanes, "lane")}</span>`;
+      const fin = old || !m.finish ? "" : `<span class="new ${late ? "warn" : "muted"}">${late ? "⚠ " : ""}Finishes ${d(m.finish)}</span>`;
+      return `<div class="grid" ${m.status === "closed" ? 'style="color:var(--muted-foreground)"' : ""}>
+        <span class="badge s-${m.status}">${m.status}</span>
+        <span class="row" style="gap:8px;min-width:0"><a class="link" href="#milestone">${m.title}</a><span class="mono muted" style="font-size:12px">${m.id}</span></span>
+        <span style="display:flex;flex-direction:column"><span>${d(m.start)} – ${d(m.end)}</span>${fin}</span>
+        ${lanes}
+        <span class="row" style="gap:8px"><span class="bar"><span style="width:${pct}%"></span></span>${m.epics.closed} of ${m.epics.total}</span>
+        ${m.warnings > 0 ? `<span class="warn">⚠ ${plural(m.warnings, "warning")}</span>` : `<span class="muted">None</span>`}
+      </div>`;
+    }).join("");
+  }
+  function render() {
+    const s = document.getElementById("state").value;
+    const scr = document.getElementById("screen").value;
+    document.querySelectorAll("[data-screen]").forEach((e) => e.classList.toggle("show", e.dataset.screen === scr));
+    document.getElementById("forecast").innerHTML = forecastCard(states[s]);
+    document.getElementById("rows").innerHTML = rows(s === "old");
+    document.getElementById("hdr-lanes").style.display = s === "old" ? "none" : "";
+    if (location.hash.slice(1) !== scr) history.replaceState(null, "", "#" + scr);
+  }
+  const fromHash = () => { const h = location.hash.slice(1); if (h === "milestones" || h === "milestone") document.getElementById("screen").value = h; render(); };
+  document.getElementById("screen").onchange = render;
+  document.getElementById("state").onchange = render;
+  document.getElementById("theme").onclick = () => document.documentElement.classList.toggle("dark");
+  window.addEventListener("hashchange", fromHash);
+  fromHash();
+</script>
+</body>
+</html>

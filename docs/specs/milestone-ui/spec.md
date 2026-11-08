@@ -283,3 +283,6 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 - GIVEN the request for the project's beads fails
 - WHEN the user opens the Gantt tab
 - THEN the epics, bars and arrows are drawn and no epic has an expand button
+
+## Diagrams
+- [Milestones forecast](diagrams/milestones-forecast-activity.md)

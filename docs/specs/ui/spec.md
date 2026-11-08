@@ -1697,3 +1697,6 @@ The page SHALL show no headline while the report loads or after it failed to loa
 - GIVEN the Delivery tab is selected and has focus
 - WHEN the user presses Right
 - THEN the AI usage tab is selected and has focus
+
+## Diagrams
+- [Bead text as Markdown](diagrams/bead-text-markdown-activity.md)
