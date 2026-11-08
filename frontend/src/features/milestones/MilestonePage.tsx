@@ -94,6 +94,7 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
         <span>{`${date(plan.start)} – ${date(plan.end)}`}</span>
         {plan.kickoff !== null && <span>{`Kicks off ${date(plan.kickoff)}`}</span>}
         <span className={cn(late && "text-state-blocked")}>{outcome}</span>
+        {plan.lanes !== null && <span>{plural(plan.lanes, "lane")}</span>}
       </div>
       {plan.description !== "" && (
         <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">

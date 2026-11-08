@@ -14,3 +14,14 @@ export function shortDate(iso: string, today: string): string {
 export const monthName = (index: number): string => MONTHS[index];
 export const weekday = (iso: string): string => WEEKDAYS[utcOf(iso).getUTCDay()];
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** Working days (Monday to Friday) after `end` up to and including `finish`, as gin-workflow `workdays_after`. */
+export function workdaysAfter(end: string, finish: string): number {
+  let count = 0;
+  const day = utcOf(end);
+  const last = utcOf(finish).getTime();
+  for (day.setUTCDate(day.getUTCDate() + 1); day.getTime() <= last; day.setUTCDate(day.getUTCDate() + 1)) {
+    if (day.getUTCDay() % 6 !== 0) count += 1;
+  }
+  return count;
+}

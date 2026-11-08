@@ -275,4 +275,30 @@ describe("MilestonePage", () => {
     await waitFor(() => expect(within(a).queryByRole("button")).toBeNull());
     expect(a).not.toHaveTextContent("closed");
   });
+
+  it("REQ-MILESTONE-UI-017 lanes shown in the header", async () => {
+    open({ ...OVERFLOW, lanes: 2 });
+    const header = (await screen.findByRole("heading", { name: "Beta readiness" })).closest("header") ?? document.body;
+    expect(within(header).getByText("2 lanes")).toBeInTheDocument();
+  });
+
+  it("REQ-MILESTONE-UI-017 older gin-workflow: no lane count", async () => {
+    open(OVERFLOW);
+    const header = (await screen.findByRole("heading", { name: "Beta readiness" })).closest("header") ?? document.body;
+    expect(within(header).queryByText(/\blanes?\b/)).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-003 lane-bound dates: B starts after A on one lane", async () => {
+    open(
+      detail(
+        [
+          epicPlan("e-a", { planned_start: "2026-11-09", planned_end: "2026-11-10", estimate_days: 2 }),
+          epicPlan("e-b", { planned_start: "2026-11-11", planned_end: "2026-11-12", estimate_days: 2 }),
+        ],
+        { start: "2026-11-09", end: "2026-11-13", schedule_start: "2026-11-09", finish: "2026-11-12", lanes: 1 },
+      ),
+    );
+    expect(beads(await row("e-a"))).toEqual(["2026-11-09", "2026-11-10"]);
+    expect(beads(await row("e-b"))).toEqual(["2026-11-11", "2026-11-12"]);
+  });
 });
