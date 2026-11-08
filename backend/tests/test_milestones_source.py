@@ -71,7 +71,10 @@ def test_milestone_ui_005_unknown_schema() -> None:
 
 
 # REQ-MILESTONE-UI-008
-@pytest.mark.parametrize("output", [[], {**LIST, "milestones": [{"id": 1}]}])
+@pytest.mark.parametrize(
+    "output",
+    [[], {**LIST, "milestones": [{"id": 1}]}, {**LIST, "forecast": {"lanes": "two"}}],
+)
 def test_milestone_ui_008_unexpected_output(output: Any) -> None:
     with pytest.raises(MilestonesError) as caught:
         list_milestones(FakeGw({"list": output}), CWD)

@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_gw import FakeGw
+from fake_gw import LIST, SHOW, FakeGw
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -108,3 +108,40 @@ def test_milestone_ui_008_failure_names_its_cause_and_is_not_cached(
         assert response.status_code == 502
         assert response.json() == {"error": "why", "cause": cause}
     assert len(fake.calls) == 2
+
+
+FORECAST: dict[str, Any] = {
+    "deadline": "2026-12-31",
+    "lanes": 1,
+    "start": "2026-11-08",
+    "finish": "2026-12-23",
+    "overflow_days": 0,
+    "open_epics": 5,
+    "unestimated": 1,
+    "error": None,
+}
+
+
+# REQ-MILESTONE-UI-008 forecast and lanes
+def test_milestone_ui_008_forecast_and_lanes(tmp_path: Path) -> None:
+    listed = {**LIST, "forecast": FORECAST, "milestones": [{**LIST["milestones"][0], "lanes": 2}]}
+    api = make(tmp_path, FakeGw({"list": listed, "show": {**SHOW, "lanes": 2}}))
+    body = api.get("/api/milestones", params={"project": "proj"}).json()
+    assert body["forecast"] == FORECAST
+    assert body["milestones"][0]["lanes"] == 2
+    assert api.get("/api/milestones/proj/gw-ab1").json()["lanes"] == 2
+
+
+# REQ-MILESTONE-UI-008 output from an older gin-workflow
+def test_milestone_ui_008_older_output_answers_null(tmp_path: Path) -> None:
+    api = make(tmp_path, FakeGw())
+    body = api.get("/api/milestones", params={"project": "proj"}).json()
+    assert body["forecast"] is None
+    assert body["milestones"][0]["lanes"] is None
+    assert api.get("/api/milestones/proj/gw-ab1").json()["lanes"] is None
+
+
+# REQ-MILESTONE-UI-008
+def test_milestone_ui_008_forecast_null(tmp_path: Path) -> None:
+    api = make(tmp_path, FakeGw({"list": {**LIST, "forecast": None}, "show": SHOW}))
+    assert api.get("/api/milestones", params={"project": "proj"}).json()["forecast"] is None
