@@ -19,10 +19,16 @@ from gin_console.milestones.source import (
 TTL = timedelta(seconds=5)
 
 
-def build_router(settings: Settings, run: GwRunner, clock: Callable[[], datetime]) -> APIRouter:
+def build_router(
+    settings: Settings,
+    run: GwRunner,
+    clock: Callable[[], datetime],
+    on_refresh: list[Callable[[], None]],
+) -> APIRouter:
     router = APIRouter()
     lists = KeyedCache[str, MilestoneList](TTL, clock)
     details = KeyedCache[tuple[str, str], MilestoneDetail](TTL, clock)
+    on_refresh += [lists.clear, details.clear]
 
     def project_dir(name: str | None) -> Path:
         entry = next((p for p in settings.projects if p.name == name), None)

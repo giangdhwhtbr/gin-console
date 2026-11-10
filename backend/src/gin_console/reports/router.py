@@ -8,7 +8,8 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
 from gin_console.beads.service import KeyedCache
-from gin_console.beads.source import BdRunner, BeadsError
+from gin_console.beads.snapshot import SnapshotStore
+from gin_console.beads.source import BeadsError
 from gin_console.config import Settings
 from gin_console.reports.models import ProjectError, Report, ReportBead
 from gin_console.reports.service import build_report
@@ -24,9 +25,15 @@ def _message(exc: BeadsError | RecursionError) -> str:
     return str(exc) or "bd output was too deeply nested"
 
 
-def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime]) -> APIRouter:
+def build_router(
+    settings: Settings,
+    snapshots: SnapshotStore,
+    clock: Callable[[], datetime],
+    on_refresh: list[Callable[[], None]],
+) -> APIRouter:
     router = APIRouter()
     reports = KeyedCache[tuple[str, int, str | None], Report](TTL, clock)
+    on_refresh.append(reports.clear)
 
     def fetch(project: str, days: int, sprint: str | None) -> Report:
         entries = (
@@ -43,7 +50,7 @@ def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime
                 )
                 continue
             try:
-                beads.extend(read_beads(run, entry.path, entry.name))
+                beads.extend(read_beads(snapshots.get(entry.path), entry.name))
             except (BeadsError, RecursionError) as exc:
                 if project != ALL:
                     raise

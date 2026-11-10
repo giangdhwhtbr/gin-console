@@ -10,7 +10,8 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse, Response
 
 from gin_console.beads.router import build_router as build_beads_router
-from gin_console.beads.source import BdRunner
+from gin_console.beads.snapshot import SnapshotStore
+from gin_console.beads.source import BdRunner, export_beads
 from gin_console.beads.source import run_bd as default_run_bd
 from gin_console.config import Settings
 from gin_console.milestones.router import build_router as build_milestones_router
@@ -47,12 +48,24 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ok", "version": version("gin-console")}
 
-    api.include_router(build_projects_router(settings))
+    # one `bd export` per project, reused until its Dolt store changes or a refresh
+    snapshots = SnapshotStore(
+        lambda cwd: export_beads(run_bd, cwd), clock=lambda: clock().timestamp()
+    )
+    on_refresh: list[Callable[[], None]] = [snapshots.clear]
+
+    @api.post("/refresh", status_code=204)
+    def refresh() -> None:
+        """Drop every cached answer so the next request reads its sources again."""
+        for clear in on_refresh:
+            clear()
+
+    api.include_router(build_projects_router(settings, snapshots, on_refresh))
     api.include_router(build_sessions_router(settings, claude_home))
     api.include_router(build_quota_router(run_claude, run_codex, clock))
-    api.include_router(build_beads_router(settings, run_bd, clock))
-    api.include_router(build_milestones_router(settings, run_gw, clock))
-    api.include_router(build_reports_router(settings, run_bd, clock))
+    api.include_router(build_beads_router(settings, snapshots, run_bd, clock))
+    api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh))
+    api.include_router(build_reports_router(settings, snapshots, clock, on_refresh))
 
     @api.api_route("/{rest:path}", methods=_METHODS)
     def api_not_found(rest: str) -> None:

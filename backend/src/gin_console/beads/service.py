@@ -15,6 +15,10 @@ class KeyedCache[K: Hashable, T]:
         self._locks: dict[K, threading.Lock] = {}
         self._items: dict[K, tuple[datetime, T]] = {}
 
+    def clear(self) -> None:
+        with self._guard:
+            self._items = {}
+
     def lock_count(self) -> int:
         return len(self._locks)
 

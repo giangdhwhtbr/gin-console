@@ -49,8 +49,37 @@ def dep(issue: str, target: str, kind: str) -> dict[str, Any]:
     return {"issue_id": issue, "depends_on_id": target, "type": kind}
 
 
+def export_rows(
+    beads: list[Any],
+    shown: dict[str, dict[str, Any]],
+    up: dict[str, list[dict[str, Any]]],
+    comments: dict[str, list[Any]],
+) -> list[Any]:
+    """What `bd export` prints for these beads: one row per bead, with its dependencies and
+    comments. A row of `up[id]` (a bead with `dependency_type`) becomes a bead depending on id."""
+    rows: dict[str, Any] = {}
+    odd: list[Any] = []
+    for row in [*beads, *shown.values()]:
+        if isinstance(row, dict) and isinstance(row.get("id"), str):
+            rows.setdefault(row["id"], dict(row))
+        else:
+            odd.append(row)
+    for target, dependents in up.items():
+        for row in dependents:
+            if not isinstance(row, dict) or not isinstance(row.get("id"), str):
+                continue
+            kind = str(row.get("dependency_type"))
+            plain = {k: v for k, v in row.items() if k != "dependency_type"}
+            entry = rows.setdefault(row["id"], plain)
+            entry["dependencies"] = [*entry.get("dependencies", []), dep(row["id"], target, kind)]
+    for ident, items in comments.items():
+        if ident in rows:
+            rows[ident]["comments"] = items
+    return [*rows.values(), *odd]
+
+
 class FakeBd:
-    """list: `beads`; show: `shown[id]` (a bead with its `dependencies`); dep list up: `up[id]`.
+    """export: `beads`, `shown`, `up`, and `comments` as `export_rows` joins them.
 
     history: `history[id]`, statuses oldest first.
     """
@@ -92,6 +121,8 @@ class FakeBd:
             raise self.failing[args[0]]
         if args[0] in self.bad:
             return self.bad[args[0]]
+        if args[0] == "export":
+            return export_rows(self.beads, self.shown, self.up, self.comments)
         if args[0] == "ready":
             return [bead(ident) for ident in self.ready]
         if args[0] == "blocked":

@@ -500,7 +500,7 @@ The Focus view SHALL show the columns In flight (status `in_progress` or `hooked
 - THEN In flight, Blocked and Next up each hold one bead and the P3 bead is in no column
 
 #### Scenario: In progress and blocked
-- GIVEN an in-progress bead that `bd blocked` also lists
+- GIVEN an in-progress bead that is also blocked
 - WHEN the Focus view is shown
 - THEN it is in In flight only
 
@@ -1629,7 +1629,7 @@ The Reports page SHALL show a loading state while the report loads, SHALL show "
 - THEN the page does not show it
 
 ### REQ-UI-094: Collapsible sidebar
-From 1024px the frontend SHALL show, at the top of the "Main" navigation's sidebar next to the theme control, a control that collapses the sidebar and expands it again, with an accessible name saying which it does ("Collapse sidebar" or "Expand sidebar") and `aria-expanded` telling whether the sidebar is expanded, and SHALL NOT show the control below 1024px. From 768px the frontend SHALL show the theme control and the collapse control as icons at the top of the navigation column, on one row with the brand mark while the sidebar is expanded and under the brand mark on the icon rail, so that both are visible without scrolling the page. WHILE the sidebar is collapsed, the frontend SHALL draw it as the icon rail of REQ-UI-056 with the brand mark without its word. The frontend SHALL start with the sidebar expanded, SHALL keep the choice in the browser and use it on the next visit, and IF the browser refuses to store the choice, THEN SHALL still collapse and expand the sidebar for the current visit without an error.
+From 1024px the frontend SHALL show, at the top of the "Main" navigation's sidebar next to the theme control, a control that collapses the sidebar and expands it again, with an accessible name saying which it does ("Collapse sidebar" or "Expand sidebar") and `aria-expanded` telling whether the sidebar is expanded, and SHALL NOT show the control below 1024px. From 768px the frontend SHALL show the refresh control (REQ-UI-096), the theme control and the collapse control as icons at the top of the navigation column, on one row with the brand mark while the sidebar is expanded and under the brand mark on the icon rail, so that both are visible without scrolling the page. WHILE the sidebar is collapsed, the frontend SHALL draw it as the icon rail of REQ-UI-056 with the brand mark without its word. The frontend SHALL start with the sidebar expanded, SHALL keep the choice in the browser and use it on the next visit, and IF the browser refuses to store the choice, THEN SHALL still collapse and expand the sidebar for the current visit without an error.
 
 #### Scenario: Collapse
 - GIVEN a window 1280px wide with the sidebar expanded
@@ -1704,6 +1704,19 @@ The page SHALL show no headline while the report loads or after it failed to loa
 - GIVEN the Delivery tab is selected and has focus
 - WHEN the user presses Right
 - THEN the AI usage tab is selected and has focus
+
+### REQ-UI-096: Refresh
+The frontend SHALL show on every page a "Refresh data" control, in the top bar below 768px and with the theme control at the top of the navigation column from 768px, and WHEN the user activates it, SHALL send `POST /api/refresh` (REQ-BEADS-012) and then load the current page's data again without a full reload and without changing the URL, showing the control as busy and disabled until the request ends; IF the request fails, THEN the page SHALL still load its data again and show its own error.
+
+#### Scenario: Refresh the page
+- GIVEN the Projects page is shown
+- WHEN the user activates "Refresh data"
+- THEN `POST /api/refresh` is sent, then the projects are requested again, and the URL is unchanged
+
+#### Scenario: Placement
+- GIVEN a window 1280px wide
+- WHEN any page is shown
+- THEN "Refresh data" is at the top of the navigation column, above the navigation links, next to the theme control
 
 ## Diagrams
 - [Bead text as Markdown](diagrams/bead-text-markdown-activity.md)

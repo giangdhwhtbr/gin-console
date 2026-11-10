@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "./Link";
 import { useLocation } from "./route";
+import { RefreshButton } from "./RefreshButton";
 import { ICON_BUTTON, ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
@@ -45,7 +46,7 @@ function Brand({ wordClass }: { wordClass?: string }) {
   );
 }
 
-export function Layout({ children }: { children: ReactNode }) {
+export function Layout({ children, onRefreshed }: { children: ReactNode; onRefreshed: () => void }) {
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const wide = !collapsed;
@@ -62,17 +63,21 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card pl-4 pr-1 md:hidden">
         <Brand />
-        <ThemeToggle />
+        <div className="flex">
+          <RefreshButton onRefreshed={onRefreshed} />
+          <ThemeToggle />
+        </div>
       </header>
       <div
         className={cn(
           "md:flex md:w-20 md:shrink-0 md:flex-col md:gap-4 md:border-r md:bg-card md:px-2 md:py-4",
-          wide && "lg:w-56 lg:px-3",
+          wide && "lg:w-64 lg:px-3",
         )}
       >
         <div className={cn("hidden items-center gap-2 md:flex md:flex-col", wide && "lg:flex-row lg:justify-between lg:gap-1 lg:pl-2")}>
           <Brand wordClass={wide ? "max-lg:hidden" : "hidden"} />
-          <div className="flex">
+          <div className={cn("flex flex-col", wide && "lg:flex-row")}>
+            <RefreshButton onRefreshed={onRefreshed} />
             <ThemeToggle />
             <button
               type="button"
