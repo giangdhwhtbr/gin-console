@@ -1,12 +1,11 @@
-"""Beads of one project for reports, read with `bd list --all`; parses `metadata.ai_usage`."""
+"""Beads of one project for reports, from its `bd export` snapshot; parses `metadata.ai_usage`."""
 
 import json
-from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
 
-from gin_console.beads.source import BdRunner, BeadsError
+from gin_console.beads.snapshot import Snapshot
 from gin_console.reports.models import AiUsage, ReportBead
 
 _KEYS = (
@@ -45,16 +44,13 @@ def parse_usage(metadata: Any) -> tuple[AiUsage | None, str | None]:
         return None, "unreadable"
 
 
-def read_beads(run: BdRunner, cwd: Path, project: str) -> list[ReportBead]:
-    data = run(["list", "--all", "--limit", "0", "--json"], cwd)
-    if not isinstance(data, list):
-        raise BeadsError("bd list output was not understood")
+def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
     beads: list[ReportBead] = []
-    for raw in data:
-        if not isinstance(raw, dict):
-            continue
+    for ident, raw in snapshot.rows.items():
         usage, problem = parse_usage(raw.get("metadata"))
         fields = {key: raw[key] for key in _KEYS if raw.get(key) is not None}
+        if ident in snapshot.parents:
+            fields["parent"] = snapshot.parents[ident]
         try:
             beads.append(
                 ReportBead.model_validate(

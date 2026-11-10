@@ -6,13 +6,15 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_bd import FakeBd, bead, comment, dep, related
+from fake_bd import FakeBd, bead, comment, dep
 
+from gin_console.beads.snapshot import Snapshot, build_snapshot
 from gin_console.beads.source import (
     MAX_COMMENT_CHARS,
     BeadNotFound,
     BeadsError,
     count_reopens,
+    export_beads,
     get_bead,
     get_comments,
     list_beads,
@@ -23,41 +25,56 @@ from gin_console.beads.source import (
 CWD = Path("/tmp/project")
 
 
+def snap(*rows: Any) -> Snapshot:
+    return build_snapshot(list(rows))
+
+
 # REQ-BEADS-001
-def test_beads_001_list_arguments_and_closed_flag() -> None:
-    fake = FakeBd([bead("a-1"), bead("a-2", status="closed")])
-    assert [b.id for b in list_beads(fake, CWD, closed=False)] == ["a-1"]
-    assert fake.calls[0] == (["list", "--limit", "0", "--json"], CWD)
-    assert [b.id for b in list_beads(fake, CWD, closed=True)] == ["a-1", "a-2"]
-    assert fake.calls[3][0] == ["list", "--limit", "0", "--json", "--all"]
+def test_beads_001_closed_flag() -> None:
+    snapshot = snap(bead("a-1"), bead("a-2", status="closed"))
+    assert [b.id for b in list_beads(snapshot, closed=False)] == ["a-1"]
+    assert [b.id for b in list_beads(snapshot, closed=True)] == ["a-1", "a-2"]
+
+
+# REQ-BEADS-001
+def test_beads_001_one_export_command() -> None:
+    fake = FakeBd([bead("a-1")])
+    assert [row["id"] for row in export_beads(fake, CWD)] == ["a-1"]
+    assert fake.calls == [(["export"], CWD)]
 
 
 # REQ-BEADS-001
 def test_beads_001_optional_fields_default() -> None:
-    (summary,) = list_beads(FakeBd([bead("a-1")]), CWD, closed=False)
+    (summary,) = list_beads(snap(bead("a-1")), closed=False)
     assert (summary.labels, summary.assignee, summary.parent) == ([], None, None)
     assert summary.priority == 2 and summary.comment_count == 0
 
 
+# REQ-BEADS-001
+def test_beads_001_parent_comes_from_the_parent_child_row() -> None:
+    child = bead("e-1.1", dependencies=[dep("e-1.1", "e-1", "parent-child")])
+    by_id = {b.id: b for b in list_beads(snap(bead("e-1", issue_type="epic"), child), False)}
+    assert (by_id["e-1"].parent, by_id["e-1.1"].parent) == (None, "e-1")
+
+
 # REQ-BEADS-005
 def test_beads_005_a_malformed_bead_is_left_out_of_the_list() -> None:
-    fake = FakeBd(
-        [
-            bead("a-1"),
-            bead("a-2", title=7),
-            bead("a-3", priority="high"),
-            bead("a-4", priority=True),
-            "x",
-        ]
+    snapshot = snap(
+        bead("a-1"),
+        bead("a-2", title=7),
+        bead("a-3", priority="high"),
+        bead("a-4", priority=True),
+        "x",
+        {"id": 5},
     )
-    assert [b.id for b in list_beads(fake, CWD, closed=False)] == ["a-1"]
+    assert [b.id for b in list_beads(snapshot, closed=False)] == ["a-1"]
 
 
 # REQ-BEADS-005
 @pytest.mark.parametrize("output", [{"x": 1}, "text", 5])
-def test_beads_005_unexpected_list_output(output: Any) -> None:
+def test_beads_005_unexpected_export_output(output: Any) -> None:
     with pytest.raises(BeadsError, match="not understood"):
-        list_beads(FakeBd(output=output), CWD, closed=False)
+        build_snapshot(output)
 
 
 # REQ-BEADS-002
@@ -65,16 +82,23 @@ def test_beads_002_detail_relations() -> None:
     shown = bead(
         "a-5",
         description="Why and what",
-        parent="a-1",
         dependencies=[
-            related("a-4", "blocks"),
-            related("a-1", "parent-child"),
-            related("z", "relates_to"),
+            dep("a-5", "a-4", "blocks"),
+            dep("a-5", "a-1", "parent-child"),
+            dep("a-5", "z", "relates_to"),
+            dep("a-5", "external:other:cap", "blocks"),
         ],
     )
-    up = {"a-5": [related("a-6", "blocks"), related("a-7", "parent-child", status="closed")]}
-    detail = get_bead(FakeBd(shown={"a-5": shown}, up=up), CWD, "a-5")
-    assert detail.description == "Why and what"
+    snapshot = snap(
+        bead("a-1"),
+        bead("a-4"),
+        bead("z"),
+        shown,
+        bead("a-6", dependencies=[dep("a-6", "a-5", "blocks")]),
+        bead("a-7", status="closed", dependencies=[dep("a-7", "a-5", "parent-child")]),
+    )
+    detail = get_bead(snapshot, "a-5")
+    assert detail.description == "Why and what" and detail.parent == "a-1"
     assert [(r.id, r.type) for r in detail.dependencies] == [
         ("a-4", "blocks"),
         ("a-1", "parent-child"),
@@ -84,33 +108,29 @@ def test_beads_002_detail_relations() -> None:
 
 
 # REQ-BEADS-002
-def test_beads_002_detail_commands() -> None:
-    fake = FakeBd(shown={"a-5": bead("a-5")})
-    get_bead(fake, CWD, "a-5")
-    assert fake.calls == [
-        (["show", "--json", "--", "a-5"], CWD),
-        (["dep", "list", "--direction", "up", "--json", "--", "a-5"], CWD),
-    ]
+def test_beads_002_detail_flags_match_the_list() -> None:
+    snapshot = snap(bead("a-1"), bead("a-5", dependencies=[dep("a-5", "a-1", "blocks")]))
+    detail = get_bead(snapshot, "a-5")
+    assert (detail.blocked, detail.ready, detail.blocked_by) == (True, False, ["a-1"])
 
 
 # REQ-BEADS-002
 def test_beads_002_description_may_be_absent() -> None:
     shown = bead("a-5")
     del shown["description"]
-    assert get_bead(FakeBd(shown={"a-5": shown}), CWD, "a-5").description is None
+    assert get_bead(snap(shown), "a-5").description is None
 
 
 # REQ-BEADS-002
 def test_beads_002_unknown_bead() -> None:
     with pytest.raises(BeadNotFound):
-        get_bead(FakeBd(), CWD, "nope-1")
+        get_bead(snap(bead("a-1")), "nope-1")
 
 
 # REQ-BEADS-005
-@pytest.mark.parametrize("output", [[], {"error": "database is locked"}, [5], "text"])
-def test_beads_005_detail_unexpected_output(output: Any) -> None:
-    with pytest.raises(BeadsError):
-        get_bead(FakeBd(output=output), CWD, "a-5")
+def test_beads_005_detail_unexpected_row() -> None:
+    with pytest.raises(BeadsError, match="not understood"):
+        get_bead(snap(bead("a-5", title=7)), "a-5")
 
 
 # REQ-BEADS-003
@@ -135,11 +155,18 @@ def test_beads_003_id_validation(value: str, ok: bool) -> None:
 
 
 # REQ-BEADS-003
-def test_beads_003_an_invalid_id_never_reaches_bd() -> None:
-    fake = FakeBd()
+@pytest.mark.parametrize("value", ["a-1\n", "a-1 ", "١", "a١"])
+def test_beads_003_trailing_newline_and_non_ascii_digits_are_not_ids(value: str) -> None:
+    assert valid_id(value) is False
+
+
+# REQ-BEADS-003
+def test_beads_003_an_invalid_id_is_not_found() -> None:
+    snapshot = snap({**bead("a-1"), "id": "--help"})
     with pytest.raises(BeadNotFound):
-        get_bead(fake, CWD, "--help")
-    assert fake.calls == []
+        get_bead(snapshot, "--help")
+    with pytest.raises(BeadNotFound):
+        get_comments(snapshot, "--help")
 
 
 # REQ-BEADS-006
@@ -149,9 +176,9 @@ def test_beads_006_lone_surrogates_are_replaced() -> None:
         title="a\ud800b",
         description="d\ud800",
         labels=["\ud800"],
-        dependencies=[related("a-4", "blocks", title="t\ud800")],
+        dependencies=[dep("a-5", "a-4", "blocks")],
     )
-    detail = get_bead(FakeBd([shown], {"a-5": shown}), CWD, "a-5")
+    detail = get_bead(snap(bead("a-4", title="t\ud800"), shown), "a-5")
     for text in (
         detail.title,
         detail.description or "",
@@ -180,12 +207,32 @@ def finished(out: str = "[]", code: int = 0, err: str = "") -> subprocess.Comple
 
 
 # REQ-BEADS-005
-def test_beads_005_real_runner_uses_a_30_second_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    calls = fake_run(monkeypatch, finished('[{"id": "a-1"}]'))
-    assert run_bd(["list", "--json"], CWD) == [{"id": "a-1"}]
+def test_beads_005_real_runner_reads_export_lines_with_a_30_second_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls = fake_run(monkeypatch, finished('{"id": "a-1"}\n\n{"id": "a-2"}\n'))
+    assert run_bd(["export"], CWD) == [{"id": "a-1"}, {"id": "a-2"}]
     ((command, kwargs),) = calls
-    assert command == ["bd", "list", "--json"]
+    assert command == ["bd", "export"]
     assert kwargs["timeout"] == 30 and kwargs["cwd"] == CWD
+
+
+# REQ-BEADS-005
+@pytest.mark.parametrize("out", ['{"id": "a-1"}\nnot json\n', '[{"id": "a-1"}]\n', "5\n"])
+def test_beads_005_real_runner_rejects_odd_export_lines(
+    monkeypatch: pytest.MonkeyPatch, out: str
+) -> None:
+    fake_run(monkeypatch, finished(out))
+    with pytest.raises(BeadsError):
+        run_bd(["export"], CWD)
+
+
+# REQ-BEADS-005
+def test_beads_005_real_runner_reads_json_for_other_commands(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_run(monkeypatch, finished('[{"Issue": {"status": "open"}}]'))
+    assert run_bd(["history", "--json", "--", "a-1"], CWD) == [{"Issue": {"status": "open"}}]
 
 
 # REQ-BEADS-005
@@ -197,12 +244,13 @@ def test_beads_005_real_runner_uses_a_30_second_timeout(monkeypatch: pytest.Monk
         (PermissionError(13, "Permission denied"), "Permission denied"),
     ],
 )
+@pytest.mark.parametrize("command", ["export", "history"])
 def test_beads_005_real_runner_failures(
-    monkeypatch: pytest.MonkeyPatch, failure: Exception, message: str
+    monkeypatch: pytest.MonkeyPatch, failure: Exception, message: str, command: str
 ) -> None:
     fake_run(monkeypatch, failure)
     with pytest.raises(BeadsError, match=message):
-        run_bd(["list"], CWD)
+        run_bd([command], CWD)
 
 
 # REQ-BEADS-005
@@ -211,67 +259,18 @@ def test_beads_005_real_runner_non_zero_exit_and_invalid_json(
 ) -> None:
     fake_run(monkeypatch, finished("", code=2, err="boom"))
     with pytest.raises(BeadsError, match="exited 2: boom"):
-        run_bd(["list"], CWD)
+        run_bd(["export"], CWD)
     fake_run(monkeypatch, finished("not json"))
     with pytest.raises(BeadsError, match="invalid JSON"):
-        run_bd(["list"], CWD)
+        run_bd(["history"], CWD)
 
 
-# REQ-BEADS-002
-def test_beads_002_json_on_failure_lets_a_not_found_answer_through(
+# REQ-BEADS-011
+def test_beads_011_json_on_failure_lets_a_not_found_answer_through(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     fake_run(monkeypatch, finished('{"error": "no issues found"}', code=1))
-    assert run_bd(["show"], CWD, json_on_failure=True) == {"error": "no issues found"}
-
-
-# REQ-BEADS-006
-@pytest.mark.parametrize(
-    ("answer", "error"),
-    [
-        ({"error": "x\ud800y"}, BeadsError),
-        ({"error": "no issue \ud800 found"}, BeadNotFound),
-    ],
-)
-def test_beads_006_error_messages_are_cleaned(
-    answer: dict[str, str], error: type[Exception]
-) -> None:
-    with pytest.raises(error) as caught:
-        get_bead(FakeBd(output=answer), CWD, "a-5")
-    str(caught.value).encode("utf-8")
-
-
-# REQ-BEADS-002
-def test_beads_002_a_malformed_relation_row_is_dropped_not_fatal() -> None:
-    shown = bead(
-        "a-5",
-        dependencies=[
-            related("a-4", "blocks"),
-            {"id": "a-3", "title": 3, "dependency_type": "blocks"},
-            "x",
-            {},
-        ],
-    )
-    detail = get_bead(FakeBd(shown={"a-5": shown}), CWD, "a-5")
-    assert [r.id for r in detail.dependencies] == ["a-4"]
-
-
-# REQ-BEADS-002
-def test_beads_002_an_unknown_id_at_dep_list_is_not_found() -> None:
-    class Flaky(FakeBd):
-        def __call__(self, args: list[str], cwd: Path, *, json_on_failure: bool = False) -> Any:
-            if args[0] == "dep":
-                return {"error": 'resolving a-5: no issue found matching "a-5"'}
-            return super().__call__(args, cwd, json_on_failure=json_on_failure)
-
-    with pytest.raises(BeadNotFound):
-        get_bead(Flaky(shown={"a-5": bead("a-5")}), CWD, "a-5")
-
-
-# REQ-BEADS-003
-@pytest.mark.parametrize("value", ["a-1\n", "a-1 ", "\u0661", "a\u0661"])
-def test_beads_003_trailing_newline_and_non_ascii_digits_are_not_ids(value: str) -> None:
-    assert valid_id(value) is False
+    assert run_bd(["history"], CWD, json_on_failure=True) == {"error": "no issues found"}
 
 
 # REQ-BEADS-005
@@ -283,134 +282,98 @@ def test_beads_005_invalid_utf8_in_the_output_is_tolerated(
     binary.parent.mkdir()
     binary.write_text(
         f"#!{sys.executable}\nimport sys\n"
-        'sys.stdout.buffer.write(b\'[{"id": "a-1", "title": "x\\xffy"}]\')\n'
+        'sys.stdout.buffer.write(b\'{"id": "a-1", "title": "x\\xffy"}\\n\')\n'
     )
     binary.chmod(binary.stat().st_mode | stat.S_IEXEC)
     monkeypatch.setenv("PATH", f"{binary.parent}{os.pathsep}{os.environ['PATH']}")
-    assert run_bd(["list"], tmp_path) == [{"id": "a-1", "title": "x\ufffdy"}]
+    assert run_bd(["export"], tmp_path) == [{"id": "a-1", "title": "x�y"}]
 
 
-READY = ["ready", "--limit", "0", "--json"]
+# REQ-BEADS-002
+def test_beads_002_a_malformed_relation_row_is_dropped_not_fatal() -> None:
+    shown = bead(
+        "a-5",
+        dependencies=[
+            dep("a-5", "a-4", "blocks"),
+            dep("a-5", "a-3", "blocks"),
+            {"issue_id": "a-5", "depends_on_id": 7, "type": "blocks"},
+            "x",
+            {},
+        ],
+    )
+    snapshot = snap(bead("a-4"), bead("a-3", title=3), shown)
+    assert [r.id for r in get_bead(snapshot, "a-5").dependencies] == ["a-4"]
 
 
 # REQ-BEADS-007
 def test_beads_007_flags_and_closed_at() -> None:
-    fake = FakeBd(
-        [
-            bead("r-1"),
-            bead("b-1"),
-            bead("w-1", status="in_progress"),
-            bead("s-1", status="blocked"),
-            bead("c-1", status="closed", closed_at="2026-10-15T10:00:00Z"),
-        ],
-        ready=["r-1"],
-        blocked=["b-1"],
+    snapshot = snap(
+        bead("r-1"),
+        bead("w-1", status="in_progress"),
+        bead("b-1", dependencies=[dep("b-1", "w-1", "blocks")]),
+        bead("s-1", status="blocked"),
+        bead("c-1", status="closed", closed_at="2026-10-15T10:00:00Z"),
     )
-    by_id = {b.id: b for b in list_beads(fake, CWD, closed=True)}
+    by_id = {b.id: b for b in list_beads(snapshot, closed=True)}
     assert (by_id["r-1"].ready, by_id["r-1"].blocked) == (True, False)
     assert (by_id["b-1"].ready, by_id["b-1"].blocked) == (False, True)
     assert (by_id["w-1"].ready, by_id["w-1"].blocked) == (False, False)
-    assert by_id["s-1"].blocked is True  # status blocked, even if bd blocked does not list it
+    assert by_id["s-1"].blocked is True  # status blocked, even if no blocker is open
     assert by_id["c-1"].closed_at == "2026-10-15T10:00:00Z"
     assert by_id["r-1"].closed_at is None
 
 
 # REQ-BEADS-007
-def test_beads_007_commands_and_unknown_ids() -> None:
-    fake = FakeBd([bead("a-1")], ready=["a-1", "ghost"], blocked=["ghost"])
-    assert [b.id for b in list_beads(fake, CWD, closed=False)] == ["a-1"]
-    assert [call[0] for call in fake.calls] == [
-        ["list", "--limit", "0", "--json"],
-        READY,
-        ["blocked", "--json"],
-    ]
-
-
-# REQ-BEADS-007
-# REQ-BEADS-005
-@pytest.mark.parametrize("command", ["ready", "blocked"])
-@pytest.mark.parametrize("output", [{"x": 1}, "text", 5])
-def test_beads_007_unexpected_readiness_output(command: str, output: Any) -> None:
-    with pytest.raises(BeadsError, match="not understood"):
-        list_beads(FakeBd([bead("a-1")], bad={command: output}), CWD, closed=False)
-
-
-# REQ-BEADS-007
-@pytest.mark.parametrize("command", ["ready", "blocked"])
-def test_beads_007_a_failing_readiness_command_fails_the_list(command: str) -> None:
-    fake = FakeBd([bead("a-1")], failing={command: BeadsError(f"bd {command} failed")})
-    with pytest.raises(BeadsError, match=f"bd {command} failed"):
-        list_beads(fake, CWD, closed=False)
+# REQ-MILESTONE-UI-007
+def test_beads_007_milestone_is_never_ready() -> None:
+    snapshot = snap(bead("m-1", issue_type="milestone"), bead("r-1"))
+    by_id = {b.id: b for b in list_beads(snapshot, closed=False)}
+    assert (by_id["m-1"].ready, by_id["r-1"].ready) == (False, True)
 
 
 # REQ-BEADS-008
-def test_beads_008_comments_in_order_with_arguments() -> None:
+def test_beads_008_comments_in_order() -> None:
     first = comment("a-5", "first", created_at="2026-10-11T10:00:00Z")
     second = comment("a-5", "second text", created_at="2026-10-12T10:00:00Z")
-    fake = FakeBd(shown={"a-5": bead("a-5")}, comments={"a-5": [first, second]})
-    comments = get_comments(fake, CWD, "a-5")
+    comments = get_comments(snap(bead("a-5", comments=[first, second])), "a-5")
     assert [c.text for c in comments] == ["first", "second text"]
     assert comments[0].author == "me" and comments[0].created_at == "2026-10-11T10:00:00Z"
     assert not comments[0].truncated
-    assert fake.calls == [(["comments", "--json", "--", "a-5"], CWD)]
 
 
 # REQ-BEADS-008
 def test_beads_008_long_comment_is_cut_and_marked() -> None:
     long = comment("a-5", "x" * 25_000)
     exact = comment("a-5", "y" * MAX_COMMENT_CHARS)
-    fake = FakeBd(shown={"a-5": bead("a-5")}, comments={"a-5": [long, exact]})
-    cut, whole = get_comments(fake, CWD, "a-5")
+    cut, whole = get_comments(snap(bead("a-5", comments=[long, exact])), "a-5")
     assert len(cut.text) == MAX_COMMENT_CHARS and cut.truncated
     assert len(whole.text) == MAX_COMMENT_CHARS and not whole.truncated
 
 
 # REQ-BEADS-008
-def test_beads_008_no_comments_is_an_empty_list() -> None:
-    fake = FakeBd(shown={"a-5": bead("a-5")})
-    assert get_comments(fake, CWD, "a-5") == []
+@pytest.mark.parametrize("comments", [None, [], {"x": 1}, "text"])
+def test_beads_008_no_or_odd_comments_is_an_empty_list(comments: Any) -> None:
+    extra = {} if comments is None else {"comments": comments}
+    assert get_comments(snap(bead("a-5", **extra)), "a-5") == []
 
 
 # REQ-BEADS-008
 def test_beads_008_a_malformed_comment_is_dropped() -> None:
-    fake = FakeBd(
-        shown={"a-5": bead("a-5")},
-        comments={"a-5": [comment("a-5", "ok"), comment("a-5") | {"text": 7}, "x", {"id": "z"}]},
-    )
-    assert [c.text for c in get_comments(fake, CWD, "a-5")] == ["ok"]
+    items = [comment("a-5", "ok"), comment("a-5") | {"text": 7}, "x", {"id": "z"}]
+    assert [c.text for c in get_comments(snap(bead("a-5", comments=items)), "a-5")] == ["ok"]
 
 
 # REQ-BEADS-008
 def test_beads_008_unknown_bead_is_not_found() -> None:
     with pytest.raises(BeadNotFound):
-        get_comments(FakeBd(), CWD, "x-1")
-
-
-# REQ-BEADS-008
-@pytest.mark.parametrize("ident", ["--help", "-x", "..", "a b", ""])
-def test_beads_008_an_invalid_id_never_reaches_bd(ident: str) -> None:
-    fake = FakeBd()
-    with pytest.raises(BeadNotFound):
-        get_comments(fake, CWD, ident)
-    assert fake.calls == []
-
-
-# REQ-BEADS-008
-# REQ-BEADS-005
-@pytest.mark.parametrize("output", [{"x": 1}, "text", 5])
-def test_beads_008_unexpected_output(output: Any) -> None:
-    with pytest.raises(BeadsError, match="not understood"):
-        get_comments(FakeBd(output=output), CWD, "a-5")
+        get_comments(snap(bead("a-5")), "x-1")
 
 
 # REQ-BEADS-008
 # REQ-BEADS-006
 def test_beads_008_lone_surrogates_are_replaced() -> None:
-    fake = FakeBd(
-        shown={"a-5": bead("a-5")},
-        comments={"a-5": [comment("a-5", "bad \ud800 text", author="a\udc00b")]},
-    )
-    (item,) = get_comments(fake, CWD, "a-5")
+    items = [comment("a-5", "bad \ud800 text", author="a\udc00b")]
+    (item,) = get_comments(snap(bead("a-5", comments=items)), "a-5")
     item.text.encode("utf-8")
     item.author.encode("utf-8")
 
@@ -425,7 +388,7 @@ def test_beads_009_author_and_text_fields() -> None:
         acceptance_criteria="it works",
         close_reason="done",
     )
-    detail = get_bead(FakeBd(shown={"a-5": shown}), CWD, "a-5")
+    detail = get_bead(snap(shown), "a-5")
     assert detail.created_by == "gin"
     assert (detail.design, detail.notes) == ("the design", "some notes")
     assert (detail.acceptance_criteria, detail.close_reason) == ("it works", "done")
@@ -433,7 +396,7 @@ def test_beads_009_author_and_text_fields() -> None:
 
 # REQ-BEADS-009
 def test_beads_009_absent_or_empty_texts_are_null() -> None:
-    detail = get_bead(FakeBd(shown={"a-5": bead("a-5", design="", created_by=None)}), CWD, "a-5")
+    detail = get_bead(snap(bead("a-5", design="", created_by=None)), "a-5")
     assert detail.design is None and detail.notes is None
     assert detail.acceptance_criteria is None and detail.close_reason is None
     assert detail.created_by is None
@@ -441,14 +404,14 @@ def test_beads_009_absent_or_empty_texts_are_null() -> None:
 
 # REQ-BEADS-009
 def test_beads_009_list_rows_carry_created_by() -> None:
-    (row,) = list_beads(FakeBd([bead("a-1", created_by="gin")]), CWD, closed=False)
+    (row,) = list_beads(snap(bead("a-1", created_by="gin")), closed=False)
     assert row.created_by == "gin"
 
 
 # REQ-BEADS-010
 def test_beads_010_blocks_and_blocked_by_rows() -> None:
     row = bead("a-5", dependencies=[dep("a-5", "a-1", "blocks"), dep("a-5", "a-2", "blocked-by")])
-    (summary,) = list_beads(FakeBd([row]), CWD, closed=False)
+    (summary,) = list_beads(snap(row), closed=False)
     assert summary.blocked_by == ["a-1", "a-2"]
 
 
@@ -463,7 +426,7 @@ def test_beads_010_other_types_are_ignored() -> None:
             dep("a-5", "a-3", "supersedes"),
         ],
     )
-    (summary,) = list_beads(FakeBd([row]), CWD, closed=False)
+    (summary,) = list_beads(snap(row), closed=False)
     assert summary.blocked_by == []
 
 
@@ -479,7 +442,7 @@ def test_beads_010_a_malformed_row_is_skipped_not_the_bead() -> None:
             dep("a-5", "a-1", "blocks"),
         ],
     )
-    (summary,) = list_beads(FakeBd([row]), CWD, closed=False)
+    (summary,) = list_beads(snap(row), closed=False)
     assert summary.id == "a-5" and summary.blocked_by == ["a-1"]  # the duplicate is dropped too
 
 
@@ -487,30 +450,24 @@ def test_beads_010_a_malformed_row_is_skipped_not_the_bead() -> None:
 @pytest.mark.parametrize("dependencies", [None, [], "text", {"x": 1}])
 def test_beads_010_no_or_odd_dependencies_give_an_empty_list(dependencies: Any) -> None:
     extra = {} if dependencies is None else {"dependencies": dependencies}
-    (summary,) = list_beads(FakeBd([bead("a-5", **extra)]), CWD, closed=False)
+    (summary,) = list_beads(snap(bead("a-5", **extra)), closed=False)
     assert summary.blocked_by == []
-
-
-# REQ-BEADS-007
-# REQ-MILESTONE-UI-007
-def test_beads_007_milestone_is_never_ready() -> None:
-    fake = FakeBd([bead("m-1", issue_type="milestone"), bead("r-1")], ready=["m-1", "r-1"])
-    by_id = {b.id: b for b in list_beads(fake, CWD, closed=False)}
-    assert (by_id["m-1"].ready, by_id["r-1"].ready) == (False, True)
 
 
 # REQ-BEADS-002
 def test_beads_002_bugs_found() -> None:
-    shown = bead("a-5", dependencies=[related("a-0", "discovered-from")])
-    up = {
-        "a-5": [
-            {**related("b-1", "discovered-from"), "issue_type": "bug"},
-            {**related("b-2", "discovered-from", status="closed"), "issue_type": "bug"},
-            {**related("e-1", "discovered-from"), "issue_type": "epic"},
-            related("a-6", "blocks"),
-        ]
-    }
-    detail = get_bead(FakeBd(shown={"a-5": shown}, up=up), CWD, "a-5")
+    def found(ident: str, kind: str, **extra: Any) -> dict[str, Any]:
+        return bead(ident, dependencies=[dep(ident, "a-5", kind)], **extra)
+
+    snapshot = snap(
+        bead("a-0"),
+        bead("a-5", dependencies=[dep("a-5", "a-0", "discovered-from")]),
+        found("b-1", "discovered-from", issue_type="bug"),
+        found("b-2", "discovered-from", issue_type="bug", status="closed"),
+        found("e-1", "discovered-from", issue_type="epic"),
+        found("a-6", "blocks"),
+    )
+    detail = get_bead(snapshot, "a-5")
     assert [(r.id, r.status, r.type) for r in detail.bugs] == [
         ("b-1", "open", "discovered-from"),
         ("b-2", "closed", "discovered-from"),
@@ -538,6 +495,22 @@ def test_beads_011_counts_closed_then_not_closed(statuses: list[str], expected: 
 def test_beads_011_unknown_bead() -> None:
     with pytest.raises(BeadNotFound):
         count_reopens(FakeBd(), CWD, "x-1")
+
+
+# REQ-BEADS-011
+@pytest.mark.parametrize(
+    ("answer", "error"),
+    [
+        ({"error": "x\ud800y"}, BeadsError),
+        ({"error": "no issue \ud800 found"}, BeadNotFound),
+    ],
+)
+def test_beads_011_error_messages_are_cleaned(
+    answer: dict[str, str], error: type[Exception]
+) -> None:
+    with pytest.raises(error) as caught:
+        count_reopens(FakeBd(output=answer), CWD, "a-5")
+    str(caught.value).encode("utf-8")
 
 
 # REQ-BEADS-011

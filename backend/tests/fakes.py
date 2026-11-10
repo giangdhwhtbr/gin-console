@@ -9,28 +9,32 @@ STATE = {
     "gates": {"requirement_confirmed": "satisfied"},
     "project": {"layout": "sdd"},
 }
-ISSUES = [
+# e3 waits on e1, which is in progress: e3 is blocked, e2 and t1 are ready
+ISSUES: list[dict[str, Any]] = [
     {"id": "e1", "title": "Epic one", "issue_type": "epic", "status": "in_progress"},
     {"id": "e2", "title": "Epic two", "issue_type": "epic", "status": "open"},
-    {"id": "e3", "title": "Epic three", "issue_type": "epic", "status": "open"},
+    {
+        "id": "e3",
+        "title": "Epic three",
+        "issue_type": "epic",
+        "status": "open",
+        "dependencies": [{"issue_id": "e3", "depends_on_id": "e1", "type": "blocks"}],
+    },
     {"id": "t1", "title": "Task", "issue_type": "task", "status": "open"},
+    {"id": "c1", "title": "Done", "issue_type": "task", "status": "closed"},
 ]
-READY = [{"id": "e2"}, {"id": "t1"}]
-BLOCKED = [{"id": "e3"}]
 
 
 class Fake:
     def __init__(
         self,
         fail: dict[str, Exception | int] | None = None,
-        issues: list[dict[str, str]] | None = None,
-        ready: list[dict[str, str]] | None = None,
+        issues: list[dict[str, Any]] | None = None,
     ) -> None:
         self.calls: list[list[str]] = []
         self.envs: list[dict[str, str]] = []
         self.fail = fail or {}
         self.issues = ISSUES if issues is None else issues
-        self.ready = READY if ready is None else ready
 
     def __call__(self, cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
         self.calls.append(cmd)
@@ -40,10 +44,8 @@ class Fake:
             raise failure
         if failure:
             return subprocess.CompletedProcess(cmd, failure, "", "boom")
-        outputs: dict[str, Any] = {
-            "state": STATE,
-            "list": self.issues,
-            "ready": self.ready,
-            "blocked": BLOCKED,
-        }
+        if cmd[1] == "export":  # JSON Lines
+            lines = "".join(json.dumps(issue) + "\n" for issue in self.issues)
+            return subprocess.CompletedProcess(cmd, 0, lines, "")
+        outputs: dict[str, Any] = {"state": STATE}
         return subprocess.CompletedProcess(cmd, 0, json.dumps(outputs[cmd[1]]), "")

@@ -1,10 +1,8 @@
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_bd import FakeBd
-from report_beads import closed, row, usage
+from report_beads import closed, row, snap, usage
 
 from gin_console.reports.models import CoverageBead, EstimateRow, Point, Report, Stat, WipRow
 from gin_console.reports.service import build_report
@@ -18,7 +16,7 @@ def ago(days: float) -> str:
 
 
 def report(rows: list[Any], *, days: int = 30, sprint: str | None = None) -> Report:
-    beads = read_beads(FakeBd(rows), Path("."), "alpha")
+    beads = read_beads(snap(rows), "alpha")
     return build_report(beads, now=NOW, project="alpha", days=days, sprint=sprint, errors=[])
 
 
@@ -270,7 +268,7 @@ def test_reports_004_weeks() -> None:
 def test_reports_004_weeks_use_utc_dates() -> None:
     # 05:00+07:00 on 2 Nov is still 1 Nov in UTC, the day "now" is on
     now = datetime(2026, 11, 1, 23, 0, tzinfo=UTC)
-    beads = read_beads(FakeBd([closed("a-1", "2026-11-02T05:00:00+07:00")]), Path("."), "alpha")
+    beads = read_beads(snap([closed("a-1", "2026-11-02T05:00:00+07:00")]), "alpha")
     r = build_report(beads, now=now, project="alpha", days=7, sprint=None, errors=[])
     weeks = {w.week: w.counts for w in r.delivery.weeks}
     assert weeks["2026-W44"] == {"task": 1}

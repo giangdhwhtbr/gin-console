@@ -154,3 +154,15 @@ def test_reports_007_members_are_merged_across_projects(tmp_path: Path) -> None:
     ann = [m for m in body["usage"]["members"] if m["member"] == "ann"]
     assert len(ann) == 1
     assert ann[0]["closed"] == 2 and ann[0]["tokens"] == 300
+
+
+# REQ-REPORTS-001
+# REQ-BEADS-012
+def test_reports_001_refresh_drops_the_cached_report(tmp_path: Path) -> None:
+    fake = FakeBd([closed("a-1", 3)])
+    api = make(tmp_path, {"alpha": fake})
+    api.get("/api/reports", params={"project": "alpha"})
+    fake.beads = [closed("a-1", 3), closed("a-2", 2)]
+    assert api.post("/api/refresh").status_code == 204
+    body = api.get("/api/reports", params={"project": "alpha"}).json()
+    assert len(fake.calls) == 2 and body["totals"]["closed"] == 2

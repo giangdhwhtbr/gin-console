@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { Fragment, lazy, Suspense, useState } from "react";
 import { BeadDetailPage } from "@/features/beads/BeadDetailPage";
 import { BeadsPage } from "@/features/beads/BeadsPage";
 import { GraphPage } from "@/features/beads/GraphPage";
@@ -55,12 +55,14 @@ function milestoneRoute(pathname: string): { project: string; id: string } | nul
 
 export function App() {
   const { pathname } = useLocation();
+  const [epoch, setEpoch] = useState(0); // a new key remounts the page, which loads its data again
   const log = logRoute(pathname);
   const graph = graphRoute(pathname);
   const bead = beadRoute(pathname);
   const milestone = milestoneRoute(pathname);
   return (
-    <Layout>
+    <Layout onRefreshed={() => setEpoch((n) => n + 1)}>
+      <Fragment key={epoch}>
       {log !== null ? (
         <SessionLogPage key={`${log.project}/${log.id}`} project={log.project} id={log.id} />
       ) : graph !== null ? (
@@ -84,6 +86,7 @@ export function App() {
       ) : (
         <ProjectsPage />
       )}
+      </Fragment>
     </Layout>
   );
 }

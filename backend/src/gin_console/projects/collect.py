@@ -1,4 +1,4 @@
-"""Run the read-only gin and bd commands for a project and cache the result."""
+"""Run the read-only gin command for a project, add its Beads counts, and cache the result."""
 
 import json
 import os
@@ -13,7 +13,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
-from gin_console.projects.models import Beads, BlockError, Epic, Workflow
+from gin_console.projects.models import Beads, BlockError, Workflow
 
 TIMEOUT_SECONDS = 10
 TTL_SECONDS = 5.0
@@ -84,16 +84,10 @@ def _resolve_cmd(cmd: list[str]) -> list[str]:
     return cmd
 
 
-def run_json(
-    cmd: list[str],
-    cwd: Path,
-    json_on_failure: bool = False,
-    timeout: float = TIMEOUT_SECONDS,
-) -> Any:
-    exec_cmd = _resolve_cmd(cmd)
+def _run(cmd: list[str], cwd: Path, timeout: float) -> "subprocess.CompletedProcess[str]":
     try:
-        done = subprocess.run(
-            exec_cmd,
+        return subprocess.run(
+            _resolve_cmd(cmd),
             cwd=cwd,
             env=_child_env(),
             capture_output=True,
@@ -108,12 +102,32 @@ def run_json(
         raise CollectError(f"{cmd[0]} timed out") from None
     except OSError as exc:  # e.g. PermissionError on the command or the project directory
         raise CollectError(f"{cmd[0]} failed: {exc.strerror}") from None
+
+
+def _exit_error(cmd: list[str], done: "subprocess.CompletedProcess[str]") -> CollectError:
+    return CollectError(
+        f"{cmd[0]} exited {done.returncode}: {done.stderr.strip()[:200]}",
+        done.returncode,
+        done.stderr,
+    )
+
+
+def run_text(cmd: list[str], cwd: Path, timeout: float = TIMEOUT_SECONDS) -> str:
+    done = _run(cmd, cwd, timeout)
+    if done.returncode != 0:
+        raise _exit_error(cmd, done)
+    return done.stdout
+
+
+def run_json(
+    cmd: list[str],
+    cwd: Path,
+    json_on_failure: bool = False,
+    timeout: float = TIMEOUT_SECONDS,
+) -> Any:
+    done = _run(cmd, cwd, timeout)
     if done.returncode != 0 and not json_on_failure:
-        raise CollectError(
-            f"{cmd[0]} exited {done.returncode}: {done.stderr.strip()[:200]}",
-            done.returncode,
-            done.stderr,
-        )
+        raise _exit_error(cmd, done)
     try:
         return json.loads(done.stdout)
     except ValueError:
@@ -134,56 +148,33 @@ def collect_workflow(path: Path) -> Workflow | BlockError:
         return BlockError(error=f"gin: unexpected output ({exc!r})")
 
 
-def collect_beads(path: Path) -> Beads | BlockError:
-    try:
-        issues = run_json(
-            ["bd", "list", "--status", "open,in_progress", "--limit", "0", "--json"], path
-        )
-        # a milestone is not work, even when nothing blocks it (REQ-MILESTONE-UI-007)
-        ready = [
-            issue
-            for issue in run_json(["bd", "ready", "--limit", "0", "--json"], path)
-            if not (isinstance(issue, dict) and issue.get("issue_type") == "milestone")
-        ]
-        blocked = run_json(["bd", "blocked", "--json"], path)
-        ready_ids = {issue["id"] for issue in ready}
-        return Beads(
-            open=sum(issue["status"] == "open" for issue in issues),
-            in_progress=sum(issue["status"] == "in_progress" for issue in issues),
-            blocked=len(blocked),
-            ready=len(ready),
-            epics=[
-                Epic(id=issue["id"], title=issue["title"])
-                for issue in issues
-                if issue["issue_type"] == "epic"
-                and (issue["status"] == "in_progress" or issue["id"] in ready_ids)
-            ],
-        )
-    except CollectError as exc:
-        return BlockError(error=str(exc))
-    except (KeyError, TypeError, ValidationError) as exc:
-        return BlockError(error=f"bd: unexpected output ({exc!r})")
-
-
 Result = tuple[Workflow | BlockError, Beads | BlockError]
+BeadsReader = Callable[[Path], Beads | BlockError]
 
 
 class Collector:
     """Per-project cache; one lock per project so overlapping requests run the commands once."""
 
     def __init__(
-        self, ttl: float = TTL_SECONDS, clock: Callable[[], float] = time.monotonic
+        self,
+        beads: BeadsReader,
+        ttl: float = TTL_SECONDS,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
+        self._beads = beads
         self._ttl = ttl
         self._clock = clock
         self._cache: dict[str, tuple[float, Result]] = {}
         self._locks: dict[str, threading.Lock] = {}
+
+    def clear(self) -> None:
+        self._cache = {}
 
     def get(self, name: str, path: Path) -> Result:
         with self._locks.setdefault(name, threading.Lock()):
             hit = self._cache.get(name)
             if hit is not None and self._clock() - hit[0] < self._ttl:
                 return hit[1]
-            result = (collect_workflow(path), collect_beads(path))
+            result = (collect_workflow(path), self._beads(path))
             self._cache[name] = (self._clock(), result)
             return result

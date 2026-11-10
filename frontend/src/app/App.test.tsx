@@ -21,6 +21,24 @@ afterEach(() => {
 });
 
 describe("App routing", () => {
+  it("REQ-UI-096 Refresh drops the server caches, then the page loads its data again", async () => {
+    window.history.replaceState(null, "", "/");
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(() => Promise.resolve(json([])));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+    const projectLoads = () => fetchMock.mock.calls.filter(([url]) => url === "/api/projects").length;
+    expect(projectLoads()).toBe(1);
+    const [button] = screen.getAllByRole("button", { name: "Refresh data" });
+    await userEvent.click(button);
+    await screen.findByText(/no projects configured/i);
+    expect(fetchMock).toHaveBeenCalledWith("/api/refresh", { method: "POST" });
+    const refreshAt = fetchMock.mock.calls.findIndex(([url]) => url === "/api/refresh");
+    expect(fetchMock.mock.calls.slice(refreshAt + 1).some(([url]) => url === "/api/projects")).toBe(true);
+    expect(projectLoads()).toBe(2);
+    expect(window.location.pathname).toBe("/");
+  });
+
   it("REQ-UI-055 opens Milestones from the sidebar without a reload", async () => {
     window.history.replaceState(null, "", "/");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));

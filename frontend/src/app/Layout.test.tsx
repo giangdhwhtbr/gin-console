@@ -11,7 +11,7 @@ afterEach(() => {
 
 const open = (path: string) => {
   window.history.replaceState(null, "", path);
-  render(<Layout>page</Layout>);
+  render(<Layout onRefreshed={() => {}}>page</Layout>);
 };
 const nav = () => screen.getByRole("navigation", { name: "Main" });
 const sidebarToggle = () => screen.getByRole("button", { name: /(Collapse|Expand) sidebar/ });
@@ -102,6 +102,13 @@ describe("Layout", () => {
     expect(sidebarToggle()).toHaveAccessibleName("Collapse sidebar");
     await userEvent.click(sidebarToggle());
     expect(sidebarToggle()).toHaveAccessibleName("Expand sidebar");
+  });
+
+  it("REQ-UI-096 offers Refresh in the top bar and in the sidebar, above the navigation", () => {
+    open("/");
+    const buttons = screen.getAllByRole("button", { name: "Refresh data" });
+    expect(buttons).toHaveLength(2);
+    expect(buttons[1].compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("REQ-UI-094 puts the theme and collapse controls above the navigation", () => {

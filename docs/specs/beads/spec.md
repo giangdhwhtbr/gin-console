@@ -51,7 +51,7 @@ WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return 
 - THEN the response is 404
 
 ### REQ-BEADS-003: Safe, read-only commands
-The server SHALL run only read-only `bd` commands with fixed arguments in the project directory, SHALL accept a bead `id` only when it matches `[A-Za-z0-9][A-Za-z0-9._-]*` and respond 404 otherwise, SHALL treat any `closed` value other than `1` as absent without failing the request, and SHALL never create, update, close or delete a bead.
+The server SHALL run only the read-only `bd export` and `bd history` commands with fixed arguments in the project directory, SHALL accept a bead `id` only when it matches `[A-Za-z0-9][A-Za-z0-9._-]*` and respond 404 otherwise, SHALL treat any `closed` value other than `1` as absent without failing the request, and SHALL never create, update, close or delete a bead.
 
 #### Scenario: Option-like id
 - GIVEN a request for the bead `--help` or `../x`
@@ -63,36 +63,26 @@ The server SHALL run only read-only `bd` commands with fixed arguments in the pr
 - WHEN the server handles it
 - THEN the response is 200 and closed beads are left out
 
-### REQ-BEADS-004: Short-lived cache
-The server SHALL reuse a successful list for 5 seconds per project and closed setting and a successful detail for 5 seconds per project and bead, SHALL run the command for one key at most once at a time when requests overlap, and SHALL NOT keep an error result.
+### REQ-BEADS-004: One export per project
+The server SHALL answer the bead list, the bead detail and the comments of a project from one `bd export` of that project (REQ-BEADS-012), SHALL run `bd export` for one project at most once at a time when requests overlap, and SHALL NOT keep an error result.
 
-#### Scenario: Reused
-- GIVEN a list fetched 2 seconds ago
-- WHEN the same list is requested
-- THEN `bd` is not run again
-
-#### Scenario: Expired
-- GIVEN a list fetched 6 seconds ago
-- WHEN the same list is requested
-- THEN `bd` runs again
-
-#### Scenario: Different key
-- GIVEN a list fetched without closed beads
-- WHEN the list with `closed=1` is requested
-- THEN `bd` runs for it
+#### Scenario: Every view from one export
+- GIVEN a project whose snapshot is current
+- WHEN a client requests its list, its list with `closed=1`, a bead detail and that bead's comments
+- THEN `bd export` ran once
 
 #### Scenario: Overlapping requests
-- GIVEN two identical requests arrive while `bd` runs
+- GIVEN two requests for the same project arrive while `bd export` runs
 - WHEN both complete
-- THEN `bd` ran once
+- THEN `bd export` ran once
 
 #### Scenario: Errors are not kept
-- GIVEN the last run failed
+- GIVEN the last `bd export` failed
 - WHEN the same request is made again
-- THEN `bd` runs again
+- THEN `bd export` runs again
 
 ### REQ-BEADS-005: Failures
-IF `bd` is not found, times out after 30 seconds, exits with a non-zero status, prints invalid JSON or JSON of an unexpected shape, THEN the server SHALL respond 502 with a JSON body whose `error` says which happened, and SHALL leave out of a list any bead whose fields have the wrong types instead of failing the list.
+IF `bd` is not found, times out after 30 seconds, exits with a non-zero status, prints invalid JSON or JSON of an unexpected shape (for `bd export`, a line that is not a JSON object), THEN the server SHALL respond 502 with a JSON body whose `error` says which happened, and SHALL leave out of a list any bead whose fields have the wrong types instead of failing the list.
 
 #### Scenario: bd missing
 - GIVEN no `bd` command can be found
@@ -105,7 +95,7 @@ IF `bd` is not found, times out after 30 seconds, exits with a non-zero status, 
 - THEN the response is 502 and `error` says it timed out
 
 #### Scenario: One malformed bead
-- GIVEN `bd` prints 3 beads of which one has a numeric `title`
+- GIVEN `bd export` prints 3 beads of which one has a numeric `title`
 - WHEN a client requests the list
 - THEN the 2 valid beads are returned
 
@@ -118,32 +108,32 @@ The server SHALL replace lone surrogate characters in every string it returns.
 - THEN both responses are 200 with the character replaced
 
 ### REQ-BEADS-007: Readiness and closing time
-WHEN a client requests the bead list, the server SHALL add to each bead `ready` (true when `bd ready` lists it and its type is not `milestone`), `blocked` (true when `bd blocked` lists it or its status is `blocked`) and `closed_at` (the time it was closed, absent for a bead that is not closed), SHALL ignore ids that `bd ready` or `bd blocked` list but `bd list` does not, SHALL use the same 5-second cache entry for all three commands, and IF `bd ready` or `bd blocked` fails or prints an unexpected shape, THEN SHALL respond 502 as in REQ-BEADS-005 instead of returning wrong flags.
+WHEN a client requests the bead list or a bead detail, the server SHALL add to each bead `ready`, `blocked` and `closed_at` (the time it was closed, absent for a bead that is not closed), working out readiness from the export as `bd ready` and `bd blocked` do: a bead that is not closed is blocked WHEN it has a `blocks` or `blocked-by` dependency on a bead of the same export that is not closed, or WHEN an ancestor along its `parent-child` dependencies is blocked so; `blocked` is also true for a bead whose status is `blocked`; `ready` is true for an open bead that is not blocked and whose type is not `milestone`. A dependency on a bead the export does not hold (an `external:` reference or a deleted bead) SHALL block nothing.
 
 #### Scenario: Flags
-- GIVEN an open unblocked bead, an open bead with an unfinished blocker, an in-progress bead and a closed bead
+- GIVEN an open unblocked bead, an open bead with an in-progress blocker, an in-progress bead and a closed bead
 - WHEN a client requests the list with `closed=1`
 - THEN the first has `ready` true, the second `blocked` true, the third both false, and the fourth has `closed_at`
 
+#### Scenario: Closed blocker
+- GIVEN an open bead whose only blocker is closed
+- WHEN a client requests the list
+- THEN the bead has `ready` true and `blocked` false
+
+#### Scenario: Blocked ancestor
+- GIVEN an epic blocked by an open bead, its child and its grandchild, all open
+- WHEN a client requests the list
+- THEN the epic, the child and the grandchild have `blocked` true and `ready` false
+
 #### Scenario: Milestone is never ready
-- GIVEN an open milestone without blockers that `bd ready` lists
+- GIVEN an open milestone without blockers
 - WHEN a client requests the list
 - THEN the milestone has `ready` false
 
-#### Scenario: Unknown id is ignored
-- GIVEN `bd ready` lists an id that `bd list` does not
+#### Scenario: External blocker
+- GIVEN an open bead whose only blocker is `external:gin-workflow:cap`
 - WHEN a client requests the list
-- THEN that id does not appear and the request succeeds
-
-#### Scenario: Readiness command fails
-- GIVEN `bd blocked` exits with a non-zero status
-- WHEN a client requests the list
-- THEN the response is 502 with an `error`, and the failure is not cached
-
-#### Scenario: One cache entry
-- GIVEN a list was returned less than 5 seconds ago
-- WHEN a client requests the same list
-- THEN none of the three commands runs again
+- THEN the bead has `ready` true
 
 ### REQ-BEADS-008: Bead comments
 WHEN a client requests `GET /api/beads/{project}/{id}/comments`, the server SHALL return the comments of that bead oldest first, each with `id`, `author`, `text`, `created_at` and `truncated`, SHALL cut a text longer than 20000 characters to 20000 and mark it `truncated`, SHALL leave out a comment whose fields have the wrong types, SHALL respond 404 when the project, the id or the bead does not exist, and SHALL respond 502 as in REQ-BEADS-005 when `bd` fails or answers in an unexpected shape.
@@ -164,7 +154,7 @@ WHEN a client requests `GET /api/beads/{project}/{id}/comments`, the server SHAL
 - THEN the response is an empty list
 
 #### Scenario: Malformed comment
-- GIVEN `bd` returns one comment whose `text` is a number and one valid comment
+- GIVEN `bd export` holds one comment whose `text` is a number and one valid comment
 - WHEN a client requests the comments
 - THEN only the valid comment is returned
 
@@ -179,14 +169,9 @@ WHEN a client requests `GET /api/beads/{project}/{id}/comments`, the server SHAL
 - THEN the response is 404 and no `bd` command ran
 
 #### Scenario: bd fails
-- GIVEN `bd comments` exits with a non-zero status
+- GIVEN `bd export` exits with a non-zero status
 - WHEN a client requests the comments
 - THEN the response is 502 with an `error`, and the next request runs the command again
-
-#### Scenario: Cache
-- GIVEN the comments were returned less than 5 seconds ago
-- WHEN a client requests them again
-- THEN `bd` does not run again
 
 ### REQ-BEADS-009: Author and text fields
 The server SHALL return `created_by` (null when `bd` has none) with every bead of the list and of the detail, and SHALL return with the bead detail the plain-text fields `design`, `notes`, `acceptance_criteria` and `close_reason`, each null when `bd` has none or it is empty.
@@ -207,7 +192,7 @@ The server SHALL return `created_by` (null when `bd` has none) with every bead o
 - THEN its row has `created_by` `gin`
 
 ### REQ-BEADS-010: Blocking dependencies
-The server SHALL return with every bead of the list `blocked_by`, the ids of the beads that block it, taken from the dependencies `bd list` prints whose type is `blocks` or `blocked-by`, SHALL leave out dependencies of any other type, SHALL leave out a dependency whose fields have the wrong types without dropping the bead, and SHALL return an empty list for a bead without such dependencies.
+The server SHALL return with every bead of the list `blocked_by`, the ids of the beads that block it, taken from the dependencies `bd export` prints for it whose type is `blocks` or `blocked-by`, SHALL leave out dependencies of any other type, SHALL leave out a dependency whose fields have the wrong types without dropping the bead, and SHALL return an empty list for a bead without such dependencies.
 
 #### Scenario: Blocking ids
 - GIVEN a bead with a `blocks` dependency on `a-1` and a `blocked-by` dependency on `a-2`
@@ -261,3 +246,26 @@ WHEN a client requests `GET /api/beads/{project}/{id}/reopens`, the server SHALL
 - GIVEN `bd history` exits with a non-zero status
 - WHEN a client requests the reopens
 - THEN the response is 502 with an `error`, and the next request runs `bd history` again
+
+### REQ-BEADS-012: Export snapshot and refresh
+The server SHALL keep, per project, the beads that `bd export` printed (with their labels, dependencies and comments) and SHALL take a bead's `parent` from its `parent-child` dependency. It SHALL run `bd export` again WHEN the content of the project's embedded Dolt manifests (`.beads/embeddeddolt/*/.dolt/noms/manifest`) differs from when the snapshot was taken, and SHALL NOT run it again while that content is unchanged, whatever their modification time; WHERE a project has no such manifest, it SHALL reuse the snapshot for 5 seconds. WHEN a client sends `POST /api/refresh`, the server SHALL drop every snapshot and every cached answer (projects, milestones, reports) and respond 204, so that the next request reads its sources again.
+
+#### Scenario: Unchanged store
+- GIVEN a snapshot taken when the manifest held `root-1`
+- WHEN `bd` reads the store, changing the manifest's modification time but not its content, and a client requests the list
+- THEN `bd export` does not run again
+
+#### Scenario: Changed store
+- GIVEN a snapshot taken when the manifest held `root-1`
+- WHEN a bead is written, the manifest now holds `root-2`, and a client requests the list
+- THEN `bd export` runs again and the list shows the change
+
+#### Scenario: No manifest
+- GIVEN a project without an embedded Dolt manifest whose snapshot is 6 seconds old
+- WHEN a client requests the list
+- THEN `bd export` runs again
+
+#### Scenario: Refresh
+- GIVEN a project whose snapshot is current and a report cached less than 60 seconds ago
+- WHEN a client sends `POST /api/refresh` and then requests the list and the report
+- THEN the response to the refresh is 204, and `bd export` runs again and the report is built again

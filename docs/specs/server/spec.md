@@ -67,7 +67,7 @@ The server SHALL serve the built frontend from `frontend/dist` for non-API paths
 - THEN the response is 503 and names the build command
 
 ### REQ-SERVER-005: Workflow state per project
-WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `workflow` object with `stage`, `layout` and `gates` (gate name to state), taken from `gin-workflow state --format json` run read-only in the project directory.
+WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `workflow` object with `stage`, `layout` and `gates` (gate name to state), taken from `gin state --format json` run read-only in the project directory.
 
 #### Scenario: Workflow state present
 - GIVEN a project whose `gin state --format json` reports stage `discuss` and five gates
@@ -75,7 +75,7 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - THEN that project's `workflow` has `stage` `discuss` and the five gates with their states
 
 ### REQ-SERVER-006: Beads summary per project
-WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id` and `title`, taken from read-only `bd` commands run in the project directory, where `ready` never counts a bead of type `milestone`.
+WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id` and `title`, taken from the project's `bd export` snapshot (REQ-BEADS-012) with readiness worked out as in REQ-BEADS-007, where `blocked` counts the beads that are not closed and blocked, and `ready` never counts a bead of type `milestone`.
 
 #### Scenario: Counts and active epics
 - GIVEN a project with 3 open, 1 in_progress and 2 ready issues, one in_progress epic and one ready open epic
@@ -88,7 +88,7 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - THEN `beads.epics` is an empty list
 
 #### Scenario: Milestone not counted as ready
-- GIVEN a project with 2 ready issues and an open milestone without blockers that `bd ready` lists
+- GIVEN a project with 2 ready issues and an open milestone without blockers
 - WHEN a client requests `GET /api/projects`
 - THEN `beads.ready` is 2
 
@@ -106,7 +106,7 @@ IF a `gin` or `bd` command for a project is missing, times out, exits non-zero, 
 - THEN its `workflow` and `beads` are `null` and no command was run for it
 
 ### REQ-SERVER-008: Short-lived cache
-The server SHALL reuse a project's collected `workflow` and `beads` data for 5 seconds, and SHALL run the commands for one project at most once at a time when requests overlap.
+The server SHALL reuse a project's collected `workflow` and `beads` data for 5 seconds, SHALL drop it on `POST /api/refresh` (REQ-BEADS-012), and SHALL run the commands for one project at most once at a time when requests overlap.
 
 #### Scenario: Cache hit
 - GIVEN a project's data was collected 2 seconds ago

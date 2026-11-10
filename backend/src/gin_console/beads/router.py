@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 
 from gin_console.beads.models import BeadDetail, BeadSummary, Comment, Reopens
 from gin_console.beads.service import KeyedCache
+from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import (
     BdRunner,
     BeadNotFound,
@@ -19,15 +20,13 @@ from gin_console.beads.source import (
 )
 from gin_console.config import Settings
 
-TTL = timedelta(seconds=5)
 REOPENS_TTL = timedelta(days=1)
 
 
-def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime]) -> APIRouter:
+def build_router(
+    settings: Settings, snapshots: SnapshotStore, run: BdRunner, clock: Callable[[], datetime]
+) -> APIRouter:
     router = APIRouter()
-    lists = KeyedCache[tuple[str, bool], list[BeadSummary]](TTL, clock)
-    details = KeyedCache[tuple[str, str], BeadDetail](TTL, clock)
-    comments = KeyedCache[tuple[str, str], list[Comment]](TTL, clock)
     # keyed by updated_at: a changed bead gets a new key, so the TTL only ages out old entries
     reopens = KeyedCache[tuple[str, str, str], Reopens](REOPENS_TTL, clock)
 
@@ -49,9 +48,7 @@ def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime
         cwd = project_dir(project)
         wants_closed = closed == "1"  # any other value means "no": it is never passed on
         try:
-            return lists.get(
-                (str(project), wants_closed), lambda: list_beads(run, cwd, wants_closed)
-            )
+            return list_beads(snapshots.get(cwd), wants_closed)
         except (BeadsError, RecursionError) as exc:
             return failure(exc)
 
@@ -61,7 +58,7 @@ def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime
         if not valid_id(bead_id):
             raise HTTPException(status_code=404)
         try:
-            return details.get((project, bead_id), lambda: get_bead(run, cwd, bead_id))
+            return get_bead(snapshots.get(cwd), bead_id)
         except BeadNotFound:
             raise HTTPException(status_code=404) from None
         except (BeadsError, RecursionError) as exc:
@@ -73,7 +70,7 @@ def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime
         if not valid_id(bead_id):
             raise HTTPException(status_code=404)
         try:
-            return comments.get((project, bead_id), lambda: get_comments(run, cwd, bead_id))
+            return get_comments(snapshots.get(cwd), bead_id)
         except BeadNotFound:
             raise HTTPException(status_code=404) from None
         except (BeadsError, RecursionError) as exc:
@@ -85,8 +82,7 @@ def build_router(settings: Settings, run: BdRunner, clock: Callable[[], datetime
         if not valid_id(bead_id):
             raise HTTPException(status_code=404)
         try:
-            # the page has just loaded the detail, so updated_at usually comes from that cache
-            bead = details.get((project, bead_id), lambda: get_bead(run, cwd, bead_id))
+            bead = get_bead(snapshots.get(cwd), bead_id)
             return reopens.get(
                 (project, bead_id, bead.updated_at),
                 lambda: Reopens(reopens=count_reopens(run, cwd, bead_id)),
