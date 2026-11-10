@@ -1720,3 +1720,5 @@ The frontend SHALL show on every page a "Refresh data" control, in the top bar b
 
 ## Diagrams
 - [Bead text as Markdown](diagrams/bead-text-markdown-activity.md)
+- [Login](diagrams/login-activity.md)
+- [My Tasks](diagrams/my-tasks-activity.md)
