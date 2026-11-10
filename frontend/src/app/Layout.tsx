@@ -1,4 +1,4 @@
-import { ChartColumn, Flag, Gauge, LayoutGrid, ListChecks, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChartColumn, Flag, LayoutGrid, ListChecks, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "./Link";
@@ -10,7 +10,6 @@ const NAV = [
   { to: "/beads", label: "Beads", icon: ListChecks, current: (path: string) => path === "/beads" || path.startsWith("/beads/") },
   { to: "/milestones", label: "Milestones", icon: Flag, current: (path: string) => path === "/milestones" || path.startsWith("/milestones/") },
   { to: "/reports", label: "Reports", icon: ChartColumn, current: (path: string) => path === "/reports" },
-  { to: "/quota", label: "Quota", icon: Gauge, current: (path: string) => path === "/quota" },
 ] as const;
 
 const LINK = cn(

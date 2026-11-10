@@ -9,7 +9,7 @@ A web-based dashboard and observability console for [gin-workflow](https://githu
 - **Project Dashboard**: Real-time project overview, git branch status, active workflow stages, and running agent counts.
 - **Native Beads Explorer**: Interactive Kanban board, hierarchical list, and visual dependency graph with multi-select filtering across status, issue type, priority, assignee, sprint, and labels.
 - **Milestones**: Dated milestones per project with a Gantt of the working-day schedule, a dependency graph per milestone, and a read-only kick-start preview (needs a gin-workflow with the `milestone` command and Beads task tracking).
-- **AI CLI Quota Tracker**: Monitored usage windows, 5-hour rolling limits, and rate-limit headroom for Claude Code and OpenAI Codex.
+- **AI CLI Quota Tracker**: Monitored usage windows, 5-hour rolling limits, and rate-limit headroom for Claude Code and OpenAI Codex, at `/quota` (not linked from the navigation).
 - **Session Inspector**: Process liveness detection, active prompt monitoring, and session metrics.
 - **Cross-Platform**: First-class support for Linux, macOS, and native Windows (no WSL required).
 

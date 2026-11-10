@@ -176,26 +176,21 @@ IF the session list or a log page request fails, THEN the page SHALL show an err
 - WHEN the log page loads
 - THEN it says "Session not found" and links back to the list
 
-### REQ-UI-015: Quota navigation
-The "Main" navigation SHALL contain a "Quota" link and the frontend SHALL show the quota page at `/quota` without a full reload, following the browser back and forward buttons.
+### REQ-UI-015: Quota page without navigation
+The "Main" navigation SHALL NOT contain a "Quota" link, and the frontend SHALL still show the quota page when `/quota` is opened directly.
 
 #### Scenario: Open the page
+- GIVEN the URL is `/quota`
+- WHEN the page loads
+- THEN the quota page is shown and no link is labelled "Quota"
+
+### REQ-UI-016: No quota on the Projects page
+The Projects page SHALL NOT show a quota strip and SHALL NOT request the quota.
+
+#### Scenario: Projects page
 - GIVEN the Projects page is shown
-- WHEN the user clicks "Quota"
-- THEN the URL is `/quota` and the quota page is shown without a reload
-
-### REQ-UI-016: Quota strip on the Projects page
-The Projects page SHALL show above its list a strip with one status badge for Claude and one for Codex, each a text status of ok, near the limit, limited, no data, or error, with the highest percentage used when known, linking to `/quota`, and a failure to load the quota SHALL NOT remove or break the project list.
-
-#### Scenario: Strip content
-- GIVEN the quota loads with Claude at 41 and 25 percent and Codex at 16 percent
-- WHEN the Projects page is shown
-- THEN the strip shows Claude "ok 41%" and Codex "ok 16%", both linking to `/quota`
-
-#### Scenario: Quota fails
-- GIVEN the quota request fails
-- WHEN the Projects page is shown
-- THEN the strip shows an error note and the project list is still shown
+- WHEN the page loads
+- THEN no request goes to `/api/quota`
 
 ### REQ-UI-017: Quota status rules
 The frontend SHALL derive a harness status from its highest `used_percent`: limited at 100 or more, near the limit at 80 or more, ok below 80; limited also when Codex reports `ordinary_usage_allowed` false; no data when it has no window; and error when its side is an error object.
@@ -905,12 +900,12 @@ The Dependencies page SHALL expose the graph to assistive technology with a visu
 - THEN the highlight changes without a transition
 
 ### REQ-UI-055: Main navigation
-The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads (`/beads`), Milestones (`/milestones`), Reports (`/reports`) and Quota (`/quota`), in that order.
+The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads (`/beads`), Milestones (`/milestones`) and Reports (`/reports`), in that order.
 
-#### Scenario: Five links
+#### Scenario: Four links
 - GIVEN any page is shown
 - WHEN the page loads
-- THEN the "Main" navigation holds the links Projects, Beads, Milestones, Reports and Quota, one each, and no Sessions link
+- THEN the "Main" navigation holds the links Projects, Beads, Milestones and Reports, one each, and no Sessions or Quota link
 
 ### REQ-UI-056: Responsive navigation
 The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with an icon and a label per link while the window is narrower than 768px, an icon rail with a label under each icon from 768px up to 1023px, and from 1024px a sidebar with an icon and a label per link, or the icon rail while the sidebar is collapsed (REQ-UI-094), and SHALL be the same element in every case.
@@ -960,8 +955,8 @@ The "Main" navigation SHALL mark the link of the page being shown with `aria-cur
 
 #### Scenario: Change page
 - GIVEN the Projects page is shown
-- WHEN the user clicks "Quota"
-- THEN only the Quota link has `aria-current="page"`
+- WHEN the user clicks "Reports"
+- THEN only the Reports link has `aria-current="page"`
 
 ### REQ-UI-058: Theme
 The frontend SHALL start in the theme the system prefers, SHALL offer a control that switches between light and dark with an accessible name saying which theme it switches to, SHALL keep the choice in the browser and use it on the next visit, SHALL set the theme before the first paint so that the wrong theme is not shown, and IF the browser refuses to store the choice, THEN SHALL still switch for the current visit without an error.

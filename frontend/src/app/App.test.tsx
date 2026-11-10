@@ -92,8 +92,8 @@ describe("App routing", () => {
   });
 
   // REQ-UI-015
-  it("REQ-UI-015 opens the quota page from the sidebar without a reload and follows back", async () => {
-    window.history.replaceState(null, "", "/");
+  it("REQ-UI-015 has no Quota link and still serves the quota page at /quota", async () => {
+    window.history.replaceState(null, "", "/quota");
     vi.stubGlobal(
       "fetch",
       vi.fn((url: string) =>
@@ -101,13 +101,8 @@ describe("App routing", () => {
       ),
     );
     render(<App />);
-    await screen.findByText(/no projects configured/i);
-    await userEvent.click(screen.getByRole("link", { name: "Quota" }));
-    expect(window.location.pathname).toBe("/quota");
     expect(await screen.findByRole("heading", { name: "Quota" })).toBeInTheDocument();
-    act(() => window.history.back());
-    await screen.findByText(/no projects configured/i);
-    expect(window.location.pathname).toBe("/");
+    expect(screen.queryByRole("link", { name: "Quota" })).not.toBeInTheDocument();
   });
 
   // REQ-UI-022
