@@ -1,4 +1,4 @@
-"""Canned gin-workflow / bd output and a stand-in for subprocess.run."""
+"""Canned gin / bd output and a stand-in for subprocess.run."""
 
 import json
 import subprocess

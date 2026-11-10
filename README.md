@@ -53,7 +53,7 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 npm install -g pnpm
 ```
 
-> **Note on Git for Windows**: Ensure Git for Windows is installed (default path: `C:\Program Files\Git\bin\bash.exe`). The console automatically invokes `bash.exe` to run `gin-workflow` scripts on Windows.
+> **Note on Git for Windows**: Ensure Git for Windows is installed (default path: `C:\Program Files\Git\bin\bash.exe`). The console automatically runs the `gin.cmd` shim that the gin-workflow `install.ps1` puts on `PATH`; without it, it runs `gin` through `bash.exe`.
 
 #### 2. Clone the Repository
 
@@ -115,7 +115,6 @@ Open your browser and navigate to:
 
 #### Windows Tips
 
-- **CLI Wrapper**: A helper script is provided at `scripts\gin-workflow.cmd` if you want to invoke `gin-workflow` directly from CMD or PowerShell.
 - **Process Management**: On Windows, quota process termination uses `taskkill` and session liveness checks use Windows `OpenProcess` API.
 - **Custom Config Location**: To use a custom configuration file path, set the `GIN_CONSOLE_CONFIG` environment variable:
   ```powershell

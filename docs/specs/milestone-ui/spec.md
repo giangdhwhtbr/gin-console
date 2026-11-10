@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-MILESTONE-UI-001: Milestones list
-gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), lanes, forecast finish, epic progress, and warning count, from `gin-workflow milestone list --all --json`. Lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" when the entry's `finish` is set, in the warning color when it is after the entry's `end`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
+gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), lanes, forecast finish, epic progress, and warning count, from `gin milestone list --all --json`. Lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" when the entry's `finish` is set, in the warning color when it is after the entry's `end`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
 Source: `assets/2026-11-08/mockup/index.html#milestones`
 
 #### Scenario: list
@@ -47,7 +47,7 @@ gin-console SHALL show, on a milestone's page, a Graph tab with the milestone's 
 - THEN X is shown as an external node with an edge to A
 
 ### REQ-MILESTONE-UI-003: Milestone Gantt tab
-gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per epic from `planned_start` to `planned_end` of `gin-workflow milestone show --json`, as gin-workflow scheduled them on the milestone's lanes and without rescheduling them, colored by bead status, with a line at the JSON `today` date, a line at the milestone `end`, and each epic's warnings.
+gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per epic from `planned_start` to `planned_end` of `gin milestone show --json`, as gin-workflow scheduled them on the milestone's lanes and without rescheduling them, colored by bead status, with a line at the JSON `today` date, a line at the milestone `end`, and each epic's warnings.
 
 #### Scenario: overflow shown
 - GIVEN milestone M1 whose `show` output gives epic A warning `overflow` of 2 days
@@ -70,12 +70,12 @@ gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per e
 - THEN A shows an external blocker warning naming E9 and M2
 
 ### REQ-MILESTONE-UI-004: Kick-start preview
-WHILE a milestone is `planned` or `scheduled`, gin-console SHALL show on its Gantt tab a Kick-start date picker defaulting to `kickoff`, else `start`, and WHEN the user picks a date SHALL redraw the Gantt from `gin-workflow milestone show <id> --start <date> --json`, labelled as a read-only preview with the command `gin-workflow milestone kickstart <id> --date <date>`; it SHALL NOT show the picker for `active` or `closed` milestones, and IF the preview fails, THEN it SHALL show the error in the Gantt tab instead of any plan.
+WHILE a milestone is `planned` or `scheduled`, gin-console SHALL show on its Gantt tab a Kick-start date picker defaulting to `kickoff`, else `start`, and WHEN the user picks a date SHALL redraw the Gantt from `gin milestone show <id> --start <date> --json`, labelled as a read-only preview with the command `gin milestone kickstart <id> --date <date>`; it SHALL NOT show the picker for `active` or `closed` milestones, and IF the preview fails, THEN it SHALL show the error in the Gantt tab instead of any plan.
 
 #### Scenario: preview
 - GIVEN planned milestone M1
 - WHEN the user picks 2026-11-16 as the kick-start date
-- THEN the Gantt is drawn from 2026-11-16, labelled preview, and shows `gin-workflow milestone kickstart M1 --date 2026-11-16`
+- THEN the Gantt is drawn from 2026-11-16, labelled preview, and shows `gin milestone kickstart M1 --date 2026-11-16`
 
 #### Scenario: active milestone
 - GIVEN active milestone M1
@@ -93,7 +93,7 @@ IF the installed gin-workflow has no `milestone` command, reports a `schema` oth
 #### Scenario: old gin-workflow
 - GIVEN project P whose gin-workflow has no `milestone` command
 - WHEN the user opens Milestones for P
-- THEN an error says milestones need a newer gin-workflow and to run `gin-workflow/install.sh`
+- THEN an error says milestones need a newer gin and to run `gin-workflow/install.sh`
 
 #### Scenario: markdown tracking
 - GIVEN project P with `providers.task_tracking: markdown`
@@ -122,7 +122,7 @@ gin-console SHALL exclude beads of type `milestone` from the ready work it colle
 - THEN M1 is not counted or flagged as ready
 
 ### REQ-MILESTONE-UI-008: Milestones API
-WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin-workflow milestone list --all --json` or `gin-workflow milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast` and the `lanes` of each list entry and of the shown milestone, with `null` for each of them that the output lacks. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
+WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin milestone list --all --json` or `gin milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast` and the `lanes` of each list entry and of the shown milestone, with `null` for each of them that the output lacks. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
 
 #### Scenario: list
 - GIVEN project P whose `milestone list --all --json` prints schema 1 with M1
@@ -150,7 +150,7 @@ WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milesto
 - THEN the response is 422 and no command runs
 
 #### Scenario: old gin-workflow
-- GIVEN project P whose `gin-workflow milestone` exits 2 with `invalid choice: 'milestone'`
+- GIVEN project P whose `gin milestone` exits 2 with `invalid choice: 'milestone'`
 - WHEN a client requests `GET /api/milestones?project=P`
 - THEN the response is 502 with `cause: "outdated"`, and the failure is not cached
 

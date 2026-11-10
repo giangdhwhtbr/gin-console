@@ -115,12 +115,12 @@ The report SHALL hold, from the own shares of `ai_usage.quality`, per member and
 - THEN the points hold the task with tokens 900 and rework 3, and not the epic
 
 ### REQ-REPORTS-006: Data coverage section
-The report SHALL list the selected closed beads without `ai_usage` with the command `gin-workflow usage collect --bead <id>`, the selected beads whose `ai_usage` is not readable or not `version` 1 (left out of every other section), the models listed in `unpriced`, the share of tokens under `Unassigned`, the beads whose `sources` hold a value other than `ok` or whose `skipped_lines` is above 0, and the projects that failed.
+The report SHALL list the selected closed beads without `ai_usage` with the command `gin usage collect --bead <id>`, the selected beads whose `ai_usage` is not readable or not `version` 1 (left out of every other section), the models listed in `unpriced`, the share of tokens under `Unassigned`, the beads whose `sources` hold a value other than `ok` or whose `skipped_lines` is above 0, and the projects that failed.
 
 #### Scenario: not collected
 - GIVEN a closed bead `a-9` without `ai_usage`
 - WHEN the report is built
-- THEN coverage lists `a-9` with `gin-workflow usage collect --bead a-9`, and no section counts its tokens
+- THEN coverage lists `a-9` with `gin usage collect --bead a-9`, and no section counts its tokens
 
 #### Scenario: unreadable usage
 - GIVEN a closed bead whose `ai_usage` is `{"version": 2}` and one whose `ai_usage` is not JSON

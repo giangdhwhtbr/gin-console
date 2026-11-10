@@ -6,7 +6,7 @@ exec_in() { docker compose exec -T gin-console sh -c "$1"; }
 fail() { echo "FAIL: $1" >&2; exit 1; }
 
 # REQ-DOCKER-001 (TC-1)
-exec_in 'uv --version && git --version && bd --version && gin-workflow --version && claude --version && codex --version' >/dev/null \
+exec_in 'uv --version && git --version && bd --version && gin --version && claude --version && codex --version' >/dev/null \
   || fail "a required tool is missing"
 
 # REQ-DOCKER-002 (TC-2)

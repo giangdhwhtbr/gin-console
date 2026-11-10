@@ -84,7 +84,7 @@ function MilestoneTable({ project }: { project: string }) {
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-2 text-sm">
           <p>{`No milestones in ${project} yet. Create one with:`}</p>
-          <CopyCommand command={'gin-workflow milestone create "<title>" --start <date> --end <date>'} />
+          <CopyCommand command={'gin milestone create "<title>" --start <date> --end <date>'} />
         </div>
       ) : (
         <ul aria-label="Milestones" className="flex flex-col divide-y rounded border bg-card">

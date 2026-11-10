@@ -5,11 +5,11 @@
 ## Requirements
 
 ### REQ-DOCKER-001: Image contains the required tools
-The Dockerfile SHALL build an image that provides `uv`, `git`, `bd`, `gin-workflow`, `claude`, and `codex` on the `PATH`, the backend installed from `uv.lock`, and the built frontend.
+The Dockerfile SHALL build an image that provides `uv`, `git`, `bd`, `gin`, `claude`, and `codex` on the `PATH`, the backend installed from `uv.lock`, and the built frontend.
 
 #### Scenario: Tools present
 - GIVEN the image was built with default build args
-- WHEN `uv --version`, `git --version`, `bd --version`, `gin-workflow --version`, `claude --version`, and `codex --version` run in the container
+- WHEN `uv --version`, `git --version`, `bd --version`, `gin --version`, `claude --version`, and `codex --version` run in the container
 - THEN each exits 0
 
 #### Scenario: Frontend bundled

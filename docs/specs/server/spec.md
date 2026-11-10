@@ -70,7 +70,7 @@ The server SHALL serve the built frontend from `frontend/dist` for non-API paths
 WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `workflow` object with `stage`, `layout` and `gates` (gate name to state), taken from `gin-workflow state --format json` run read-only in the project directory.
 
 #### Scenario: Workflow state present
-- GIVEN a project whose `gin-workflow state --format json` reports stage `discuss` and five gates
+- GIVEN a project whose `gin state --format json` reports stage `discuss` and five gates
 - WHEN a client requests `GET /api/projects`
 - THEN that project's `workflow` has `stage` `discuss` and the five gates with their states
 
@@ -93,10 +93,10 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - THEN `beads.ready` is 2
 
 ### REQ-SERVER-007: Per-block errors
-IF a `gin-workflow` or `bd` command for a project is missing, times out, exits non-zero, or prints invalid JSON, THEN the server SHALL set that block (`workflow` or `beads`) to an object whose only content is an `error` message, and SHALL leave the other block and the other projects unaffected; for a project whose `exists` is false the server SHALL run no command and return both blocks as `null`.
+IF a `gin` or `bd` command for a project is missing, times out, exits non-zero, or prints invalid JSON, THEN the server SHALL set that block (`workflow` or `beads`) to an object whose only content is an `error` message, and SHALL leave the other block and the other projects unaffected; for a project whose `exists` is false the server SHALL run no command and return both blocks as `null`.
 
 #### Scenario: One block fails
-- GIVEN `bd` fails for a project while `gin-workflow state` succeeds
+- GIVEN `bd` fails for a project while `gin state` succeeds
 - WHEN a client requests `GET /api/projects`
 - THEN that project's `beads` is `{"error": "<message>"}` and its `workflow` has data
 
@@ -124,14 +124,14 @@ The server SHALL reuse a project's collected `workflow` and `beads` data for 5 s
 - THEN the commands ran once for that project
 
 ### REQ-SERVER-009: Windows script execution and environment
-WHERE the server runs on Windows, the server SHALL sanitize `PATH` in `_child_env` by stripping `Scripts` under `VIRTUAL_ENV` rather than `bin`, and SHALL invoke `gin-workflow` via `bash` (locating `bash.exe` via `PATH` or the standard Git for Windows installation path).
+WHERE the server runs on Windows, the server SHALL sanitize `PATH` in `_child_env` by stripping `Scripts` under `VIRTUAL_ENV` rather than `bin`, and SHALL invoke `gin` through the `gin.cmd` (or `.bat`/`.exe`) found on `PATH`, else via `bash` (locating `bash.exe` via `PATH` or the standard Git for Windows installation path).
 
 #### Scenario: Child environment on Windows
 - GIVEN `sys.platform` is `"win32"` and `VIRTUAL_ENV` is set in the environment
 - WHEN `_child_env()` is called
 - THEN the sanitized `PATH` does not contain the virtualenv's `Scripts` directory
 
-#### Scenario: gin-workflow dispatch on Windows
-- GIVEN `sys.platform` is `"win32"` and a command starts with `"gin-workflow"`
+#### Scenario: gin dispatch on Windows
+- GIVEN `sys.platform` is `"win32"` and a command starts with `"gin"`
 - WHEN the command is prepared for subprocess execution
-- THEN it is executed via `bash` with the script arguments preserved
+- THEN it is executed through the `gin.cmd` shim on `PATH`, or via `bash` when no shim exists, with the arguments preserved

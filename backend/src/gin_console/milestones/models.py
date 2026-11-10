@@ -1,5 +1,5 @@
 """
-`gin-workflow milestone list|show --json`, schema 1, as the console serves it;
+`gin milestone list|show --json`, schema 1, as the console serves it;
 `forecast` and `lanes` are null from a gin-workflow before
 milestone-forecast.
 """

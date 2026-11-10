@@ -147,7 +147,7 @@ describe("report sections", () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal("navigator", { clipboard: { writeText } });
     const coverage = {
-      not_collected: [{ project: "alpha", id: "a-9", title: "t", detail: "gin-workflow usage collect --bead a-9" }],
+      not_collected: [{ project: "alpha", id: "a-9", title: "t", detail: "gin usage collect --bead a-9" }],
       invalid: [],
       unpriced: ["m1", "m2"],
       unassigned_share: 0.25,
@@ -155,7 +155,7 @@ describe("report sections", () => {
     };
     render(<CoverageSection coverage={coverage} errors={[{ project: "beta", error: "boom" }]} />);
     fireEvent.click(screen.getByRole("button", { name: "Copy" }));
-    expect(writeText).toHaveBeenCalledWith("gin-workflow usage collect --bead a-9");
+    expect(writeText).toHaveBeenCalledWith("gin usage collect --bead a-9");
     expect(screen.getByRole("link", { name: "a-9" }).getAttribute("href")).toBe("/beads/alpha/a-9");
     expect(screen.getByRole("heading", { name: "Not collected 1" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Unreadable usage 0" })).toBeTruthy();

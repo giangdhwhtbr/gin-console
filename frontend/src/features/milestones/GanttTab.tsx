@@ -64,7 +64,7 @@ export function GanttTab({
       {previewing && !failed && (
         <div className="flex flex-col gap-2 rounded border border-dashed p-3 text-sm md:flex-row md:items-center md:justify-between">
           <p>{`Preview from ${weekday(start)} ${shortDate(start, plan.today)}. Nothing changes until you run:`}</p>
-          <CopyCommand command={`gin-workflow milestone kickstart ${plan.id} --date ${start}`} />
+          <CopyCommand command={`gin milestone kickstart ${plan.id} --date ${start}`} />
         </div>
       )}
       {failed ? (

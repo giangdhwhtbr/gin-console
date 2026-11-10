@@ -19,9 +19,9 @@ sudo loginctl enable-linger gin
 ### PATH of the service
 
 systemd starts user services with a minimal `PATH` (system directories only), not your shell's. The
-console runs `bd`, `gin-workflow`, `claude` and `codex`, so the unit sets `Environment=PATH=...`
+console runs `bd`, `gin`, `claude` and `codex`, so the unit sets `Environment=PATH=...`
 (`~/.local/bin`, `~/.npm-global/bin`, Homebrew's `bin`, then the system directories). Check each tool
-with `command -v bd gin-workflow claude codex` in your shell and edit that line of
+with `command -v bd gin claude codex` in your shell and edit that line of
 `~/.config/systemd/user/gin-console.service` if one lives elsewhere, then
 `systemctl --user daemon-reload && systemctl --user restart gin-console`. A tool that cannot be found
 shows up in the UI as "<tool> not found" (project cards, Quota page).
@@ -65,6 +65,6 @@ docker compose logs -f
 
 - The container runs as your uid (default 1002) with `HOME=/home/gin` and mounts the config, projects, `~/.claude`, and `~/.codex` at the same paths as on the host, so the same `config.yaml` works in both modes. `~/.claude` and `~/.codex` are read-only; projects are read-write because `bd` writes `.beads/.local_version` and Dolt files even for reads.
 - The port is published on `127.0.0.1:8700` only; `tailscale serve --https=8443 http://127.0.0.1:8700` is unchanged.
-- The image carries `uv`, `git`, `bd`, `gin-workflow`, `claude`, and `codex`. Versions are build args (`BD_VERSION`, `CLAUDE_VERSION`, `CODEX_VERSION`, `GIN_WORKFLOW_REF`). `bd` is built from source because 1.0.5 has no release binary.
+- The image carries `uv`, `git`, `bd`, `gin`, `claude`, and `codex`. Versions are build args (`BD_VERSION`, `CLAUDE_VERSION`, `CODEX_VERSION`, `GIN_WORKFLOW_REF`). `bd` is built from source because 1.0.5 has no release binary.
 - Switch back: `docker compose down && systemctl --user start gin-console`.
 

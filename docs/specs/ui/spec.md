@@ -1602,7 +1602,7 @@ The Quality tab SHALL show, in this order:
 
 ### REQ-UI-092: Data coverage view
 The Data coverage tab SHALL show the data coverage of REQ-REPORTS-006 as five blocks, in this order, each headed by its name and its count:
-1. Not collected: each bead, linking to its bead page, with a button that copies its `gin-workflow usage collect` command.
+1. Not collected: each bead, linking to its bead page, with a button that copies its `gin usage collect` command.
 2. Unreadable usage: each bead with its problem.
 3. Models without a price: each model.
 4. Incomplete logs: each bead with its sources that are not `ok` and its skipped lines.
@@ -1613,7 +1613,7 @@ A block whose count is 0 SHALL show one sentence saying that nothing is missing,
 #### Scenario: copy command
 - GIVEN coverage lists `a-9` as not collected
 - WHEN the user presses its copy button
-- THEN the clipboard holds `gin-workflow usage collect --bead a-9`
+- THEN the clipboard holds `gin usage collect --bead a-9`
 
 #### Scenario: empty block
 - GIVEN a report where no project failed

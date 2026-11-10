@@ -18,8 +18,8 @@ CWD = Path("/p")
 # an old gin-workflow: the usage line alone is longer than the 200 characters CollectError keeps
 COMMANDS = "setup,state,unblock,record,quick-check,rules,specs,team,usage,reviewer,hooks"
 OLD = (
-    f"usage: gin-workflow [-h] {{{COMMANDS},task,routes,notify,paths,goal,worktree}} ...\n"
-    f"gin-workflow: error: argument command: invalid choice: 'milestone' (choose from {COMMANDS})\n"
+    f"usage: gin [-h] {{{COMMANDS},task,routes,notify,paths,goal,worktree}} ...\n"
+    f"gin: error: argument command: invalid choice: 'milestone' (choose from {COMMANDS})\n"
 )
 
 
@@ -67,7 +67,7 @@ def test_milestone_ui_005_unknown_schema() -> None:
     with pytest.raises(MilestonesError) as caught:
         list_milestones(FakeGw({"list": {**LIST, "schema": 2}}), CWD)
     assert caught.value.cause == "schema"
-    assert str(caught.value) == "gin-workflow reports milestone schema 2"
+    assert str(caught.value) == "gin reports milestone schema 2"
 
 
 # REQ-MILESTONE-UI-008
