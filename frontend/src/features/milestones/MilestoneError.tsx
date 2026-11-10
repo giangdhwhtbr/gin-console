@@ -6,7 +6,7 @@ import { CopyCommand } from "./CopyCommand";
 function explain(error: MilestonesError): { title: string; body: string; command: string | null } {
   switch (error.kind) {
     case "outdated":
-      return { title: "Milestones need a newer gin-workflow", body: "Run the gin-workflow installer, then reload this page.", command: "gin-workflow/install.sh" };
+      return { title: "Milestones need a newer gin", body: "Run the gin installer, then reload this page.", command: "gin-workflow/install.sh" };
     case "tracking":
       return {
         title: "This project tracks tasks in markdown",

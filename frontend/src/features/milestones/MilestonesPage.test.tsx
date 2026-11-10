@@ -113,12 +113,12 @@ describe("MilestonesPage", () => {
   it("REQ-MILESTONE-UI-001 an empty project says how to create a milestone", async () => {
     open(json(list([])));
     expect(await screen.findByText(/No milestones in alpha yet/)).toBeInTheDocument();
-    expect(screen.getByText(/gin-workflow milestone create/)).toBeInTheDocument();
+    expect(screen.getByText(/gin milestone create/)).toBeInTheDocument();
   });
 
   it("REQ-MILESTONE-UI-005 old gin-workflow: says to run the installer", async () => {
-    open(json({ error: "this gin-workflow has no milestone command", cause: "outdated" }, 502));
-    expect(await screen.findByText("Milestones need a newer gin-workflow")).toBeInTheDocument();
+    open(json({ error: "this gin has no milestone command", cause: "outdated" }, 502));
+    expect(await screen.findByText("Milestones need a newer gin")).toBeInTheDocument();
     expect(screen.getByText("gin-workflow/install.sh")).toBeInTheDocument();
   });
 
@@ -129,8 +129,8 @@ describe("MilestonesPage", () => {
   });
 
   it("REQ-MILESTONE-UI-005 unknown schema: names it and lists nothing", async () => {
-    open(json({ error: "gin-workflow reports milestone schema 2", cause: "schema" }, 502));
-    expect(await screen.findByText("gin-workflow reports milestone schema 2")).toBeInTheDocument();
+    open(json({ error: "gin reports milestone schema 2", cause: "schema" }, 502));
+    expect(await screen.findByText("gin reports milestone schema 2")).toBeInTheDocument();
     expect(screen.queryByRole("list", { name: "Milestones" })).toBeNull();
   });
 

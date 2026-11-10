@@ -23,7 +23,7 @@ const marked = () =>
 
 describe("Layout", () => {
   it.each(["/", "/beads", "/sessions", "/reports"])(
-    "REQ-UI-055 has one Main navigation with the five links on %s",
+    "REQ-UI-055 has one Main navigation with the four links on %s",
     (path) => {
       open(path);
       expect(screen.getAllByRole("navigation")).toHaveLength(1);
@@ -33,7 +33,6 @@ describe("Layout", () => {
         ["Beads", "/beads"],
         ["Milestones", "/milestones"],
         ["Reports", "/reports"],
-        ["Quota", "/quota"],
       ]);
     },
   );
@@ -50,7 +49,7 @@ describe("Layout", () => {
     ["/sessions/alpha/11111111-1111-4111-8111-111111111111", []],
     ["/reports", ["Reports"]],
     ["/reportsx", []],
-    ["/quota", ["Quota"]],
+    ["/quota", []],
     ["/nowhere", []],
     ["/beadsx", []],
   ])("REQ-UI-057 %s marks %j", (path, expected) => {
@@ -60,8 +59,8 @@ describe("Layout", () => {
 
   it("REQ-UI-057 follows a click", async () => {
     open("/");
-    await userEvent.click(within(nav()).getByRole("link", { name: "Quota" }));
-    expect(marked()).toEqual(["Quota"]);
+    await userEvent.click(within(nav()).getByRole("link", { name: "Reports" }));
+    expect(marked()).toEqual(["Reports"]);
   });
 
   it("REQ-UI-062 offers the theme control", () => {
@@ -113,11 +112,11 @@ describe("Layout", () => {
     }
   });
 
-  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the five links when collapsed", () => {
+  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the four links when collapsed", () => {
     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
     open("/beads");
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
-    expect(within(nav()).getAllByRole("link")).toHaveLength(5);
+    expect(within(nav()).getAllByRole("link")).toHaveLength(4);
     expect(marked()).toEqual(["Beads"]);
   });
 });

@@ -89,7 +89,7 @@ describe("MilestonePage", () => {
     fireEvent.change(picker, { target: { value: "2026-11-16" } });
     await waitFor(() => expect(beads(document.querySelector("[data-epic='e-a']") ?? document.body)[0]).toBe("2026-11-16"));
     expect(screen.getByText(/Preview from Mon 16 Nov\. Nothing changes until you run:/)).toBeInTheDocument();
-    expect(screen.getByText("gin-workflow milestone kickstart m-1 --date 2026-11-16")).toBeInTheDocument();
+    expect(screen.getByText("gin milestone kickstart m-1 --date 2026-11-16")).toBeInTheDocument();
     expect(window.location.search).toBe("?start=2026-11-16");
     expect(fetchMock.mock.calls.some(([input]) => typeof input === "string" && input.includes("start=2026-11-16"))).toBe(true);
   });

@@ -206,7 +206,7 @@ def test_tc_milestone_ui_027_unknown_project_or_missing_directory_is_404(tmp_pat
 def test_tc_milestone_ui_028_old_gin_workflow_is_502_outdated_and_not_cached(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    cli = Cli(2, stderr="gin-workflow: error: argument command: invalid choice: 'milestone'\n")
+    cli = Cli(2, stderr="gin: error: argument command: invalid choice: 'milestone'\n")
     monkeypatch.setattr(subprocess, "run", cli)
     api = make(tmp_path, run_gw)
     for _ in range(2):

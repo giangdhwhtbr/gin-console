@@ -1,4 +1,4 @@
-"""Run the read-only gin-workflow and bd commands for a project and cache the result."""
+"""Run the read-only gin and bd commands for a project and cache the result."""
 
 import json
 import os
@@ -35,7 +35,7 @@ def _normalize_entry(p: str, is_win: bool) -> str:
 
 
 def _child_env() -> dict[str, str]:
-    """Environment without the console's own venv: gin-workflow's `env python3` shebang must
+    """Environment without the console's own venv: gin's `env python3` shebang must
     resolve to the system Python, which has its dependencies, not ours."""
     env = dict(os.environ)
     venv = env.pop("VIRTUAL_ENV", None)
@@ -72,10 +72,15 @@ def _resolve_cmd(cmd: list[str]) -> list[str]:
     """Adapt commands on Windows where shell scripts cannot be spawned directly."""
     if not cmd:
         return cmd
-    if sys.platform == "win32" and cmd[0] == "gin-workflow":
+    if sys.platform == "win32" and cmd[0] == "gin":
+        # install.ps1 puts a gin.cmd shim on PATH; CreateProcess finds it only by full name
+        shim = shutil.which("gin")
+        if shim and Path(shim).suffix.lower() in {".cmd", ".bat", ".exe"}:
+            return [shim, *cmd[1:]]
+        # install.sh run from Git Bash leaves a script only bash can start
         bash = _find_bash()
         if bash:
-            return [bash, "-c", 'gin-workflow "$@"', "_", *cmd[1:]]
+            return [bash, "-c", 'gin "$@"', "_", *cmd[1:]]
     return cmd
 
 
@@ -121,12 +126,12 @@ def run_json(
 def collect_workflow(path: Path) -> Workflow | BlockError:
     try:
         # state exits 1 for a finished workflow (decision "complete") but still prints JSON
-        data = run_json(["gin-workflow", "state", "--format", "json"], path, json_on_failure=True)
+        data = run_json(["gin", "state", "--format", "json"], path, json_on_failure=True)
         return Workflow(stage=data["stage"], layout=data["project"]["layout"], gates=data["gates"])
     except CollectError as exc:
         return BlockError(error=str(exc))
     except (KeyError, TypeError, ValidationError) as exc:
-        return BlockError(error=f"gin-workflow: unexpected output ({exc!r})")
+        return BlockError(error=f"gin: unexpected output ({exc!r})")
 
 
 def collect_beads(path: Path) -> Beads | BlockError:

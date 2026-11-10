@@ -454,7 +454,7 @@ def _coverage(
                 project=b.project,
                 id=b.id,
                 title=b.title,
-                detail=f"gin-workflow usage collect --bead {b.id}",
+                detail=f"gin usage collect --bead {b.id}",
             )
             for b in closed
             if b.usage is None and b.usage_problem is None

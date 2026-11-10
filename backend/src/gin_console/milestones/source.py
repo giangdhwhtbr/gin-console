@@ -1,4 +1,4 @@
-"""Milestones of a project via `gin-workflow milestone`; the only module that knows its JSON."""
+"""Milestones of a project via `gin milestone`; the only module that knows its JSON."""
 
 from datetime import date
 from pathlib import Path
@@ -16,7 +16,7 @@ Cause = Literal["outdated", "tracking", "schema"]
 
 
 class MilestonesError(Exception):
-    """gin-workflow could not answer; `cause` names a reason the page explains with its fix."""
+    """gin could not answer; `cause` names a reason the page explains with its fix."""
 
     def __init__(self, message: str, cause: Cause | None = None) -> None:
         super().__init__(message)
@@ -29,11 +29,11 @@ class GwRunner(Protocol):
 
 def run_gw(args: list[str], cwd: Path) -> Any:
     try:
-        return run_json(["gin-workflow", *args], cwd, timeout=GW_TIMEOUT)
+        return run_json(["gin", *args], cwd, timeout=GW_TIMEOUT)
     except CollectError as exc:
         if exc.returncode == 2 and "invalid choice: 'milestone'" in exc.stderr:
             raise MilestonesError(
-                "this gin-workflow has no milestone command", "outdated"
+                "this gin has no milestone command", "outdated"
             ) from None
         if "providers.task_tracking: beads" in exc.stderr:
             raise MilestonesError(
@@ -47,10 +47,10 @@ def run_gw(args: list[str], cwd: Path) -> Any:
 
 def _schema_1(data: Any, what: str) -> dict[str, Any]:
     if not isinstance(data, dict):
-        raise MilestonesError(f"gin-workflow milestone {what} output was not understood")
+        raise MilestonesError(f"gin milestone {what} output was not understood")
     if data.get("schema") != SCHEMA:
         raise MilestonesError(
-            f"gin-workflow reports milestone schema {data.get('schema')}", "schema"
+            f"gin reports milestone schema {data.get('schema')}", "schema"
         )
     return data
 
@@ -60,7 +60,7 @@ def list_milestones(run: GwRunner, cwd: Path) -> MilestoneList:
     try:
         return MilestoneList.model_validate(data)
     except ValidationError:
-        raise MilestonesError("gin-workflow milestone list output was not understood") from None
+        raise MilestonesError("gin milestone list output was not understood") from None
 
 
 def show_milestone(
@@ -71,4 +71,4 @@ def show_milestone(
     try:
         return MilestoneDetail.model_validate(data)
     except ValidationError:
-        raise MilestonesError("gin-workflow milestone show output was not understood") from None
+        raise MilestonesError("gin milestone show output was not understood") from None

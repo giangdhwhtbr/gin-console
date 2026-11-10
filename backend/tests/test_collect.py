@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import threading
 import time
 from pathlib import Path
@@ -54,12 +55,12 @@ def test_server_005_children_do_not_inherit_console_venv(
 def test_server_005_state_json_is_used_despite_exit_code(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    # `gin-workflow state` exits 1 for a finished workflow but still prints JSON.
+    # `gin state` exits 1 for a finished workflow but still prints JSON.
     inner = Fake()
 
     def run(cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
         done = inner(cmd, **kwargs)
-        if cmd[0] == "gin-workflow":
+        if cmd[0] == "gin":
             done.returncode = 1
         return done
 
@@ -111,9 +112,9 @@ def test_server_007_beads_error_isolated(
 def test_server_007_workflow_error_isolated(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    patch(monkeypatch, Fake({"gin-workflow": 2}))
+    patch(monkeypatch, Fake({"gin": 2}))
     workflow, beads = Collector().get("p", tmp_path)
-    assert isinstance(workflow, BlockError) and "gin-workflow" in workflow.error
+    assert isinstance(workflow, BlockError) and "gin" in workflow.error
     assert beads_of(beads).ready == 2
 
 
@@ -188,7 +189,7 @@ def test_server_009_child_env_strips_scripts_on_windows(monkeypatch: pytest.Monk
 
 
 # REQ-SERVER-009
-def test_server_009_gin_workflow_dispatches_via_bash_on_windows(
+def test_server_009_gin_without_cmd_shim_runs_via_bash_on_windows(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     import sys
@@ -204,16 +205,8 @@ def test_server_009_gin_workflow_dispatches_via_bash_on_windows(
 
     monkeypatch.setattr("shutil.which", fake_which)
 
-    resolved = _resolve_cmd(["gin-workflow", "state", "--format", "json"])
-    assert resolved == [
-        r"C:\Git\bin\bash.exe",
-        "-c",
-        'gin-workflow "$@"',
-        "_",
-        "state",
-        "--format",
-        "json",
-    ]
+    resolved = _resolve_cmd(["gin", "state", "--format", "json"])
+    assert resolved == [r"C:\Git\bin\bash.exe", "-c", 'gin "$@"', "_", "state", "--format", "json"]
 
     # Verify that run_json invokes the resolved command
     called_cmd: list[list[str]] = []
@@ -223,17 +216,23 @@ def test_server_009_gin_workflow_dispatches_via_bash_on_windows(
         return subprocess.CompletedProcess(cmd, 0, stdout="{}", stderr="")
 
     patch(monkeypatch, fake_run)
-    run_json(["gin-workflow", "state"], tmp_path)
-    assert called_cmd == [[r"C:\Git\bin\bash.exe", "-c", 'gin-workflow "$@"', "_", "state"]]
+    run_json(["gin", "state"], tmp_path)
+    assert called_cmd == [[r"C:\Git\bin\bash.exe", "-c", 'gin "$@"', "_", "state"]]
 
 
 # REQ-SERVER-009
-def test_server_009_gin_workflow_cmd_exists() -> None:
-    # Verify scripts/gin-workflow.cmd exists in the repository
-    cmd_file = Path(__file__).resolve().parents[2] / "scripts" / "gin-workflow.cmd"
-    assert cmd_file.is_file()
-    content = cmd_file.read_text()
-    assert "bash" in content.lower()
+def test_server_009_windows_runs_gin_cmd_shim(monkeypatch: pytest.MonkeyPatch) -> None:
+    from gin_console.projects.collect import _resolve_cmd
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    shim = r"C:\Users\u\.local\bin\gin.cmd"
+    monkeypatch.setattr("shutil.which", lambda name: shim if name == "gin" else None)
+
+    assert _resolve_cmd(["gin", "milestone", "list", "--json"]) == [
+        shim, "milestone", "list", "--json"
+    ]
+    # other commands pass through untouched
+    assert _resolve_cmd(["bd", "list"]) == ["bd", "list"]
 
 
 # REQ-SERVER-006

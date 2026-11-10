@@ -1,4 +1,4 @@
-"""A stand-in for `gin-workflow milestone`: canned schema 1 output, the contract's own examples."""
+"""A stand-in for `gin milestone`: canned schema 1 output, the contract's own examples."""
 
 from pathlib import Path
 from typing import Any

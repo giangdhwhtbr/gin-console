@@ -22,7 +22,7 @@ RUN git clone --depth 1 --branch v${BD_VERSION} https://github.com/gastownhall/b
 FROM node:22-bookworm-slim AS runtime
 ARG CLAUDE_VERSION=2.1.296
 ARG CODEX_VERSION=0.160.0
-ARG GIN_WORKFLOW_REF=v1.4.2
+ARG GIN_WORKFLOW_REF=v3.0.0
 ARG GIN_WORKFLOW_REPO=https://github.com/giangdhwhtbr/gin-workflow.git
 ARG APP_UID=1002
 ARG APP_GID=1002
@@ -35,11 +35,11 @@ COPY --from=bd /out/bd /usr/local/bin/bd
 
 RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_VERSION} @openai/codex@${CODEX_VERSION}
 
-# gin-workflow: pinned ref
+# gin (from the gin-workflow repo): pinned ref
 RUN git clone --depth 1 --branch "${GIN_WORKFLOW_REF}" "${GIN_WORKFLOW_REPO}" /tmp/gw \
- && cp -r /tmp/gw/plugins/gin-workflow/src/scripts /opt/gin-workflow \
- && chmod +x /opt/gin-workflow/gin-workflow \
- && ln -s /opt/gin-workflow/gin-workflow /usr/local/bin/gin-workflow \
+ && cp -r /tmp/gw/plugins/gin-workflow/src/scripts /opt/gin \
+ && chmod +x /opt/gin/gin \
+ && ln -s /opt/gin/gin /usr/local/bin/gin \
  && rm -rf /tmp/gw
 
 WORKDIR /app/backend

@@ -362,7 +362,7 @@ def test_reports_006_not_collected() -> None:
             project="alpha",
             id="a-9",
             title="Title of a-9",
-            detail="gin-workflow usage collect --bead a-9",
+            detail="gin usage collect --bead a-9",
         )
     ]
     assert r.totals.tokens == 0 and r.totals.tokens_per_bead is None
