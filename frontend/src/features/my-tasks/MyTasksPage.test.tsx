@@ -49,6 +49,15 @@ describe("MyTasksPage", () => {
     for (const row of rows()) expect(within(row).getByText("alpha")).toBeInTheDocument();
   });
 
+  it("REQ-UI-100 My Tasks does not request /api/projects", async () => {
+    const fetchMock = stubBeads(() => json([bead("a-1", { assignee: "giangdhwhtbr" })]));
+    open("/my-tasks");
+    await screen.findByText("1 task");
+    const urls = fetchMock.mock.calls.map(([input]) => new URL(requested(input), "http://localhost").pathname);
+    expect(urls).toContain("/api/projects/beads");
+    expect(urls).not.toContain("/api/projects");
+  });
+
   it("REQ-UI-100 rows across projects in order and linked", async () => {
     stubBeads(
       (url) =>
@@ -70,14 +79,13 @@ describe("MyTasksPage", () => {
       name,
       path: `/home/gin/${name}`,
       exists: true,
-      workflow: null,
       beads: { open: 0, in_progress: 0, blocked: 0, ready: 0, epics: [], stale },
     });
     vi.stubGlobal(
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = new URL(requested(input), "http://localhost");
-        if (url.pathname === "/api/projects") return Promise.resolve(json([entry("A", true), entry("B", false)]));
+        if (url.pathname === "/api/projects/beads") return Promise.resolve(json([entry("A", true), entry("B", false)]));
         const name = url.searchParams.get("project") ?? "";
         return Promise.resolve(json([bead(`${name.toLowerCase()}-1`, { assignee: "giangdhwhtbr" })]));
       }),
@@ -142,7 +150,12 @@ describe("MyTasksPage", () => {
   });
 
   it("REQ-UI-102 projects fail", async () => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({}, 500))));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) =>
+        Promise.resolve(json({}, new URL(requested(input), "http://localhost").pathname === "/api/projects/beads" ? 500 : 200)),
+      ),
+    );
     open("/my-tasks");
     expect(await screen.findByText("Projects could not be loaded")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByRole("table")).toBeNull());
