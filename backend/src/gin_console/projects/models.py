@@ -31,3 +31,10 @@ class Project(BaseModel):
     exists: bool
     workflow: Workflow | BlockError | None
     beads: Beads | BlockError | None
+
+
+class ProjectBeads(BaseModel):
+    name: str
+    path: str
+    exists: bool
+    beads: Beads | BlockError | None
