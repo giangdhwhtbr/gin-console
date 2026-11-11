@@ -124,14 +124,3 @@ export async function fetchComments(project: string, id: string): Promise<Commen
   }
   return body;
 }
-
-export async function fetchReopens(project: string, id: string): Promise<number> {
-  const response = await fetch(`/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/reopens`);
-  if (!response.ok) throw await failure(response, "Bead");
-  const body: unknown = await response.json();
-  const reopens = isObject(body) ? field(body, "reopens") : undefined;
-  if (typeof reopens !== "number" || !Number.isInteger(reopens) || reopens < 0) {
-    throw new Error("Could not load the reopens (unexpected response)");
-  }
-  return reopens;
-}

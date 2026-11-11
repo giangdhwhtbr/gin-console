@@ -4,6 +4,7 @@ import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StaleNote } from "@/features/beads/StaleNote";
 import { StateMark } from "@/features/beads/StateMark";
 import { TypeBadge } from "@/features/beads/TypeBadge";
 import { loadMyTasks, type MyTasks } from "./load";
@@ -64,6 +65,7 @@ export function MyTasksPage() {
       )}
       {state.status === "ok" && (
         <>
+          <StaleNote projects={state.data.stale} />
           {state.data.failures.map((failure) => (
             <Alert key={failure.project} variant="destructive">
               <AlertTitle>{failure.project} could not be loaded</AlertTitle>

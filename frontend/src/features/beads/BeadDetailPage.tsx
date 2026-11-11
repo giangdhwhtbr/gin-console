@@ -12,7 +12,6 @@ import { DiscussionPanel } from "./DiscussionPanel";
 import { graphPath } from "./graph";
 import { MarkdownText } from "./MarkdownText";
 import { useDiscussionHidden } from "./discussion";
-import { Reopens } from "./Reopens";
 import { RelationList } from "./RelationList";
 import { SIDE_PANEL } from "./side-panel";
 import { TextSection } from "./TextSection";
@@ -155,7 +154,6 @@ export function BeadDetailPage({
                     ]
                       .filter(Boolean)
                       .join(" · ")}
-                    <Reopens key={bead.id} project={project} id={bead.id} />
                   </div>
                   {bead.id !== graphScope &&
                     (bead.children.length > 0 ||
