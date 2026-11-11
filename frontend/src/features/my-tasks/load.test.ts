@@ -4,7 +4,10 @@ import { bead, project } from "@/features/beads/beadFixtures";
 import { fetchProjects } from "@/features/projects/api";
 import { loadMyTasks } from "./load";
 
-vi.mock("@/features/projects/api", () => ({ fetchProjects: vi.fn() }));
+vi.mock("@/features/projects/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/projects/api")>()),
+  fetchProjects: vi.fn(),
+}));
 vi.mock("@/features/beads/api", () => ({ fetchBeads: vi.fn() }));
 
 const email = "giangdhwhtbr@gmail.com";
@@ -17,6 +20,17 @@ beforeEach(() => {
 });
 
 describe("loadMyTasks", () => {
+  it("REQ-UI-103 lists stale projects", async () => {
+    const withStale = (name: string, stale: boolean, exists = true) => ({
+      ...project(name, exists),
+      beads: { open: 0, in_progress: 0, blocked: 0, ready: 0, epics: [], stale },
+    });
+    projects.mockResolvedValue([withStale("A", true), withStale("B", false), withStale("C", true, false)]);
+    beads.mockResolvedValue([]);
+    const result = await loadMyTasks(email, false);
+    expect(result.stale).toEqual(["A"]);
+  });
+
   it("REQ-UI-100 gathers my beads across projects in order", async () => {
     beads.mockImplementation((name) =>
       Promise.resolve(

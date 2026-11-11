@@ -65,6 +65,32 @@ describe("MyTasksPage", () => {
     expect(within(rows()[1]).getByRole("link")).toHaveAttribute("href", "/beads/A/a-1");
   });
 
+  it("REQ-UI-103 one note per stale project", async () => {
+    const entry = (name: string, stale: boolean) => ({
+      name,
+      path: `/home/gin/${name}`,
+      exists: true,
+      workflow: null,
+      beads: { open: 0, in_progress: 0, blocked: 0, ready: 0, epics: [], stale },
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = new URL(requested(input), "http://localhost");
+        if (url.pathname === "/api/projects") return Promise.resolve(json([entry("A", true), entry("B", false)]));
+        const name = url.searchParams.get("project") ?? "";
+        return Promise.resolve(json([bead(`${name.toLowerCase()}-1`, { assignee: "giangdhwhtbr" })]));
+      }),
+    );
+    open("/my-tasks");
+    await screen.findByText("2 tasks");
+    const notes = screen.getAllByRole("alert");
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toHaveTextContent("Beads of A may be out of date.");
+    expect(screen.queryByText(/Beads of B/)).not.toBeInTheDocument();
+    expect(rows()).toHaveLength(2);
+  });
+
   it("REQ-UI-100 nothing assigned", async () => {
     stubBeads(() => json([bead("a-1", { assignee: "alice" })]));
     open("/my-tasks");

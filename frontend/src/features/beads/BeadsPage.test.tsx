@@ -39,6 +39,11 @@ const project = (name: string, exists = true): Project => ({
   beads: null,
 });
 
+const withBeads = (name: string, stale?: boolean): Project => ({
+  ...project(name),
+  beads: { open: 0, in_progress: 0, blocked: 0, ready: 0, epics: [], ...(stale === undefined ? {} : { stale }) },
+});
+
 const defaultProjects: Project[] = [project("alpha", true), project("omega", true), project("ghost", false)];
 
 const stub = (
@@ -88,6 +93,26 @@ describe("BeadsPage", () => {
     await userEvent.selectOptions(select, "omega");
     expect(await screen.findByText("Omega Bead")).toBeInTheDocument();
     expect(window.location.search).toBe("?project=omega");
+  });
+
+  it("REQ-UI-103 note for the selected stale project", async () => {
+    stub(() => json([bead("a-1")]), [withBeads("alpha", true), withBeads("omega", false)]);
+    render(<BeadsPage />);
+    const note = await screen.findByRole("alert");
+    expect(note).toHaveTextContent(
+      "Beads of alpha may be out of date. Run bd export -o .beads/issues.jsonl in alpha.",
+    );
+    expect(await screen.findByText("Title a-1")).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText("Project"), "omega");
+    await screen.findByLabelText("Project");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("REQ-UI-103 no note when not stale", async () => {
+    stub(() => json([bead("a-1")]), [withBeads("alpha"), withBeads("omega", false)]);
+    render(<BeadsPage />);
+    expect(await screen.findByText("Title a-1")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("REQ-UI-081 the project picker is followed by a Dependencies link", async () => {
