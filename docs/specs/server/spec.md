@@ -135,3 +135,6 @@ WHERE the server runs on Windows, the server SHALL sanitize `PATH` in `_child_en
 - GIVEN `sys.platform` is `"win32"` and a command starts with `"gin"`
 - WHEN the command is prepared for subprocess execution
 - THEN it is executed through the `gin.cmd` shim on `PATH`, or via `bash` when no shim exists, with the arguments preserved
+
+## Diagrams
+- [Project beads](diagrams/project-beads-activity.md)
