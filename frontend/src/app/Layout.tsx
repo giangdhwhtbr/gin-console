@@ -1,6 +1,7 @@
-import { ChartColumn, Flag, LayoutGrid, ListChecks, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChartColumn, Flag, LayoutGrid, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { clearEmail, useEmail } from "./identity";
 import { Link } from "./Link";
 import { useLocation } from "./route";
 import { RefreshButton } from "./RefreshButton";
@@ -50,6 +51,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
   const { pathname } = useLocation();
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const wide = !collapsed;
+  const email = useEmail();
   const toggle = () => {
     setCollapsed(wide);
     try {
@@ -66,11 +68,22 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
         <div className="flex">
           <RefreshButton onRefreshed={onRefreshed} />
           <ThemeToggle />
+          {email !== null && (
+            <button
+              type="button"
+              onClick={clearEmail}
+              aria-label={`Log out ${email}`}
+              title={`Log out ${email}`}
+              className={ICON_BUTTON}
+            >
+              <LogOut aria-hidden className="size-5" />
+            </button>
+          )}
         </div>
       </header>
       <div
         className={cn(
-          "md:flex md:w-20 md:shrink-0 md:flex-col md:gap-4 md:border-r md:bg-card md:px-2 md:py-4",
+          "md:flex md:min-h-screen md:w-20 md:shrink-0 md:flex-col md:gap-4 md:border-r md:bg-card md:px-2 md:py-4",
           wide && "lg:w-64 lg:px-3",
         )}
       >
@@ -102,6 +115,35 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
             </Link>
           ))}
         </nav>
+        {email !== null && (
+          <div
+            className={cn(
+              "hidden md:mt-auto md:flex md:flex-col md:items-center md:gap-1 md:border-t md:pt-3",
+              wide && "lg:flex-row lg:justify-between lg:px-2",
+            )}
+          >
+            <span
+              aria-hidden
+              title={email}
+              className={cn(
+                "flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold uppercase",
+                wide && "lg:hidden",
+              )}
+            >
+              {email[0]}
+            </span>
+            <span className={cn("hidden truncate text-sm", wide && "lg:block")}>{email}</span>
+            <button
+              type="button"
+              onClick={clearEmail}
+              aria-label={`Log out ${email}`}
+              title={`Log out ${email}`}
+              className={ICON_BUTTON}
+            >
+              <LogOut aria-hidden className="size-5" />
+            </button>
+          </div>
+        )}
       </div>
       <main className="min-w-0 flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6">{children}</main>
     </div>
