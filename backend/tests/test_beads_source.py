@@ -227,12 +227,14 @@ def test_beads_005_unreadable(tmp_path: Path) -> None:
 
 # REQ-BEADS-005
 # REQ-BEADS-006
-def test_beads_005_invalid_utf8_in_the_file_is_tolerated(tmp_path: Path) -> None:
-    # a bead written with a stray byte must not turn into an uncaught UnicodeDecodeError
+def test_beads_005_invalid_utf8_in_the_file_is_replaced(tmp_path: Path) -> None:
+    # a stray byte becomes U+FFFD, as bd stdout was decoded: no UnicodeDecodeError, and no
+    # lone surrogate for a model without `clean` to choke on
     line = json.dumps(bead("a-1", title="x@y")).encode().replace(b"x@y", b"x\xffy")
     export_file(tmp_path, line + b"\n")
+    assert read_export(tmp_path)[0]["title"] == "x\ufffdy"
     (summary,) = list_beads(build_snapshot(read_export(tmp_path)), closed=False)
-    assert summary.title == "x?y"
+    assert summary.title == "x\ufffdy"
 
 
 # REQ-BEADS-002

@@ -45,7 +45,7 @@ def read_export(cwd: Path) -> list[dict[str, Any]]:
     """Every row of the project's `bd` export file (what `bd export` prints)."""
     path = cwd / EXPORT_FILE
     try:
-        text = path.read_text(encoding="utf-8", errors="surrogateescape")
+        text = path.read_text(encoding="utf-8", errors="replace")
     except FileNotFoundError:
         raise BeadsError(MISSING.format(path=_NAME)) from None
     except OSError as exc:

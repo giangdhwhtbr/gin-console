@@ -153,6 +153,6 @@ class SnapshotStore:
         """The Dolt store changed since the kept snapshot was read, and the file did not."""
         with self._guard:
             hit = self._items.get(cwd)
-        if hit is None or hit[1] is None:
+        if hit is None or hit[1] is None or self._file_key(cwd) != hit[0]:
             return False
         return self._signature(cwd) not in (None, hit[1])

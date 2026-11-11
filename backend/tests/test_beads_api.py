@@ -287,6 +287,23 @@ def test_beads_005_malformed_line_502(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-005
+def test_beads_005_bad_utf8_in_an_epic_title_answers_200(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(subprocess, "run", Fake())  # gin state
+    epic = bead("e-1", title="x@y", issue_type="epic", status="in_progress")
+    path = write_export(tmp_path / "proj", [epic])
+    path.write_bytes(path.read_bytes().replace(b"x@y", b"x\xffy"))
+    api = make(tmp_path)  # the default reader
+    projects = api.get("/api/projects")
+    assert projects.status_code == 200
+    proj = next(p for p in projects.json() if p["name"] == "proj")
+    assert proj["beads"]["epics"] == [{"id": "e-1", "title": "x\ufffdy"}]
+    assert api.get("/api/reports", params={"project": "proj"}).status_code == 200
+    assert api.get("/api/beads", params={"project": "proj"}).status_code == 200
+
+
+# REQ-BEADS-005
 @pytest.mark.parametrize("path", ["/api/beads?project=proj", "/api/beads/proj/a-1/comments"])
 def test_beads_005_unexpected_export_shape_is_502(tmp_path: Path, path: str) -> None:
     api = make(tmp_path, FakeExport(FOUR, output={"x": 1}))

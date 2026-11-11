@@ -1,5 +1,6 @@
 class BeadsError(Exception):
-    """`bd` failed or said something unexpected; the message is shown to the operator."""
+    """The export file could not be read or held something unexpected; the message is shown to
+    the operator."""
 
 
 class BeadNotFound(Exception):

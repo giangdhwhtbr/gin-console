@@ -218,6 +218,17 @@ def test_beads_013_stale_when_manifest_moves(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-013
+def test_beads_013_not_stale_once_the_file_changed(tmp_path: Path) -> None:
+    manifest = dolt(tmp_path, "db", b"root-1")
+    export_file(tmp_path)
+    store = SnapshotStore(Reads())
+    store.get(tmp_path)
+    manifest.write_bytes(b"root-2")
+    export_file(tmp_path, at=2_000_000_000)  # bd exported the write; nothing read it yet
+    assert store.is_stale(tmp_path) is False
+
+
+# REQ-BEADS-013
 def test_beads_013_a_write_during_the_read_shows_as_stale(tmp_path: Path) -> None:
     manifest = dolt(tmp_path, "db", b"root-1")
     export_file(tmp_path)
