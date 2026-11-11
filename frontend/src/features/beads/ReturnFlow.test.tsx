@@ -26,8 +26,8 @@ function stub() {
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url,
         "http://localhost",
       );
-      if (url.pathname === "/api/projects") {
-        return Promise.resolve(json([{ name: "alpha", path: "/x", exists: true, workflow: null, beads: null }]));
+      if (url.pathname === "/api/projects/beads") {
+        return Promise.resolve(json([{ name: "alpha", path: "/x", exists: true, beads: null }]));
       }
       if (url.pathname === "/api/beads") return Promise.resolve(json(list));
       if (url.pathname.endsWith("/comments")) return Promise.resolve(json([]));

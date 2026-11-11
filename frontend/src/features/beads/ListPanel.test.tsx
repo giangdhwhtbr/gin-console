@@ -39,7 +39,7 @@ function stubTreeWithDetail(
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const url = new URL(text, "http://localhost");
-    if (url.pathname === "/api/projects") {
+    if (url.pathname === "/api/projects/beads") {
       return Promise.resolve(json([project("alpha")]));
     }
     if (url.pathname === "/api/beads") {

@@ -75,7 +75,7 @@ export function stubMilestones(handler: (url: URL) => Response | Promise<Respons
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const url = new URL(text, "http://localhost");
-    if (url.pathname === "/api/projects") return Promise.resolve(json([project("alpha")]));
+    if (url.pathname === "/api/projects/beads") return Promise.resolve(json([project("alpha")]));
     if (url.pathname.startsWith("/api/milestones")) return Promise.resolve(handler(url));
     if (url.pathname === "/api/beads") return Promise.resolve(typeof beads === "function" ? beads(url) : json(beads));
     return Promise.resolve(json({}, 404));

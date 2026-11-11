@@ -1,17 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchBeads } from "@/features/beads/api";
 import { bead, project } from "@/features/beads/beadFixtures";
-import { fetchProjects } from "@/features/projects/api";
+import { fetchProjectBeads } from "@/features/projects/api";
 import { loadMyTasks } from "./load";
 
 vi.mock("@/features/projects/api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/features/projects/api")>()),
-  fetchProjects: vi.fn(),
+  fetchProjectBeads: vi.fn(),
 }));
 vi.mock("@/features/beads/api", () => ({ fetchBeads: vi.fn() }));
 
 const email = "giangdhwhtbr@gmail.com";
-const projects = vi.mocked(fetchProjects);
+const projects = vi.mocked(fetchProjectBeads);
 const beads = vi.mocked(fetchBeads);
 
 beforeEach(() => {

@@ -1,5 +1,5 @@
 import { fetchBeads, type BeadSummary } from "@/features/beads/api";
-import { fetchProjects, isStale } from "@/features/projects/api";
+import { fetchProjectBeads, isStale } from "@/features/projects/api";
 import { isMine } from "./match";
 
 export type MyTask = { project: string; bead: BeadSummary };
@@ -16,7 +16,7 @@ export function compareTasks(a: MyTask, b: MyTask): number {
 }
 
 export async function loadMyTasks(email: string, closed: boolean): Promise<MyTasks> {
-  const existing = (await fetchProjects()).filter((p) => p.exists);
+  const existing = (await fetchProjectBeads()).filter((p) => p.exists);
   const names = existing.map((p) => p.name);
   const stale = existing.filter(isStale).map((p) => p.name);
   const results = await Promise.allSettled(names.map((name) => fetchBeads(name, closed)));

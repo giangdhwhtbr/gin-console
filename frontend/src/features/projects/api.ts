@@ -23,6 +23,8 @@ export type Project = {
   beads: Beads | BlockError | null;
 };
 
+export type ProjectBeads = Pick<Project, "name" | "path" | "exists" | "beads">;
+
 export function isBlockError(value: unknown): value is BlockError {
   return (
     typeof value === "object" && value !== null && "error" in value && typeof value.error === "string"
@@ -35,7 +37,7 @@ const isNullOrObject = (value: unknown) => value === null || (typeof value === "
 const hasValidStale = (value: unknown) =>
   typeof value !== "object" || value === null || !("stale" in value) || typeof value.stale === "boolean";
 
-function isProject(value: unknown): value is Project {
+function isProjectBeads(value: unknown): value is ProjectBeads {
   if (typeof value !== "object" || value === null) return false;
   return (
     "name" in value &&
@@ -44,15 +46,17 @@ function isProject(value: unknown): value is Project {
     typeof value.path === "string" &&
     "exists" in value &&
     typeof value.exists === "boolean" &&
-    "workflow" in value &&
-    Boolean(isNullOrObject(value.workflow)) &&
     "beads" in value &&
     Boolean(isNullOrObject(value.beads)) &&
     hasValidStale(value.beads)
   );
 }
 
-export const isStale = (project: Project): boolean =>
+function isProject(value: unknown): value is Project {
+  return isProjectBeads(value) && "workflow" in value && Boolean(isNullOrObject(value.workflow));
+}
+
+export const isStale = (project: Pick<Project, "beads">): boolean =>
   project.beads !== null && !isBlockError(project.beads) && project.beads.stale === true;
 
 export async function fetchProjects(): Promise<Project[]> {
@@ -62,6 +66,18 @@ export async function fetchProjects(): Promise<Project[]> {
   }
   const body: unknown = await response.json();
   if (!Array.isArray(body) || !body.every(isProject)) {
+    throw new Error("Could not load projects (unexpected response)");
+  }
+  return body;
+}
+
+export async function fetchProjectBeads(): Promise<ProjectBeads[]> {
+  const response = await fetch("/api/projects/beads");
+  if (!response.ok) {
+    throw new Error(`Could not load projects (HTTP ${response.status})`);
+  }
+  const body: unknown = await response.json();
+  if (!Array.isArray(body) || !body.every(isProjectBeads)) {
     throw new Error("Could not load projects (unexpected response)");
   }
   return body;
