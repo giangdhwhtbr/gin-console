@@ -1,6 +1,6 @@
 # TC-UI-006: My Tasks shows one note per stale project
 
-- **REQ:** REQ-UI-103@1b47034e
+- **REQ:** REQ-UI-103@5ebe1b9b
 - **Priority:** high
 
 **Preconditions:**

@@ -1,6 +1,6 @@
 # TC-BEADS-016: Write not exported marks the beads stale
 
-- **REQ:** REQ-BEADS-013@083a7f3b
+- **REQ:** REQ-BEADS-013@a896831f
 - **Priority:** high
 
 **Preconditions:**

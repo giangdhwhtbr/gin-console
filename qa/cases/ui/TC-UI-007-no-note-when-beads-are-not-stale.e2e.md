@@ -1,6 +1,6 @@
 # TC-UI-007: No note when beads are not stale
 
-- **REQ:** REQ-UI-103@1b47034e
+- **REQ:** REQ-UI-103@5ebe1b9b
 - **Priority:** medium
 
 **Preconditions:**
