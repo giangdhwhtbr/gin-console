@@ -4,6 +4,7 @@ import { BeadsPage } from "@/features/beads/BeadsPage";
 import { GraphPage } from "@/features/beads/GraphPage";
 import { MilestonePage } from "@/features/milestones/MilestonePage";
 import { MilestonesPage } from "@/features/milestones/MilestonesPage";
+import { MyTasksPage } from "@/features/my-tasks/MyTasksPage";
 import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { QuotaPage } from "@/features/quota/QuotaPage";
 import { SessionLogPage } from "@/features/sessions/SessionLogPage";
@@ -79,6 +80,8 @@ export function App() {
         <SessionsPage />
       ) : pathname === "/beads" ? (
         <BeadsPage />
+      ) : pathname === "/my-tasks" ? (
+        <MyTasksPage />
       ) : pathname === "/milestones" ? (
         <MilestonesPage />
       ) : pathname === "/quota" ? (

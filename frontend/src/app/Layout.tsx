@@ -1,4 +1,4 @@
-import { ChartColumn, Flag, LayoutGrid, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChartColumn, Flag, LayoutGrid, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, UserCheck } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { clearEmail, useEmail } from "./identity";
@@ -10,6 +10,7 @@ import { ICON_BUTTON, ThemeToggle } from "./ThemeToggle";
 const NAV = [
   { to: "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
   { to: "/beads", label: "Beads", icon: ListChecks, current: (path: string) => path === "/beads" || path.startsWith("/beads/") },
+  { to: "/my-tasks", label: "My Tasks", icon: UserCheck, current: (path: string) => path === "/my-tasks" },
   { to: "/milestones", label: "Milestones", icon: Flag, current: (path: string) => path === "/milestones" || path.startsWith("/milestones/") },
   { to: "/reports", label: "Reports", icon: ChartColumn, current: (path: string) => path === "/reports" },
 ] as const;
