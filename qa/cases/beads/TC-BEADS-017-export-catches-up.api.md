@@ -8,7 +8,8 @@
 
 **Steps:**
 1. Write `issues.jsonl` again
-2. Request `GET /api/projects/beads`
+2. Wait for the 5-second reuse of `GET /api/projects` to pass
+3. Request `GET /api/projects`
 
 **Expected:**
 - The file was read again
