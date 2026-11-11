@@ -138,3 +138,26 @@ WHERE the server runs on Windows, the server SHALL sanitize `PATH` in `_child_en
 
 ## Diagrams
 - [Project beads](diagrams/project-beads-activity.md)
+
+### REQ-SERVER-010: Project beads without workflow
+WHEN a client requests `GET /api/projects/beads`, the server SHALL return the configured projects in config order, each with `name`, `path`, `exists` reflecting whether `path` is a directory at request time, and `beads`: for an existing project the summary of REQ-SERVER-006 with `stale` (REQ-BEADS-013), or an object whose only content is an `error` message when its beads cannot be read (REQ-BEADS-005); for a missing project `null`. It SHALL NOT include `workflow` and SHALL NOT start any process.
+
+#### Scenario: Summary per project
+- GIVEN an existing project with 3 open, 1 in_progress and 2 ready beads, and a project whose directory does not exist
+- WHEN a client requests `GET /api/projects/beads`
+- THEN both are returned in config order, the first with `exists: true` and those counts and `stale: false`, the second with `exists: false` and `beads: null`, and neither has `workflow`
+
+#### Scenario: No process
+- GIVEN two existing projects with `.beads/issues.jsonl`
+- WHEN a client requests `GET /api/projects/beads`
+- THEN the response is 200 and no `gin` or `bd` process was started
+
+#### Scenario: Unreadable beads
+- GIVEN an existing project without `.beads/issues.jsonl`
+- WHEN a client requests `GET /api/projects/beads`
+- THEN that project's `beads` is `{"error": "<the REQ-BEADS-005 message>"}` and the other projects have their summaries
+
+#### Scenario: No projects
+- GIVEN a config with no projects
+- WHEN a client requests `GET /api/projects/beads`
+- THEN the response is `[]`
