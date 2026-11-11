@@ -269,3 +269,6 @@ The server SHALL keep, per project, the beads that `bd export` printed (with the
 - GIVEN a project whose snapshot is current and a report cached less than 60 seconds ago
 - WHEN a client sends `POST /api/refresh` and then requests the list and the report
 - THEN the response to the refresh is 204, and `bd export` runs again and the report is built again
+
+## Diagrams
+- [Export read](diagrams/export-read-activity.md)
