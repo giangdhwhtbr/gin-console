@@ -2,16 +2,17 @@ import { useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { fetchProjects, type Project } from "@/features/projects/api";
+import { fetchProjects, isStale, type Project } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
 import { graphPath } from "./graph";
 import { rememberSearch } from "./returnState";
+import { StaleNote } from "./StaleNote";
 
 type Projects =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ok"; names: string[] };
+  | { status: "ok"; names: string[]; stale: string[] };
 
 export function BeadsPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
@@ -20,8 +21,10 @@ export function BeadsPage() {
 
   useEffect(() => {
     void fetchProjects().then(
-      (list: Project[]) =>
-        setProjects({ status: "ok", names: list.filter((p) => p.exists).map((p) => p.name) }),
+      (list: Project[]) => {
+        const existing = list.filter((p) => p.exists);
+        setProjects({ status: "ok", names: existing.map((p) => p.name), stale: existing.filter(isStale).map((p) => p.name) });
+      },
       (error: unknown) =>
         setProjects({ status: "error", message: error instanceof Error ? error.message : String(error) }),
     );
@@ -29,6 +32,7 @@ export function BeadsPage() {
 
   const change = (next: BeadFilters) => navigate(`/beads${filtersToSearch(next)}`, { replace: true });
   const names = projects.status === "ok" ? projects.names : [];
+  const stale = projects.status === "ok" ? projects.stale : [];
   // the default is not written back into the URL
   const selected = names.includes(filters.project) ? filters.project : (names[0] ?? "");
 
@@ -71,6 +75,7 @@ export function BeadsPage() {
               Dependencies
             </Link>
           </div>
+          <StaleNote projects={stale.includes(selected) ? [selected] : []} />
           <BeadsView key={selected} project={selected} filters={filters} onChange={change} />
         </>
       )}

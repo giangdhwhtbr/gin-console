@@ -12,6 +12,7 @@ export type Beads = {
   blocked: number;
   ready: number;
   epics: { id: string; title: string }[];
+  stale?: boolean;
 };
 
 export type Project = {
@@ -30,6 +31,10 @@ export function isBlockError(value: unknown): value is BlockError {
 
 const isNullOrObject = (value: unknown) => value === null || (typeof value === "object" && value);
 
+// `stale` is optional in the response; when present it must be a boolean
+const hasValidStale = (value: unknown) =>
+  typeof value !== "object" || value === null || !("stale" in value) || typeof value.stale === "boolean";
+
 function isProject(value: unknown): value is Project {
   if (typeof value !== "object" || value === null) return false;
   return (
@@ -42,9 +47,13 @@ function isProject(value: unknown): value is Project {
     "workflow" in value &&
     Boolean(isNullOrObject(value.workflow)) &&
     "beads" in value &&
-    Boolean(isNullOrObject(value.beads))
+    Boolean(isNullOrObject(value.beads)) &&
+    hasValidStale(value.beads)
   );
 }
+
+export const isStale = (project: Project): boolean =>
+  project.beads !== null && !isBlockError(project.beads) && project.beads.stale === true;
 
 export async function fetchProjects(): Promise<Project[]> {
   const response = await fetch("/api/projects");

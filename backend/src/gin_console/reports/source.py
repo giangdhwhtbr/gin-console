@@ -1,4 +1,5 @@
-"""Beads of one project for reports, from its `bd export` snapshot; parses `metadata.ai_usage`."""
+"""Beads of one project for reports, from its `.beads/issues.jsonl` snapshot; parses
+`metadata.ai_usage`."""
 
 import json
 from typing import Any

@@ -1,9 +1,9 @@
-"""Rows as `bd export` prints them, with an `ai_usage` built from a few numbers."""
+"""Rows as `.beads/issues.jsonl` holds them, with an `ai_usage` built from a few numbers."""
 
 import json
 from typing import Any
 
-from fake_bd import bead
+from fake_export import bead
 
 from gin_console.beads.snapshot import Snapshot, build_snapshot
 
@@ -44,7 +44,7 @@ def usage(
 
 
 def row(ident: str, *, ai: dict[str, Any] | str | None = None, **fields: Any) -> dict[str, Any]:
-    """A `bd export` row; `ai` is stored as a JSON string, as bd does."""
+    """An exported row; `ai` is stored as a JSON string, as bd does."""
     base = bead(ident, **fields)
     if ai is not None:
         base["metadata"] = {"ai_usage": ai if isinstance(ai, str) else json.dumps(ai)}
@@ -56,5 +56,5 @@ def closed(ident: str, at: str, **fields: Any) -> dict[str, Any]:
 
 
 def snap(rows: list[Any]) -> Snapshot:
-    """The snapshot the console builds from these `bd export` rows."""
+    """The snapshot the console builds from these exported rows."""
     return build_snapshot(rows)

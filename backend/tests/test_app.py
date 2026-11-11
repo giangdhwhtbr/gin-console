@@ -2,10 +2,12 @@ import subprocess
 from pathlib import Path
 
 import pytest
-from fakes import Fake
+from fake_export import write_export
+from fakes import ISSUES, Fake
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
+from gin_console.beads.source import MISSING
 from gin_console.config import ProjectEntry, Settings
 
 WORKFLOW = {"stage": "plan", "layout": "sdd", "gates": {"requirement_confirmed": "satisfied"}}
@@ -15,6 +17,7 @@ BEADS = {
     "blocked": 1,
     "ready": 2,
     "epics": [{"id": "e1", "title": "Epic one"}, {"id": "e2", "title": "Epic two"}],
+    "stale": False,
 }
 
 
@@ -49,7 +52,7 @@ def test_server_002_health(tmp_path: Path) -> None:
 # REQ-SERVER-003
 def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
     present = tmp_path / "present"
-    present.mkdir()
+    write_export(present, ISSUES)
     client = make_client(
         tmp_path,
         [
@@ -104,11 +107,11 @@ def test_server_007_missing_path_runs_nothing(tmp_path: Path, fake: Fake) -> Non
 def test_server_007_block_error_in_response(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(subprocess, "run", Fake({"bd": FileNotFoundError()}))
-    (tmp_path / "s").mkdir()
+    monkeypatch.setattr(subprocess, "run", Fake())
+    (tmp_path / "s").mkdir()  # no .beads/issues.jsonl
     client = make_client(tmp_path, [ProjectEntry(name="s", path=tmp_path / "s")])
     body = client.get("/api/projects").json()[0]
-    assert body["beads"] == {"error": "bd not found"}
+    assert body["beads"] == {"error": MISSING.format(path=".beads/issues.jsonl")}
     assert body["workflow"] == WORKFLOW
 
 

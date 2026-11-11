@@ -13,7 +13,6 @@ const stubFetch = (detail: BeadDetail, comments: () => Response | Promise<Respon
     "fetch",
     vi.fn((input: RequestInfo | URL) => {
       const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
-      if (url.endsWith("/reopens")) return Promise.resolve(json({ reopens: 0 }));
       return Promise.resolve(url.endsWith("/comments") ? comments() : json(detail));
     }),
   );

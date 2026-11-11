@@ -22,7 +22,7 @@ _SPRINT = re.compile(r"[A-Za-z0-9._-]{1,100}")
 
 
 def _message(exc: BeadsError | RecursionError) -> str:
-    return str(exc) or "bd output was too deeply nested"
+    return str(exc) or "issues.jsonl was too deeply nested"
 
 
 def build_router(

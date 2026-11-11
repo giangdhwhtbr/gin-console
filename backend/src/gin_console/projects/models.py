@@ -22,6 +22,7 @@ class Beads(BaseModel):
     blocked: int
     ready: int
     epics: list[Epic]
+    stale: bool = False
 
 
 class Project(BaseModel):

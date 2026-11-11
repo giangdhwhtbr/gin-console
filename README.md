@@ -23,7 +23,7 @@ Before installing, ensure the following are installed on your machine:
 - [**uv**](https://docs.astral.sh/uv/) (recommended fast Python package manager)
 - **Node.js (v20+ or v22+)** and [**pnpm**](https://pnpm.io/)
 - **Git** (on Windows, **Git for Windows** is required)
-- [**bd** (Beads CLI)](https://github.com/gastownhall/beads) in your system `PATH`
+- [**bd** (Beads CLI)](https://github.com/gastownhall/beads) in your system `PATH`, to write each project's export file. The console never runs `bd`; see [Beads export](#beads-export).
 - *(Optional)* AI CLIs:
   - Claude Code: `npm install -g @anthropic-ai/claude-code`
   - OpenAI Codex: `npm install -g @openai/codex`
@@ -307,6 +307,26 @@ For the user account:
 ### Check the bind
 
 From another device, open `http://<machine-ip>:8700`. If `GIN_CONSOLE_ALLOW_NON_LOOPBACK` is missing, the console exits with `refusing to bind 0.0.0.0`. If `GIN_CONSOLE_HOST` is missing, the console listens on loopback only and the other device cannot connect.
+
+---
+
+## Beads export
+
+gin-console reads each project's beads from `.beads/issues.jsonl`. It never runs `bd`, so the file must exist and stay current. Run these three commands once in each project directory. They work the same in bash, PowerShell and cmd:
+
+```bash
+bd config set export.auto true
+bd config set export.interval 1s
+bd export -o .beads/issues.jsonl
+```
+
+The first two commands write to the project's `.beads/config.yaml`. The last one writes the file now. After that, each `bd` write updates it.
+
+Without the file, the console shows an error for that project that names these commands.
+
+`bd` skips an automatic export that comes less than `export.interval` after the previous one. The console then shows a note that the project's beads may be out of date. Run `bd export -o .beads/issues.jsonl`, or make another `bd` write after the interval, to refresh it.
+
+The bead page no longer shows a reopen count.
 
 ---
 

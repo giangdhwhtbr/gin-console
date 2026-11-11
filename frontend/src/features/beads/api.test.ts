@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BeadNotFoundError, fetchBead, fetchBeads, fetchComments, fetchReopens } from "./api";
+import { BeadNotFoundError, fetchBead, fetchBeads, fetchComments } from "./api";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -325,17 +325,5 @@ describe("api", () => {
     );
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([missingAuthor]))));
     await expect(fetchComments("proj", "a-1")).rejects.toThrow("Could not load the comments (unexpected response)");
-  });
-
-  // REQ-UI-086
-  it("REQ-UI-086 fetchReopens parses the count and rejects an unexpected shape", async () => {
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ reopens: 2 }))));
-    expect(await fetchReopens("alpha", "a-5")).toBe(2);
-    for (const body of [{ reopens: -1 }, { x: 1 }]) {
-      vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(body))));
-      await expect(fetchReopens("alpha", "a-5")).rejects.toThrow("Could not load the reopens (unexpected response)");
-    }
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ error: "bd history failed" }, 502))));
-    await expect(fetchReopens("alpha", "a-5")).rejects.toThrow("bd history failed");
   });
 });
