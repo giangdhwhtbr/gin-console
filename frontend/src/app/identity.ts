@@ -13,7 +13,7 @@ export function getEmail(): string | null {
   if (memory === undefined) {
     try {
       const stored = window.localStorage.getItem(EMAIL_KEY);
-      memory = stored !== null && isEmail(stored) ? stored : null;
+      memory = stored !== null && isEmail(stored) ? stored.trim().toLowerCase() : null;
     } catch {
       memory = null; // storage refused: nobody is signed in yet
     }

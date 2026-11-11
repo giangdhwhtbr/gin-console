@@ -136,12 +136,13 @@ describe("Layout", () => {
     it("REQ-UI-098 the sidebar shows the email and Log out", () => {
       open("/");
       expect(screen.getAllByText("tester@example.com").length).toBeGreaterThan(0);
-      expect(screen.getAllByRole("button", { name: "Log out" }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: /^Log out/ }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: "Log out tester@example.com" }).length).toBeGreaterThan(0);
     });
 
     it("REQ-UI-098 Log out forgets the email", async () => {
       open("/");
-      await userEvent.click(screen.getAllByRole("button", { name: "Log out" })[0]);
+      await userEvent.click(screen.getAllByRole("button", { name: /^Log out/ })[0]);
       expect(getEmail()).toBeNull();
     });
   });

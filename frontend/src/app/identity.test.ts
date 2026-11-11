@@ -26,6 +26,18 @@ describe("identity", () => {
     expect(getEmail()).toBe("giangdhwhtbr@gmail.com");
   });
 
+  it("REQ-UI-097 a junk stored value reads as null", () => {
+    localStorage.setItem(EMAIL_KEY, "giang");
+    resetIdentity();
+    expect(getEmail()).toBeNull();
+  });
+
+  it("REQ-UI-097 a stored value is trimmed and lower-cased on read", () => {
+    localStorage.setItem(EMAIL_KEY, " A@B.C ");
+    resetIdentity();
+    expect(getEmail()).toBe("a@b.c");
+  });
+
   it("REQ-UI-097 storage refused keeps the email for the visit", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("denied");

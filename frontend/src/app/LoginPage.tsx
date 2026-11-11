@@ -26,10 +26,11 @@ export function LoginPage() {
             value={value}
             onChange={(event) => setValue(event.target.value)}
             aria-invalid={invalid}
+            aria-describedby={invalid ? "login-email-error" : undefined}
             className="h-9 rounded-md border bg-background px-3 text-sm"
           />
           {invalid && (
-            <p role="alert" className="text-sm text-destructive">
+            <p id="login-email-error" role="alert" className="text-sm text-destructive">
               That is not a valid email.
             </p>
           )}

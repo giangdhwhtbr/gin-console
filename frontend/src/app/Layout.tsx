@@ -72,7 +72,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
             <button
               type="button"
               onClick={clearEmail}
-              aria-label="Log out"
+              aria-label={`Log out ${email}`}
               title={`Log out ${email}`}
               className={ICON_BUTTON}
             >
@@ -123,7 +123,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
             )}
           >
             <span
-              aria-label={email}
+              aria-hidden
               title={email}
               className={cn(
                 "flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold uppercase",
@@ -136,7 +136,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
             <button
               type="button"
               onClick={clearEmail}
-              aria-label="Log out"
+              aria-label={`Log out ${email}`}
               title={`Log out ${email}`}
               className={ICON_BUTTON}
             >

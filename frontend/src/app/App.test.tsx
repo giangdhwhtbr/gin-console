@@ -56,7 +56,7 @@ describe("App routing", () => {
     window.history.replaceState(null, "", "/beads");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     render(<App />);
-    await userEvent.click(screen.getAllByRole("button", { name: "Log out" })[0]);
+    await userEvent.click(screen.getAllByRole("button", { name: /^Log out/ })[0]);
     expect(screen.getByRole("textbox", { name: "Email" })).toBeInTheDocument();
     expect(localStorage.getItem(EMAIL_KEY)).toBeNull();
     expect(window.location.pathname).toBe("/beads");
