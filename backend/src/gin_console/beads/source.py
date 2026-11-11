@@ -1,24 +1,26 @@
-"""Beads of a project from its `bd export` snapshot (and `bd history`); the only module that
-knows their JSON."""
+"""Beads of a project from its `.beads/issues.jsonl` snapshot; the only module that knows their
+JSON."""
 
 import json
 import re
-from itertools import pairwise
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any
 
 from pydantic import ValidationError
 
 from gin_console.beads.errors import BeadNotFound, BeadsError
 from gin_console.beads.models import BeadDetail, BeadSummary, Comment, Relation
-from gin_console.beads.snapshot import BLOCKING, Snapshot
-from gin_console.projects.collect import CollectError, run_json, run_text
-from gin_console.quota.source import clean
+from gin_console.beads.snapshot import BLOCKING, EXPORT_FILE, Snapshot
 
-__all__ = ["BeadNotFound", "BeadsError"]
+__all__ = ["EXPORT_FILE", "BeadNotFound", "BeadsError"]
 
-BD_TIMEOUT = 30.0
 MAX_COMMENT_CHARS = 20_000
+MISSING = (
+    "{path} not found: run `bd config set export.auto true` and "
+    "`bd config set export.interval 1s` in the project, then any bd write "
+    "(or `bd export -o .beads/issues.jsonl`)"
+)
+_NAME = EXPORT_FILE.as_posix()  # the same message on Windows
 _ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]*")
 _SUMMARY_KEYS = (
     "id",
@@ -39,28 +41,22 @@ _SUMMARY_KEYS = (
 )
 
 
-class BdRunner(Protocol):
-    def __call__(self, args: list[str], cwd: Path, *, json_on_failure: bool = False) -> Any: ...
-
-
-def run_bd(args: list[str], cwd: Path, *, json_on_failure: bool = False) -> Any:
+def read_export(cwd: Path) -> list[dict[str, Any]]:
+    """Every row of the project's `bd` export file (what `bd export` prints)."""
+    path = cwd / EXPORT_FILE
     try:
-        if args[:1] == ["export"]:  # JSON Lines, one bead per line
-            text = run_text(["bd", *args], cwd, timeout=BD_TIMEOUT)
-            rows = [json.loads(line) for line in text.splitlines() if line.strip()]
-            if not all(isinstance(row, dict) for row in rows):
-                raise BeadsError("bd export output was not understood")
-            return rows
-        return run_json(["bd", *args], cwd, json_on_failure=json_on_failure, timeout=BD_TIMEOUT)
-    except CollectError as exc:
-        raise BeadsError(str(exc)) from None
+        text = path.read_text(encoding="utf-8", errors="surrogateescape")
+    except FileNotFoundError:
+        raise BeadsError(MISSING.format(path=_NAME)) from None
+    except OSError as exc:
+        raise BeadsError(f"{_NAME} could not be read: {exc.strerror or exc}") from None
+    try:
+        rows = [json.loads(line) for line in text.splitlines() if line.strip()]
     except ValueError:
-        raise BeadsError("bd export printed invalid JSON") from None
-
-
-def export_beads(run: BdRunner, cwd: Path) -> Any:
-    """Every regular bead with its labels, dependencies, and comments."""
-    return run(["export"], cwd)
+        raise BeadsError(f"{_NAME} has a line that is not JSON") from None
+    if not all(isinstance(row, dict) for row in rows):
+        raise BeadsError(f"{_NAME} has a line that is not a JSON object")
+    return rows
 
 
 def valid_id(value: str) -> bool:
@@ -163,7 +159,7 @@ def get_bead(snapshot: Snapshot, bead_id: str) -> BeadDetail:
             }
         )
     except ValidationError:
-        raise BeadsError("bd export output was not understood") from None
+        raise BeadsError(f"{_NAME} was not understood") from None
 
 
 def _comment(raw: Any) -> Comment | None:
@@ -184,27 +180,3 @@ def get_comments(snapshot: Snapshot, bead_id: str) -> list[Comment]:
     data = _row(snapshot, bead_id).get("comments")
     rows = data if isinstance(data, list) else []
     return [item for item in map(_comment, rows) if item is not None]
-
-
-def count_reopens(run: BdRunner, cwd: Path, bead_id: str) -> int:
-    """Times the bead went from closed to another status, as gin-workflow's `quality()` counts."""
-    if not valid_id(bead_id):
-        raise BeadNotFound(bead_id)
-    data = run(["history", "--json", "--", bead_id], cwd, json_on_failure=True)
-    if isinstance(data, dict) and "error" in data:
-        message = clean(str(data["error"]))  # it reaches response bodies: no lone surrogates
-        if "no issue" in message:
-            raise BeadNotFound(message)
-        raise BeadsError(f"bd: {message[:200]}")
-    if data is None or data == []:  # bd answers an unknown id with `null` and exit 0
-        raise BeadNotFound(bead_id)
-    if not isinstance(data, list):
-        raise BeadsError("bd history output was not understood")
-    statuses: list[str] = []
-    for row in reversed(data):  # bd prints the newest snapshot first
-        issue = row.get("Issue") if isinstance(row, dict) else None
-        status = issue.get("status") if isinstance(issue, dict) else None
-        if not isinstance(status, str):
-            raise BeadsError("bd history output was not understood")
-        statuses.append(status)
-    return sum(1 for before, after in pairwise(statuses) if before == "closed" != after)

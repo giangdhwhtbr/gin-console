@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from fake_bd import dep
+from fake_export import dep
 from report_beads import row, snap, usage
 
 from gin_console.beads.source import BeadsError
@@ -49,6 +49,6 @@ def test_reports_006_missing_usage_and_bad_rows() -> None:
     assert [(b.id, b.usage, b.usage_problem) for b in beads] == [("a-1", None, None)]
 
 
-def test_reports_007_bd_output_not_a_list() -> None:
+def test_reports_007_export_not_a_list() -> None:
     with pytest.raises(BeadsError):
         snap({"error": "boom"})  # type: ignore[arg-type]

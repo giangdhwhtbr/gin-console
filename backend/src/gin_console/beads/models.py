@@ -61,9 +61,3 @@ class BeadDetail(BeadSummary):
     dependents: list[Relation] = []
     children: list[Relation] = []
     bugs: list[Relation] = []
-
-
-class Reopens(BaseModel):
-    model_config = ConfigDict(strict=True)
-
-    reopens: int

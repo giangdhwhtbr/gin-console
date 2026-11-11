@@ -1,13 +1,19 @@
+import os
 import threading
 import time
 from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_bd import bead, dep
+from fake_export import bead, dep
 
 from gin_console.beads.errors import BeadsError
-from gin_console.beads.snapshot import TTL_SECONDS, SnapshotStore, build_snapshot, store_signature
+from gin_console.beads.snapshot import (
+    SnapshotStore,
+    build_snapshot,
+    export_key,
+    store_signature,
+)
 
 
 def blocks(ident: str, *targets: str, **extra: Any) -> dict[str, Any]:
@@ -75,7 +81,18 @@ def dolt(project: Path, db: str, content: bytes) -> Path:
     return manifest
 
 
-class Exports:
+def export_file(project: Path, content: str = "{}\n", at: int = 1_000_000_000) -> Path:
+    """Write the project's export file with modification time `at` (nanoseconds)."""
+    path = project / ".beads" / "issues.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content)
+    os.utime(path, ns=(at, at))
+    return path
+
+
+class Reads:
+    """A reader that counts its calls; the n-th read returns bead a-n."""
+
     def __init__(self) -> None:
         self.calls: list[Path] = []
 
@@ -84,8 +101,8 @@ class Exports:
         return [bead(f"a-{len(self.calls)}")]
 
 
-# REQ-BEADS-012
-def test_beads_012_signature_is_the_manifest_content(tmp_path: Path) -> None:
+# REQ-BEADS-013
+def test_beads_013_signature_is_the_manifest_content(tmp_path: Path) -> None:
     assert store_signature(tmp_path) is None
     manifest = dolt(tmp_path, "proj", b"root-1")
     first = store_signature(tmp_path)
@@ -96,67 +113,83 @@ def test_beads_012_signature_is_the_manifest_content(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-012
-def test_beads_012_one_export_until_the_store_changes(tmp_path: Path) -> None:
-    manifest = dolt(tmp_path, "proj", b"root-1")
-    exports = Exports()
-    store = SnapshotStore(exports)
+def test_beads_012_export_key_is_time_and_size(tmp_path: Path) -> None:
+    assert export_key(tmp_path) is None
+    export_file(tmp_path, "abc\n", at=7)
+    assert export_key(tmp_path) == (7, 4)
+
+
+# REQ-BEADS-012 (Unchanged file)
+def test_beads_012_unchanged_file_not_read_again(tmp_path: Path) -> None:
+    export_file(tmp_path, "x" * 2000)
+    reads = Reads()
+    store = SnapshotStore(reads)
     assert list(store.get(tmp_path).rows) == ["a-1"]
     assert list(store.get(tmp_path).rows) == ["a-1"]
-    manifest.write_bytes(b"root-2")
+    assert len(reads.calls) == 1
+
+
+# REQ-BEADS-012 (Changed file)
+@pytest.mark.parametrize(
+    ("content", "at"),
+    [("x" * 2000, 2_000_000_000), ("y" * 2001, 1_000_000_000)],
+    ids=["new time", "new size at the same time"],
+)
+def test_beads_012_changed_file_read_again(tmp_path: Path, content: str, at: int) -> None:
+    export_file(tmp_path, "x" * 2000)
+    reads = Reads()
+    store = SnapshotStore(reads)
+    store.get(tmp_path)
+    export_file(tmp_path, content, at=at)
     assert list(store.get(tmp_path).rows) == ["a-2"]
-    assert len(exports.calls) == 2
+    assert len(reads.calls) == 2
 
 
 # REQ-BEADS-012
-def test_beads_012_without_a_manifest_the_snapshot_lasts_the_ttl(tmp_path: Path) -> None:
-    now = [100.0]
-    exports = Exports()
-    store = SnapshotStore(exports, clock=lambda: now[0])
+def test_beads_012_a_missing_file_is_read_every_time(tmp_path: Path) -> None:
+    reads = Reads()
+    store = SnapshotStore(reads)
     store.get(tmp_path)
-    now[0] += TTL_SECONDS - 0.1
     store.get(tmp_path)
-    assert len(exports.calls) == 1
-    now[0] += 0.2
-    store.get(tmp_path)
-    assert len(exports.calls) == 2
+    assert len(reads.calls) == 2
 
 
-# REQ-BEADS-012
-def test_beads_012_clear_exports_again(tmp_path: Path) -> None:
-    dolt(tmp_path, "proj", b"root-1")
-    exports = Exports()
-    store = SnapshotStore(exports)
+# REQ-BEADS-012 (Refresh)
+def test_beads_012_refresh_clears(tmp_path: Path) -> None:
+    export_file(tmp_path)
+    reads = Reads()
+    store = SnapshotStore(reads)
     store.get(tmp_path)
     store.clear()
     store.get(tmp_path)
-    assert len(exports.calls) == 2
+    assert len(reads.calls) == 2
 
 
-# REQ-BEADS-012
-def test_beads_012_a_failed_export_is_not_kept(tmp_path: Path) -> None:
-    dolt(tmp_path, "proj", b"root-1")
-    answers: list[Any] = [BeadsError("bd not found"), [bead("a-1")]]
+# REQ-BEADS-004 (Errors are not kept)
+def test_beads_004_errors_are_not_kept(tmp_path: Path) -> None:
+    export_file(tmp_path)
+    answers: list[Any] = [BeadsError("unreadable"), [bead("a-1")]]
 
-    def export(cwd: Path) -> Any:
+    def read(cwd: Path) -> Any:
         answer = answers.pop(0)
         if isinstance(answer, Exception):
             raise answer
         return answer
 
-    store = SnapshotStore(export)
+    store = SnapshotStore(read)
     with pytest.raises(BeadsError):
         store.get(tmp_path)
     assert list(store.get(tmp_path).rows) == ["a-1"]
 
 
-# REQ-BEADS-012
-def test_beads_012_overlapping_requests_export_once(tmp_path: Path) -> None:
-    dolt(tmp_path, "proj", b"root-1")
-    exports = Exports()
+# REQ-BEADS-004 (Overlapping requests)
+def test_beads_004_overlapping_reads_once(tmp_path: Path) -> None:
+    export_file(tmp_path)
+    reads = Reads()
 
     def slow(cwd: Path) -> Any:
         time.sleep(0.05)
-        return exports(cwd)
+        return reads(cwd)
 
     store = SnapshotStore(slow)
     threads = [threading.Thread(target=store.get, args=(tmp_path,)) for _ in range(3)]
@@ -164,4 +197,52 @@ def test_beads_012_overlapping_requests_export_once(tmp_path: Path) -> None:
         thread.start()
     for thread in threads:
         thread.join()
-    assert len(exports.calls) == 1
+    assert len(reads.calls) == 1
+
+
+# REQ-BEADS-013 (Fresh export, Write not exported, Export catches up)
+def test_beads_013_stale_when_manifest_moves(tmp_path: Path) -> None:
+    manifest = dolt(tmp_path, "db", b"root-1")
+    export_file(tmp_path)
+    reads = Reads()
+    store = SnapshotStore(reads)
+    store.get(tmp_path)
+    assert store.is_stale(tmp_path) is False
+    manifest.write_bytes(b"root-2")
+    assert store.is_stale(tmp_path) is True
+    assert list(store.get(tmp_path).rows) == ["a-1"]  # the file is unchanged: no read
+    assert store.is_stale(tmp_path) is True
+    export_file(tmp_path, at=2_000_000_000)
+    assert list(store.get(tmp_path).rows) == ["a-2"]
+    assert store.is_stale(tmp_path) is False
+
+
+# REQ-BEADS-013
+def test_beads_013_a_write_during_the_read_shows_as_stale(tmp_path: Path) -> None:
+    manifest = dolt(tmp_path, "db", b"root-1")
+    export_file(tmp_path)
+
+    def read(cwd: Path) -> Any:
+        manifest.write_bytes(b"root-2")  # bd writes while the file is read
+        return [bead("a-1")]
+
+    store = SnapshotStore(read)
+    store.get(tmp_path)
+    assert store.is_stale(tmp_path) is True
+
+
+# REQ-BEADS-013 (No manifest)
+def test_beads_013_no_manifest_never_stale(tmp_path: Path) -> None:
+    export_file(tmp_path)
+    store = SnapshotStore(Reads())
+    store.get(tmp_path)
+    assert store.is_stale(tmp_path) is False
+    dolt(tmp_path, "db", b"root-1")  # a manifest that appears later was not seen at the read
+    assert store.is_stale(tmp_path) is False
+
+
+# REQ-BEADS-013
+def test_beads_013_not_stale_before_any_read(tmp_path: Path) -> None:
+    dolt(tmp_path, "db", b"root-1")
+    export_file(tmp_path)
+    assert SnapshotStore(Reads()).is_stale(tmp_path) is False

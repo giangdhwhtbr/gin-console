@@ -1,28 +1,21 @@
-import os
-import stat
-import subprocess
-import sys
+import json
 from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_bd import FakeBd, bead, comment, dep
+from fake_export import bead, comment, dep
 
 from gin_console.beads.snapshot import Snapshot, build_snapshot
 from gin_console.beads.source import (
     MAX_COMMENT_CHARS,
     BeadNotFound,
     BeadsError,
-    count_reopens,
-    export_beads,
     get_bead,
     get_comments,
     list_beads,
-    run_bd,
+    read_export,
     valid_id,
 )
-
-CWD = Path("/tmp/project")
 
 
 def snap(*rows: Any) -> Snapshot:
@@ -34,13 +27,6 @@ def test_beads_001_closed_flag() -> None:
     snapshot = snap(bead("a-1"), bead("a-2", status="closed"))
     assert [b.id for b in list_beads(snapshot, closed=False)] == ["a-1"]
     assert [b.id for b in list_beads(snapshot, closed=True)] == ["a-1", "a-2"]
-
-
-# REQ-BEADS-001
-def test_beads_001_one_export_command() -> None:
-    fake = FakeBd([bead("a-1")])
-    assert [row["id"] for row in export_beads(fake, CWD)] == ["a-1"]
-    assert fake.calls == [(["export"], CWD)]
 
 
 # REQ-BEADS-001
@@ -189,104 +175,64 @@ def test_beads_006_lone_surrogates_are_replaced() -> None:
     assert detail.title == "a?b"
 
 
-def fake_run(monkeypatch: pytest.MonkeyPatch, result: Any) -> list[Any]:
-    calls: list[Any] = []
-
-    def run(command: list[str], **kwargs: Any) -> Any:
-        calls.append((command, kwargs))
-        if isinstance(result, Exception):
-            raise result
-        return result
-
-    monkeypatch.setattr(subprocess, "run", run)
-    return calls
+def export_file(project: Path, content: str | bytes) -> Path:
+    path = project / ".beads" / "issues.jsonl"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if isinstance(content, bytes):
+        path.write_bytes(content)
+    else:
+        path.write_text(content, encoding="utf-8")
+    return path
 
 
-def finished(out: str = "[]", code: int = 0, err: str = "") -> subprocess.CompletedProcess[str]:
-    return subprocess.CompletedProcess(["bd"], code, out, err)
+# REQ-BEADS-012
+def test_beads_012_reads_every_row(tmp_path: Path) -> None:
+    rows = [bead("a-1", labels=["x"], comments=[comment("a-1")]), bead("a-2")]
+    export_file(tmp_path, json.dumps(rows[0]) + "\n\n" + json.dumps(rows[1]) + "\n")
+    assert read_export(tmp_path) == rows
 
 
-# REQ-BEADS-005
-def test_beads_005_real_runner_reads_export_lines_with_a_30_second_timeout(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    calls = fake_run(monkeypatch, finished('{"id": "a-1"}\n\n{"id": "a-2"}\n'))
-    assert run_bd(["export"], CWD) == [{"id": "a-1"}, {"id": "a-2"}]
-    ((command, kwargs),) = calls
-    assert command == ["bd", "export"]
-    assert kwargs["timeout"] == 30 and kwargs["cwd"] == CWD
-
-
-# REQ-BEADS-005
-@pytest.mark.parametrize("out", ['{"id": "a-1"}\nnot json\n', '[{"id": "a-1"}]\n', "5\n"])
-def test_beads_005_real_runner_rejects_odd_export_lines(
-    monkeypatch: pytest.MonkeyPatch, out: str
-) -> None:
-    fake_run(monkeypatch, finished(out))
-    with pytest.raises(BeadsError):
-        run_bd(["export"], CWD)
+# REQ-BEADS-005 (Missing file)
+def test_beads_005_missing_file_names_the_commands(tmp_path: Path) -> None:
+    with pytest.raises(BeadsError) as caught:
+        read_export(tmp_path)
+    message = str(caught.value)
+    assert ".beads/issues.jsonl" in message
+    assert "bd config set export.auto true" in message
+    assert "bd config set export.interval 1s" in message
+    assert "bd export -o .beads/issues.jsonl" in message
 
 
 # REQ-BEADS-005
-def test_beads_005_real_runner_reads_json_for_other_commands(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fake_run(monkeypatch, finished('[{"Issue": {"status": "open"}}]'))
-    assert run_bd(["history", "--json", "--", "a-1"], CWD) == [{"Issue": {"status": "open"}}]
+def test_beads_005_line_not_json(tmp_path: Path) -> None:
+    export_file(tmp_path, '{"id": "a-1"}\n{"id":\n')
+    with pytest.raises(BeadsError, match="a line that is not JSON"):
+        read_export(tmp_path)
+
+
+# REQ-BEADS-005 (Malformed line)
+@pytest.mark.parametrize("line", ["[1, 2]", "5", '"text"', "null"])
+def test_beads_005_line_not_object(tmp_path: Path, line: str) -> None:
+    export_file(tmp_path, '{"id": "a-1"}\n' + line + "\n")
+    with pytest.raises(BeadsError, match="a line that is not a JSON object"):
+        read_export(tmp_path)
 
 
 # REQ-BEADS-005
-@pytest.mark.parametrize(
-    ("failure", "message"),
-    [
-        (FileNotFoundError(), "bd not found"),
-        (subprocess.TimeoutExpired("bd", 30), "bd timed out"),
-        (PermissionError(13, "Permission denied"), "Permission denied"),
-    ],
-)
-@pytest.mark.parametrize("command", ["export", "history"])
-def test_beads_005_real_runner_failures(
-    monkeypatch: pytest.MonkeyPatch, failure: Exception, message: str, command: str
-) -> None:
-    fake_run(monkeypatch, failure)
-    with pytest.raises(BeadsError, match=message):
-        run_bd([command], CWD)
+def test_beads_005_unreadable(tmp_path: Path) -> None:
+    (tmp_path / ".beads" / "issues.jsonl").mkdir(parents=True)
+    with pytest.raises(BeadsError, match="could not be read"):
+        read_export(tmp_path)
 
 
 # REQ-BEADS-005
-def test_beads_005_real_runner_non_zero_exit_and_invalid_json(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fake_run(monkeypatch, finished("", code=2, err="boom"))
-    with pytest.raises(BeadsError, match="exited 2: boom"):
-        run_bd(["export"], CWD)
-    fake_run(monkeypatch, finished("not json"))
-    with pytest.raises(BeadsError, match="invalid JSON"):
-        run_bd(["history"], CWD)
-
-
-# REQ-BEADS-011
-def test_beads_011_json_on_failure_lets_a_not_found_answer_through(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    fake_run(monkeypatch, finished('{"error": "no issues found"}', code=1))
-    assert run_bd(["history"], CWD, json_on_failure=True) == {"error": "no issues found"}
-
-
-# REQ-BEADS-005
-def test_beads_005_invalid_utf8_in_the_output_is_tolerated(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+# REQ-BEADS-006
+def test_beads_005_invalid_utf8_in_the_file_is_tolerated(tmp_path: Path) -> None:
     # a bead written with a stray byte must not turn into an uncaught UnicodeDecodeError
-    binary = tmp_path / "bin" / "bd"
-    binary.parent.mkdir()
-    binary.write_text(
-        f"#!{sys.executable}\nimport sys\n"
-        'sys.stdout.buffer.write(b\'{"id": "a-1", "title": "x\\xffy"}\\n\')\n'
-    )
-    binary.chmod(binary.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("PATH", f"{binary.parent}{os.pathsep}{os.environ['PATH']}")
-    assert run_bd(["export"], tmp_path) == [{"id": "a-1", "title": "x�y"}]
+    line = json.dumps(bead("a-1", title="x@y")).encode().replace(b"x@y", b"x\xffy")
+    export_file(tmp_path, line + b"\n")
+    (summary,) = list_beads(build_snapshot(read_export(tmp_path)), closed=False)
+    assert summary.title == "x?y"
 
 
 # REQ-BEADS-002
@@ -474,47 +420,3 @@ def test_beads_002_bugs_found() -> None:
     ]
     assert [r.id for r in detail.dependents] == ["a-6"]
     assert detail.children == [] and detail.dependencies == []
-
-
-# REQ-BEADS-011
-@pytest.mark.parametrize(
-    ("statuses", "expected"),
-    [
-        (["open", "in_progress", "closed", "closed", "open", "closed", "in_progress", "closed"], 2),
-        (["open", "in_progress", "closed", "closed"], 0),
-        (["open"], 0),
-    ],
-)
-def test_beads_011_counts_closed_then_not_closed(statuses: list[str], expected: int) -> None:
-    fake = FakeBd(history={"a-5": statuses})
-    assert count_reopens(fake, CWD, "a-5") == expected
-    assert fake.calls == [(["history", "--json", "--", "a-5"], CWD)]
-
-
-# REQ-BEADS-011
-def test_beads_011_unknown_bead() -> None:
-    with pytest.raises(BeadNotFound):
-        count_reopens(FakeBd(), CWD, "x-1")
-
-
-# REQ-BEADS-011
-@pytest.mark.parametrize(
-    ("answer", "error"),
-    [
-        ({"error": "x\ud800y"}, BeadsError),
-        ({"error": "no issue \ud800 found"}, BeadNotFound),
-    ],
-)
-def test_beads_011_error_messages_are_cleaned(
-    answer: dict[str, str], error: type[Exception]
-) -> None:
-    with pytest.raises(error) as caught:
-        count_reopens(FakeBd(output=answer), CWD, "a-5")
-    str(caught.value).encode("utf-8")
-
-
-# REQ-BEADS-011
-@pytest.mark.parametrize("output", [{"x": 1}, [{"Issue": {}}], [{"Issue": {"status": 3}}], ["x"]])
-def test_beads_011_unexpected_shape(output: object) -> None:
-    with pytest.raises(BeadsError):
-        count_reopens(FakeBd(bad={"history": output}), CWD, "a-5")

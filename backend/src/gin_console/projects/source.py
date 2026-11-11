@@ -13,7 +13,7 @@ def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
     try:
         rows = snapshots.get(path)
     except (BeadsError, RecursionError) as exc:
-        return BlockError(error=str(exc) or "bd output was too deeply nested")
+        return BlockError(error=str(exc) or "issues.jsonl was too deeply nested")
     active = [r for r in rows.rows.values() if r.get("status") in ("open", "in_progress")]
     # a milestone is not work, even when nothing blocks it (REQ-MILESTONE-UI-007)
     ready = {
@@ -31,9 +31,10 @@ def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
                 if r.get("issue_type") == "epic"
                 and (r["status"] == "in_progress" or r["id"] in ready)
             ],
+            stale=snapshots.is_stale(path),
         )
     except (KeyError, TypeError, ValueError) as exc:
-        return BlockError(error=f"bd: unexpected output ({exc!r})")
+        return BlockError(error=f"issues.jsonl: unexpected content ({exc!r})")
 
 
 def build_project(entry: ProjectEntry, collector: Collector) -> Project:
