@@ -1,11 +1,13 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EMAIL_KEY, getEmail, resetIdentity, setEmail } from "./identity";
 import { Layout, SIDEBAR_KEY } from "./Layout";
 
 beforeEach(() => window.localStorage.clear());
 afterEach(() => {
   cleanup();
+  resetIdentity();
   vi.restoreAllMocks();
 });
 
@@ -125,5 +127,22 @@ describe("Layout", () => {
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
     expect(within(nav()).getAllByRole("link")).toHaveLength(4);
     expect(marked()).toEqual(["Beads"]);
+  });
+
+  describe("signed in", () => {
+    beforeEach(() => setEmail("tester@example.com"));
+    afterEach(() => window.localStorage.removeItem(EMAIL_KEY));
+
+    it("REQ-UI-098 the sidebar shows the email and Log out", () => {
+      open("/");
+      expect(screen.getAllByText("tester@example.com").length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: "Log out" }).length).toBeGreaterThan(0);
+    });
+
+    it("REQ-UI-098 Log out forgets the email", async () => {
+      open("/");
+      await userEvent.click(screen.getAllByRole("button", { name: "Log out" })[0]);
+      expect(getEmail()).toBeNull();
+    });
   });
 });

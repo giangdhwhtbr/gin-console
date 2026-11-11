@@ -5,6 +5,7 @@ import { quota } from "@/features/quota/quotaFixtures";
 import { resetQuotaStore } from "@/features/quota/quotaStore";
 import { clearReturn } from "@/features/beads/returnState";
 import { App } from "./App";
+import { clearEmail, EMAIL_KEY, resetIdentity, setEmail } from "./identity";
 import { navigate } from "./route";
 
 const json = (body: unknown) =>
@@ -13,14 +14,54 @@ const json = (body: unknown) =>
 beforeEach(() => {
   clearReturn();
   resetQuotaStore();
+  setEmail("tester@example.com");
 });
 
 afterEach(() => {
   cleanup();
+  localStorage.removeItem(EMAIL_KEY);
+  resetIdentity();
   vi.unstubAllGlobals();
 });
 
 describe("App routing", () => {
+  it("REQ-UI-097 without an email every URL shows the login screen", () => {
+    clearEmail();
+    window.history.replaceState(null, "", "/beads?project=gin-console");
+    render(<App />);
+    expect(screen.getByRole("textbox", { name: "Email" })).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Main" })).toBeNull();
+  });
+
+  it("REQ-UI-097 signing in shows the page of the URL", async () => {
+    clearEmail();
+    window.history.replaceState(null, "", "/beads?project=gin-console");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    render(<App />);
+    await userEvent.type(screen.getByRole("textbox", { name: "Email" }), "tester@example.com");
+    await userEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(window.location.pathname + window.location.search).toBe("/beads?project=gin-console");
+    expect(await screen.findByRole("heading", { name: "Beads" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-097 a remembered email skips the login screen", () => {
+    window.history.replaceState(null, "", "/");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    render(<App />);
+    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Email" })).toBeNull();
+  });
+
+  it("REQ-UI-098 Log out shows the login screen and keeps the URL", async () => {
+    window.history.replaceState(null, "", "/beads");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    render(<App />);
+    await userEvent.click(screen.getAllByRole("button", { name: "Log out" })[0]);
+    expect(screen.getByRole("textbox", { name: "Email" })).toBeInTheDocument();
+    expect(localStorage.getItem(EMAIL_KEY)).toBeNull();
+    expect(window.location.pathname).toBe("/beads");
+  });
+
   it("REQ-UI-096 Refresh drops the server caches, then the page loads its data again", async () => {
     window.history.replaceState(null, "", "/");
     const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(() => Promise.resolve(json([])));

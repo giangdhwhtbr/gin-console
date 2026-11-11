@@ -2,12 +2,18 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@/app/App";
+import { EMAIL_KEY, resetIdentity, setEmail } from "@/app/identity";
 import { bead, json } from "./beadFixtures";
 import { clearReturn } from "./returnState";
 
-beforeEach(() => clearReturn());
+beforeEach(() => {
+  clearReturn();
+  setEmail("tester@example.com");
+});
 afterEach(() => {
   cleanup();
+  localStorage.removeItem(EMAIL_KEY);
+  resetIdentity();
   vi.unstubAllGlobals();
 });
 
