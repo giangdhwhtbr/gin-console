@@ -1467,8 +1467,8 @@ The bead filter bar SHALL offer a "Labels" multi-select popover listing every un
 - WHEN the user selects labels "ui" and "backend" with match mode "All"
 - THEN only the bead with both labels remains visible and the URL query contains `label=ui,backend&label_mode=all`
 
-### REQ-UI-086: Bugs and reopens on the bead page
-The bead page and the List detail panel SHALL list under "Bugs found" the `bugs` of the bead (each with id, title and status, linking to that bead in the same project) and show nothing when there are none, SHALL request the reopens of REQ-BEADS-011 after the bead is shown and, when the count is above 0, add "Reopened 1 time" or "Reopened N times" to the line with the creation and update times, SHALL show nothing about reopens while they load or when the count is 0, IF the reopens request fails or its answer has an unexpected shape, THEN SHALL show "Reopens unavailable" with the error and a Retry button that repeats only that request while the rest of the page stays shown, and a late reopens answer for a bead that is no longer shown SHALL NOT be shown for the bead now shown.
+### REQ-UI-086: Bugs on the bead page
+The bead page and the List detail panel SHALL list under "Bugs found" the `bugs` of the bead (each with id, title and status, linking to that bead in the same project), SHALL show nothing when there are none, and SHALL NOT request or show a reopen count.
 
 #### Scenario: bugs found
 - GIVEN a bead with an open bug and a closed bug that each have a `discovered-from` dependency on it
@@ -1480,33 +1480,18 @@ The bead page and the List detail panel SHALL list under "Bugs found" the `bugs`
 - WHEN the bead page is shown
 - THEN there is no "Bugs found" section
 
-#### Scenario: reopened
-- GIVEN a bead whose reopens answer is `{"reopens": 2}`
+#### Scenario: no reopens
+- GIVEN any bead
 - WHEN the bead page is shown
-- THEN the line with the creation and update times includes "Reopened 2 times"
+- THEN no request goes to `/reopens` and the page shows no "Reopened" text and no "Reopens unavailable"
 
-#### Scenario: not reopened or still loading
-- GIVEN a bead whose reopens answer is `{"reopens": 0}`, or has not arrived yet
+### REQ-UI-087: Bugs found in the bug color
+The "Bugs found" heading of REQ-UI-086 SHALL be shown in the bug color (the `type-bug` theme token used by the bug type badge), in light and dark, while the bug rows keep the default text color.
+
+#### Scenario: highlighted heading
+- GIVEN a bead with one bug found
 - WHEN the bead page is shown
-- THEN the page shows no text about reopens and no 0
-
-#### Scenario: reopens fail
-- GIVEN the reopens request answers 502 with `bd history failed`
-- WHEN the bead page is shown
-- THEN the bead fields stay shown, "Reopens unavailable" shows `bd history failed` and Retry, and Retry requests the reopens again
-
-#### Scenario: late answer
-- GIVEN the reopens of bead `a-5` are still loading and the user opens bead `a-6`
-- WHEN the answer for `a-5` arrives
-- THEN the page of `a-6` does not show it
-
-### REQ-UI-087: Quality signals in the bug color
-The "Reopened 1 time" or "Reopened N times" text of REQ-UI-086 and the "Bugs found" heading SHALL be shown in the bug color (the `type-bug` theme token used by the bug type badge), in light and dark, while the " · " separator, the bug rows and the "Reopens unavailable" error keep the default text color.
-
-#### Scenario: highlighted signals
-- GIVEN a bead with one bug found whose reopens answer is `{"reopens": 1}`
-- WHEN the bead page is shown
-- THEN "Reopened 1 time" and the "Bugs found" heading use the `type-bug` color and the separator and bug rows do not
+- THEN the "Bugs found" heading uses the `type-bug` color and the bug rows do not
 
 ### REQ-UI-088: Reports page
 The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page header SHALL hold the project choice: each configured project and "All projects", with the first project as the default. The panel of each tab of REQ-UI-095 SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to every tab. The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-089 to REQ-UI-091). The page SHALL label every cost "estimated" and SHALL show "no price" where a cost is absent.
@@ -1820,3 +1805,21 @@ IF `GET /api/projects` fails, THEN the My Tasks page SHALL show that the project
 - GIVEN `GET /api/projects` responds 500
 - WHEN My Tasks opens
 - THEN the page says the projects could not be loaded and lists nothing
+
+### REQ-UI-103: Stale beads note
+WHERE the `beads` object of a project in `GET /api/projects` has `stale: true`, the Beads page with that project selected and the My Tasks page SHALL show, above their list, the note "Beads of <project> may be out of date. Run `bd export -o .beads/issues.jsonl` in <project>." once per stale project, and SHALL show no note for a project whose `stale` is `false` or missing.
+
+#### Scenario: Beads page
+- GIVEN project A has `beads.stale: true`
+- WHEN the Beads page opens with A selected
+- THEN the note names A and the command, and the list is shown below it
+
+#### Scenario: My Tasks
+- GIVEN projects A with `beads.stale: true` and B with `beads.stale: false`
+- WHEN My Tasks opens
+- THEN one note names A, none names B, and the tasks of both are listed
+
+#### Scenario: Not stale
+- GIVEN project A whose `beads` has no `stale` key, or `stale: false`
+- WHEN the Beads page opens with A selected
+- THEN no note is shown
