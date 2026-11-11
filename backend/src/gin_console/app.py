@@ -10,9 +10,8 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse, Response
 
 from gin_console.beads.router import build_router as build_beads_router
-from gin_console.beads.snapshot import SnapshotStore
-from gin_console.beads.source import BdRunner, export_beads
-from gin_console.beads.source import run_bd as default_run_bd
+from gin_console.beads.snapshot import Reader, SnapshotStore
+from gin_console.beads.source import read_export
 from gin_console.config import Settings
 from gin_console.milestones.router import build_router as build_milestones_router
 from gin_console.milestones.source import GwRunner
@@ -36,7 +35,7 @@ def create_app(
     claude_home: Path = DEFAULT_CLAUDE_HOME,
     run_claude: Callable[[], str] = run_claude_usage,
     run_codex: Callable[[], Any] = run_codex_rate_limits,
-    run_bd: BdRunner = default_run_bd,
+    read_beads: Reader = read_export,
     run_gw: GwRunner = default_run_gw,
     clock: Callable[[], datetime] = utc_now,
 ) -> FastAPI:
@@ -48,10 +47,8 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ok", "version": version("gin-console")}
 
-    # one `bd export` per project, reused until its Dolt store changes or a refresh
-    snapshots = SnapshotStore(
-        lambda cwd: export_beads(run_bd, cwd), clock=lambda: clock().timestamp()
-    )
+    # one read of .beads/issues.jsonl per project, reused until the file changes or a refresh
+    snapshots = SnapshotStore(read_beads)
     on_refresh: list[Callable[[], None]] = [snapshots.clear]
 
     @api.post("/refresh", status_code=204)
@@ -63,7 +60,7 @@ def create_app(
     api.include_router(build_projects_router(settings, snapshots, on_refresh))
     api.include_router(build_sessions_router(settings, claude_home))
     api.include_router(build_quota_router(run_claude, run_codex, clock))
-    api.include_router(build_beads_router(settings, snapshots, run_bd, clock))
+    api.include_router(build_beads_router(settings, snapshots))
     api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh))
     api.include_router(build_reports_router(settings, snapshots, clock, on_refresh))
 

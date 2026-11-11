@@ -1,4 +1,4 @@
-"""Canned gin / bd output and a stand-in for subprocess.run."""
+"""Canned gin output and beads rows, and a stand-in for subprocess.run."""
 
 import json
 import subprocess
@@ -26,15 +26,10 @@ ISSUES: list[dict[str, Any]] = [
 
 
 class Fake:
-    def __init__(
-        self,
-        fail: dict[str, Exception | int] | None = None,
-        issues: list[dict[str, Any]] | None = None,
-    ) -> None:
+    def __init__(self, fail: dict[str, Exception | int] | None = None) -> None:
         self.calls: list[list[str]] = []
         self.envs: list[dict[str, str]] = []
         self.fail = fail or {}
-        self.issues = ISSUES if issues is None else issues
 
     def __call__(self, cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
         self.calls.append(cmd)
@@ -44,8 +39,5 @@ class Fake:
             raise failure
         if failure:
             return subprocess.CompletedProcess(cmd, failure, "", "boom")
-        if cmd[1] == "export":  # JSON Lines
-            lines = "".join(json.dumps(issue) + "\n" for issue in self.issues)
-            return subprocess.CompletedProcess(cmd, 0, lines, "")
         outputs: dict[str, Any] = {"state": STATE}
         return subprocess.CompletedProcess(cmd, 0, json.dumps(outputs[cmd[1]]), "")

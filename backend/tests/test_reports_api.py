@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from fake_bd import FakeBd, bead
+from fake_export import FakeExport, bead, write_export
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -19,8 +19,9 @@ class Clock:
 
 
 def make(tmp_path: Path, runners: dict[str, Any], clock: Clock | None = None) -> TestClient:
-    for name in ("alpha", "beta", "dist"):
-        (tmp_path / name).mkdir(exist_ok=True)
+    (tmp_path / "dist").mkdir(exist_ok=True)
+    for name in ("alpha", "beta"):  # an export file each, so a snapshot is kept until it changes
+        write_export(tmp_path / name, [])
     settings = Settings(
         projects=[
             ProjectEntry(name="alpha", path=tmp_path / "alpha"),
@@ -31,7 +32,7 @@ def make(tmp_path: Path, runners: dict[str, Any], clock: Clock | None = None) ->
         settings,
         static_dir=tmp_path / "dist",
         claude_home=tmp_path,
-        run_bd=lambda args, cwd, **kw: runners[cwd.name](args, cwd, **kw),
+        read_beads=lambda cwd: runners[cwd.name](cwd),
         clock=clock or Clock(),
     )
     return TestClient(app, raise_server_exceptions=False)
@@ -56,7 +57,7 @@ def usage(tokens: int) -> dict[str, Any]:
 
 # REQ-REPORTS-001
 def test_reports_001_default_period_is_30_days(tmp_path: Path) -> None:
-    fake = FakeBd([closed("a-1", 3), closed("a-2", 20), closed("a-3", 40)])
+    fake = FakeExport([closed("a-1", 3), closed("a-2", 20), closed("a-3", 40)])
     body = make(tmp_path, {"alpha": fake}).get("/api/reports", params={"project": "alpha"}).json()
     assert body["totals"]["closed"] == 2
     assert body["days"] == 30
@@ -64,7 +65,7 @@ def test_reports_001_default_period_is_30_days(tmp_path: Path) -> None:
 
 # REQ-REPORTS-003, REQ-REPORTS-004
 def test_reports_003_004_new_fields_in_json(tmp_path: Path) -> None:
-    fake = FakeBd([closed("a-1", 3)])
+    fake = FakeExport([closed("a-1", 3)])
     body = make(tmp_path, {"alpha": fake}).get("/api/reports", params={"project": "alpha"}).json()
     assert "cache_ratio" in body["totals"]
     assert body["delivery"]["overall"]["key"] == "all"
@@ -72,7 +73,7 @@ def test_reports_003_004_new_fields_in_json(tmp_path: Path) -> None:
 
 # REQ-REPORTS-001
 def test_reports_001_sprint_takes_the_labelled_epic_tree(tmp_path: Path) -> None:
-    fake = FakeBd(
+    fake = FakeExport(
         [
             closed("a-1", 60, issue_type="epic", labels=["sprint:s7"]),
             closed("a-1.1", 50, parent="a-1"),
@@ -86,22 +87,23 @@ def test_reports_001_sprint_takes_the_labelled_epic_tree(tmp_path: Path) -> None
 
 
 # REQ-REPORTS-001
+# REQ-BEADS-004
 def test_reports_001_cached_for_60_seconds(tmp_path: Path) -> None:
-    fake, clock = FakeBd([closed("a-1", 3)]), Clock()
+    fake, clock = FakeExport([closed("a-1", 3)]), Clock()
     api = make(tmp_path, {"alpha": fake}, clock)
     first = api.get("/api/reports", params={"project": "alpha"}).json()
     clock.now += timedelta(seconds=20)
     second = api.get("/api/reports", params={"project": "alpha"}).json()
-    assert len(fake.calls) == 1
     assert second["generated_at"] == first["generated_at"]
     clock.now += timedelta(seconds=41)
-    api.get("/api/reports", params={"project": "alpha"})
-    assert len(fake.calls) == 2
+    third = api.get("/api/reports", params={"project": "alpha"}).json()
+    assert third["generated_at"] != first["generated_at"]  # built again
+    assert len(fake.calls) == 1  # from the same read: the file did not change
 
 
 # REQ-REPORTS-001
-def test_reports_001_bad_input_runs_no_bd(tmp_path: Path) -> None:
-    fake = FakeBd([closed("a-1", 3)])
+def test_reports_001_bad_input_reads_nothing(tmp_path: Path) -> None:
+    fake = FakeExport([closed("a-1", 3)])
     api = make(tmp_path, {"alpha": fake})
     assert api.get("/api/reports", params={"project": "nope"}).status_code == 404
     for extra in ({"days": "14"}, {"sprint": "a b"}, {"sprint": ""}):
@@ -113,8 +115,8 @@ def test_reports_001_bad_input_runs_no_bd(tmp_path: Path) -> None:
 # REQ-REPORTS-007
 def test_reports_007_one_project_failing_in_all_is_listed(tmp_path: Path) -> None:
     runners = {
-        "alpha": FakeBd([closed("a-1", 3)]),
-        "beta": FakeBd(failure=BeadsError("boom")),
+        "alpha": FakeExport([closed("a-1", 3)]),
+        "beta": FakeExport(failure=BeadsError("boom")),
     }
     r = make(tmp_path, runners).get("/api/reports", params={"project": "all"})
     assert r.status_code == 200
@@ -126,8 +128,8 @@ def test_reports_007_one_project_failing_in_all_is_listed(tmp_path: Path) -> Non
 # REQ-REPORTS-007
 def test_reports_007_every_project_failing_in_all_is_502(tmp_path: Path) -> None:
     runners = {
-        "alpha": FakeBd(failure=BeadsError("boom")),
-        "beta": FakeBd(failure=BeadsError("bang")),
+        "alpha": FakeExport(failure=BeadsError("boom")),
+        "beta": FakeExport(failure=BeadsError("bang")),
     }
     r = make(tmp_path, runners).get("/api/reports", params={"project": "all"})
     assert r.status_code == 502
@@ -136,7 +138,7 @@ def test_reports_007_every_project_failing_in_all_is_502(tmp_path: Path) -> None
 
 # REQ-REPORTS-007
 def test_reports_007_single_project_failure_is_502_and_not_cached(tmp_path: Path) -> None:
-    fake = FakeBd(failure=BeadsError("boom"))
+    fake = FakeExport(failure=BeadsError("boom"))
     api = make(tmp_path, {"alpha": fake})
     for _ in range(2):
         r = api.get("/api/reports", params={"project": "alpha"})
@@ -147,8 +149,8 @@ def test_reports_007_single_project_failure_is_502_and_not_cached(tmp_path: Path
 # REQ-REPORTS-007
 def test_reports_007_members_are_merged_across_projects(tmp_path: Path) -> None:
     runners = {
-        "alpha": FakeBd([closed("a-1", 3, assignee="ann", metadata=usage(100))]),
-        "beta": FakeBd([closed("b-1", 3, assignee="ann", metadata=usage(200))]),
+        "alpha": FakeExport([closed("a-1", 3, assignee="ann", metadata=usage(100))]),
+        "beta": FakeExport([closed("b-1", 3, assignee="ann", metadata=usage(200))]),
     }
     body = make(tmp_path, runners).get("/api/reports", params={"project": "all"}).json()
     ann = [m for m in body["usage"]["members"] if m["member"] == "ann"]
@@ -159,7 +161,7 @@ def test_reports_007_members_are_merged_across_projects(tmp_path: Path) -> None:
 # REQ-REPORTS-001
 # REQ-BEADS-012
 def test_reports_001_refresh_drops_the_cached_report(tmp_path: Path) -> None:
-    fake = FakeBd([closed("a-1", 3)])
+    fake = FakeExport([closed("a-1", 3)])
     api = make(tmp_path, {"alpha": fake})
     api.get("/api/reports", params={"project": "alpha"})
     fake.beads = [closed("a-1", 3), closed("a-2", 2)]

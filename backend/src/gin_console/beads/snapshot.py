@@ -1,11 +1,11 @@
-"""All beads of a project from one `bd export`, kept until the Dolt store changes.
+"""All beads of a project from its `.beads/issues.jsonl`, kept until the file changes; stale
+when the Dolt store changed after the file was read.
 
-Every `bd` call opens the embedded Dolt store anew (about 0.4 s), so the console reads a
-project once and answers lists, details, comments, and counts from memory.
+The console reads a project's file once and answers lists, details, comments, and counts from
+memory; it never starts `bd`.
 """
 
 import threading
-import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -13,10 +13,11 @@ from typing import Any
 
 from gin_console.beads.errors import BeadsError
 
-TTL_SECONDS = 5.0  # only for a store whose changes cannot be seen (no embedded Dolt manifest)
+EXPORT_FILE = Path(".beads") / "issues.jsonl"
 BLOCKING = ("blocks", "blocked-by")
 
-Exporter = Callable[[Path], Any]
+Reader = Callable[[Path], Any]
+FileKey = tuple[int, int] | None
 
 
 @dataclass(frozen=True)
@@ -45,11 +46,11 @@ def _deps(row: dict[str, Any]) -> list[tuple[str, str]]:
 
 
 def build_snapshot(data: Any) -> Snapshot:
-    """Index `bd export` rows and work out readiness as `bd ready` and `bd blocked` do:
+    """Index exported rows and work out readiness as `bd ready` and `bd blocked` do:
     a bead that is not closed is blocked by a blocker it has in this store that is not closed,
     or by a blocked ancestor; an open bead that is not blocked is ready."""
     if not isinstance(data, list):
-        raise BeadsError("bd export output was not understood")
+        raise BeadsError(f"{EXPORT_FILE.as_posix()} was not understood")
     rows = {
         row["id"]: row for row in data if isinstance(row, dict) and isinstance(row.get("id"), str)
     }
@@ -102,21 +103,31 @@ def store_signature(cwd: Path) -> bytes | None:
         return None
 
 
+def export_key(cwd: Path) -> FileKey:
+    """(st_mtime_ns, st_size) of the export file: bd rewrites it on each exported write.
+    None when it cannot be seen."""
+    try:
+        st = (cwd / EXPORT_FILE).stat()
+    except OSError:
+        return None
+    return (st.st_mtime_ns, st.st_size)
+
+
 class SnapshotStore:
-    """One snapshot per project directory; one export per project at a time."""
+    """One snapshot per project directory; one read per project at a time."""
 
     def __init__(
         self,
-        export: Exporter,
+        read: Reader,
+        file_key: Callable[[Path], FileKey] = export_key,
         signature: Callable[[Path], bytes | None] = store_signature,
-        clock: Callable[[], float] = time.monotonic,
     ) -> None:
-        self._export = export
+        self._read = read
+        self._file_key = file_key
         self._signature = signature
-        self._clock = clock
         self._guard = threading.Lock()
         self._locks: dict[Path, threading.Lock] = {}
-        self._items: dict[Path, tuple[bytes | None, float, Snapshot]] = {}
+        self._items: dict[Path, tuple[FileKey, bytes | None, Snapshot]] = {}
 
     def clear(self) -> None:
         with self._guard:
@@ -126,16 +137,22 @@ class SnapshotStore:
         with self._guard:
             lock = self._locks.setdefault(cwd, threading.Lock())
         with lock:
-            signature = self._signature(cwd)
-            hit = self._items.get(cwd)
-            if hit is not None and (
-                hit[0] == signature
-                if signature is not None
-                else hit[0] is None and 0 <= self._clock() - hit[1] < TTL_SECONDS
-            ):
-                return hit[2]
-            snapshot = build_snapshot(self._export(cwd))  # an error propagates, nothing is kept
-            # read before the export: a write during it shows up as a change next time
+            key = self._file_key(cwd)
             with self._guard:
-                self._items[cwd] = (signature, self._clock(), snapshot)
+                hit = self._items.get(cwd)
+            if key is not None and hit is not None and hit[0] == key:
+                return hit[2]
+            # read before the file: a write during the read shows as stale, not as fresh
+            signature = self._signature(cwd)
+            snapshot = build_snapshot(self._read(cwd))  # an error propagates, nothing is kept
+            with self._guard:
+                self._items[cwd] = (key, signature, snapshot)
             return snapshot
+
+    def is_stale(self, cwd: Path) -> bool:
+        """The Dolt store changed since the kept snapshot was read, and the file did not."""
+        with self._guard:
+            hit = self._items.get(cwd)
+        if hit is None or hit[1] is None or self._file_key(cwd) != hit[0]:
+            return False
+        return self._signature(cwd) not in (None, hit[1])
