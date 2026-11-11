@@ -1,6 +1,6 @@
 # TC-BEADS-017: Export catches up
 
-- **REQ:** REQ-BEADS-013@083a7f3b
+- **REQ:** REQ-BEADS-013@a896831f
 - **Priority:** high
 
 **Preconditions:**
@@ -8,8 +8,7 @@
 
 **Steps:**
 1. Write `issues.jsonl` again
-2. Wait for the 5-second reuse of `GET /api/projects` to pass
-3. Request `GET /api/projects`
+2. Request `GET /api/projects/beads`
 
 **Expected:**
 - The file was read again

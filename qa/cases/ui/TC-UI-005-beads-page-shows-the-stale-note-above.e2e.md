@@ -1,10 +1,10 @@
 # TC-UI-005: Beads page shows the stale note above the list
 
-- **REQ:** REQ-UI-103@1b47034e
+- **REQ:** REQ-UI-103@5ebe1b9b
 - **Priority:** high
 
 **Preconditions:**
-- Project A whose `GET /api/projects` entry has `beads.stale: true` and which has beads
+- Project A whose `GET /api/projects/beads` entry has `beads.stale: true` and which has beads
 
 **Steps:**
 1. Open /beads?project=A
