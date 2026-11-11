@@ -121,6 +121,7 @@ Open your browser and navigate to:
   $env:GIN_CONSOLE_CONFIG = "C:\path\to\config.yaml"
   uv run --directory backend -m gin_console
   ```
+- To listen on other machines, see [Listening on all interfaces](#listening-on-all-interfaces).
 
 ---
 
@@ -181,6 +182,8 @@ Open your browser at **[http://127.0.0.1:8700](http://127.0.0.1:8700)**.
 
 > For production deployment as a **systemd user service** and exposing over **Tailscale**, see [deploy/README.md](deploy/README.md).
 
+To listen on other machines, see [Listening on all interfaces](#listening-on-all-interfaces).
+
 ---
 
 ## Docker Deployment
@@ -201,6 +204,109 @@ Check the health and smoke test:
 ```bash
 scripts/docker-smoke.sh
 ```
+
+---
+
+## Listening on all interfaces
+
+gin-console listens on `127.0.0.1` by default and refuses any other address. It has no authentication, so it is meant to stay on loopback behind `tailscale serve`. To listen on every interface, set both `GIN_CONSOLE_HOST=0.0.0.0` and `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1`. `GIN_CONSOLE_HOST` overrides `server.host` in the config. You can set `server.host: 0.0.0.0` in the config instead, but `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1` is still required.
+
+> **Warning**: gin-console has no authentication. The email on the login screen only selects "My Tasks"; it is not a password. Anyone who can reach the port can read projects, Beads, and session logs. Allow the port only from trusted networks, for example behind a firewall or a VPN.
+
+### Linux and macOS
+
+Set both variables for a single run:
+
+```bash
+GIN_CONSOLE_HOST=0.0.0.0 GIN_CONSOLE_ALLOW_NON_LOOPBACK=1 uv run --directory backend -m gin_console
+```
+
+### systemd user service
+
+Add both variables to a drop-in for the `gin-console` unit, then restart it:
+
+```bash
+systemctl --user edit gin-console
+```
+
+```ini
+[Service]
+Environment=GIN_CONSOLE_HOST=0.0.0.0
+Environment=GIN_CONSOLE_ALLOW_NON_LOOPBACK=1
+```
+
+```bash
+systemctl --user restart gin-console
+```
+
+### Docker
+
+The container already listens on `0.0.0.0` with both variables set in `docker-compose.yml`. Only the published address is limited to loopback (`127.0.0.1:8700:8700`). To publish the port on every interface, add this to `docker-compose.override.yml`:
+
+```yaml
+services:
+  gin-console:
+    ports: !override
+      - "0.0.0.0:8700:8700"
+```
+
+`!override` needs Docker Compose 2.24 or later.
+
+### Windows
+
+Set the variables for the current session, or for your user account so that new terminals inherit them.
+
+#### PowerShell for this session
+
+```powershell
+$env:GIN_CONSOLE_HOST = "0.0.0.0"
+$env:GIN_CONSOLE_ALLOW_NON_LOOPBACK = "1"
+uv run --directory backend -m gin_console
+```
+
+#### PowerShell for the user account
+
+```powershell
+[Environment]::SetEnvironmentVariable("GIN_CONSOLE_HOST", "0.0.0.0", "User")
+[Environment]::SetEnvironmentVariable("GIN_CONSOLE_ALLOW_NON_LOOPBACK", "1", "User")
+```
+
+Open a new terminal afterwards. The same variables can be set with `setx GIN_CONSOLE_HOST 0.0.0.0` and `setx GIN_CONSOLE_ALLOW_NON_LOOPBACK 1`.
+
+#### Command Prompt for this session
+
+```bat
+set GIN_CONSOLE_HOST=0.0.0.0
+set GIN_CONSOLE_ALLOW_NON_LOOPBACK=1
+uv run --directory backend -m gin_console
+```
+
+#### Firewall
+
+Windows may ask to allow Python through Windows Defender Firewall on first start. Allow it on private networks only. To add a rule instead, run this in an elevated PowerShell:
+
+```powershell
+New-NetFirewallRule -DisplayName "gin-console" -Direction Inbound -Protocol TCP -LocalPort 8700 -Action Allow -Profile Private
+```
+
+#### Undo
+
+For this session:
+
+```powershell
+Remove-Item Env:GIN_CONSOLE_HOST, Env:GIN_CONSOLE_ALLOW_NON_LOOPBACK
+```
+
+For the user account:
+
+```powershell
+[Environment]::SetEnvironmentVariable("GIN_CONSOLE_HOST", $null, "User")
+[Environment]::SetEnvironmentVariable("GIN_CONSOLE_ALLOW_NON_LOOPBACK", $null, "User")
+```
+
+### Check the bind
+
+From another device, open `http://<machine-ip>:8700`. If `GIN_CONSOLE_ALLOW_NON_LOOPBACK` is missing, the console exits with `refusing to bind 0.0.0.0`. If `GIN_CONSOLE_HOST` is missing, the console listens on loopback only and the other device cannot connect.
 
 ---
 

@@ -1,11 +1,13 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { EMAIL_KEY, getEmail, resetIdentity, setEmail } from "./identity";
 import { Layout, SIDEBAR_KEY } from "./Layout";
 
 beforeEach(() => window.localStorage.clear());
 afterEach(() => {
   cleanup();
+  resetIdentity();
   vi.restoreAllMocks();
 });
 
@@ -23,7 +25,7 @@ const marked = () =>
 
 describe("Layout", () => {
   it.each(["/", "/beads", "/sessions", "/reports"])(
-    "REQ-UI-055 has one Main navigation with the four links on %s",
+    "REQ-UI-055 REQ-UI-099 has one Main navigation with the five links on %s",
     (path) => {
       open(path);
       expect(screen.getAllByRole("navigation")).toHaveLength(1);
@@ -31,6 +33,7 @@ describe("Layout", () => {
       expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
         ["Projects", "/"],
         ["Beads", "/beads"],
+        ["My Tasks", "/my-tasks"],
         ["Milestones", "/milestones"],
         ["Reports", "/reports"],
       ]);
@@ -41,6 +44,7 @@ describe("Layout", () => {
     ["/", ["Projects"]],
     ["/beads", ["Beads"]],
     ["/beads/alpha/a-1", ["Beads"]],
+    ["/my-tasks", ["My Tasks"]],
     ["/milestones", ["Milestones"]],
     ["/milestones/alpha/m-1", ["Milestones"]],
     ["/milestonesx", []],
@@ -119,11 +123,29 @@ describe("Layout", () => {
     }
   });
 
-  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the four links when collapsed", () => {
+  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the five links when collapsed", () => {
     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
     open("/beads");
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
-    expect(within(nav()).getAllByRole("link")).toHaveLength(4);
+    expect(within(nav()).getAllByRole("link")).toHaveLength(5);
     expect(marked()).toEqual(["Beads"]);
+  });
+
+  describe("signed in", () => {
+    beforeEach(() => setEmail("tester@example.com"));
+    afterEach(() => window.localStorage.removeItem(EMAIL_KEY));
+
+    it("REQ-UI-098 the sidebar shows the email and Log out", () => {
+      open("/");
+      expect(screen.getAllByText("tester@example.com").length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: /^Log out/ }).length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: "Log out tester@example.com" }).length).toBeGreaterThan(0);
+    });
+
+    it("REQ-UI-098 Log out forgets the email", async () => {
+      open("/");
+      await userEvent.click(screen.getAllByRole("button", { name: /^Log out/ })[0]);
+      expect(getEmail()).toBeNull();
+    });
   });
 });

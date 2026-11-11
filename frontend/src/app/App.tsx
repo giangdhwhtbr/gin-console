@@ -4,11 +4,14 @@ import { BeadsPage } from "@/features/beads/BeadsPage";
 import { GraphPage } from "@/features/beads/GraphPage";
 import { MilestonePage } from "@/features/milestones/MilestonePage";
 import { MilestonesPage } from "@/features/milestones/MilestonesPage";
+import { MyTasksPage } from "@/features/my-tasks/MyTasksPage";
 import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { QuotaPage } from "@/features/quota/QuotaPage";
 import { SessionLogPage } from "@/features/sessions/SessionLogPage";
 import { SessionsPage } from "@/features/sessions/SessionsPage";
+import { useEmail } from "./identity";
 import { Layout } from "./Layout";
+import { LoginPage } from "./LoginPage";
 import { useLocation } from "./route";
 
 const ReportsPage = lazy(() => import("@/features/reports/ReportsPage").then((m) => ({ default: m.ReportsPage })));
@@ -60,6 +63,8 @@ export function App() {
   const graph = graphRoute(pathname);
   const bead = beadRoute(pathname);
   const milestone = milestoneRoute(pathname);
+  const email = useEmail();
+  if (email === null) return <LoginPage />;
   return (
     <Layout onRefreshed={() => setEpoch((n) => n + 1)}>
       <Fragment key={epoch}>
@@ -75,6 +80,8 @@ export function App() {
         <SessionsPage />
       ) : pathname === "/beads" ? (
         <BeadsPage />
+      ) : pathname === "/my-tasks" ? (
+        <MyTasksPage />
       ) : pathname === "/milestones" ? (
         <MilestonesPage />
       ) : pathname === "/quota" ? (
