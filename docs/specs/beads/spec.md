@@ -244,6 +244,7 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 
 ## Diagrams
 - [Export read](diagrams/export-read-activity.md)
+- [Bead list transfer](diagrams/bead-list-transfer-activity.md)
 
 ### REQ-BEADS-013: Stale export
 The server SHALL record, each time it reads a project's `.beads/issues.jsonl`, the content of the project's embedded Dolt manifests (`.beads/embeddeddolt/*/.dolt/noms/manifest`), and SHALL report the project's export as stale WHILE that content differs from the recorded content and the file has not changed since; WHERE a project has no such manifest, its export SHALL never be stale. `GET /api/projects` and `GET /api/projects/beads` SHALL include `stale` (a boolean) in the `beads` object of each project whose beads were read.
