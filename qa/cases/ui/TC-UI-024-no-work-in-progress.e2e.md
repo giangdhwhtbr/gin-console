@@ -4,7 +4,7 @@
 - **Priority:** medium
 
 **Preconditions:**
-- A report with no bead in progress
+- A report with a bead in progress
 
 **Test data:**
 - None
