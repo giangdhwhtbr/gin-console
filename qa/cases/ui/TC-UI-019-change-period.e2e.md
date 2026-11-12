@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user picks 90 days
+1. Pick 90 days
 
 **Expected:**
 - The URL becomes `/reports?project=alpha&days=90&tab=delivery` without a reload and the report is requested again

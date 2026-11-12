@@ -10,7 +10,8 @@
 - None
 
 **Steps:**
-1. The user presses the Age header twice
+1. Press the Age header
+2. Press the Age header again
 
 **Expected:**
 - The rows are sorted by age, oldest last, and the header has `aria-sort="descending"`

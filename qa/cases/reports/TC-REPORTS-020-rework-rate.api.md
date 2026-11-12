@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The team report is built
+1. Send `GET /api/reports/team?project=alpha`
 
 **Expected:**
 - `ann`'s row has `rework_rate` 0.25 and `reopens` 1

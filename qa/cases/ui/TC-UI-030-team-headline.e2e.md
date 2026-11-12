@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The page is shown on the Delivery tab
+1. Open the Delivery tab
 
 **Expected:**
 - The Team headline reads "27 of 64 closed · on pace" without a warning icon

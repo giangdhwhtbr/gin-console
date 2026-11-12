@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The team report is built
+1. Send `GET /api/reports/team?project=alpha`
 
 **Expected:**
 - `team.throughput` is 18, `pace` 3.6, `days_left` 11, `pace_needed` 37 ÷ 11 and `elapsed` 9

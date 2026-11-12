@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The page loads
+1. Open `/reports?project=all&days=7&tab=delivery`
 
 **Expected:**
 - "All projects" and 7 days are selected and the report for them is requested

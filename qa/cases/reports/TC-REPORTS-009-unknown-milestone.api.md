@@ -4,13 +4,13 @@
 - **Priority:** medium
 
 **Preconditions:**
-- The same project
+- Project `alpha` with closed milestone `m1`, active milestone `m2` and planned milestone `m3`
 
 **Test data:**
 - None
 
 **Steps:**
-1. A client requests `milestone=gone`
+1. Send `GET /api/reports/team?project=alpha&milestone=gone`
 
 **Expected:**
 - The response is 200 with `milestone` `m2`

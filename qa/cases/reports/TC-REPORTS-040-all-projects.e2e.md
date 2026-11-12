@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The Team tab is shown
+1. Open `/reports?project=all&tab=team`
 
 **Expected:**
 - It says "Pick a project to see its team" and no request goes to `/api/reports/team`

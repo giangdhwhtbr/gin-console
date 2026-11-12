@@ -10,7 +10,8 @@
 - None
 
 **Steps:**
-1. The Closed list is shown and the user presses "Show 15 more"
+1. Select the Closed list
+2. Press "Show 15 more"
 
 **Expected:**
 - 30 rows are shown

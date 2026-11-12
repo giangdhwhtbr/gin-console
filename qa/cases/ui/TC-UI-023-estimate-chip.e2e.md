@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The Delivery tab is shown
+1. Open the Delivery tab
 
 **Expected:**
 - Their chips read "+2 d" in the warning color, "−2 d" and "−0.5 d"

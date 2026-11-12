@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The report is built
+1. Send `GET /api/reports?project=alpha`
 
 **Expected:**
 - `overall` has no cycle time and no lead time

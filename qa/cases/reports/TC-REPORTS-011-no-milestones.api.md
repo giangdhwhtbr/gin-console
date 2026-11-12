@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. A client requests `/api/reports/team?project=beta`
+1. Send `GET /api/reports/team?project=beta`
 
 **Expected:**
 - The response is 200 with `milestones` empty and `milestone` `null`

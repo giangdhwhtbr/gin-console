@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user presses `ann`'s row again
+1. Press `ann`'s row in the member table
 
 **Expected:**
 - All members is selected

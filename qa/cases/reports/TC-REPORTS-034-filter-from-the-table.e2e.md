@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user presses `ann`'s row
+1. Press `ann`'s row in the member table
 
 **Expected:**
 - The Member select shows `ann`, the URL holds `member=ann` and the figures and list show `ann`'s beads

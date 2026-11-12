@@ -10,7 +10,8 @@
 - None
 
 **Steps:**
-1. The panel is shown
+1. Select the Team tab
+2. Look at the panel for period buttons and a sprint field
 
 **Expected:**
 - No period buttons and no sprint field are shown

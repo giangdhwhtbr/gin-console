@@ -10,7 +10,8 @@
 - None
 
 **Steps:**
-1. The user picks the Team tab and then the Quality tab
+1. Select the Team tab
+2. Select the Quality tab
 
 **Expected:**
 - 7 days is selected in the Quality panel

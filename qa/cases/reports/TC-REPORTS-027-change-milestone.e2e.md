@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user picks `m1`
+1. Pick `m1` in the Milestone select
 
 **Expected:**
 - The team report for `m1` is requested, All members is selected and the default list of REQ-REPORTS-016 is shown

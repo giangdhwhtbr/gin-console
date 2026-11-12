@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The team report is built
+1. Send `GET /api/reports/team?project=alpha`
 
 **Expected:**
 - Their buckets are `open`, `open` and `in_progress`, and their members are `Unassigned`, `ann` and `bao`

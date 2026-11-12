@@ -4,13 +4,14 @@
 - **Priority:** medium
 
 **Preconditions:**
-- The Delivery tab is shown
+- A report with no bead in progress
 
 **Test data:**
 - None
 
 **Steps:**
-1. The figures and sections are read
+1. Open the Delivery tab
+2. Read the figures and sections
 
 **Expected:**
 - There is no "In progress now" figure, no "Oldest in progress" table and no "In progress by member" chart

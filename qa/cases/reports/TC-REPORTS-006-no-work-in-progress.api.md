@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The report is built
+1. Send `GET /api/reports?project=alpha`
 
 **Expected:**
 - `delivery` has neither `wip` nor `oldest`

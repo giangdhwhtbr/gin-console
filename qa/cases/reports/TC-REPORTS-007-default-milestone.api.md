@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. A client requests `/api/reports/team?project=alpha`
+1. Send `GET /api/reports/team?project=alpha`
 
 **Expected:**
 - `milestone` is `m2` and `milestones` holds `m1`, `m2` and `m3` with statuses `closed`, `active` and `planned`

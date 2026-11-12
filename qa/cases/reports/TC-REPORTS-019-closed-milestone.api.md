@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The team report is built
+1. Send `GET /api/reports/team?project=alpha&milestone=<id of the closed milestone>`
 
 **Expected:**
 - `team.throughput` is 13.2, `pace_needed` is `null` and `on_time` is 51 ÷ 58

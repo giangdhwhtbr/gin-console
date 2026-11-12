@@ -4,13 +4,16 @@
 - **Priority:** medium
 
 **Preconditions:**
-- No project `nope`
+- No project `nope` is configured
+- Project `alpha` is configured
 
 **Test data:**
 - None
 
 **Steps:**
-1. A client requests `project=nope` and `project=alpha&milestone=a b`
+1. Send `GET /api/reports/team?project=nope`
+2. Send `GET /api/reports/team?project=alpha&milestone=a b`
 
 **Expected:**
-- The responses are 404 and 422
+- The response to step 1 is 404
+- The response to step 2 is 422

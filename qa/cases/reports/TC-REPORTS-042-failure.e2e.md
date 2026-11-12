@@ -4,13 +4,15 @@
 - **Priority:** medium
 
 **Preconditions:**
-- `/api/reports/team` answers 502
+- `/api/reports/team` answers 502 once and then 200
 
 **Test data:**
 - None
 
 **Steps:**
-1. The user presses Retry and the next answer is 200
+1. Open `/reports?project=alpha&tab=team`
+2. Press Retry
 
 **Expected:**
-- The Team tab shows the report
+- The first answer shows an error
+- The Team tab shows the report after Retry

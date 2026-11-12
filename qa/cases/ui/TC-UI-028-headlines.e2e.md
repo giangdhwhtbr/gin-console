@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The page is shown
+1. Open the Reports page
 
 **Expected:**
 - The headlines read "41 beads closed", "12.4M tokens, $38.20", "9% rework" and "5 gaps", and the Data coverage headline has a warning icon

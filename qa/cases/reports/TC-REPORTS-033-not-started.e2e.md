@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The Team tab is shown
+1. Select the Team tab
 
 **Expected:**
 - No chart is shown

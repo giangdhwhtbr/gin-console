@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The report is built
+1. Send `GET /api/reports?project=alpha`
 
 **Expected:**
 - It counts in throughput and lead time and not in cycle time

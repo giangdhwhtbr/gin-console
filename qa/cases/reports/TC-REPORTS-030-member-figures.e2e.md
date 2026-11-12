@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user selects `ann`
+1. Select `ann` in the Member select
 
 **Expected:**
 - The figures read "6 / 11", "55% of assigned", "1 blocked", and Throughput instead of Pace

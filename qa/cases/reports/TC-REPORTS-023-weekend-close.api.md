@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The team report is built
+1. Send `GET /api/reports/team?project=alpha`
 
 **Expected:**
 - The entry for Friday 2026-11-06 counts 1 for `ann`

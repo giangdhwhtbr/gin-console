@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The page is shown
+1. Open the Reports page
 
 **Expected:**
 - The Data coverage headline reads "0 gaps" without a warning icon

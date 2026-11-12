@@ -4,13 +4,15 @@
 - **Priority:** medium
 
 **Preconditions:**
-- The team report for `alpha` was answered 20 seconds ago
+- Project `alpha`
 
 **Test data:**
 - None
 
 **Steps:**
-1. A client requests it again
+1. Send `GET /api/reports/team?project=alpha`
+2. Send the same request again 20 seconds later
 
 **Expected:**
-- No `gin` or `bd` process starts and the same `generated_at` is returned
+- The second response has the same `generated_at` as the first
+- No `gin` or `bd` process starts (check with `pgrep`)

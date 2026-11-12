@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The page loads
+1. Open `/reports?project=alpha&tab=nope`
 
 **Expected:**
 - The Team tab is selected

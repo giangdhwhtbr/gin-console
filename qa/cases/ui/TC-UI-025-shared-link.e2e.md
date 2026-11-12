@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The page loads
+1. Open `/reports?project=alpha&days=7&tab=quality`
 
 **Expected:**
 - The Quality tab is selected and its panel shows the report for `alpha` and 7 days

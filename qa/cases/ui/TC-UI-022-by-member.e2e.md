@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user picks By member
+1. Pick By member
 
 **Expected:**
 - Both range charts show one range per member and `ann`'s cycle range has its dot at 1.5 days

@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The team report for `m2` is built
+1. Send `GET /api/reports/team?project=alpha&milestone=m2`
 
 **Expected:**
 - `beads` holds `e1.1` and `e1.1.1` with epic `e1`, and neither `e1` nor `e9.1`

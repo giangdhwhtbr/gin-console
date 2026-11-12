@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The report is built
+1. Send `GET /api/reports?project=alpha`
 
 **Expected:**
 - The task median is 3 days and the p85 lies between 4 and 10 days

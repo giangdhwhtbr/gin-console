@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The page loads
+1. Open `/reports?project=alpha&tab=team&milestone=m1&member=ann&status=closed`
 
 **Expected:**
 - Milestone `m1`, member `ann` and the Closed list are shown

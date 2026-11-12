@@ -4,13 +4,13 @@
 - **Priority:** medium
 
 **Preconditions:**
-- The same project
+- Project `alpha` with closed milestone `m1`, active milestone `m2` and planned milestone `m3`
 
 **Test data:**
 - None
 
 **Steps:**
-1. A client requests `/api/reports/team?project=alpha&milestone=m1`
+1. Send `GET /api/reports/team?project=alpha&milestone=m1`
 
 **Expected:**
 - `milestone` is `m1` and the sections describe `m1`

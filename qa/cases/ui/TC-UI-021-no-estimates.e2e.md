@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The page is shown
+1. Open the Delivery tab
 
 **Expected:**
 - No estimate table is shown

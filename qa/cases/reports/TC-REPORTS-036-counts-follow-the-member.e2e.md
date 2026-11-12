@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user selects `ann`
+1. Select `ann` in the Member select
 
 **Expected:**
 - The tabs read Open 4, In progress 1, Closed 6 and All 11

@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The Team tab is shown
+1. Open `/reports?project=beta&tab=team`
 
 **Expected:**
 - It says "beta has no milestones yet" and offers to copy `gin-workflow milestone create`

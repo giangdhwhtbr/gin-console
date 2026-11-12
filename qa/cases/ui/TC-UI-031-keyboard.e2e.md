@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user presses Right
+1. Press Right
 
 **Expected:**
 - The AI usage tab is selected and has focus

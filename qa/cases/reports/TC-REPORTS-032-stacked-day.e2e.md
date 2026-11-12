@@ -10,7 +10,8 @@
 - None
 
 **Steps:**
-1. The user focuses that column
+1. Select the Team tab
+2. Focus the column for 4 Nov
 
 **Expected:**
 - It shows 4 Nov, `ann` 2, `bao` 1 and a total of 3

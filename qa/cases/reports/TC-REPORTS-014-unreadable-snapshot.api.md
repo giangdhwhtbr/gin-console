@@ -10,7 +10,9 @@
 - None
 
 **Steps:**
-1. A client requests the team report twice
+1. Send `GET /api/reports/team?project=alpha`
+2. Send `GET /api/reports/team?project=alpha` again
 
 **Expected:**
-- Both responses are 502 with an `error` and the failure is not cached
+- Both responses are 502 with an `error`
+- The failure is not cached

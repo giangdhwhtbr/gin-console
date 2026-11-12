@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The user picks the AI usage tab
+1. Pick the AI usage tab
 
 **Expected:**
 - The URL becomes `/reports?project=alpha&days=90&tab=usage` without a reload and no new report is requested

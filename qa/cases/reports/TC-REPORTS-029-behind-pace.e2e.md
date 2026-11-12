@@ -10,7 +10,7 @@
 - None
 
 **Steps:**
-1. The Team tab is shown
+1. Select the Team tab
 
 **Expected:**
 - The Pace figure reads "2.0 / day" and "needs 3.4 / day to end on 27 Nov", in the warning color
