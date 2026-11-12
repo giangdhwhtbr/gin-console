@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { DeliverySection as Delivery, Stat, TimeRow } from "./api";
-import { BarRows } from "./BarRows";
 import { ChartBox, legendText } from "./ChartBox";
 import { TYPES, present, typeColor } from "./colors";
-import { beadPath, estimateDiff, formatDays } from "./format";
+import { beadPath, estimateDiff } from "./format";
 import { RangeChart, type Range } from "./RangeChart";
 
 const tick = { fill: "var(--color-muted-foreground)" };
@@ -80,46 +79,6 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
           <RangeChart title="Lead time" ranges={rangesOf(times, (r) => r.lead)} />
         </div>
       </section>
-      <div className="grid gap-8 md:grid-cols-[2fr_1fr]">
-        <section className="flex min-w-0 flex-col gap-3">
-          <h2 className="font-semibold">Oldest in progress</h2>
-          {delivery.oldest.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing in progress</p>
-          ) : (
-            <Table>
-              {heads(["Bead", "Assignee", "Age"])}
-              <TableBody>
-                {delivery.oldest.map((b) => (
-                  <TableRow key={`${b.project}/${b.id}`}>
-                    <TableCell>
-                      <Link to={beadPath(b.project, b.id)} className="underline">
-                        {b.id} — {b.title}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{b.assignee ?? "Unassigned"}</TableCell>
-                    <TableCell>{formatDays(b.age_days)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </section>
-        <section className="flex min-w-0 flex-col gap-3">
-          <h2 className="font-semibold">In progress by member</h2>
-          {delivery.wip.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nothing in progress</p>
-          ) : (
-            <BarRows
-              rows={delivery.wip.map((w) => ({
-                key: w.member,
-                segments: [{ name: "In progress", value: w.count, color: "var(--series-1)" }],
-                total: String(w.count),
-                detail: `${w.count} in progress`,
-              }))}
-            />
-          )}
-        </section>
-      </div>
       {delivery.estimates.length > 0 && (
         <section className="flex flex-col gap-3">
           <h2 className="font-semibold">Estimate and actual</h2>

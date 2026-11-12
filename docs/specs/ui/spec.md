@@ -1499,21 +1499,21 @@ The "Bugs found" heading of REQ-UI-086 SHALL be shown in the bug color (the `typ
 - THEN the "Bugs found" heading uses the `type-bug` color and the bug rows do not
 
 ### REQ-UI-088: Reports page
-The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page header SHALL hold the project choice: each configured project and "All projects", with the first project as the default. The panel of each tab of REQ-UI-095 SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to every tab. The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-089 to REQ-UI-091). The page SHALL label every cost "estimated" and SHALL show "no price" where a cost is absent.
+The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page header SHALL hold the project choice: each configured project and "All projects", with the first project as the default. The panels of the Delivery, AI usage, Quality and Data coverage tabs (REQ-UI-095) SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to those four tabs. The Team tab has its own choices (REQ-REPORTS-012). The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-089 to REQ-UI-091, REQ-REPORTS-013). The page SHALL label every cost "estimated" and SHALL show "no price" where a cost is absent.
 
 #### Scenario: shared link
-- GIVEN the URL `/reports?project=all&days=7`
+- GIVEN the URL `/reports?project=all&days=7&tab=delivery`
 - WHEN the page loads
 - THEN "All projects" and 7 days are selected and the report for them is requested
 
 #### Scenario: change period
-- GIVEN the Reports page for `alpha` and 30 days
+- GIVEN the Reports page for `alpha`, 30 days and the Delivery tab
 - WHEN the user picks 90 days
 - THEN the URL becomes `/reports?project=alpha&days=90&tab=delivery` without a reload and the report is requested again
 
 #### Scenario: period kept across tabs
 - GIVEN the Reports page for `alpha` with 7 days picked on the Delivery tab
-- WHEN the user picks the Quality tab
+- WHEN the user picks the Team tab and then the Quality tab
 - THEN 7 days is selected in the Quality panel
 
 ### REQ-UI-089: AI usage view
@@ -1540,14 +1540,16 @@ The AI usage tab SHALL show, in this order:
 
 ### REQ-UI-090: Delivery flow view
 The Delivery tab SHALL show, in this order:
-- A row of figures: beads closed (`totals.closed`), median cycle time and median lead time (from `delivery.overall`, "—" when absent), and beads in progress now (the sum of the in-progress counts per member).
+- A row of figures: beads closed (`totals.closed`), and the median cycle time and median lead time from `delivery.overall` ("—" when absent).
 - Beads closed per ISO week, as a column chart stacked by type with a legend.
 - Cycle time and lead time as two range charts side by side, each with a dot at the median and a tick at the 85th percentile. A switch SHALL choose between By type (the default) and By member. Each range SHALL show, on hover and on focus, its type or member, the number of beads, the median and the 85th percentile.
-- The 5 oldest in-progress beads, with their age in days and a link to each bead page, next to a bar chart of in-progress beads per member.
 - The estimate table of REQ-REPORTS-004, when it has rows. Each row SHALL hold a chip with the actual minus the estimated working days, rounded to one decimal:
   - "+<n> d" in the warning color when the difference is above 0;
   - "on estimate" when it is 0;
   - "−<n> d" when it is below 0.
+
+The Delivery tab SHALL NOT show beads in progress; the Team tab shows them (REQ-REPORTS-013 to REQ-REPORTS-016).
+Source: `assets/2026-11-12/mockup/index.html`
 
 #### Scenario: no estimates
 - GIVEN a report without estimated epics
@@ -1563,6 +1565,11 @@ The Delivery tab SHALL show, in this order:
 - GIVEN epics estimated at 5 working days that took 7, 3 and 4.5
 - WHEN the Delivery tab is shown
 - THEN their chips read "+2 d" in the warning color, "−2 d" and "−0.5 d"
+
+#### Scenario: no work in progress
+- GIVEN the Delivery tab is shown
+- WHEN the figures and sections are read
+- THEN there is no "In progress now" figure, no "Oldest in progress" table and no "In progress by member" chart
 
 ### REQ-UI-091: Quality view
 The Quality tab SHALL show, in this order:
@@ -1657,13 +1664,21 @@ From 1024px the frontend SHALL show, at the top of the "Main" navigation's sideb
 - THEN no collapse control is shown and the theme control is under the brand mark, above the links
 
 ### REQ-UI-095: Report tabs
-The Reports page SHALL show the tabs Delivery, AI usage, Quality and Data coverage, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline from the loaded report:
+The Reports page SHALL show the tabs Team, Delivery, AI usage, Quality and Data coverage, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:
+- Team, from the team report of the selected milestone:
+  - "Finished on time", or "Finished <n> d late" with a warning icon, for a closed milestone;
+  - "Starts <start>" before its start;
+  - "<closed> of <scope> closed · on pace", or "· behind pace" with a warning icon when `pace_needed` is above `pace`;
+  - "<closed> of <scope> closed · past end" with a warning icon when `late_open` is above 0;
+  - "No milestones" when the project has none;
+  - no headline while "All projects" is selected.
 - Delivery: "<closed> beads closed", where `<closed>` is `totals.closed`.
 - AI usage: "<tokens> tokens, <cost>", with "no price" in place of `<cost>` when `totals.cost` is absent.
 - Quality: "<rate> rework", with "—" in place of `<rate>` when `totals.rework_rate` is absent.
 - Data coverage: "<n> gaps" ("1 gap" when `<n>` is 1), with a warning icon when `<n>` is above 0. `<n>` is the sum of five counts: beads not collected, beads with unreadable usage, models without a price, beads with incomplete logs (`coverage.sources`), and projects under `errors`.
 
-The page SHALL show no headline while the report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`delivery`, `usage`, `quality` or `coverage`), SHALL select Delivery when `tab` is missing or holds another value, and SHALL keep the project, period and sprint when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page.
+The page SHALL request the team report whenever a single project is selected, whatever the tab, so that the Team headline shows. It SHALL show no headline for a tab while its report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`team`, `delivery`, `usage`, `quality` or `coverage`), SHALL select Team when `tab` is missing or holds another value, and SHALL keep the project, period, sprint, milestone and member when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page.
+Source: `assets/2026-11-12/mockup/index.html`
 
 #### Scenario: shared link
 - GIVEN the URL `/reports?project=alpha&days=7&tab=quality`
@@ -1673,7 +1688,7 @@ The page SHALL show no headline while the report loads or after it failed to loa
 #### Scenario: unknown tab
 - GIVEN the URL `/reports?project=alpha&tab=nope`
 - WHEN the page loads
-- THEN the Delivery tab is selected
+- THEN the Team tab is selected
 
 #### Scenario: change tab
 - GIVEN the Reports page for `alpha`, 90 days and the Delivery tab
@@ -1689,6 +1704,11 @@ The page SHALL show no headline while the report loads or after it failed to loa
 - GIVEN a report with no coverage gaps and no failed project
 - WHEN the page is shown
 - THEN the Data coverage headline reads "0 gaps" without a warning icon
+
+#### Scenario: team headline
+- GIVEN the team report of an open milestone with 27 of 64 beads closed, `pace` 3.6 and `pace_needed` 3.4
+- WHEN the page is shown on the Delivery tab
+- THEN the Team headline reads "27 of 64 closed · on pace" without a warning icon
 
 #### Scenario: keyboard
 - GIVEN the Delivery tab is selected and has focus
