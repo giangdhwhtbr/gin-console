@@ -1,32 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { fetchMilestones } from "./api";
 import { BeadFilterBar } from "./BeadFilterBar";
 import { BoardView } from "./BoardView";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
 import { ListView } from "./ListView";
-import { isClosedMilestone, milestoneInEffect, type MilestonesState } from "./milestoneChoice";
+import { isClosedMilestone, milestoneInEffect } from "./milestoneChoice";
 import { useBeads } from "./useBeads";
 import { useCardKeys } from "./useCardKeys";
+import { useMilestones } from "./useMilestones";
 import { ViewTabs } from "./ViewTabs";
-
-/** The project's milestones; an answer for another project counts as still loading. */
-function useMilestones(project: string): MilestonesState {
-  const [loaded, setLoaded] = useState<{ project: string; state: MilestonesState } | null>(null);
-  useEffect(() => {
-    let current = true;
-    void fetchMilestones(project).then(
-      (data) => current && setLoaded({ project, state: { status: "ok", data } }),
-      () => current && setLoaded({ project, state: { status: "error" } }),
-    );
-    return () => {
-      current = false;
-    };
-  }, [project]);
-  return loaded !== null && loaded.project === project ? loaded.state : { status: "loading" };
-}
 
 export function BeadsView({
   project,
