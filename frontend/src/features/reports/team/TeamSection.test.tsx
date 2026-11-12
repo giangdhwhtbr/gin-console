@@ -79,6 +79,16 @@ describe("TeamSection", () => {
     expect(screen.queryByRole("textbox", { name: "Sprint" })).toBeNull();
   });
 
+  it("REQ-REPORTS-012 change milestone resets the list", async () => {
+    const onChange = show(teamReport(), { status: "open" });
+    expect(screen.getByRole("tab", { name: /^Open/ })).toHaveAttribute("aria-selected", "true");
+    await userEvent.selectOptions(screen.getByLabelText("Milestone"), "m1");
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ milestone: "m1", status: "" }));
+    cleanup();
+    show(teamReport({ milestone: "m1" }), { milestone: "m1", status: "" });
+    expect(screen.getByRole("tab", { name: /^Closed/ })).toHaveAttribute("aria-selected", "true");
+  });
+
   it("REQ-REPORTS-017 no milestones", () => {
     show(teamReport({ milestones: [], milestone: null, team: null, members: [], days: [], beads: [] }));
     expect(screen.getByText("alpha has no milestones yet")).toBeInTheDocument();

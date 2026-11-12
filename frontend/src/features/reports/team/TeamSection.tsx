@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { milestonePath } from "@/features/milestones/api";
 import { CopyCommand } from "@/features/milestones/CopyCommand";
 import type { ReportFilters } from "../filters";
-import { selectedMilestone, type TeamMilestone, type TeamReport } from "../teamApi";
+import { selectedMilestone, UNASSIGNED, type TeamMilestone, type TeamReport } from "../teamApi";
+import { BeadTable } from "./BeadTable";
+import { ClosedPerDayChart } from "./ClosedPerDayChart";
+import { MemberTable } from "./MemberTable";
 import { MilestoneLine } from "./MilestoneLine";
+import { TeamFigures } from "./TeamFigures";
 
 const selectClass = "rounded border bg-background px-2 py-1 text-sm";
 
@@ -92,7 +96,27 @@ export function TeamSection({
       {report.undated > 0 && (
         <p className="text-sm text-muted-foreground">{report.undated} milestones without start and end dates are not listed</p>
       )}
-      {report.team !== null && <div data-slot="team-body" className="flex flex-col gap-8" />}
+      {report.team !== null && milestone !== null && (
+        <div data-slot="team-body" className="flex flex-col gap-8">
+          <TeamFigures team={report.team} member={report.members.find((m) => m.member === filters.member) ?? null} milestone={milestone} />
+          <ClosedPerDayChart
+            days={report.days}
+            members={report.members.map((m) => m.member)}
+            selected={filters.member}
+            today={report.today}
+            milestone={milestone}
+          />
+          <MemberTable members={report.members} selected={filters.member} onSelect={(member) => onChange({ ...filters, member })} />
+          <BeadTable
+            project={project}
+            beads={filters.member === "" ? report.beads : report.beads.filter((b) => (b.assignee ?? UNASSIGNED) === filters.member)}
+            member={filters.member}
+            status={filters.status || (milestone.status === "closed" ? "closed" : "open")}
+            onStatus={(status) => onChange({ ...filters, status })}
+            today={report.today}
+          />
+        </div>
+      )}
     </div>
   );
 }
