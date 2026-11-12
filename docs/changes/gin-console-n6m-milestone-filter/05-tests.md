@@ -4,4 +4,4 @@ Automated tests carry the REQ-ID in the test name or a comment. List here only m
 
 | TC | REQ | type | evidence |
 |---|---|---|---|
-| TC-1 | REQ-UI-104, REQ-UI-105 | manual | On the Tailscale deploy: `/beads?project=qwikfone` opens with Milestone "Backlog Remediation — Nov 2026" and only its beads in List, Board and Focus; All and No milestone work; `/my-tasks` has All projects with Milestone disabled, and choosing `qwikfone` selects the same milestone and lists only its tasks |
+| TC-1 | REQ-UI-104, REQ-UI-105 | manual | On the Tailscale deploy: `/beads?project=qwikfone` opens with Milestone "Backlog Remediation — Nov 2026" and only its beads in List, Board and Focus; All and No milestone work; `/my-tasks` has All projects with Milestone disabled, and choosing `qwikfone` selects the same milestone and lists only its tasks; attempt 1 failed (My Tasks filter row overflowed on iPhone, fixed in gin-console-n6m.6); pass, giangdhwhtbr, 2026-11-13 (Tailscale build of 35b3cf0) |
