@@ -24,6 +24,13 @@ const requested = (input: RequestInfo | URL) =>
 const rows = () => screen.getAllByRole("row").slice(1);
 
 describe("MyTasksPage", () => {
+  it("REQ-UI-105 the filter row wraps on narrow screens", async () => {
+    stubBeads(() => json([]));
+    open("/my-tasks");
+    const select = await screen.findByRole("combobox", { name: "Project" });
+    expect(select.closest("div")).toHaveClass("flex-wrap");
+  });
+
   it("REQ-UI-099 the My Tasks link opens /my-tasks and is current", async () => {
     stubBeads(() => json([]));
     open("/");

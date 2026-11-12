@@ -30,14 +30,14 @@ export function MilestoneFilter({
 }) {
   const milestones = state.status === "ok" ? state.data.milestones : [];
   return (
-    <label className="flex items-center gap-1 text-sm">
+    <label className="flex min-w-0 max-w-full items-center gap-1 text-sm">
       Milestone
       <select
         aria-label="Milestone"
         value={state.status === "error" ? "unavailable" : value}
         disabled={disabled || state.status !== "ok"}
         onChange={(event) => onChange(event.target.value)}
-        className="rounded border bg-background px-2 py-1"
+        className="min-w-0 max-w-full truncate rounded border bg-background px-2 py-1"
       >
         {state.status === "error" ? (
           <option value="unavailable" disabled>
