@@ -151,12 +151,6 @@ IF `bd` fails in the selected project as in REQ-BEADS-005, THEN the server SHALL
 - WHEN a client requests `/api/reports?project=all`
 - THEN one member row `ann` holds 2 beads and 300 tokens
 
-## Diagrams
-- [Team tab](diagrams/team-tab-activity.md)
-
-## Use Cases
-- [Review the team in a milestone](use-cases/review-team-in-milestone.md)
-
 ### REQ-REPORTS-008: Team report request
 WHEN a client requests `GET /api/reports/team` with `project` (a configured project name) and optionally `milestone` (a bead id), the server SHALL read every bead of the project from its `bd export` snapshot (REQ-BEADS-012) without starting a process, and SHALL return:
 - `generated_at`;
@@ -489,3 +483,9 @@ Source: `assets/2026-11-12/mockup/index.html`
 - GIVEN the team report for `m2` is loading and the user picks `m1`
 - WHEN the answer for `m2` arrives
 - THEN the page does not show it
+
+## Diagrams
+- [Team tab](diagrams/team-tab-activity.md)
+
+## Use Cases
+- [Review the team in a milestone](use-cases/review-team-in-milestone.md)
