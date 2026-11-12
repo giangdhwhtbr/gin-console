@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-BEADS-001: Bead list
-WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return the beads of that configured project, each with `id`, `title`, `status`, `priority`, `issue_type`, `labels`, `owner`, `assignee`, `parent`, `created_at`, `updated_at`, `dependency_count`, `dependent_count` and `comment_count` and without the description, SHALL leave out closed beads unless the request has `closed=1`, and SHALL respond 404 when the project is not configured or its directory does not exist.
+WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return the beads of that configured project, each with `id`, `title`, `status`, `priority`, `issue_type`, `labels`, `owner`, `assignee`, `parent`, `created_at`, `updated_at`, `dependency_count`, `dependent_count`, `comment_count` and `milestone` (the id of the nearest bead of type `milestone` among the bead and its ancestors, found over every bead of the export whether closed or not, or `null`), and without the description, SHALL leave out closed beads unless the request has `closed=1`, and SHALL respond 404 when the project is not configured or its directory does not exist.
 
 #### Scenario: Open beads by default
 - GIVEN a project with 3 open, 1 in-progress and 4 closed beads
@@ -26,6 +26,11 @@ WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return 
 - GIVEN a configured project whose directory does not exist
 - WHEN a client requests its beads
 - THEN the response is 404
+
+#### Scenario: Milestone of a bead
+- GIVEN milestone `m2`, its closed epic `e1`, and an open task `e1.1` under `e1`
+- WHEN a client requests `GET /api/beads?project=<name>`
+- THEN `e1.1` has `milestone` `m2`, `m2` has `milestone` `m2`, and a bead under no milestone has `milestone` `null`
 
 ### REQ-BEADS-002: Bead detail
 WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return the bead with the fields of REQ-BEADS-001 plus `description`, `dependencies` and `dependents` (each with `id`, `title`, `status` and `type`, where `type` is `blocks` or `parent-child`), `bugs` (each bead of type `bug` that has a `discovered-from` dependency on this bead, open or closed, with `id`, `title`, `status` and `type` `discovered-from`) and, for an epic, `children` (each with `id`, `title`, `status`, closed children included), and SHALL respond 404 when the project or the bead does not exist.
@@ -302,3 +307,31 @@ WHEN the server answers `GET /api/beads` with 200, it SHALL send `ETag: W/"<tag>
 - GIVEN the project's export cannot be read as in REQ-BEADS-005
 - WHEN a client requests its beads with any `If-None-Match`
 - THEN the answer is 502 with an `error` and no `ETag`
+
+### REQ-BEADS-015: Project milestones
+WHEN a client requests `GET /api/beads/milestones?project=<name>`, the server SHALL read the project's beads from its `bd export` snapshot (REQ-BEADS-012) without starting a process, and SHALL return `milestones`: every bead of type `milestone`, each with `id`, `title`, `status`, `start` and `end` (ISO dates from `metadata.start` and `metadata.end`, or `null` when missing or not a valid date), and `current`: the id of the current milestone, or `null`. A milestone's `status` SHALL be `closed` when the bead is closed, else `active` when `metadata.kickoff` is a date on or before today, `scheduled` when it is after today, and `planned` without a valid kickoff. The current milestone SHALL be the first match, among milestones with both dates, of: the `active` milestone with the earliest `start`; the open milestone whose `start` to `end` holds today; the open milestone with the earliest `start` after today (ties by `id`). The server SHALL respond 404 when the project is not configured or its directory does not exist, and 502 with an `error` as in REQ-BEADS-005.
+
+#### Scenario: Current milestone
+- GIVEN project `alpha` with closed milestone `m1`, active milestone `m2` and planned milestone `m3`
+- WHEN a client requests `GET /api/beads/milestones?project=alpha`
+- THEN `milestones` holds `m1`, `m2` and `m3` with statuses `closed`, `active` and `planned`, and `current` is `m2`
+
+#### Scenario: Period holds today
+- GIVEN project `alpha` whose only open milestone `m4` has no kickoff and runs from before today to after today
+- WHEN a client requests its milestones
+- THEN `current` is `m4`
+
+#### Scenario: No open milestone
+- GIVEN project `alpha` whose milestones are all closed
+- WHEN a client requests its milestones
+- THEN `current` is `null`
+
+#### Scenario: Undated milestone
+- GIVEN a milestone bead `m5` without `metadata.end`
+- WHEN a client requests its project's milestones
+- THEN `m5` is listed with `end` `null` and is not `current`
+
+#### Scenario: Bad input
+- GIVEN no project `nope`
+- WHEN a client requests `GET /api/beads/milestones?project=nope`
+- THEN the response is 404
