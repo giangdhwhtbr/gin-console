@@ -72,6 +72,14 @@ describe("loadMyTasks", () => {
     expect(beads).toHaveBeenCalledWith("A", true);
   });
 
+  it("REQ-UI-105 a project requests only its own beads", async () => {
+    beads.mockResolvedValue([bead("b-1", { assignee: "giangdhwhtbr" })]);
+    const result = await loadMyTasks(email, false, "B");
+    expect(beads.mock.calls).toEqual([["B", false]]);
+    expect(result.tasks.map((t) => t.project)).toEqual(["B"]);
+    expect(result.projects).toEqual(["A", "B"]);
+  });
+
   it("REQ-UI-102 a failing project is reported and the others listed", async () => {
     beads.mockImplementation((name) =>
       name === "B" ? Promise.reject(new Error("bd failed")) : Promise.resolve([bead("a-1", { assignee: "giangdhwhtbr" })]),

@@ -4,7 +4,7 @@ import { isMine } from "./match";
 
 export type MyTask = { project: string; bead: BeadSummary };
 export type ProjectFailure = { project: string; message: string };
-export type MyTasks = { tasks: MyTask[]; failures: ProjectFailure[]; stale: string[] };
+export type MyTasks = { tasks: MyTask[]; failures: ProjectFailure[]; stale: string[]; projects: string[] };
 
 export function compareTasks(a: MyTask, b: MyTask): number {
   return (
@@ -15,10 +15,11 @@ export function compareTasks(a: MyTask, b: MyTask): number {
   );
 }
 
-export async function loadMyTasks(email: string, closed: boolean): Promise<MyTasks> {
+export async function loadMyTasks(email: string, closed: boolean, project = ""): Promise<MyTasks> {
   const existing = (await fetchProjectBeads()).filter((p) => p.exists);
-  const names = existing.map((p) => p.name);
-  const stale = existing.filter(isStale).map((p) => p.name);
+  const projects = existing.map((p) => p.name);
+  const names = project === "" ? projects : projects.filter((name) => name === project);
+  const stale = existing.filter((p) => names.includes(p.name)).filter(isStale).map((p) => p.name);
   const results = await Promise.allSettled(names.map((name) => fetchBeads(name, closed)));
   const tasks: MyTask[] = [];
   const failures: ProjectFailure[] = [];
@@ -30,5 +31,5 @@ export async function loadMyTasks(email: string, closed: boolean): Promise<MyTas
       for (const bead of result.value) if (isMine(bead, email)) tasks.push({ project, bead });
     }
   });
-  return { tasks: tasks.sort(compareTasks), failures, stale };
+  return { tasks: tasks.sort(compareTasks), failures, stale, projects };
 }
