@@ -129,3 +129,11 @@ def test_reports_008_api_unreadable(tmp_path: Path) -> None:
         r = get(api)
         assert r.status_code == 502 and r.json() == {"error": "boom"}
     assert len(fake.calls) == 2
+
+
+# REQ-REPORTS-008
+def test_reports_008_api_invalid_dates(tmp_path: Path) -> None:
+    fake = FakeExport([milestone("m1", "2026-13-45", "2026-12-31")])
+    r = get(make(tmp_path, {"alpha": fake}))
+    assert r.status_code == 200
+    assert r.json()["undated"] == 1

@@ -31,7 +31,12 @@ def _day(moment: datetime) -> date:
 
 
 def _iso(text: str | None) -> date | None:
-    return date.fromisoformat(text) if text and _DATE.fullmatch(text) else None
+    if not text or _DATE.fullmatch(text) is None:
+        return None
+    try:
+        return date.fromisoformat(text)
+    except ValueError:  # e.g. 2026-13-45
+        return None
 
 
 def _workday(day: date) -> date:
@@ -103,7 +108,7 @@ def _scope(
     for bead in beads:
         if bead.issue_type in ("epic", "milestone"):
             continue
-        epics = [b for b in tree._lineage(bead) if b.issue_type == "epic"]
+        epics = tree.epics_of(bead)
         if any(e.parent == milestone_id for e in epics):
             rows.append((bead, epics[0]))
     rows.sort(key=lambda r: r[0].id)

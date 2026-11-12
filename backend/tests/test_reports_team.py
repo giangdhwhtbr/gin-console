@@ -1,6 +1,9 @@
+import time
+from collections.abc import Iterator
 from datetime import UTC, date, datetime
 from typing import Any
 
+import pytest
 from report_beads import closed, row, snap, usage
 
 from gin_console.reports.models import TeamReport
@@ -281,3 +284,32 @@ def test_reports_011_range() -> None:
     assert r.days[0].date == date(2026, 11, 2)
     assert r.days[-1].date == date(2026, 11, 27)
     assert r.days[0].closed == {"ann": 1}
+
+
+# REQ-REPORTS-008
+def test_reports_008_invalid_dates() -> None:
+    r = team([*standard(), ms("bad", "2026-13-45", "2026-12-31")])
+    assert [m.id for m in r.milestones] == ["m1", "m2", "m3"]
+    assert r.undated == 1
+    r = team([ms("k", "2026-11-02", "2026-11-27", kickoff="2026-02-30")])
+    assert r.milestones[0].status == "planned"
+
+
+@pytest.fixture
+def vietnam_time(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    monkeypatch.setenv("TZ", "Asia/Ho_Chi_Minh")
+    time.tzset()
+    yield
+    monkeypatch.undo()
+    time.tzset()
+
+
+# REQ-REPORTS-011
+@pytest.mark.skipif(not hasattr(time, "tzset"), reason="needs time.tzset")
+@pytest.mark.usefixtures("vietnam_time")
+def test_reports_011_close_date_is_local() -> None:
+    # Thursday 20:00 UTC is Friday 03:00 in UTC+7
+    beads = [closed("t1", "2026-11-05T20:00:00Z", parent="e1", assignee="ann")]
+    r = team([*standard(), *scoped("m2", "e1", beads)])
+    day = next(d for d in r.days if d.date == date(2026, 11, 6))
+    assert day.closed == {"ann": 1}
