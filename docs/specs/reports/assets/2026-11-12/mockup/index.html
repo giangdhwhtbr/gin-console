@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reports — Team tab (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app shell > Reports header (project) > tab bar with headlines > Team panel:
+   filters (milestone, member) > milestone line > KPI strip > status bar > activity chart > member KPI table > bead list.
+   Tokens are the console's own (frontend/src/index.css), as in docs/specs/reports/assets/mockup/reports-tabs.html. */
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --fg: #12161c; --muted: #eceff3; --muted-fg: #566072;
+  --border: #cfd5de; --grid: #e4e8ee; --ring: #12161c;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+  --open: #7d8695; --progress: #1d4ed8; --done: #0f766e; --blocked: #a3470a;
+  --warn: #a3470a; --warn-bg: #fdf1e7; --ok: #0f766e; --ok-bg: #e6f4f2; --bad: #b91c1c; --bad-bg: #fdecec;
+  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+:root[data-theme="dark"] {
+  --bg: #0e1217; --card: #161b22; --fg: #e7eaf0; --muted: #1d242d; --muted-fg: #9aa4b2;
+  --border: #2c343f; --grid: #222a33; --ring: #e7eaf0;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --open: #8b95a5; --progress: #93c5fd; --done: #2dd4bf; --blocked: #fbbf24;
+  --warn: #fbbf24; --warn-bg: #2b2210; --ok: #2dd4bf; --ok-bg: #0f2724; --bad: #f87171; --bad-bg: #2d1717; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.5 var(--font); }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+h1, h2 { margin: 0; text-wrap: balance; }
+h1 { font-size: 20px; font-weight: 600; }
+h2 { font-size: 15px; font-weight: 600; }
+p { margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+.dim { color: var(--muted-fg); }
+.small { font-size: 12.5px; }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+button, select, input { font: inherit; color: inherit; }
+
+/* mockup-only controls */
+.mock { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; padding: 8px 16px;
+  border-bottom: 1px dashed var(--border); background: var(--muted); font-size: 12.5px; color: var(--muted-fg); }
+.mock strong { color: var(--fg); font-weight: 500; }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--card); }
+.seg button { border: 0; background: none; padding: 4px 10px; cursor: pointer; font-size: 13px; display: inline-flex; gap: 6px; align-items: baseline; }
+.seg button + button { border-left: 1px solid var(--border); }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--fg); color: var(--bg); }
+.seg button .c { font-variant-numeric: tabular-nums; opacity: .75; font-size: 12px; }
+
+/* shell */
+.app { display: grid; grid-template-columns: 196px minmax(0, 1fr); min-height: 100vh; }
+.side { border-right: 1px solid var(--border); background: var(--card); padding: 16px 12px; display: flex; flex-direction: column; gap: 2px; }
+.brand { font-weight: 600; padding: 4px 10px 14px; }
+.nav { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 7px; text-decoration: none; color: var(--muted-fg); }
+.nav[aria-current="page"] { background: var(--muted); color: var(--fg); font-weight: 500; }
+main { min-width: 0; padding: 24px 28px 64px; display: flex; flex-direction: column; gap: 20px; max-width: 1240px; }
+@media (max-width: 767px) { .app { grid-template-columns: minmax(0, 1fr); } .side { display: none; } main { padding: 16px; } }
+
+.head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+.field { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted-fg); }
+select { border: 1px solid var(--border); background: var(--card); border-radius: 7px; padding: 5px 8px; color: var(--fg); max-width: 100%; }
+
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.tab { border: 0; background: none; cursor: pointer; text-align: left; padding: 8px 14px 10px; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; display: flex; flex-direction: column; gap: 1px; white-space: nowrap; border-radius: 6px 6px 0 0; }
+.tab:hover { background: var(--muted); }
+.tab .name { font-weight: 500; color: var(--muted-fg); display: inline-flex; gap: 6px; align-items: center; }
+.tab .line { font-size: 12.5px; color: var(--muted-fg); }
+.tab .line.warn { color: var(--warn); }
+.tab[aria-selected="true"] { border-bottom-color: var(--fg); }
+.tab[aria-selected="true"] .name { color: var(--fg); }
+.new { font-size: 10.5px; font-weight: 600; letter-spacing: .02em; padding: 0 6px; border-radius: 999px; background: var(--s1); color: #fff; }
+
+.panel { display: flex; flex-direction: column; gap: 28px; }
+.filters { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.ms-line { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: -14px; }
+.ms-line .t { font-size: 17px; font-weight: 600; }
+
+.chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 500; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.chip.warn { color: var(--warn); background: var(--warn-bg); }
+.chip.ok { color: var(--ok); background: var(--ok-bg); }
+.chip.bad { color: var(--bad); background: var(--bad-bg); }
+.chip.plain { color: var(--muted-fg); background: var(--muted); }
+.chip.prog { color: var(--progress); background: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex: none; }
+
+/* KPI strip */
+.strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; border: 1px solid var(--border); border-radius: 10px; background: var(--card); overflow: hidden; }
+.kpi { padding: 12px 16px; border-right: 1px solid var(--grid); border-bottom: 1px solid var(--grid); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.kpi .l { font-size: 12.5px; color: var(--muted-fg); display: flex; justify-content: space-between; gap: 6px; }
+.kpi .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; line-height: 1.25; }
+.kpi .v small { font-size: 13px; font-weight: 500; color: var(--muted-fg); }
+.kpi .s { font-size: 12.5px; color: var(--muted-fg); }
+.kpi .s.warn, .kpi .v.warn { color: var(--warn); }
+.kpi .s.ok { color: var(--ok); }
+
+.block { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.block-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; justify-content: space-between; }
+
+/* status bar */
+.sbar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--muted); gap: 2px; }
+.sbar span { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--muted-fg); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend b { color: var(--fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.hatch { background-image: repeating-linear-gradient(135deg, var(--blocked) 0 3px, transparent 3px 6px); }
+
+/* chart */
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--muted-fg); font-size: 11.5px; font-family: var(--font); }
+.chart text.ink { fill: var(--fg); font-weight: 500; }
+.tip { position: fixed; pointer-events: none; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; box-shadow: 0 4px 16px rgb(0 0 0 / .12); display: none; z-index: 10; min-width: 160px; }
+.tip .row { display: flex; justify-content: space-between; gap: 14px; }
+
+/* tables */
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { text-align: left; font-weight: 500; color: var(--muted-fg); font-size: 12.5px; padding: 6px 12px 6px 0; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th button { border: 0; background: none; padding: 0; cursor: pointer; color: inherit; font: inherit; display: inline-flex; gap: 3px; }
+th[aria-sort] button { color: var(--fg); }
+td { padding: 8px 12px 8px 0; border-bottom: 1px solid var(--grid); vertical-align: middle; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; }
+td.warn { color: var(--warn); }
+tr.sel td { background: var(--muted); }
+tr.member { cursor: pointer; }
+tr.member:hover td { background: var(--muted); }
+.who { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.title-cell { display: flex; flex-direction: column; min-width: 0; max-width: 46ch; }
+.title-cell a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meter { display: flex; align-items: center; gap: 8px; min-width: 110px; }
+.meter .track { flex: 1; height: 6px; border-radius: 3px; background: var(--muted); overflow: hidden; display: flex; }
+.meter .track span { height: 100%; }
+.more { align-self: flex-start; border: 1px solid var(--border); background: var(--card); border-radius: 7px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+.note { border: 1px dashed var(--border); border-radius: 10px; padding: 14px 16px; font-size: 13px; color: var(--muted-fg); }
+.note h2 { color: var(--fg); margin-bottom: 6px; font-size: 14px; }
+.note dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; }
+.note dt { color: var(--fg); font-weight: 500; }
+.note dd { margin: 0; }
+.empty { padding: 32px; border: 1px dashed var(--border); border-radius: 10px; text-align: center; color: var(--muted-fg); display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.empty code { font-family: var(--mono); font-size: 12.5px; background: var(--muted); padding: 3px 8px; border-radius: 6px; color: var(--fg); }
+.ghost { color: var(--muted-fg); }
+</style>
+</head>
+<body>
+<div class="mock" role="region" aria-label="Mockup controls">
+  <strong>Mockup controls (not part of the design)</strong>
+  <span>Project <span class="seg" id="m-project"><button aria-pressed="true" data-v="gin-console">gin-console</button><button aria-pressed="false" data-v="all">All projects</button><button aria-pressed="false" data-v="empty">No milestones</button></span></span>
+  <span>Theme <span class="seg" id="m-theme"><button aria-pressed="true" data-v="light">Light</button><button aria-pressed="false" data-v="dark">Dark</button></span></span>
+  <span>Today is <strong>Thu 12 Nov 2026</strong>; sample data</span>
+</div>
+<div class="app">
+  <nav class="side" aria-label="Main">
+    <div class="brand">gin-console</div>
+    <a class="nav" href="#">Projects</a><a class="nav" href="#">My tasks</a><a class="nav" href="#">Beads</a>
+    <a class="nav" href="#">Milestones</a><a class="nav" href="#">Sessions</a><a class="nav" href="#">Quota</a>
+    <a class="nav" href="#" aria-current="page">Reports</a>
+  </nav>
+  <main>
+    <div class="head">
+      <div><h1>Reports</h1><p class="small dim">Generated 12/11/2026, 14:05:12</p></div>
+      <label class="field">Project
+        <select id="project" aria-label="Project"><option value="all">All projects</option><option value="gin-console" selected>gin-console</option><option value="gin-workflow">gin-workflow</option><option value="qwikfone">qwikfone</option></select>
+      </label>
+    </div>
+    <div class="tabs" role="tablist" aria-label="Report" id="tabs"></div>
+    <div class="panel" role="tabpanel" id="panel"></div>
+  </main>
+</div>
+<div class="tip" id="tip" role="tooltip"></div>
+
+<script>
+// ---------- sample data ----------
+const TODAY = "2026-11-12";
+const MEMBERS = ["giangdhwhtbr", "linh.nguyen", "minh.tran", "bao.le"];
+const UNASSIGNED = "Unassigned";
+const MCOLOR = { "giangdhwhtbr": "var(--s1)", "linh.nguyen": "var(--s2)", "minh.tran": "var(--s3)", "bao.le": "var(--s7)", [UNASSIGNED]: "var(--open)" };
+const MILESTONES = [
+  { id: "gc-m3", title: "Team visibility — Nov 2026", status: "active", start: "2026-11-02", end: "2026-11-27" },
+  { id: "gc-m4", title: "Console 1.0 — Dec 2026", status: "planned", start: "2026-11-30", end: "2026-12-18" },
+  { id: "gc-m2", title: "Milestones & Gantt — Oct 2026", status: "closed", start: "2026-10-05", end: "2026-10-30", finish: "2026-11-03" },
+  { id: "gc-m1", title: "Reports — Sep 2026", status: "closed", start: "2026-09-07", end: "2026-10-02", finish: "2026-10-01" },
+];
+const EPICS = {
+  "gc-m3": ["Team tab in Reports", "Member filter on Beads", "Session cost per bead", "Quota alerts", "Bead page comments"],
+  "gc-m4": ["Windows installer", "Docs site", "Release notes page", "Settings page"],
+  "gc-m2": ["Milestone Gantt", "Forecast card", "Dependency graph", "Kick-start preview", "Lanes"],
+  "gc-m1": ["Reports API", "Reports tabs", "Data coverage", "Usage collection"],
+};
+const TASKS = ["Add endpoint", "Parse snapshot field", "Table component", "Empty state", "URL query sync", "Unit tests", "Fix sort order",
+  "Dark theme colors", "Mobile layout", "Loading state", "Error alert", "Cache key", "Refactor helper", "Docs update", "Fix timezone bug",
+  "Keyboard navigation", "Retry button", "Tooltip on focus", "Fix flaky test", "Rename field", "Chart axis ticks", "Copy command button"];
+
+function rng(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+const pick = (r, xs) => xs[Math.floor(r() * xs.length)];
+const D = (s) => new Date(s + "T00:00:00Z");
+const iso = (d) => d.toISOString().slice(0, 10);
+const addDays = (s, n) => { const d = D(s); d.setUTCDate(d.getUTCDate() + n); return iso(d); };
+const isWork = (s) => { const w = D(s).getUTCDay(); return w !== 0 && w !== 6; };
+function workdays(a, b) { const out = []; for (let d = a; d <= b; d = addDays(d, 1)) if (isWork(d)) out.push(d); return out; }
+const fmtDate = (s) => D(s).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
+const daysBetween = (a, b) => (D(b) - D(a)) / 86400000;
+
+function genBeads(m, seed) {
+  const r = rng(seed); const beads = []; let n = 1;
+  const epics = EPICS[m.id];
+  const scope = m.status === "planned" ? 38 : m.status === "closed" ? 58 : 64;
+  const lastDay = m.status === "closed" ? m.finish : TODAY;
+  const days = workdays(m.start, lastDay < m.end ? lastDay : m.end).concat(m.status === "closed" ? workdays(addDays(m.end, 1), m.finish) : []);
+  const weights = [0.42, 0.24, 0.2, 0.14];
+  const who = () => { const x = r(); let c = 0; for (let i = 0; i < 4; i++) { c += weights[i]; if (x < c) return MEMBERS[i]; } return MEMBERS[3]; };
+  for (let i = 0; i < scope; i++) {
+    const e = Math.floor(r() * epics.length);
+    const type = r() < 0.68 ? "task" : r() < 0.7 ? "bug" : pick(r, ["feature", "chore"]);
+    const prefix = m.id.replace("-", "");
+    const b = { id: `gin-console-${prefix}.${e + 1}.${n++}`, title: (type === "bug" ? "Bug: " : "") + pick(r, TASKS), type,
+      epic: { id: `gin-console-${prefix}.${e + 1}`, title: epics[e] }, priority: Math.floor(r() * 4),
+      created: addDays(m.start, -Math.floor(r() * 8) + (type === "bug" ? Math.floor(r() * 10) : 0)) };
+    let state;
+    if (m.status === "planned") state = r() < 0.08 ? "blocked" : "open";
+    else if (m.status === "closed") state = "closed";
+    else { const x = r(); state = x < 0.55 ? "closed" : x < 0.64 ? "in_progress" : x < 0.69 ? "blocked" : "open"; }
+    b.status = state;
+    if (state === "closed") {
+      // closes drift later through the milestone
+      const k = Math.min(days.length - 1, Math.floor(Math.pow(r(), 0.8) * days.length));
+      b.closed = days[k];
+      const cyc = +(0.2 + r() * r() * 5).toFixed(1);
+      b.started = addDays(b.closed, -Math.round(cyc)); b.cycle = cyc;
+      if (b.created > b.started) b.created = b.started;
+      b.assignee = r() < 0.05 ? null : who();
+      b.collected = r() < 0.85;
+      b.reopens = b.collected && r() < 0.12 ? 1 : 0; b.bugs = b.collected && r() < 0.07 ? 1 : 0;
+    } else if (state === "in_progress") {
+      b.assignee = who(); b.age = +(0.4 + r() * 5.8).toFixed(1);
+    } else {
+      b.assignee = m.status === "planned" ? (r() < 0.25 ? who() : null) : (r() < 0.45 ? null : who());
+    }
+    beads.push(b);
+  }
+  return beads;
+}
+const DATA = Object.fromEntries(MILESTONES.map((m, i) => [m.id, genBeads(m, 7 + i * 101)]));
+
+// ---------- KPI ----------
+const bucket = (b) => (b.status === "closed" ? "closed" : b.status === "in_progress" ? "in_progress" : "open");
+const memberOf = (b) => b.assignee ?? UNASSIGNED;
+const median = (xs) => { if (!xs.length) return null; const s = [...xs].sort((a, b) => a - b); const h = s.length / 2; return s.length % 2 ? s[Math.floor(h)] : (s[h - 1] + s[h]) / 2; };
+const pct = (x) => (x === null ? "—" : `${Math.round(x * 100)}%`);
+const days1 = (x) => (x === null ? "—" : `${x.toFixed(1)} d`);
+
+function clock(m) {
+  const all = workdays(m.start, m.end);
+  const until = m.status === "closed" ? m.finish : TODAY;
+  const elapsed = m.status === "planned" ? 0 : workdays(m.start, until < m.end ? until : m.end).length;
+  const left = m.status === "active" ? workdays(addDays(TODAY, 1), m.end).length : m.status === "planned" ? all.length : 0;
+  return { total: all.length, elapsed, left };
+}
+
+function kpis(m, beads) {
+  const c = clock(m);
+  const closed = beads.filter((b) => bucket(b) === "closed");
+  const prog = beads.filter((b) => bucket(b) === "in_progress");
+  const open = beads.filter((b) => bucket(b) === "open");
+  const last5 = workdays(m.start, m.status === "closed" ? m.finish : TODAY).slice(-5);
+  const pace = m.status === "planned" ? null : m.status === "closed"
+    ? closed.length / Math.max(1, workdays(m.start, m.finish).length)
+    : closed.filter((b) => last5.includes(b.closed)).length / 5;
+  const remaining = open.length + prog.length;
+  const needed = m.status === "active" ? remaining / Math.max(1, c.left) : m.status === "planned" ? beads.length / c.total : null;
+  const collected = closed.filter((b) => b.collected);
+  return {
+    scope: beads.length, closed: closed.length, prog: prog.length, open: open.length,
+    blocked: open.filter((b) => b.status === "blocked").length,
+    unclaimed: open.filter((b) => !b.assignee).length,
+    done: beads.length ? closed.length / beads.length : null,
+    pace, needed, remaining,
+    cycle: median(closed.map((b) => b.cycle)),
+    oldest: prog.length ? Math.max(...prog.map((b) => b.age)) : null,
+    onTime: closed.length ? closed.filter((b) => b.closed <= m.end).length / closed.length : null,
+    lateOpen: m.status !== "planned" && TODAY > m.end ? remaining : 0,
+    rework: collected.length ? collected.filter((b) => b.reopens + b.bugs > 0).length / collected.length : null,
+    reopens: closed.reduce((n, b) => n + (b.reopens || 0), 0), bugs: closed.reduce((n, b) => n + (b.bugs || 0), 0),
+    perWeek: pace === null ? null : pace * 5,
+  };
+}
+
+// ---------- state ----------
+const state = { project: "gin-console", tab: "team", milestone: "gc-m3", member: "all", status: "open", sort: null, shown: 15, theme: "light" };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function teamHeadline() {
+  if (state.project !== "gin-console") return { text: state.project === "all" ? "Pick a project" : "No milestones", warn: false };
+  const m = MILESTONES.find((x) => x.id === state.milestone); const k = kpis(m, DATA[m.id]);
+  if (m.status === "planned") return { text: `Starts ${fmtDate(m.start)} · ${k.scope} beads`, warn: false };
+  if (m.status === "closed") { const late = m.finish > m.end ? workdays(addDays(m.end, 1), m.finish).length : 0;
+    return { text: late ? `Finished ${late} d late` : "Finished on time", warn: late > 0 }; }
+  const behind = k.needed > k.pace;
+  return { text: `${k.closed} of ${k.scope} closed · ${behind ? "behind pace" : "on pace"}`, warn: behind };
+}
+
+function renderTabs() {
+  const h = teamHeadline();
+  const tabs = [["team", "Team", h.text, h.warn, true], ["delivery", "Delivery", "41 beads closed"], ["usage", "AI usage", "12.4M tokens, $38.20"], ["quality", "Quality", "9% rework"], ["coverage", "Data coverage", "5 gaps", true]];
+  document.getElementById("tabs").innerHTML = tabs.map(([v, name, line, warn, isNew]) =>
+    `<button class="tab" role="tab" aria-selected="${state.tab === v}" data-tab="${v}">
+      <span class="name">${name}${v === "team" ? ' <span class="new">NEW</span>' : ""}</span>
+      <span class="line ${warn && v !== "team" ? "warn" : ""} ${v === "team" && warn ? "warn" : ""}">${esc(line)}</span></button>`).join("");
+  document.querySelectorAll(".tab").forEach((t) => t.onclick = () => { state.tab = t.dataset.tab; render(); });
+}
+
+function milestoneSelect() {
+  const groups = [["active", "Active"], ["planned", "Planned"], ["closed", "Closed"]];
+  return `<label class="field">Milestone <select id="ms">${groups.map(([s, label]) => {
+    const ms = MILESTONES.filter((m) => m.status === s); if (!ms.length) return "";
+    return `<optgroup label="${label}">${ms.map((m) => `<option value="${m.id}" ${m.id === state.milestone ? "selected" : ""}>${esc(m.title)}</option>`).join("")}</optgroup>`;
+  }).join("")}</select></label>`;
+}
+
+function memberSelect(beads) {
+  const counts = {}; beads.forEach((b) => (counts[memberOf(b)] = (counts[memberOf(b)] || 0) + 1));
+  const names = MEMBERS.filter((x) => counts[x]).concat(counts[UNASSIGNED] ? [UNASSIGNED] : []);
+  return `<label class="field">Member <select id="member"><option value="all">All members (${names.length})</option>${names.map((x) =>
+    `<option value="${x}" ${x === state.member ? "selected" : ""}>${esc(x)} · ${counts[x]}</option>`).join("")}</select></label>`;
+}
+
+function kpiStrip(m, k, member) {
+  const c = clock(m);
+  const solo = member !== "all";
+  const cells = [];
+  cells.push(`<div class="kpi"><span class="l">Done</span><span class="v">${k.closed}<small> / ${k.scope}</small></span>
+    <span class="s">${pct(k.done)} of ${solo ? "assigned" : "scope"}</span></div>`);
+  cells.push(`<div class="kpi"><span class="l">In progress</span><span class="v">${k.prog}</span>
+    <span class="s ${k.oldest > 3 ? "warn" : ""}">${k.oldest === null ? "nothing started" : `oldest ${days1(k.oldest)}`}</span></div>`);
+  cells.push(`<div class="kpi"><span class="l">Open</span><span class="v">${k.open}</span>
+    <span class="s ${k.blocked ? "warn" : ""}">${k.blocked} blocked${solo ? "" : ` · ${k.unclaimed} unclaimed`}</span></div>`);
+  if (m.status === "active" && !solo) {
+    const behind = k.needed > k.pace;
+    cells.push(`<div class="kpi"><span class="l">Pace <span>last 5 days</span></span><span class="v ${behind ? "warn" : ""}">${k.pace.toFixed(1)}<small> / day</small></span>
+      <span class="s ${behind ? "warn" : "ok"}">needs ${k.needed.toFixed(1)} / day to end on ${fmtDate(m.end)}</span></div>`);
+  } else if (m.status === "planned" && !solo) {
+    cells.push(`<div class="kpi"><span class="l">Pace needed</span><span class="v">${k.needed.toFixed(1)}<small> / day</small></span>
+      <span class="s">${c.total} working days</span></div>`);
+  } else {
+    cells.push(`<div class="kpi"><span class="l">Throughput</span><span class="v">${k.perWeek === null ? "—" : k.perWeek.toFixed(1)}<small> / week</small></span>
+      <span class="s">${m.status === "closed" ? "over the milestone" : "last 5 working days"}</span></div>`);
+  }
+  cells.push(`<div class="kpi"><span class="l">Median cycle</span><span class="v">${days1(k.cycle)}</span><span class="s">start → close</span></div>`);
+  const late = k.onTime !== null && k.onTime < 1;
+  cells.push(`<div class="kpi"><span class="l">On time</span><span class="v ${late ? "warn" : ""}">${pct(k.onTime)}</span>
+    <span class="s ${k.lateOpen ? "warn" : ""}">${m.status === "planned" ? "nothing closed yet" : k.lateOpen ? `${k.lateOpen} still open after end` : `closed by ${fmtDate(m.end)}`}</span></div>`);
+  cells.push(`<div class="kpi"><span class="l">Rework</span><span class="v">${pct(k.rework)}</span>
+    <span class="s">${k.reopens} reopens · ${k.bugs} bugs later</span></div>`);
+  return `<div class="strip" aria-label="Key figures">${cells.join("")}</div>`;
+}
+
+function statusBar(k) {
+  const w = (n) => (k.scope ? (n / k.scope) * 100 : 0);
+  return `<div class="block"><div class="block-head"><h2>Scope by status</h2><span class="small dim">${k.scope} beads ${state.member === "all" ? "under the milestone's epics" : `assigned to ${esc(state.member)}`}</span></div>
+    <div class="sbar" role="img" aria-label="${k.closed} closed, ${k.prog} in progress, ${k.open - k.blocked} open, ${k.blocked} blocked">
+      <span style="width:${w(k.closed)}%;background:var(--done)"></span><span style="width:${w(k.prog)}%;background:var(--progress)"></span>
+      <span style="width:${w(k.open - k.blocked)}%;background:var(--open);opacity:.45"></span><span class="hatch" style="width:${w(k.blocked)}%"></span></div>
+    <div class="legend"><span><i class="dot" style="background:var(--done)"></i>Closed <b>${k.closed}</b></span>
+      <span><i class="dot" style="background:var(--progress)"></i>In progress <b>${k.prog}</b></span>
+      <span><i class="dot" style="background:var(--open);opacity:.45"></i>Open <b>${k.open - k.blocked}</b></span>
+      <span><i class="dot hatch"></i>Blocked <b>${k.blocked}</b></span></div></div>`;
+}
+
+function activityChart(m, beads) {
+  const until = m.status === "closed" ? (m.finish > m.end ? m.finish : m.end) : m.end;
+  const days = workdays(m.start, until);
+  const closed = beads.filter((b) => bucket(b) === "closed");
+  const series = MEMBERS.concat([UNASSIGNED]);
+  const rows = days.map((d) => { const r = { d }; series.forEach((s) => (r[s] = closed.filter((b) => b.closed === d && memberOf(b) === s).length)); return r; });
+  const max = Math.max(4, ...rows.map((r) => series.reduce((n, s) => n + r[s], 0)));
+  const W = 880, H = 190, L = 28, B = 22, T = 8, cw = (W - L) / days.length, bw = Math.max(6, cw * 0.62);
+  const y = (v) => T + (H - T - B) * (1 - v / max);
+  let svg = "";
+  for (let g = 0; g <= max; g += Math.ceil(max / 4)) svg += `<line x1="${L}" x2="${W}" y1="${y(g)}" y2="${y(g)}" stroke="var(--grid)"/><text x="${L - 6}" y="${y(g) + 4}" text-anchor="end">${g}</text>`;
+  rows.forEach((r, i) => {
+    const x = L + i * cw + (cw - bw) / 2; let acc = 0;
+    const future = m.status === "active" && r.d > TODAY;
+    series.forEach((s) => {
+      if (!r[s]) return;
+      const dim = state.member !== "all" && state.member !== s;
+      svg += `<rect x="${x}" y="${y(acc + r[s])}" width="${bw}" height="${y(acc) - y(acc + r[s]) - 1}" fill="${MCOLOR[s]}" opacity="${dim ? 0.18 : 1}" rx="1.5"/>`;
+      acc += r[s];
+    });
+    if (future) svg += `<rect x="${x}" y="${y(0) - 2}" width="${bw}" height="2" fill="var(--grid)"/>`;
+    if (D(r.d).getUTCDay() === 1 || i === 0) svg += `<text x="${x + bw / 2}" y="${H - 5}" text-anchor="middle">${fmtDate(r.d)}</text>`;
+    svg += `<rect class="hit" data-i="${i}" x="${L + i * cw}" y="${T}" width="${cw}" height="${H - T - B}" fill="transparent" tabindex="0"/>`;
+  });
+  const mark = (d, label) => { const i = days.indexOf(d); if (i < 0) return ""; const x = L + i * cw + cw / 2 + (label.startsWith("End") ? cw / 2 : 0);
+    return `<line x1="${x}" x2="${x}" y1="${T}" y2="${H - B}" stroke="var(--fg)" stroke-dasharray="3 3" opacity=".55"/><text class="ink" x="${x + 4}" y="${T + 10}">${label}</text>`; };
+  if (m.status === "active") svg += mark(TODAY, "Today");
+  if (m.status === "closed" && m.finish > m.end) svg += mark(m.end, `End ${fmtDate(m.end)}`);
+  const legend = series.filter((s) => closed.some((b) => memberOf(b) === s)).map((s) => `<span><i class="dot" style="background:${MCOLOR[s]}"></i>${esc(s)}</span>`).join("");
+  const title = m.status === "planned" ? "" : `<div class="block"><div class="block-head"><h2>Closed per working day</h2><div class="legend">${legend}</div></div>
+    <div class="chart" id="act"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Beads closed per working day, stacked by member">${svg}</svg></div></div>`;
+  window.__rows = rows; window.__series = series;
+  return title;
+}
+
+function memberTable(m, beads) {
+  const names = MEMBERS.filter((x) => beads.some((b) => memberOf(b) === x)).concat(beads.some((b) => !b.assignee) ? [UNASSIGNED] : []);
+  const rows = names.map((name) => {
+    const mine = beads.filter((b) => memberOf(b) === name); const k = kpis(m, mine);
+    const sel = state.member === name;
+    const w = (n) => (k.scope ? (n / k.scope) * 100 : 0);
+    const un = name === UNASSIGNED;
+    return `<tr class="member ${sel ? "sel" : ""}" data-member="${esc(name)}" tabindex="0" aria-selected="${sel}">
+      <td><span class="who"><i class="dot" style="background:${MCOLOR[name]}"></i>${un ? '<span class="dim">Unassigned</span>' : esc(name)}</span></td>
+      <td class="r">${k.scope}</td><td class="r">${k.closed}</td><td class="r">${k.prog}</td><td class="r">${k.open}${k.blocked ? ` <span class="small" style="color:var(--warn)">(${k.blocked} blocked)</span>` : ""}</td>
+      <td><div class="meter"><div class="track"><span style="width:${w(k.closed)}%;background:var(--done)"></span><span style="width:${w(k.prog)}%;background:var(--progress)"></span></div><span class="num small">${pct(k.done)}</span></div></td>
+      <td class="r">${k.perWeek === null ? "—" : k.perWeek.toFixed(1)}</td>
+      <td class="r">${days1(k.cycle)}</td>
+      <td class="r ${k.oldest > 3 ? "warn" : ""}">${days1(k.oldest)}</td>
+      <td class="r">${pct(k.onTime)}</td>
+      <td class="r">${un ? "—" : pct(k.rework)}</td></tr>`;
+  });
+  return `<div class="block"><div class="block-head"><h2>Team KPI</h2><span class="small dim">Click a row to filter by that member</span></div>
+    <div class="scroll"><table><thead><tr><th>Member</th><th class="r">Assigned</th><th class="r">Closed</th><th class="r">In progress</th><th class="r">Open</th><th>Done</th>
+    <th class="r" title="Beads closed per 5 working days">Per week</th><th class="r">Median cycle</th><th class="r">Oldest in progress</th><th class="r">On time</th><th class="r">Rework</th></tr></thead>
+    <tbody>${rows.join("")}</tbody></table></div></div>`;
+}
+
+const COLS = {
+  open: [["Bead", (b) => b.id], ["Epic", (b) => b.epic.title], ["Type", (b) => b.type], ["Assignee", (b) => memberOf(b)], ["Priority", (b) => b.priority], ["Status", (b) => b.status], ["Age", (b) => daysBetween(b.created, TODAY)]],
+  in_progress: [["Bead", (b) => b.id], ["Epic", (b) => b.epic.title], ["Type", (b) => b.type], ["Assignee", (b) => memberOf(b)], ["In progress for", (b) => b.age]],
+  closed: [["Bead", (b) => b.id], ["Epic", (b) => b.epic.title], ["Type", (b) => b.type], ["Assignee", (b) => memberOf(b)], ["Closed", (b) => b.closed], ["Cycle", (b) => b.cycle], ["On time", (b) => b.closed], ["Rework", (b) => (b.reopens || 0) + (b.bugs || 0)]],
+  all: [["Bead", (b) => b.id], ["Epic", (b) => b.epic.title], ["Type", (b) => b.type], ["Assignee", (b) => memberOf(b)], ["Status", (b) => b.status]],
+};
+const DEFAULT_SORT = { open: ["Priority", 1], in_progress: ["In progress for", -1], closed: ["Closed", -1], all: ["Status", 1] };
+const STATUS_CHIP = { open: '<span class="chip plain">Open</span>', blocked: '<span class="chip warn">Blocked</span>', in_progress: '<span class="chip prog">In progress</span>', closed: '<span class="chip ok">Closed</span>' };
+
+function cell(col, b, m) {
+  switch (col) {
+    case "Bead": return `<td><div class="title-cell"><a href="#">${esc(b.title)}</a><span class="mono dim">${esc(b.id)}</span></div></td>`;
+    case "Epic": return `<td class="small"><a href="#">${esc(b.epic.title)}</a></td>`;
+    case "Type": return `<td class="small dim">${b.type}</td>`;
+    case "Assignee": return `<td class="small">${b.assignee ? `<span class="who"><i class="dot" style="background:${MCOLOR[b.assignee]}"></i>${esc(b.assignee)}</span>` : '<span class="dim">Unassigned</span>'}</td>`;
+    case "Priority": return `<td class="small mono">P${b.priority}</td>`;
+    case "Status": return `<td>${STATUS_CHIP[b.status]}</td>`;
+    case "Age": return `<td class="r">${days1(daysBetween(b.created, TODAY))}</td>`;
+    case "In progress for": return `<td class="r ${b.age > 3 ? "warn" : ""}">${days1(b.age)}</td>`;
+    case "Closed": return `<td class="r small">${fmtDate(b.closed)}</td>`;
+    case "Cycle": return `<td class="r">${days1(b.cycle)}</td>`;
+    case "On time": return `<td>${b.closed <= m.end ? '<span class="chip ok">On time</span>' : `<span class="chip warn">${workdays(addDays(m.end, 1), b.closed).length} d late</span>`}</td>`;
+    case "Rework": return `<td class="r">${b.collected ? (b.reopens || 0) + (b.bugs || 0) : '<span class="dim" title="ai_usage not collected">—</span>'}</td>`;
+  }
+}
+
+function beadList(m, beads) {
+  const counts = { open: 0, in_progress: 0, closed: 0 }; beads.forEach((b) => counts[bucket(b)]++);
+  const st = state.status;
+  const rows = st === "all" ? [...beads] : beads.filter((b) => bucket(b) === st);
+  const cols = COLS[st];
+  const [sk, sd] = state.sort ?? DEFAULT_SORT[st];
+  const f = (cols.find((c) => c[0] === sk) ?? cols[0])[1];
+  rows.sort((a, b) => (f(a) > f(b) ? 1 : f(a) < f(b) ? -1 : 0) * sd);
+  const shown = rows.slice(0, state.shown);
+  const seg = [["open", "Open", counts.open], ["in_progress", "In progress", counts.in_progress], ["closed", "Closed", counts.closed], ["all", "All", beads.length]]
+    .map(([v, l, c]) => `<button role="tab" aria-selected="${st === v}" data-st="${v}">${l} <span class="c">${c}</span></button>`).join("");
+  const who = state.member === "all" ? "" : ` · ${esc(state.member)}`;
+  return `<div class="block"><div class="block-head"><h2>Beads${who}</h2><span class="seg" role="tablist" aria-label="Status">${seg}</span></div>
+    ${rows.length === 0 ? `<p class="dim">No ${st === "all" ? "" : st.replace("_", " ") + " "}beads${state.member === "all" ? "" : " for " + esc(state.member)} in this milestone.</p>` :
+    `<div class="scroll"><table><thead><tr>${cols.map(([c]) => { const s = c === sk ? (sd > 0 ? "ascending" : "descending") : null;
+      return `<th class="${["Age", "In progress for", "Cycle", "Rework", "Closed"].includes(c) ? "r" : ""}" ${s ? `aria-sort="${s}"` : ""}><button data-sort="${c}">${c}${s ? (sd > 0 ? " ↑" : " ↓") : ""}</button></th>`; }).join("")}</tr></thead>
+    <tbody>${shown.map((b) => `<tr>${cols.map(([c]) => cell(c, b, m)).join("")}</tr>`).join("")}</tbody></table></div>
+    ${rows.length > shown.length ? `<button class="more" id="more">Show ${Math.min(15, rows.length - shown.length)} more of ${rows.length - shown.length}</button>` : `<span class="small dim">${rows.length} beads</span>`}`}</div>`;
+}
+
+function definitions() {
+  return `<div class="note"><h2>Mockup note: KPI definitions</h2><dl>
+    <dt>Scope</dt><dd>Non-epic beads (task, bug, feature, chore) anywhere under the milestone's epics, whatever their status.</dd>
+    <dt>Open / In progress / Closed</dt><dd><code>open</code>, <code>blocked</code> and <code>deferred</code> count as Open; <code>in_progress</code> as In progress; <code>closed</code> as Closed.</dd>
+    <dt>Member</dt><dd>The bead's <code>assignee</code>; beads without one fall under Unassigned (open ones are "unclaimed").</dd>
+    <dt>Pace</dt><dd>Beads closed in the last 5 working days ÷ 5. Pace needed = (open + in progress) ÷ working days left until the end date.</dd>
+    <dt>Per week</dt><dd>Pace × 5; for a closed milestone, closed beads ÷ its working days × 5.</dd>
+    <dt>Median cycle</dt><dd>Median of <code>started_at → closed_at</code> over the closed beads (as REQ-REPORTS-004).</dd>
+    <dt>On time</dt><dd>Share of closed beads closed on or before the milestone's end date; after the end date, beads still open are counted as late.</dd>
+    <dt>Rework</dt><dd>Share of closed beads with collected <code>ai_usage</code> that had reopens or bugs found later (as REQ-REPORTS-005).</dd>
+  </dl></div>`;
+}
+
+function renderTeam(panel) {
+  if (state.project === "all") {
+    panel.innerHTML = `<div class="empty"><strong style="color:var(--fg)">Pick a project to see its team</strong><span>Milestones belong to one project. Choose a project in the header; the other tabs keep showing All projects.</span></div>`;
+    return;
+  }
+  if (state.project === "empty") {
+    panel.innerHTML = `<div class="empty"><strong style="color:var(--fg)">qwikfone has no milestones yet</strong><span>A milestone groups epics with a start and end date; the Team tab measures the beads under them.</span><code>gin-workflow milestone create</code></div>`;
+    return;
+  }
+  const m = MILESTONES.find((x) => x.id === state.milestone);
+  const all = DATA[m.id];
+  const mine = state.member === "all" ? all : all.filter((b) => memberOf(b) === state.member);
+  const k = kpis(m, mine);
+  const c = clock(m);
+  const chip = m.status === "active" ? '<span class="chip prog">Active</span>' : m.status === "planned" ? '<span class="chip plain">Planned</span>'
+    : m.finish > m.end ? `<span class="chip warn">Closed · ${workdays(addDays(m.end, 1), m.finish).length} d late</span>` : '<span class="chip ok">Closed · on time</span>';
+  const when = m.status === "active" ? `working day ${c.elapsed} of ${c.total} · ${c.left} left` : m.status === "planned" ? `starts in ${workdays(addDays(TODAY, 1), m.start).length} working days · ${c.total} working days` : `finished ${fmtDate(m.finish)}`;
+  panel.innerHTML = `
+    <div class="filters">${milestoneSelect()}${memberSelect(all)}
+      ${state.member !== "all" ? `<button class="more" id="clear">Clear member</button>` : ""}
+      <a href="#" class="small">Open Gantt ↗</a></div>
+    <div class="ms-line"><span class="t">${esc(m.title)}</span>${chip}<span class="small dim">${fmtDate(m.start)} – ${fmtDate(m.end)} · ${when}</span></div>
+    ${kpiStrip(m, k, state.member)}
+    ${statusBar(k)}
+    ${activityChart(m, all)}
+    ${memberTable(m, all)}
+    ${beadList(m, mine)}
+    ${definitions()}`;
+  document.getElementById("ms").onchange = (e) => { state.milestone = e.target.value; state.member = "all"; state.sort = null; state.shown = 15; state.status = MILESTONES.find((x) => x.id === state.milestone).status === "closed" ? "closed" : "open"; render(); };
+  document.getElementById("member").onchange = (e) => { state.member = e.target.value; state.shown = 15; render(); };
+  const clear = document.getElementById("clear"); if (clear) clear.onclick = () => { state.member = "all"; render(); };
+  panel.querySelectorAll("tr.member").forEach((tr) => { const go = () => { state.member = state.member === tr.dataset.member ? "all" : tr.dataset.member; state.shown = 15; render(); };
+    tr.onclick = go; tr.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } }; });
+  panel.querySelectorAll("[data-st]").forEach((b) => (b.onclick = () => { state.status = b.dataset.st; state.sort = null; state.shown = 15; render(); }));
+  panel.querySelectorAll("[data-sort]").forEach((b) => (b.onclick = () => { const [sk, sd] = state.sort ?? DEFAULT_SORT[state.status]; state.sort = [b.dataset.sort, sk === b.dataset.sort ? -sd : 1]; render(); }));
+  const more = document.getElementById("more"); if (more) more.onclick = () => { state.shown += 15; render(); };
+  // chart tooltip
+  const tip = document.getElementById("tip");
+  panel.querySelectorAll(".hit").forEach((h) => {
+    const show = (x, y) => { const r = window.__rows[+h.dataset.i]; const tot = window.__series.reduce((n, s) => n + r[s], 0);
+      tip.innerHTML = `<div style="font-weight:600;margin-bottom:4px">${fmtDate(r.d)}</div>` + window.__series.filter((s) => r[s]).map((s) => `<div class="row"><span><i class="dot" style="background:${MCOLOR[s]}"></i> ${esc(s)}</span><b>${r[s]}</b></div>`).join("") + `<div class="row dim"><span>Total closed</span><b>${tot}</b></div>`;
+      tip.style.display = "block"; tip.style.left = Math.min(x + 12, innerWidth - 200) + "px"; tip.style.top = y + 12 + "px"; };
+    h.onmousemove = (e) => show(e.clientX, e.clientY); h.onmouseleave = () => (tip.style.display = "none");
+    h.onfocus = () => { const b = h.getBoundingClientRect(); show(b.right, b.top); }; h.onblur = () => (tip.style.display = "none");
+  });
+}
+
+function renderDelivery(panel) {
+  panel.innerHTML = `<div class="filters"><span class="seg"><button aria-pressed="false">7 days</button><button aria-pressed="true">30 days</button><button aria-pressed="false">90 days</button></span>
+    <span class="small dim">Beads closed in the last 30 days, or the epics of a sprint</span></div>
+    <div class="note"><h2>Delivery tab after this change</h2>Unchanged: figures (closed, median cycle, median lead), closed per week, cycle and lead time, estimate and actual.<br>
+    <strong style="color:var(--fg)">Removed:</strong> "Oldest in progress" and "In progress by member" (and the "In progress now" figure) — work in progress now lives in the Team tab, per milestone and member.</div>`;
+}
+
+function render() {
+  document.documentElement.dataset.theme = state.theme;
+  renderTabs();
+  const panel = document.getElementById("panel");
+  if (state.tab === "team") renderTeam(panel);
+  else if (state.tab === "delivery") renderDelivery(panel);
+  else panel.innerHTML = `<p class="dim">Unchanged by this design.</p>`;
+}
+
+function wireSeg(id, key, after) {
+  document.querySelectorAll(`#${id} button`).forEach((b) => (b.onclick = () => {
+    document.querySelectorAll(`#${id} button`).forEach((x) => x.setAttribute("aria-pressed", x === b));
+    state[key] = b.dataset.v; after && after(); render();
+  }));
+}
+wireSeg("m-project", "project", () => { document.getElementById("project").value = state.project === "all" ? "all" : state.project === "empty" ? "qwikfone" : "gin-console"; });
+wireSeg("m-theme", "theme");
+document.getElementById("project").onchange = (e) => { state.project = e.target.value === "all" ? "all" : e.target.value === "gin-console" ? "gin-console" : "empty"; render(); };
+render();
+</script>
+</body>
+</html>

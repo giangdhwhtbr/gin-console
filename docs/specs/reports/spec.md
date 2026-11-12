@@ -144,3 +144,9 @@ IF `bd` fails in the selected project as in REQ-BEADS-005, THEN the server SHALL
 - GIVEN `ann` closed a bead of 100 tokens in `alpha` and one of 200 in `beta`
 - WHEN a client requests `/api/reports?project=all`
 - THEN one member row `ann` holds 2 beads and 300 tokens
+
+## Diagrams
+- [Team tab](diagrams/team-tab-activity.md)
+
+## Use Cases
+- [Review the team in a milestone](use-cases/review-team-in-milestone.md)
