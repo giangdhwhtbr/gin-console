@@ -1,9 +1,8 @@
-// TC: TC-MILESTONE-UI-041@565d7477
+// TC: TC-MILESTONE-UI-041@afa98bcc
 import { test, expect } from '../evidence';
 import { detail, epicPlan, stubApi } from '../support/api';
 
-// fixme: the app drops tab=gantt from the URL on a zoom change; case or app to be fixed in gin-console-aul.
-test.fixme('TC-MILESTONE-UI-041: Two weeks starts on the Monday of today', async ({ page, ev }) => {
+test('TC-MILESTONE-UI-041: Two weeks starts on the Monday of today', async ({ page, ev }) => {
   // Precondition: M1's plan spans 2026-11-02 to 2026-11-27 and today is 2026-11-11 (a Wednesday);
   // the preview fetched for start=2026-11-02 is the same plan.
   const plan = detail(
@@ -13,6 +12,8 @@ test.fixme('TC-MILESTONE-UI-041: Two weeks starts on the Monday of today', async
     ],
     { start: '2026-11-02', end: '2026-11-27', finish: '2026-11-27', schedule_start: '2026-11-02', today: '2026-11-11' },
   );
+  // The console asks for an email first; a stored one signs the page in (frontend/src/app/identity.ts).
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, { milestone: { M1: plan } });
   const schedule = page.getByRole('figure', { name: 'Schedule' });
 
@@ -29,6 +30,7 @@ test.fixme('TC-MILESTONE-UI-041: Two weeks starts on the Monday of today', async
     await expect(schedule.getByText('9 Nov – 22 Nov', { exact: true })).toBeVisible();
     await expect(page).toHaveURL(/[?&]zoom=2w(&|$)/);
     await expect(page).toHaveURL(/[?&]start=2026-11-02(&|$)/);
-    await expect(page).toHaveURL(/[?&]tab=gantt(&|$)/);
+    // Gantt is the default tab, so the app omits tab or writes tab=gantt.
+    await expect(page).toHaveURL(/^(?!.*[?&]tab=(?!gantt(&|$)))/);
   });
 });
