@@ -699,7 +699,7 @@ Steps:
 5. Commit: `git commit -m "test(qa): cases for the Team tab (gin-console-slc)"`
 
 ### Track 5: Check on the Tailscale deploy
-- **Dependencies**: Track 1, Track 2, Track 3, Track 4
+- **Dependencies**: Track 1, Track 2, Track 3, Track 4, Track 6
 - **Requirements**: REQ-REPORTS-012, REQ-REPORTS-013, REQ-REPORTS-014, REQ-REPORTS-015, REQ-REPORTS-016, REQ-UI-095
 - **Files**:
   - Modify `docs/changes/gin-console-slc-team-tab/05-tests.md` (TC-1 result)
@@ -729,6 +729,31 @@ TC-1 (manual), as in `05-tests.md`:
 - In light, dark and at 400 px wide, the layout and wording match the mockup.
 - Pressing a member row filters the figures, the chart highlight and the list.
 - `pgrep -fa "bd \|gin "` shows nothing started by opening the tab after a Refresh.
+
+### Track 6: Age sort puts the oldest first when descending
+- **Dependencies**: none
+- **Requirements**: REQ-REPORTS-016
+- **Files**:
+  - Modify `frontend/src/features/reports/team/beadSort.ts` (Age sorts by `ageOf`, not `-ageOf`)
+  - Test `frontend/src/features/reports/team/beadSort.test.ts`
+  - Test `frontend/src/features/reports/team/BeadTable.test.tsx` (REQ-REPORTS-016 sort scenario)
+  - Modify `qa/cases/reports/TC-REPORTS-039-sort.e2e.md` (Expected: oldest first; re-pin)
+- **Provider role**: `frontend`
+- **Model:** `sonnet`
+- **Effort:** `low`
+- **Why:** a one-line sort key change with its tests and QA case, after the user approved correcting the REQ-REPORTS-016 sort scenario on 2026-11-12 (it read "descending, oldest last").
+- **Acceptance criteria**:
+  - Pressing Age once sorts ascending (newest first); pressing it again gives `aria-sort="descending"` with the oldest bead first, tested with REQ-REPORTS-016 in the name.
+  - `gin-qa cases check --change gin-console-slc` prints `ok`.
+  - `pnpm -C frontend test --run`, `typecheck`, `lint` and `build` pass.
+- **Estimated complexity**: low
+
+Steps:
+
+1. In `BeadTable.test.tsx`, change the REQ-REPORTS-016 sort test: after two presses on Age, `aria-sort="descending"` and the first row is the oldest bead. In `beadSort.test.ts`, sorting by `age` with `dir` 1 puts the newest first. Run `pnpm -C frontend test --run src/features/reports/team`; expect failures.
+2. In `beadSort.ts`, sort Age by `ageOf(bead, today)` and drop the comment about the creation-date ordering. Run the tests; expect them to pass.
+3. Update `TC-REPORTS-039-sort.e2e.md` to the corrected scenario, run `gin-qa cases pin TC-REPORTS-039` if asked, and `gin-qa cases check --change gin-console-slc` until `ok`.
+4. Run the full frontend checks, then commit: `git commit -m "fix(reports): Age descending puts the oldest bead first (gin-console-slc)"`
 
 ## Integration
 - **Branch**: `feat/gin-console-slc-team-tab`

@@ -291,7 +291,7 @@ The Team tab SHALL show the scope beads of the selected member, or of every memb
 In every list:
 - Bead shows the title linking to the bead page, with the id under it.
 - Epic links to the epic's bead page.
-- Pressing a column header sorts by that column, and pressing it again reverses the order. The header is marked with `aria-sort`.
+- Pressing a column header sorts by that column, ascending first, and pressing it again reverses the order. The header is marked with `aria-sort`. Age sorts by its number of days, so descending puts the oldest bead first.
 - The list shows 15 rows, then a "Show 15 more" control while more remain.
 - An empty list says "No <status> beads in this milestone", adding " for <member>" when one is selected.
 Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-closed.png`
@@ -314,7 +314,7 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-closed.pn
 #### Scenario: sort
 - GIVEN the Open list sorted by priority
 - WHEN the user presses the Age header twice
-- THEN the rows are sorted by age, oldest last, and the header has `aria-sort="descending"`
+- THEN the rows are sorted by age, oldest first, and the header has `aria-sort="descending"`
 
 ### REQ-REPORTS-017: Team tab states
 The Team tab SHALL handle these states:
