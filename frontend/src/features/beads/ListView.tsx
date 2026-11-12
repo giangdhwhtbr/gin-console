@@ -6,6 +6,7 @@ import type { BeadSummary } from "./api";
 import { BeadDetailPage } from "./BeadDetailPage";
 import { filterBeads, type BeadFilters } from "./filters";
 import { COLUMNS, ListRow } from "./ListRow";
+import type { MilestoneInEffect } from "./milestoneChoice";
 import { getReturn, rememberOpen } from "./returnState";
 import { SIDE_PANEL } from "./side-panel";
 import { allBranches, ancestorsOf, keepSet, treeIndex, treeRows } from "./tree";
@@ -16,17 +17,21 @@ export function ListView({
   project,
   beads,
   filters,
+  milestone = "all",
+  closedMilestone = false,
   onChange,
 }: {
   project: string;
   beads: readonly BeadSummary[];
   filters: BeadFilters;
+  milestone?: MilestoneInEffect;
+  closedMilestone?: boolean;
   onChange: (next: BeadFilters) => void;
 }) {
   const wide = useWide();
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(getReturn().open[project] ?? []));
   const base = beads.filter(
-    (b) => filters.closed || (filters.sprint !== "" && filters.sprint !== "none") || b.status !== "closed",
+    (b) => filters.closed || closedMilestone || (filters.sprint !== "" && filters.sprint !== "none") || b.status !== "closed",
   );
   const index = treeIndex(base);
   const filtering =
@@ -36,9 +41,10 @@ export function ListView({
     filters.label.length > 0 ||
     filters.type !== "" ||
     filters.assignee.length > 0 ||
-    filters.sprint !== "";
+    filters.sprint !== "" ||
+    milestone !== "all";
   const keep = filtering
-    ? keepSet(index, new Set(filterBeads(beads, filters).map((b) => b.id)))
+    ? keepSet(index, new Set(filterBeads(beads, { ...filters, closed: filters.closed || closedMilestone }, milestone).map((b) => b.id)))
     : null;
   // a branch is open when the user opened it, when it leads to a match, or when it holds the selection
   const shownOpen = new Set<string>([

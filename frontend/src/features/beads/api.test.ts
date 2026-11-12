@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BeadNotFoundError, fetchBead, fetchBeads, fetchComments } from "./api";
+import { BeadNotFoundError, fetchBead, fetchBeads, fetchComments, fetchMilestones } from "./api";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -24,6 +24,7 @@ const sampleSummary = {
   blocked: false,
   created_by: null,
   blocked_by: [],
+  milestone: null,
 };
 
 const sampleDetail = {
@@ -161,6 +162,41 @@ describe("api", () => {
     const withString = { ...sampleSummary, closed_at: "2026-10-15T00:00:00Z" };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([withString]))));
     await expect(fetchBeads("proj", false)).resolves.toEqual([withString]);
+  });
+
+  // REQ-UI-104
+  it("REQ-UI-104 reads a bead milestone, and a missing one as null", async () => {
+    const withMilestone = { ...sampleSummary, milestone: "m2" };
+    const old = Object.fromEntries(Object.entries(sampleSummary).filter(([key]) => key !== "milestone"));
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([withMilestone, old]))));
+    await expect(fetchBeads("proj", false)).resolves.toEqual([withMilestone, sampleSummary]);
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleSummary, milestone: 5 }]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow(/unexpected response/);
+  });
+
+  // REQ-UI-104
+  it("REQ-UI-104 fetchMilestones requests the endpoint and checks the shape", async () => {
+    const body = {
+      milestones: [{ id: "m1", title: "One", status: "active", start: "2026-10-01", end: null }],
+      current: "m1",
+    };
+    const fetchMock = vi.fn(() => Promise.resolve(json(body)));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(fetchMilestones("a b")).resolves.toEqual(body);
+    expect(fetchMock).toHaveBeenCalledWith("/api/beads/milestones?project=a%20b");
+
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ current: null }))));
+    await expect(fetchMilestones("p")).rejects.toThrow(/unexpected response/);
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ milestones: [{ id: "m" }], current: null }))));
+    await expect(fetchMilestones("p")).rejects.toThrow(/unexpected response/);
+  });
+
+  // REQ-UI-104
+  it("REQ-UI-104 fetchMilestones maps 404 and 502", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({}, 404))));
+    await expect(fetchMilestones("p")).rejects.toThrow(/not found/i);
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ error: "bd failed" }, 502))));
+    await expect(fetchMilestones("p")).rejects.toThrow("bd failed");
   });
 
   // REQ-UI-029: 502 with error body

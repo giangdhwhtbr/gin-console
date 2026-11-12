@@ -20,7 +20,17 @@ export type BeadSummary = {
   created_by: string | null;
   blocked_by: string[];
   closed_at: string | null;
+  milestone: string | null;
 };
+export type MilestoneStatus = "active" | "scheduled" | "planned" | "closed";
+export type MilestoneOption = {
+  id: string;
+  title: string;
+  status: MilestoneStatus;
+  start: string | null;
+  end: string | null;
+};
+export type ProjectMilestones = { milestones: MilestoneOption[]; current: string | null };
 export type Relation = { id: string; title: string; status: string; type: "blocks" | "parent-child" | "discovered-from" };
 export type BeadDetail = BeadSummary & {
   description: string | null;
@@ -38,6 +48,7 @@ export type Comment = { id: string; author: string; text: string; created_at: st
 export class BeadNotFoundError extends Error {}
 
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
+const isStringOrUndefined = (value: unknown) => value === undefined || isStringOrNull(value);
 const isStringArray = (value: unknown) => Array.isArray(value) && value.every(isString);
 
 function isSummary(value: unknown): value is BeadSummary {
@@ -45,6 +56,7 @@ function isSummary(value: unknown): value is BeadSummary {
     isObject(value) &&
     ["id", "title", "status", "issue_type", "created_at", "updated_at"].every((k) => isString(field(value, k))) &&
     ["owner", "assignee", "parent", "closed_at", "created_by"].every((k) => isStringOrNull(field(value, k))) &&
+    isStringOrUndefined(field(value, "milestone")) &&
     ["priority", "dependency_count", "dependent_count", "comment_count"].every((k) =>
       isFiniteNumber(field(value, k)),
     ) &&
@@ -53,6 +65,26 @@ function isSummary(value: unknown): value is BeadSummary {
     isStringArray(field(value, "blocked_by"))
   );
 }
+
+const MILESTONE_STATUSES: readonly unknown[] = ["active", "scheduled", "planned", "closed"];
+
+function isMilestoneOption(value: unknown): value is MilestoneOption {
+  return (
+    isObject(value) &&
+    ["id", "title"].every((k) => isString(field(value, k))) &&
+    MILESTONE_STATUSES.includes(field(value, "status")) &&
+    ["start", "end"].every((k) => isStringOrNull(field(value, k)))
+  );
+}
+
+function isProjectMilestones(value: unknown): value is ProjectMilestones {
+  if (!isObject(value)) return false;
+  const milestones = field(value, "milestones");
+  return Array.isArray(milestones) && milestones.every(isMilestoneOption) && isStringOrNull(field(value, "current"));
+}
+
+/** An answer from before `milestone` existed has no such key; it reads as no milestone. */
+const withMilestone = <T extends BeadSummary>(bead: T): T => ({ ...bead, milestone: bead.milestone ?? null });
 
 function isRelation(value: unknown): value is Relation {
   return (
@@ -102,6 +134,14 @@ export async function fetchBeads(project: string, closed: boolean): Promise<Bead
   if (!Array.isArray(body) || !body.every(isSummary)) {
     throw new Error("Could not load beads (unexpected response)");
   }
+  return body.map(withMilestone);
+}
+
+export async function fetchMilestones(project: string): Promise<ProjectMilestones> {
+  const response = await fetch(`/api/beads/milestones?project=${encodeURIComponent(project)}`);
+  if (!response.ok) throw await failure(response, "Project");
+  const body: unknown = await response.json();
+  if (!isProjectMilestones(body)) throw new Error("Could not load milestones (unexpected response)");
   return body;
 }
 
@@ -110,7 +150,7 @@ export async function fetchBead(project: string, id: string): Promise<BeadDetail
   if (!response.ok) throw await failure(response, "Bead");
   const body: unknown = await response.json();
   if (!isDetail(body)) throw new Error("Could not load the bead (unexpected response)");
-  return body;
+  return withMilestone(body);
 }
 
 export async function fetchComments(project: string, id: string): Promise<Comment[]> {

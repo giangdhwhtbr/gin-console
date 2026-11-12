@@ -1,8 +1,8 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ProjectBeads } from "@/features/projects/api";
-import type { BeadSummary } from "./api";
+import type { BeadSummary, ProjectMilestones } from "./api";
 import { BeadsPage } from "./BeadsPage";
 
 const json = (body: unknown, status = 200) =>
@@ -28,6 +28,7 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   blocked: false,
   created_by: null,
   blocked_by: [],
+  milestone: null,
   ...overrides,
 });
 
@@ -48,12 +49,16 @@ const defaultProjects: ProjectBeads[] = [project("alpha", true), project("omega"
 const stub = (
   beadsHandler: (url: URL) => Response | Promise<Response> = () => json([]),
   projects: ProjectBeads[] = defaultProjects,
+  milestonesHandler: (url: URL) => Response = () => json({}, 404),
 ) => {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const url = new URL(urlString, "http://localhost");
     if (url.pathname === "/api/projects/beads") {
       return Promise.resolve(json(projects));
+    }
+    if (url.pathname === "/api/beads/milestones") {
+      return Promise.resolve(milestonesHandler(url));
     }
     if (url.pathname === "/api/beads") {
       return Promise.resolve(beadsHandler(url));
@@ -529,4 +534,104 @@ describe("BeadsPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  describe("milestone filter", () => {
+    const option = (id: string, status: ProjectMilestones["milestones"][number]["status"]) => ({
+      id,
+      title: `Milestone ${id}`,
+      status,
+      start: null,
+      end: null,
+    });
+    const milestones = (current: string | null): ProjectMilestones => ({
+      milestones: [option("m1", "closed"), option("m2", "active"), option("m3", "planned")],
+      current,
+    });
+    const all = [
+      bead("m2", { issue_type: "milestone", title: "Milestone bead", milestone: "m2" }),
+      bead("e-2", { issue_type: "epic", title: "Epic two", parent: "m2", milestone: "m2", ready: true }),
+      bead("t-2", { title: "Task two", parent: "e-2", milestone: "m2" }),
+      bead("e-3", { issue_type: "epic", title: "Epic three", milestone: "m3", ready: true }),
+      bead("e-x", { issue_type: "epic", title: "Epic loose", ready: true }),
+    ];
+    const withMilestones = (current: string | null, beadsHandler: (url: URL) => Response = () => json(all)) =>
+      stub(beadsHandler, defaultProjects, () => json(milestones(current)));
+
+    it("REQ-UI-104 defaults to the current milestone", async () => {
+      withMilestones("m2");
+      render(<BeadsPage />);
+      await screen.findByText("Epic two");
+      expect(screen.getByLabelText("Milestone")).toHaveValue("m2");
+      expect(screen.getByText("Task two")).toBeInTheDocument();
+      expect(screen.queryByText("Epic three")).toBeNull();
+      expect(screen.queryByText("Epic loose")).toBeNull();
+    });
+
+    it("REQ-UI-043 filter by milestone in the List view", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&milestone=m2");
+      withMilestones(null);
+      render(<BeadsPage />);
+      await screen.findByText("Epic two");
+      expect(screen.getByText("Task two")).toBeInTheDocument();
+      expect(screen.queryByText("Epic loose")).toBeNull();
+      expect(screen.queryByText("Epic three")).toBeNull();
+      expect(screen.queryByText("Milestone bead")).toBeNull();
+    });
+
+    it("REQ-UI-104 filter by milestone applies to the Board view", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=board&milestone=m3");
+      withMilestones("m2");
+      render(<BeadsPage />);
+      await screen.findByText("Epic three");
+      expect(screen.queryByText("Epic two")).toBeNull();
+      expect(screen.queryByText("Epic loose")).toBeNull();
+    });
+
+    it("REQ-UI-104 All and No milestone", async () => {
+      withMilestones("m2");
+      render(<BeadsPage />);
+      await screen.findByText("Epic two");
+      await userEvent.selectOptions(screen.getByLabelText("Milestone"), "all");
+      expect(window.location.search).toContain("milestone=all");
+      expect(await screen.findByText("Epic loose")).toBeInTheDocument();
+      expect(screen.getByText("Epic three")).toBeInTheDocument();
+      expect(screen.getByText("Epic two")).toBeInTheDocument();
+      await userEvent.selectOptions(screen.getByLabelText("Milestone"), "none");
+      expect(window.location.search).toContain("milestone=none");
+      await waitFor(() => expect(screen.queryByText("Epic two")).toBeNull());
+      expect(screen.getByText("Epic loose")).toBeInTheDocument();
+      expect(screen.queryByText("Epic three")).toBeNull();
+    });
+
+    it("REQ-UI-104 closed milestone fetches closed beads", async () => {
+      const closed = [
+        bead("c-1", { title: "Done task", status: "closed", closed_at: "2026-09-01T00:00:00Z", milestone: "m1" }),
+      ];
+      const fetchMock = withMilestones("m2", (url) =>
+        url.searchParams.get("closed") === "1" ? json([...all, ...closed]) : json(all),
+      );
+      render(<BeadsPage />);
+      await screen.findByText("Epic two");
+      await userEvent.selectOptions(screen.getByLabelText("Milestone"), "m1");
+      expect(await screen.findByText("Done task")).toBeInTheDocument();
+      const urls = fetchMock.mock.calls.map(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url));
+      expect(urls.some((u) => u.startsWith("/api/beads?") && u.includes("closed=1"))).toBe(true);
+      expect(screen.queryByRole("checkbox", { name: "Show closed" })).not.toBeChecked();
+    });
+
+    it("REQ-UI-104 no current milestone shows All", async () => {
+      withMilestones(null);
+      render(<BeadsPage />);
+      await screen.findByText("Epic loose");
+      expect(screen.getByLabelText("Milestone")).toHaveValue("all");
+      expect(screen.getByText("Epic three")).toBeInTheDocument();
+    });
+
+    it("REQ-UI-104 milestones unavailable", async () => {
+      stub(() => json(all), defaultProjects, () => json({ error: "bd failed" }, 502));
+      render(<BeadsPage />);
+      await screen.findByText("Epic loose");
+      expect(await screen.findByRole("option", { name: "Milestones unavailable" })).toBeInTheDocument();
+      expect(screen.getByText("Epic three")).toBeInTheDocument();
+    });
+  });
 });
