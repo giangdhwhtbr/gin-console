@@ -23,7 +23,7 @@ export function report(overrides: Partial<Report> = {}): Report {
         { model: "opus", role: "developer", input: 1, output: 2, cache_read: 3, cache_write: 4, tokens: 10, cost: 1 },
       ],
     },
-    delivery: { weeks: [{ week: "2026-W44", counts: { task: 3 } }], by_type: [], by_member: [], overall: { key: "all", cycle: null, lead: null }, wip: [], oldest: [], estimates: [] },
+    delivery: { weeks: [{ week: "2026-W44", counts: { task: 3 } }], by_type: [], by_member: [], overall: { key: "all", cycle: null, lead: null }, estimates: [] },
     quality: {
       members: [],
       epics: [],
