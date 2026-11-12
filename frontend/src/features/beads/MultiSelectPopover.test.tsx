@@ -113,7 +113,14 @@ describe("MobileFiltersSheet", () => {
     const onChange = vi.fn();
     const onClear = vi.fn();
 
-    render(<MobileFiltersSheet filters={filters} options={options} onChange={onChange} onClear={onClear} />);
+    render(<MobileFiltersSheet
+        filters={filters}
+        options={options}
+        milestones={{ status: "loading" }}
+        milestone="all"
+        onChange={onChange}
+        onClear={onClear}
+      />);
 
     // Mobile trigger button shows total active filter count
     const trigger = screen.getByRole("button", { name: /Filters/i });
@@ -136,7 +143,14 @@ describe("MobileFiltersSheet", () => {
     const onChange = vi.fn();
     const onClear = vi.fn();
 
-    render(<MobileFiltersSheet filters={filters} options={options} onChange={onChange} onClear={onClear} />);
+    render(<MobileFiltersSheet
+        filters={filters}
+        options={options}
+        milestones={{ status: "loading" }}
+        milestone="all"
+        onChange={onChange}
+        onClear={onClear}
+      />);
 
     // Open sheet
     await user.click(screen.getByRole("button", { name: /Filters/i }));

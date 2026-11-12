@@ -46,6 +46,7 @@ const beadDetail = (id: string, overrides: Partial<BeadDetail> = {}): BeadDetail
   blocked: false,
   created_by: null,
   blocked_by: [],
+  milestone: null,
   description: "A description",
   design: null,
   notes: null,

@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict
@@ -30,6 +31,7 @@ class BeadSummary(BaseModel):
     blocked: bool = False
     created_by: Text | None = None
     blocked_by: list[Text] = []
+    milestone: Text | None = None
 
 
 class Relation(BaseModel):
@@ -61,3 +63,18 @@ class BeadDetail(BeadSummary):
     dependents: list[Relation] = []
     children: list[Relation] = []
     bugs: list[Relation] = []
+
+
+class MilestoneOption(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    id: Text
+    title: Text
+    status: Literal["active", "scheduled", "planned", "closed"]
+    start: date | None
+    end: date | None
+
+
+class ProjectMilestones(BaseModel):
+    milestones: list[MilestoneOption]
+    current: Text | None

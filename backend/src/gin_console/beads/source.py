@@ -3,13 +3,29 @@ JSON."""
 
 import json
 import re
+from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
 
 from gin_console.beads.errors import BeadNotFound, BeadsError
-from gin_console.beads.models import BeadDetail, BeadSummary, Comment, Relation
+from gin_console.beads.milestones import (
+    MilestoneStatus,
+    current_milestone,
+    milestone_of,
+    milestone_status,
+    parse_date,
+)
+from gin_console.beads.models import (
+    BeadDetail,
+    BeadSummary,
+    Comment,
+    MilestoneOption,
+    ProjectMilestones,
+    Relation,
+)
 from gin_console.beads.snapshot import BLOCKING, EXPORT_FILE, Snapshot
 
 __all__ = ["EXPORT_FILE", "BeadNotFound", "BeadsError"]
@@ -88,6 +104,7 @@ def _fields(snapshot: Snapshot, ident: str) -> dict[str, Any]:
         **{k: raw[k] for k in _SUMMARY_KEYS if k in raw},
         "parent": snapshot.parents.get(ident),
         "blocked_by": _blocked_by(raw),
+        "milestone": milestone_of(snapshot, ident),
         # a milestone is not work, even when nothing blocks it (REQ-MILESTONE-UI-007)
         "ready": ident in snapshot.ready and raw.get("issue_type") != "milestone",
         "blocked": ident in snapshot.blocked or raw.get("status") == "blocked",
@@ -104,6 +121,42 @@ def list_beads(snapshot: Snapshot, closed: bool) -> list[BeadSummary]:
         except ValidationError:
             continue  # a malformed bead is left out (REQ-BEADS-005)
     return beads
+
+
+@dataclass(frozen=True)
+class _Dated:
+    id: str
+    status: MilestoneStatus
+    start: date
+    end: date
+
+
+def list_milestones(snapshot: Snapshot, today: date) -> ProjectMilestones:
+    options: list[MilestoneOption] = []
+    for ident, raw in snapshot.rows.items():
+        if raw.get("issue_type") != "milestone":
+            continue
+        meta = raw.get("metadata")
+        meta = meta if isinstance(meta, dict) else {}
+        try:
+            options.append(
+                MilestoneOption.model_validate(
+                    {
+                        "id": ident,
+                        "title": raw.get("title"),
+                        "status": milestone_status(
+                            raw.get("status") == "closed", meta.get("kickoff"), today
+                        ),
+                        "start": parse_date(meta.get("start")),
+                        "end": parse_date(meta.get("end")),
+                    }
+                )
+            )
+        except ValidationError:
+            continue  # a malformed bead is left out (REQ-BEADS-005)
+    dated = [_Dated(o.id, o.status, o.start, o.end) for o in options if o.start and o.end]
+    found = current_milestone(dated, today)
+    return ProjectMilestones(milestones=options, current=found.id if found else None)
 
 
 def _relation(snapshot: Snapshot, ident: str, kind: str) -> Relation | None:

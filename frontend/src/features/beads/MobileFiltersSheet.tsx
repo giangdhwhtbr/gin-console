@@ -2,15 +2,21 @@ import { Dialog } from "@base-ui/react/dialog";
 import { SlidersHorizontal, X } from "lucide-react";
 import { activeFilters } from "./Breadcrumb";
 import type { BeadFilters, BeadOptions } from "./filters";
+import { MilestoneFilter } from "./MilestoneFilter";
+import type { MilestoneInEffect, MilestonesState } from "./milestoneChoice";
 
 export function MobileFiltersSheet({
   filters,
   options,
+  milestones,
+  milestone,
   onChange,
   onClear,
 }: {
   filters: BeadFilters;
   options: BeadOptions;
+  milestones: MilestonesState;
+  milestone: MilestoneInEffect;
   onChange: (patch: Partial<BeadFilters>) => void;
   onClear: () => void;
 }) {
@@ -227,6 +233,9 @@ export function MobileFiltersSheet({
                 </div>
               </div>
             )}
+
+            {/* Milestone */}
+            <MilestoneFilter state={milestones} value={milestone} onChange={(value) => onChange({ milestone: value })} />
 
             {/* Type */}
             {options.types.length > 0 && (

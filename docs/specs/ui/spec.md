@@ -342,7 +342,7 @@ The bead list SHALL show the loaded beads as an indented hierarchy as REQ-UI-041
 - THEN it says no beads match
 
 ### REQ-UI-025: Search and filters
-The bead list SHALL offer a search box that matches the id, title and labels case-insensitively, and filters for status, priority, label, type, assignee and sprint, SHALL combine distinct filter categories with AND, SHALL serialize multi-select filters (`status`, `priority`, `label`, `assignee`) as comma-separated values in the URL query (`q`, `status`, `priority`, `label`, `label_mode`, `type`, `assignee`, `sprint`), and SHALL restore them on page load.
+The bead list SHALL offer a search box that matches the id, title and labels case-insensitively, and filters for status, priority, label, type, assignee, sprint and milestone (REQ-UI-104), SHALL combine distinct filter categories with AND, SHALL serialize multi-select filters (`status`, `priority`, `label`, `assignee`) as comma-separated values in the URL query (`q`, `status`, `priority`, `label`, `label_mode`, `type`, `assignee`, `sprint`, `milestone`), and SHALL restore them on page load.
 
 #### Scenario: Search
 - GIVEN beads titled "Fix login" and "Add search"
@@ -355,9 +355,9 @@ The bead list SHALL offer a search box that matches the id, title and labels cas
 - THEN only open and in-progress P1 beads remain and the URL query contains `status=open,in_progress&priority=1`
 
 #### Scenario: Restored from the URL
-- GIVEN the URL query has `?status=open,in_progress&priority=0,1&assignee=alice%40example.com&sprint=sprint-1`
+- GIVEN the URL query has `?status=open,in_progress&priority=0,1&assignee=alice%40example.com&sprint=sprint-1&milestone=m2`
 - WHEN the page loads
-- THEN the multi-select filters are restored and applied to the view
+- THEN the filters are restored and applied to the view
 
 ### REQ-UI-026: Closed beads
 The bead list SHALL leave closed beads out by default, SHALL offer a "Show closed" control kept in the URL as `closed=1` that requests the list with `closed=1`, and SHALL apply search and filters to the closed beads too.
@@ -637,7 +637,7 @@ The List view SHALL show as roots the beads without a parent or whose parent is 
 - THEN the later-updated P1, the other P1, then the P2 are listed
 
 ### REQ-UI-043: List filters
-WHEN a search or a filter is active, the List view SHALL show only the beads that match them together with their ancestors in the hierarchy, with every branch that leads to a match open, and SHALL leave out closed beads unless "Show closed" is on or a sprint filter is active.
+WHEN a search or a filter is active, the List view SHALL show only the beads that match them together with their ancestors in the hierarchy, with every branch that leads to a match open, and SHALL leave out closed beads unless "Show closed" is on, a sprint filter is active, or a closed milestone is selected (REQ-UI-104).
 
 #### Scenario: Match with ancestors
 - GIVEN an epic with a child titled "Fix login" and another titled "Add search"
@@ -653,6 +653,11 @@ WHEN a search or a filter is active, the List view SHALL show only the beads tha
 - GIVEN an epic with children assigned to "alice" and "bob"
 - WHEN the user filters by assignee "alice"
 - THEN the epic and the child assigned to "alice" are shown, and the child assigned to "bob" is not
+
+#### Scenario: Filter by milestone
+- GIVEN milestone `m2` with an epic and its child task, and an epic under no milestone
+- WHEN the user selects milestone `m2`
+- THEN the epic under `m2` and its child task are shown, the other epic is not, and no milestone bead is shown (REQ-MILESTONE-UI-009)
 
 ### REQ-UI-044: List rows
 The List view SHALL show for each row an open/close control when it has children, its id in the monospace face, its title as a link to `/beads/<project>/<id>`, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic how many of its direct children are closed with a progress bar, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
@@ -1853,3 +1858,52 @@ WHERE the `beads` object of a project in `GET /api/projects/beads` has `stale: t
 - GIVEN project A whose `beads` has no `stale` key, or `stale: false`
 - WHEN the Beads page opens with A selected
 - THEN no note is shown
+
+### REQ-UI-104: Beads milestone filter
+WHEN the Beads page loads a project, the frontend SHALL request `GET /api/beads/milestones?project=<name>` and SHALL offer a "Milestone" single-select in the bead filter bar, and in its mobile sheet (REQ-UI-084), listing "All", "No milestone", then the milestones grouped as Active (`active`), Planned (`scheduled` and `planned`, by `start`) and Closed (latest `end` first), kept in the URL as `milestone` (`all`, `none` or a milestone id). WHEN the URL has no `milestone`, the filter SHALL select `current`, or "All" when `current` is `null`. WHILE a milestone is selected, only the beads whose `milestone` is that id SHALL match; WHILE "No milestone" is selected, only the beads whose `milestone` is `null` SHALL match. WHILE a closed milestone is selected, closed beads SHALL be fetched and shown without "Show closed". The filter SHALL apply to the List, Board and Focus views. IF the milestones request fails, THEN the select SHALL say "Milestones unavailable" and the page SHALL behave as with "All".
+
+#### Scenario: Default to the current milestone
+- GIVEN project `alpha` whose current milestone is `m2`, with beads under `m2` and `m3` and a bead under no milestone
+- WHEN the user opens `/beads?project=alpha`
+- THEN only the beads under `m2` are shown and the Milestone select shows `m2`
+
+#### Scenario: All and No milestone
+- GIVEN the same project
+- WHEN the user chooses "All" and then "No milestone"
+- THEN every bead is shown with `milestone=all` in the URL, then only the bead under no milestone with `milestone=none`
+
+#### Scenario: Closed milestone
+- GIVEN closed milestone `m1` whose beads are all closed, and "Show closed" off
+- WHEN the user chooses `m1`
+- THEN the beads are requested with `closed=1` and the closed beads of `m1` are shown
+
+#### Scenario: No current milestone
+- GIVEN a project whose milestones are all closed
+- WHEN the user opens its Beads page without `milestone`
+- THEN "All" is selected and every open bead is shown
+
+#### Scenario: Milestones unavailable
+- GIVEN `GET /api/beads/milestones` answers 502
+- WHEN the Beads page loads
+- THEN the Milestone select says "Milestones unavailable" and every bead is shown
+
+### REQ-UI-105: My Tasks project and milestone filters
+The My Tasks page SHALL offer a "Project" select with "All projects" (the default) and each project whose directory exists, kept in the URL as `project`, and a "Milestone" select kept in the URL as `milestone`. WHILE "All projects" is selected, the Milestone select SHALL be disabled and every matching bead of every project SHALL be listed. WHEN a project is selected, the page SHALL list only that project's matching beads, SHALL request `GET /api/beads/milestones?project=<name>`, and SHALL offer the choices of REQ-UI-104, selecting `current` (or "All" when `current` is `null`) WHILE the URL has no `milestone`; the milestone choice SHALL filter the beads as in REQ-UI-104, and a closed milestone SHALL list its closed beads without "Show closed". A change of project SHALL clear `milestone`.
+
+#### Scenario: All projects
+- GIVEN tasks assigned to me in projects A and B
+- WHEN My Tasks opens at `/my-tasks`
+- THEN "All projects" is selected, the Milestone select is disabled, and the tasks of A and B are listed
+
+#### Scenario: Project with a current milestone
+- GIVEN project A whose current milestone is `m2`, with my tasks under `m2` and `m3`
+- WHEN the user chooses project A
+- THEN the URL is `/my-tasks?project=A`, the Milestone select shows `m2`, and only my tasks under `m2` are listed
+
+#### Scenario: Change project clears the milestone
+- GIVEN My Tasks at `/my-tasks?project=A&milestone=m3`
+- WHEN the user chooses project B
+- THEN the URL is `/my-tasks?project=B` and B's current milestone is selected
+
+## Use Cases
+- [Filter beads by milestone](use-cases/filter-by-milestone.md)

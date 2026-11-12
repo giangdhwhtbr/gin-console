@@ -1,19 +1,25 @@
 import { Button } from "@/components/ui/button";
 import { FilterSelect } from "./FilterSelect";
 import { LabelsPopover } from "./LabelsPopover";
+import { MilestoneFilter } from "./MilestoneFilter";
 import { MobileFiltersSheet } from "./MobileFiltersSheet";
 import { MultiSelectPopover } from "./MultiSelectPopover";
 import type { BeadFilters, BeadOptions } from "./filters";
+import type { MilestoneInEffect, MilestonesState } from "./milestoneChoice";
 
 const same = (value: string) => ({ value, label: value });
 
 export function BeadFilterBar({
   filters,
   options,
+  milestones,
+  milestone,
   onChange,
 }: {
   filters: BeadFilters;
   options: BeadOptions;
+  milestones: MilestonesState;
+  milestone: MilestoneInEffect;
   onChange: (next: BeadFilters) => void;
 }) {
   const set = (patch: Partial<BeadFilters>) => onChange({ ...filters, ...patch });
@@ -28,6 +34,7 @@ export function BeadFilterBar({
       type: "",
       assignee: [],
       sprint: "",
+      milestone: "",
     });
 
   const sprintOptions =
@@ -49,7 +56,14 @@ export function BeadFilterBar({
 
       {/* Mobile view: single Filters drawer button */}
       <div className="flex md:hidden items-center gap-2">
-        <MobileFiltersSheet filters={filters} options={options} onChange={set} onClear={clearFilters} />
+        <MobileFiltersSheet
+          filters={filters}
+          options={options}
+          milestones={milestones}
+          milestone={milestone}
+          onChange={set}
+          onClear={clearFilters}
+        />
       </div>
 
       {/* Desktop view: individual button popovers */}
@@ -96,6 +110,7 @@ export function BeadFilterBar({
             onChange={(sprint) => set({ sprint })}
           />
         )}
+        <MilestoneFilter state={milestones} value={milestone} onChange={(value) => set({ milestone: value })} />
         <label className="flex items-center gap-1.5 text-sm cursor-pointer ml-1 select-none">
           <input
             type="checkbox"

@@ -6,8 +6,10 @@ import { BoardView } from "./BoardView";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
 import { ListView } from "./ListView";
+import { isClosedMilestone, milestoneInEffect } from "./milestoneChoice";
 import { useBeads } from "./useBeads";
 import { useCardKeys } from "./useCardKeys";
+import { useMilestones } from "./useMilestones";
 import { ViewTabs } from "./ViewTabs";
 
 export function BeadsView({
@@ -22,11 +24,17 @@ export function BeadsView({
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
   useCardKeys(true, clearSearch, filters.view !== "list");
 
-  const { state, retry } = useBeads(project, filters.closed || (filters.sprint !== "" && filters.sprint !== "none"));
+  const milestones = useMilestones(project);
+  const milestone = milestoneInEffect(filters.milestone, milestones);
+  const closedMilestone = isClosedMilestone(milestone, milestones);
+  const { state, retry } = useBeads(
+    project,
+    filters.closed || (filters.sprint !== "" && filters.sprint !== "none") || closedMilestone,
+  );
 
   const errorMessage = state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
   const beads = state.status === "ok" ? state.beads : [];
-  const shown = sortBeads(filterBeads(beads, filters));
+  const shown = sortBeads(filterBeads(beads, { ...filters, closed: filters.closed || closedMilestone }, milestone));
 
   return (
     <section className="flex flex-col gap-4">
@@ -45,14 +53,27 @@ export function BeadsView({
       {state.status === "ok" && (
         <>
           <ViewTabs filters={filters} onChange={onChange} />
-          <BeadFilterBar filters={filters} options={optionsOf(beads)} onChange={onChange} />
+          <BeadFilterBar
+            filters={filters}
+            options={optionsOf(beads)}
+            milestones={milestones}
+            milestone={milestone}
+            onChange={onChange}
+          />
           <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>
           {filters.view === "board" && <BoardView project={project} beads={shown} filters={filters} />}
           {filters.view === "focus" && (
             <FocusView project={project} beads={shown} filters={filters} onChange={onChange} />
           )}
           {filters.view === "list" && (
-            <ListView project={project} beads={beads} filters={filters} onChange={onChange} />
+            <ListView
+              project={project}
+              beads={beads}
+              filters={filters}
+              milestone={milestone}
+              closedMilestone={closedMilestone}
+              onChange={onChange}
+            />
           )}
         </>
       )}

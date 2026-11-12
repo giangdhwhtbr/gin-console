@@ -22,6 +22,7 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   ready: false,
   blocked: false,
   blocked_by: [],
+  milestone: null,
   ...overrides,
 });
 
@@ -47,6 +48,7 @@ describe("filters", () => {
       finished: false,
       assignee: ["alice", "unassigned"],
       sprint: "1",
+      milestone: "",
       select: "",
     });
   });
@@ -139,6 +141,24 @@ describe("filters", () => {
     const fAll = { ...empty, label: ["qa", "ui"], labelMode: "all" as const };
     expect(filtersToSearch(fAll)).toBe("?label=qa%2Cui&label_mode=all");
     expect(parseFilters(filtersToSearch(fAll))).toEqual(fAll);
+  });
+
+  // REQ-UI-025
+  it("REQ-UI-025 restores milestone from the URL and writes it only when set", () => {
+    const f = parseFilters("?status=open,in_progress&priority=0,1&sprint=sprint-1&milestone=m2");
+    expect(f.milestone).toBe("m2");
+    expect(parseFilters("").milestone).toBe("");
+    expect(filtersToSearch({ ...empty, milestone: "none" })).toBe("?milestone=none");
+    expect(filtersToSearch(empty)).toBe("");
+    expect(parseFilters(filtersToSearch(f))).toEqual(f);
+  });
+
+  // REQ-UI-043
+  it("REQ-UI-043 filterBeads keeps the beads of the chosen milestone", () => {
+    const beads = [bead("a", { milestone: "m2" }), bead("b", { milestone: "m3" }), bead("c")];
+    expect(filterBeads(beads, empty, "m2").map((b) => b.id)).toEqual(["a"]);
+    expect(filterBeads(beads, empty, "none").map((b) => b.id)).toEqual(["c"]);
+    expect(filterBeads(beads, empty).map((b) => b.id)).toEqual(["a", "b", "c"]);
   });
 
   // REQ-UI-083

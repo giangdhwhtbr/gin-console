@@ -62,7 +62,7 @@ def create_app(
     api.include_router(build_projects_router(settings, snapshots, on_refresh))
     api.include_router(build_sessions_router(settings, claude_home))
     api.include_router(build_quota_router(run_claude, run_codex, clock))
-    api.include_router(build_beads_router(settings, snapshots))
+    api.include_router(build_beads_router(settings, snapshots, clock))
     api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh))
     api.include_router(build_reports_router(settings, snapshots, clock, on_refresh))
 
