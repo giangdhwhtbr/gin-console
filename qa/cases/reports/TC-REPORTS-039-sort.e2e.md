@@ -1,6 +1,6 @@
 # TC-REPORTS-039: Sort
 
-- **REQ:** REQ-REPORTS-016@8004f160
+- **REQ:** REQ-REPORTS-016@7125b437
 - **Priority:** medium
 
 **Preconditions:**
@@ -14,4 +14,4 @@
 2. Press the Age header again
 
 **Expected:**
-- The rows are sorted by age, oldest last, and the header has `aria-sort="descending"`
+- The rows are sorted by age, oldest first, and the header has `aria-sort="descending"`

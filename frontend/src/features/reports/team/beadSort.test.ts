@@ -37,6 +37,12 @@ describe("beadSort", () => {
     expect(ids(sortBeads(beads, "priority", -1, today))).toEqual(["p3", "p1", "none"]);
   });
 
+  it("age sorts by days: descending puts the oldest first", () => {
+    const beads = [bead({ id: "new", created_at: "2026-11-10T00:00:00Z" }), bead({ id: "old", created_at: "2026-11-01T00:00:00Z" })];
+    expect(ids(sortBeads(beads, "age", -1, today))).toEqual(["old", "new"]);
+    expect(ids(sortBeads(beads, "age", 1, today))).toEqual(["new", "old"]);
+  });
+
   it("ageOf counts days from creation to today and each status has its columns", () => {
     expect(ageOf(bead({ created_at: "2026-11-10T00:00:00Z" }), today)).toBe(2);
     expect(COLUMNS.in_progress).toEqual(["bead", "epic", "type", "assignee", "progress"]);

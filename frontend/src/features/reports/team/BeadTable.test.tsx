@@ -64,7 +64,7 @@ describe("BeadTable", () => {
     await userEvent.click(screen.getByRole("button", { name: "Age" }));
     await userEvent.click(screen.getByRole("button", { name: "Age" }));
     expect(screen.getByRole("columnheader", { name: /Age/ })).toHaveAttribute("aria-sort", "descending");
-    expect(order()).toEqual(["Bead 1", "Bead 3", "Bead 2"]);
+    expect(order()).toEqual(["Bead 2", "Bead 3", "Bead 1"]);
   });
 
   it("REQ-REPORTS-016 columns per status", () => {
