@@ -6,7 +6,7 @@ from gin_console.beads.errors import BeadsError
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.config import ProjectEntry
 from gin_console.projects.collect import Collector
-from gin_console.projects.models import Beads, BlockError, Epic, Project
+from gin_console.projects.models import Beads, BlockError, Epic, Project, ProjectBeads
 
 
 def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
@@ -46,4 +46,14 @@ def build_project(entry: ProjectEntry, collector: Collector) -> Project:
         exists=exists,
         workflow=workflow,
         beads=beads,
+    )
+
+
+def build_project_beads(entry: ProjectEntry, snapshots: SnapshotStore) -> ProjectBeads:
+    exists = entry.path.is_dir()
+    return ProjectBeads(
+        name=entry.name,
+        path=str(entry.path),
+        exists=exists,
+        beads=count_beads(snapshots, entry.path) if exists else None,
     )

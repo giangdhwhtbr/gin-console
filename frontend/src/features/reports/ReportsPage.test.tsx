@@ -7,12 +7,12 @@ import { report } from "./reportFixtures";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-const project = (name: string) => ({ name, path: `/x/${name}`, exists: true, workflow: null, beads: null });
+const project = (name: string) => ({ name, path: `/x/${name}`, exists: true, beads: null });
 
 const stub = (handler: (url: URL) => Response | Promise<Response> = () => json(report())) => {
   const mock = vi.fn((input: RequestInfo | URL) => {
     const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url, "http://localhost");
-    if (url.pathname === "/api/projects") return Promise.resolve(json([project("alpha"), project("beta")]));
+    if (url.pathname === "/api/projects/beads") return Promise.resolve(json([project("alpha"), project("beta")]));
     if (url.pathname === "/api/reports") return Promise.resolve(handler(url));
     return Promise.resolve(json({}, 404));
   });

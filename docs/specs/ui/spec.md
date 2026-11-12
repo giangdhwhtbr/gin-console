@@ -306,7 +306,7 @@ The "Main" navigation SHALL contain a "Beads" link, and the frontend SHALL show 
 - THEN the list is shown with the same filters
 
 ### REQ-UI-023: Project choice
-The bead list SHALL offer the configured projects whose directory exists in a select kept in the `?project=` query, SHALL default to the first of them, and WHEN no project exists SHALL say that no projects are configured.
+The bead list SHALL offer the configured projects whose directory exists, from `GET /api/projects/beads`, in a select kept in the `?project=` query, SHALL default to the first of them, and WHEN no project exists SHALL say that no projects are configured.
 
 #### Scenario: Default and choice
 - GIVEN two projects
@@ -314,9 +314,14 @@ The bead list SHALL offer the configured projects whose directory exists in a se
 - THEN the first project is selected and its beads are shown, and choosing the other changes the URL and the list
 
 #### Scenario: No projects
-- GIVEN `/api/projects` returns an empty list
+- GIVEN `/api/projects/beads` returns an empty list
 - WHEN the list opens
 - THEN it says no projects are configured
+
+#### Scenario: Not the full projects list
+- GIVEN two projects
+- WHEN the list opens
+- THEN no request goes to `/api/projects`
 
 ### REQ-UI-024: Bead list
 The bead list SHALL show the loaded beads as an indented hierarchy as REQ-UI-041 describes, SHALL show for each bead the content REQ-UI-044 describes, and SHALL show how many of the loaded beads match the current search and filters.
@@ -1758,7 +1763,7 @@ The "Main" navigation SHALL contain a "My Tasks" link after "Beads", and the fro
 - THEN the URL is `/my-tasks`, the My Tasks page is shown without a reload and "My Tasks" is the current link
 
 ### REQ-UI-100: My Tasks list
-WHEN the My Tasks page opens, the frontend SHALL request `GET /api/projects`, then `GET /api/beads?project=<name>` for each project whose directory exists, and SHALL list in one table the beads whose `assignee`, trimmed and ignoring case, equals the signed-in email or the part of the email before `@`, leaving out beads matched only by `owner`. Each row SHALL show the project, the id, the title, the state, the type, `P<n>` and the updated time, and SHALL link to `/beads/<project>/<id>`. Rows SHALL be ordered by priority ascending, then by `updated_at` newest first, then by project and id. The page SHALL show how many beads it lists, and WHEN none matches, SHALL say "No tasks assigned to <email>". The Refresh control (REQ-UI-096) SHALL load the list again.
+WHEN the My Tasks page opens, the frontend SHALL request `GET /api/projects/beads`, then `GET /api/beads?project=<name>` for each project whose directory exists, and SHALL list in one table the beads whose `assignee`, trimmed and ignoring case, equals the signed-in email or the part of the email before `@`, leaving out beads matched only by `owner`. Each row SHALL show the project, the id, the title, the state, the type, `P<n>` and the updated time, and SHALL link to `/beads/<project>/<id>`. Rows SHALL be ordered by priority ascending, then by `updated_at` newest first, then by project and id. The page SHALL show how many beads it lists, and WHEN none matches, SHALL say "No tasks assigned to <email>". The Refresh control (REQ-UI-096) SHALL load the list again.
 
 #### Scenario: Match by email or name
 - GIVEN the signed-in email `giangdhwhtbr@gmail.com`, project A with open beads assigned to `giangdhwhtbr`, `GiangDHWHTBR@gmail.com` and `alice`, and one unassigned open bead owned by `giangdhwhtbr@gmail.com`
@@ -1780,6 +1785,11 @@ WHEN the My Tasks page opens, the frontend SHALL request `GET /api/projects`, th
 - WHEN My Tasks opens
 - THEN no beads request is sent for C
 
+#### Scenario: Not the full projects list
+- GIVEN two projects
+- WHEN My Tasks opens
+- THEN no request goes to `/api/projects`
+
 ### REQ-UI-101: My Tasks closed beads
 The My Tasks page SHALL leave closed beads out by default, and SHALL offer a "Show closed" control kept in the URL as `closed=1` that requests each project's beads with `closed=1` and lists the matching closed beads too.
 
@@ -1794,7 +1804,7 @@ The My Tasks page SHALL leave closed beads out by default, and SHALL offer a "Sh
 - THEN the URL is `/my-tasks?closed=1`, the beads are requested with `closed=1` and 5 beads are listed
 
 ### REQ-UI-102: My Tasks failures
-IF `GET /api/projects` fails, THEN the My Tasks page SHALL show that the projects could not be loaded; IF the beads request of a project fails, THEN the page SHALL show an error naming that project and its message and SHALL still list the matching beads of the other projects; WHILE requests are pending, the page SHALL say it is loading.
+IF `GET /api/projects/beads` fails, THEN the My Tasks page SHALL show that the projects could not be loaded; IF the beads request of a project fails, THEN the page SHALL show an error naming that project and its message and SHALL still list the matching beads of the other projects; WHILE requests are pending, the page SHALL say it is loading.
 
 #### Scenario: One project fails
 - GIVEN projects A and B, where the beads request of B responds 500 and A has 2 beads assigned to me
@@ -1802,12 +1812,12 @@ IF `GET /api/projects` fails, THEN the My Tasks page SHALL show that the project
 - THEN an error names B and the 2 beads of A are listed
 
 #### Scenario: Projects fail
-- GIVEN `GET /api/projects` responds 500
+- GIVEN `GET /api/projects/beads` responds 500
 - WHEN My Tasks opens
 - THEN the page says the projects could not be loaded and lists nothing
 
 ### REQ-UI-103: Stale beads note
-WHERE the `beads` object of a project in `GET /api/projects` has `stale: true`, the Beads page with that project selected and the My Tasks page SHALL show, above their list, the note "Beads of <project> may be out of date. Run `bd export -o .beads/issues.jsonl` in <project>." once per stale project, and SHALL show no note for a project whose `stale` is `false` or missing.
+WHERE the `beads` object of a project in `GET /api/projects/beads` has `stale: true`, the Beads page with that project selected and the My Tasks page SHALL show, above their list, the note "Beads of <project> may be out of date. Run `bd export -o .beads/issues.jsonl` in <project>." once per stale project, and SHALL show no note for a project whose `stale` is `false` or missing.
 
 #### Scenario: Beads page
 - GIVEN project A has `beads.stale: true`

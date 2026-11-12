@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { Project } from "@/features/projects/api";
+import type { ProjectBeads } from "@/features/projects/api";
 import type { BeadSummary } from "./api";
 
 export const json = (body: unknown, status = 200) =>
@@ -28,11 +28,10 @@ export const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSumm
   ...overrides,
 });
 
-export const project = (name: string, exists = true): Project => ({
+export const project = (name: string, exists = true): ProjectBeads => ({
   name,
   path: `/home/gin/${name}`,
   exists,
-  workflow: null,
   beads: null,
 });
 
@@ -44,7 +43,7 @@ export function stubBeads(
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const url = new URL(text, "http://localhost");
-    if (url.pathname === "/api/projects") return Promise.resolve(json(names.map((n) => project(n))));
+    if (url.pathname === "/api/projects/beads") return Promise.resolve(json(names.map((n) => project(n))));
     if (url.pathname === "/api/beads") return Promise.resolve(handler(url));
     return Promise.resolve(json({}, 404));
   });

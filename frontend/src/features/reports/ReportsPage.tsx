@@ -4,7 +4,7 @@ import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
-import { fetchProjects, type Project } from "@/features/projects/api";
+import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { cn } from "@/lib/utils";
 import { fetchReport, type Report } from "./api";
 import { PERIODS, TABS, parseReportSearch, reportSearch, type ReportFilters, type ReportTab } from "./filters";
@@ -41,8 +41,8 @@ export function ReportsPage() {
   const filters = parseReportSearch(search);
 
   useEffect(() => {
-    void fetchProjects().then(
-      (list: Project[]) => setProjects({ status: "ok", names: list.filter((p) => p.exists).map((p) => p.name) }),
+    void fetchProjectBeads().then(
+      (list: ProjectBeads[]) => setProjects({ status: "ok", names: list.filter((p) => p.exists).map((p) => p.name) }),
       (error: unknown) => setProjects({ status: "error", message: messageOf(error) }),
     );
   }, []);

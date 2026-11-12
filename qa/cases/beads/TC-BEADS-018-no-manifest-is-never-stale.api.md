@@ -1,6 +1,6 @@
 # TC-BEADS-018: No manifest is never stale
 
-- **REQ:** REQ-BEADS-013@083a7f3b
+- **REQ:** REQ-BEADS-013@a896831f
 - **Priority:** medium
 
 **Preconditions:**

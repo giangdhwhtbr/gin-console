@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { fetchProjects, type Project } from "@/features/projects/api";
+import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { cn } from "@/lib/utils";
 import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
@@ -26,8 +26,8 @@ export function MilestonesPage() {
   const asked = new URLSearchParams(search).get("project") ?? "";
 
   useEffect(() => {
-    void fetchProjects().then(
-      (list: Project[]) => setProjects({ status: "ok", names: list.filter((p) => p.exists).map((p) => p.name) }),
+    void fetchProjectBeads().then(
+      (list: ProjectBeads[]) => setProjects({ status: "ok", names: list.filter((p) => p.exists).map((p) => p.name) }),
       (error: unknown) => setProjects({ status: "error", message: error instanceof Error ? error.message : String(error) }),
     );
   }, []);

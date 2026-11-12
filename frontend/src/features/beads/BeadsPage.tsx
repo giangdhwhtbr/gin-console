@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { fetchProjects, isStale, type Project } from "@/features/projects/api";
+import { fetchProjectBeads, isStale, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
 import { graphPath } from "./graph";
@@ -20,8 +20,8 @@ export function BeadsPage() {
   const filters = parseFilters(search);
 
   useEffect(() => {
-    void fetchProjects().then(
-      (list: Project[]) => {
+    void fetchProjectBeads().then(
+      (list: ProjectBeads[]) => {
         const existing = list.filter((p) => p.exists);
         setProjects({ status: "ok", names: existing.map((p) => p.name), stale: existing.filter(isStale).map((p) => p.name) });
       },

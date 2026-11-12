@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Project } from "@/features/projects/api";
+import type { ProjectBeads } from "@/features/projects/api";
 import type { BeadSummary } from "./api";
 import { BeadsPage } from "./BeadsPage";
 
@@ -31,29 +31,28 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   ...overrides,
 });
 
-const project = (name: string, exists = true): Project => ({
+const project = (name: string, exists = true): ProjectBeads => ({
   name,
   path: `/home/gin/${name}`,
   exists,
-  workflow: null,
   beads: null,
 });
 
-const withBeads = (name: string, stale?: boolean): Project => ({
+const withBeads = (name: string, stale?: boolean): ProjectBeads => ({
   ...project(name),
   beads: { open: 0, in_progress: 0, blocked: 0, ready: 0, epics: [], ...(stale === undefined ? {} : { stale }) },
 });
 
-const defaultProjects: Project[] = [project("alpha", true), project("omega", true), project("ghost", false)];
+const defaultProjects: ProjectBeads[] = [project("alpha", true), project("omega", true), project("ghost", false)];
 
 const stub = (
   beadsHandler: (url: URL) => Response | Promise<Response> = () => json([]),
-  projects: Project[] = defaultProjects,
+  projects: ProjectBeads[] = defaultProjects,
 ) => {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const url = new URL(urlString, "http://localhost");
-    if (url.pathname === "/api/projects") {
+    if (url.pathname === "/api/projects/beads") {
       return Promise.resolve(json(projects));
     }
     if (url.pathname === "/api/beads") {
@@ -155,6 +154,15 @@ describe("BeadsPage", () => {
     const ready = await screen.findByRole("region", { name: "Ready" });
     expect(within(ready).getByText("Epic A")).toBeInTheDocument();
     expect(screen.queryByText("Milestone M1")).toBeNull();
+  });
+
+  it("REQ-UI-023 the Beads page does not request /api/projects", async () => {
+    const fetchMock = stub(() => json([bead("a-1", { title: "Alpha Bead" })]));
+    render(<BeadsPage />);
+    await screen.findByText("Alpha Bead");
+    const urls = fetchMock.mock.calls.map(([input]) => new URL(String(input instanceof Request ? input.url : input), "http://localhost").pathname);
+    expect(urls).toContain("/api/projects/beads");
+    expect(urls).not.toContain("/api/projects");
   });
 
   // REQ-UI-023
@@ -310,7 +318,7 @@ describe("BeadsPage", () => {
     const fetchMock = vi.fn((input: RequestInfo | URL) => {
       const urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const url = new URL(urlString, "http://localhost");
-      if (url.pathname === "/api/projects") {
+      if (url.pathname === "/api/projects/beads") {
         return Promise.resolve(json([project("alpha")]));
       }
       if (url.pathname === "/api/beads") {
@@ -346,7 +354,7 @@ describe("BeadsPage", () => {
     const fetchMock = vi.fn((input: RequestInfo | URL) => {
       const urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const url = new URL(urlString, "http://localhost");
-      if (url.pathname === "/api/projects") {
+      if (url.pathname === "/api/projects/beads") {
         return Promise.resolve(json([project("alpha")]));
       }
       if (url.pathname === "/api/beads") {
@@ -409,7 +417,7 @@ describe("BeadsPage", () => {
     const fetchMock = vi.fn((input: RequestInfo | URL) => {
       const urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const url = new URL(urlString, "http://localhost");
-      if (url.pathname === "/api/projects") {
+      if (url.pathname === "/api/projects/beads") {
         return Promise.resolve(json([project("alpha")]));
       }
       if (url.pathname === "/api/beads") {
@@ -437,7 +445,7 @@ describe("BeadsPage", () => {
     const fetchMock = vi.fn((input: RequestInfo | URL) => {
       const urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const url = new URL(urlString, "http://localhost");
-      if (url.pathname === "/api/projects") {
+      if (url.pathname === "/api/projects/beads") {
         return Promise.resolve(json([project("alpha")]));
       }
       if (url.pathname === "/api/beads") {
