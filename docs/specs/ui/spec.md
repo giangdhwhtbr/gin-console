@@ -1859,9 +1859,6 @@ WHERE the `beads` object of a project in `GET /api/projects/beads` has `stale: t
 - WHEN the Beads page opens with A selected
 - THEN no note is shown
 
-## Use Cases
-- [Filter beads by milestone](use-cases/filter-by-milestone.md)
-
 ### REQ-UI-104: Beads milestone filter
 WHEN the Beads page loads a project, the frontend SHALL request `GET /api/beads/milestones?project=<name>` and SHALL offer a "Milestone" single-select in the bead filter bar, and in its mobile sheet (REQ-UI-084), listing "All", "No milestone", then the milestones grouped as Active (`active`), Planned (`scheduled` and `planned`, by `start`) and Closed (latest `end` first), kept in the URL as `milestone` (`all`, `none` or a milestone id). WHEN the URL has no `milestone`, the filter SHALL select `current`, or "All" when `current` is `null`. WHILE a milestone is selected, only the beads whose `milestone` is that id SHALL match; WHILE "No milestone" is selected, only the beads whose `milestone` is `null` SHALL match. WHILE a closed milestone is selected, closed beads SHALL be fetched and shown without "Show closed". The filter SHALL apply to the List, Board and Focus views. IF the milestones request fails, THEN the select SHALL say "Milestones unavailable" and the page SHALL behave as with "All".
 
@@ -1907,3 +1904,6 @@ The My Tasks page SHALL offer a "Project" select with "All projects" (the defaul
 - GIVEN My Tasks at `/my-tasks?project=A&milestone=m3`
 - WHEN the user chooses project B
 - THEN the URL is `/my-tasks?project=B` and B's current milestone is selected
+
+## Use Cases
+- [Filter beads by milestone](use-cases/filter-by-milestone.md)
