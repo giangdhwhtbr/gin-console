@@ -52,9 +52,8 @@ function keyOf(bead: TeamBead, column: Column, today: string): Key {
       return bead.priority;
     case "status":
       return bead.status;
-    // Age sorts like the creation date: ascending lists the oldest first, descending ends with the oldest.
     case "age":
-      return -ageOf(bead, today);
+      return ageOf(bead, today);
     case "progress":
       return bead.age_days;
     case "closed":
