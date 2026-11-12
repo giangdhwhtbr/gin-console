@@ -27,6 +27,11 @@ const data = {
 const labelsOf = (group: HTMLElement) => within(group).getAllByRole("option").map((o) => o.textContent);
 
 describe("MilestoneFilter", () => {
+  it("REQ-UI-104 the select can shrink so a long title never widens the page", () => {
+    render(<MilestoneFilter state={{ status: "ok", data }} value="a1" onChange={() => {}} />);
+    expect(screen.getByRole("combobox", { name: "Milestone" })).toHaveClass("max-w-full");
+  });
+
   it("REQ-UI-104 lists All, No milestone and the Active, Planned and Closed groups", () => {
     render(<MilestoneFilter state={{ status: "ok", data }} value="a1" onChange={() => {}} />);
     const select = screen.getByRole("combobox", { name: "Milestone" });
