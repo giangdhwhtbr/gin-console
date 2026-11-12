@@ -29,6 +29,7 @@ Vertical slices by value: each epic ships a usable screen end to end.
 Milestone 1 = foundation, projects-dashboard, claude-sessions, quota (Claude sessions only; Claude + Codex quota).
 Beads viewing starts by deep-linking to Scotty (read-only) and later moves natively into the console so Scotty can be retired.
 Web chat is deferred and optional: Claude Code Remote Control, the desktop app, and SSH + tmux already cover continuing a session.
+Dropped on 2026-11-12: More harnesses and Web chat are no longer planned.
 
 ## Order
 
@@ -39,6 +40,8 @@ flowchart LR
   claude-sessions --> more-harnesses
   claude-sessions --> web-chat
 ```
+
+more-harnesses and web-chat were dropped on 2026-11-12.
 
 ## Epics
 
@@ -80,6 +83,7 @@ Risks: Claude estimate may diverge from real limits (no official source); Codex 
 
 ### More harnesses
 Epic: gin-console-rm-more-harnesses
+Status: Dropped on 2026-11-12 by the PM; the epic bead is closed without implementation.
 Goal: Sessions and logs for Codex and Antigravity, plus Antigravity quota.
 Scope: Session parsers for Codex (`~/.codex/sessions`) and Antigravity (`~/.gemini/antigravity`); Antigravity quota; per-harness resume commands.
 Out of scope: opencode.
@@ -98,6 +102,7 @@ Risks: Scope creep from copying all of Scotty; bounded by the agreed parity list
 
 ### Web chat (optional)
 Epic: gin-console-rm-web-chat
+Status: Dropped on 2026-11-12 by the PM; the epic bead is closed without implementation.
 Goal: Continue chatting with agents from the web UI, only if still needed after Milestone 1.
 Scope: Choose between tmux + xterm.js and headless resume when the epic starts.
 Out of scope: Everything else until the epic is picked up.
