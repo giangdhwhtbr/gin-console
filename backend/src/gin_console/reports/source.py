@@ -22,6 +22,7 @@ _KEYS = (
     "started_at",
     "closed_at",
     "estimated_minutes",
+    "priority",
 )
 
 
@@ -50,6 +51,11 @@ def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
     for ident, raw in snapshot.rows.items():
         usage, problem = parse_usage(raw.get("metadata"))
         fields = {key: raw[key] for key in _KEYS if raw.get(key) is not None}
+        metadata = raw.get("metadata")
+        if raw.get("issue_type") == "milestone" and isinstance(metadata, dict):
+            for key in ("start", "end", "kickoff"):
+                if isinstance(metadata.get(key), str):
+                    fields[key] = metadata[key]
         if ident in snapshot.parents:
             fields["parent"] = snapshot.parents[ident]
         try:
