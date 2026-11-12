@@ -161,3 +161,21 @@ WHEN a client requests `GET /api/projects/beads`, the server SHALL return the co
 - GIVEN a config with no projects
 - WHEN a client requests `GET /api/projects/beads`
 - THEN the response is `[]`
+
+### REQ-SERVER-011: Compressed responses
+WHEN a client that sends `Accept-Encoding` naming `gzip` requests any path, the server SHALL compress a response body of at least 1000 bytes with gzip and send `Content-Encoding: gzip`, and SHALL send a smaller body, or any body to a client that does not accept gzip, uncompressed.
+
+#### Scenario: Large API answer
+- GIVEN a project whose bead list serializes to more than 1000 bytes
+- WHEN a client sends `GET /api/beads?project=<name>&closed=1` with `Accept-Encoding: gzip`
+- THEN the response has `Content-Encoding: gzip` and decompresses to the same JSON as without gzip
+
+#### Scenario: Small answer
+- GIVEN the server is running
+- WHEN a client sends `GET /api/health` with `Accept-Encoding: gzip`
+- THEN the response has no `Content-Encoding` header
+
+#### Scenario: Client without gzip
+- GIVEN the same project
+- WHEN a client sends `GET /api/beads?project=<name>&closed=1` with `Accept-Encoding: identity`
+- THEN the response has no `Content-Encoding` header
