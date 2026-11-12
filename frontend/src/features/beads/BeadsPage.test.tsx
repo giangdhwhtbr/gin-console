@@ -49,7 +49,7 @@ const defaultProjects: ProjectBeads[] = [project("alpha", true), project("omega"
 const stub = (
   beadsHandler: (url: URL) => Response | Promise<Response> = () => json([]),
   projects: ProjectBeads[] = defaultProjects,
-  milestonesHandler: (url: URL) => Response = () => json({}, 404),
+  milestonesHandler: (url: URL) => Response | Promise<Response> = () => json({}, 404),
 ) => {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const urlString = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
@@ -632,6 +632,72 @@ describe("BeadsPage", () => {
       await screen.findByText("Epic loose");
       expect(await screen.findByRole("option", { name: "Milestones unavailable" })).toBeInTheDocument();
       expect(screen.getByText("Epic three")).toBeInTheDocument();
+    });
+
+    it("REQ-UI-104 filter by milestone applies to the Focus view", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=focus&milestone=m2");
+      const focus = (id: string, title: string, milestone: string | null) =>
+        bead(id, { title, milestone, status: "in_progress" });
+      withMilestones("m3", () =>
+        json([focus("f-2", "Focus two", "m2"), focus("f-3", "Focus three", "m3"), focus("f-x", "Focus loose", null)]),
+      );
+      render(<BeadsPage />);
+      await screen.findByText("Focus two");
+      expect(screen.queryByText("Focus three")).toBeNull();
+      expect(screen.queryByText("Focus loose")).toBeNull();
+    });
+
+    it("REQ-UI-104 ignores a late milestones answer of another project", async () => {
+      let releaseAlpha: (response: Response) => void = () => {};
+      const alphaAnswer = new Promise<Response>((resolve) => {
+        releaseAlpha = resolve;
+      });
+      const omegaBeads = [
+        bead("o-1", { title: "Omega in o-m", milestone: "o-m" }),
+        bead("o-2", { title: "Omega in a-m", milestone: "a-m" }),
+      ];
+      const answer = (current: string) => ({
+        milestones: [option("a-m", "active"), option("o-m", "active")],
+        current,
+      });
+      stub(
+        () => json(omegaBeads),
+        defaultProjects,
+        (url) =>
+          url.searchParams.get("project") === "alpha" ? alphaAnswer : Promise.resolve(json(answer("o-m"))),
+      );
+      render(<BeadsPage />);
+      await userEvent.selectOptions(await screen.findByLabelText("Project"), "omega");
+      await screen.findByText("Omega in o-m");
+      expect(screen.queryByText("Omega in a-m")).toBeNull();
+      await act(async () => {
+        releaseAlpha(json(answer("a-m")));
+        await alphaAnswer;
+      });
+      expect(screen.getByText("Omega in o-m")).toBeInTheDocument();
+      expect(screen.queryByText("Omega in a-m")).toBeNull();
+      expect(screen.getByLabelText("Milestone")).toHaveValue("o-m");
+    });
+
+    it("REQ-UI-104 an unknown milestone id shows All", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&milestone=bogus");
+      withMilestones("m2");
+      render(<BeadsPage />);
+      await screen.findByText("Epic loose");
+      expect(screen.getByLabelText("Milestone")).toHaveValue("all");
+      expect(screen.getByText("Epic three")).toBeInTheDocument();
+      expect(screen.getByText("Epic two")).toBeInTheDocument();
+      expect(screen.queryByText("Milestone bead")).toBeNull();
+    });
+
+    it("REQ-UI-104 the mobile sheet offers the Milestone select", async () => {
+      withMilestones("m2");
+      render(<BeadsPage />);
+      await screen.findByText("Epic two");
+      expect(screen.getAllByLabelText("Milestone")).toHaveLength(1);
+      await userEvent.click(screen.getByRole("button", { name: /Filters/ }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByLabelText("Milestone")).toHaveValue("m2");
     });
   });
 });
