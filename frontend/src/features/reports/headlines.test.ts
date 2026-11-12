@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { figures, gapCount, headlines } from "./headlines";
+import { figures, gapCount, headlines, teamHeadline } from "./headlines";
+import { teamReport, teamTotals } from "./team/teamFixtures";
 import { report } from "./reportFixtures";
 
 const base = report();
@@ -28,9 +29,22 @@ describe("report headlines", () => {
   });
   it("REQ-UI-090 delivery figures", () => {
     const r = report({
-      delivery: { ...base.delivery, overall: { key: "all", cycle: { n: 2, median: 0.7, p85: 1 }, lead: null }, wip: [{ member: "ann", count: 2 }, { member: "bao", count: 4 }] },
+      delivery: { ...base.delivery, overall: { key: "all", cycle: { n: 2, median: 0.7, p85: 1 }, lead: null } },
     });
-    expect(figures("delivery", r)).toEqual([["Beads closed", "4"], ["Median cycle time", "0.7 d"], ["Median lead time", "—"], ["In progress now", "6"]]);
+    expect(figures("delivery", r)).toEqual([["Beads closed", "4"], ["Median cycle time", "0.7 d"], ["Median lead time", "—"]]);
+  });
+  it("REQ-UI-095 team headline cases", () => {
+    const t = teamReport();
+    const team = teamTotals;
+    expect(teamHeadline({ ...t, milestone: "m1" })).toEqual({ text: "Finished 2 d late", warn: true });
+    const onTime = { ...t, milestones: t.milestones.map((m) => (m.id === "m1" ? { ...m, closed_on: "2026-10-30" } : m)), milestone: "m1" };
+    expect(teamHeadline(onTime)).toEqual({ text: "Finished on time", warn: false });
+    expect(teamHeadline({ ...t, milestone: "m3" })).toEqual({ text: "Starts 30 Nov", warn: false });
+    expect(teamHeadline({ ...t, team: { ...team, closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 } })).toEqual({ text: "27 of 64 closed · on pace", warn: false });
+    expect(teamHeadline({ ...t, team: { ...team, closed: 27, scope: 64, pace: 3.4, pace_needed: 3.6 } })).toEqual({ text: "27 of 64 closed · behind pace", warn: true });
+    expect(teamHeadline({ ...t, team: { ...team, closed: 27, scope: 64, late_open: 2 } })).toEqual({ text: "27 of 64 closed · past end", warn: true });
+    expect(teamHeadline({ ...t, milestones: [], milestone: null, team: null })).toEqual({ text: "No milestones", warn: false });
+    expect(figures("team", base)).toEqual([]);
   });
   it("REQ-UI-089 usage figures", () => {
     expect(figures("usage", base)).toEqual([["Tokens", "51.1M"], ["Estimated cost", "$12.34"], ["Tokens per closed bead", "12.8M"], ["Cache reads", "90%"]]);

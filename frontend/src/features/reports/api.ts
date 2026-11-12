@@ -60,16 +60,12 @@ export type UsageSection = {
 export type WeekRow = { week: string; counts: Record<string, number> };
 export type Stat = { n: number; median: number; p85: number };
 export type TimeRow = { key: string; cycle: Stat | null; lead: Stat | null };
-export type WipRow = { member: string; count: number };
-export type WipBead = { project: string; id: string; title: string; assignee: string | null; age_days: number };
 export type EstimateRow = { project: string; id: string; title: string; estimate_days: number; actual_days: number };
 export type DeliverySection = {
   weeks: WeekRow[];
   by_type: TimeRow[];
   by_member: TimeRow[];
   overall: TimeRow;
-  wip: WipRow[];
-  oldest: WipBead[];
   estimates: EstimateRow[];
 };
 export type Findings = { critical: number; important: number; minor: number; suggestion: number };
@@ -121,7 +117,7 @@ const isObject = (value: unknown): value is object => typeof value === "object" 
 
 const ARRAYS: Record<string, string[]> = {
   usage: ["members", "epics", "beads", "stages", "models"],
-  delivery: ["weeks", "by_type", "by_member", "wip", "oldest", "estimates"],
+  delivery: ["weeks", "by_type", "by_member", "estimates"],
   quality: ["members", "epics", "points"],
   coverage: ["not_collected", "invalid", "unpriced", "sources"],
 };
@@ -142,7 +138,7 @@ function isReport(value: unknown): value is Report {
   );
 }
 
-async function failure(response: Response): Promise<Error> {
+export async function failure(response: Response): Promise<Error> {
   if (response.status === 404) return new Error("Project not found");
   let detail = `HTTP ${response.status}`;
   try {

@@ -64,7 +64,7 @@ describe("report sections", () => {
     expect(screen.getByRole("row", { name: /opus developer 10 \$1\.00/ })).toBeTruthy();
   });
 
-  it("REQ-UI-090 delivery: weeks, ranges by type and member, in progress, oldest", () => {
+  it("REQ-UI-090 delivery: weeks, ranges by type and member, no work in progress", () => {
     const base = report();
     const d: Delivery = {
       ...base.delivery,
@@ -74,8 +74,6 @@ describe("report sections", () => {
       ],
       by_type: [{ key: "task", cycle: { n: 3, median: 2, p85: 4 }, lead: null }],
       by_member: [{ key: "ann", cycle: { n: 3, median: 1.5, p85: 4 }, lead: { n: 3, median: 5, p85: 6 } }],
-      wip: [{ member: "ann", count: 2 }],
-      oldest: [{ project: "alpha", id: "a-7", title: "Old", assignee: "ann", age_days: 10 }],
     };
     const { container } = render(<DeliverySection delivery={d} />);
     expect(container.querySelectorAll(".recharts-bar").length).toBeGreaterThan(0);
@@ -84,10 +82,8 @@ describe("report sections", () => {
     expect(screen.getByRole("button", { name: "By member" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByLabelText("ann: 3 beads, median 1.5 d, 85th percentile 4.0 d")).toBeTruthy();
     expect(screen.getByLabelText("ann: 3 beads, median 5.0 d, 85th percentile 6.0 d")).toBeTruthy();
-    expect(screen.getByLabelText("ann: 2 in progress")).toBeTruthy();
-    const old = screen.getByRole("row", { name: /a-7/ });
-    expect(within(old).getByText("10.0 d")).toBeTruthy();
-    expect(within(old).getByRole("link").getAttribute("href")).toBe("/beads/alpha/a-7");
+    expect(screen.queryByText("Oldest in progress")).toBeNull();
+    expect(screen.queryByText("In progress by member")).toBeNull();
     expect(screen.queryByText("Estimate and actual")).toBeNull();
   });
 
