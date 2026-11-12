@@ -1,11 +1,13 @@
 import hashlib
+from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import JSONResponse, Response
 from pydantic import TypeAdapter
 
-from gin_console.beads.models import BeadDetail, BeadSummary, Comment
+from gin_console.beads.models import BeadDetail, BeadSummary, Comment, ProjectMilestones
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import (
     BeadNotFound,
@@ -13,6 +15,7 @@ from gin_console.beads.source import (
     get_bead,
     get_comments,
     list_beads,
+    list_milestones,
     valid_id,
 )
 from gin_console.config import Settings
@@ -33,7 +36,9 @@ def _matches(if_none_match: str | None, etag: str) -> bool:
     return any(e == "*" or e.removeprefix("W/") == bare for e in entries)
 
 
-def build_router(settings: Settings, snapshots: SnapshotStore) -> APIRouter:
+def build_router(
+    settings: Settings, snapshots: SnapshotStore, clock: Callable[[], datetime]
+) -> APIRouter:
     router = APIRouter()
 
     def project_dir(name: str | None) -> Path:
@@ -65,6 +70,15 @@ def build_router(settings: Settings, snapshots: SnapshotStore) -> APIRouter:
         if _matches(if_none_match, etag):
             return Response(status_code=304, headers=headers)
         return Response(content=body, media_type="application/json", headers=headers)
+
+    @router.get("/beads/milestones", response_model=ProjectMilestones)
+    def get_milestones(project: str | None = None) -> ProjectMilestones | JSONResponse:
+        cwd = project_dir(project)
+        today = clock().astimezone().date()
+        try:
+            return list_milestones(snapshots.get(cwd), today)
+        except (BeadsError, RecursionError) as exc:
+            return failure(exc)
 
     @router.get("/beads/{project}/{bead_id}", response_model=BeadDetail)
     def get_one(project: str, bead_id: str) -> BeadDetail | JSONResponse:

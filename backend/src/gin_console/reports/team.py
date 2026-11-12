@@ -2,16 +2,15 @@
 
 Dates are local (`astimezone()`); the working days are Monday to Friday."""
 
-import re
 import statistics
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
+from gin_console.beads.milestones import current_milestone, milestone_status, parse_date
 from gin_console.reports.models import (
     BeadBucket,
     DayRow,
     MemberFigures,
-    MilestoneStatus,
     ReportBead,
     TeamBead,
     TeamEpic,
@@ -23,20 +22,10 @@ from gin_console.reports.models import (
 from gin_console.reports.service import DAY, UNASSIGNED, _span, _Tree
 
 PACE_WINDOW = 5  # working days behind `throughput`
-_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
 def _day(moment: datetime) -> date:
     return moment.astimezone().date()
-
-
-def _iso(text: str | None) -> date | None:
-    if not text or _DATE.fullmatch(text) is None:
-        return None
-    try:
-        return date.fromisoformat(text)
-    except ValueError:  # e.g. 2026-13-45
-        return None
 
 
 def _workday(day: date) -> date:
@@ -53,22 +42,13 @@ def _member(row: TeamBead) -> str:
     return row.assignee or UNASSIGNED
 
 
-def _status(m: ReportBead, today: date) -> MilestoneStatus:
-    if m.status == "closed":
-        return "closed"
-    kickoff = _iso(m.kickoff)
-    if kickoff is None:
-        return "planned"
-    return "active" if kickoff <= today else "scheduled"
-
-
 def _milestones(beads: list[ReportBead], today: date) -> tuple[list[TeamMilestone], int]:
     found: list[TeamMilestone] = []
     undated = 0
     for m in beads:
         if m.issue_type != "milestone":
             continue
-        start, end = _iso(m.start), _iso(m.end)
+        start, end = parse_date(m.start), parse_date(m.end)
         if start is None or end is None:
             undated += 1
             continue
@@ -77,7 +57,7 @@ def _milestones(beads: list[ReportBead], today: date) -> tuple[list[TeamMileston
             TeamMilestone(
                 id=m.id,
                 title=m.title,
-                status=_status(m, today),
+                status=milestone_status(m.status == "closed", m.kickoff, today),
                 start=start,
                 end=end,
                 closed_on=closed_on,
@@ -88,14 +68,9 @@ def _milestones(beads: list[ReportBead], today: date) -> tuple[list[TeamMileston
 
 
 def _default(milestones: list[TeamMilestone], today: date) -> TeamMilestone:
-    opened = [m for m in milestones if m.status != "closed"]
-    for pool in (
-        [m for m in opened if m.status == "active"],
-        [m for m in opened if m.start <= today <= m.end],
-        [m for m in opened if m.start > today],
-    ):
-        if pool:
-            return pool[0]  # milestones are sorted by start, then id
+    found = current_milestone(milestones, today)
+    if found is not None:
+        return found
     pool = [m for m in milestones if m.status == "closed"] or milestones
     return min(pool, key=lambda m: (-m.end.toordinal(), m.id))
 
