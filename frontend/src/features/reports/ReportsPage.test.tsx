@@ -285,6 +285,35 @@ describe("ReportsPage", () => {
     expect(window.location.pathname + window.location.search).toBe("/reports?project=alpha&days=30&tab=team&milestone=m2");
   });
 
+  it("REQ-REPORTS-012 asks once when the default milestone is written to the URL", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=team");
+    const mock = stub();
+    render(<ReportsPage />);
+    await screen.findByLabelText("Milestone");
+    await vi.waitFor(() => expect(window.location.search).toContain("milestone=m2"));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(teamCalls(mock)).toEqual(["/api/reports/team?project=alpha"]);
+    expect(screen.getByLabelText("Milestone")).toBeInTheDocument();
+  });
+
+  it("REQ-REPORTS-012 change milestone requests the new team report", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=team&milestone=m2&member=ann&status=closed");
+    const mock = stub(undefined, (url) => json(teamFixture({ milestone: url.searchParams.get("milestone") ?? "m2" })));
+    render(<ReportsPage />);
+    await userEvent.selectOptions(await screen.findByLabelText("Milestone"), "m1");
+    expect(await screen.findByText("Closed · 2 d late")).toBeInTheDocument();
+    expect(teamCalls(mock)).toContain("/api/reports/team?project=alpha&milestone=m1");
+    expect(window.location.search).toBe("?project=alpha&days=30&tab=team&milestone=m1");
+  });
+
+  it("REQ-UI-095 no Team headline while All projects is selected", async () => {
+    window.history.replaceState(null, "", "/reports?project=all&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    expect(screen.getByRole("tab", { name: "Team" })).toBeInTheDocument();
+  });
+
   it("REQ-REPORTS-012 leaves the milestone out of the URL on other tabs", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
     stub();
@@ -317,8 +346,7 @@ describe("ReportsPage", () => {
     render(<ReportsPage />);
     expect(await screen.findByText("boom")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-    // the default milestone is written to the URL, which asks for the report once more
-    await vi.waitFor(() => expect(screen.getByText("working day 9 of 20 · 11 left")).toBeInTheDocument());
+    expect(await screen.findByText("working day 9 of 20 · 11 left")).toBeInTheDocument();
   });
 
   it("REQ-REPORTS-017 drops a late answer", async () => {

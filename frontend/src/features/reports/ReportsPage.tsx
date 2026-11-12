@@ -41,7 +41,7 @@ export function ReportsPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
   const [settled, setSettled] = useState<{ key: string; value: Settled } | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const [settledTeam, setSettledTeam] = useState<{ key: string; value: SettledTeam } | null>(null);
+  const [settledTeam, setSettledTeam] = useState<{ base: string; requested: string; value: SettledTeam } | null>(null);
   const [teamAttempt, setTeamAttempt] = useState(0);
   const { search } = useLocation();
   const filters = parseReportSearch(search);
@@ -61,26 +61,33 @@ export function ReportsPage() {
   const key = JSON.stringify([selected, days, sprint, attempt]);
   const loaded: Loaded = settled !== null && settled.key === key ? settled.value : { status: "loading" };
 
-  const teamKey = JSON.stringify([selected, filters.milestone, teamAttempt]);
-  const team: LoadedTeam = settledTeam !== null && settledTeam.key === teamKey ? settledTeam.value : { status: "loading" };
-  const teamWanted = selected !== "" && selected !== "all";
+  // an answer counts for the request it was made for; an answer to "server default" also counts for the milestone it chose,
+  // so writing that milestone into the URL does not ask again
+  const teamBase = JSON.stringify([selected, teamAttempt]);
   const { milestone, member } = filters;
+  const teamCurrent =
+    settledTeam !== null &&
+    settledTeam.base === teamBase &&
+    (settledTeam.requested === milestone ||
+      (settledTeam.requested === "" && settledTeam.value.status === "ok" && settledTeam.value.report.milestone === milestone));
+  const team: LoadedTeam = settledTeam !== null && teamCurrent ? settledTeam.value : { status: "loading" };
+  const teamWanted = selected !== "" && selected !== "all";
 
   useEffect(() => {
-    if (!teamWanted) return;
+    if (!teamWanted || teamCurrent) return;
     let live = true;
     fetchTeam(selected, milestone).then(
       (report) => {
-        if (live) setSettledTeam({ key: teamKey, value: { status: "ok", report } });
+        if (live) setSettledTeam({ base: teamBase, requested: milestone, value: { status: "ok", report } });
       },
       (error: unknown) => {
-        if (live) setSettledTeam({ key: teamKey, value: { status: "error", message: messageOf(error) } });
+        if (live) setSettledTeam({ base: teamBase, requested: milestone, value: { status: "error", message: messageOf(error) } });
       },
     );
     return () => {
       live = false;
     };
-  }, [selected, milestone, teamKey, teamWanted]);
+  }, [selected, milestone, teamBase, teamWanted, teamCurrent]);
 
   // the URL follows the answer on the Team tab: the server's default milestone, and no member that is not in the milestone
   const teamReport = team.status === "ok" ? team.report : null;
