@@ -136,7 +136,7 @@ export function BeadTable({
   const columns = COLUMNS[status];
   const press = (column: Column) =>
     setPicked({ status, column, dir: sort.column === column ? (sort.dir === 1 ? -1 : 1) : 1 });
-  const empty = `No ${status === "all" ? "" : `${STATUS_NAME[status]} `}beads${member === "" ? "" : ` for ${member}`} in this milestone`;
+  const empty = `No ${status === "all" ? "" : `${STATUS_NAME[status]} `}beads in this milestone${member === "" ? "" : ` for ${member}`}`;
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-2">

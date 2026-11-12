@@ -93,7 +93,7 @@ describe("BeadTable", () => {
 
   it("REQ-REPORTS-016 empty", () => {
     show([open], "in_progress");
-    expect(screen.getByText("No in progress beads for ann in this milestone")).toBeInTheDocument();
+    expect(screen.getByText("No in progress beads in this milestone for ann")).toBeInTheDocument();
     cleanup();
     show([], "all", "");
     expect(screen.getByText("No beads in this milestone")).toBeInTheDocument();
