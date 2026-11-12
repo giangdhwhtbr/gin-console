@@ -1,4 +1,4 @@
-"""GET /api/reports (spec REQ-REPORTS-001, REQ-REPORTS-007)."""
+"""GET /api/reports and GET /api/reports/team (spec REQ-REPORTS-001, 007, 008)."""
 
 import re
 from collections.abc import Callable
@@ -11,14 +11,16 @@ from gin_console.beads.service import KeyedCache
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import BeadsError
 from gin_console.config import Settings
-from gin_console.reports.models import ProjectError, Report, ReportBead
+from gin_console.reports.models import ProjectError, Report, ReportBead, TeamReport
 from gin_console.reports.service import build_report
 from gin_console.reports.source import read_beads
+from gin_console.reports.team import build_team
 
 TTL = timedelta(seconds=60)
 ALL = "all"
 PERIODS = {"7": 7, "30": 30, "90": 90}
 _SPRINT = re.compile(r"[A-Za-z0-9._-]{1,100}")
+_MILESTONE = re.compile(r"[A-Za-z0-9._-]{1,200}")
 
 
 def _message(exc: BeadsError | RecursionError) -> str:
@@ -34,6 +36,8 @@ def build_router(
     router = APIRouter()
     reports = KeyedCache[tuple[str, int, str | None], Report](TTL, clock)
     on_refresh.append(reports.clear)
+    team = KeyedCache[tuple[str, str | None], TeamReport](TTL, clock)
+    on_refresh.append(team.clear)
 
     def fetch(project: str, days: int, sprint: str | None) -> Report:
         entries = (
@@ -82,6 +86,31 @@ def build_router(
         try:
             # a partial "all" answer is a success and is cached; a failure is not (KeyedCache)
             return reports.get((project, period, sprint), lambda: fetch(project, period, sprint))
+        except (BeadsError, RecursionError) as exc:
+            return JSONResponse(status_code=502, content={"error": _message(exc)})
+
+    @router.get("/reports/team", response_model=TeamReport)
+    def get_team(
+        project: str | None = None, milestone: str | None = None
+    ) -> TeamReport | JSONResponse:
+        entry = next((p for p in settings.projects if p.name == project), None)
+        if entry is None or not entry.path.is_dir():
+            raise HTTPException(status_code=404)
+        if milestone is not None and _MILESTONE.fullmatch(milestone) is None:
+            return JSONResponse(
+                status_code=422,
+                content={"error": "milestone may hold only letters, digits, '.', '_' and '-'"},
+            )
+        try:
+            return team.get(
+                (entry.name, milestone),
+                lambda: build_team(
+                    read_beads(snapshots.get(entry.path), entry.name),
+                    now=clock(),
+                    project=entry.name,
+                    milestone=milestone,
+                ),
+            )
         except (BeadsError, RecursionError) as exc:
             return JSONResponse(status_code=502, content={"error": _message(exc)})
 

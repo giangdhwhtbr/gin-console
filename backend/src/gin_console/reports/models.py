@@ -1,6 +1,7 @@
 """The report of GET /api/reports and the parsed `ai_usage` it is built from."""
 
-from datetime import datetime
+from datetime import date, datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -72,6 +73,10 @@ class ReportBead(BaseModel):
     started_at: datetime | None = None
     closed_at: datetime | None = None
     estimated_minutes: int | None = None
+    priority: int | None = None
+    start: str | None = None  # milestone rows only: metadata.start as written
+    end: str | None = None
+    kickoff: str | None = None
     usage: AiUsage | None = None
     usage_problem: str | None = (
         None  # "unreadable" or "version N"; None when usage is fine or absent
@@ -161,19 +166,6 @@ class WeekRow(BaseModel):
     counts: dict[str, int]
 
 
-class WipRow(BaseModel):
-    member: str
-    count: int
-
-
-class WipBead(BaseModel):
-    project: str
-    id: str
-    title: str
-    assignee: str | None
-    age_days: float
-
-
 class EstimateRow(BaseModel):
     project: str
     id: str
@@ -187,8 +179,6 @@ class DeliverySection(BaseModel):
     by_type: list[TimeRow]
     by_member: list[TimeRow]
     overall: TimeRow
-    wip: list[WipRow]
-    oldest: list[WipBead]
     estimates: list[EstimateRow]
 
 
@@ -259,3 +249,87 @@ class Report(BaseModel):
     quality: QualitySection
     coverage: Coverage
     errors: list[ProjectError]
+
+
+BeadBucket = Literal["open", "in_progress", "closed"]
+MilestoneStatus = Literal["active", "scheduled", "planned", "closed"]
+
+
+class TeamMilestone(BaseModel):
+    id: str
+    title: str
+    status: MilestoneStatus
+    start: date
+    end: date
+    closed_on: date | None
+
+
+class TeamEpic(BaseModel):
+    id: str
+    title: str
+
+
+class TeamBead(BaseModel):
+    id: str
+    title: str
+    issue_type: str
+    status: str
+    bucket: BeadBucket
+    assignee: str | None
+    priority: int | None
+    created_at: datetime
+    epic: TeamEpic
+    started_at: datetime | None
+    closed_at: datetime | None
+    cycle_days: float | None
+    age_days: float | None  # in_progress only
+    late_days: int | None  # closed only
+    rework: int | None  # own reopens + bugs; None without readable ai_usage
+
+
+class TeamFigures(BaseModel):
+    scope: int
+    closed: int
+    in_progress: int
+    open: int
+    blocked: int
+    unclaimed: int
+    done: float | None
+    throughput: float
+    cycle_median: float | None
+    oldest_in_progress: float | None
+    on_time: float | None
+    rework_rate: float | None
+    reopens: int
+    bugs: int
+
+
+class MemberFigures(TeamFigures):
+    member: str
+
+
+class TeamTotals(TeamFigures):
+    working_days: int
+    elapsed: int
+    days_left: int
+    pace: float
+    pace_needed: float | None
+    late_open: int
+
+
+class DayRow(BaseModel):
+    date: date
+    closed: dict[str, int]  # member -> beads closed that working day; zero counts left out
+
+
+class TeamReport(BaseModel):
+    generated_at: datetime
+    project: str
+    today: date
+    milestones: list[TeamMilestone]
+    undated: int
+    milestone: str | None
+    team: TeamTotals | None
+    members: list[MemberFigures]
+    days: list[DayRow]
+    beads: list[TeamBead]

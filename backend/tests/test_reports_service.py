@@ -4,7 +4,7 @@ from typing import Any
 import pytest
 from report_beads import closed, row, snap, usage
 
-from gin_console.reports.models import CoverageBead, EstimateRow, Point, Report, Stat, WipRow
+from gin_console.reports.models import CoverageBead, EstimateRow, Point, Report, Stat
 from gin_console.reports.service import build_report
 from gin_console.reports.source import read_beads
 
@@ -275,27 +275,12 @@ def test_reports_004_weeks_use_utc_dates() -> None:
     assert "2026-W45" not in weeks
 
 
-def test_reports_004_work_in_progress() -> None:
-    r = report(
-        [
-            row("a-1", status="in_progress", assignee="ann", started_at=ago(10)),
-            row("a-2", status="in_progress", assignee="ann", started_at=ago(2)),
-            row("a-3", status="in_progress", assignee="bob", updated_at=ago(5)),
-            closed("a-4", ago(1), assignee="ann", started_at=ago(3)),
-            row("a-5", status="in_progress", assignee="cat", started_at=ago(60)),
-        ]
-    )
-    assert r.delivery.wip == [
-        WipRow(member="ann", count=2),
-        WipRow(member="bob", count=1),
-        WipRow(member="cat", count=1),
-    ]
-    assert [(b.id, b.age_days) for b in r.delivery.oldest] == [
-        ("a-5", 60.0),
-        ("a-1", 10.0),
-        ("a-3", 5.0),
-        ("a-2", 2.0),
-    ]
+# REQ-REPORTS-004
+def test_reports_004_no_work_in_progress() -> None:
+    r = report([row("a-1", status="in_progress", assignee="ann", started_at=ago(10))])
+    dumped = r.delivery.model_dump()
+    assert "wip" not in dumped
+    assert "oldest" not in dumped
 
 
 def test_reports_004_estimate_against_working_days() -> None:

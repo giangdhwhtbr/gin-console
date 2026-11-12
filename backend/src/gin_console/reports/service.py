@@ -33,13 +33,10 @@ from gin_console.reports.models import (
     Totals,
     UsageSection,
     WeekRow,
-    WipBead,
-    WipRow,
 )
 
 UNASSIGNED = "Unassigned"
 TOP = 10
-OLDEST = 5
 WORKDAY_MINUTES = 480  # gin-workflow workflow_core/milestone.py WORKDAY_MINUTES
 STAGES = ("discuss", "plan", "orchestrate", "execute", "review", "verify", "ship", "quick")
 DAY = 86400.0
@@ -347,7 +344,7 @@ def _times(closed: list[ReportBead], key: Callable[[ReportBead], str]) -> list[T
 
 
 def _delivery(
-    scope: list[ReportBead], closed: list[ReportBead], now: datetime, days: int, sprint: str | None
+    closed: list[ReportBead], now: datetime, days: int, sprint: str | None
 ) -> DeliverySection:
     counts: dict[str, Counter[str]] = defaultdict(Counter)
     for bead in closed:
@@ -359,9 +356,6 @@ def _delivery(
     else:
         dates = [_closed_at(b).astimezone(UTC).date() for b in closed]
         weeks = _weeks(min(dates), max(dates)) if dates else []
-    active = [b for b in scope if b.status == "in_progress"]
-    per_member = Counter(member_of(b) for b in active)
-    oldest = sorted(active, key=lambda b: (b.started_at or b.updated_at, b.id))[:OLDEST]
     estimates = [
         EstimateRow(
             project=b.project,
@@ -378,20 +372,6 @@ def _delivery(
         by_type=_times(closed, lambda b: b.issue_type),
         by_member=_times(closed, member_of),
         overall=(_times(closed, lambda _: "all") or [TimeRow(key="all", cycle=None, lead=None)])[0],
-        wip=[
-            WipRow(member=m, count=c)
-            for m, c in sorted(per_member.items(), key=lambda x: (-x[1], x[0]))
-        ],
-        oldest=[
-            WipBead(
-                project=b.project,
-                id=b.id,
-                title=b.title,
-                assignee=b.assignee,
-                age_days=round((now - (b.started_at or b.updated_at)).total_seconds() / DAY, 1),
-            )
-            for b in oldest
-        ],
         estimates=estimates,
     )
 
@@ -517,7 +497,7 @@ def build_report(
         sprint=sprint,
         totals=_totals(closed, measured),
         usage=_usage(tree, closed, measured),
-        delivery=_delivery(scope, closed, now, days, sprint),
+        delivery=_delivery(closed, now, days, sprint),
         quality=_quality(tree, measured),
         coverage=_coverage(closed, scope if sprint is not None else closed, measured),
         errors=errors,
