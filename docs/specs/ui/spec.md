@@ -1853,3 +1853,6 @@ WHERE the `beads` object of a project in `GET /api/projects/beads` has `stale: t
 - GIVEN project A whose `beads` has no `stale` key, or `stale: false`
 - WHEN the Beads page opens with A selected
 - THEN no note is shown
+
+## Use Cases
+- [Filter beads by milestone](use-cases/filter-by-milestone.md)
