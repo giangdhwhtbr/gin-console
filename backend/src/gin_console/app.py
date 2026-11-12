@@ -8,6 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse, Response
+from starlette.middleware.gzip import GZipMiddleware
 
 from gin_console.beads.router import build_router as build_beads_router
 from gin_console.beads.snapshot import Reader, SnapshotStore
@@ -40,6 +41,7 @@ def create_app(
     clock: Callable[[], datetime] = utc_now,
 ) -> FastAPI:
     app = FastAPI(title="gin-console", docs_url=None, redoc_url=None, openapi_url=None)
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
 
     api = APIRouter(prefix="/api")
 

@@ -244,6 +244,7 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 
 ## Diagrams
 - [Export read](diagrams/export-read-activity.md)
+- [Bead list transfer](diagrams/bead-list-transfer-activity.md)
 
 ### REQ-BEADS-013: Stale export
 The server SHALL record, each time it reads a project's `.beads/issues.jsonl`, the content of the project's embedded Dolt manifests (`.beads/embeddeddolt/*/.dolt/noms/manifest`), and SHALL report the project's export as stale WHILE that content differs from the recorded content and the file has not changed since; WHERE a project has no such manifest, its export SHALL never be stale. `GET /api/projects` and `GET /api/projects/beads` SHALL include `stale` (a boolean) in the `beads` object of each project whose beads were read.
@@ -272,3 +273,31 @@ The server SHALL record, each time it reads a project's `.beads/issues.jsonl`, t
 - GIVEN the file was read when the manifest held `root-1`
 - WHEN a bead is written, the manifest now holds `root-2`, the file is unchanged, and a client requests `GET /api/projects/beads` at once
 - THEN that project's `beads.stale` is `true`
+
+### REQ-BEADS-014: Bead list revalidation
+WHEN the server answers `GET /api/beads` with 200, it SHALL send `ETag: W/"<tag>"`, where `<tag>` is derived from the response body so that two equal bodies have the same tag and two different bodies have different tags, together with `Cache-Control: no-cache`; WHEN the request's `If-None-Match` names that tag, the server SHALL answer 304 with the same `ETag` and no body; and it SHALL send no `ETag` with a 404 or 502 answer.
+
+#### Scenario: Same list
+- GIVEN a project whose beads did not change between two requests
+- WHEN a client requests `GET /api/beads?project=<name>` twice
+- THEN both answers are 200 with the same `ETag` and `Cache-Control: no-cache`
+
+#### Scenario: Not modified
+- GIVEN a client holds the `ETag` of the current bead list
+- WHEN it requests the list again with `If-None-Match` set to that `ETag`
+- THEN the answer is 304 with that `ETag` and an empty body
+
+#### Scenario: Changed list
+- GIVEN a client holds the `ETag` of a bead list, and a bead's title changes in the export
+- WHEN it requests the list with `If-None-Match` set to that `ETag`
+- THEN the answer is 200 with the new list and a different `ETag`
+
+#### Scenario: Show closed
+- GIVEN a project with closed beads
+- WHEN a client requests the list without and with `closed=1`
+- THEN the two `ETag` values differ
+
+#### Scenario: Failure
+- GIVEN the project's export cannot be read as in REQ-BEADS-005
+- WHEN a client requests its beads with any `If-None-Match`
+- THEN the answer is 502 with an `error` and no `ETag`
