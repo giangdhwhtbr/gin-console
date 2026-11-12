@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 import type { ProjectBeads } from "@/features/projects/api";
-import type { BeadSummary } from "./api";
+import type { BeadSummary, MilestoneOption, ProjectMilestones } from "./api";
 
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -25,8 +25,20 @@ export const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSumm
   blocked: false,
   created_by: null,
   blocked_by: [],
+  milestone: null,
   ...overrides,
 });
+
+export const milestoneOption = (
+  id: string,
+  status: MilestoneOption["status"],
+  overrides: Partial<MilestoneOption> = {},
+): MilestoneOption => ({ id, title: `Milestone ${id}`, status, start: null, end: null, ...overrides });
+
+export const projectMilestones = (
+  milestones: MilestoneOption[],
+  current: string | null = null,
+): ProjectMilestones => ({ milestones, current });
 
 export const project = (name: string, exists = true): ProjectBeads => ({
   name,

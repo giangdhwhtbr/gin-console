@@ -1,4 +1,5 @@
 import type { BeadSummary } from "./api";
+import { matchesMilestone, type MilestoneInEffect } from "./milestoneChoice";
 
 export const VIEWS = ["list", "board", "focus"] as const;
 export type View = (typeof VIEWS)[number];
@@ -17,6 +18,8 @@ export type BeadFilters = {
   finished: boolean;
   assignee: string[];
   sprint: string;
+  /** `all`, `none`, a milestone id, or `` for the project's current milestone (REQ-UI-104). */
+  milestone: string;
   select: string;
 };
 
@@ -44,6 +47,7 @@ export function parseFilters(search: string): BeadFilters {
     finished: p.get("finished") === "1",
     assignee: parseArray(p.get("assignee")),
     sprint: p.get("sprint") ?? "",
+    milestone: p.get("milestone") ?? "",
     select: p.get("select") ?? "",
   };
 }
@@ -63,6 +67,7 @@ export function filtersToSearch(filters: BeadFilters): string {
   if (filters.finished) p.set("finished", "1");
   if (filters.assignee.length > 0) p.set("assignee", filters.assignee.join(","));
   if (filters.sprint !== "") p.set("sprint", filters.sprint);
+  if (filters.milestone !== "") p.set("milestone", filters.milestone);
   if (filters.select !== "") p.set("select", filters.select);
   const text = p.toString();
   return text === "" ? "" : `?${text}`;
@@ -78,7 +83,11 @@ export const effectiveAssignee = (bead: BeadSummary): string | null => {
   return val ? val.trim() : null;
 };
 
-export function filterBeads(beads: readonly BeadSummary[], filters: BeadFilters): BeadSummary[] {
+export function filterBeads(
+  beads: readonly BeadSummary[],
+  filters: BeadFilters,
+  milestone: MilestoneInEffect = "all",
+): BeadSummary[] {
   const needle = filters.q.trim().toLowerCase();
   const sprintMap = new Map<string, string[]>();
   const sprintRegex = /^sprint:(.+)$/;
@@ -95,6 +104,7 @@ export function filterBeads(beads: readonly BeadSummary[], filters: BeadFilters)
   }
 
   return beads.filter((bead) => {
+    if (!matchesMilestone(bead, milestone)) return false;
     if (
       needle !== "" &&
       !bead.id.toLowerCase().includes(needle) &&
