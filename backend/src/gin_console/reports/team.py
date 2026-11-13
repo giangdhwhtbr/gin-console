@@ -19,7 +19,7 @@ from gin_console.reports.models import (
     TeamReport,
     TeamTotals,
 )
-from gin_console.reports.service import DAY, UNASSIGNED, _span, _Tree
+from gin_console.reports.service import DAY, UNASSIGNED, _key, _span, _Tree
 
 PACE_WINDOW = 5  # working days behind `throughput`
 
@@ -78,11 +78,13 @@ def _default(milestones: list[TeamMilestone], today: date) -> TeamMilestone:
 def _scope(
     tree: _Tree, beads: list[ReportBead], milestone_id: str
 ) -> list[tuple[ReportBead, ReportBead]]:
-    """(bead, nearest epic) of every bead that sits under an epic of the milestone."""
+    """(bead, nearest epic) of beads under an epic of the milestone; an epic while childless."""
     rows: list[tuple[ReportBead, ReportBead]] = []
     for bead in beads:
-        if bead.issue_type in ("epic", "milestone"):
+        if bead.issue_type == "milestone":
             continue
+        if bead.issue_type == "epic" and tree.children.get(_key(bead)):
+            continue  # split into tasks: its children carry the work
         epics = tree.epics_of(bead)
         if any(e.parent == milestone_id for e in epics):
             rows.append((bead, epics[0]))

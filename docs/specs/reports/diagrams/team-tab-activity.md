@@ -17,7 +17,7 @@ flowchart TD
   any -- yes --> sel{M is a listed milestone?}
   sel -- yes --> scope
   sel -- no --> def[Default: active, else open holding today, else next open, else latest closed]
-  def --> scope[Scope: non-epic beads under the milestone's epics; bucket open, in_progress or closed; member = assignee or Unassigned]
+  def --> scope[Scope: non-milestone beads under the milestone's epics, except epics that have child beads; bucket open, in_progress or closed; member = assignee or Unassigned]
   scope --> kpi[KPIs for the team and each member; closed per working day; bead rows]
   kpi --> answer[Answer cached for 60 s]
   answer --> late{Still the selected project and milestone?}

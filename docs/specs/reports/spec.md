@@ -218,7 +218,7 @@ Source: `assets/2026-11-12/mockup/index.html`
 - THEN both responses are 502 with an `error` and the failure is not cached
 
 ### REQ-REPORTS-009: Team scope and bead rows
-The scope of a milestone SHALL be every bead that is neither an epic nor a milestone and whose chain of parents holds an epic whose parent is the milestone.
+The scope of a milestone SHALL be every bead that is not a milestone, whose chain of parents (itself included) holds an epic whose parent is the milestone, and that is either not an epic or an epic that no bead has as its parent.
 
 Each scope bead SHALL fall in one bucket:
 - `closed` for status `closed`;
@@ -229,7 +229,7 @@ Its member SHALL be its `assignee`, or `Unassigned` when it has none.
 
 The response SHALL hold `beads`, one row per scope bead, with:
 - `id`, `title`, `issue_type`, `status`, `bucket`, `assignee`, `priority` and `created_at`;
-- `epic`: the `id` and `title` of the nearest epic in its chain of parents;
+- `epic`: the `id` and `title` of the nearest epic among the bead and its chain of parents;
 - `started_at` and `closed_at`;
 - `cycle_days`, as the cycle time of REQ-REPORTS-004, or `null`;
 - `age_days`: for an in-progress bead, the days since `started_at` (else `updated_at`); otherwise `null`;
@@ -240,6 +240,16 @@ The response SHALL hold `beads`, one row per scope bead, with:
 - GIVEN milestone `m2` with epic `e1`, whose child `e1.1` has child `e1.1.1`, and epic `e9` under milestone `m3` with child `e9.1`
 - WHEN the team report for `m2` is built
 - THEN `beads` holds `e1.1` and `e1.1.1` with epic `e1`, and neither `e1` nor `e9.1`
+
+#### Scenario: epic not yet split into tasks
+- GIVEN milestone `m2` with epics `e2`, `e3` and `e4` without child beads, all assigned to `ann`, and epic `e5` whose only child, a closed task, is assigned to `ann`
+- WHEN the team report for `m2` is built
+- THEN `beads` holds `e2`, `e3`, `e4` and the task, each of `e2`, `e3` and `e4` with itself as its epic, `e5` is not in `beads`, and `ann`'s row has scope 4 and closed 1
+
+#### Scenario: nested epic without children
+- GIVEN milestone `m2` with epic `e1` whose only child is epic `e1.1` without child beads
+- WHEN the team report for `m2` is built
+- THEN `beads` holds `e1.1` with itself as its epic, and not `e1`
 
 #### Scenario: buckets and members
 - GIVEN scope beads with status `blocked` and no assignee, `deferred` assigned to `ann`, and `in_progress` assigned to `bao`
