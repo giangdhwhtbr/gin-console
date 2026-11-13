@@ -123,6 +123,35 @@ def test_reports_009_nested_scope() -> None:
 
 
 # REQ-REPORTS-009
+def test_reports_009_epic_not_yet_split() -> None:
+    rows = [
+        *standard(),
+        row("e2", issue_type="epic", parent="m2", assignee="ann"),
+        row("e3", issue_type="epic", parent="m2", assignee="ann"),
+        row("e4", issue_type="epic", parent="m2", assignee="ann"),
+        row("e5", issue_type="epic", parent="m2", assignee="ann"),
+        closed("e5.1", at("2026-11-05"), parent="e5", assignee="ann"),
+    ]
+    r = team(rows)
+    assert [b.id for b in r.beads] == ["e2", "e3", "e4", "e5.1"]
+    assert all(b.epic.id == b.id for b in r.beads if b.id != "e5.1")
+    ann = next(m for m in r.members if m.member == "ann")
+    assert (ann.scope, ann.closed) == (4, 1)
+
+
+# REQ-REPORTS-009
+def test_reports_009_nested_epic_without_children() -> None:
+    rows = [
+        *standard(),
+        row("e1", issue_type="epic", parent="m2"),
+        row("e1.1", issue_type="epic", parent="e1"),
+    ]
+    r = team(rows)
+    assert [b.id for b in r.beads] == ["e1.1"]
+    assert r.beads[0].epic.id == "e1.1"
+
+
+# REQ-REPORTS-009
 def test_reports_009_buckets_and_members() -> None:
     rows = [
         *standard(),
