@@ -214,14 +214,47 @@ describe("BeadDetailPage", () => {
   });
 
   // REQ-UI-028
+  it("REQ-UI-028 epic with a prep task: progress over tracks, Prep 1/1, chip on p-1 only", async () => {
+    const epic = beadDetail("e-1", {
+      issue_type: "epic",
+      children: [
+        { id: "t-1", title: "Track 1", status: "closed", type: "parent-child", prep: false },
+        { id: "t-2", title: "Track 2", status: "open", type: "parent-child", prep: false },
+        { id: "p-1", title: "Prep 1", status: "closed", type: "parent-child", prep: true },
+      ],
+    });
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(epic))));
+    render(<BeadDetailPage project="alpha" id="e-1" />);
+    const bar = await screen.findByRole("progressbar", { name: "Children closed" });
+    expect(bar).toHaveAttribute("aria-valuenow", "50");
+    expect(screen.getByText("1 of 2 closed")).toBeInTheDocument();
+    expect(screen.getByText("Prep 1/1")).toBeInTheDocument();
+    expect(screen.getAllByText("Prep", { selector: "[data-slot=badge]" })).toHaveLength(1);
+    const row = (id: string) => screen.getByRole("link", { name: id }).closest("li") as HTMLElement;
+    expect(within(row("p-1")).getByText("Prep")).toBeInTheDocument();
+    expect(within(row("t-1")).queryByText("Prep")).toBeNull();
+    expect(within(row("t-2")).queryByText("Prep")).toBeNull();
+  });
+
+  it("REQ-UI-028 an epic with only prep children shows Prep x/y and no track bar", async () => {
+    const epic = beadDetail("e-1", {
+      issue_type: "epic",
+      children: [{ id: "p-1", title: "Prep 1", status: "open", type: "parent-child", prep: true }],
+    });
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(epic))));
+    render(<BeadDetailPage project="alpha" id="e-1" />);
+    expect(await screen.findByText("Prep 0/1")).toBeInTheDocument();
+    expect(screen.queryByRole("progressbar")).toBeNull();
+  });
+
   it("REQ-UI-028 shows epic progress and children, or omits them when absent", async () => {
     const epic = beadDetail("e-1", {
       issue_type: "epic",
       children: [
-        { id: "c-1", title: "Child 1", status: "closed", type: "parent-child" },
-        { id: "c-2", title: "Child 2", status: "closed", type: "parent-child" },
-        { id: "c-3", title: "Child 3", status: "closed", type: "parent-child" },
-        { id: "c-4", title: "Child 4", status: "open", type: "parent-child" },
+        { id: "c-1", title: "Child 1", status: "closed", type: "parent-child", prep: false },
+        { id: "c-2", title: "Child 2", status: "closed", type: "parent-child", prep: false },
+        { id: "c-3", title: "Child 3", status: "closed", type: "parent-child", prep: false },
+        { id: "c-4", title: "Child 4", status: "open", type: "parent-child", prep: false },
       ],
     });
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(epic))));
@@ -467,7 +500,7 @@ describe("BeadDetailPage", () => {
   });
 
   it("REQ-UI-053 View dependencies for a bead with children or a blocks relation only", async () => {
-    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [{ id: "t", title: "T", status: "open", type: "parent-child" }] }));
+    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [{ id: "t", title: "T", status: "open", type: "parent-child", prep: false }] }));
     render(<BeadDetailPage project="p" id="e-1" />);
     expect(await screen.findByRole("link", { name: "View dependencies" })).toHaveAttribute("href", "/beads/p/e-1/graph");
     cleanup();
@@ -480,7 +513,7 @@ describe("BeadDetailPage", () => {
     await screen.findByText("Title t-2");
     expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();
     cleanup();
-    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [{ id: "t", title: "T", status: "open", type: "parent-child" }] }));
+    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [{ id: "t", title: "T", status: "open", type: "parent-child", prep: false }] }));
     render(<BeadDetailPage project="p" id="e-1" graphScope="e-1" />);
     await screen.findByText("Title e-1");
     expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();

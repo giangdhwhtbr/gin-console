@@ -1,4 +1,5 @@
 import type { BeadSummary } from "./api";
+import { childCounts, type ChildCounts } from "./prep";
 
 export const TREE_LIMIT = 2000;
 const WALK_LIMIT = 100_000; // ponytail: a pathological DAG stops being counted here; the count then reads "N+ more"
@@ -16,8 +17,7 @@ export type TreeRow = {
   level: number;
   hasKids: boolean;
   open: boolean;
-  totalKids: number;
-  closedKids: number;
+  counts: ChildCounts;
 };
 
 export type TreeRows = { rows: TreeRow[]; omitted: number; walkLimited: boolean };
@@ -125,8 +125,7 @@ export function treeRows(
         level,
         hasKids: shownKids.length > 0,
         open: isOpen,
-        totalKids: all.length,
-        closedKids: all.filter((k) => k.status === "closed").length,
+        counts: childCounts(all),
       });
     } else {
       omitted += 1;

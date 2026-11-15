@@ -2,6 +2,7 @@ import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import type { Relation } from "./api";
+import { PrepChip } from "./PrepChip";
 
 export function RelationList({
   title,
@@ -12,7 +13,7 @@ export function RelationList({
   title: string;
   titleClassName?: string;
   project: string;
-  items: Relation[];
+  items: (Relation & { prep?: boolean })[];
 }) {
   if (items.length === 0) return null;
   return (
@@ -25,6 +26,7 @@ export function RelationList({
               <span className="font-mono">{item.id}</span>
             </Link>
             <span>{item.title}</span>
+            {item.prep === true && <PrepChip />}
             <Badge variant="secondary">{item.status}</Badge>
           </li>
         ))}

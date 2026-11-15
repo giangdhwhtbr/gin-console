@@ -92,6 +92,28 @@ describe("GraphCanvas", () => {
     expect(calls.open).toHaveBeenCalledWith("e-1");
   });
 
+  it("REQ-UI-049 node with a prep task: 1 of 2 done, open icon, chip on p-1 only", () => {
+    const g = scopeGraph(
+      [epic("e-1"), task("t-1", "e-1", [], { status: "closed" }), task("t-2", "e-1"), task("p-1", "e-1", [], { labels: ["prep", "prep:mockup"] })],
+      null,
+      OFF,
+    );
+    show(g);
+    expect(node("e-1")).toHaveTextContent("1 of 2 done");
+    expect(node("e-1").querySelector("svg")).not.toBeNull();
+    cleanup();
+    show(scopeGraph([epic("e-1"), task("t-1", "e-1"), task("t-2", "e-1"), task("p-1", "e-1", [], { labels: ["prep"] })], "e-1", OFF));
+    expect(node("p-1")).toHaveTextContent("Prep");
+    expect(node("t-1")).not.toHaveTextContent("Prep");
+    expect(node("t-2")).not.toHaveTextContent("Prep");
+  });
+
+  it("REQ-UI-049 an epic with only prep children keeps the open icon and shows no n of m done", () => {
+    show(scopeGraph([epic("e-1"), task("p-1", "e-1", [], { labels: ["prep"] })], null, OFF));
+    expect(node("e-1")).not.toHaveTextContent("done");
+    expect(node("e-1").querySelector("svg.lucide-layers")).not.toBeNull();
+  });
+
   it("REQ-UI-054 the hidden list reads each arrow and the relations that make it", () => {
     const g = scopeGraph([epic("e-1"), epic("e-2"), task("x", "e-1"), task("y", "e-2", ["x"]), task("z", "e-2", ["x"])], null, OFF);
     show(g);

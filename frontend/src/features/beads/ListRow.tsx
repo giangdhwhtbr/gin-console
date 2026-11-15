@@ -3,6 +3,8 @@ import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CountBadge } from "./CountBadge";
+import { isPrep, prepLabel } from "./prep";
+import { PrepChip } from "./PrepChip";
 import { StateMark } from "./StateMark";
 import type { TreeRow } from "./tree";
 import { TypeBadge } from "./TypeBadge";
@@ -66,16 +68,20 @@ export function ListRow({
         <span className="min-w-0 truncate font-medium" onClick={(event) => event.stopPropagation()}>
           <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
         </span>
-        {bead.issue_type === "epic" && row.totalKids > 0 && (
+        {isPrep(bead.labels) && <PrepChip />}
+        {bead.issue_type === "epic" && row.counts.tracks > 0 && (
           <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground @xl:flex">
             <span className="h-1.5 w-12 overflow-hidden rounded bg-muted">
               <span
                 className="block h-full bg-foreground/60"
-                style={{ width: `${(row.closedKids / row.totalKids) * 100}%` }}
+                style={{ width: `${(row.counts.closedTracks / row.counts.tracks) * 100}%` }}
               />
             </span>
-            {`${row.closedKids}/${row.totalKids} closed`}
+            {`${row.counts.closedTracks}/${row.counts.tracks} closed`}
           </span>
+        )}
+        {bead.issue_type === "epic" && prepLabel(row.counts) !== null && (
+          <span className="hidden shrink-0 text-xs text-muted-foreground @xl:inline">{prepLabel(row.counts)}</span>
         )}
         <span className="hidden shrink-0 items-center gap-1 @3xl:flex">
           {bead.labels.slice(0, 3).map((label) => (

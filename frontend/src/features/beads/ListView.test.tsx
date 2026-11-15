@@ -202,6 +202,38 @@ describe("ListView", () => {
     expect(within(tree).getByRole("treeitem", { name: /xss-1/ })).toBeInTheDocument();
   });
 
+  it("REQ-UI-044 epic with a prep task: track bar, Prep 0/1 and a chip on p-1 only", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&closed=1");
+    stubBeads(() =>
+      json([
+        bead("e-1", { issue_type: "epic", title: "Epic" }),
+        bead("t-1", { parent: "e-1", status: "closed", title: "Track 1" }),
+        bead("t-2", { parent: "e-1", title: "Track 2" }),
+        bead("p-1", { parent: "e-1", title: "Prep 1", labels: ["prep", "prep:mockup"] }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const tree = await screen.findByRole("tree");
+    expect(within(tree).getByText("1/2 closed")).toBeInTheDocument();
+    expect(within(tree).getByText("Prep 0/1")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Expand all" }));
+    const chip = (id: string) => within(within(tree).getByRole("treeitem", { name: new RegExp(id) })).queryByText("Prep", { selector: "[data-slot=badge]" });
+    expect(chip("p-1")).not.toBeNull();
+    expect(chip("t-1")).toBeNull();
+    expect(chip("t-2")).toBeNull();
+  });
+
+  it("REQ-UI-044 an epic with only prep tasks shows no track count", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() =>
+      json([bead("e-1", { issue_type: "epic" }), bead("p-1", { parent: "e-1", labels: ["prep"] })]),
+    );
+    render(<BeadsPage />);
+    const tree = await screen.findByRole("tree");
+    expect(within(tree).getByText("Prep 0/1")).toBeInTheDocument();
+    expect(within(tree).queryByText(/closed$/)).toBeNull();
+  });
+
   it("REQ-UI-045 selection: clicking updates URL and initial selection opens branch", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>

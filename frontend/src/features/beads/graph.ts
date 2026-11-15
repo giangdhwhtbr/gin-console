@@ -1,5 +1,6 @@
 import type { BeadSummary } from "./api";
 import { boardColumn } from "./columns";
+import { isPrep } from "./prep";
 
 export type GraphState = "ready" | "in_progress" | "blocked" | "done" | "deferred";
 export const STATE_LABEL: Record<GraphState, string> = {
@@ -35,6 +36,7 @@ export type GraphNode = {
   order: number;
   done: number;
   total: number;
+  hasKids: boolean;
 };
 export type Graph = { nodes: GraphNode[]; edges: GraphEdge[]; cycle: string[]; unlinked: number };
 export type GraphOptions = { hideDone: boolean; onlyLinked: boolean };
@@ -54,13 +56,15 @@ const indexOf = (beads: readonly BeadSummary[]) => new Map(beads.map((b) => [b.i
 const parentOf = (byId: ReadonlyMap<string, BeadSummary>, b: BeadSummary) =>
   b.parent !== null && byId.has(b.parent) ? b.parent : null;
 
+const parentIds = (beads: readonly BeadSummary[]) => new Set(beads.flatMap((b) => (b.parent === null ? [] : [b.parent])));
 export const hasChildren = (beads: readonly BeadSummary[], id: string) => beads.some((b) => b.parent === id);
 
-/** "n of m done" over the direct children of each bead; the key "" holds the beads without a parent. */
+/** "n of m done" over the direct children of each bead that are not prep tasks; the key "" holds the beads without a parent. */
 export function progressOf(beads: readonly BeadSummary[]): Map<string, { done: number; total: number }> {
   const byId = indexOf(beads);
   const counts = new Map<string, { done: number; total: number }>();
   for (const b of beads) {
+    if (isPrep(b.labels)) continue;
     const key = parentOf(byId, b) ?? "";
     const c = counts.get(key) ?? { done: 0, total: 0 };
     counts.set(key, { done: c.done + (isDone(b) ? 1 : 0), total: c.total + 1 });
@@ -169,6 +173,7 @@ function layout(
   external: ReadonlySet<string>,
   edges: readonly Link[],
   progress: ReadonlyMap<string, { done: number; total: number }>,
+  parents: ReadonlySet<string>,
 ): Pick<Graph, "nodes" | "cycle"> {
   const blockers = new Map<string, string[]>();
   for (const e of edges) blockers.set(e.to, [...(blockers.get(e.to) ?? []), e.from]);
@@ -225,7 +230,7 @@ function layout(
     row.forEach((b, i) => {
       order.set(b.id, i);
       const { done, total } = progress.get(b.id) ?? { done: 0, total: 0 };
-      nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total });
+      nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total, hasKids: parents.has(b.id) });
     });
   }
   return { nodes, cycle: cycleNodes(edges) };
@@ -257,7 +262,7 @@ export function scopeGraph(beads: readonly BeadSummary[], scope: string | null, 
   const inside = beads.filter((b) => holder(b.id) === b.id && kept(b.id)).map((b) => b.id);
   const shown = options.onlyLinked ? inside.filter((id) => linked.has(id)) : inside;
   const external = new Set([...linked].filter((id) => holder(id) === null));
-  const { nodes, cycle } = layout(byId, [...shown, ...external], external, edges, progressOf(beads));
+  const { nodes, cycle } = layout(byId, [...shown, ...external], external, edges, progressOf(beads), parentIds(beads));
   return { nodes, edges, cycle, unlinked: inside.length - shown.length };
 }
 
@@ -297,7 +302,7 @@ export function neighbourhoodOf(
   );
   const drawn = new Set([id, ...reach(links, id, false), ...reach(links, id, true)]);
   const edges = links.filter((l) => drawn.has(l.from) && drawn.has(l.to)).map((l) => ({ ...l, links: [l] }));
-  const { nodes, cycle } = layout(byId, [...drawn], new Set(), edges, progressOf(beads));
+  const { nodes, cycle } = layout(byId, [...drawn], new Set(), edges, progressOf(beads), parentIds(beads));
   return { nodes, edges, cycle, unlinked: 0 };
 }
 
