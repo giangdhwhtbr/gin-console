@@ -34,6 +34,13 @@ describe("report sections", () => {
     expect(screen.getByText("review")).toBeTruthy();
   });
 
+  it("REQ-UI-107 a cut row key has a tooltip with the full key", () => {
+    const base = report();
+    const member = "m".repeat(60);
+    render(usageOf(report({ usage: { ...base.usage, members: [{ ...base.usage.members[0], member }] } })));
+    expect(screen.getByText(member)).toHaveAttribute("title", member);
+  });
+
   it("REQ-UI-089 epic budget meter, no budget, no price; top beads listed", () => {
     const base = report();
     const e = base.usage.epics[0];

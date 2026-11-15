@@ -41,6 +41,25 @@ describe("MilestonesPage", () => {
     expect(screen.getByRole("link", { name: "Beta" })).toHaveAttribute("href", "/milestones/alpha/m-1");
   });
 
+  it("REQ-MILESTONE-UI-001 a milestone without dates shows No dates and its error, after the dated ones; a long title has a tooltip", async () => {
+    const long = "A".repeat(120);
+    open(
+      json(
+        list([
+          entry("m-4", { title: "M4", start: null, end: null, error: "M4 has no start/end metadata" }),
+          entry("m-1", { title: long }),
+        ]),
+      ),
+    );
+    const m4 = await rowOf("M4");
+    expect(m4).toHaveTextContent("No dates");
+    expect(m4).toHaveTextContent("M4 has no start/end metadata");
+    expect(screen.getByRole("link", { name: long }).closest("[title]")).toHaveAttribute("title", long);
+    const titles = screen.getAllByRole("link").map((a) => a.textContent);
+    expect(titles.indexOf(long)).toBeLessThan(titles.indexOf("M4"));
+    expect(await rowOf(long)).toHaveTextContent("2 Nov – 18 Dec");
+  });
+
   it("REQ-MILESTONE-UI-001 does not show the unassigned_epics count", async () => {
     open(json(list([entry("m-1", { title: "Beta" })], { unassigned_epics: 4 })));
     await rowOf("Beta");

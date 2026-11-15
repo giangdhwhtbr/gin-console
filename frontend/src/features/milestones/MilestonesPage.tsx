@@ -70,13 +70,17 @@ export function MilestonesPage() {
   );
 }
 
+// an entry without dates goes after the dated ones
+const byStart = (a: MilestoneEntry, b: MilestoneEntry) =>
+  a.start === null || b.start === null ? Number(a.start === null) - Number(b.start === null) : a.start.localeCompare(b.start);
+
 function MilestoneTable({ project }: { project: string }) {
   const fetcher = useCallback(() => fetchMilestones(project), [project]);
   const { state, retry } = useLoad(fetcher, true);
   if (state.status === "loading") return <p className="text-muted-foreground">Loading milestones…</p>;
   if (state.status === "error") return <MilestoneError error={state.error} onRetry={retry} />;
   const { milestones, today, forecast } = state.data;
-  const rows = [...milestones].sort((a, b) => rank(a.status) - rank(b.status) || a.start.localeCompare(b.start));
+  const rows = [...milestones].sort((a, b) => rank(a.status) - rank(b.status) || byStart(a, b));
   return (
     <div className="flex flex-col gap-3">
       {state.error !== null && <p role="status" className="text-sm text-destructive">{`Refresh failed: ${state.error.message}`}</p>}
@@ -120,16 +124,20 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
     >
       <MilestoneStatus status={m.status} />
       <span className="flex min-w-0 items-baseline gap-2">
-        <Link to={milestonePath(project, m.id)} className="truncate font-medium underline-offset-2 hover:underline">
-          {m.title}
-        </Link>
+        <span title={m.title} className="min-w-0 truncate font-medium">
+          <Link to={milestonePath(project, m.id)} className="underline-offset-2 hover:underline">
+            {m.title}
+          </Link>
+        </span>
         <span className="font-mono text-xs text-muted-foreground">{m.id}</span>
       </span>
       <span className="flex flex-col text-sm">
         {m.kickoff !== null && <span>{`Kicks off ${date(m.kickoff)}`}</span>}
-        <span className={cn(m.kickoff !== null && "text-muted-foreground")}>{`${date(m.start)} – ${date(m.end)}`}</span>
+        <span className={cn(m.kickoff !== null && "text-muted-foreground")}>
+          {m.start === null || m.end === null ? "No dates" : `${date(m.start)} – ${date(m.end)}`}
+        </span>
         {m.finish !== null && (
-          <span className={cn(m.finish > m.end ? "text-state-blocked" : "text-muted-foreground")}>{`Finishes ${date(m.finish)}`}</span>
+          <span className={cn(m.end !== null && m.finish > m.end ? "text-state-blocked" : "text-muted-foreground")}>{`Finishes ${date(m.finish)}`}</span>
         )}
       </span>
       <span className="text-sm">{m.lanes === null ? "–" : plural(m.lanes, "lane")}</span>

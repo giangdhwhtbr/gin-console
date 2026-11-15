@@ -135,13 +135,13 @@ export function ReportsPage() {
           )}
         </div>
         {selected !== "" && (
-          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+          <label className="flex min-w-0 max-w-full items-center gap-2 text-sm text-muted-foreground">
             Project
             <select
               aria-label="Project"
               value={selected}
               onChange={(event) => change({ ...filters, project: event.target.value })}
-              className="rounded border bg-background px-2 py-1 text-sm"
+              className="min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm"
             >
               <option value="all">All projects</option>
               {names.map((name) => (

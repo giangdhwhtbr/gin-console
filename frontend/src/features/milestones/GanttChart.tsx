@@ -6,6 +6,7 @@ import type { BeadSummary } from "@/features/beads/api";
 import { childCounts, isPrep, prepLabel } from "@/features/beads/prep";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
+import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import type { MilestoneDetail } from "./api";
 import { CopyCommand } from "./CopyCommand";
@@ -371,6 +372,8 @@ function EpicRow({
   const unestimated = epic.estimate_days === null;
   const counts = childCounts(kids);
   const prep = prepLabel(counts);
+  const period = `${periodOf(epic.planned_start, epic.planned_end, today)}, ${unestimated ? "no estimate" : `${epic.estimate_days}d`}`;
+  const closedTracks = `${counts.closedTracks}/${counts.tracks} closed`;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
     <li data-epic={epic.id} data-faded={faded || undefined} onMouseEnter={onHot} onFocus={onHot} className="flex border-b" style={{ height: row.height }}>
@@ -395,23 +398,24 @@ function EpicRow({
               {epic.title}
             </span>
           </span>
-          {/* on wide screens only the id shrinks; it keeps 64 px, so its link stays reachable on a phone */}
-          <span className="flex min-w-0 items-center gap-1.5 whitespace-nowrap pl-[26px] text-xs text-muted-foreground">
-            <span title={epic.id} className="min-w-16 shrink-[100] truncate">
+          {/* below lg the items keep their size and wrap; from lg only the id shrinks, but keeps 64 px, so its link stays reachable */}
+          <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 whitespace-nowrap pl-[26px] text-xs text-muted-foreground lg:flex-nowrap">
+            <span title={epic.id} className="max-w-full shrink-0 truncate lg:min-w-16 lg:shrink-[100]">
               <Link to={`/beads/${enc(project)}/${enc(epic.id)}`} className="font-mono underline-offset-2 hover:underline">
-                {epic.id}
+                <span aria-hidden={shortId(epic.id) !== epic.id || undefined}>{shortId(epic.id)}</span>
+                {shortId(epic.id) !== epic.id && <span className="sr-only">{epic.id}</span>}
               </Link>
             </span>
-            <span className="min-w-0 truncate lg:shrink-0">{`${periodOf(epic.planned_start, epic.planned_end, today)}, ${unestimated ? "no estimate" : `${epic.estimate_days}d`}`}</span>
-            {counts.tracks > 0 && <span className="min-w-0 truncate lg:shrink-0">{`${counts.closedTracks}/${counts.tracks} closed`}</span>}
-            {prep !== null && <span className="min-w-0 truncate lg:shrink-0">{prep}</span>}
+            <span title={period} className="max-w-full shrink-0 truncate">{period}</span>
+            {counts.tracks > 0 && <span title={closedTracks} className="max-w-full shrink-0 truncate">{closedTracks}</span>}
+            {prep !== null && <span title={prep} className="max-w-full shrink-0 truncate">{prep}</span>}
             {epic.spec_confirmed === true && (
-              <span className="flex min-w-0 items-center gap-1 truncate text-state-ready lg:shrink-0">
+              <span title="Spec confirmed" className="flex max-w-full shrink-0 items-center gap-1 truncate text-state-ready">
                 <FileCheck aria-hidden className="size-3 flex-none" />
                 Spec confirmed
               </span>
             )}
-            {epic.spec_confirmed === false && <span className="min-w-0 truncate text-muted-foreground lg:shrink-0">No confirmed spec</span>}
+            {epic.spec_confirmed === false && <span title="No confirmed spec" className="max-w-full shrink-0 truncate text-muted-foreground">No confirmed spec</span>}
           </span>
           {warningLines(epic, today).map((text) => (
             <span key={text} title={text} className="flex min-w-0 items-center gap-1 pl-[26px] text-xs text-state-blocked">

@@ -6,8 +6,8 @@ export type MilestoneEntry = {
   id: string;
   title: string;
   status: string;
-  start: string;
-  end: string;
+  start: string | null;
+  end: string | null;
   kickoff: string | null;
   finish: string | null;
   epics: { total: number; closed: number };
@@ -88,8 +88,8 @@ function isEntry(value: unknown): value is MilestoneEntry {
   if (!isObject(value)) return false;
   const epics = field(value, "epics");
   return (
-    strings(value, ["id", "title", "status", "start", "end"]) &&
-    stringsOrNull(value, ["kickoff", "finish", "error"]) &&
+    strings(value, ["id", "title", "status"]) &&
+    stringsOrNull(value, ["start", "end", "kickoff", "finish", "error"]) &&
     isNumberOrNull(field(value, "warnings")) &&
     isObject(epics) &&
     isFiniteNumber(field(epics, "total")) &&

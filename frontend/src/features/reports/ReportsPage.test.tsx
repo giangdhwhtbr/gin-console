@@ -277,6 +277,17 @@ describe("ReportsPage", () => {
     expect(screen.getByLabelText("Member")).toHaveValue("ann");
   });
 
+  it("REQ-REPORTS-012 long options on a phone: the Project, Milestone and Member selects are capped to their row", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=team&milestone=m1");
+    stub(undefined, () => json(teamFixture({ milestone: "m1" })));
+    render(<ReportsPage />);
+    for (const name of ["Project", "Milestone", "Member"]) {
+      const select = await screen.findByLabelText(name);
+      expect(select).toHaveClass("max-w-full", "min-w-0");
+      expect(select.closest("label")).toHaveClass("max-w-full", "min-w-0");
+    }
+  });
+
   it("REQ-REPORTS-012 writes the default milestone into the URL", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=team");
     stub();
