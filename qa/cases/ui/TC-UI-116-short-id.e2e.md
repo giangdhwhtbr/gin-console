@@ -7,7 +7,7 @@
 - Project `alpha` has bead `ex-e4.1`
 
 **Steps:**
-1. Open `/beads?project=alpha&milestone=all` and look at the row of the bead
+1. Open `/beads?project=alpha&milestone=all`
 
 **Expected:**
 - Its id reads `ex-e4.1` in full

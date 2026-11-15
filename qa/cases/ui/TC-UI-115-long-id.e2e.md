@@ -7,7 +7,7 @@
 - Project `alpha` has bead `ex-payments-provider-migration-and-reconciliation-2026.2.1`
 
 **Steps:**
-1. Open `/beads?project=alpha&milestone=all` and look at the row of the bead
+1. Open `/beads?project=alpha&milestone=all`
 
 **Expected:**
 - Its id reads `ex-payments-pr…-2026.2.1`

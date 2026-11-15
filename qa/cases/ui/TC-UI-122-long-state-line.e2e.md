@@ -4,7 +4,7 @@
 - **Priority:** medium
 
 **Preconditions:**
-- Project `alpha` has an in-progress epic `e-1` with 2 of 5 tracks done and a title of 80 characters
+- Project `alpha` has an in-progress epic `e-1` without a parent with 2 of 5 tracks done and a title of 80 characters
 
 **Steps:**
 1. Open `/beads/alpha/graph`

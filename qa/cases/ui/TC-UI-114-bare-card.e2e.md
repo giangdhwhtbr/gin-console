@@ -7,7 +7,7 @@
 - Project `alpha` has task `t-2` with no assignee, no comments and no dependencies
 
 **Steps:**
-1. Open `/beads?project=alpha&view=board`
+1. Open `/beads?project=alpha&milestone=all&view=board`
 
 **Expected:**
 - The last line of the card of `t-2` shows only the state and the type

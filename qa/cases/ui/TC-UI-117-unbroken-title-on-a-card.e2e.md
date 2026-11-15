@@ -8,7 +8,7 @@
 - The browser window is 1440px wide
 
 **Steps:**
-1. Open `/beads?project=alpha&view=board`
+1. Open `/beads?project=alpha&milestone=all&view=board`
 
 **Expected:**
 - The title wraps inside its Board card
