@@ -13,11 +13,15 @@ import { dayOf, isoOf, zoomOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
+import { parseRetros } from "./retro";
+import { RetroTab } from "./RetroTab";
+import { useMilestoneComments } from "./useMilestoneComments";
 import { useLoad } from "./useLoad";
 
 const TABS = [
   { value: "gantt", label: "Gantt" },
   { value: "beads", label: "Beads" },
+  { value: "retro", label: "Retro" },
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 
@@ -29,7 +33,7 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
   const asked = params.get("start");
   const day = asked !== null && ISO.test(asked) ? dayOf(asked) : NaN; // month 13 gives NaN, Feb 31 rolls over
   const tabAsked = params.get("tab");
-  const tab: Tab = tabAsked === "beads" || tabAsked === "graph" ? "beads" : "gantt";
+  const tab: Tab = tabAsked === "beads" || tabAsked === "graph" ? "beads" : tabAsked === "retro" ? "retro" : "gantt";
   const zoom = zoomOf(params.get("zoom"));
   const start = !Number.isNaN(day) && isoOf(day) === asked ? asked : null;
   // REQ-MILESTONE-UI-018: the old Graph tab is the Graph view of the Beads tab
@@ -47,6 +51,10 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
   );
   const base = useLoad(current, true);
   const shown = useLoad<MilestoneDetail | null>(preview, false);
+  const comments = useMilestoneComments(project, id);
+  // REQ-MILESTONE-UI-019: the tab counts the members with a retro; no number while loading or after an error
+  const retros = comments.state === "ok" ? parseRetros(comments.comments, id).retros.length : 0;
+  const tabs = TABS.map((t) => (t.value === "retro" && retros > 0 ? { ...t, label: `Retro ${retros}` } : t));
   const pick = (next: string | null) => navigate(milestonePath(project, id, tab, next, zoom), { replace: true });
 
   return (
@@ -63,7 +71,7 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
           {base.state.error !== null && (
             <p role="status" className="text-sm text-destructive">{`Refresh failed: ${base.state.error.message}`}</p>
           )}
-          <Tabs tabs={TABS} tab={tab} onChange={(next) => navigate(milestonePath(project, id, next, start, zoom), { replace: true })} label="Milestone views" />
+          <Tabs tabs={tabs} tab={tab} onChange={(next) => navigate(milestonePath(project, id, next, start, zoom), { replace: true })} label="Milestone views" />
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
             {tab === "gantt" ? (
               <GanttTab
@@ -76,6 +84,8 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
                 onStart={pick}
                 onZoom={(next) => navigate(milestonePath(project, id, tab, start, next), { replace: true })}
               />
+            ) : tab === "retro" ? (
+              <RetroTab milestoneId={id} comments={comments} />
             ) : (
               <BeadsView
                 project={project}

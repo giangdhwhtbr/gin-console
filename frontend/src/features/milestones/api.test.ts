@@ -92,6 +92,7 @@ describe("milestones api", () => {
   it("builds milestone paths", () => {
     expect(milestonePath("al pha", "m-1")).toBe("/milestones/al%20pha/m-1");
     expect(milestonePath("alpha", "m-1", "beads", "2026-11-16")).toBe("/milestones/alpha/m-1?tab=beads&start=2026-11-16");
+    expect(milestonePath("p", "m2", "retro", "2026-11-10", "2w")).toBe("/milestones/p/m2?tab=retro&start=2026-11-10&zoom=2w"); // REQ-MILESTONE-UI-019
     expect(milestonePath("p", "m2", "gantt", "2026-11-10", "2w")).toBe("/milestones/p/m2?start=2026-11-10&zoom=2w");
     // REQ-MILESTONE-UI-018: the Beads filters ride after tab, start and zoom; project and milestone are dropped
     expect(milestonePath("p", "m2", "beads", null, "all", "?view=board&status=open")).toBe("/milestones/p/m2?tab=beads&view=board&status=open");
