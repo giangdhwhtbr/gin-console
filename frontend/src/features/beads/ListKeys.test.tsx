@@ -172,4 +172,20 @@ describe("ListKeys", () => {
     await user.keyboard("{Escape}");
     expect(searchInput).toHaveValue("");
   });
+
+  it("REQ-UI-045 Escape in the search box clears the text and keeps the selection", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
+    stubBeads(() => json([bead("t-1", { title: "Task One" })]));
+    const user = userEvent.setup();
+    render(<BeadsPage />);
+    await screen.findByRole("tree");
+    await user.keyboard("/");
+    const searchInput = screen.getByRole("searchbox", { name: "Search" });
+    await user.keyboard("Task");
+    expect(searchInput).toHaveValue("Task");
+    await user.keyboard("{Escape}");
+    expect(searchInput).toHaveValue("");
+    expect(window.location.search).toContain("select=t-1");
+    expect(screen.getByRole("complementary", { name: "Bead details" })).toBeInTheDocument();
+  });
 });

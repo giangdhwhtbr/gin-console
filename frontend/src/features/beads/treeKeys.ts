@@ -6,7 +6,7 @@ const levelOf = (item: HTMLElement) => Number(item.getAttribute("aria-level"));
 /** Standard tree keys on a `role="tree"` element: the handler goes on the tree. */
 export function treeKeyDown(
   event: KeyboardEvent<HTMLElement>,
-  actions: { toggle: (id: string, open: boolean) => void; select: (id: string) => void },
+  actions: { toggle: (id: string, open: boolean) => void; select: (id: string) => void; clear?: () => void },
 ): void {
   if (event.ctrlKey || event.metaKey || event.altKey) return;
   const item = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[role="treeitem"]') : null;
@@ -47,6 +47,12 @@ export function treeKeyDown(
       if (event.target === item) {
         event.preventDefault();
         actions.select(id);
+      }
+      break;
+    case "Escape":
+      if (actions.clear !== undefined) {
+        event.preventDefault();
+        actions.clear();
       }
       break;
     default:

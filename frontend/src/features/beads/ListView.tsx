@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { navigate } from "@/app/route";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
-import { BeadDetailPage } from "./BeadDetailPage";
+import { DetailsPanel } from "./DetailsPanel";
 import { filterBeads, type BeadFilters } from "./filters";
 import { COLUMNS, ListRow } from "./ListRow";
 import type { MilestoneInEffect } from "./milestoneChoice";
 import { getReturn, rememberOpen } from "./returnState";
-import { SIDE_PANEL } from "./side-panel";
 import { allBranches, ancestorsOf, keepSet, treeIndex, treeRows } from "./tree";
 import { treeKeyDown } from "./treeKeys";
 import { useWide } from "./useWide";
@@ -71,8 +70,21 @@ export function ListView({
       ? onChange({ ...filters, select: id })
       : navigate(`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`);
 
+  // closing returns focus to the row that was selected, or to the first row when it is gone
+  const closed = useRef<string | null>(null);
+  useEffect(() => {
+    if (filters.select !== "" || closed.current === null) return;
+    const rowsNow = Array.from(document.querySelectorAll<HTMLElement>('[role="tree"] [role="treeitem"]'));
+    (rowsNow.find((r) => r.dataset.id === closed.current) ?? rowsNow[0])?.focus();
+    closed.current = null;
+  }, [filters.select]);
+  const close = () => {
+    closed.current = filters.select;
+    onChange({ ...filters, select: "" });
+  };
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+    <div className={cn("grid gap-4", filters.select !== "" && "lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]")}>
       <div className="@container flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Button size="sm" variant="outline" onClick={() => remember(allBranches(index))}>
@@ -101,7 +113,7 @@ export function ListView({
             <ul
               role="tree"
               aria-label={`Beads of ${project}`}
-              onKeyDown={(event) => treeKeyDown(event, { toggle, select: choose })}
+              onKeyDown={(event) => treeKeyDown(event, { toggle, select: choose, clear: filters.select === "" ? undefined : close })}
               className="flex flex-col gap-1"
             >
               {rows.map((row) => (
@@ -122,18 +134,15 @@ export function ListView({
           <p className="text-sm text-muted-foreground">{`${omitted}${walkLimited ? "+" : ""} more not shown`}</p>
         )}
       </div>
-      <aside aria-label="Bead details" tabIndex={0} className={cn("hidden min-w-0 rounded border p-3 lg:block", SIDE_PANEL)}>
-        {filters.select === "" ? (
-          <p className="text-muted-foreground">Select a bead to see its details</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {!rows.some((r) => r.bead.id === filters.select) && (
-              <p className="text-sm text-muted-foreground">Not in the current list</p>
-            )}
-            <BeadDetailPage key={`${project}/${filters.select}`} project={project} id={filters.select} embedded />
-          </div>
-        )}
-      </aside>
+      {filters.select !== "" && (
+        <DetailsPanel
+          project={project}
+          id={filters.select}
+          note={rows.some((r) => r.bead.id === filters.select) ? undefined : "Not in the current list"}
+          className="hidden lg:block"
+          onClose={close}
+        />
+      )}
     </div>
   );
 }

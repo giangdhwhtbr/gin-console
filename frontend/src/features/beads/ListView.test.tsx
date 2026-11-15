@@ -298,6 +298,62 @@ describe("ListView", () => {
     expect(t1Initial).toHaveAttribute("aria-selected", "true");
   });
 
+  describe("details panel only while selected", () => {
+    const two = () => stubBeads(() => json([bead("t-1", { title: "Task 1" }), bead("t-2", { title: "Task 2" })]));
+
+    it("REQ-UI-045 nothing selected: no panel and a single column", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+      two();
+      render(<BeadsPage />);
+      const tree = await screen.findByRole("tree");
+      expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+      expect(tree.parentElement?.parentElement).not.toHaveClass("lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]");
+    });
+
+    it("REQ-UI-045 select a row: the panel shows and the grid has two columns", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+      two();
+      render(<BeadsPage />);
+      const tree = await screen.findByRole("tree");
+      await userEvent.click(within(tree).getByRole("treeitem", { name: /t-1/ }));
+      expect(screen.getByRole("complementary", { name: "Bead details" })).toBeInTheDocument();
+      expect(tree.parentElement?.parentElement).toHaveClass("lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]");
+    });
+
+    it("REQ-UI-045 close button clears the selection and focuses the row", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
+      two();
+      render(<BeadsPage />);
+      await screen.findByRole("tree");
+      await userEvent.click(screen.getByRole("button", { name: "Close details" }));
+      expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+      expect(window.location.search).not.toContain("select=");
+      expect(document.querySelector('[role="treeitem"][data-id="t-1"]')).toHaveFocus();
+    });
+
+    it("REQ-UI-045 Escape on a row closes the panel and keeps focus on the row", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
+      two();
+      render(<BeadsPage />);
+      const tree = await screen.findByRole("tree");
+      within(tree).getByRole("treeitem", { name: /t-1/ }).focus();
+      await userEvent.keyboard("{Escape}");
+      expect(window.location.search).not.toContain("select=");
+      expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+      expect(document.querySelector('[role="treeitem"][data-id="t-1"]')).toHaveFocus();
+    });
+
+    it("REQ-UI-045 closing a selection missing from the list focuses the first row", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=zz");
+      two();
+      render(<BeadsPage />);
+      await screen.findByRole("tree");
+      expect(screen.getByText("Not in the current list")).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Close details" }));
+      expect(document.querySelector('[role="treeitem"][data-id="t-1"]')).toHaveFocus();
+    });
+  });
+
   it("REQ-UI-045 refresh keeps state", async () => {
     vi.useFakeTimers();
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
