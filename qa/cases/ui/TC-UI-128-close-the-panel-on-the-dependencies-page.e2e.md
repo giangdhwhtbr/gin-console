@@ -13,7 +13,5 @@
 4. Reload the page
 
 **Expected:**
-- The URL has `select=none`
-- The panel is gone and the graph takes the full width
-- After the reload the panel is still closed
-- The node of `e-1` had focus after closing
+- After step 3: the heading bar of `e-1` has focus, the URL has `select=none`, no details panel is shown and the graph takes the full width
+- After step 4 (reload): still no details panel

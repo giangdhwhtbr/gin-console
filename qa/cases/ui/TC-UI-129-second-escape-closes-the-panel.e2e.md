@@ -4,11 +4,15 @@
 - **Priority:** medium
 
 **Preconditions:**
-- Project `alpha` with epic `e-1`
+- Project `alpha` with epic `e-1` that has task `t-1`
 
 **Steps:**
-1. Open `/beads/alpha/e-1/graph` so that `e-1` is selected
-2. Press Escape
+1. Set the window width to 1280px
+2. Open `/beads/alpha/e-1/graph`
+3. Click the node of task `t-1`
+4. Press Escape
+5. Press Escape again
 
 **Expected:**
-- Nothing is selected, the URL has `select=none` and the panel is gone
+- After step 4: `e-1` is selected again
+- After step 5: the URL has `select=none` and no details panel is shown
