@@ -1,6 +1,7 @@
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
 
 export type BeadKind = "capability" | "technical" | "parity";
+export type BeadComplexity = "low" | "medium" | "high";
 export type BeadSummary = {
   id: string;
   title: string;
@@ -24,7 +25,7 @@ export type BeadSummary = {
   milestone: string | null;
   kind: BeadKind | null;
   capabilities: string[];
-  complexity: "low" | "medium" | "high" | null;
+  complexity: BeadComplexity | null;
   estimate_minutes: number | null;
 };
 export type MilestoneStatus = "active" | "scheduled" | "planned" | "closed";
@@ -57,8 +58,8 @@ const isObject = (value: unknown): value is object => typeof value === "object" 
 const isStringOrUndefined = (value: unknown) => value === undefined || isStringOrNull(value);
 const isStringArray = (value: unknown) => Array.isArray(value) && value.every(isString);
 const isMissingOr = (value: unknown, ok: (v: unknown) => boolean) => value === undefined || value === null || ok(value);
-const KINDS: readonly unknown[] = ["capability", "technical", "parity"];
-const COMPLEXITIES: readonly unknown[] = ["low", "medium", "high"];
+const KINDS: readonly BeadKind[] = ["capability", "technical", "parity"];
+const COMPLEXITIES: readonly BeadComplexity[] = ["low", "medium", "high"];
 
 function isSummary(value: unknown): value is BeadSummary {
   return (
@@ -72,9 +73,9 @@ function isSummary(value: unknown): value is BeadSummary {
     ["ready", "blocked"].every((k) => typeof field(value, k) === "boolean") &&
     isStringArray(field(value, "labels")) &&
     isStringArray(field(value, "blocked_by")) &&
-    isMissingOr(field(value, "kind"), (v) => KINDS.includes(v)) &&
+    isMissingOr(field(value, "kind"), isString) &&
     isMissingOr(field(value, "capabilities"), isStringArray) &&
-    isMissingOr(field(value, "complexity"), (v) => COMPLEXITIES.includes(v)) &&
+    isMissingOr(field(value, "complexity"), isString) &&
     isMissingOr(field(value, "estimate_minutes"), isFiniteNumber)
   );
 }
@@ -96,13 +97,13 @@ function isProjectMilestones(value: unknown): value is ProjectMilestones {
   return Array.isArray(milestones) && milestones.every(isMilestoneOption) && isStringOrNull(field(value, "current"));
 }
 
-/** An answer from before `milestone`, `kind` or the estimate fields existed lacks those keys; they read as empty. */
+/** An answer from before `milestone`, `kind` or the estimate fields existed lacks those keys, and an unknown kind or complexity reads as empty. */
 const withMilestone = <T extends BeadSummary>(bead: T): T => ({
   ...bead,
   milestone: bead.milestone ?? null,
-  kind: bead.kind ?? null,
+  kind: KINDS.find((k) => k === bead.kind) ?? null,
   capabilities: bead.capabilities ?? [],
-  complexity: bead.complexity ?? null,
+  complexity: COMPLEXITIES.find((c) => c === bead.complexity) ?? null,
   estimate_minutes: bead.estimate_minutes ?? null,
 });
 

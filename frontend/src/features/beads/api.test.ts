@@ -89,9 +89,16 @@ describe("api", () => {
     expect(without).toMatchObject({ kind: null, capabilities: [], complexity: null, estimate_minutes: null });
   });
 
-  it("REQ-UI-108 rejects an unknown kind", async () => {
+  it("REQ-UI-108 reads an unknown kind as null", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleSummary, kind: "weird" }]))));
-    await expect(fetchBeads("proj", false)).rejects.toThrow("unexpected response");
+    const [result] = await fetchBeads("proj", false);
+    expect(result.kind).toBeNull();
+  });
+
+  it("REQ-UI-108 reads an unknown complexity as null", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleSummary, complexity: "huge" }]))));
+    const [result] = await fetchBeads("proj", false);
+    expect(result.complexity).toBeNull();
   });
 
   // REQ-UI-029: unexpected shape - non-array body

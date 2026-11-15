@@ -758,9 +758,9 @@ describe("BeadsPage", () => {
       stub(() =>
         json([
           bead("e-1", { title: "Tech epic", issue_type: "epic", kind: "technical", capabilities: ["ui"] }),
-          bead("t-1", { title: "Tech epic", parent: "e-1" }),
+          bead("t-1", { title: "Tech track", parent: "e-1" }),
           bead("e-2", { title: "Cap epic", issue_type: "epic", kind: "capability", capabilities: ["beads"] }),
-          bead("t-2", { title: "Cap epic", parent: "e-2" }),
+          bead("t-2", { title: "Cap track", parent: "e-2" }),
         ]),
       );
 
@@ -770,8 +770,9 @@ describe("BeadsPage", () => {
       await screen.findAllByText("Cap epic");
       await userEvent.selectOptions(screen.getByLabelText("Kind"), "technical");
       expect(window.location.search).toContain("kind=technical");
-      expect(screen.getAllByText("Tech epic").length).toBeGreaterThan(0);
+      expect(await screen.findByText("Tech track")).toBeInTheDocument();
       await waitFor(() => expect(screen.queryByText("Cap epic")).toBeNull());
+      expect(screen.queryByText("Cap track")).toBeNull();
     });
 
     it("REQ-UI-108 the Capability multi-select lists the capabilities and sets capability", async () => {
@@ -782,8 +783,9 @@ describe("BeadsPage", () => {
       expect(await screen.findByRole("checkbox", { name: "ui" })).toBeInTheDocument();
       await userEvent.click(screen.getByRole("checkbox", { name: "beads" }));
       expect(window.location.search).toContain("capability=beads");
-      expect(screen.getAllByText("Cap epic").length).toBeGreaterThan(0);
+      expect(await screen.findByText("Cap track")).toBeInTheDocument();
       await waitFor(() => expect(screen.queryByText("Tech epic")).toBeNull());
+      expect(screen.queryByText("Tech track")).toBeNull();
     });
 
     it("REQ-UI-108 Clear filters clears kind and capability", async () => {
