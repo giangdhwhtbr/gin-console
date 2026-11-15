@@ -1,4 +1,5 @@
 import type { BeadSummary } from "@/features/beads/api";
+import { childCounts, prepLabel } from "@/features/beads/prep";
 import type { EpicPlan, MilestoneDetail } from "./api";
 import { monthName, shortDate, utcOf } from "./format";
 
@@ -147,6 +148,8 @@ export function stepDay(axis: Axis, from: number, direction: 1 | -1, span: numbe
 
 export const ROW_HEIGHT = 56;
 export const WARNING_HEIGHT = 18;
+export const LABEL_LINE = 16;
+const LABEL_PADDING = 24;
 export const CHILD_HEIGHT = 36;
 export const BAR_TOP = 16;
 export const BEAD_HEIGHT = 24;
@@ -155,17 +158,26 @@ export type Row =
   | { kind: "epic"; epic: EpicPlan; top: number; height: number }
   | { kind: "child"; epic: EpicPlan; bead: BeadSummary; top: number; height: number };
 
-/** Epic rows in `epics` order, each followed by its children when expanded; tops in px from the first row. */
+/** REQ-MILESTONE-UI-013: below lg the meta items wrap, so the row holds the title and one line per item shown (id, period, tracks, prep, spec). */
+function narrowHeight(epic: EpicPlan, kids: readonly BeadSummary[]): number {
+  const counts = childCounts(kids);
+  const items = 2 + Number(counts.tracks > 0) + Number(prepLabel(counts) !== null) + Number(epic.spec_confirmed !== null);
+  return Math.max(ROW_HEIGHT, LABEL_PADDING + LABEL_LINE * (1 + items));
+}
+
+/** Epic rows in `epics` order, each followed by its children when expanded; tops in px from the first row. `wide`: from lg up, rows keep ROW_HEIGHT. */
 export function rowsOf(
   epics: readonly EpicPlan[],
   today: string,
   expanded: ReadonlySet<string>,
   children: ReadonlyMap<string, readonly BeadSummary[]>,
+  wide = true,
 ): Row[] {
   const rows: Row[] = [];
   let top = 0;
   for (const epic of epics) {
-    const height = ROW_HEIGHT + WARNING_HEIGHT * warningLines(epic, today).length;
+    const base = wide ? ROW_HEIGHT : narrowHeight(epic, children.get(epic.id) ?? []);
+    const height = base + WARNING_HEIGHT * warningLines(epic, today).length;
     rows.push({ kind: "epic", epic, top, height });
     top += height;
     if (!expanded.has(epic.id)) continue;

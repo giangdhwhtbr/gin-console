@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MilestoneDetail } from "./api";
@@ -8,7 +8,10 @@ import { bead } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import { detail, epicPlan } from "./milestoneFixtures";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const draw = (plan: MilestoneDetail, zoom: Zoom = "all") =>
   render(<GanttChart project="alpha" plan={plan} preview={false} zoom={zoom} onZoom={vi.fn()} childBeads={new Map()} />);
@@ -133,6 +136,22 @@ describe("GanttChart", () => {
     expect(idLabel).toHaveAttribute("title", id);
     expect(idLabel).toHaveTextContent("gin-workflow-r…re-things");
     expect(screen.getByRole("link", { name: id })).toHaveAttribute("href", `/beads/alpha/${id}`);
+  });
+
+  it("REQ-MILESTONE-UI-013 below lg the rows grow so that wrapped labels do not overlap the next row; warning text has a tooltip", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+    draw(
+      detail([
+        epicPlan("e-a", { spec_confirmed: false, warnings: [{ code: "late", days: null }] }),
+        epicPlan("e-b", { spec_confirmed: true }),
+        epicPlan("e-c"),
+      ]),
+    );
+    const rows = ["e-a", "e-b", "e-c"].map((id) => epicRow(id));
+    // rows stack in flow: their heights are their tops (jsdom has no layout)
+    expect(rows.map((row) => row.style.height)).toEqual(["106px", "88px", "72px"]);
+    const warning = within(rows[0]).getByText(/^Late: should have finished/);
+    expect(warning).toHaveAttribute("title", warning.textContent);
   });
 
   it("REQ-MILESTONE-UI-013 no title after a bar that reaches the end", () => {

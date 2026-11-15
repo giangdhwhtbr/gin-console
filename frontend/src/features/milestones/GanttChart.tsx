@@ -168,7 +168,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads }: Props) {
     });
 
   const epics = sortEpics(plan.epics);
-  const rows = rowsOf(epics, plan.today, expanded, childBeads);
+  const rows = rowsOf(epics, plan.today, expanded, childBeads, wide);
   const height = rows.reduce((sum, r) => sum + r.height, 0);
   const chain = hot === null ? null : chainOf(epics, hot);
   const faded = (id: string) => chain !== null && !chain.has(id);
@@ -420,7 +420,7 @@ function EpicRow({
           {warningLines(epic, today).map((text) => (
             <span key={text} title={text} className="flex min-w-0 items-center gap-1 pl-[26px] text-xs text-state-blocked">
               <TriangleAlert aria-hidden className="size-3 flex-none" />
-              <span className="min-w-0 truncate">{text}</span>
+              <span title={text} className="min-w-0 truncate">{text}</span>
             </span>
           ))}
         </div>

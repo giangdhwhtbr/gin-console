@@ -185,6 +185,17 @@ describe("gantt", () => {
     expect(dependencyArrows(rows, axisOf(detail(epics), 28))[0].path).toBe("M25 28 H28 V174 H159");
   });
 
+  it("REQ-MILESTONE-UI-013 below lg a row holds a line per label and warning; from lg it keeps 56", () => {
+    const epics = [
+      epicPlan("a", { spec_confirmed: false, warnings: [{ code: "unestimated", days: null }, { code: "spec_not_ready", days: null }] }),
+      epicPlan("b"),
+    ];
+    const heights = (wide: boolean) => rowsOf(epics, "2026-10-29", new Set(), new Map(), wide).map((r) => [r.top, r.height]);
+    // 24 + title, id, period and spec lines of 16 = 88, plus 2 warnings of 18
+    expect(heights(false)).toEqual([[0, 124], [124, 72]]);
+    expect(heights(true)).toEqual([[0, 92], [92, 56]]);
+  });
+
   it("REQ-MILESTONE-UI-014 the chain runs upstream and downstream, not to siblings", () => {
     const epics = [
       epicPlan("a"),
