@@ -43,6 +43,7 @@ describe("GraphNode content", () => {
     const done = within(n).getByText("2 of 5 done");
     expect(done).toHaveClass("shrink-0");
     expect(done.parentElement).toHaveClass("whitespace-nowrap", "min-w-0");
+    expect(within(n).getByText("In progress").parentElement).toHaveAttribute("title", "In progress");
     expect(within(n).getByText("In progress").parentElement).toHaveClass("min-w-0", "truncate");
   });
 });

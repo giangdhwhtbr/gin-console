@@ -1,5 +1,6 @@
 import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
+import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import type { Relation } from "./api";
 import { PrepChip } from "./PrepChip";
@@ -23,9 +24,12 @@ export function RelationList({
         {items.map((item) => (
           <li key={item.id} className="flex flex-wrap items-center gap-2">
             <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(item.id)}`}>
-              <span className="font-mono">{item.id}</span>
+              <span className="font-mono" title={item.id} aria-hidden={shortId(item.id) !== item.id || undefined}>
+                {shortId(item.id)}
+              </span>
+              {shortId(item.id) !== item.id && <span className="sr-only">{item.id}</span>}
             </Link>
-            <span>{item.title}</span>
+            <span className="min-w-0 wrap-anywhere">{item.title}</span>
             {item.prep === true && <PrepChip />}
             <Badge variant="secondary">{item.status}</Badge>
           </li>

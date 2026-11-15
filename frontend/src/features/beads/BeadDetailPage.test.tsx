@@ -91,6 +91,22 @@ describe("BeadDetailPage", () => {
     expect(md.parentElement).toHaveClass("min-w-0");
   });
 
+  it("REQ-UI-107 a long unbroken child title wraps and a long child id is shortened", async () => {
+    const longId = "ex-payments-provider-migration-and-reconciliation-2026.2.1";
+    const unbroken = "Handle-PaymentReconciliationExceptionsForTheSettlementBatchProcessorWithoutBreaking";
+    stubFetch(
+      beadDetail("a-5", {
+        children: [{ id: longId, title: unbroken, status: "open", type: "parent-child", prep: false }],
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    const title = await screen.findByText(unbroken);
+    expect(title).toHaveClass("min-w-0", "wrap-anywhere");
+    const shown = screen.getByText("ex-payments-pr…-2026.2.1");
+    expect(shown).toHaveAttribute("title", longId);
+    expect(screen.getByRole("link", { name: longId })).toHaveAttribute("href", `/beads/alpha/${longId}`);
+  });
+
   const bug = (id: string, status = "open") => ({ id, title: `Bug ${id}`, status, type: "discovered-from" as const });
 
   // REQ-UI-086

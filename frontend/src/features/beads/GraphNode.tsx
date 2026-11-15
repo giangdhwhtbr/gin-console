@@ -3,7 +3,7 @@ import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import { PrepChip } from "./PrepChip";
 import { isPrep } from "./prep";
-import { NODE, stateOf, type GraphNode as Node, type Placed } from "./graph";
+import { NODE, STATE_LABEL, stateOf, type GraphNode as Node, type Placed } from "./graph";
 import { StateMark, stateEdge } from "./StateMark";
 
 export function GraphNodeButton({
@@ -24,6 +24,7 @@ export function GraphNodeButton({
   onOpen: (id: string) => void;
 }) {
   const state = stateOf(node.bead);
+  const short = shortId(node.bead.id);
   return (
     <button
       type="button"
@@ -45,15 +46,15 @@ export function GraphNodeButton({
       )}
     >
       <span className="flex items-center justify-between gap-1 font-mono text-muted-foreground">
-        <span className="min-w-0 truncate" title={node.bead.id} aria-hidden={shortId(node.bead.id) !== node.bead.id || undefined}>
-          {shortId(node.bead.id)}
+        <span className="min-w-0 truncate" title={node.bead.id} aria-hidden={short !== node.bead.id || undefined}>
+          {short}
         </span>
-        {shortId(node.bead.id) !== node.bead.id && <span className="sr-only">{node.bead.id}</span>}
+        {short !== node.bead.id && <span className="sr-only">{node.bead.id}</span>}
         <span className="shrink-0">{`P${node.bead.priority}`}</span>
       </span>
       <span className="truncate text-sm font-medium text-card-foreground">{node.bead.title}</span>
       <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
-        <span className="min-w-0 truncate">
+        <span className="min-w-0 truncate" title={STATE_LABEL[state]}>
           <StateMark bead={node.bead} className="text-xs" />
         </span>
         {isPrep(node.bead.labels) && <PrepChip />}
