@@ -52,7 +52,7 @@ gin-console SHALL show, on a milestone's page, in the Graph view of the Beads ta
 - THEN X is shown as an external node with an edge to A
 
 ### REQ-MILESTONE-UI-003: Milestone Gantt tab
-gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per epic from `planned_start` to `planned_end` of `gin milestone show --json`, as gin-workflow scheduled them on the milestone's lanes and without rescheduling them, colored by bead status, with a line at the JSON `today` date, a line at the milestone `end`, and each epic's warnings.
+gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per epic from `planned_start` to `planned_end` of `gin milestone show --json`, as gin-workflow scheduled them on the milestone's lanes and without rescheduling them, colored by bead status, with a line at the JSON `today` date, a line at the milestone `end`, and each epic's warnings, reading `spec_due` as "Spec due before kick-off", `after_integration` as "Ends after integration on <integration date>", `open_bugs` as "<count> open bug(s)" and `oversized` as "<days> working day(s) longer than the milestone", and any other code as the code itself.
 
 #### Scenario: overflow shown
 - GIVEN milestone M1 whose `show` output gives epic A warning `overflow` of 2 days
@@ -73,6 +73,11 @@ gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per e
 - GIVEN epic A in M1 with warning `external_blocker` and `external_depends_on` `[{"id": "E9", "milestone": "M2"}]`
 - WHEN the user opens the Gantt tab of M1
 - THEN A shows an external blocker warning naming E9 and M2
+
+#### Scenario: newer warnings
+- GIVEN epics in M1 with warnings `spec_due`, `after_integration` (integration 2026-11-24), `open_bugs` with `count: 2` and `oversized` with `days: 3`
+- WHEN the user opens the Gantt tab of M1
+- THEN they read "Spec due before kick-off", "Ends after integration on 24 Nov", "2 open bugs" and "3 working days longer than the milestone"
 
 ### REQ-MILESTONE-UI-004: Kick-start preview
 WHILE a milestone is `planned` or `scheduled`, gin-console SHALL show on its Gantt tab a Kick-start date picker defaulting to `kickoff`, else `start`, and WHEN the user picks a date SHALL redraw the Gantt from `gin milestone show <id> --start <date> --json`, labelled as a read-only preview with the command `gin milestone kickstart <id> --date <date>`; it SHALL NOT show the picker for `active` or `closed` milestones, and IF the preview fails, THEN it SHALL show the error in the Gantt tab instead of any plan.
@@ -127,7 +132,7 @@ gin-console SHALL exclude beads of type `milestone` from the ready work it colle
 - THEN M1 is not counted or flagged as ready
 
 ### REQ-MILESTONE-UI-008: Milestones API
-WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin milestone list --all --json` or `gin milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast` and the `lanes` of each list entry and of the shown milestone, with `null` for each of them that the output lacks, and SHALL accept a list entry whose `start` and `end` are `null` and return them as `null`. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
+WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin milestone list --all --json` or `gin milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast`, the `lanes` of each list entry and of the shown milestone, the shown milestone's `integration`, `deadline` and `away`, and each epic's `remaining_days` and `assumed_days`, with `null` (`{}` for `away`) for each of them that the output lacks, and SHALL accept a list entry whose `start` and `end` are `null` and return them as `null`. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
 
 #### Scenario: list
 - GIVEN project P whose `milestone list --all --json` prints schema 1 with M1
@@ -168,6 +173,11 @@ WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milesto
 - GIVEN project P whose `milestone list` prints M1 and M4 with `start: null`, `end: null` and `error: "M4 has no start/end metadata"`
 - WHEN a client requests `GET /api/milestones?project=P`
 - THEN the response is 200 with M1, and M4 with `start: null`, `end: null` and that `error`
+
+#### Scenario: schedule facts
+- GIVEN project P whose `milestone show M1` prints `integration: 2026-11-24`, `deadline: null`, `away: {"ann": ["2026-11-18"]}` and an epic with `remaining_days: 2` and `assumed_days: null`
+- WHEN a client requests `GET /api/milestones/P/M1`
+- THEN the response carries those values unchanged
 
 ### REQ-MILESTONE-UI-009: Milestone beads hidden from Beads views
 The List, Board, Focus, and Dependencies views SHALL NOT show beads of type `milestone`, and SHALL show the beads whose parent is a milestone as having no parent.
@@ -262,7 +272,7 @@ WHILE the Gantt is zoomed to `1 week` or `2 weeks`, gin-console SHALL draw the w
 - THEN ‹, › and the label of days in view are not shown and dragging does not move the chart
 
 ### REQ-MILESTONE-UI-013: Readable Gantt rows
-Each epic row of the Gantt SHALL show, in a label column that stays visible while the chart scrolls, the status icon and title on one line and the epic id (linking to its bead page), period and estimate on the next, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, period and estimate, closed tracks, prep, spec) wrap onto further lines rather than being cut, followed by the epic's warnings; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar.
+Each epic row of the Gantt SHALL show, in a label column that stays visible while the chart scrolls, the status icon and title on one line and the epic id (linking to its bead page), period and estimate on the next, the estimate reading "<n>d", or "<n>d left" when the epic is in progress and its `remaining_days` is below its estimate, or "assumed <n>d" when it has no estimate and `assumed_days` is set, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, period and estimate, closed tracks, prep, spec) wrap onto further lines rather than being cut, followed by the epic's warnings; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar.
 
 #### Scenario: long id
 - GIVEN epic `gin-workflow-rm-process-hygiene` titled "Process hygiene: consistent skills, rules that bind where it matters"
@@ -273,6 +283,11 @@ Each epic row of the Gantt SHALL show, in a label column that stays visible whil
 - GIVEN epic A whose bar ends on the first day of a 10-day plan shown as `Whole milestone`
 - WHEN the Gantt is shown
 - THEN A's title is shown after its bar
+
+#### Scenario: remaining and assumed days
+- GIVEN an in-progress epic A with `estimate_days: 5` and `remaining_days: 2`, and an open epic B without an estimate and with `assumed_days: 3`
+- WHEN the Gantt is shown
+- THEN A's second line reads "2d left" and B's reads "assumed 3d"
 
 ### REQ-MILESTONE-UI-014: Dependency arrows on the Gantt
 For each epic B of the milestone and each id A in B's `depends_on` that is an epic of the same milestone, the Gantt SHALL draw an arrow from the end of A's last bead to the start of B's first bead, in the blocked color IF B's `planned_start` is not after A's `planned_end`, and SHALL draw no arrow for an id that is not an epic of the milestone. WHILE the pointer is over an epic's row or bar, or focus is inside its row, the Gantt SHALL highlight that epic, every epic it depends on or that depends on it directly or through other epics, and the arrows between them, and SHALL fade the other epics and arrows.
@@ -390,7 +405,7 @@ Source: `assets/2026-11-08/mockup/index.html#milestone`
 - THEN the header shows no lane count and the rest of the header is unchanged
 
 ### REQ-MILESTONE-UI-018: Beads tab on the milestone page
-The milestone page SHALL offer the tabs Gantt and Beads, kept in the URL as `tab` (`gantt` when absent or unknown, `beads`), and SHALL treat `tab=graph` as `tab=beads` with `view=graph`. WHILE the Beads tab is shown, the page SHALL show the Beads views (REQ-UI-030) of the milestone's project with the Milestone filter fixed to this milestone and no Milestone select, SHALL keep their search, filters, view, selection and graph scope in the milestone page's URL with the names the Beads page uses, and SHALL fetch closed beads without "Show closed" WHILE the milestone is closed. WHEN the user changes tab, the page SHALL keep only `start` and `zoom` of the query besides `tab`.
+The milestone page SHALL offer the tabs Gantt, Beads and Retro (REQ-MILESTONE-UI-019), kept in the URL as `tab` (`gantt` when absent or unknown, `beads`, `retro`), and SHALL treat `tab=graph` as `tab=beads` with `view=graph`. WHILE the Beads tab is shown, the page SHALL show the Beads views (REQ-UI-030) of the milestone's project with the Milestone filter fixed to this milestone and no Milestone select, SHALL keep their search, filters, view, selection and graph scope in the milestone page's URL with the names the Beads page uses, and SHALL fetch closed beads without "Show closed" WHILE the milestone is closed. WHEN the user changes tab, the page SHALL keep only `start` and `zoom` of the query besides `tab`.
 
 #### Scenario: Beads tab
 - GIVEN milestone `m2` of project `p` with epics `e1` and `e2` and a bead `x` under milestone `m3`
@@ -416,3 +431,49 @@ The milestone page SHALL offer the tabs Gantt and Beads, kept in the URL as `tab
 - GIVEN closed milestone `m1` whose beads are all closed
 - WHEN the user opens its Beads tab with "Show closed" off
 - THEN the closed beads of `m1` are shown
+
+### REQ-MILESTONE-UI-019: Retro tab on the milestone page
+The milestone page SHALL offer a third tab "Retro", kept in the URL as `tab=retro` and labelled with the number of members who left a retro, that SHALL read the comments of the milestone bead through `GET /api/beads/{project}/{id}/comments` and show:
+- the newest comment that starts with `[gin close] <milestone id>`, with its author and date and the text after each of the labels `Delivered:`, `Spillover:`, `Outcome:`, `Demo:`, `Retros:`, `Metrics:` and `Action:` that it holds, rendered as Markdown, leaving out a label it lacks;
+- for each member, by name, the newest comment that starts with `[gin retro] <milestone id> <member>`, with its date and the text after `Went well:`, `Slowed us:` and `Change next:`;
+- a comment with one of these prefixes but none of the labels, as its full text with the note "Not in the expected format";
+- "No retros yet. Members record one with `/retro`." when there is no retro and no close comment.
+IF the comments cannot be loaded, THEN the tab SHALL show the error with a Retry button.
+
+#### Scenario: Close and retros
+- GIVEN milestone `m1` with a comment `[gin close] m1` holding `Delivered:`, `Spillover:` and `Action:`, and comments `[gin retro] m1 ann` and `[gin retro] m1 bao`
+- WHEN the user opens `/milestones/p/m1?tab=retro`
+- THEN the tab reads "Retro 2", shows the close block with Delivered, Spillover and Action, then the retros of ann and bao
+
+#### Scenario: Newest retro per member
+- GIVEN two comments `[gin retro] m1 ann` from 10 Nov and 12 Nov
+- WHEN the Retro tab is shown
+- THEN only the retro of 12 Nov is shown for ann
+
+#### Scenario: Retro of another milestone
+- GIVEN a comment `[gin retro] m2 ann` on the bead of `m1`
+- WHEN the Retro tab of `m1` is shown
+- THEN it is not counted or shown
+
+#### Scenario: Not in the expected format
+- GIVEN a comment `[gin retro] m1 chi` with no `Went well:`, `Slowed us:` or `Change next:`
+- WHEN the Retro tab is shown
+- THEN chi's comment is shown in full with "Not in the expected format"
+
+#### Scenario: Nothing yet
+- GIVEN milestone `m1` without retro or close comments
+- WHEN the Retro tab is shown
+- THEN it reads "Retro" without a number and says "No retros yet. Members record one with `/retro`."
+
+### REQ-MILESTONE-UI-020: Integration, deadline and away in the milestone header
+WHEN a milestone's `show` output has `integration`, `deadline` or a non-empty `away`, the milestone page header SHALL show "Integration <date>", "Deadline <date>" and "Away: <member> <dates>, …" (each range of a member as a date or "<from>–<to>"), and SHALL show nothing for each of them that is `null`, empty or missing.
+
+#### Scenario: All three
+- GIVEN milestone `m1` whose `show` output has `integration: 2026-11-24`, `deadline: 2026-11-28` and `away: {"ann": ["2026-11-18..2026-11-20"], "bao": ["2026-11-25"]}`
+- WHEN the user opens `m1`
+- THEN the header shows "Integration 24 Nov", "Deadline 28 Nov" and "Away: ann 18–20 Nov, bao 25 Nov"
+
+#### Scenario: Older gin-workflow
+- GIVEN milestone `m1` whose `show` output has no `integration`, `deadline` or `away` key
+- WHEN the user opens `m1`
+- THEN the header shows none of them and the rest of the header is unchanged

@@ -483,7 +483,7 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-closed.pn
 ### REQ-REPORTS-017: Team tab states
 The Team tab SHALL handle these states:
 - WHILE "All projects" is selected, it SHALL show "Pick a project to see its team" and SHALL NOT request the team report.
-- WHEN `milestones` is empty, it SHALL show "<project> has no milestones yet", one sentence on what a milestone is, and the command `gin-workflow milestone create` with a copy button.
+- WHEN `milestones` is empty, it SHALL show "<project> has no milestones yet", one sentence on what a milestone is, and the command `gin milestone create` with a copy button.
 - WHILE the team report loads, it SHALL show a loading state.
 - IF the request fails, THEN it SHALL show the error with a Retry button.
 - It SHALL NOT show a late answer for a project or milestone that is no longer selected.
@@ -497,7 +497,7 @@ Source: `assets/2026-11-12/mockup/index.html`
 #### Scenario: no milestones
 - GIVEN the team report of `beta` has no milestones
 - WHEN the Team tab is shown
-- THEN it says "beta has no milestones yet" and offers to copy `gin-workflow milestone create`
+- THEN it says "beta has no milestones yet" and offers to copy `gin milestone create`
 
 #### Scenario: failure
 - GIVEN `/api/reports/team` answers 502
