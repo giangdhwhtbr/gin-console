@@ -1,6 +1,6 @@
 # TC-UI-104: Drill down and back
 
-- **REQ:** REQ-UI-106@0ef18c76
+- **REQ:** REQ-UI-106@3747fc19
 - **Priority:** high
 
 **Preconditions:**
