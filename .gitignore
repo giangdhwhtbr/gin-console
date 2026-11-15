@@ -23,3 +23,6 @@ docker-compose.override.yml
 /node_modules/
 /test-results/
 /playwright-report/
+
+# example project built by scripts/make_example_project.py
+/examples/
