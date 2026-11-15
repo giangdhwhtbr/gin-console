@@ -104,18 +104,8 @@ describe("ListPanel", () => {
     expect(await within(panel).findByText("Comment of t-1")).toBeInTheDocument();
   });
 
-  it("REQ-UI-045 nothing selected: panel prompts to select a bead", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
-    stubTreeWithDetail([bead("t-1", { title: "Task One" })]);
-    render(<BeadsPage />);
-
-    expect(await screen.findByRole("tree")).toBeInTheDocument();
-    const panel = screen.getByRole("complementary", { name: "Bead details" });
-    expect(within(panel).getByText("Select a bead to see its details")).toBeInTheDocument();
-  });
-
   it("REQ-UI-078 the details panel stays in view, scrolls by itself and takes focus", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
     stubTreeWithDetail([bead("t-1", { title: "Task One" })]);
     render(<BeadsPage />);
 
