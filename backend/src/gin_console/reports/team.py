@@ -7,6 +7,7 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
 from gin_console.beads.milestones import current_milestone, milestone_status, parse_date
+from gin_console.beads.prep import is_prep
 from gin_console.reports.models import (
     BeadBucket,
     DayRow,
@@ -83,7 +84,10 @@ def _scope(
     for bead in beads:
         if bead.issue_type == "milestone":
             continue
-        if bead.issue_type == "epic" and tree.children.get(_key(bead)):
+        if is_prep(bead.labels):
+            continue  # prep tasks are not tracked work (REQ-BEADS-002)
+        tracks = [c for c in tree.children.get(_key(bead), []) if not is_prep(c.labels)]
+        if bead.issue_type == "epic" and tracks:
             continue  # split into tasks: its children carry the work
         epics = tree.epics_of(bead)
         if any(e.parent == milestone_id for e in epics):

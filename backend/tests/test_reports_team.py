@@ -342,3 +342,20 @@ def test_reports_011_close_date_is_local() -> None:
     r = team([*standard(), *scoped("m2", "e1", beads)])
     day = next(d for d in r.days if d.date == date(2026, 11, 6))
     assert day.closed == {"ann": 1}
+
+
+# REQ-REPORTS-009
+def test_reports_009_prep_tasks_left_out() -> None:
+    rows = [
+        *standard(),
+        row("e-1", issue_type="epic", parent="m2"),
+        row("t-1", parent="e-1"),
+        row("t-2", parent="e-1"),
+        row("p-1", parent="e-1", labels=["prep", "prep:mockup"]),
+        row("e-2", issue_type="epic", parent="m2"),
+        row("p-2", parent="e-2", labels=["prep"]),
+        row("t-3", parent="e-1", labels=["prep", "track:api"]),
+    ]
+    r = team(rows)
+    assert [b.id for b in r.beads] == ["e-2", "t-1", "t-2", "t-3"]
+    assert {b.id: b.epic.id for b in r.beads}["e-2"] == "e-2"

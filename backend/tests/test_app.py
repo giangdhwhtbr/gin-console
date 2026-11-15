@@ -16,6 +16,7 @@ BEADS = {
     "in_progress": 1,
     "blocked": 1,
     "ready": 2,
+    "prep": 0,
     "epics": [{"id": "e1", "title": "Epic one"}, {"id": "e2", "title": "Epic two"}],
     "stale": False,
 }

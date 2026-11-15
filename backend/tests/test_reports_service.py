@@ -383,3 +383,18 @@ def test_reports_006_sprint_lists_open_unreadable_usage() -> None:
     )
     assert [(c.id, c.detail) for c in r.coverage.invalid] == [("a-1.1", "unreadable")]
     assert r.coverage.not_collected == []
+
+
+# REQ-REPORTS-003
+def test_reports_003_epic_with_a_prep_task() -> None:
+    r = report(
+        [
+            row("e-1", issue_type="epic"),
+            closed("t-1", ago(2), parent="e-1", ai=usage(200)),
+            row("t-2", parent="e-1"),
+            closed("p-1", ago(2), parent="e-1", labels=["prep", "prep:mockup"], ai=usage(100)),
+        ]
+    )
+    [epic] = r.usage.epics
+    assert (epic.id, epic.tokens, epic.closed_children, epic.children) == ("e-1", 300, 1, 2)
+    assert (epic.closed_prep_children, epic.prep_children) == (1, 1)

@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from gin_console.beads.errors import BeadsError
+from gin_console.beads.prep import row_is_prep
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.config import ProjectEntry
 from gin_console.projects.collect import Collector
@@ -14,17 +15,21 @@ def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
         rows = snapshots.get(path)
     except (BeadsError, RecursionError) as exc:
         return BlockError(error=str(exc) or "issues.jsonl was too deeply nested")
-    active = [r for r in rows.rows.values() if r.get("status") in ("open", "in_progress")]
+    # prep tasks are counted apart (REQ-BEADS-002)
+    prep_ids = {i for i, r in rows.rows.items() if row_is_prep(r)}
+    open_rows = [r for r in rows.rows.values() if r.get("status") in ("open", "in_progress")]
+    active = [r for r in open_rows if r.get("id") not in prep_ids]
     # a milestone is not work, even when nothing blocks it (REQ-MILESTONE-UI-007)
     ready = {
-        i for i in rows.ready if rows.rows[i].get("issue_type") != "milestone"
+        i for i in rows.ready if rows.rows[i].get("issue_type") != "milestone" and i not in prep_ids
     }
     try:
         return Beads(
             open=sum(r["status"] == "open" for r in active),
             in_progress=sum(r["status"] == "in_progress" for r in active),
-            blocked=len(rows.blocked),
+            blocked=len(rows.blocked - prep_ids),
             ready=len(ready),
+            prep=sum(r.get("status") != "closed" for i, r in rows.rows.items() if i in prep_ids),
             epics=[
                 Epic(id=r["id"], title=r["title"])
                 for r in active

@@ -21,6 +21,7 @@ class Beads(BaseModel):
     in_progress: int
     blocked: int
     ready: int
+    prep: int = 0
     epics: list[Epic]
     stale: bool = False
 

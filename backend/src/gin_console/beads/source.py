@@ -21,11 +21,13 @@ from gin_console.beads.milestones import (
 from gin_console.beads.models import (
     BeadDetail,
     BeadSummary,
+    ChildRelation,
     Comment,
     MilestoneOption,
     ProjectMilestones,
     Relation,
 )
+from gin_console.beads.prep import row_is_prep
 from gin_console.beads.snapshot import BLOCKING, EXPORT_FILE, Snapshot
 
 __all__ = ["EXPORT_FILE", "BeadNotFound", "BeadsError"]
@@ -175,6 +177,20 @@ def _relations(snapshot: Snapshot, pairs: list[tuple[str, str]]) -> list[Relatio
     return [r for r in (_relation(snapshot, i, k) for i, k in pairs) if r is not None]
 
 
+def _children(snapshot: Snapshot, above: list[tuple[str, str]]) -> list[ChildRelation]:
+    found: list[ChildRelation] = []
+    for ident, kind in above:
+        relation = _relation(snapshot, ident, kind) if kind == "parent-child" else None
+        if relation is not None:
+            found.append(
+                ChildRelation(
+                    **relation.model_dump(),
+                    prep=row_is_prep(snapshot.rows[ident]),
+                )
+            )
+    return found
+
+
 def _row(snapshot: Snapshot, bead_id: str) -> dict[str, Any]:
     if not valid_id(bead_id) or bead_id not in snapshot.rows:
         raise BeadNotFound(bead_id)
@@ -205,9 +221,7 @@ def get_bead(snapshot: Snapshot, bead_id: str) -> BeadDetail:
                 "close_reason": raw.get("close_reason") or None,
                 "dependencies": _relations(snapshot, own),
                 "dependents": _relations(snapshot, [(i, k) for i, k in above if k == "blocks"]),
-                "children": _relations(
-                    snapshot, [(i, k) for i, k in above if k == "parent-child"]
-                ),
+                "children": _children(snapshot, above),
                 "bugs": _relations(snapshot, bugs),
             }
         )
