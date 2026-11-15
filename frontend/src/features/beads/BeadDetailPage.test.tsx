@@ -74,6 +74,16 @@ afterEach(() => {
 });
 
 describe("BeadDetailPage", () => {
+  it("REQ-UI-107 Unbroken title on a phone and Wide table on a phone", async () => {
+    stubFetch(beadDetail("a-5", { title: "T".repeat(90), description: "| a | b |\n|---|---|\n| 1 | 2 |" }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    const h1 = await screen.findByRole("heading", { name: "T".repeat(90) });
+    expect(h1).toHaveClass("wrap-anywhere");
+    expect(within(h1.parentElement!).getByText("a-5")).toHaveClass("wrap-anywhere");
+    expect(screen.getByText(/Owner alice/)).toHaveClass("wrap-anywhere");
+    expect(h1.closest("div.flex-col")).toHaveClass("min-w-0");
+  });
+
   const bug = (id: string, status = "open") => ({ id, title: `Bug ${id}`, status, type: "discovered-from" as const });
 
   // REQ-UI-086

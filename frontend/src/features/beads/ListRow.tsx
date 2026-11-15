@@ -1,3 +1,4 @@
+import { shortId } from "@/lib/shortId";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
@@ -64,8 +65,10 @@ export function ListRow({
         ) : (
           <span className="size-6 shrink-0" />
         )}
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">{bead.id}</span>
-        <span className="min-w-0 truncate font-medium" onClick={(event) => event.stopPropagation()}>
+        <span className="min-w-0 shrink truncate font-mono text-xs text-muted-foreground" title={bead.id}>
+          {shortId(bead.id)}
+        </span>
+        <span className="min-w-32 truncate font-medium" title={bead.title} onClick={(event) => event.stopPropagation()}>
           <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
         </span>
         {isPrep(bead.labels) && <PrepChip />}
@@ -99,7 +102,9 @@ export function ListRow({
           <CountBadge kind="comments" count={bead.comment_count} />
           <CountBadge kind="dependencies" count={bead.dependency_count} />
         </span>
-        <span className="hidden truncate text-muted-foreground @4xl:block">{bead.assignee ?? bead.owner ?? ""}</span>
+        <span className="hidden truncate text-muted-foreground @4xl:block" title={bead.assignee ?? bead.owner ?? ""}>
+          {bead.assignee ?? bead.owner ?? ""}
+        </span>
         <span className="hidden text-xs text-muted-foreground @4xl:block">{new Date(bead.updated_at).toLocaleDateString()}</span>
       </div>
     </li>

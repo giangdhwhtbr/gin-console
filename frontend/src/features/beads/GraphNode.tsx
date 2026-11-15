@@ -1,4 +1,5 @@
 import { Layers } from "lucide-react";
+import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import { PrepChip } from "./PrepChip";
 import { isPrep } from "./prep";
@@ -44,15 +45,17 @@ export function GraphNodeButton({
       )}
     >
       <span className="flex items-center justify-between gap-1 font-mono text-muted-foreground">
-        <span className="min-w-0 truncate" title={node.bead.id}>{node.bead.id}</span>
+        <span className="min-w-0 truncate" title={node.bead.id}>{shortId(node.bead.id)}</span>
         <span className="shrink-0">{`P${node.bead.priority}`}</span>
       </span>
       <span className="truncate text-sm font-medium text-card-foreground">{node.bead.title}</span>
-      <span className="flex items-center gap-2">
-        <StateMark bead={node.bead} className="text-xs" />
+      <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
+        <span className="min-w-0 truncate">
+          <StateMark bead={node.bead} className="text-xs" />
+        </span>
         {isPrep(node.bead.labels) && <PrepChip />}
         {node.hasKids && (
-          <span className="ml-auto inline-flex items-center gap-1 text-muted-foreground">
+          <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-muted-foreground">
             <Layers aria-hidden className="size-3.5" />
             {node.total > 0 && `${node.done} of ${node.total} done`}
           </span>
