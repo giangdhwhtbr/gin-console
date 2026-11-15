@@ -324,3 +324,26 @@ def test_milestone_ui_008_entry_without_dates_is_listed(tmp_path: Path) -> None:
     m4 = response.json()["milestones"][1]
     assert m4["start"] is None and m4["end"] is None
     assert m4["error"] == "M4 has no start/end metadata"
+
+
+# REQ-MILESTONE-UI-008 schedule facts
+def test_milestone_ui_008_schedule_facts_pass_through(tmp_path: Path) -> None:
+    warning = {"code": "open_bugs", "count": 2}
+    epic = {**SHOW["epics"][0], "remaining_days": 2, "assumed_days": None, "warnings": [warning]}
+    away = {"ann": ["2026-11-18..2026-11-20"]}
+    show = {**SHOW, "epics": [epic], "integration": "2026-11-24", "deadline": None, "away": away}
+    api = make(tmp_path, FakeGw({"list": LIST, "show": show}))
+    body = api.get("/api/milestones/proj/gw-ab1").json()
+    assert (body["integration"], body["deadline"], body["away"]) == ("2026-11-24", None, away)
+    assert body["epics"][0]["remaining_days"] == 2
+    assert body["epics"][0]["assumed_days"] is None
+    assert body["epics"][0]["warnings"] == [{"code": "open_bugs", "days": None, "count": 2}]
+
+
+# REQ-MILESTONE-UI-008 older output without schedule facts
+def test_milestone_ui_008_older_output_has_no_schedule_facts(tmp_path: Path) -> None:
+    body = make(tmp_path, FakeGw()).get("/api/milestones/proj/gw-ab1").json()
+    assert (body["integration"], body["deadline"], body["away"]) == (None, None, {})
+    assert body["epics"][0]["remaining_days"] is None
+    assert body["epics"][0]["assumed_days"] is None
+    assert body["epics"][0]["warnings"][0]["count"] is None

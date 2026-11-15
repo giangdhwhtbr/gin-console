@@ -226,6 +226,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads }: Props) {
                     axis={axis}
                     label={label}
                     today={plan.today}
+                    integration={plan.integration}
                     kids={childBeads.get(row.epic.id) ?? []}
                     open={expanded.has(row.epic.id)}
                     faded={faded(row.epic.id)}
@@ -346,6 +347,7 @@ function EpicRow({
   axis,
   label,
   today,
+  integration,
   kids,
   open,
   faded,
@@ -357,6 +359,7 @@ function EpicRow({
   axis: Axis;
   label: number;
   today: string;
+  integration: string | null;
   kids: readonly BeadSummary[];
   open: boolean;
   faded: boolean;
@@ -372,7 +375,9 @@ function EpicRow({
   const unestimated = epic.estimate_days === null;
   const counts = childCounts(kids);
   const prep = prepLabel(counts);
-  const period = `${periodOf(epic.planned_start, epic.planned_end, today)}, ${unestimated ? "no estimate" : `${epic.estimate_days}d`}`;
+  const left = epic.status === "in_progress" && epic.estimate_days !== null && epic.remaining_days !== null && epic.remaining_days < epic.estimate_days;
+  const size = left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate";
+  const period = `${periodOf(epic.planned_start, epic.planned_end, today)}, ${size}`;
   const closedTracks = `${counts.closedTracks}/${counts.tracks} closed`;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
@@ -417,7 +422,7 @@ function EpicRow({
             )}
             {epic.spec_confirmed === false && <span title="No confirmed spec" className="max-w-full shrink-0 truncate text-muted-foreground">No confirmed spec</span>}
           </span>
-          {warningLines(epic, today).map((text) => (
+          {warningLines(epic, today, integration).map((text) => (
             <span key={text} title={text} className="flex min-w-0 items-center gap-1 pl-[26px] text-xs text-state-blocked">
               <TriangleAlert aria-hidden className="size-3 flex-none" />
               <span title={text} className="min-w-0 truncate">{text}</span>

@@ -1,7 +1,7 @@
 import type { BeadSummary } from "@/features/beads/api";
 import { childCounts, prepLabel } from "@/features/beads/prep";
 import type { EpicPlan, MilestoneDetail } from "./api";
-import { monthName, shortDate, utcOf } from "./format";
+import { monthName, plural, shortDate, utcOf } from "./format";
 
 const DAY_MS = 86_400_000;
 export const WEEKEND_WIDTH = 8;
@@ -87,7 +87,7 @@ export function monthsOf(axis: Axis, today: string): Month[] {
   return months;
 }
 
-export function warningLines(epic: EpicPlan, today: string): string[] {
+export function warningLines(epic: EpicPlan, today: string, integration: string | null): string[] {
   return epic.warnings.flatMap((w) => {
     switch (w.code) {
       case "overflow":
@@ -98,6 +98,14 @@ export function warningLines(epic: EpicPlan, today: string): string[] {
         return ["No estimate"];
       case "spec_not_ready":
         return ["Spec not confirmed"];
+      case "spec_due":
+        return ["Spec due before kick-off"];
+      case "after_integration":
+        return [integration === null ? "Ends after integration" : `Ends after integration on ${shortDate(integration, today)}`];
+      case "open_bugs":
+        return [plural(w.count ?? 0, "open bug")];
+      case "oversized":
+        return [`${plural(w.days ?? 0, "working day")} longer than the milestone`];
       case "external_blocker":
         return epic.external_depends_on.map(
           (d) => `Blocked by ${d.id} (${d.milestone === null ? "not in a milestone" : `in ${d.milestone}`})`,
@@ -177,7 +185,7 @@ export function rowsOf(
   let top = 0;
   for (const epic of epics) {
     const base = wide ? ROW_HEIGHT : narrowHeight(epic, children.get(epic.id) ?? []);
-    const height = base + WARNING_HEIGHT * warningLines(epic, today).length;
+    const height = base + WARNING_HEIGHT * warningLines(epic, today, null).length;
     rows.push({ kind: "epic", epic, top, height });
     top += height;
     if (!expanded.has(epic.id)) continue;

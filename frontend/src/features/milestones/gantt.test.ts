@@ -69,25 +69,38 @@ describe("gantt", () => {
 
   it("REQ-MILESTONE-UI-003 warnings read as sentences", () => {
     const today = "2026-10-29";
-    expect(warningLines(epicPlan("a", { warnings: [{ code: "overflow", days: 2 }] }), today)).toEqual([
+    expect(warningLines(epicPlan("a", { warnings: [{ code: "overflow", days: 2, count: null }] }), today, null)).toEqual([
       "2 working days past the end",
     ]);
-    expect(warningLines(epicPlan("a", { warnings: [{ code: "overflow", days: 1 }] }), today)).toEqual([
+    expect(warningLines(epicPlan("a", { warnings: [{ code: "overflow", days: 1, count: null }] }), today, null)).toEqual([
       "1 working day past the end",
     ]);
-    expect(warningLines(epicPlan("a", { warnings: [{ code: "late", days: null }] }), today)).toEqual([
+    expect(warningLines(epicPlan("a", { warnings: [{ code: "late", days: null, count: null }] }), today, null)).toEqual([
       "Late: should have finished 4 Nov",
     ]);
-    expect(warningLines(epicPlan("a", { warnings: [{ code: "unestimated", days: null }] }), today)).toEqual(["No estimate"]);
-    expect(warningLines(epicPlan("a", { warnings: [{ code: "spec_not_ready", days: null }] }), today)).toEqual(["Spec not confirmed"]);
+    expect(warningLines(epicPlan("a", { warnings: [{ code: "unestimated", days: null, count: null }] }), today, null)).toEqual(["No estimate"]);
+    expect(warningLines(epicPlan("a", { warnings: [{ code: "spec_not_ready", days: null, count: null }] }), today, null)).toEqual(["Spec not confirmed"]);
     const blocked = epicPlan("a", {
-      warnings: [{ code: "external_blocker", days: null }],
+      warnings: [{ code: "external_blocker", days: null, count: null }],
       external_depends_on: [
         { id: "E9", milestone: "M2" },
         { id: "X1", milestone: null },
       ],
     });
-    expect(warningLines(blocked, today)).toEqual(["Blocked by E9 (in M2)", "Blocked by X1 (not in a milestone)"]);
+    expect(warningLines(blocked, today, null)).toEqual(["Blocked by E9 (in M2)", "Blocked by X1 (not in a milestone)"]);
+  });
+
+  it("REQ-MILESTONE-UI-003 newer warnings", () => {
+    const today = "2026-10-29";
+    const lines = (code: string, extra: { days?: number; count?: number } = {}) =>
+      warningLines(epicPlan("a", { warnings: [{ code, days: extra.days ?? null, count: extra.count ?? null }] }), today, "2026-11-24");
+    expect(lines("spec_due")).toEqual(["Spec due before kick-off"]);
+    expect(lines("after_integration")).toEqual(["Ends after integration on 24 Nov"]);
+    expect(lines("open_bugs", { count: 2 })).toEqual(["2 open bugs"]);
+    expect(lines("open_bugs", { count: 1 })).toEqual(["1 open bug"]);
+    expect(lines("oversized", { days: 3 })).toEqual(["3 working days longer than the milestone"]);
+    expect(lines("oversized", { days: 1 })).toEqual(["1 working day longer than the milestone"]);
+    expect(lines("brand_new")).toEqual(["brand_new"]);
   });
 
   it("REQ-MILESTONE-UI-003 months and row order", () => {
@@ -171,7 +184,7 @@ describe("gantt", () => {
 
   it("REQ-MILESTONE-UI-014 arrows follow rows moved by warnings and expanded children", () => {
     const epics = [
-      epicPlan("a", { planned_start: "2026-11-02", planned_end: "2026-11-02", warnings: [{ code: "unestimated", days: null }] }),
+      epicPlan("a", { planned_start: "2026-11-02", planned_end: "2026-11-02", warnings: [{ code: "unestimated", days: null, count: null }] }),
       epicPlan("b", { planned_start: "2026-11-09", planned_end: "2026-11-09", depends_on: ["a"] }),
     ];
     const children = new Map([["a", [bead("a.1"), bead("a.2")]]]);
@@ -187,7 +200,7 @@ describe("gantt", () => {
 
   it("REQ-MILESTONE-UI-013 below lg a row holds a line per label and warning; from lg it keeps 56", () => {
     const epics = [
-      epicPlan("a", { spec_confirmed: false, warnings: [{ code: "unestimated", days: null }, { code: "spec_not_ready", days: null }] }),
+      epicPlan("a", { spec_confirmed: false, warnings: [{ code: "unestimated", days: null, count: null }, { code: "spec_not_ready", days: null, count: null }] }),
       epicPlan("b"),
     ];
     const heights = (wide: boolean) => rowsOf(epics, "2026-10-29", new Set(), new Map(), wide).map((r) => [r.top, r.height]);

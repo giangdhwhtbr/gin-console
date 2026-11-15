@@ -26,7 +26,7 @@ export type Forecast = {
   error: string | null;
 };
 export type MilestoneList = { milestones: MilestoneEntry[]; unassigned_epics: number; today: string; forecast: Forecast | null };
-export type EpicWarning = { code: string; days: number | null };
+export type EpicWarning = { code: string; days: number | null; count: number | null };
 export type ExternalDependency = { id: string; milestone: string | null };
 export type EpicPlan = {
   id: string;
@@ -39,6 +39,8 @@ export type EpicPlan = {
   external_depends_on: ExternalDependency[];
   warnings: EpicWarning[];
   spec_confirmed: boolean | null;
+  remaining_days: number | null;
+  assumed_days: number | null;
 };
 export type MilestoneDetail = {
   id: string;
@@ -55,6 +57,9 @@ export type MilestoneDetail = {
   overflow_days: number;
   epics: EpicPlan[];
   lanes: number | null;
+  integration: string | null;
+  deadline: string | null;
+  away: Record<string, string[]>;
 };
 
 /** A failed milestones request; `kind` names a known cause the page explains with its fix. */
@@ -73,6 +78,8 @@ const strings = (value: object, keys: readonly string[]) => keys.every((k) => is
 const stringsOrNull = (value: object, keys: readonly string[]) => keys.every((k) => isStringOrNull(field(value, k)));
 const isNumberOrNull = (value: unknown) => value === null || isFiniteNumber(value);
 const isLanes = (value: unknown) => value === undefined || isNumberOrNull(value);
+const isAway = (value: unknown) =>
+  value === undefined || (isObject(value) && Object.values(value).every((ranges) => every(ranges, isString)));
 const every = (value: unknown, check: (item: unknown) => boolean) => Array.isArray(value) && value.every(check);
 
 function isForecast(value: unknown): value is Forecast {
@@ -109,7 +116,7 @@ function isList(value: unknown): value is MilestoneList {
 }
 
 const isWarning = (value: unknown) =>
-  isObject(value) && isString(field(value, "code")) && isNumberOrNull(field(value, "days"));
+  isObject(value) && isString(field(value, "code")) && isNumberOrNull(field(value, "days")) && isLanes(field(value, "count"));
 const isExternal = (value: unknown) =>
   isObject(value) && isString(field(value, "id")) && isStringOrNull(field(value, "milestone"));
 
@@ -123,7 +130,9 @@ function isEpic(value: unknown): value is EpicPlan {
     every(field(value, "depends_on"), isString) &&
     every(field(value, "external_depends_on"), isExternal) &&
     every(field(value, "warnings"), isWarning) &&
-    isSpecConfirmed(field(value, "spec_confirmed"))
+    isSpecConfirmed(field(value, "spec_confirmed")) &&
+    isLanes(field(value, "remaining_days")) &&
+    isLanes(field(value, "assumed_days"))
   );
 }
 
@@ -135,7 +144,9 @@ function isDetail(value: unknown): value is MilestoneDetail {
     typeof field(value, "preview") === "boolean" &&
     isFiniteNumber(field(value, "overflow_days")) &&
     every(field(value, "epics"), isEpic) &&
-    isLanes(field(value, "lanes"))
+    isLanes(field(value, "lanes")) &&
+    ["integration", "deadline"].every((k) => field(value, k) === undefined || isStringOrNull(field(value, k))) &&
+    isAway(field(value, "away"))
   );
 }
 
@@ -170,7 +181,20 @@ export async function fetchMilestone(project: string, id: string, start: string 
   if (!response.ok) throw await failure(response, "Milestone");
   const body: unknown = await response.json();
   if (!isDetail(body)) throw new MilestonesError("Could not load the milestone (unexpected response)");
-  return { ...body, lanes: body.lanes ?? null, epics: body.epics.map((e) => ({ ...e, spec_confirmed: e.spec_confirmed ?? null })) };
+  return {
+    ...body,
+    lanes: body.lanes ?? null,
+    integration: body.integration ?? null,
+    deadline: body.deadline ?? null,
+    away: body.away ?? {},
+    epics: body.epics.map((e) => ({
+      ...e,
+      spec_confirmed: e.spec_confirmed ?? null,
+      remaining_days: e.remaining_days ?? null,
+      assumed_days: e.assumed_days ?? null,
+      warnings: e.warnings.map((w) => ({ ...w, count: w.count ?? null })),
+    })),
+  };
 }
 
 export const milestonesPath = (project: string) => `/milestones?project=${enc(project)}`;

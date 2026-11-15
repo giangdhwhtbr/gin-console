@@ -32,7 +32,7 @@ const OVERFLOW = detail(
       planned_start: "2026-11-02",
       planned_end: "2026-11-06",
       estimate_days: 5,
-      warnings: [{ code: "overflow", days: 2 }],
+      warnings: [{ code: "overflow", days: 2, count: null }],
     }),
   ],
   { end: "2026-11-04", finish: "2026-11-06", overflow_days: 2, today: "2026-11-04" },
@@ -68,7 +68,7 @@ describe("MilestonePage", () => {
     open(
       detail([
         epicPlan("e-a", {
-          warnings: [{ code: "external_blocker", days: null }],
+          warnings: [{ code: "external_blocker", days: null, count: null }],
           external_depends_on: [{ id: "E9", milestone: "M2" }],
         }),
       ]),
@@ -322,6 +322,21 @@ describe("MilestonePage", () => {
     open(OVERFLOW);
     const header = (await screen.findByRole("heading", { name: "Beta readiness" })).closest("header") ?? document.body;
     expect(within(header).queryByText(/\blanes?\b/)).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-020 integration, deadline and away in the header", async () => {
+    open({ ...OVERFLOW, integration: "2026-11-24", deadline: "2026-11-28", away: { ann: ["2026-11-18..2026-11-20"], bao: ["2026-11-25"] } });
+    const header = (await screen.findByRole("heading", { name: "Beta readiness" })).closest("header") ?? document.body;
+    expect(within(header).getByText("Integration 24 Nov")).toBeInTheDocument();
+    expect(within(header).getByText("Deadline 28 Nov")).toBeInTheDocument();
+    expect(within(header).getByText("Away: ann 18–20 Nov, bao 25 Nov")).toBeInTheDocument();
+  });
+
+  it("REQ-MILESTONE-UI-020 older gin-workflow: none of them shown", async () => {
+    open(OVERFLOW);
+    const header = (await screen.findByRole("heading", { name: "Beta readiness" })).closest("header") ?? document.body;
+    expect(within(header).queryByText(/Integration|Deadline|Away/)).toBeNull();
+    expect(within(header).getByText("Beta readiness")).toBeInTheDocument();
   });
 
   it("REQ-MILESTONE-UI-003 lane-bound dates: B starts after A on one lane", async () => {

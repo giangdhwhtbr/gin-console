@@ -32,7 +32,7 @@ export function TeamSection({
       <div className="flex flex-col gap-3">
         <p className="font-semibold">{project} has no milestones yet</p>
         <p className="text-sm text-muted-foreground">A milestone groups epics under a start and end date, so the team can follow its pace.</p>
-        <CopyCommand command="gin-workflow milestone create" />
+        <CopyCommand command="gin milestone create" />
       </div>
     );
   }

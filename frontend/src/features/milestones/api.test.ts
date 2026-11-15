@@ -65,6 +65,25 @@ describe("milestones api", () => {
     await expect(fetchMilestone("alpha", "m-1", null)).rejects.toThrow("unexpected response");
   });
 
+  it("REQ-MILESTONE-UI-008 reads schedule facts and defaults them for an older gin", async () => {
+    const full = detail([epicPlan("e-a", { remaining_days: 2, assumed_days: 3, warnings: [{ code: "open_bugs", days: null, count: 2 }] })], {
+      integration: "2026-11-24",
+      deadline: "2026-11-28",
+      away: { ann: ["2026-11-25"] },
+    });
+    stubMilestones(() => json(full));
+    expect(await fetchMilestone("alpha", "m-1", null)).toEqual(full);
+    const old = detail([epicPlan("e-a")]);
+    const bare = (x: object, keys: string[]) => Object.fromEntries(Object.entries(x).filter(([k]) => !keys.includes(k)));
+    const epic = bare(old.epics[0], ["remaining_days", "assumed_days"]);
+    stubMilestones(() => json({ ...bare(old, ["integration", "deadline", "away"]), epics: [{ ...epic, warnings: [{ code: "late", days: null }] }] }));
+    const got = await fetchMilestone("alpha", "m-1", null);
+    expect([got.integration, got.deadline, got.away]).toEqual([null, null, {}]);
+    expect([got.epics[0].remaining_days, got.epics[0].assumed_days, got.epics[0].warnings[0].count]).toEqual([null, null, null]);
+    stubMilestones(() => json({ ...full, away: { ann: [1] } }));
+    await expect(fetchMilestone("alpha", "m-1", null)).rejects.toBeInstanceOf(MilestonesError);
+  });
+
   it("REQ-MILESTONE-UI-008 refuses a malformed forecast", async () => {
     stubMilestones(() => json(list([], { forecast: { ...forecast(), lanes: "two" } as unknown as Forecast })));
     await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");

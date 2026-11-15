@@ -8,7 +8,7 @@ import { filtersToSearch, parseFilters } from "@/features/beads/filters";
 import { rememberPlace } from "@/features/beads/returnState";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
-import { plural, shortDate } from "./format";
+import { awayLine, plural, shortDate } from "./format";
 import { dayOf, isoOf, zoomOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
@@ -95,6 +95,7 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
   const [more, setMore] = useState(false);
   const date = (iso: string) => shortDate(iso, plan.today);
   const late = plan.overflow_days > 0;
+  const away = awayLine(plan.away, plan.today);
   const outcome =
     plan.finish === null
       ? "No epics yet"
@@ -111,6 +112,9 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
         {plan.kickoff !== null && <span>{`Kicks off ${date(plan.kickoff)}`}</span>}
         <span className={cn(late && "text-state-blocked")}>{outcome}</span>
         {plan.lanes !== null && <span>{plural(plan.lanes, "lane")}</span>}
+        {plan.integration !== null && <span>{`Integration ${date(plan.integration)}`}</span>}
+        {plan.deadline !== null && <span>{`Deadline ${date(plan.deadline)}`}</span>}
+        {away !== null && <span>{away}</span>}
       </div>
       {plan.description !== "" && (
         <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">

@@ -92,7 +92,7 @@ describe("TeamSection", () => {
   it("REQ-REPORTS-017 no milestones", () => {
     show(teamReport({ milestones: [], milestone: null, team: null, members: [], days: [], beads: [] }));
     expect(screen.getByText("alpha has no milestones yet")).toBeInTheDocument();
-    expect(screen.getByText("gin-workflow milestone create")).toBeInTheDocument();
+    expect(screen.getByText("gin milestone create")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
   });
 });
