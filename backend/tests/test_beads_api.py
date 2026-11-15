@@ -382,3 +382,48 @@ def test_beads_010_blocked_by_over_http(tmp_path: Path) -> None:
     body = make(tmp_path, FakeExport(rows)).get("/api/beads", params={"project": "proj"}).json()
     by_id = {r["id"]: r for r in body}
     assert by_id["a-1"]["blocked_by"] == [] and by_id["a-2"]["blocked_by"] == ["a-1"]
+
+
+# REQ-BEADS-001
+def test_beads_001_kind_capabilities_complexity_and_estimate(tmp_path: Path) -> None:
+    """Scenario: Kind, capabilities and estimate."""
+    epic = bead(
+        "e-1",
+        issue_type="epic",
+        labels=["kind:technical"],
+        description="Capabilities: beads, ui (new)\nComplexity: medium (two views)",
+        estimated_minutes=960,
+    )
+    track = bead(
+        "t-1",
+        labels=["req:REQ-MILESTONE-UI-019"],
+        dependencies=[dep("t-1", "e-1", "parent-child")],
+    )
+    api = make(tmp_path, FakeExport([epic, track]))
+    body = {b["id"]: b for b in api.get("/api/beads", params={"project": "proj"}).json()}
+    assert body["e-1"]["kind"] == "technical"
+    assert body["e-1"]["capabilities"] == ["beads", "milestone-ui", "ui"]
+    assert body["e-1"]["complexity"] == "medium"
+    assert body["e-1"]["estimate_minutes"] == 960
+    assert body["t-1"]["kind"] is None
+    assert body["t-1"]["capabilities"] == ["milestone-ui"]
+    assert "description" not in body["e-1"]
+
+
+# REQ-BEADS-001
+def test_beads_001_kind_defaults(tmp_path: Path) -> None:
+    """Scenario: Defaults."""
+    api = make(tmp_path, FakeExport([bead("e-2", issue_type="epic")]))
+    (item,) = api.get("/api/beads", params={"project": "proj"}).json()
+    assert item["kind"] == "capability"
+    assert item["capabilities"] == []
+    assert item["complexity"] is None
+    assert item["estimate_minutes"] is None
+
+
+# REQ-BEADS-001
+@pytest.mark.parametrize("minutes", [0, -5, "60", 1.5, True, None])
+def test_beads_001_malformed_estimate_is_null(tmp_path: Path, minutes: Any) -> None:
+    api = make(tmp_path, FakeExport([bead("a-1", estimated_minutes=minutes)]))
+    (item,) = api.get("/api/beads", params={"project": "proj"}).json()
+    assert item["estimate_minutes"] is None and item["capabilities"] == []

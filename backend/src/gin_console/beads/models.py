@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict
 
+from gin_console.beads.kinds import Complexity, Kind
 from gin_console.quota.source import clean
 
 # lone surrogates are valid JSON escapes but cannot be encoded in a response
@@ -32,6 +33,10 @@ class BeadSummary(BaseModel):
     created_by: Text | None = None
     blocked_by: list[Text] = []
     milestone: Text | None = None
+    kind: Kind | None = None
+    capabilities: list[Text] = []
+    complexity: Complexity | None = None
+    estimate_minutes: int | None = None
 
 
 class Relation(BaseModel):
