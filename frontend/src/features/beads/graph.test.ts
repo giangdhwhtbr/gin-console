@@ -6,6 +6,7 @@ import {
   graphFor,
   graphPath,
   keepWithAncestors,
+  NODE,
   neighbourhoodOf,
   place,
   progressOf,
@@ -152,6 +153,28 @@ describe("layout", () => {
     expect(layers(diamond)).toEqual({ a: 0, b: 1, c: 1, d: 2 });
   });
 
+  it("REQ-UI-048 No relations: unlinked tasks fill rows of 3 by priority then id", () => {
+    const beads = [epic("e"), ...["g", "f", "e1", "d", "c", "b", "a"].map((id) => task(id, "e"))];
+    const g = scopeGraph(beads, "e", OFF);
+    const sorted = [...g.nodes].sort((x, y) => x.layer - y.layer || x.order - y.order);
+    expect(sorted.map((n) => n.bead.id)).toEqual(["a", "b", "c", "d", "e1", "f", "g"]);
+    expect(sorted.map((n) => n.layer)).toEqual([0, 0, 0, 1, 1, 1, 2]);
+    expect(sorted.map((n) => n.order)).toEqual([0, 1, 2, 0, 1, 2, 0]);
+    expect(sorted.every((n) => n.group === "unlinked")).toBe(true);
+  });
+
+  it("REQ-UI-048 Linked and unlinked: the group starts below the last layer", () => {
+    const beads = [epic("e"), task("a", "e"), task("b", "e", ["a"]), ...["c", "d", "e1", "f"].map((id) => task(id, "e"))];
+    const g = scopeGraph(beads, "e", OFF);
+    const at = (id: string) => g.nodes.find((n) => n.bead.id === id);
+    expect([at("a")?.layer, at("b")?.layer, at("a")?.group, at("b")?.group]).toEqual([0, 1, "layer", "layer"]);
+    expect(["c", "d", "e1", "f"].map((id) => at(id)?.layer)).toEqual([2, 2, 2, 3]);
+    expect(["c", "d", "e1", "f"].map((id) => at(id)?.group)).toEqual(["unlinked", "unlinked", "unlinked", "unlinked"]);
+    const { at: pos, height } = place(g);
+    expect(pos.get("f")?.y).toBeGreaterThan(pos.get("b")?.y ?? 0);
+    expect(height).toBeGreaterThan((pos.get("f")?.y ?? 0) + NODE.h);
+  });
+
   it("REQ-UI-048 orders a layer by the position of its blockers", () => {
     const g = scopeGraph([epic("e"), task("a", "e"), task("b", "e"), task("x", "e", ["b"]), task("y", "e", ["a"])], "e", OFF);
     const order = (id: string) => g.nodes.find((n) => n.bead.id === id)?.order;
@@ -166,7 +189,7 @@ describe("layout", () => {
   });
 
   it("REQ-UI-052 arrows go down to a blocked bead, up to a blocker, sideways in a layer", () => {
-    const g = scopeGraph([epic("e"), task("a", "e"), task("b", "e", ["a"]), task("c", "e")], "e", OFF);
+    const g = scopeGraph([epic("e"), task("a", "e"), task("b", "e", ["a", "c"]), task("c", "e")], "e", OFF);
     expect(step(g, "a", "ArrowDown")).toBe("b");
     expect(step(g, "b", "ArrowUp")).toBe("a");
     expect(step(g, "a", "ArrowRight")).toBe("c");

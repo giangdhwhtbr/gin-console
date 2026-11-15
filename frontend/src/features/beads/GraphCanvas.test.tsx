@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bead } from "./beadFixtures";
 import { fitScale, GraphCanvas } from "./GraphCanvas";
-import { scopeGraph } from "./graph";
+import { NODE, scopeGraph } from "./graph";
 
 const OFF = { hideDone: false, onlyLinked: false };
 const epic = (id: string, extra = {}) => bead(id, { issue_type: "epic", ...extra });
@@ -38,6 +38,19 @@ afterEach(() => {
 });
 
 describe("GraphCanvas", () => {
+  it("REQ-UI-048 a heading counts the unlinked group above its first row", () => {
+    const graph = scopeGraph([epic("e"), task("a", "e"), task("b", "e", ["a"]), task("c", "e"), task("d", "e")], "e", OFF);
+    show(graph);
+    const heading = screen.getByText("2 without dependencies");
+    expect(parseFloat(heading.style.top) + NODE.head).toBe(parseFloat(node("c").style.top));
+    expect(parseFloat(heading.style.top)).toBeGreaterThan(parseFloat(node("b").style.top) + NODE.h);
+  });
+
+  it("REQ-UI-048 no heading without unlinked nodes", () => {
+    show(scopeGraph([epic("e"), task("a", "e"), task("b", "e", ["a"])], "e", OFF));
+    expect(screen.queryByText(/without dependencies/)).toBeNull();
+  });
+
   it("REQ-UI-077 Zoom out twice from 100% reads 80%", async () => {
     box(5000, 5000);
     show();
@@ -128,7 +141,7 @@ describe("GraphCanvas", () => {
   });
 
   it("REQ-UI-052 arrows follow the arrows, Escape asks to reselect, one node in the tab order", async () => {
-    const calls = show(undefined, "a");
+    const calls = show(scopeGraph([epic("e"), task("a", "e"), task("b", "e", ["a", "c"]), task("c", "e")], "e", OFF), "a");
     expect(screen.getAllByRole("button").filter((b) => b.dataset.node && b.tabIndex === 0)).toHaveLength(1);
     node("a").focus();
     await userEvent.keyboard("{ArrowDown}");

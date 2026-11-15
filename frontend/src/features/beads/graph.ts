@@ -37,7 +37,9 @@ export type GraphNode = {
   done: number;
   total: number;
   hasKids: boolean;
+  group: "layer" | "unlinked";
 };
+export const UNLINKED_COLUMNS = 3;
 export type Graph = { nodes: GraphNode[]; edges: GraphEdge[]; cycle: string[]; unlinked: number };
 export type GraphOptions = { hideDone: boolean; onlyLinked: boolean; keep?: ReadonlySet<string> };
 export type StepKey = "ArrowRight" | "ArrowLeft" | "ArrowUp" | "ArrowDown";
@@ -169,12 +171,15 @@ function cycleNodes(edges: readonly Link[]): string[] {
 
 function layout(
   byId: ReadonlyMap<string, BeadSummary>,
-  ids: readonly string[],
+  allIds: readonly string[],
   external: ReadonlySet<string>,
   edges: readonly Link[],
   progress: ReadonlyMap<string, { done: number; total: number }>,
   parents: ReadonlySet<string>,
 ): Pick<Graph, "nodes" | "cycle"> {
+  const linkedIds = new Set(edges.flatMap((e) => [e.from, e.to]));
+  const unlinkedIds = [...new Set(allIds)].filter((id) => !linkedIds.has(id));
+  const ids = allIds.filter((id) => linkedIds.has(id));
   const blockers = new Map<string, string[]>();
   for (const e of edges) blockers.set(e.to, [...(blockers.get(e.to) ?? []), e.from]);
   const layer = new Map<string, number>();
@@ -230,9 +235,27 @@ function layout(
     row.forEach((b, i) => {
       order.set(b.id, i);
       const { done, total } = progress.get(b.id) ?? { done: 0, total: 0 };
-      nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total, hasKids: parents.has(b.id) });
+      nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total, hasKids: parents.has(b.id), group: "layer" });
     });
   }
+  const linkedLayers = rows.length;
+  unlinkedIds
+    .flatMap((id) => byId.get(id) ?? [])
+    .sort(byImportance)
+    .forEach((b, i) => {
+      const { done, total } = progress.get(b.id) ?? { done: 0, total: 0 };
+      const layer = linkedLayers + Math.floor(i / UNLINKED_COLUMNS);
+      nodes.push({
+        bead: b,
+        external: external.has(b.id),
+        layer,
+        order: i % UNLINKED_COLUMNS,
+        done,
+        total,
+        hasKids: parents.has(b.id),
+        group: "unlinked",
+      });
+    });
   return { nodes, cycle: cycleNodes(edges) };
 }
 
@@ -337,22 +360,26 @@ export function step(graph: Graph, id: string, key: StepKey): string | null {
   return graph.nodes.find((n) => n.layer === node.layer && n.order === order)?.bead.id ?? null;
 }
 
-export const NODE = { w: 184, h: 64, gapX: 24, gapY: 56, pad: 16 } as const;
+export const NODE = { w: 184, h: 64, gapX: 24, gapY: 56, pad: 16, head: 28 } as const;
 export type Placed = { x: number; y: number };
 
 export function place(graph: Graph): { at: Map<string, Placed>; width: number; height: number } {
   const at = new Map<string, Placed>();
   let columns = 0;
   let rows = 0;
+  let extra = 0;
   for (const n of graph.nodes) {
-    at.set(n.bead.id, { x: NODE.pad + n.order * (NODE.w + NODE.gapX), y: NODE.pad + n.layer * (NODE.h + NODE.gapY) });
+    // the unlinked group sits one heading lower, so its heading never needs room above the first layer
+    const head = n.group === "unlinked" ? NODE.head : 0;
+    at.set(n.bead.id, { x: NODE.pad + n.order * (NODE.w + NODE.gapX), y: NODE.pad + n.layer * (NODE.h + NODE.gapY) + head });
+    extra = Math.max(extra, head);
     columns = Math.max(columns, n.order + 1);
     rows = Math.max(rows, n.layer + 1);
   }
   return {
     at,
     width: NODE.pad * 2 + columns * NODE.w + Math.max(0, columns - 1) * NODE.gapX,
-    height: NODE.pad * 2 + rows * NODE.h + Math.max(0, rows - 1) * NODE.gapY,
+    height: NODE.pad * 2 + rows * NODE.h + Math.max(0, rows - 1) * NODE.gapY + extra,
   };
 }
 
