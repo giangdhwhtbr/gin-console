@@ -9,7 +9,7 @@
 **Steps:**
 1. Set the window width to 1280 px
 2. Open `/beads?project=alpha&milestone=all&view=list`
-3. Open the bead page `/beads/e-1?project=alpha`
+3. Open the bead page `/beads/alpha/e-1`
 
 **Expected:**
 - The List row of `e-1` shows "Technical" and "medium · 3d"
