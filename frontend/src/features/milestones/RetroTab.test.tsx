@@ -57,4 +57,15 @@ describe("RetroTab", () => {
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(retry).toHaveBeenCalledOnce();
   });
+
+  it("REQ-MILESTONE-UI-019 says when a comment was truncated", () => {
+    render(
+      <RetroTab
+        milestoneId="m1"
+        comments={ok([{ ...note("1", "ann", "2026-11-11T10:00:00Z", "[gin retro] m1 Ann Lee\nWent well: x"), truncated: true }])}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Ann Lee" })).toBeInTheDocument();
+    expect(screen.getByText("Comment truncated")).toBeInTheDocument();
+  });
 });

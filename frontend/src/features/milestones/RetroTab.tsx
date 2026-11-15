@@ -19,11 +19,14 @@ function Sections({ sections }: { sections: Section[] }) {
   );
 }
 
-const Byline = ({ name, at }: { name: string; at: string }) => (
-  <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-    <span className="font-semibold">{name}</span>
-    <span className="text-muted-foreground">{when(at)}</span>
-  </p>
+const Byline = ({ name, at, truncated }: { name: string; at: string; truncated: boolean }) => (
+  <>
+    <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+      <span className="font-semibold">{name}</span>
+      <span className="text-muted-foreground">{when(at)}</span>
+    </p>
+    {truncated && <p className="text-xs text-muted-foreground">Comment truncated</p>}
+  </>
 );
 
 /** REQ-MILESTONE-UI-019: the close comment and the member retros of the milestone. */
@@ -50,7 +53,7 @@ export function RetroTab({ milestoneId, comments }: { milestoneId: string; comme
       {close !== null && (
         <section aria-labelledby="retro-close" className="flex flex-col gap-2 rounded-lg border bg-card p-3">
           <h2 id="retro-close" className="text-base font-semibold">Close</h2>
-          <Byline name={close.author} at={close.created_at} />
+          <Byline name={close.author} at={close.created_at} truncated={close.truncated} />
           <Sections sections={close.sections} />
         </section>
       )}
@@ -61,7 +64,7 @@ export function RetroTab({ milestoneId, comments }: { milestoneId: string; comme
             {retros.map((retro) => (
               <li key={retro.member} className="flex flex-col gap-2 rounded-lg border bg-card p-3">
                 <h3 className="font-semibold">{retro.member}</h3>
-                <Byline name={retro.author} at={retro.created_at} />
+                <Byline name={retro.author} at={retro.created_at} truncated={retro.truncated} />
                 <Sections sections={retro.sections} />
               </li>
             ))}
@@ -70,9 +73,9 @@ export function RetroTab({ milestoneId, comments }: { milestoneId: string; comme
       )}
       {unparsed.length > 0 && (
         <ul className="flex flex-col gap-3">
-          {unparsed.map((raw) => (
-            <li key={`${raw.created_at}-${raw.text}`} className="flex flex-col gap-1.5 rounded-lg border bg-card p-3">
-              <Byline name={raw.author} at={raw.created_at} />
+          {unparsed.map((raw, at) => (
+            <li key={`${at}-${raw.created_at}`} className="flex flex-col gap-1.5 rounded-lg border bg-card p-3">
+              <Byline name={raw.author} at={raw.created_at} truncated={raw.truncated} />
               <p className="text-xs text-muted-foreground">Not in the expected format</p>
               <p className="whitespace-pre-wrap break-words text-sm">{raw.text}</p>
             </li>

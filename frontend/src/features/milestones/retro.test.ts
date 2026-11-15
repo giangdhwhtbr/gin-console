@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseRetros } from "./retro";
 
-const c = (text: string, created_at = "2026-11-10T10:00:00Z", author = "gin") => ({ author, created_at, text });
+const c = (text: string, created_at = "2026-11-10T10:00:00Z", author = "gin", truncated = false) => ({ author, created_at, text, truncated });
 
 describe("parseRetros", () => {
   it("REQ-MILESTONE-UI-019 close holds only the present labels, in label order", () => {
@@ -12,6 +12,7 @@ describe("parseRetros", () => {
     expect(close).toEqual({
       author: "lead",
       created_at: "2026-11-10T10:00:00Z",
+      truncated: false,
       sections: [
         { label: "Delivered", text: "a" },
         { label: "Spillover", text: "b" },
@@ -59,7 +60,7 @@ describe("parseRetros", () => {
     const { retros, unparsed } = parseRetros([c("[gin retro] m1 chi\njust words", "2026-11-10T00:00:00Z", "chi")], "m1");
     expect(retros).toEqual([]);
     expect(unparsed).toEqual([
-      { kind: "retro", member: "chi", author: "chi", created_at: "2026-11-10T00:00:00Z", text: "[gin retro] m1 chi\njust words" },
+      { kind: "retro", member: "chi", author: "chi", created_at: "2026-11-10T00:00:00Z", text: "[gin retro] m1 chi\njust words", truncated: false },
     ]);
   });
 
@@ -81,5 +82,23 @@ describe("parseRetros", () => {
     const { retros, unparsed } = parseRetros([c("[gin retro] m1\nWent well: x")], "m1");
     expect(retros).toEqual([]);
     expect(unparsed[0]).toMatchObject({ kind: "retro", member: null });
+  });
+
+  it("REQ-MILESTONE-UI-019 a repeated label keeps every occurrence", () => {
+    const { close } = parseRetros([c("[gin close] m1\nSpillover: e1 moved\nSpillover: e2 moved\nAction: one\nAction: two")], "m1");
+    expect(close?.sections).toEqual([
+      { label: "Spillover", text: "e1 moved\ne2 moved" },
+      { label: "Action", text: "one\ntwo" },
+    ]);
+  });
+
+  it("REQ-MILESTONE-UI-019 the member is the rest of the line: a name with a space or an email", () => {
+    const { retros } = parseRetros([c("[gin retro] m1 Ann Lee\nWent well: x"), c("[gin retro] m1  ann@x.io \nWent well: y")], "m1");
+    expect(retros.map((r) => r.member)).toEqual(["Ann Lee", "ann@x.io"]);
+  });
+
+  it("REQ-MILESTONE-UI-019 text after the id of a close comment is ignored, and truncation is carried", () => {
+    const { close } = parseRetros([c("[gin close] m1 extra words\nDelivered: a", "2026-11-10T10:00:00Z", "gin", true)], "m1");
+    expect(close).toMatchObject({ truncated: true, sections: [{ label: "Delivered", text: "a" }] });
   });
 });
