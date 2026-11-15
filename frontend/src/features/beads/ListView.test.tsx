@@ -34,8 +34,10 @@ describe("ListView", () => {
     expect(within(row).getByText(id, { selector: ".sr-only" })).toBeInTheDocument();
     const shown = within(row).getByText("ex-payments-pr…tion-2026");
     expect(shown).toHaveAttribute("title", id);
-    expect(shown).toHaveClass("min-w-0", "truncate");
-    expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-32");
+    expect(shown).toHaveClass("shrink-0", "max-w-[40%]", "truncate");
+    expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-0", "flex-1", "truncate");
+    // the bar and the closed count give way to the title when the title cell is narrow
+    expect(within(row).getByText(/\d+\/\d+ closed/)).toHaveClass("hidden", "@[26rem]/title:flex");
     expect(within(row).getByText("Payments migration").parentElement).toHaveAttribute("title", "Payments migration");
     expect(within(row).getByText("a-very-long-assignee-name")).toHaveAttribute("title", "a-very-long-assignee-name");
   });
