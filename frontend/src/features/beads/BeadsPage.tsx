@@ -4,7 +4,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, isStale, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
-import { rememberSearch } from "./returnState";
+import { rememberPlace } from "./returnState";
 import { StaleNote } from "./StaleNote";
 
 type Projects =
@@ -36,7 +36,7 @@ export function BeadsPage() {
 
   // the place the breadcrumb of a bead page returns to; the project is always in it, even when it is the default one
   useEffect(() => {
-    if (selected !== "") rememberSearch(filtersToSearch({ ...parseFilters(search), project: selected }));
+    if (selected !== "") rememberPlace("/beads", filtersToSearch({ ...parseFilters(search), project: selected }));
   }, [search, selected]);
 
   return (

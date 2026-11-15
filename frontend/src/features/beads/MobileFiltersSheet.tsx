@@ -10,6 +10,7 @@ export function MobileFiltersSheet({
   options,
   milestones,
   milestone,
+  hideMilestone = false,
   onChange,
   onClear,
 }: {
@@ -17,6 +18,7 @@ export function MobileFiltersSheet({
   options: BeadOptions;
   milestones: MilestonesState;
   milestone: MilestoneInEffect;
+  hideMilestone?: boolean;
   onChange: (patch: Partial<BeadFilters>) => void;
   onClear: () => void;
 }) {
@@ -235,7 +237,9 @@ export function MobileFiltersSheet({
             )}
 
             {/* Milestone */}
-            <MilestoneFilter state={milestones} value={milestone} onChange={(value) => onChange({ milestone: value })} />
+            {!hideMilestone && (
+              <MilestoneFilter state={milestones} value={milestone} onChange={(value) => onChange({ milestone: value })} />
+            )}
 
             {/* Type */}
             {options.types.length > 0 && (

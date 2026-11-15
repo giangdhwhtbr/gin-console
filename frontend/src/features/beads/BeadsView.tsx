@@ -16,17 +16,20 @@ import { ViewTabs } from "./ViewTabs";
 export function BeadsView({
   project,
   filters,
+  fixedMilestone,
   onChange,
 }: {
   project: string;
   filters: BeadFilters;
+  /** A milestone page: this milestone is in effect and cannot be changed here. */
+  fixedMilestone?: string;
   onChange: (next: BeadFilters) => void;
 }) {
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
   useCardKeys(true, clearSearch, filters.view !== "list");
 
   const milestones = useMilestones(project);
-  const milestone = milestoneInEffect(filters.milestone, milestones);
+  const milestone = fixedMilestone ?? milestoneInEffect(filters.milestone, milestones);
   const closedMilestone = isClosedMilestone(milestone, milestones);
   const { state, retry } = useBeads(
     project,
@@ -65,6 +68,7 @@ export function BeadsView({
             options={optionsOf(beads)}
             milestones={milestones}
             milestone={milestone}
+            hideMilestone={fixedMilestone !== undefined}
             onChange={onChange}
           />
           <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>

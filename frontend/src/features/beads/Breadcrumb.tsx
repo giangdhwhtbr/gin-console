@@ -34,12 +34,21 @@ export function Breadcrumb({
   graph?: readonly string[];
 }) {
   const saved = useReturn();
-  const remembered = saved.search !== "" && new URLSearchParams(saved.search).get("project") === project;
+  // a milestone's Beads tab is remembered as /milestones/<project>/<milestone>
+  const place = saved.path.startsWith("/milestones/") ? saved.path.split("/").slice(2).map(decodeURIComponent) : null;
+  const remembered =
+    saved.search !== "" &&
+    (place !== null ? place[0] === project && place.length === 2 : new URLSearchParams(saved.search).get("project") === project);
   const filters = parseFilters(remembered ? saved.search : "");
   const count = remembered ? activeFilters(filters) : 0;
-  const to = remembered ? `/beads${filtersToSearch(filters)}` : `/beads?project=${enc(project)}`;
+  const to = !remembered
+    ? `/beads?project=${enc(project)}`
+    : place !== null
+      ? saved.path + saved.search
+      : `/beads${filtersToSearch(filters)}`;
+  const first = place !== null ? (place[1] ?? "") : "Beads";
   const label = remembered
-    ? `Beads › ${VIEW_NAME[filters.view] ?? "List"}${count > 0 ? ` · ${count} filter${count === 1 ? "" : "s"}` : ""}`
+    ? `${first} › ${VIEW_NAME[filters.view] ?? "List"}${count > 0 ? ` · ${count} filter${count === 1 ? "" : "s"}` : ""}`
     : "Beads";
   const later = "hidden items-center gap-2 sm:flex";
   return (

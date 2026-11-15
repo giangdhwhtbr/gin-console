@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { bead, json } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import type { MilestoneDetail } from "./api";
+import { getReturn } from "@/features/beads/returnState";
 import { detail, epicPlan, stubMilestones } from "./milestoneFixtures";
 import { MilestonePage } from "./MilestonePage";
 
@@ -164,32 +165,67 @@ describe("MilestonePage", () => {
     expect(within(document.body).getByText("/roadmap --milestone m-1")).toBeInTheDocument();
   });
 
-  const graphBeads = [
-    bead("m-1", { issue_type: "milestone" }),
-    bead("m-2", { issue_type: "milestone" }),
-    bead("e-a", { issue_type: "epic", parent: "m-1", blocked_by: ["e-x"] }),
-    bead("e-b", { issue_type: "epic", parent: "m-1", blocked_by: ["e-a"] }),
-    bead("e-x", { issue_type: "epic", parent: "m-2" }),
+  const mBeads = [
+    bead("m2", { issue_type: "milestone" }),
+    bead("m3", { issue_type: "milestone" }),
+    bead("e1", { issue_type: "epic", parent: "m2", milestone: "m2", blocked_by: ["x"] }),
+    bead("e2", { issue_type: "epic", parent: "m2", milestone: "m2", status: "in_progress" }),
+    bead("x", { issue_type: "epic", parent: "m3", milestone: "m3" }),
   ];
+  const openBeads = (search: string, id = "m2", beads: BeadSummary[] | ((url: URL) => Response) = mBeads) => {
+    window.history.replaceState(null, "", `/milestones/alpha/${id}${search}`);
+    const fetchMock = stubMilestones(() => json(detail([epicPlan("e1"), epicPlan("e2")], { id })), beads);
+    render(<MilestonePage project="alpha" id={id} />);
+    return fetchMock;
+  };
   const graphNode = (id: string) => screen.findByRole("button", { name: new RegExp(`^${id}`) });
 
-  it("REQ-MILESTONE-UI-002 graph: the milestone's epics with their edge, outside epics external", async () => {
-    window.history.replaceState(null, "", "/milestones/alpha/m-1?tab=graph");
-    stubMilestones(() => json(detail([epicPlan("e-a"), epicPlan("e-b")])), graphBeads);
-    render(<MilestonePage project="alpha" id="m-1" />);
-    expect(await graphNode("e-a")).toHaveAttribute("data-external", "false");
-    expect(await graphNode("e-b")).toHaveAttribute("data-external", "false");
-    expect(await graphNode("e-x")).toHaveAttribute("data-external", "true");
-    expect(screen.queryByRole("button", { name: /^m-1/ })).toBeNull();
-    expect(screen.getByText("Dashed nodes are outside this milestone.")).toBeInTheDocument();
+  it("REQ-MILESTONE-UI-018 the Beads tab lists the milestone's beads and has no Milestone filter", async () => {
+    openBeads("?tab=beads");
+    expect(await screen.findByText("Title e1")).toBeInTheDocument();
+    expect(screen.getByText("Title e2")).toBeInTheDocument();
+    expect(screen.queryByText("Title x")).toBeNull();
+    expect(screen.queryByText("Milestone")).toBeNull();
   });
 
-  it("REQ-MILESTONE-UI-002 the tabs switch between Gantt and Graph in the URL", async () => {
-    open(detail([epicPlan("e-a")]));
-    await userEvent.click(await screen.findByRole("tab", { name: "Graph" }));
-    expect(window.location.search).toBe("?tab=graph");
-    await userEvent.click(screen.getByRole("tab", { name: "Gantt" }));
-    expect(window.location.search).toBe("");
+  it("REQ-MILESTONE-UI-018 the view and the filters are kept in the URL", async () => {
+    openBeads("?tab=beads");
+    await userEvent.click(await screen.findByRole("button", { name: "Board" }));
+    await waitFor(() => expect(window.location.search).toBe("?tab=beads&view=board"));
+    await userEvent.click(screen.getByRole("button", { name: "Status" }));
+    await userEvent.click(await screen.findByRole("checkbox", { name: "open" }));
+    await waitFor(() => expect(window.location.search).toBe("?tab=beads&status=open&view=board"));
+  });
+
+  it("REQ-MILESTONE-UI-018 changing the tab keeps only start and zoom", async () => {
+    openBeads("?tab=beads&view=board&status=open&start=2026-11-10&zoom=2w");
+    await userEvent.click(await screen.findByRole("tab", { name: "Gantt" }));
+    expect(window.location.search).toBe("?start=2026-11-10&zoom=2w");
+    await userEvent.click(screen.getByRole("tab", { name: "Beads" }));
+    expect(window.location.search).toBe("?tab=beads&start=2026-11-10&zoom=2w");
+  });
+
+  it("REQ-MILESTONE-UI-018 the old Graph link opens the Graph view of the Beads tab", async () => {
+    openBeads("?tab=graph");
+    expect(await screen.findByRole("tab", { name: "Beads", selected: true })).toBeInTheDocument();
+    expect(window.location.search).toBe("?tab=beads&view=graph");
+    expect(await graphNode("e1")).toHaveAttribute("data-external", "false");
+    expect(await graphNode("x")).toHaveAttribute("data-external", "true");
+  });
+
+  it("REQ-MILESTONE-UI-018 a closed milestone shows its closed beads without Show closed", async () => {
+    const fetchMock = openBeads("?tab=beads", "m1", (url) =>
+      json(url.searchParams.get("closed") === "1" ? [bead("c1", { status: "closed", milestone: "m1" })] : []),
+    );
+    expect(await screen.findByText("Title c1")).toBeInTheDocument();
+    const urls = fetchMock.mock.calls.map(([u]) => (typeof u === "string" ? u : u instanceof URL ? u.href : u.url));
+    expect(urls.some((u) => u.startsWith("/api/beads?") && u.includes("closed=1"))).toBe(true);
+  });
+
+  it("REQ-UI-072 the Beads tab remembers its place for the breadcrumb of a bead page", async () => {
+    openBeads("?tab=beads&view=board");
+    await screen.findByRole("button", { name: "Board" });
+    expect(getReturn()).toMatchObject({ path: "/milestones/alpha/m2", search: "?tab=beads&view=board" });
   });
 
   const LONG = detail([epicPlan("e-a", { planned_start: "2026-11-02", planned_end: "2026-11-27", estimate_days: 20 })], {
@@ -232,8 +268,8 @@ describe("MilestonePage", () => {
     expect(window.location.search).toBe("?start=2026-11-16&zoom=1w");
     await waitFor(() => expect(beads(document.querySelector("[data-epic='e-a']") ?? document.body)[0]).toBe("2026-11-16"));
     expect(pressed()).toHaveTextContent("1 week");
-    await userEvent.click(screen.getByRole("tab", { name: "Graph" }));
-    expect(window.location.search).toBe("?tab=graph&start=2026-11-16&zoom=1w");
+    await userEvent.click(screen.getByRole("tab", { name: "Beads" }));
+    expect(window.location.search).toBe("?tab=beads&start=2026-11-16&zoom=1w");
   });
 
   const epicBeads = [

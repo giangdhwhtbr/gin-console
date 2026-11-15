@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Breadcrumb } from "./Breadcrumb";
-import { clearReturn, rememberSearch } from "./returnState";
+import { clearReturn, rememberPlace, rememberSearch } from "./returnState";
 
 beforeEach(() => clearReturn());
 afterEach(cleanup);
@@ -17,6 +17,38 @@ describe("Breadcrumb", () => {
     expect(href.startsWith("/beads?")).toBe(true);
     for (const part of ["project=a", "view=board", "status=open", "q=fix"]) expect(href).toContain(part);
     expect(crumb().getByText("a-1")).toHaveAttribute("aria-current", "page");
+  });
+
+  it("REQ-UI-072 from a milestone page it names the milestone and links back to its Beads tab", () => {
+    rememberPlace("/milestones/a/m2", "?tab=beads&view=board&status=open");
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "m2 › Board · 1 filter" })).toHaveAttribute(
+      "href",
+      "/milestones/a/m2?tab=beads&view=board&status=open",
+    );
+  });
+
+  it("REQ-UI-072 a milestone page without filters or a view says List", () => {
+    rememberPlace("/milestones/a/m2", "?tab=beads");
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "m2 › List" })).toHaveAttribute("href", "/milestones/a/m2?tab=beads");
+  });
+
+  it("REQ-UI-073 the milestone page last wins over the Beads page, and the reverse", () => {
+    rememberSearch("?project=a&view=focus");
+    rememberPlace("/milestones/a/m2", "?tab=beads&view=board");
+    const { unmount } = render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "m2 › Board" })).toBeInTheDocument();
+    unmount();
+    rememberSearch("?project=a&view=focus");
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads › Focus" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-073 ignores the milestone place of another project", () => {
+    rememberPlace("/milestones/a/m2", "?tab=beads&view=board");
+    render(<Breadcrumb project="b" id="b-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=b");
   });
 
   it("REQ-UI-072 shows the parent as a link before the bead", () => {

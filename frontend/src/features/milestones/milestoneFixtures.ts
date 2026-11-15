@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import { json, project } from "@/features/beads/beadFixtures";
+import { json, milestoneOption, project, projectMilestones } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import type { EpicPlan, Forecast, MilestoneDetail, MilestoneEntry, MilestoneList } from "./api";
 
@@ -70,12 +70,18 @@ export const detail = (epics: EpicPlan[], overrides: Partial<MilestoneDetail> = 
   ...overrides,
 });
 
-/** Stub `fetch`: `/api/projects` lists "alpha", `/api/milestones…` goes to `handler`, `/api/beads` returns `beads` (or what `beads(url)` answers). */
+const projectMilestones_ = projectMilestones(
+  [milestoneOption("m1", "closed"), milestoneOption("m2", "active"), milestoneOption("m3", "planned")],
+  "m2",
+);
+
+/** Stub `fetch`: `/api/projects` lists "alpha", `/api/beads/milestones` lists m1 (closed), m2 (active, current) and m3, `/api/milestones…` goes to `handler`, `/api/beads` returns `beads` (or what `beads(url)` answers). */
 export function stubMilestones(handler: (url: URL) => Response | Promise<Response>, beads: BeadSummary[] | ((url: URL) => Response) = []) {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const url = new URL(text, "http://localhost");
     if (url.pathname === "/api/projects/beads") return Promise.resolve(json([project("alpha")]));
+    if (url.pathname === "/api/beads/milestones") return Promise.resolve(json(projectMilestones_));
     if (url.pathname.startsWith("/api/milestones")) return Promise.resolve(handler(url));
     if (url.pathname === "/api/beads") return Promise.resolve(typeof beads === "function" ? beads(url) : json(beads));
     return Promise.resolve(json({}, 404));

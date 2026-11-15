@@ -14,12 +14,15 @@ export function BeadFilterBar({
   options,
   milestones,
   milestone,
+  hideMilestone = false,
   onChange,
 }: {
   filters: BeadFilters;
   options: BeadOptions;
   milestones: MilestonesState;
   milestone: MilestoneInEffect;
+  /** The milestone is fixed by the page: no Milestone filter. */
+  hideMilestone?: boolean;
   onChange: (next: BeadFilters) => void;
 }) {
   const set = (patch: Partial<BeadFilters>) => onChange({ ...filters, ...patch });
@@ -61,6 +64,7 @@ export function BeadFilterBar({
           options={options}
           milestones={milestones}
           milestone={milestone}
+          hideMilestone={hideMilestone}
           onChange={set}
           onClear={clearFilters}
         />
@@ -110,7 +114,9 @@ export function BeadFilterBar({
             onChange={(sprint) => set({ sprint })}
           />
         )}
-        <MilestoneFilter state={milestones} value={milestone} onChange={(value) => set({ milestone: value })} />
+        {!hideMilestone && (
+          <MilestoneFilter state={milestones} value={milestone} onChange={(value) => set({ milestone: value })} />
+        )}
         <label className="flex items-center gap-1.5 text-sm cursor-pointer ml-1 select-none">
           <input
             type="checkbox"
