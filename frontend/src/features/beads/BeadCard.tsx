@@ -8,13 +8,14 @@ import { StateMark, stateEdge } from "./StateMark";
 import { TypeBadge } from "./TypeBadge";
 
 export function BeadCard({ project, bead }: { project: string; bead: BeadSummary }) {
+  const short = shortId(bead.id);
   return (
     <li data-card className={cn("flex flex-col gap-1.5 rounded border bg-card p-2.5 text-sm", stateEdge(stateOf(bead)))}>
       <div className="flex items-center justify-between font-mono text-xs text-muted-foreground">
-        <span title={bead.id} aria-hidden={shortId(bead.id) !== bead.id || undefined}>
-          {shortId(bead.id)}
+        <span title={bead.id} aria-hidden={short !== bead.id || undefined}>
+          {short}
         </span>
-        {shortId(bead.id) !== bead.id && <span className="sr-only">{bead.id}</span>}
+        {short !== bead.id && <span className="sr-only">{bead.id}</span>}
         <span>{`P${bead.priority}`}</span>
       </div>
       <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`} className="font-medium wrap-anywhere">

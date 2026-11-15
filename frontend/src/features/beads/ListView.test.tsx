@@ -23,8 +23,9 @@ describe("ListView", () => {
     const id = "ex-payments-provider-migration-and-reconciliation-2026";
     stubBeads(() =>
       json([
-        bead(id, { issue_type: "epic", title: "Payments migration", assignee: "a-very-long-assignee-name" }),
+        bead(id, { issue_type: "epic", title: "Payments migration", assignee: "a-very-long-assignee-name", labels: ["p-label"] }),
         bead("c-1", { parent: id, title: "Child" }),
+        bead("c-2", { parent: id, title: "Prep child", labels: ["prep"] }),
       ]),
     );
     render(<BeadsPage />);
@@ -35,9 +36,11 @@ describe("ListView", () => {
     const shown = within(row).getByText("ex-payments-pr…tion-2026");
     expect(shown).toHaveAttribute("title", id);
     expect(shown).toHaveClass("shrink-0", "max-w-[40%]", "truncate");
-    expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-0", "flex-1", "truncate");
+    expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
     // the bar and the closed count give way to the title when the title cell is narrow
-    expect(within(row).getByText(/\d+\/\d+ closed/)).toHaveClass("hidden", "@[26rem]/title:flex");
+    expect(within(row).getByText(/\d+\/\d+ closed/)).toHaveClass("hidden", "@[38rem]/title:flex");
+    expect(within(row).getByText(/^Prep /)).toHaveClass("hidden", "@[46rem]/title:inline");
+    expect(within(row).getByText("p-label").parentElement).toHaveClass("hidden", "@[74rem]/title:flex");
     expect(within(row).getByText("Payments migration").parentElement).toHaveAttribute("title", "Payments migration");
     expect(within(row).getByText("a-very-long-assignee-name")).toHaveAttribute("title", "a-very-long-assignee-name");
   });

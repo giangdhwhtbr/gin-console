@@ -34,6 +34,7 @@ export function ListRow({
   onSelect: (id: string) => void;
 }) {
   const { bead } = row;
+  const short = shortId(bead.id);
   return (
     <li
       role="treeitem"
@@ -65,16 +66,16 @@ export function ListRow({
         ) : (
           <span className="size-6 shrink-0" />
         )}
-        <span className="max-w-[40%] shrink-0 truncate font-mono text-xs text-muted-foreground" title={bead.id} aria-hidden={shortId(bead.id) !== bead.id || undefined}>
-          {shortId(bead.id)}
+        <span className="max-w-[40%] shrink-0 truncate font-mono text-xs text-muted-foreground" title={bead.id} aria-hidden={short !== bead.id || undefined}>
+          {short}
         </span>
-        {shortId(bead.id) !== bead.id && <span className="sr-only">{bead.id}</span>}
-        <span className="min-w-0 flex-1 truncate font-medium" title={bead.title} onClick={(event) => event.stopPropagation()}>
+        {short !== bead.id && <span className="sr-only">{bead.id}</span>}
+        <span className="min-w-32 flex-1 truncate font-medium" title={bead.title} onClick={(event) => event.stopPropagation()}>
           <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
         </span>
         {isPrep(bead.labels) && <PrepChip />}
         {bead.issue_type === "epic" && row.counts.tracks > 0 && (
-          <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground @[26rem]/title:flex">
+          <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground @[38rem]/title:flex">
             <span className="h-1.5 w-12 overflow-hidden rounded bg-muted">
               <span
                 className="block h-full bg-foreground/60"
@@ -85,9 +86,9 @@ export function ListRow({
           </span>
         )}
         {bead.issue_type === "epic" && prepLabel(row.counts) !== null && (
-          <span className="hidden shrink-0 text-xs text-muted-foreground @[26rem]/title:inline">{prepLabel(row.counts)}</span>
+          <span className="hidden shrink-0 text-xs text-muted-foreground @[46rem]/title:inline">{prepLabel(row.counts)}</span>
         )}
-        <span className="hidden shrink-0 items-center gap-1 @3xl:flex">
+        <span className="hidden shrink-0 items-center gap-1 @[74rem]/title:flex">
           {bead.labels.slice(0, 3).map((label) => (
             <Badge key={label} variant="outline">
               {label}
