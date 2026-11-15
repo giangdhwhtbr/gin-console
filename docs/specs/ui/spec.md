@@ -675,7 +675,7 @@ WHEN a search or a filter is active, the List view SHALL show only the beads tha
 - THEN the epic under `m2` and its child task are shown, the other epic is not, and no milestone bead is shown (REQ-MILESTONE-UI-009)
 
 ### REQ-UI-044: List rows
-The List view SHALL show for each row an open/close control when it has children, its id in the monospace face, its title as a link to `/beads/<project>/<id>`, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic with a track how many of its tracks are closed with a progress bar, SHALL show for an epic with prep tasks (REQ-BEADS-002) "Prep x/y", where x is its closed prep tasks and y all its prep tasks, SHALL show a "Prep" chip on the row of a prep task, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
+The List view SHALL show for each row an open/close control when it has children, its id in the monospace face shortened as REQ-UI-107 describes, its title as a link to `/beads/<project>/<id>` cut short with the full title as `title` and never narrower than 8rem while the row is at least 360px wide, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic with a track how many of its tracks are closed with a progress bar, SHALL show for an epic with prep tasks (REQ-BEADS-002) "Prep x/y", where x is its closed prep tasks and y all its prep tasks, SHALL show a "Prep" chip on the row of a prep task, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
 
 #### Scenario: Row content
 - GIVEN a blocked P1 bug assigned to alice with 2 comments
@@ -716,6 +716,11 @@ The List view SHALL show for each row an open/close control when it has children
 - GIVEN 2100 root beads
 - WHEN the List view is shown
 - THEN 2000 rows are shown and a line says "100 more not shown"
+
+#### Scenario: Long id keeps the title
+- GIVEN the epic `ex-payments-provider-migration-and-reconciliation-2026` with an open task and the title "Migrate every checkout payment to the new provider"
+- WHEN the List view is shown at 1440px and at 390px with the epic open
+- THEN each of the two rows shows its open/close control when it has children, its shortened id and at least the start of its title
 
 ### REQ-UI-045: Selection and detail panel
 WHILE the window is 1024px wide or more and the user clicks a row, the List view SHALL select it, keep its id in the URL as `select`, mark it selected, and show the bead in a panel beside the list with the content of the bead page (fields, text sections, relations and the discussion), without the breadcrumb and with an "Open page" link to `/beads/<project>/<id>`, the panel SHALL say "Select a bead to see its details" when nothing is selected, SHALL keep showing a selected bead that is not in the current list together with the note "Not in the current list", SHALL stay in view and scroll on its own as REQ-UI-078 describes, and a reload SHALL restore the selection, and WHILE the window is narrower than 1024px a click on a row SHALL open the bead page.
@@ -779,7 +784,7 @@ The List view SHALL expose the hierarchy with `role="tree"` and each row with `r
 - THEN the row is selected
 
 ### REQ-UI-048: Dependency layers
-The Dependencies page SHALL place each node one layer below its furthest blocker, so that nodes without blockers are in the first layer at the top, SHALL order the nodes of a layer by the average position of their blockers in the layers above to limit crossing arrows, and SHALL draw an arrow from each blocker down to the node it blocks.
+The Dependencies page SHALL place each node one layer below its furthest blocker, so that nodes without blockers are in the first layer at the top, SHALL order the nodes of a layer by the average position of their blockers in the layers above to limit crossing arrows, SHALL draw an arrow from each blocker down to the node it blocks, and SHALL place the nodes without any arrow apart, below the layers, in rows of at most 3 nodes under the heading "n without dependencies".
 
 #### Scenario: Chain
 - GIVEN tasks `a`, `b`, `c` where `b` is blocked by `a` and `c` by `b`
@@ -797,12 +802,17 @@ The Dependencies page SHALL place each node one layer below its furthest blocker
 - THEN `y` is placed before `x` in layer 1, so that the arrows do not cross
 
 #### Scenario: No relations
-- GIVEN an epic whose tasks block none of each other
+- GIVEN an epic with 7 tasks that block none of each other
 - WHEN the epic is drawn
-- THEN all nodes are in layer 0 and the note "No blocking relations between these tasks" is shown
+- THEN the 7 nodes are placed in rows of 3, 3 and 1 under "7 without dependencies", and the note "No blocking relations between these tasks" is shown
+
+#### Scenario: Linked and unlinked
+- GIVEN `b` blocked by `a`, and `c`, `d`, `e`, `f` without blockers that block nothing
+- WHEN the epic is drawn
+- THEN `a` and `b` are in layers 0 and 1, and `c`, `d`, `e` then `f` are placed below them in rows of 3 under "4 without dependencies"
 
 ### REQ-UI-049: Node content
-The Dependencies page SHALL show on each node the content of a card: the bead id in the monospace face and `P<n>` on the first line, its title on one line with the full title as `title`, and its state as REQ-UI-064 describes, with the 4px left edge in the colour of the state, and on a node with children an icon that says it can be opened, with "n of m done" over its tracks (REQ-BEADS-002) when it has a track. The node of a prep task SHALL show a "Prep" chip.
+The Dependencies page SHALL show on each node the content of a card: the bead id in the monospace face shortened as REQ-UI-107 describes and `P<n>` on the first line, its title on one line with the full title as `title`, and its state as REQ-UI-064 describes on one line, the state label cut short before "n of m done" is, with the 4px left edge in the colour of the state, and on a node with children an icon that says it can be opened, with "n of m done" over its tracks (REQ-BEADS-002) when it has a track. The node of a prep task SHALL show a "Prep" chip.
 
 #### Scenario: Node with children
 - GIVEN epic `e-1` without a parent with 3 tasks, 1 of them closed
@@ -823,6 +833,11 @@ The Dependencies page SHALL show on each node the content of a card: the bead id
 - GIVEN epic `e-1` without a parent with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`
 - WHEN the project page is shown, and then the page of `e-1`
 - THEN the node `e-1` reads "1 of 2 done" with the open icon, and on the page of `e-1` the node `p-1` shows a "Prep" chip while `t-1` and `t-2` do not
+
+#### Scenario: Long state line
+- GIVEN an in-progress epic with 2 of 5 tracks done and a title of 80 characters
+- WHEN its node is drawn
+- THEN its id, title and state each take one line inside the node, and "2 of 5 done" is shown in full
 
 ### REQ-UI-050: Outside beads and cycles
 WHERE a drawn node, or a bead under it, has a `blocked_by` relation with a bead outside the scope, the Dependencies page SHALL draw that outside bead as a dimmed node with a dashed border, above with an arrow to the node when it blocks, and below with an arrow from the node when it is blocked, and IF the arrows form a cycle, THEN the page SHALL still draw every node, SHALL put the nodes of the cycle in layers without looping forever, and SHALL show the warning "Dependency cycle between …" naming the beads.
@@ -1095,7 +1110,7 @@ Every bead card of the Board and Focus views SHALL show the state of the bead as
 - THEN the row shows the state icon and name and has no coloured left edge
 
 ### REQ-UI-065: Card anatomy
-A bead card of the Board and Focus views SHALL show on its first line the id in the monospace face and `P<n>`, below it the title as a link to `/beads/<project>/<id>`, and on its last line the state mark of REQ-UI-064, the type badge of REQ-UI-067, the indicators of REQ-UI-066 and the assignee when there is one.
+A bead card of the Board and Focus views SHALL show on its first line the id in the monospace face shortened as REQ-UI-107 describes and `P<n>`, below it the title as a link to `/beads/<project>/<id>`, and on its last line the state mark of REQ-UI-064, the type badge of REQ-UI-067, the indicators of REQ-UI-066 and the assignee when there is one, the title and the assignee wrapping inside the card (REQ-UI-107).
 
 #### Scenario: Full card
 - GIVEN a ready P1 task assigned to alice with 2 comments and 1 dependency
@@ -1998,3 +2013,36 @@ The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, wit
 - GIVEN a search that matches no bead
 - WHEN the Graph view is shown
 - THEN it says "No beads match these filters"
+
+### REQ-UI-107: Long text
+The frontend SHALL break a word that does not fit its box at any character in bead titles, ids on a page, assignees, owners and comments; SHALL show an id longer than 24 characters, wherever it is cut to fit a row, a card, a node or a Gantt label, as its first 14 characters, "…" and its last 9 characters, with the full id as `title`; SHALL give every text it cuts short with an ellipsis the full text as `title`; and SHALL keep every page from scrolling sideways at 360px and wider, a table or code block scrolling inside its own box.
+
+#### Scenario: Long id
+- GIVEN the bead `ex-payments-provider-migration-and-reconciliation-2026.2.1`
+- WHEN its row, card or node is shown
+- THEN its id reads `ex-payments-pr…-2026.2.1` with the full id as `title`
+
+#### Scenario: Short id
+- GIVEN the bead `ex-e4.1`
+- WHEN its row is shown
+- THEN its id reads `ex-e4.1` in full
+
+#### Scenario: Unbroken title on a card
+- GIVEN a bead titled "Handle PaymentReconciliationServiceTimeoutExceptionHandlerFactoryProviderBean in the worker"
+- WHEN its Board card is shown at 1440px
+- THEN the title wraps inside the card and the page does not scroll sideways
+
+#### Scenario: Unbroken title on a phone
+- GIVEN the same bead
+- WHEN its bead page is shown at 390px
+- THEN the heading wraps inside the window and the page does not scroll sideways
+
+#### Scenario: Wide table on a phone
+- GIVEN a bead whose description holds a table with five wide columns and a long code line
+- WHEN its bead page is shown at 390px
+- THEN the table and the code block scroll inside their own boxes and the page does not scroll sideways
+
+#### Scenario: Cut text has a tooltip
+- GIVEN a milestone titled with 120 characters
+- WHEN the Milestones list cuts it short
+- THEN the full title is its `title`

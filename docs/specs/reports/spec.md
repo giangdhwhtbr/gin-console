@@ -343,7 +343,7 @@ WHILE a single project is selected, the Team tab of the Reports page SHALL reque
   - "working day <elapsed> of <working_days> · <days_left> left" while the period holds `today`, "starts in <n> working days" before `start`, or "finished <closed_on>" once closed.
 - WHEN `undated` is above 0, the note "<undated> milestones without start and end dates are not listed".
 
-It SHALL keep the milestone, member and bead status in the URL query (`milestone`, `member`, `status`). It SHALL put the answer's `milestone` in the URL when it differs. It SHALL select All members when `member` is not one of `members`. A change of milestone SHALL clear the member and status. The tab SHALL NOT show the period or sprint choice, and SHALL keep `days` and `sprint` in the URL for the other tabs.
+Its selects SHALL be no wider than the panel, a long option cut short. It SHALL keep the milestone, member and bead status in the URL query (`milestone`, `member`, `status`). It SHALL put the answer's `milestone` in the URL when it differs. It SHALL select All members when `member` is not one of `members`. A change of milestone SHALL clear the member and status. The tab SHALL NOT show the period or sprint choice, and SHALL keep `days` and `sprint` in the URL for the other tabs.
 Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.png`
 
 #### Scenario: shared link
@@ -365,6 +365,11 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.pn
 - GIVEN the Team tab is selected
 - WHEN the panel is shown
 - THEN no period buttons and no sprint field are shown
+
+#### Scenario: long options on a phone
+- GIVEN a milestone titled with 120 characters and a member `nguyen.thi.thanh.huong.payments-team@example-company.com.vn`
+- WHEN the Team tab is shown at 390px
+- THEN both selects fit inside the window and the page does not scroll sideways
 
 ### REQ-REPORTS-013: Team figures
 The Team tab SHALL show a row of figures, in this order, from `team`, or from the selected member's row:

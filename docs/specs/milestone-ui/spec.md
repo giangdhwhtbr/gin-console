@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-MILESTONE-UI-001: Milestones list
-gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), lanes, forecast finish, epic progress, and warning count, from `gin milestone list --all --json`. Lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" when the entry's `finish` is set, in the warning color when it is after the entry's `end`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
+gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), lanes, forecast finish, epic progress, and warning count, from `gin milestone list --all --json`. Lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" when the entry's `finish` is set, in the warning color when it is after the entry's `end`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, SHALL show "No dates" in place of the period of an entry whose `start` or `end` is `null`, SHALL cut a long title short with the full title as `title`, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
 Source: `assets/2026-11-08/mockup/index.html#milestones`
 
 #### Scenario: list
@@ -32,6 +32,11 @@ Source: `assets/2026-11-08/mockup/index.html#milestones`
 - GIVEN project P whose `milestone list` reports M2 with `error` "dependency cycle: A -> B -> A"
 - WHEN the user opens Milestones for P
 - THEN M2 shows that error in place of its progress and warning count, and M1 is shown normally
+
+#### Scenario: milestone without dates
+- GIVEN project P whose `milestone list` reports M1 (active) and M4 with `start: null`, `end: null` and `error` "M4 has no start/end metadata"
+- WHEN the user opens Milestones for P
+- THEN M1 is shown normally, and M4 shows "No dates" and that error
 
 ### REQ-MILESTONE-UI-002: Milestone graph
 gin-console SHALL show, on a milestone's page, in the Graph view of the Beads tab (REQ-MILESTONE-UI-018, REQ-UI-106), the milestone's epics and their dependency edges, marking dependencies outside the milestone as external.
@@ -122,7 +127,7 @@ gin-console SHALL exclude beads of type `milestone` from the ready work it colle
 - THEN M1 is not counted or flagged as ready
 
 ### REQ-MILESTONE-UI-008: Milestones API
-WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin milestone list --all --json` or `gin milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast` and the `lanes` of each list entry and of the shown milestone, with `null` for each of them that the output lacks. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
+WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin milestone list --all --json` or `gin milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast` and the `lanes` of each list entry and of the shown milestone, with `null` for each of them that the output lacks, and SHALL accept a list entry whose `start` and `end` are `null` and return them as `null`. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
 
 #### Scenario: list
 - GIVEN project P whose `milestone list --all --json` prints schema 1 with M1
@@ -158,6 +163,11 @@ WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milesto
 - GIVEN project P whose `milestone list` exits 1 with `milestone error: milestones need providers.task_tracking: beads`
 - WHEN a client requests `GET /api/milestones?project=P`
 - THEN the response is 502 with `cause: "tracking"`
+
+#### Scenario: entry without dates
+- GIVEN project P whose `milestone list` prints M1 and M4 with `start: null`, `end: null` and `error: "M4 has no start/end metadata"`
+- WHEN a client requests `GET /api/milestones?project=P`
+- THEN the response is 200 with M1, and M4 with `start: null`, `end: null` and that `error`
 
 ### REQ-MILESTONE-UI-009: Milestone beads hidden from Beads views
 The List, Board, Focus, and Dependencies views SHALL NOT show beads of type `milestone`, and SHALL show the beads whose parent is a milestone as having no parent.
@@ -252,12 +262,12 @@ WHILE the Gantt is zoomed to `1 week` or `2 weeks`, gin-console SHALL draw the w
 - THEN ‹, › and the label of days in view are not shown and dragging does not move the chart
 
 ### REQ-MILESTONE-UI-013: Readable Gantt rows
-Each epic row of the Gantt SHALL show, in a label column that stays visible while the chart scrolls, the status icon and title on one line and the epic id (linking to its bead page), period and estimate on the next, each line cut short with an ellipsis instead of wrapping and the full title available on hover, followed by the epic's warnings; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar.
+Each epic row of the Gantt SHALL show, in a label column that stays visible while the chart scrolls, the status icon and title on one line and the epic id (linking to its bead page), period and estimate on the next, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, period and estimate, closed tracks, prep, spec) wrap onto further lines rather than being cut, followed by the epic's warnings; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar.
 
 #### Scenario: long id
 - GIVEN epic `gin-workflow-rm-process-hygiene` titled "Process hygiene: consistent skills, rules that bind where it matters"
 - WHEN the Gantt is shown on a phone
-- THEN the title and the id each take one line, cut short with an ellipsis
+- THEN the title takes one line cut short with an ellipsis, and the id, period and closed tracks wrap onto the following lines, none of them cut to less than its first word
 
 #### Scenario: title after the bar
 - GIVEN epic A whose bar ends on the first day of a 10-day plan shown as `Whole milestone`
