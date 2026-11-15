@@ -32,6 +32,12 @@ function view(
   );
   return onChange;
 }
+function rerenderable(over: { milestone: string }) {
+  const props = { project: "p", beads: all, matched: noMilestones, milestone: over.milestone, filters: parseFilters("?view=graph"), onChange: vi.fn() };
+  stubBeads(() => json([]));
+  const { rerender } = render(<GraphView {...props} />);
+  return { props, rerender: (next: typeof props) => rerender(<GraphView {...next} />) };
+}
 const node = (id: string) => screen.queryByRole("button", { name: new RegExp(`^${id}`) });
 
 afterEach(() => {
@@ -95,5 +101,32 @@ describe("GraphView", () => {
     view({ milestone: "m2", filters: { select: "e1" } });
     expect(screen.getByRole("complementary", { name: "Bead details" })).toBeInTheDocument();
     expect(node("e1")).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("REQ-UI-106 the trail skips milestone beads; the project item returns to the project scope", async () => {
+    const onChange = view({ milestone: "all", filters: { scope: "e1" } });
+    const trail = screen.getByRole("navigation", { name: "Graph scope" });
+    expect(within(trail).getAllByRole("button").map((b) => b.textContent)).toEqual(["p", "e1"]);
+    await userEvent.click(within(trail).getByRole("button", { name: "p" }));
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "" }));
+  });
+
+  it("REQ-UI-106 a scope naming another milestone is ignored", () => {
+    view({ milestone: "m2", beads: [...all, bead("m3", { issue_type: "milestone" }), bead("e5", { parent: "m3", milestone: "m3" })], filters: { scope: "m3" } });
+    expect(node("e1")).toBeInTheDocument();
+    expect(node("e5")).toBeNull();
+  });
+
+  it("REQ-UI-106 the search applied in the other views narrows the graph", () => {
+    view({ milestone: "m2", matched: [e2], filters: { q: "e2" } });
+    expect(node("e2")).toBeInTheDocument();
+    expect(node("e1")).toBeNull();
+  });
+
+  it("REQ-UI-106 Only linked is off on a milestone scope and on again at the project scope", () => {
+    const { rerender, props } = rerenderable({ milestone: "m2" });
+    expect(screen.getByRole("switch", { name: "Only linked" })).not.toBeChecked();
+    rerender({ ...props, milestone: "all" });
+    expect(screen.getByRole("switch", { name: "Only linked" })).toBeChecked();
   });
 });

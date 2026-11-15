@@ -26,7 +26,7 @@ type Props = {
 export function GraphView(props: Props) {
   const { beads, milestone, filters } = props;
   const scopeId =
-    filters.scope !== "" && hasChildren(beads, filters.scope)
+    filters.scope !== "" && hasChildren(beads, filters.scope) && beads.find((b) => b.id === filters.scope)?.issue_type !== "milestone"
       ? filters.scope
       : milestone !== "all" && milestone !== "none"
         ? milestone
@@ -43,10 +43,10 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
   const selected = filters.select !== "" && (known.has(filters.select) || filters.select === scopeId) ? filters.select : focus;
   const tabStop = known.has(selected) ? selected : (graph.nodes[0]?.bead.id ?? "");
   const to = (scope: string) => onChange({ ...filters, scope });
-  const trail = scopeId === null ? [] : [...ancestorsOf(beads, scopeId), scopeId];
-  const rooted = trail[0] === milestone; // the trail starts at the milestone in effect, which "" returns to
-  const top = rooted ? milestone : project;
-  const rest = rooted ? trail.slice(1) : trail;
+  // Milestone beads are never drawn outside their own scope, so the trail skips them; "" returns to the top item.
+  const plain = beads.filter((b) => b.issue_type !== "milestone");
+  const rest = scopeId === null || scopeId === milestone ? [] : [...ancestorsOf(plain, scopeId), scopeId];
+  const top = milestone !== "all" && milestone !== "none" ? milestone : project;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

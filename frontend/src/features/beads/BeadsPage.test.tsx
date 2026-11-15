@@ -156,6 +156,21 @@ describe("BeadsPage", () => {
     expect(within(screen.getByRole("navigation", { name: "Graph scope" })).getByRole("button", { name: "m2" })).toBeInTheDocument();
   });
 
+  it("REQ-UI-106 switching List to Graph keeps the search and loads nothing more", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&q=a-1");
+    const fetchMock = stub(() => json([bead("a-1"), bead("a-12", { blocked_by: ["a-1"] }), bead("b-2")]));
+    render(<BeadsPage />);
+    await screen.findByText("Title a-1");
+    const calls = () => fetchMock.mock.calls.filter(([i]) => String(i instanceof Request ? i.url : i).includes("/api/beads?")).length;
+    const before = calls();
+    await userEvent.click(screen.getByRole("button", { name: "Graph" }));
+    await screen.findByRole("navigation", { name: "Graph scope" });
+    expect(window.location.search).toContain("q=a-1");
+    expect(screen.getAllByRole("button", { name: /^a-1/ })).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: /^b-2/ })).toBeNull();
+    expect(calls()).toBe(before);
+  });
+
   it("REQ-MILESTONE-UI-009 list view: milestone not listed and its epics are roots", async () => {
     stub(() =>
       json([
