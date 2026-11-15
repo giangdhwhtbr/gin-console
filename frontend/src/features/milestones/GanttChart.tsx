@@ -408,7 +408,6 @@ function EpicRow({
             <span title={epic.title} className="min-w-0 truncate font-medium">
               {epic.title}
             </span>
-            <KindBadge kind={kind} />
           </span>
           {/* below lg the items keep their size and wrap; from lg only the id shrinks, but keeps 64 px, so its link stays reachable */}
           <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 whitespace-nowrap pl-[26px] text-xs text-muted-foreground lg:flex-nowrap">
@@ -418,6 +417,7 @@ function EpicRow({
                 {shortId(epic.id) !== epic.id && <span className="sr-only">{epic.id}</span>}
               </Link>
             </span>
+            <KindBadge kind={kind} className="max-w-full" />
             <span title={period} className="max-w-full shrink-0 truncate">{period}</span>
             {counts.tracks > 0 && <span title={closedTracks} className="max-w-full shrink-0 truncate">{closedTracks}</span>}
             {prep !== null && <span title={prep} className="max-w-full shrink-0 truncate">{prep}</span>}

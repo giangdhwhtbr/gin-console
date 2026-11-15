@@ -229,7 +229,11 @@ describe("GanttChart", () => {
         kinds={new Map([["e-a", "technical"]])}
       />,
     );
-    expect(within(epicRow("e-a")).getByText("Technical")).toBeInTheDocument();
+    const row = within(epicRow("e-a"));
+    const badge = row.getByText("Technical");
+    // on the meta line beside the id, so the title keeps its whole line
+    expect(badge.closest("[title='Technical']")?.parentElement).toBe(row.getByTitle("e-a").parentElement);
+    expect(row.getByTitle("Title e-a")).not.toContainElement(badge);
     expect(epicRow("e-b")).not.toHaveTextContent("Technical");
   });
 });

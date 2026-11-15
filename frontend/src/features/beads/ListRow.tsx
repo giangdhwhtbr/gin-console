@@ -76,7 +76,7 @@ export function ListRow({
         <span className="min-w-32 flex-1 truncate font-medium" title={bead.title} onClick={(event) => event.stopPropagation()}>
           <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
         </span>
-        <KindBadge kind={bead.kind} />
+        <KindBadge kind={bead.kind} className="min-w-0 shrink" />
         {isPrep(bead.labels) && <PrepChip />}
         <div className="hidden min-w-0 shrink items-center gap-2 overflow-hidden @xl:flex">
           {bead.issue_type === "epic" && row.counts.tracks > 0 && (
