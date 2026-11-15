@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fake_export import write_export
@@ -10,14 +11,33 @@ from gin_console.app import create_app
 from gin_console.beads.source import MISSING
 from gin_console.config import ProjectEntry, Settings
 
-WORKFLOW = {"stage": "plan", "layout": "sdd", "gates": {"requirement_confirmed": "satisfied"}}
+WORKFLOW: dict[str, Any] = {
+    "stage": "plan",
+    "layout": "sdd",
+    "gates": {"requirement_confirmed": "satisfied"},
+    "workspace": None,
+    "team": None,
+    "decision": None,
+    "warnings": [],
+    "remedies": [],
+    "review_waivers": [],
+}
+EPIC_WORKFLOW: dict[str, Any] = {
+    "stage": "plan",
+    "gates": {"requirement_confirmed": "satisfied"},
+    "warnings": [],
+    "review_waivers": [],
+}
 BEADS = {
     "open": 3,
     "in_progress": 1,
     "blocked": 1,
     "ready": 2,
     "prep": 0,
-    "epics": [{"id": "e1", "title": "Epic one"}, {"id": "e2", "title": "Epic two"}],
+    "epics": [
+        {"id": "e1", "title": "Epic one", "status": "in_progress", "workflow": EPIC_WORKFLOW},
+        {"id": "e2", "title": "Epic two", "status": "open", "workflow": None},
+    ],
     "stale": False,
 }
 

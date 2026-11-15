@@ -8,15 +8,26 @@ import sys
 import threading
 import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
 
-from gin_console.projects.models import Beads, BlockError, Workflow
+from gin_console.projects.models import (
+    Beads,
+    BlockError,
+    Epic,
+    EpicWorkflow,
+    ReviewWaiver,
+    Team,
+    Workflow,
+    Workspace,
+)
 
 TIMEOUT_SECONDS = 10
 TTL_SECONDS = 5.0
+EPIC_STATE_WORKERS = 4
 
 
 class CollectError(Exception):
@@ -137,15 +148,79 @@ def run_json(
         raise CollectError(f"{cmd[0]} printed invalid JSON{detail}") from None
 
 
+def _optional(model: type[Any], value: Any) -> Any:
+    """An optional block of gin's output: anything malformed becomes None."""
+    try:
+        return model.model_validate(value)
+    except ValidationError:
+        return None
+
+
+def _strings(value: Any) -> list[str]:
+    return [v for v in value if isinstance(v, str)] if isinstance(value, list) else []
+
+
+def _waivers(value: Any) -> list[ReviewWaiver]:
+    items = (_optional(ReviewWaiver, v) for v in value) if isinstance(value, list) else ()
+    return [w for w in items if w is not None]
+
+
 def collect_workflow(path: Path) -> Workflow | BlockError:
     try:
         # state exits 1 for a finished workflow (decision "complete") but still prints JSON
         data = run_json(["gin", "state", "--format", "json"], path, json_on_failure=True)
-        return Workflow(stage=data["stage"], layout=data["project"]["layout"], gates=data["gates"])
+        project = data["project"]
+        decision = data.get("decision")
+        return Workflow(
+            stage=data["stage"],
+            layout=project["layout"],
+            gates=data["gates"],
+            workspace=_optional(Workspace, data.get("workspace")),
+            team=_optional(Team, project.get("team")),
+            decision=decision if isinstance(decision, str) else None,
+            warnings=_strings(data.get("warnings")),
+            remedies=_strings(data.get("remedies")),
+            review_waivers=_waivers(data.get("review_waivers")),
+        )
     except CollectError as exc:
         return BlockError(error=str(exc))
     except (KeyError, TypeError, ValidationError) as exc:
         return BlockError(error=f"gin: unexpected output ({exc!r})")
+
+
+def collect_epic_workflow(path: Path, epic_id: str) -> EpicWorkflow | BlockError:
+    try:
+        data = run_json(
+            ["gin", "state", "--workflow-id", epic_id, "--format", "json"],
+            path,
+            json_on_failure=True,
+        )
+        return EpicWorkflow(
+            stage=data["stage"],
+            gates=data["gates"],
+            warnings=_strings(data.get("warnings")),
+            review_waivers=_waivers(data.get("review_waivers")),
+        )
+    except CollectError as exc:
+        return BlockError(error=str(exc))
+    except (KeyError, TypeError, ValidationError) as exc:
+        return BlockError(error=f"gin: unexpected output ({exc!r})")
+
+
+def _with_epic_workflows(beads: Beads | BlockError, path: Path) -> Beads | BlockError:
+    """Attach the stage of each in_progress epic; ready epics cost no process."""
+    if isinstance(beads, BlockError):
+        return beads
+    running = [e for e in beads.epics if e.status == "in_progress"]
+    if not running:
+        return beads
+    with ThreadPoolExecutor(max_workers=EPIC_STATE_WORKERS) as pool:
+        states = list(pool.map(lambda e: collect_epic_workflow(path, e.id), running))
+    by_id = {e.id: s for e, s in zip(running, states, strict=True)}
+    epics = [
+        Epic(**e.model_dump(exclude={"workflow"}), workflow=by_id.get(e.id)) for e in beads.epics
+    ]
+    return beads.model_copy(update={"epics": epics})
 
 
 Result = tuple[Workflow | BlockError, Beads | BlockError]
@@ -175,6 +250,6 @@ class Collector:
             hit = self._cache.get(name)
             if hit is not None and self._clock() - hit[0] < self._ttl:
                 return hit[1]
-            result = (collect_workflow(path), self._beads(path))
+            result = (collect_workflow(path), _with_epic_workflows(self._beads(path), path))
             self._cache[name] = (self._clock(), result)
             return result
