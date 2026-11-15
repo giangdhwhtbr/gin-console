@@ -26,6 +26,34 @@ describe("fetchProjects stale guard", () => {
   });
 });
 
+describe("fetchProjects health fields", () => {
+  const wf = (extra: object) => ({ stage: "plan", layout: "sdd", gates: {}, ...extra });
+  const withWorkflow = (w: unknown) => ({ ...project(null), workflow: w });
+
+  it("REQ-SERVER-005 accepts the new workflow fields and an older workflow without them", async () => {
+    const full = wf({
+      workspace: { root: "/w", repos: [] },
+      team: { enabled: true, host: "github", me: null },
+      decision: "hold",
+      warnings: ["w"],
+      remedies: ["r"],
+      review_waivers: [{ task_id: "t-1", reason: "x", actor: "a" }],
+    });
+    stub([withWorkflow(full), withWorkflow(wf({})), withWorkflow(wf({ workspace: null, team: null }))]);
+    expect(await fetchProjects()).toHaveLength(3);
+  });
+
+  it("REQ-SERVER-006 accepts epics with and without status and workflow", async () => {
+    const epics = [
+      { id: "e-1", title: "t", status: "in_progress", workflow: { stage: "execute", gates: {}, warnings: [], review_waivers: [] } },
+      { id: "e-2", title: "t", status: "in_progress", workflow: { error: "boom" } },
+      { id: "e-3", title: "t" },
+    ];
+    stub([project(beads({ epics }))]);
+    expect(await fetchProjects()).toHaveLength(1);
+  });
+});
+
 describe("fetchProjectBeads", () => {
   const entry = (b: unknown) => ({ name: "alpha", path: "/p/alpha", exists: true, beads: b });
 
