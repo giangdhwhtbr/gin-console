@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-074: Entry without dates
 
-- **REQ:** REQ-MILESTONE-UI-008@e217a166
+- **REQ:** REQ-MILESTONE-UI-008@d38e632d
 - **Priority:** high
 
 **Preconditions:**

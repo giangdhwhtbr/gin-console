@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-069: View and filters in the URL
 
-- **REQ:** REQ-MILESTONE-UI-018@03e47834
+- **REQ:** REQ-MILESTONE-UI-018@4d6687be
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-15T14-02-27

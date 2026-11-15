@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-007: Gantt shows an overflow warning past the end line
-REQ: REQ-MILESTONE-UI-003@68d4a64d
+REQ: REQ-MILESTONE-UI-003@eea05295
 Priority: high
 Result: passed
 Run: qa/evidence/2026-11-15T14-02-27

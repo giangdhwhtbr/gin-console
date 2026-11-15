@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-028: Old gin-workflow answers 502 outdated and is not cached
-REQ: REQ-MILESTONE-UI-008@e217a166
+REQ: REQ-MILESTONE-UI-008@d38e632d
 Priority: high
 Result: passed
 Run: qa/evidence/2026-11-06T04-03-21-api
