@@ -1,6 +1,6 @@
 # TC-UI-039: Default to the current milestone
 
-- **REQ:** REQ-UI-104@3cd94953
+- **REQ:** REQ-UI-104@9ce338fe
 - **Priority:** high
 
 **Preconditions:**
