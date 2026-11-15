@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-015@665bc3ff
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - epic `gin-workflow-rm-cost-control` with four closed children `.1` to `.4`, closed on 2026-11-01

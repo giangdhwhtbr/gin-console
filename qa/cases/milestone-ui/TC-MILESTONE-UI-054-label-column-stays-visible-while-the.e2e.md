@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-013@8bde4860
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - milestone M1 zoomed to `1 week` with epic A

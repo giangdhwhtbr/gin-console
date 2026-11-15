@@ -1,8 +1,8 @@
-// TC: TC-MILESTONE-UI-005@1e745d94
+// TC: TC-MILESTONE-UI-005@d2d9b877
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
-test('TC-MILESTONE-UI-005: Graph tab shows epics and their dependency edge', async ({ page, ev }) => {
+test('TC-MILESTONE-UI-005: Graph view shows epics and their dependency edge', async ({ page, ev }) => {
   // Precondition: milestone M1 of project P with epics A and B, B depending on A.
   await stubApi(page, {
     milestone: { M1: detail([epicPlan('A'), epicPlan('B', { depends_on: ['A'] })]) },
@@ -18,13 +18,19 @@ test('TC-MILESTONE-UI-005: Graph tab shows epics and their dependency edge', asy
     await expect(page.getByRole('heading', { name: 'Beta readiness' })).toBeVisible();
   });
 
-  await ev.step('2. Click the "Graph" tab', async () => {
-    await page.getByRole('tab', { name: 'Graph' }).click();
-    await expect(page).toHaveURL(/[?&]tab=graph(&|$)/);
-    await expect(page.getByRole('tab', { name: 'Graph' })).toHaveAttribute('aria-selected', 'true');
-    const panel = page.getByRole('tabpanel', { name: 'Graph' });
-    await expect(panel.getByRole('button', { name: /^A\b/ })).toBeVisible();
-    await expect(panel.getByRole('button', { name: /^B\b/ })).toBeVisible();
+  await ev.step('2. Click the "Beads" tab', async () => {
+    await page.getByRole('tab', { name: 'Beads' }).click();
+    await expect(page).toHaveURL(/[?&]tab=beads(&|$)/);
+    await expect(page.getByRole('tab', { name: 'Beads' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  await ev.step('3. Choose "Graph" in the views', async () => {
+    await page.getByRole('navigation', { name: 'View' }).getByRole('button', { name: 'Graph' }).click();
+    await expect(page).toHaveURL(/[?&]tab=beads(&|$)/);
+    await expect(page).toHaveURL(/[?&]view=graph(&|$)/);
+    const panel = page.getByRole('tabpanel');
+    await expect(panel.locator('[data-node="A"]')).toBeVisible();
+    await expect(panel.locator('[data-node="B"]')).toBeVisible();
     const edges = panel.getByRole('list', { name: 'Dependencies' }).getByRole('listitem');
     await expect(edges).toHaveCount(1);
     await expect(edges).toHaveText('B is blocked by A');

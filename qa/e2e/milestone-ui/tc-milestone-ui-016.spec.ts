@@ -9,8 +9,8 @@ test('TC-MILESTONE-UI-016: Old gin-workflow names the install fix', async ({ pag
   await ev.step('1. Open /milestones?project=P', async () => {
     await page.goto('/milestones?project=P');
     const alert = page.getByRole('alert');
-    await expect(alert).toContainText('Milestones need a newer gin-workflow');
+    await expect(alert).toContainText('Milestones need a newer gin');
     await expect(alert.getByText('gin-workflow/install.sh', { exact: true })).toBeVisible();
-    await expect(alert).toContainText('Run the gin-workflow installer');
+    await expect(alert).toContainText('Run the gin installer');
   });
 });

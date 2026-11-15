@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-015@665bc3ff
 Priority: low
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - epics A and B in M1, each with child beads

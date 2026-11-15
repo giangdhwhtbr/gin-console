@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-MILESTONE-UI-018@03e47834
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-15T14-02-27
 
 **Preconditions:**
 - Milestone `m2` of project `p`

@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-001@edeac124
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - project P whose `milestone list --all --json` reports M1 (active) and M2 (planned)

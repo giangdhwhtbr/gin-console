@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-009@b69e4614
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - project P with open milestone M1 and open epic A

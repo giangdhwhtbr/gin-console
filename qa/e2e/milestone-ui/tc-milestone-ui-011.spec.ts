@@ -42,6 +42,6 @@ test('TC-MILESTONE-UI-011: Kick-start preview redraws the Gantt from the picked 
     await expect(firstDay('A')).toHaveAttribute('data-bead', '2026-11-16');
     await expect(firstDay('B')).toHaveAttribute('data-bead', '2026-11-19');
     await expect(page.getByRole('figure', { name: 'Schedule' })).toHaveClass(/border-dashed/);
-    await expect(page.getByText('gin-workflow milestone kickstart M1 --date 2026-11-16', { exact: true })).toBeVisible();
+    await expect(page.getByText('gin milestone kickstart M1 --date 2026-11-16', { exact: true })).toBeVisible();
   });
 });

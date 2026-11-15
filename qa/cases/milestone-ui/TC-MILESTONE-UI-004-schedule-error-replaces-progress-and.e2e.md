@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-001@edeac124
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - project P whose `milestone list` reports M1 normally and M2 with `error` "dependency cycle: A -> B -> A"

@@ -10,8 +10,8 @@ test('TC-MILESTONE-UI-019: Milestone page shows the same unavailable error', asy
   await ev.step('1. Open /milestones/P/M1', async () => {
     await page.goto('/milestones/P/M1');
     const alert = page.getByRole('alert');
-    await expect(alert).toContainText('Milestones need a newer gin-workflow');
+    await expect(alert).toContainText('Milestones need a newer gin');
     await expect(alert.getByText('gin-workflow/install.sh', { exact: true })).toBeVisible();
-    await expect(alert).toContainText('Run the gin-workflow installer');
+    await expect(alert).toContainText('Run the gin installer');
   });
 });

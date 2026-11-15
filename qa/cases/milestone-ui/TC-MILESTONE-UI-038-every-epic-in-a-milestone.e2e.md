@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-010@870a452a
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - project P whose open epics all have a milestone parent

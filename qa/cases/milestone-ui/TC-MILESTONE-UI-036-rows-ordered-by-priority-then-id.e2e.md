@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-010@870a452a
 Priority: low
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - project P with parentless open epics `p-b` (P1), `p-a` (P1), and `p-c` (P0)

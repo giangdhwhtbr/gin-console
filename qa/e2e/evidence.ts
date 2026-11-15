@@ -43,6 +43,8 @@ function projectFolder(name: string): string {
 
 export const test = base.extend<{ ev: Evidence }>({
   ev: async ({ page }, use, testInfo) => {
+    // REQ-UI-097: the app shows the email login screen until localStorage holds an email.
+    await page.addInitScript(() => localStorage.setItem('gin-console.email', 'qa@example.com'));
     const header = HEADER.exec(fs.readFileSync(testInfo.file, 'utf8').split(/\r?\n/)[0]);
     const runDir = process.env.GIN_QA_RUN_DIR;
     const project = testInfo.project.name;

@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-004@ed8c64e1
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - active milestone M1

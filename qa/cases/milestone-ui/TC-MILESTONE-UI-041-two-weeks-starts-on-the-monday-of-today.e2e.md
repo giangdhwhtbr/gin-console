@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-011@83b54b5c
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-12T13-33-28
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - milestone M1 whose plan spans 2026-11-02 to 2026-11-27 and `today: 2026-11-11`

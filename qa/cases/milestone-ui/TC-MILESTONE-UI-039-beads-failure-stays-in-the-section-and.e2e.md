@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-010@870a452a
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-18-00
+Run: qa/evidence/2026-11-15T14-02-27
 
 Preconditions:
 - project P whose milestones load and whose `GET /api/beads` responds 502
