@@ -2077,3 +2077,39 @@ The frontend SHALL break a word that does not fit its box at any character in be
 - GIVEN a milestone titled with 120 characters
 - WHEN the Milestones list cuts it short
 - THEN the full title is its `title`
+
+### REQ-UI-108: Kind and capability filters
+The bead filter bar and its mobile sheet SHALL offer a "Kind" select (All, Capability, Technical, Parity) kept in the URL as `kind`, and a multi-select "Capability" listing every capability of the loaded beads, kept in the URL as `capability` and hidden while there is none. A bead SHALL match the Kind filter when it or its nearest epic ancestor has that kind, and the Capability filter when its capabilities or those of its nearest epic ancestor hold any chosen capability. The filters SHALL apply to the List, Board, Focus and Graph views on the Beads page and on a milestone's Beads tab, and SHALL count in the breadcrumb's filter count (REQ-UI-072).
+
+#### Scenario: Kind filter keeps the tracks
+- GIVEN technical epic `e-1` with task `t-1`, and capability epic `e-2` with task `t-2`
+- WHEN the user chooses Kind "Technical"
+- THEN the URL has `kind=technical` and `e-1` and `t-1` are shown while `e-2` and `t-2` are not
+
+#### Scenario: Capability filter
+- GIVEN track `t-1` with capability `milestone-ui` and track `t-3` with capability `beads`
+- WHEN the user chooses the capability `milestone-ui`
+- THEN the URL has `capability=milestone-ui` and `t-1` is shown while `t-3` is not
+
+#### Scenario: No capabilities
+- GIVEN a project whose beads have no capability
+- WHEN the Beads page is shown
+- THEN there is no "Capability" filter
+
+### REQ-UI-109: Kind, capabilities and estimate in the Beads views
+The frontend SHALL show a "Technical" or "Parity" badge for an epic of that kind, and no kind badge for a capability epic, on its List row, its Board and Focus card, its bead page and its Gantt label; SHALL show the bead's capabilities as chips on its bead page; SHALL show "Estimate <n>d" on the bead page of a bead with `estimate_minutes`, counting 480 minutes as one working day and rounding to one decimal; and SHALL show on an epic's List row its complexity (REQ-UI-028) and estimate as "<complexity> · <n>d", or either alone, among the items that give way before the title (REQ-UI-044).
+
+#### Scenario: Technical epic
+- GIVEN technical epic `e-1` with capabilities `beads` and `ui`, complexity `medium` and `estimate_minutes: 1440`
+- WHEN its List row and its bead page are shown
+- THEN the row shows "Technical" and "medium · 3d", and the bead page shows "Technical", the chips `beads` and `ui`, and "Estimate 3d"
+
+#### Scenario: Capability epic
+- GIVEN capability epic `e-2` without an estimate
+- WHEN its List row is shown
+- THEN it shows no kind badge and no estimate
+
+#### Scenario: Partial day
+- GIVEN a task with `estimate_minutes: 240`
+- WHEN its bead page is shown
+- THEN it shows "Estimate 0.5d"
