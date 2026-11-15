@@ -1,9 +1,40 @@
 export type BlockError = { error: string };
 
+export type ReviewWaiver = { task_id: string; reason: string; actor: string };
+
+export type WorkspaceRepo = {
+  path: string;
+  branch: string | null;
+  shape: string | null;
+  frozen: boolean;
+  present: boolean;
+};
+
+// Every field after `gates` is optional: an older backend does not send it
 export type Workflow = {
   stage: string;
   layout: string;
   gates: Record<string, string>;
+  workspace?: { root: string; repos: WorkspaceRepo[] } | null;
+  team?: { enabled: boolean; host: string | null; me: string | null } | null;
+  decision?: string | null;
+  warnings?: string[];
+  remedies?: string[];
+  review_waivers?: ReviewWaiver[];
+};
+
+export type EpicWorkflow = {
+  stage: string;
+  gates: Record<string, string>;
+  warnings: string[];
+  review_waivers: ReviewWaiver[];
+};
+
+export type Epic = {
+  id: string;
+  title: string;
+  status?: string;
+  workflow?: EpicWorkflow | BlockError | null;
 };
 
 export type Beads = {
@@ -13,7 +44,7 @@ export type Beads = {
   ready: number;
   /** open prep tasks; absent from an older backend: read as 0 */
   prep?: number;
-  epics: { id: string; title: string }[];
+  epics: Epic[];
   stale?: boolean;
 };
 

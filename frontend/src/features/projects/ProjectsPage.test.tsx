@@ -1,7 +1,7 @@
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { Beads, Project, Workflow } from "./api";
+import type { Beads, Project, Workflow, WorkspaceRepo } from "./api";
 import { ProjectsPage } from "./ProjectsPage";
 
 const json = (body: unknown, status = 200) =>
@@ -21,6 +21,20 @@ const workflow: Workflow = {
   layout: "sdd",
   gates: { requirement_confirmed: "satisfied", plan_approved: "unmet" },
 };
+
+const repo = (path: string, extra: Partial<WorkspaceRepo> = {}): WorkspaceRepo => ({
+  path,
+  branch: "master",
+  shape: "backend",
+  frozen: false,
+  present: true,
+  ...extra,
+});
+const workspaceOf = (n: number, frozen = -1) => ({
+  root: "/w",
+  repos: Array.from({ length: n }, (_, i) => repo(`repo-${i}`, { frozen: i === frozen })),
+});
+const teamWorkflow: Workflow = { ...workflow, team: { enabled: true, host: "github", me: null } };
 
 const beads: Beads = {
   open: 3,
@@ -90,13 +104,62 @@ describe("ProjectsPage", () => {
   });
 
   // REQ-UI-003
-  it("REQ-UI-003 shows the stage and one chip per gate", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ workflow })])));
+  it("REQ-UI-003 shows workspace and team, and lists the repos on request", async () => {
+    const full: Workflow = { ...teamWorkflow, workspace: workspaceOf(8, 2) };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ workflow: full })])));
     render(<ProjectsPage />);
     const card = await screen.findByRole("article", { name: "qwikfone" });
-    expect(within(card).getByText("plan")).toBeInTheDocument();
-    expect(within(card).getByText("requirement_confirmed: satisfied")).toBeInTheDocument();
-    expect(within(card).getByText("plan_approved: unmet")).toBeInTheDocument();
+    expect(within(card).getByText("workspace · 8 repos")).toBeInTheDocument();
+    expect(within(card).getByText("team · github")).toBeInTheDocument();
+    expect(within(card).queryByText("repo-0")).not.toBeInTheDocument();
+    const toggle = within(card).getByRole("button", { name: "Show repos" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(toggle);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    expect(within(card).getAllByText(/^repo-\d$/)).toHaveLength(8);
+    expect(within(card).getAllByText("frozen")).toHaveLength(1);
+    expect(within(card).queryByText("missing")).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-003
+  it("REQ-UI-003 marks a repo that is not present", async () => {
+    const w: Workflow = { ...workflow, workspace: { root: "/w", repos: [repo("gone", { present: false })] } };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ workflow: w })])));
+    render(<ProjectsPage />);
+    const card = await screen.findByRole("article", { name: "qwikfone" });
+    await userEvent.click(within(card).getByRole("button", { name: "Show repos" }));
+    expect(within(card).getByText("missing")).toBeInTheDocument();
+  });
+
+  // REQ-UI-003
+  it("REQ-UI-003 shows a health alert and the review waivers", async () => {
+    const held: Workflow = {
+      ...workflow,
+      decision: "hold",
+      warnings: ["event log unreadable"],
+      remedies: ["run gin doctor"],
+      review_waivers: [{ task_id: "t-1", reason: "docs only", actor: "gin" }],
+    };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ workflow: held })])));
+    render(<ProjectsPage />);
+    const card = await screen.findByRole("article", { name: "qwikfone" });
+    const alert = within(card).getByRole("alert");
+    expect(alert).toHaveTextContent("hold");
+    expect(alert).toHaveTextContent("event log unreadable");
+    expect(alert).toHaveTextContent("run gin doctor");
+    expect(within(card).getByText("1 review waiver")).toBeInTheDocument();
+    expect(within(card).getByText(/t-1/)).toBeInTheDocument();
+  });
+
+  // REQ-UI-003
+  it("REQ-UI-003 shows nothing for a plain project and no gate chips", async () => {
+    const plain: Workflow = { ...workflow, stage: "discuss", team: { enabled: false, host: null, me: null } };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ workflow: plain })])));
+    render(<ProjectsPage />);
+    const card = await screen.findByRole("article", { name: "qwikfone" });
+    expect(within(card).queryByRole("alert")).not.toBeInTheDocument();
+    expect(within(card).queryByRole("button")).not.toBeInTheDocument();
+    expect(within(card).queryByText(/workspace|team|waiver|discuss|: (satisfied|unmet)/)).not.toBeInTheDocument();
   });
 
   // REQ-UI-004
@@ -116,6 +179,73 @@ describe("ProjectsPage", () => {
     render(<ProjectsPage />);
     expect(within(await screen.findByRole("article", { name: "qwikfone" })).getByText("prep 2")).toBeInTheDocument();
     expect(within(cardOf("other")).queryByText(/^prep/)).toBeNull();
+  });
+
+  // REQ-UI-004
+  it("REQ-UI-004 shows the stage per epic, a warning mark with details, and ready", async () => {
+    const epics: Beads["epics"] = [
+      {
+        id: "e-1",
+        title: "Running",
+        status: "in_progress",
+        workflow: {
+          stage: "execute",
+          gates: {},
+          warnings: [],
+          review_waivers: [{ task_id: "t-9", reason: "docs only", actor: "gin" }],
+        },
+      },
+      { id: "e-2", title: "Waiting", status: "open" },
+      { id: "e-3", title: "Broken", status: "in_progress", workflow: { error: "gin failed" } },
+    ];
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ beads: { ...beads, epics } })])));
+    render(<ProjectsPage />);
+    const card = await screen.findByRole("article", { name: "qwikfone" });
+    const [running, waiting, broken] = within(card).getAllByRole("listitem");
+    expect(within(running).getByText("execute")).toBeInTheDocument();
+    expect(within(running).getByText("⚠ 1")).toBeInTheDocument();
+    expect(within(running).getByText(/t-9.*docs only/)).toHaveClass("sr-only");
+    expect(within(waiting).getByText("ready")).toBeInTheDocument();
+    expect(within(waiting).queryByText(/⚠/)).not.toBeInTheDocument();
+    expect(within(broken).getByText("stage unknown")).toHaveAttribute("title", "gin failed");
+  });
+
+  // REQ-UI-004
+  it("REQ-UI-004 does not crash on a partial, null or malformed epic workflow", async () => {
+    const bad = (value: unknown) => value as Beads["epics"][number]["workflow"];
+    const epics: Beads["epics"] = [
+      { id: "p-1", title: "Partial", status: "in_progress", workflow: bad({ stage: "plan", gates: {} }) },
+      { id: "p-2", title: "Null", status: "in_progress", workflow: null },
+      { id: "p-3", title: "Bad", status: "in_progress", workflow: bad({ stage: "ship", warnings: "x", review_waivers: 3 }) },
+    ];
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ beads: { ...beads, epics } })])));
+    render(<ProjectsPage />);
+    const card = await screen.findByRole("article", { name: "qwikfone" });
+    const [partial, nul, malformed] = within(card).getAllByRole("listitem");
+    expect(within(partial).getByText("plan")).toBeInTheDocument();
+    expect(within(partial).queryByText(/⚠/)).not.toBeInTheDocument();
+    expect(within(nul).queryByText(/plan|⚠|unknown/)).not.toBeInTheDocument();
+    expect(within(malformed).getByText("ship")).toBeInTheDocument();
+    expect(within(malformed).queryByText(/⚠/)).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-003
+  it("REQ-UI-003 does not crash on a workspace without repos or non-array warnings", async () => {
+    const bad = (value: unknown) => value as Workflow;
+    const cases = [
+      bad({ ...workflow, workspace: { root: "/w" } }),
+      bad({ ...workflow, warnings: "x", remedies: 1, review_waivers: "y" }),
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        json([project({ workflow: cases[0] }), project({ name: "other", workflow: cases[1] })]),
+      ),
+    );
+    render(<ProjectsPage />);
+    await screen.findByRole("article", { name: "qwikfone" });
+    expect(within(cardOf("qwikfone")).getByText("workspace · 0 repos")).toBeInTheDocument();
+    expect(within(cardOf("other")).queryByRole("alert")).not.toBeInTheDocument();
   });
 
   // REQ-UI-004
@@ -175,12 +305,12 @@ describe("ProjectsPage", () => {
   it("REQ-UI-007 shows a block error and still shows the other block", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(json([project({ workflow, beads: { error: "bd not found" } })])),
+      vi.fn().mockResolvedValue(json([project({ workflow: teamWorkflow, beads: { error: "bd not found" } })])),
     );
     render(<ProjectsPage />);
     const card = await screen.findByRole("article", { name: "qwikfone" });
     expect(within(card).getByText(/bd not found/)).toBeInTheDocument();
-    expect(within(card).getByText("plan")).toBeInTheDocument();
+    expect(within(card).getByText("team · github")).toBeInTheDocument();
   });
 
   describe("refresh", () => {
@@ -197,16 +327,16 @@ describe("ProjectsPage", () => {
       vi.useFakeTimers();
       const fetchMock = vi
         .fn()
-        .mockResolvedValueOnce(json([project({ workflow })]))
-        .mockResolvedValue(json([project({ workflow: { ...workflow, stage: "execute" } })]));
+        .mockResolvedValueOnce(json([project({ workflow: { ...workflow, workspace: workspaceOf(1) } })]))
+        .mockResolvedValue(json([project({ workflow: { ...workflow, workspace: workspaceOf(2) } })]));
       vi.stubGlobal("fetch", fetchMock);
       render(<ProjectsPage />);
       await advance(0);
-      expect(within(cardOf("qwikfone")).getByText("plan")).toBeInTheDocument();
+      expect(within(cardOf("qwikfone")).getByText("workspace · 1 repos")).toBeInTheDocument();
       await advance(10_000);
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-      expect(within(cardOf("qwikfone")).getByText("execute")).toBeInTheDocument();
+      expect(within(cardOf("qwikfone")).getByText("workspace · 2 repos")).toBeInTheDocument();
     });
 
     // REQ-UI-006
