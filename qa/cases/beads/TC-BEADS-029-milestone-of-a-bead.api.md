@@ -1,6 +1,6 @@
 # TC-BEADS-029: Milestone of a bead
 
-- **REQ:** REQ-BEADS-001@dc0f6cd9
+- **REQ:** REQ-BEADS-001@877b56b8
 - **Priority:** medium
 
 **Preconditions:**
