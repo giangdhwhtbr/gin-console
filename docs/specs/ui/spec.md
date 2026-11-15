@@ -1767,6 +1767,7 @@ The frontend SHALL show on every page a "Refresh data" control, in the top bar b
 - [Bead text as Markdown](diagrams/bead-text-markdown-activity.md)
 - [Login](diagrams/login-activity.md)
 - [My Tasks](diagrams/my-tasks-activity.md)
+- [Graph view](diagrams/graph-view-activity.md)
 
 ### REQ-UI-097: Email login
 WHILE the browser holds no email for the console, the frontend SHALL show, at every URL, a login screen with one email field and a "Continue" control instead of the navigation and the page; WHEN the user submits a value that, trimmed, has text before and after one `@` and no whitespace, the frontend SHALL keep it lower-cased in localStorage under `gin-console.email` and show the page of the current URL without a full reload; IF the value is not such an email, THEN the frontend SHALL keep the login screen and say the email is not valid; IF the browser refuses to store the email, THEN the frontend SHALL keep it for the current visit without an error. The email SHALL NOT be sent to the server.
@@ -1937,3 +1938,4 @@ The My Tasks page SHALL offer a "Project" select with "All projects" (the defaul
 
 ## Use Cases
 - [Filter beads by milestone](use-cases/filter-by-milestone.md)
+- [Browse a milestone's beads](use-cases/browse-milestone-beads.md)

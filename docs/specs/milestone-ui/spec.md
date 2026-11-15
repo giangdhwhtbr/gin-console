@@ -317,6 +317,7 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 
 ## Diagrams
 - [Milestones forecast](diagrams/milestones-forecast-activity.md)
+- [Milestone Beads tab](diagrams/milestone-beads-tab-activity.md)
 
 ### REQ-MILESTONE-UI-016: Project forecast card
 WHEN the Milestones list of a project has a non-null `forecast`, gin-console SHALL show a forecast card above the milestone list with:
