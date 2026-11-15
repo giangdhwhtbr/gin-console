@@ -1,6 +1,6 @@
 # TC-UI-065: Closed bead
 
-- **REQ:** REQ-UI-049@4f311f64
+- **REQ:** REQ-UI-049@24a50bbd
 - **Priority:** medium
 
 **Preconditions:**

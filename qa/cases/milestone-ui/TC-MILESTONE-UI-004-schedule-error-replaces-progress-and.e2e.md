@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-004: Schedule error replaces progress and warnings
-REQ: REQ-MILESTONE-UI-001@b8f53ca9
+REQ: REQ-MILESTONE-UI-001@edeac124
 Priority: high
 Result: passed
 Run: qa/evidence/2026-11-06T04-18-00

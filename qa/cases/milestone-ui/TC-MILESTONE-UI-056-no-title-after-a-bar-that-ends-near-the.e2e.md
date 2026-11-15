@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-056: No title after a bar that ends near the chart edge
-REQ: REQ-MILESTONE-UI-013@707f050a
+REQ: REQ-MILESTONE-UI-013@8bde4860
 Priority: low
 Result: passed
 Run: qa/evidence/2026-11-06T04-18-00
