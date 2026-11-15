@@ -129,8 +129,10 @@ describe("GraphPage", () => {
   it("REQ-UI-051 close: select=none, no panel, focus back to the heading bar; a reload keeps it closed", async () => {
     open("/beads/p/e-1/graph", [epic("e-1"), task("a", "e-1"), task("b", "e-1", ["a"])]);
     await node("a");
+    const before = window.history.length;
     await userEvent.click(await within(panel()).findByRole("button", { name: "Close details" }));
     expect(window.location.search).toBe("?select=none");
+    expect(window.history.length).toBe(before);
     expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
     expect(within(screen.getByRole("region", { name: "Scope" })).getByRole("button", { name: /e-1|Title/ })).toHaveFocus();
     cleanup();

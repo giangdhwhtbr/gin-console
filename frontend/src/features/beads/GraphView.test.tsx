@@ -170,4 +170,10 @@ describe("GraphView", () => {
     await userEvent.keyboard("{Escape}");
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
   });
+
+  it("REQ-UI-051 the breadcrumb resets select to the new scope's default", async () => {
+    const onChange = view({ milestone: "m2", filters: { scope: "e1", select: "none" } });
+    await userEvent.click(within(screen.getByRole("navigation", { name: "Graph scope" })).getByRole("button", { name: "m2" }));
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "", select: "" }));
+  });
 });

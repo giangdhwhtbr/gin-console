@@ -12,7 +12,7 @@ export function ViewTabs({ filters, onChange }: { filters: BeadFilters; onChange
           size="sm"
           variant={filters.view === view ? "default" : "outline"}
           aria-pressed={filters.view === view}
-          onClick={() => onChange({ ...filters, view })}
+          onClick={() => onChange({ ...filters, view, select: filters.select === "none" ? "" : filters.select })}
         >
           {TITLES[view]}
         </Button>

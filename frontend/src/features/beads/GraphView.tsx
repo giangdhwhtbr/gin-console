@@ -55,7 +55,7 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
     closed.current = selected;
     onChange({ ...filters, select: "none" });
   };
-  const to = (scope: string) => onChange({ ...filters, scope });
+  const to = (scope: string) => onChange({ ...filters, scope, select: "" });
   // Milestone beads are never drawn outside their own scope, so the trail skips them; "" returns to the top item.
   const plain = beads.filter((b) => b.issue_type !== "milestone");
   const rest = scopeId === null || scopeId === milestone ? [] : [...ancestorsOf(plain, scopeId), scopeId];
