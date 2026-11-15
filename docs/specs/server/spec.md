@@ -67,15 +67,25 @@ The server SHALL serve the built frontend from `frontend/dist` for non-API paths
 - THEN the response is 503 and names the build command
 
 ### REQ-SERVER-005: Workflow state per project
-WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `workflow` object with `stage`, `layout` and `gates` (gate name to state), taken from `gin state --format json` run read-only in the project directory.
+WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `workflow` object with `stage`, `layout` and `gates` (gate name to state), `workspace` (`null`, or `root` and `repos`, each repo with `path`, `branch`, `shape`, `frozen` and `present`), `team` (`enabled`, `host`, `me`), `decision`, `warnings`, `remedies` and `review_waivers` (each with `task_id`, `reason` and `actor`), taken from `gin state --format json` run read-only in the project directory, with `null` or an empty list for each of them that the output lacks.
 
 #### Scenario: Workflow state present
 - GIVEN a project whose `gin state --format json` reports stage `discuss` and five gates
 - WHEN a client requests `GET /api/projects`
 - THEN that project's `workflow` has `stage` `discuss` and the five gates with their states
 
+#### Scenario: Workspace, team and health
+- GIVEN a project whose `gin state --format json` reports a workspace with 8 repos, `team.enabled` true with host `github`, `decision` `hold`, the warning "event log unreadable" and one review waiver
+- WHEN a client requests `GET /api/projects`
+- THEN that project's `workflow` carries the 8 repos, the team, `decision` `hold`, the warning and the waiver
+
+#### Scenario: Older gin
+- GIVEN a project whose `gin state --format json` has no `workspace`, `team`, `decision`, `warnings`, `remedies` or `review_waivers`
+- WHEN a client requests `GET /api/projects`
+- THEN `workflow.workspace` is `null`, `team` is `null`, `decision` is `null`, and the three lists are empty
+
 ### REQ-SERVER-006: Beads summary per project
-WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id` and `title`, taken from the project's `bd export` snapshot (REQ-BEADS-012) with readiness worked out as in REQ-BEADS-007, where `blocked` counts the beads that are not closed and blocked, and `ready` never counts a bead of type `milestone`. The counts `open`, `in_progress`, `blocked` and `ready` SHALL leave out prep tasks (REQ-BEADS-002). The `beads` object SHALL add `prep`, the number of prep tasks that are not closed.
+WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id`, `title`, `status` and, for an `in_progress` epic in `GET /api/projects` only (never in `GET /api/projects/beads`, which starts no process, REQ-SERVER-010), `workflow`: the `stage`, `gates`, `warnings` and `review_waivers` of `gin state --workflow-id <id> --format json`, or `{"error": <message>}` when that command fails, the commands for one project running at most four at a time, taken from the project's `bd export` snapshot (REQ-BEADS-012) with readiness worked out as in REQ-BEADS-007, where `blocked` counts the beads that are not closed and blocked, and `ready` never counts a bead of type `milestone`. The counts `open`, `in_progress`, `blocked` and `ready` SHALL leave out prep tasks (REQ-BEADS-002). The `beads` object SHALL add `prep`, the number of prep tasks that are not closed.
 
 #### Scenario: Counts and active epics
 - GIVEN a project with 3 open, 1 in_progress and 2 ready issues, one in_progress epic and one ready open epic
@@ -96,6 +106,21 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - GIVEN a project whose only beads are the in_progress epic `e-1`, its open ready tracks `t-1` and `t-2`, its open prep task `p-1` labelled `prep` and `prep:mockup` without blockers, and its closed prep task `p-2` labelled `prep`
 - WHEN a client requests `GET /api/projects`
 - THEN `beads.open` is 2, `beads.in_progress` is 1, `beads.ready` is 2, `beads.blocked` is 0 and `beads.prep` is 1
+
+#### Scenario: Stage of an epic in progress
+- GIVEN in_progress epic `e-1` whose `gin state --workflow-id e-1` reports stage `execute`, and ready epic `e-2`
+- WHEN a client requests `GET /api/projects`
+- THEN `e-1` has `status` `in_progress` and `workflow.stage` `execute`, `e-2` has `status` `open` and no `workflow`, and no `gin state` ran for `e-2`
+
+#### Scenario: One epic fails
+- GIVEN in_progress epics `e-1` and `e-3`, and `gin state --workflow-id e-3` exiting non-zero
+- WHEN a client requests `GET /api/projects`
+- THEN `e-1` has its `workflow`, `e-3` has `workflow` `{"error": …}`, and the rest of the project is unchanged
+
+#### Scenario: Project beads endpoint unchanged
+- GIVEN the same in_progress epic `e-1`
+- WHEN a client requests `GET /api/projects/beads`
+- THEN `e-1` has `id`, `title` and `status` and no `workflow`, and no `gin state` ran
 
 ### REQ-SERVER-007: Per-block errors
 IF a `gin` or `bd` command for a project is missing, times out, exits non-zero, or prints invalid JSON, THEN the server SHALL set that block (`workflow` or `beads`) to an object whose only content is an `error` message, and SHALL leave the other block and the other projects unaffected; for a project whose `exists` is false the server SHALL run no command and return both blocks as `null`.

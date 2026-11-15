@@ -26,15 +26,25 @@ IF the request to `/api/projects` fails, THEN the Projects page SHALL show an er
 - THEN the error disappears and the project list is shown
 
 ### REQ-UI-003: Workflow state display
-The Projects page SHALL show, for each project with `workflow` data, the `stage` and one chip per gate whose text names the gate and its state.
+The Projects page SHALL show, for each project with `workflow` data, "workspace · <n> repos" with a "Show repos" control that lists each repo's path, branch and shape and marks a repo that is frozen or not present, "team · <host>" while team mode is on, an alert listing the `decision` when it is `hold` together with the `warnings` and `remedies`, and "<n> review waiver(s)" with each waiver's task, reason and actor, showing none of them when it is absent or empty; it SHALL NOT show the default workflow's stage and gates.
 
-#### Scenario: Stage and gates
-- GIVEN a project with stage `plan` and gate `requirement_confirmed` satisfied
+#### Scenario: Workspace and team
+- GIVEN a project with a workspace of 8 repos, one of them frozen, and team mode on with host `github`
+- WHEN the Projects page loads and the user chooses "Show repos"
+- THEN the card shows "workspace · 8 repos" and "team · github", then the 8 repos with the frozen one marked
+
+#### Scenario: Health alert
+- GIVEN a project with `decision` `hold`, the warning "event log unreadable" and one review waiver for `t-1`
 - WHEN the Projects page loads
-- THEN the project's card shows `plan` and a chip naming `requirement_confirmed` as satisfied
+- THEN the card shows an alert with "hold" and the warning, and "1 review waiver" naming `t-1`
+
+#### Scenario: Plain project
+- GIVEN a project without workspace, team, warnings or waivers and the default workflow at stage `discuss`
+- WHEN the Projects page loads
+- THEN the card shows none of these and no default-workflow stage or gate chips
 
 ### REQ-UI-004: Beads summary display
-The Projects page SHALL show, for each project with `beads` data, the counts open, in progress, blocked and ready, the count `prep` as "prep <n>" when it is above 0, and the active epics as `id` and `title`, or a "no active epics" note when the list is empty.
+The Projects page SHALL show, for each project with `beads` data, the counts open, in progress, blocked and ready, the count `prep` as "prep <n>" when it is above 0, and the active epics as `id` and `title`, each epic in progress with its `workflow.stage` and, when its `warnings` or `review_waivers` are not empty, a warning mark with their count whose details show on hover and focus, an epic whose `workflow` is an error with "stage unknown" and the error as its details, and a ready epic with "ready", or a "no active epics" note when the list is empty.
 
 #### Scenario: Counts and epics
 - GIVEN a project with the counts 3, 1, 0, 2 and one active epic
@@ -45,6 +55,11 @@ The Projects page SHALL show, for each project with `beads` data, the counts ope
 - GIVEN a project with the counts 3, 1, 0, 2 and `prep` 2, and a project with `prep` 0
 - WHEN the Projects page loads
 - THEN the first card shows the four counts and "prep 2", and the second card shows no prep count
+
+#### Scenario: Stage per epic
+- GIVEN in_progress epic `e-1` at stage `execute` with one review waiver, and ready epic `e-2`
+- WHEN the Projects page loads
+- THEN `e-1` shows `execute` and a warning mark "1", and `e-2` shows "ready"
 
 ### REQ-UI-005: Project links
 The Projects page SHALL link each project name to that project's Beads page `/beads?project=<name>` inside the console, in the same tab and without an external address, and SHALL link each active epic to the bead page `/beads/<project>/<id>`.
