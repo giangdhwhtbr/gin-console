@@ -1,6 +1,6 @@
 # TC-UI-106: Details panel
 
-- **REQ:** REQ-UI-106@0ef18c76
+- **REQ:** REQ-UI-106@3747fc19
 - **Priority:** medium
 
 **Preconditions:**
