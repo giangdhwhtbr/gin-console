@@ -490,7 +490,10 @@ describe("ListView", () => {
     render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
     const row = within(tree).getByRole("treeitem", { name: /Tech epic/ });
-    expect(within(row).getByText("Technical")).toHaveClass("shrink-0");
+    const badge = within(row).getByText("Technical").parentElement;
+    expect(badge).toHaveClass("min-w-0", "shrink");
+    expect(badge).not.toHaveClass("shrink-0");
+    expect(badge).toHaveAttribute("title", "Technical");
     const chip = within(row).getByText("medium · 3d");
     expect(chip.parentElement).toHaveClass("min-w-0", "shrink", "overflow-hidden");
     expect(within(row).getByText("Tech epic").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
