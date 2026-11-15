@@ -443,7 +443,7 @@ IF a request for the list or a bead fails, THEN the page SHALL show the error an
 - THEN an error and a retry button are shown, not a blank page
 
 ### REQ-UI-030: Views
-The Beads page SHALL offer the views List, Board and Focus kept in the URL as `view` (`list` when absent or unknown), SHALL load the beads once for all three views with the project, search, filters and "Show closed" of the list applying to each of them, and SHALL refresh them as in REQ-UI-027 without reloading the data when the view changes.
+The Beads page, and the Beads tab of a milestone page (REQ-MILESTONE-UI-018), SHALL offer the views List, Board, Focus and Graph (REQ-UI-106) kept in the URL as `view` (`list` when absent or unknown), SHALL load the beads once for all four views with the project, search, filters and "Show closed" of the list applying to each of them, and SHALL refresh them as in REQ-UI-027 without reloading the data when the view changes.
 
 #### Scenario: Switch keeps filters
 - GIVEN the List view with the filter status "open" and the search "fix"
@@ -460,10 +460,15 @@ The Beads page SHALL offer the views List, Board and Focus kept in the URL as `v
 - WHEN the page loads
 - THEN the List view is shown
 
-#### Scenario: Old Tree and Graph links
-- GIVEN the URL has `?project=a&view=tree` or `?project=a&view=graph&epic=e-1`
+#### Scenario: Old Tree link
+- GIVEN the URL has `?project=a&view=tree`
 - WHEN the page loads
-- THEN the List view is shown and there is no Tree or Graph tab
+- THEN the List view is shown and there is no Tree tab
+
+#### Scenario: Old Graph link
+- GIVEN the URL has `?project=a&view=graph&epic=e-1`
+- WHEN the page loads
+- THEN the Graph view is shown and `epic` is ignored
 
 ### REQ-UI-031: Board columns
 The Board view SHALL show the columns Backlog (status `deferred`), Ready (`ready`), In Progress (status `in_progress` or `hooked`), Blocked (`blocked`) and Done (status `closed`), each with its number of beads, SHALL put a bead in the first of those columns that fits, SHALL leave out of the Board any bead that fits none, SHALL order a column by priority and then by last update, newest first, and SHALL show each bead as a card as REQ-UI-065 describes.
@@ -1196,7 +1201,7 @@ The discussion SHALL show each comment as a block of its own with a border, with
 - THEN the text wraps inside its block and the page does not scroll sideways
 
 ### REQ-UI-072: Breadcrumb
-WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of the link "Beads" followed by the name of the view of the remembered place (REQ-UI-073) and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, "· N filters" where N counts them, all as one link to the remembered place, then the parent of the bead as a link to its page when it has one, then the id of the bead marked `aria-current="page"`, or, on a Dependencies page, after the link to the remembered place, "Dependencies" as a link to the project page, then every ancestor of the scope bead from the top as a link to its Dependencies page, then the id of the scope bead, with the last item marked `aria-current="page"`, and under 640px SHALL show only the first link.
+WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of the link "Beads", or the milestone id when the remembered place is the Beads tab of a milestone page, followed by the name of the view of the remembered place (REQ-UI-073) and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, "· N filters" where N counts them, all as one link to the remembered place, then the parent of the bead as a link to its page when it has one, then the id of the bead marked `aria-current="page"`, or, on a Dependencies page, after the link to the remembered place, "Dependencies" as a link to the project page, then every ancestor of the scope bead from the top as a link to its Dependencies page, then the id of the scope bead, with the last item marked `aria-current="page"`, and under 640px SHALL show only the first link.
 
 #### Scenario: Place and filters
 - GIVEN the Beads page was last at `?project=a&view=board&status=open&q=fix`
@@ -1218,8 +1223,13 @@ WHEN a bead is shown as a page, not as the details panel of another view, the be
 - WHEN the panel is shown
 - THEN it has no breadcrumb and keeps its "Open page" link
 
+#### Scenario: From a milestone page
+- GIVEN the Beads tab of milestone `m2` of project `a` was last at `?tab=beads&view=board&status=open`
+- WHEN the bead page of `a-1` is shown
+- THEN the breadcrumb reads "m2 › Board · 1 filter" then `a-1`, and the first link goes to `/milestones/a/m2?tab=beads&view=board&status=open`
+
 ### REQ-UI-073: Remembered place
-The Beads page SHALL remember its URL query for the current browser tab, SHALL use it for the first link of the breadcrumb when the remembered project is the project of the bead and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
+The Beads page and the Beads tab of a milestone page SHALL remember their path and URL query for the current browser tab, the one shown last replacing the other, SHALL use it for the first link of the breadcrumb when the remembered project is the project of the bead and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
 
 #### Scenario: Back to the Board with its filters
 - GIVEN the Board with the filter status "open" is shown
@@ -1245,6 +1255,11 @@ The Beads page SHALL remember its URL query for the current browser tab, SHALL u
 - GIVEN the browser throws when the place is stored
 - WHEN the user opens a bead and uses the breadcrumb
 - THEN the remembered place of this visit is used and no error is shown
+
+#### Scenario: Milestone page last
+- GIVEN the user opened the Beads page and then the Beads tab of milestone `m2` with the Graph view
+- WHEN the user opens a node's bead page and uses the first link of the breadcrumb
+- THEN the Graph view of the Beads tab of `m2` is shown
 
 ### REQ-UI-074: Remembered branches
 The List view SHALL remember for the current browser tab which branches of each project are open, SHALL open them again when the List is shown after another page, and SHALL ignore remembered ids that are not among the loaded beads.
@@ -1427,13 +1442,13 @@ WHEN the user double-clicks a node or presses "View dependencies" in the details
 - WHEN the user double-clicks it
 - THEN the page of `a` draws its blockers and the beads it blocks
 
-### REQ-UI-081: Project entry and Only linked
-The Beads page SHALL offer the link "Dependencies" next to the project picker to `/beads/<project>/graph`, and the Dependencies page of a scope with children SHALL offer a switch "Only linked", on at first on the project page and off at first on the page of a bead and not remembered, that leaves out the nodes without an arrow and shows "n without dependencies", and SHALL say "No dependencies between these beads" when it leaves out every node.
+### REQ-UI-081: Only linked
+The Beads page SHALL NOT offer a link "Dependencies" next to the project picker, its Graph view (REQ-UI-106) taking its place, and the Dependencies page of a scope with children SHALL offer a switch "Only linked", on at first on the project page and off at first on the page of a bead and not remembered, that leaves out the nodes without an arrow and shows "n without dependencies", and SHALL say "No dependencies between these beads" when it leaves out every node.
 
-#### Scenario: Entry
+#### Scenario: No separate entry
 - GIVEN the Beads page of project `p`
 - WHEN it is shown
-- THEN the link "Dependencies" goes to `/beads/p/graph`
+- THEN there is no link "Dependencies" next to the project picker and the views offer Graph
 
 #### Scenario: Only linked on the project page
 - GIVEN `r-1`→`r-2` and 5 other beads without a parent and without arrows
@@ -1891,7 +1906,7 @@ WHERE the `beads` object of a project in `GET /api/projects/beads` has `stale: t
 - THEN no note is shown
 
 ### REQ-UI-104: Beads milestone filter
-WHEN the Beads page loads a project, the frontend SHALL request `GET /api/beads/milestones?project=<name>` and SHALL offer a "Milestone" single-select in the bead filter bar, and in its mobile sheet (REQ-UI-084), listing "All", "No milestone", then the milestones grouped as Active (`active`), Planned (`scheduled` and `planned`, by `start`) and Closed (latest `end` first), kept in the URL as `milestone` (`all`, `none` or a milestone id). WHEN the URL has no `milestone`, the filter SHALL select `current`, or "All" when `current` is `null`. WHILE a milestone is selected, only the beads whose `milestone` is that id SHALL match; WHILE "No milestone" is selected, only the beads whose `milestone` is `null` SHALL match. WHILE a closed milestone is selected, closed beads SHALL be fetched and shown without "Show closed". The filter SHALL apply to the List, Board and Focus views. IF the milestones request fails, THEN the select SHALL say "Milestones unavailable" and the page SHALL behave as with "All".
+WHEN the Beads page loads a project, the frontend SHALL request `GET /api/beads/milestones?project=<name>` and SHALL offer a "Milestone" single-select in the bead filter bar, and in its mobile sheet (REQ-UI-084), listing "All", "No milestone", then the milestones grouped as Active (`active`), Planned (`scheduled` and `planned`, by `start`) and Closed (latest `end` first), kept in the URL as `milestone` (`all`, `none` or a milestone id). WHEN the URL has no `milestone`, the filter SHALL select `current`, or "All" when `current` is `null`. WHILE a milestone is selected, only the beads whose `milestone` is that id SHALL match; WHILE "No milestone" is selected, only the beads whose `milestone` is `null` SHALL match. WHILE a closed milestone is selected, closed beads SHALL be fetched and shown without "Show closed". The filter SHALL apply to the List, Board, Focus and Graph views. IF the milestones request fails, THEN the select SHALL say "Milestones unavailable" and the page SHALL behave as with "All".
 
 #### Scenario: Default to the current milestone
 - GIVEN project `alpha` whose current milestone is `m2`, with beads under `m2` and `m3` and a bead under no milestone
@@ -1939,3 +1954,46 @@ The My Tasks page SHALL offer a "Project" select with "All projects" (the defaul
 ## Use Cases
 - [Filter beads by milestone](use-cases/filter-by-milestone.md)
 - [Browse a milestone's beads](use-cases/browse-milestone-beads.md)
+
+### REQ-UI-106: Graph view
+The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of the Dependencies page (REQ-UI-048 to REQ-UI-050, REQ-UI-079), the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as the List view does. WHEN a node with children is opened, the view SHALL set `scope` to its id and show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it. WHEN a node without children is opened, the frontend SHALL open its bead page. WHILE nothing matches, the view SHALL say "No beads match these filters".
+
+#### Scenario: Milestone scope
+- GIVEN milestone `m2` with epics `e1` and `e2`, `e2` blocked by `x` under milestone `m3`
+- WHEN the Beads page shows `milestone=m2&view=graph`
+- THEN `e1` and `e2` are drawn, `x` is drawn as an outside bead with an arrow to `e2`
+
+#### Scenario: Project scope
+- GIVEN milestone "All" is selected
+- WHEN the Graph view is shown
+- THEN the beads of the project without a parent are drawn, epics under a milestone included, and "Only linked" is on
+
+#### Scenario: Filters apply to the nodes
+- GIVEN epic `e1` with a task assigned to `bao` and epic `e2` with no bead assigned to `bao`
+- WHEN the assignee filter is `bao`
+- THEN `e1` is drawn and `e2` is not
+
+#### Scenario: Shared with the other views
+- GIVEN the List view with the search "pay"
+- WHEN the user chooses Graph
+- THEN the search "pay" still applies and no new request is made
+
+#### Scenario: Drill down and back
+- GIVEN the Graph view of milestone `m2`
+- WHEN the user opens epic `e1`, which has tasks
+- THEN the URL has `scope=e1`, the tasks of `e1` are drawn, and the breadcrumb `m2` › `e1` returns to the epics of `m2` when `m2` is chosen
+
+#### Scenario: Open a leaf
+- GIVEN the tasks of `e1` are drawn
+- WHEN the user opens task `e1.1`, which has no children
+- THEN the bead page of `e1.1` is shown
+
+#### Scenario: Details panel
+- GIVEN the Graph view
+- WHEN the user selects `e1`
+- THEN the URL has `select=e1` and the details panel shows `e1`
+
+#### Scenario: Nothing matches
+- GIVEN a search that matches no bead
+- WHEN the Graph view is shown
+- THEN it says "No beads match these filters"

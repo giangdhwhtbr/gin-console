@@ -33,17 +33,17 @@ Source: `assets/2026-11-08/mockup/index.html#milestones`
 - WHEN the user opens Milestones for P
 - THEN M2 shows that error in place of its progress and warning count, and M1 is shown normally
 
-### REQ-MILESTONE-UI-002: Milestone Graph tab
-gin-console SHALL show, on a milestone's page, a Graph tab with the milestone's epics and their dependency edges, marking dependencies outside the milestone as external.
+### REQ-MILESTONE-UI-002: Milestone graph
+gin-console SHALL show, on a milestone's page, in the Graph view of the Beads tab (REQ-MILESTONE-UI-018, REQ-UI-106), the milestone's epics and their dependency edges, marking dependencies outside the milestone as external.
 
 #### Scenario: graph
 - GIVEN milestone M1 with epics A and B, B depending on A
-- WHEN the user opens the Graph tab of M1
+- WHEN the user opens the Graph view of the Beads tab of M1
 - THEN A and B are shown with an edge from A to B
 
 #### Scenario: dependency outside the milestone
 - GIVEN epic A in M1 depending on epic X in M2
-- WHEN the user opens the Graph tab of M1
+- WHEN the user opens the Graph view of the Beads tab of M1
 - THEN X is shown as an external node with an edge to A
 
 ### REQ-MILESTONE-UI-003: Milestone Gantt tab
@@ -377,3 +377,31 @@ Source: `assets/2026-11-08/mockup/index.html#milestone`
 - GIVEN milestone M1 whose `show` output has no `lanes` key
 - WHEN the user opens M1
 - THEN the header shows no lane count and the rest of the header is unchanged
+
+### REQ-MILESTONE-UI-018: Beads tab on the milestone page
+The milestone page SHALL offer the tabs Gantt and Beads, kept in the URL as `tab` (`gantt` when absent or unknown, `beads`), and SHALL treat `tab=graph` as `tab=beads` with `view=graph`. WHILE the Beads tab is shown, the page SHALL show the Beads views (REQ-UI-030) of the milestone's project with the Milestone filter fixed to this milestone and no Milestone select, SHALL keep their search, filters, view, selection and graph scope in the milestone page's URL with the names the Beads page uses, and SHALL fetch closed beads without "Show closed" WHILE the milestone is closed. WHEN the user changes tab, the page SHALL keep only `start` and `zoom` of the query besides `tab`.
+
+#### Scenario: Beads tab
+- GIVEN milestone `m2` of project `p` with epics `e1` and `e2` and a bead `x` under milestone `m3`
+- WHEN the user opens `/milestones/p/m2?tab=beads`
+- THEN the List view shows `e1` and `e2` and not `x`, and there is no Milestone select
+
+#### Scenario: View and filters in the URL
+- GIVEN the Beads tab of `m2`
+- WHEN the user chooses Board and the status "open"
+- THEN the URL is `/milestones/p/m2?tab=beads&view=board&status=open` and reloading it shows the same Board and filter
+
+#### Scenario: Changing tab
+- GIVEN `/milestones/p/m2?tab=beads&view=board&status=open&start=2026-11-10&zoom=2w`
+- WHEN the user chooses Gantt and then Beads
+- THEN the URL is `/milestones/p/m2?start=2026-11-10&zoom=2w` and then `/milestones/p/m2?tab=beads&start=2026-11-10&zoom=2w`, and the List view shows no filter
+
+#### Scenario: Old Graph link
+- GIVEN a link to `/milestones/p/m2?tab=graph`
+- WHEN it is opened
+- THEN the Beads tab is shown on the Graph view
+
+#### Scenario: Closed milestone
+- GIVEN closed milestone `m1` whose beads are all closed
+- WHEN the user opens its Beads tab with "Show closed" off
+- THEN the closed beads of `m1` are shown
