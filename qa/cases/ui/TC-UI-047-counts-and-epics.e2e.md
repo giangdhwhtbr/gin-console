@@ -1,6 +1,6 @@
 # TC-UI-047: Counts and epics
 
-- **REQ:** REQ-UI-004@fc5b08bf
+- **REQ:** REQ-UI-004@825967e7
 - **Priority:** high
 
 **Preconditions:**

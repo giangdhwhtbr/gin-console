@@ -1,6 +1,6 @@
 # TC-SERVER-011: Prep tasks counted apart
 
-- **REQ:** REQ-SERVER-006@a80c9bc6
+- **REQ:** REQ-SERVER-006@a9789995
 - **Priority:** high
 
 **Preconditions:**
