@@ -2,7 +2,8 @@ import { Ban, Check, ChevronLeft, ChevronRight, Circle, CircleDot, Clock, FileCh
 import { useId, useLayoutEffect, useRef, useState, type RefObject, type UIEvent } from "react";
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
-import type { BeadSummary } from "@/features/beads/api";
+import type { BeadKind, BeadSummary } from "@/features/beads/api";
+import { KindBadge } from "@/features/beads/KindBadge";
 import { childCounts, isPrep, prepLabel } from "@/features/beads/prep";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
@@ -64,6 +65,7 @@ const ZOOMS = [
 ] as const;
 const DEFAULT_WIDTH = 960; // until the first measure, and in tests, which have no layout
 const TAIL_ROOM = 90;
+const NO_KINDS: ReadonlyMap<string, BeadKind> = new Map();
 
 type Props = {
   project: string;
@@ -72,6 +74,7 @@ type Props = {
   zoom: Zoom;
   onZoom: (zoom: Zoom) => void;
   childBeads: ReadonlyMap<string, readonly BeadSummary[]>;
+  kinds?: ReadonlyMap<string, BeadKind>;
 };
 
 /** REQ-MILESTONE-UI-003 and -011 to -015: each epic as beads on a thread, one bead per working day, zoomed to fit the width. */
@@ -102,7 +105,7 @@ function useWidth(ref: RefObject<HTMLElement | null>) {
   return width;
 }
 
-function Chart({ project, plan, preview, zoom, onZoom, childBeads }: Props) {
+function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KINDS }: Props) {
   const wide = useWide();
   const label = wide ? 300 : 168;
   const scroller = useRef<HTMLDivElement>(null);
@@ -228,6 +231,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads }: Props) {
                     today={plan.today}
                     integration={plan.integration}
                     kids={childBeads.get(row.epic.id) ?? []}
+                    kind={kinds.get(row.epic.id) ?? null}
                     open={expanded.has(row.epic.id)}
                     faded={faded(row.epic.id)}
                     onToggle={() => toggle(row.epic.id)}
@@ -349,6 +353,7 @@ function EpicRow({
   today,
   integration,
   kids,
+  kind,
   open,
   faded,
   onToggle,
@@ -361,6 +366,7 @@ function EpicRow({
   today: string;
   integration: string | null;
   kids: readonly BeadSummary[];
+  kind: BeadKind | null;
   open: boolean;
   faded: boolean;
   onToggle: () => void;
@@ -402,6 +408,7 @@ function EpicRow({
             <span title={epic.title} className="min-w-0 truncate font-medium">
               {epic.title}
             </span>
+            <KindBadge kind={kind} />
           </span>
           {/* below lg the items keep their size and wrap; from lg only the id shrinks, but keeps 64 px, so its link stays reachable */}
           <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 whitespace-nowrap pl-[26px] text-xs text-muted-foreground lg:flex-nowrap">

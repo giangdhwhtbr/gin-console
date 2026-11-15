@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import type { BeadSummary } from "@/features/beads/api";
+import type { BeadKind, BeadSummary } from "@/features/beads/api";
 import { useBeads } from "@/features/beads/useBeads";
 import type { MilestoneDetail } from "./api";
 import { CopyCommand } from "./CopyCommand";
@@ -35,6 +35,11 @@ export function GanttTab({
 }) {
   const { state: beads } = useBeads(project, true);
   const childBeads = useMemo(() => (beads.status === "ok" ? childrenOf(beads.beads) : NO_CHILDREN), [beads]);
+  const kinds = useMemo(() => {
+    const map = new Map<string, BeadKind>();
+    if (beads.status === "ok") for (const b of beads.beads) if (b.kind !== null) map.set(b.id, b.kind);
+    return map;
+  }, [beads]);
   const pickable = plan.status === "planned" || plan.status === "scheduled";
   const previewing = pickable && start !== null;
   const failed = previewing && preview.status === "error";
@@ -74,7 +79,7 @@ export function GanttTab({
           Loading preview…
         </p>
       ) : (
-        <GanttChart project={project} plan={shown} preview={previewing} zoom={zoom} onZoom={onZoom} childBeads={childBeads} />
+        <GanttChart project={project} plan={shown} preview={previewing} zoom={zoom} onZoom={onZoom} childBeads={childBeads} kinds={kinds} />
       )}
     </div>
   );

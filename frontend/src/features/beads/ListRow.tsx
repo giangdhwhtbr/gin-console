@@ -4,6 +4,8 @@ import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CountBadge } from "./CountBadge";
+import { estimateText } from "./estimate";
+import { KindBadge } from "./KindBadge";
 import { isPrep, prepLabel } from "./prep";
 import { PrepChip } from "./PrepChip";
 import { StateMark } from "./StateMark";
@@ -35,6 +37,7 @@ export function ListRow({
 }) {
   const { bead } = row;
   const short = shortId(bead.id);
+  const sizeText = [bead.complexity, estimateText(bead.estimate_minutes)].filter(Boolean).join(" · ");
   return (
     <li
       role="treeitem"
@@ -73,6 +76,7 @@ export function ListRow({
         <span className="min-w-32 flex-1 truncate font-medium" title={bead.title} onClick={(event) => event.stopPropagation()}>
           <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
         </span>
+        <KindBadge kind={bead.kind} />
         {isPrep(bead.labels) && <PrepChip />}
         <div className="hidden min-w-0 shrink items-center gap-2 overflow-hidden @xl:flex">
           {bead.issue_type === "epic" && row.counts.tracks > 0 && (
@@ -88,6 +92,9 @@ export function ListRow({
           )}
           {bead.issue_type === "epic" && prepLabel(row.counts) !== null && (
             <span className="hidden shrink-0 text-xs text-muted-foreground @xl:inline">{prepLabel(row.counts)}</span>
+          )}
+          {bead.issue_type === "epic" && sizeText !== "" && (
+            <span className="hidden shrink-0 text-xs text-muted-foreground @xl:inline">{sizeText}</span>
           )}
           <span className="hidden shrink-0 items-center gap-1 @3xl:flex">
             {bead.labels.slice(0, 3).map((label) => (

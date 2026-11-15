@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { CountBadge } from "./CountBadge";
 import { stateOf } from "./graph";
+import { KindBadge } from "./KindBadge";
 import { StateMark, stateEdge } from "./StateMark";
 import { TypeBadge } from "./TypeBadge";
 
@@ -24,6 +25,7 @@ export function BeadCard({ project, bead }: { project: string; bead: BeadSummary
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <StateMark bead={bead} />
         <TypeBadge type={bead.issue_type} />
+        <KindBadge kind={bead.kind} />
         <CountBadge kind="comments" count={bead.comment_count} />
         <CountBadge kind="dependencies" count={bead.dependency_count} />
         {(bead.assignee ?? bead.owner ?? "") !== "" && (
