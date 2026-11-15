@@ -27,11 +27,11 @@ Dates are relative to the anchor date (today by default), so the charts always s
 | Members | `ann`, `bao`, `chi`, `dung`, a long email assignee (see Long text), and unassigned beads |
 | Milestone closed late | `ex-m1` "Onboarding revamp", epics `ex-e1` and `ex-e2`, every child closed, up to the milestone's close date, which is after its end date |
 | Active milestone | `ex-m2` "Checkout v2" |
-| Epic split into tasks | `ex-e3` (closed, in progress, blocked and open tasks, a `blocks` dependency, a `discovered-from` bug, comments), `ex-e4` (tasks and a closed prep task) |
+| Epic split into tasks | `ex-e3` (closed, in progress, blocked and open tasks, a `blocks` dependency, a `discovered-from` bug, comments; a `Capabilities:` and a `Complexity:` line; tracks labelled `req:REQ-CHECKOUT-00<n>`), `ex-e4` (tracks labelled `req:REQ-UI-00<n>` and a closed prep task) |
 | Epics not split into tasks | `ex-e5`, `ex-e6` (open) and `ex-e7` (in progress), each assigned to a member |
-| Epic with only prep tasks | `ex-e8` (an open `prep:mockup` and a closed `prep:spike`) |
+| Epic with only prep tasks | `ex-e8`, a `kind:technical` epic (an open `prep:mockup` and a closed `prep:spike`) |
 | Planned milestone | `ex-m3` "Mobile parity", epics `ex-e9` (unassigned open tasks) and `ex-e10` (no tasks) |
-| Outside any milestone | epic `ex-e11` (tasks including a deferred one), chore `ex-t1`, bug `ex-t2` |
+| Outside any milestone | `kind:parity` epic `ex-e11` (tasks including a deferred one), chore `ex-t1`, bug `ex-t2` |
 | Usage | every closed child bead, except the spike in `ex-e8`, has a version 1 `ai_usage` with tokens, cost, and some reopens and bugs |
 | Planned milestone with a long title | `ex-m4` "Platform hardening: …", after `ex-m3`, no epics |
 | Long text | epic `ex-payments-provider-migration-and-reconciliation-2026` in `ex-m2`: a long title, a long email assignee, five long labels, a description with a wide table, a code block and long URLs; tasks with an unbroken CamelCase token, a Vietnamese title, a URL, a very long title and a two-letter title; a long-titled prep task; a comment with a stack trace; tasks nested three levels deep (`….2.1.1`) |

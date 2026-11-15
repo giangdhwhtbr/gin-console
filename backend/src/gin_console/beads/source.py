@@ -11,6 +11,12 @@ from typing import Any
 from pydantic import ValidationError
 
 from gin_console.beads.errors import BeadNotFound, BeadsError
+from gin_console.beads.kinds import (
+    complexity_of,
+    declared_capabilities,
+    kind_of,
+    req_capabilities,
+)
 from gin_console.beads.milestones import (
     MilestoneStatus,
     current_milestone,
@@ -100,13 +106,48 @@ def _own_deps(row: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def _labels(row: dict[str, Any]) -> list[str]:
+    labels = row.get("labels")
+    return [label for label in labels if isinstance(label, str)] if isinstance(labels, list) else []
+
+
+def _description(row: dict[str, Any]) -> str:
+    text = row.get("description")
+    return text if isinstance(text, str) else ""
+
+
+def _capabilities(snapshot: Snapshot, ident: str) -> list[str]:
+    """Declared and `req:` capabilities of a bead; an epic adds those of its children."""
+    raw = snapshot.rows[ident]
+    names = [*declared_capabilities(_description(raw)), *req_capabilities(_labels(raw))]
+    if raw.get("issue_type") == "epic":
+        for child, kind in snapshot.dependents.get(ident, []):
+            if kind == "parent-child" and child in snapshot.rows:
+                names += req_capabilities(_labels(snapshot.rows[child]))
+    return sorted(set(names))
+
+
+def _estimate(raw: dict[str, Any]) -> int | None:
+    minutes = raw.get("estimated_minutes")
+    return (
+        minutes
+        if isinstance(minutes, int) and not isinstance(minutes, bool) and minutes > 0
+        else None
+    )
+
+
 def _fields(snapshot: Snapshot, ident: str) -> dict[str, Any]:
     raw = snapshot.rows[ident]
+    issue_type = raw.get("issue_type")
     return {
         **{k: raw[k] for k in _SUMMARY_KEYS if k in raw},
         "parent": snapshot.parents.get(ident),
         "blocked_by": _blocked_by(raw),
         "milestone": milestone_of(snapshot, ident),
+        "kind": kind_of(issue_type if isinstance(issue_type, str) else "", _labels(raw)),
+        "capabilities": _capabilities(snapshot, ident),
+        "complexity": complexity_of(_description(raw)),
+        "estimate_minutes": _estimate(raw),
         # a milestone is not work, even when nothing blocks it (REQ-MILESTONE-UI-007)
         "ready": ident in snapshot.ready and raw.get("issue_type") != "milestone",
         "blocked": ident in snapshot.blocked or raw.get("status") == "blocked",

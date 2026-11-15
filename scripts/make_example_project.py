@@ -303,11 +303,18 @@ def build(today: date, seed: int = 7) -> list[Row]:
         labels=["sprint:s15"],
         assignee="bao",
         started_at=stamp(m2_start),
+        description=(
+            "Sample epic for the gin-console example project.\n"
+            "Capabilities: checkout, ui\n"
+            "Complexity: medium (payment and address forms)"
+        ),
     )
     statuses = ["closed"] * 5 + ["in_progress"] * 2 + ["blocked", "open", "open"]
     tasks3 = [
-        p.task(e3["id"], t, s, start=m2_start, end=today)
-        for t, s in zip(p.rng.sample(TITLES, len(statuses)), statuses, strict=True)
+        p.task(e3["id"], t, s, start=m2_start, end=today, labels=[f"req:REQ-CHECKOUT-00{n}"])
+        for n, (t, s) in enumerate(
+            zip(p.rng.sample(TITLES, len(statuses)), statuses, strict=True), 1
+        )
     ]
     blocker = next(t for t in tasks3 if t["status"] == "open")
     blocked = next(t for t in tasks3 if t["status"] == "blocked")
@@ -353,10 +360,15 @@ def build(today: date, seed: int = 7) -> list[Row]:
         assignee="chi",
         started_at=stamp(m2_start),
     )
-    for t, s in zip(
-        p.rng.sample(TITLES, 5), ["closed", "closed", "in_progress", "open", "open"], strict=True
+    for n, (t, s) in enumerate(
+        zip(
+            p.rng.sample(TITLES, 5),
+            ["closed", "closed", "in_progress", "open", "open"],
+            strict=True,
+        ),
+        1,
     ):
-        p.task(e4["id"], t, s, start=m2_start, end=today)
+        p.task(e4["id"], t, s, start=m2_start, end=today, labels=[f"req:REQ-UI-00{n}"])
     p.task(
         e4["id"],
         "Capture the legacy address form",
@@ -388,7 +400,14 @@ def build(today: date, seed: int = 7) -> list[Row]:
     )
 
     # An epic whose only children are prep tasks.
-    e8 = epic("e8", "Loyalty points", "m2", today - timedelta(days=7), assignee="bao")
+    e8 = epic(
+        "e8",
+        "Loyalty points",
+        "m2",
+        today - timedelta(days=7),
+        assignee="bao",
+        labels=["kind:technical"],
+    )
     p.task(
         e8["id"],
         "Mockup the points widget",
@@ -421,6 +440,7 @@ def build(today: date, seed: int = 7) -> list[Row]:
         "Tech debt",
         None,
         today - timedelta(days=30),
+        labels=["kind:parity"],
         status="in_progress",
         started_at=stamp(today - timedelta(days=20)),
     )
@@ -649,6 +669,14 @@ def check(out: Path, rows: list[Row]) -> list[str]:
         problems.append(f"unexpected bead kinds: {dict(kinds)}")
     if not any("prep" in (r.get("labels") or []) for r in exported):
         problems.append("no prep task")
+    epic_labels = [r.get("labels") or [] for r in exported if r["issue_type"] == "epic"]
+    for kind in ("technical", "parity"):
+        if not any(f"kind:{kind}" in labels for labels in epic_labels):
+            problems.append(f"no {kind} epic")
+    if not any("Capabilities:" in (r.get("description") or "") for r in exported):
+        problems.append("no Capabilities: line")
+    if not any(label.startswith("req:") for r in exported for label in (r.get("labels") or [])):
+        problems.append("no req: label")
     if shutil.which("gin"):
         listed = subprocess.run(
             ["gin", "milestone", "list", "--all", "--json"],
