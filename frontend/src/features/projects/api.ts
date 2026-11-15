@@ -11,6 +11,8 @@ export type Beads = {
   in_progress: number;
   blocked: number;
   ready: number;
+  /** open prep tasks; absent from an older backend: read as 0 */
+  prep?: number;
   epics: { id: string; title: string }[];
   stale?: boolean;
 };

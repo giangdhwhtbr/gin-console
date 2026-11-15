@@ -25,6 +25,7 @@ function BeadsBlock({ beads, projectName }: { beads: Beads; projectName: string 
     ["blocked", beads.blocked],
     ["ready", beads.ready],
   ];
+  if ((beads.prep ?? 0) > 0) counts.push(["prep", beads.prep ?? 0]);
   return (
     <div className="flex flex-col gap-2 text-sm">
       <div className="flex flex-wrap gap-3">

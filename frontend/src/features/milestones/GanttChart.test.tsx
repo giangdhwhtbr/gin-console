@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MilestoneDetail } from "./api";
 import { GanttChart } from "./GanttChart";
 import type { Zoom } from "./gantt";
+import { bead } from "@/features/beads/beadFixtures";
+import type { BeadSummary } from "@/features/beads/api";
 import { detail, epicPlan } from "./milestoneFixtures";
 
 afterEach(cleanup);
@@ -20,7 +22,29 @@ const MONTH = detail([epicPlan("e-a", { planned_start: "2026-11-02", planned_end
   finish: "2026-11-27",
 });
 
+const drawKids = (kids: Record<string, BeadSummary[]>) =>
+  render(<GanttChart project="alpha" plan={detail([epicPlan("e-a"), epicPlan("e-b")])} preview={false} zoom="all" onZoom={vi.fn()} childBeads={new Map(Object.entries(kids))} />);
+const track = (id: string, status = "open") => bead(id, { parent: "e-a", status, labels: ["track:1"] });
+const prep = (id: string, status = "open") => bead(id, { parent: "e-a", status, labels: ["prep"] });
+
 describe("GanttChart", () => {
+  it("REQ-MILESTONE-UI-015 tracks and prep counted apart; prep rows carry a Prep chip", async () => {
+    drawKids({ "e-a": [track("e-a.1", "closed"), track("e-a.2"), prep("e-a.3", "closed"), prep("e-a.4")] });
+    expect(epicRow("e-a")).toHaveTextContent("1/2 closed");
+    expect(epicRow("e-a")).toHaveTextContent("Prep 1/2");
+    await userEvent.click(screen.getByRole("button", { name: /child beads of e-a/ }));
+    const rows = [...document.querySelectorAll<HTMLElement>("[data-child]")];
+    expect(rows.map((r) => r.dataset.child)).toEqual(["e-a.1", "e-a.2", "e-a.3", "e-a.4"]);
+    expect(rows.map((r) => r.textContent?.includes("Prep"))).toEqual([false, false, true, true]);
+  });
+
+  it("REQ-MILESTONE-UI-015 an epic with only prep tasks: expand button, Prep x/y, no closed count", () => {
+    drawKids({ "e-a": [prep("e-a.1", "closed"), prep("e-a.2")] });
+    expect(screen.getByRole("button", { name: /child beads of e-a/ })).toBeInTheDocument();
+    expect(epicRow("e-a")).toHaveTextContent("Prep 1/2");
+    expect(epicRow("e-a")).not.toHaveTextContent("closed");
+  });
+
   it("REQ-MILESTONE-UI-003 the epic row shows spec readiness: confirmed, missing, or nothing when unknown", () => {
     draw(detail([epicPlan("e-a", { spec_confirmed: true }), epicPlan("e-b", { spec_confirmed: false }), epicPlan("e-c")]));
     expect(epicRow("e-a")).toHaveTextContent("Spec confirmed");
