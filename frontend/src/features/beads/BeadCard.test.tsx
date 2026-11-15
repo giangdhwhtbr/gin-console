@@ -54,4 +54,12 @@ describe("BeadCard", () => {
     card(bead("a-4", { assignee: null, owner: "bob" }));
     expect(screen.getByText("bob")).toBeInTheDocument();
   });
+
+  it("REQ-UI-109 shows the kind badge of a technical epic and none for a capability epic", () => {
+    card(bead("e-1", { issue_type: "epic", kind: "technical" }));
+    expect(screen.getByText("Technical")).toBeInTheDocument();
+    cleanup();
+    card(bead("e-2", { issue_type: "epic", kind: "capability" }));
+    expect(screen.queryByText(/Technical|Parity/)).toBeNull();
+  });
 });

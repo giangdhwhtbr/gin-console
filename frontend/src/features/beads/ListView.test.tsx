@@ -478,4 +478,32 @@ describe("ListView", () => {
     expect(within(row).getByText("alice")).toHaveClass("hidden", "@4xl:block");
     expect(within(row).getByRole("link", { name: "Task One" }).closest("div")).toHaveClass("overflow-hidden");
   });
+
+  it("REQ-UI-109 Technical epic: the row shows the kind badge and the complexity and estimate chip", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() =>
+      json([
+        bead("e-1", { issue_type: "epic", title: "Tech epic", kind: "technical", capabilities: ["beads", "ui"], complexity: "medium", estimate_minutes: 1440 }),
+        bead("e-3", { issue_type: "epic", title: "Sized epic", complexity: "high" }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const tree = await screen.findByRole("tree");
+    const row = within(tree).getByRole("treeitem", { name: /Tech epic/ });
+    expect(within(row).getByText("Technical")).toHaveClass("shrink-0");
+    const chip = within(row).getByText("medium · 3d");
+    expect(chip.parentElement).toHaveClass("min-w-0", "shrink", "overflow-hidden");
+    expect(within(row).getByText("Tech epic").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
+    expect(within(within(tree).getByRole("treeitem", { name: /Sized epic/ })).getByText("high")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-109 Capability epic: no kind badge and no estimate", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() => json([bead("e-2", { issue_type: "epic", title: "Cap epic", kind: "capability" })]));
+    render(<BeadsPage />);
+    const row = within(await screen.findByRole("tree")).getByRole("treeitem", { name: /Cap epic/ });
+    expect(row).not.toHaveTextContent(/Technical|Parity/);
+    expect(row).not.toHaveTextContent(/\d+(\.\d)?d\b/);
+    expect(row).not.toHaveTextContent("·");
+  });
 });

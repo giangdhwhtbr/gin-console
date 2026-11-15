@@ -555,4 +555,27 @@ describe("BeadDetailPage", () => {
     await screen.findByText("Title e-1");
     expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();
   });
+
+  it("REQ-UI-109 Technical epic: the page shows the badge, the capability chips and the estimate", async () => {
+    stubFetch(beadDetail("e-1", { issue_type: "epic", kind: "technical", capabilities: ["beads", "ui"], estimate_minutes: 1440 }));
+    render(<BeadDetailPage project="alpha" id="e-1" />);
+    expect(await screen.findByText("Technical")).toBeInTheDocument();
+    const caps = screen.getByRole("list", { name: "Capabilities" });
+    expect(within(caps).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["beads", "ui"]);
+    expect(screen.getByText(/Estimate 3d/)).toBeInTheDocument();
+  });
+
+  it("REQ-UI-109 Partial day: 240 minutes shows Estimate 0.5d", async () => {
+    stubFetch(beadDetail("a-5", { estimate_minutes: 240 }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByText(/Estimate 0\.5d/)).toBeInTheDocument();
+  });
+
+  it("REQ-UI-109 without kind, capabilities or estimate the page shows none of them", async () => {
+    stubFetch(beadDetail("a-5"));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    await screen.findByText("A description");
+    expect(screen.queryByRole("list", { name: "Capabilities" })).toBeNull();
+    expect(screen.queryByText(/Estimate|Technical|Parity/)).toBeNull();
+  });
 });

@@ -216,4 +216,20 @@ describe("GanttChart", () => {
     expect(epicRow("A")).toHaveAttribute("data-faded", "true");
     expect(arrow("A", "B")).toHaveAttribute("data-state", "faded");
   });
+
+  it("REQ-UI-109 the epic label shows the Technical badge when its bead has that kind", () => {
+    render(
+      <GanttChart
+        project="alpha"
+        plan={detail([epicPlan("e-a"), epicPlan("e-b")])}
+        preview={false}
+        zoom="all"
+        onZoom={vi.fn()}
+        childBeads={new Map()}
+        kinds={new Map([["e-a", "technical"]])}
+      />,
+    );
+    expect(within(epicRow("e-a")).getByText("Technical")).toBeInTheDocument();
+    expect(epicRow("e-b")).not.toHaveTextContent("Technical");
+  });
 });

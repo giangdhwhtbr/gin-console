@@ -9,7 +9,9 @@ import { BeadNotFoundError, fetchBead, type BeadDetail } from "./api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
+import { estimateText } from "./estimate";
 import { graphPath } from "./graph";
+import { KindBadge } from "./KindBadge";
 import { MarkdownText } from "./MarkdownText";
 import { useDiscussionHidden } from "./discussion";
 import { RelationList } from "./RelationList";
@@ -76,6 +78,7 @@ export function BeadDetailPage({
   }
   const bead = state.status === "ok" ? state.bead : null;
   const complexity = bead?.issue_type === "epic" ? complexityOf(bead.description) : null;
+  const estimate = estimateText(bead?.estimate_minutes ?? null);
   const children = bead?.children ?? [];
   const counts = childCounts(children.map((c) => ({ labels: c.prep ? ["prep"] : [], status: c.status })));
   const closed = counts.closedTracks;
@@ -136,6 +139,7 @@ export function BeadDetailPage({
                     <Badge variant="secondary">{bead.status}</Badge>
                     <span>{`P${bead.priority}`}</span>
                     <TypeBadge type={bead.issue_type} />
+                    <KindBadge kind={bead.kind} />
                     {complexity !== null && (
                       <Badge variant="outline" className={cn(complexity === "high" ? "text-state-blocked" : "text-muted-foreground")}>
                         {`Complexity: ${complexity}`}
@@ -147,6 +151,15 @@ export function BeadDetailPage({
                       </Badge>
                     ))}
                   </div>
+                  {bead.capabilities.length > 0 && (
+                    <ul aria-label="Capabilities" className="flex flex-wrap items-center gap-2 text-sm">
+                      {bead.capabilities.map((cap) => (
+                        <li key={cap}>
+                          <Badge variant="outline">{cap}</Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   <div className="text-sm text-muted-foreground wrap-anywhere">
                     {[
                       bead.owner && `Owner ${bead.owner}`,
@@ -154,6 +167,7 @@ export function BeadDetailPage({
                       bead.created_by && `Created by ${bead.created_by}`,
                       `Created ${new Date(bead.created_at).toLocaleString()}`,
                       `Updated ${new Date(bead.updated_at).toLocaleString()}`,
+                      estimate !== null && `Estimate ${estimate}`,
                       `${bead.comment_count} comment${bead.comment_count === 1 ? "" : "s"}`,
                     ]
                       .filter(Boolean)
