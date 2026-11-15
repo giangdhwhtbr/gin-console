@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { navigate } from "@/app/route";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
-import { BeadDetailPage } from "./BeadDetailPage";
+import { DetailsPanel } from "./DetailsPanel";
 import type { BeadFilters } from "./filters";
 import { GraphCanvas } from "./GraphCanvas";
 import { ancestorsOf, hasChildren, keepWithAncestors, scopeGraph } from "./graph";
 import type { MilestoneInEffect } from "./milestoneChoice";
-import { SIDE_PANEL } from "./side-panel";
 
 const enc = encodeURIComponent;
 
@@ -40,8 +39,22 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
   const graph = scopeGraph(graphBeads, scopeId, { hideDone: false, onlyLinked, keep: keepWithAncestors(beads, matched) });
   const known = new Set(graph.nodes.map((n) => n.bead.id));
   const focus = scopeId ?? "";
-  const selected = filters.select !== "" && (known.has(filters.select) || filters.select === scopeId) ? filters.select : focus;
+  const asked = filters.select;
+  const selected =
+    asked === "none" ? "" : asked !== "" && (known.has(asked) || asked === scopeId) ? asked : focus;
   const tabStop = known.has(selected) ? selected : (graph.nodes[0]?.bead.id ?? "");
+  // closing returns focus to the node that was selected, or to the canvas tab stop when it is gone
+  const closed = useRef<string | null>(null);
+  useEffect(() => {
+    if (selected !== "" || closed.current === null) return;
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>("[data-node]"));
+    (nodes.find((el) => el.dataset.node === closed.current) ?? nodes.find((el) => el.tabIndex === 0))?.focus();
+    closed.current = null;
+  }, [selected]);
+  const close = () => {
+    closed.current = selected;
+    onChange({ ...filters, select: "none" });
+  };
   const to = (scope: string) => onChange({ ...filters, scope });
   // Milestone beads are never drawn outside their own scope, so the trail skips them; "" returns to the top item.
   const plain = beads.filter((b) => b.issue_type !== "milestone");
@@ -49,7 +62,7 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
   const top = milestone !== "all" && milestone !== "none" ? milestone : project;
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className={cn("grid gap-4", selected !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
       <div className="flex min-w-0 flex-col gap-3">
         <nav aria-label="Graph scope" className="flex flex-wrap items-center gap-2 text-sm">
           {[["", top], ...rest.map((id) => [id, id])].map(([id, label], i) => (
@@ -90,17 +103,11 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
                 ? onChange({ ...filters, scope: id, select: "" })
                 : navigate(`/beads/${enc(project)}/${enc(id)}`)
             }
-            onEscape={() => onChange({ ...filters, select: focus })}
+            onEscape={() => onChange({ ...filters, select: selected !== "" && selected !== focus ? focus || "none" : "none" })}
           />
         )}
       </div>
-      <aside aria-label="Bead details" tabIndex={0} className={cn("min-w-0 rounded border p-3", SIDE_PANEL)}>
-        {selected === "" ? (
-          <p className="text-muted-foreground">Select a bead to see its details</p>
-        ) : (
-          <BeadDetailPage key={`${project}/${selected}`} project={project} id={selected} embedded graphScope={scopeId} />
-        )}
-      </aside>
+      {selected !== "" && <DetailsPanel project={project} id={selected} graphScope={scopeId} onClose={close} />}
     </div>
   );
 }

@@ -1,14 +1,13 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { BeadDetailPage } from "./BeadDetailPage";
 import { Breadcrumb } from "./Breadcrumb";
+import { DetailsPanel } from "./DetailsPanel";
 import { GraphCanvas } from "./GraphCanvas";
 import { ancestorsOf, graphFor, graphPath, hasChildren, progressOf, relationsOf } from "./graph";
-import { SIDE_PANEL } from "./side-panel";
 import { useBeads } from "./useBeads";
 
 const enc = encodeURIComponent;
@@ -24,6 +23,22 @@ export function GraphPage({ project, id }: { project: string; id: string | null 
   const focus = id ?? "";
   const asked = new URLSearchParams(search).get("select") ?? "";
   const select = (next: string) => navigate(next === focus ? here : `${here}?select=${enc(next)}`, { replace: true });
+  // closing returns focus to the node that was selected, to the Scope button when that is the heading bar, else to the canvas tab stop
+  const closed = useRef<string | null>(null);
+  useEffect(() => {
+    if (asked !== "none" || closed.current === null) return;
+    const nodes = Array.from(document.querySelectorAll<HTMLElement>("[data-node]"));
+    (
+      nodes.find((el) => el.dataset.node === closed.current) ??
+      (closed.current === id ? document.querySelector<HTMLElement>('section[aria-label="Scope"] button[aria-pressed]') : null) ??
+      nodes.find((el) => el.tabIndex === 0)
+    )?.focus();
+    closed.current = null;
+  }, [asked, id]);
+  const close = (selected: string) => {
+    closed.current = selected;
+    select("none");
+  };
   const open = (next: string) => navigate(graphPath(project, next));
   const errorMessage = state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
 
@@ -33,7 +48,7 @@ export function GraphPage({ project, id }: { project: string; id: string | null 
     const container = id === null || hasChildren(beads, id);
     const graph = graphFor(beads, id, { hideDone, onlyLinked: container && onlyLinked });
     const known = new Set(graph.nodes.map((n) => n.bead.id));
-    const selected = asked !== "" && (known.has(asked) || asked === id) ? asked : focus;
+    const selected = asked === "none" ? "" : asked !== "" && (known.has(asked) || asked === id) ? asked : focus;
     const tabStop = known.has(selected) ? selected : (graph.nodes[0]?.bead.id ?? "");
     const inside = graph.nodes.filter((n) => !n.external).length;
     const progress = progressOf(beads).get(focus) ?? { done: 0, total: 0 };
@@ -49,7 +64,7 @@ export function GraphPage({ project, id }: { project: string; id: string | null 
       ));
 
     return (
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className={cn("grid gap-4", selected !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
         <div className="flex min-w-0 flex-col gap-3">
           {container && (
             <section
@@ -109,7 +124,7 @@ export function GraphPage({ project, id }: { project: string; id: string | null 
                 tabStop={tabStop}
                 onSelect={select}
                 onOpen={open}
-                onEscape={() => select(focus)}
+                onEscape={() => select(selected !== "" && selected !== focus ? focus || "none" : "none")}
               />
             </>
           )}
@@ -128,13 +143,7 @@ export function GraphPage({ project, id }: { project: string; id: string | null 
             </div>
           )}
         </div>
-        <aside aria-label="Bead details" tabIndex={0} className={cn("min-w-0 rounded border p-3", SIDE_PANEL)}>
-          {selected === "" ? (
-            <p className="text-muted-foreground">Select a bead to see its details</p>
-          ) : (
-            <BeadDetailPage key={`${project}/${selected}`} project={project} id={selected} embedded graphScope={id} />
-          )}
-        </aside>
+        {selected !== "" && <DetailsPanel project={project} id={selected} graphScope={id} onClose={() => close(selected)} />}
       </div>
     );
   };

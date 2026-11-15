@@ -129,4 +129,45 @@ describe("GraphView", () => {
     rerender({ ...props, milestone: "all" });
     expect(screen.getByRole("switch", { name: "Only linked" })).toBeChecked();
   });
+
+  it("REQ-UI-106 no panel on the project scope; a milestone scope shows its bead", () => {
+    view();
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect(screen.getByRole("switch", { name: "Only linked" }).closest(".grid")?.className).not.toContain("lg:grid-cols");
+    cleanup();
+    view({ milestone: "m2" });
+    const panel = screen.getByRole("complementary", { name: "Bead details" });
+    expect(panel.closest(".grid")?.className).toContain("lg:grid-cols");
+    expect(screen.queryByText("Select a bead to see its details")).toBeNull();
+  });
+
+  it("REQ-UI-051 close writes select=none and focus returns to the node", async () => {
+    const props = { project: "p", beads: all, matched: noMilestones, milestone: "m2", filters: parseFilters("?view=graph&select=e1"), onChange: vi.fn() };
+    stubBeads(() => json([]));
+    const { rerender } = render(<GraphView {...props} />);
+    await userEvent.click(screen.getByRole("button", { name: "Close details" }));
+    expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
+    rerender(<GraphView {...props} filters={{ ...props.filters, select: "none" }} />);
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect(node("e1")).toHaveFocus();
+  });
+
+  it("REQ-UI-052 Escape goes up to the scope bead, a second Escape closes", async () => {
+    const onChange = view({ milestone: "m2", filters: { select: "e1" } });
+    node("e1")!.focus();
+    await userEvent.keyboard("{Escape}");
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "m2" }));
+    cleanup();
+    const second = view({ milestone: "m2", filters: { select: "m2" } });
+    node("e1")!.focus();
+    await userEvent.keyboard("{Escape}");
+    expect(second).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
+  });
+
+  it("REQ-UI-052 Escape on the project scope closes", async () => {
+    const onChange = view({ filters: { select: "x" } });
+    node("x")!.focus();
+    await userEvent.keyboard("{Escape}");
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
+  });
 });
