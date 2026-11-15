@@ -1,9 +1,9 @@
 import { useMemo, useSyncExternalStore } from "react";
 
 export const RETURN_KEY = "gin-console-beads-return";
-export type Saved = { search: string; open: Record<string, string[]> };
+export type Saved = { path: string; search: string; open: Record<string, string[]> };
 
-const empty = (): Saved => ({ search: "", open: {} }); // a fresh object each time: callers may not share it
+const empty = (): Saved => ({ path: "/beads", search: "", open: {} }); // a fresh object each time: callers may not share it
 const listeners = new Set<() => void>();
 let memory: string | null = null; // what was set in this visit: wins over storage, which may refuse writes
 
@@ -29,9 +29,10 @@ function parse(text: string): Saved {
   try {
     const value: unknown = JSON.parse(text);
     if (typeof value !== "object" || value === null) return empty();
+    const path: unknown = Reflect.get(value, "path");
     const search: unknown = Reflect.get(value, "search");
     const open: unknown = Reflect.get(value, "open");
-    return typeof search === "string" && isLists(open) ? { search, open } : empty();
+    return typeof search === "string" && isLists(open) ? { path: typeof path === "string" ? path : "/beads", search, open } : empty();
   } catch {
     return empty(); // empty or damaged text
   }
@@ -50,10 +51,13 @@ function save(next: Saved): void {
   listeners.forEach((listener) => listener());
 }
 
-export function rememberSearch(search: string): void {
+/** The place the breadcrumb of a bead page returns to: the Beads page or a milestone's Beads tab. */
+export function rememberPlace(path: string, search: string): void {
   const now = getReturn();
-  if (now.search !== search) save({ ...now, search });
+  if (now.path !== path || now.search !== search) save({ ...now, path, search });
 }
+
+export const rememberSearch = (search: string): void => rememberPlace("/beads", search);
 
 export function rememberOpen(project: string, ids: readonly string[]): void {
   const now = getReturn();

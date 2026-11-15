@@ -175,11 +175,17 @@ export async function fetchMilestone(project: string, id: string, start: string 
 
 export const milestonesPath = (project: string) => `/milestones?project=${enc(project)}`;
 
-export function milestonePath(project: string, id: string, tab: "gantt" | "graph" = "gantt", start: string | null = null, zoom: Zoom = "all") {
+export type MilestoneTab = "gantt" | "beads";
+
+/** `extra`: a Beads filters query (with or without "?"), merged after tab, start and zoom; its `project` and `milestone` are dropped. */
+export function milestonePath(project: string, id: string, tab: MilestoneTab = "gantt", start: string | null = null, zoom: Zoom = "all", extra = "") {
   const query = new URLSearchParams();
-  if (tab === "graph") query.set("tab", "graph");
+  if (tab === "beads") query.set("tab", "beads");
   if (start !== null) query.set("start", start);
   if (zoom !== "all") query.set("zoom", zoom);
+  new URLSearchParams(extra).forEach((value, key) => {
+    if (key !== "project" && key !== "milestone") query.append(key, value);
+  });
   const search = query.toString();
   return `/milestones/${enc(project)}/${enc(id)}${search === "" ? "" : `?${search}`}`;
 }

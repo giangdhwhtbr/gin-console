@@ -1,21 +1,23 @@
 import { ArrowLeft } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
 import { Tabs } from "@/components/Tabs";
+import { BeadsView } from "@/features/beads/BeadsView";
+import { filtersToSearch, parseFilters } from "@/features/beads/filters";
+import { rememberPlace } from "@/features/beads/returnState";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
 import { plural, shortDate } from "./format";
 import { dayOf, isoOf, zoomOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
-import { MilestoneGraph } from "./MilestoneGraph";
 import { MilestoneStatus } from "./MilestoneStatus";
 import { useLoad } from "./useLoad";
 
 const TABS = [
   { value: "gantt", label: "Gantt" },
-  { value: "graph", label: "Graph" },
+  { value: "beads", label: "Beads" },
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 
@@ -26,9 +28,18 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
   const params = new URLSearchParams(search);
   const asked = params.get("start");
   const day = asked !== null && ISO.test(asked) ? dayOf(asked) : NaN; // month 13 gives NaN, Feb 31 rolls over
-  const tab: Tab = params.get("tab") === "graph" ? "graph" : "gantt";
+  const tabAsked = params.get("tab");
+  const tab: Tab = tabAsked === "beads" || tabAsked === "graph" ? "beads" : "gantt";
   const zoom = zoomOf(params.get("zoom"));
   const start = !Number.isNaN(day) && isoOf(day) === asked ? asked : null;
+  // REQ-MILESTONE-UI-018: the old Graph tab is the Graph view of the Beads tab
+  useEffect(() => {
+    if (tabAsked === "graph") navigate(milestonePath(project, id, "beads", start, zoom, "?view=graph"), { replace: true });
+  }, [tabAsked, project, id, start, zoom]);
+  // REQ-UI-072: the place the breadcrumb of a bead page returns to
+  useEffect(() => {
+    if (tab === "beads" && tabAsked === "beads") rememberPlace(`/milestones/${encodeURIComponent(project)}/${encodeURIComponent(id)}`, search);
+  }, [tab, tabAsked, project, id, search]);
   const current = useCallback(() => fetchMilestone(project, id, null), [project, id]);
   const preview = useCallback(
     () => (start === null ? Promise.resolve(null) : fetchMilestone(project, id, start)),
@@ -66,7 +77,12 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
                 onZoom={(next) => navigate(milestonePath(project, id, tab, start, next), { replace: true })}
               />
             ) : (
-              <MilestoneGraph project={project} id={id} />
+              <BeadsView
+                project={project}
+                fixedMilestone={id}
+                filters={{ ...parseFilters(search), project, milestone: id }}
+                onChange={(next) => navigate(milestonePath(project, id, "beads", start, zoom, filtersToSearch(next)), { replace: true })}
+              />
             )}
           </div>
         </>
