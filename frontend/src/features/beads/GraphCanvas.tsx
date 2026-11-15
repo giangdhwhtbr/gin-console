@@ -51,6 +51,8 @@ export function GraphCanvas({
     return () => el.removeEventListener("wheel", wheel);
   }, []);
 
+  const group = graph.nodes.filter((n) => n.group === "unlinked");
+  const groupTop = group.length === 0 ? null : (at.get(group[0].bead.id)?.y ?? 0) - NODE.head;
   const chain = at.has(selected) ? chainOf(graph, selected) : null;
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") return onEscape();
@@ -116,6 +118,12 @@ export function GraphCanvas({
                 );
               })}
             </svg>
+            {groupTop !== null && (
+              <p
+                className="absolute m-0 text-xs text-muted-foreground"
+                style={{ left: NODE.pad, top: groupTop, height: NODE.head }}
+              >{`${group.length} without dependencies`}</p>
+            )}
             {graph.nodes.map((node) => {
               const position = at.get(node.bead.id);
               return position === undefined ? null : (
