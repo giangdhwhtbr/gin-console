@@ -1,6 +1,6 @@
 # TC-REPORTS-028: No period choice
 
-- **REQ:** REQ-REPORTS-012@a1aed608
+- **REQ:** REQ-REPORTS-012@702fde2d
 - **Priority:** medium
 
 **Preconditions:**
