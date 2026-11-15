@@ -4,7 +4,7 @@ import { LabelsPopover } from "./LabelsPopover";
 import { MilestoneFilter } from "./MilestoneFilter";
 import { MobileFiltersSheet } from "./MobileFiltersSheet";
 import { MultiSelectPopover } from "./MultiSelectPopover";
-import type { BeadFilters, BeadOptions } from "./filters";
+import { KIND_OPTIONS, type BeadFilters, type BeadOptions } from "./filters";
 import type { MilestoneInEffect, MilestonesState } from "./milestoneChoice";
 
 const same = (value: string) => ({ value, label: value });
@@ -35,6 +35,8 @@ export function BeadFilterBar({
       label: [],
       labelMode: "any",
       type: "",
+      kind: "",
+      capability: [],
       assignee: [],
       sprint: "",
       milestone: "",
@@ -97,6 +99,20 @@ export function BeadFilterBar({
           options={options.types.map(same)}
           onChange={(type) => set({ type })}
         />
+        <FilterSelect
+          label="Kind"
+          value={filters.kind}
+          options={KIND_OPTIONS}
+          onChange={(kind) => set({ kind: KIND_OPTIONS.find((o) => o.value === kind)?.value ?? "" })}
+        />
+        {options.capabilities.length > 0 && (
+          <MultiSelectPopover
+            label="Capability"
+            values={filters.capability}
+            options={options.capabilities.map(same)}
+            onChange={(capability) => set({ capability })}
+          />
+        )}
         <MultiSelectPopover
           label="Assignee"
           values={filters.assignee}

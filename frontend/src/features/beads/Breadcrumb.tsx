@@ -6,7 +6,7 @@ import { useReturn } from "./returnState";
 const VIEW_NAME: Record<string, string> = { list: "List", board: "Board", focus: "Focus", graph: "Graph" };
 const enc = encodeURIComponent;
 
-/** How many of the search, the status, priority, label, type, assignee and sprint filters and "Show closed" are on. */
+/** How many of the search, the status, priority, label, type, kind, capability, assignee and sprint filters and "Show closed" are on. */
 export function activeFilters(filters: BeadFilters): number {
   const set = [
     filters.q.trim() !== "",
@@ -14,6 +14,8 @@ export function activeFilters(filters: BeadFilters): number {
     filters.priority.length > 0,
     filters.label.length > 0,
     filters.type !== "",
+    filters.kind !== "",
+    filters.capability.length > 0,
     filters.assignee.length > 0,
     filters.sprint !== "",
     filters.closed,

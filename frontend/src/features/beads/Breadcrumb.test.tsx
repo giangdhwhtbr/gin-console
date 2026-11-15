@@ -19,6 +19,12 @@ describe("Breadcrumb", () => {
     expect(crumb().getByText("a-1")).toHaveAttribute("aria-current", "page");
   });
 
+  it("REQ-UI-108 counts the kind and capability filters", () => {
+    rememberSearch("?project=a&kind=technical&capability=ui,beads");
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads › List · 2 filters" })).toBeInTheDocument();
+  });
+
   it("REQ-UI-072 from a milestone page it names the milestone and links back to its Beads tab", () => {
     rememberPlace("/milestones/a/m2", "?tab=beads&view=board&status=open");
     render(<Breadcrumb project="a" id="a-1" parent={null} />);

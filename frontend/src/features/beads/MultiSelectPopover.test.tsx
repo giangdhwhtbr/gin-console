@@ -102,6 +102,7 @@ describe("MobileFiltersSheet", () => {
     statuses: ["open", "in_progress", "closed"],
     priorities: [0, 1, 2],
     labels: ["ui", "backend"],
+    capabilities: [],
     types: ["bug", "task"],
     assignees: ["unassigned", "alice"],
     sprints: ["sprint-1"],

@@ -39,6 +39,8 @@ export function ListView({
     filters.priority.length > 0 ||
     filters.label.length > 0 ||
     filters.type !== "" ||
+    filters.kind !== "" ||
+    filters.capability.length > 0 ||
     filters.assignee.length > 0 ||
     filters.sprint !== "" ||
     milestone !== "all";

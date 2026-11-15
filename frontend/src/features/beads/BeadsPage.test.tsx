@@ -29,6 +29,10 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   created_by: null,
   blocked_by: [],
   milestone: null,
+  kind: null,
+  capabilities: [],
+  complexity: null,
+  estimate_minutes: null,
   ...overrides,
 });
 
@@ -746,6 +750,71 @@ describe("BeadsPage", () => {
       await userEvent.click(screen.getByRole("button", { name: /Filters/ }));
       const dialog = await screen.findByRole("dialog");
       expect(within(dialog).getByLabelText("Milestone")).toHaveValue("m2");
+    });
+  });
+
+  describe("kind and capability filters", () => {
+    const stubKinds = () =>
+      stub(() =>
+        json([
+          bead("e-1", { title: "Tech epic", issue_type: "epic", kind: "technical", capabilities: ["ui"] }),
+          bead("t-1", { title: "Tech epic", parent: "e-1" }),
+          bead("e-2", { title: "Cap epic", issue_type: "epic", kind: "capability", capabilities: ["beads"] }),
+          bead("t-2", { title: "Cap epic", parent: "e-2" }),
+        ]),
+      );
+
+    it("REQ-UI-108 the Kind select sets kind and keeps the epics of that kind", async () => {
+      stubKinds();
+      render(<BeadsPage />);
+      await screen.findAllByText("Cap epic");
+      await userEvent.selectOptions(screen.getByLabelText("Kind"), "technical");
+      expect(window.location.search).toContain("kind=technical");
+      expect(screen.getAllByText("Tech epic").length).toBeGreaterThan(0);
+      await waitFor(() => expect(screen.queryByText("Cap epic")).toBeNull());
+    });
+
+    it("REQ-UI-108 the Capability multi-select lists the capabilities and sets capability", async () => {
+      stubKinds();
+      render(<BeadsPage />);
+      await screen.findAllByText("Cap epic");
+      await userEvent.click(screen.getByRole("button", { name: "Capability" }));
+      expect(await screen.findByRole("checkbox", { name: "ui" })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("checkbox", { name: "beads" }));
+      expect(window.location.search).toContain("capability=beads");
+      expect(screen.getAllByText("Cap epic").length).toBeGreaterThan(0);
+      await waitFor(() => expect(screen.queryByText("Tech epic")).toBeNull());
+    });
+
+    it("REQ-UI-108 Clear filters clears kind and capability", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&kind=technical&capability=ui");
+      stubKinds();
+      render(<BeadsPage />);
+      await screen.findAllByText("Tech epic");
+      await userEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+      expect(window.location.search).not.toContain("kind");
+      expect(window.location.search).not.toContain("capability");
+      expect((await screen.findAllByText("Cap epic")).length).toBeGreaterThan(0);
+    });
+
+    it("REQ-UI-108 with no capabilities there is no Capability filter", async () => {
+      stub(() => json([bead("a-1")]));
+      render(<BeadsPage />);
+      await screen.findByText("Title a-1");
+      expect(screen.queryByRole("button", { name: "Capability" })).toBeNull();
+      expect(screen.getByLabelText("Kind")).toBeInTheDocument();
+    });
+
+    it("REQ-UI-108 the mobile sheet sets kind and capability", async () => {
+      stubKinds();
+      render(<BeadsPage />);
+      await screen.findAllByText("Cap epic");
+      await userEvent.click(screen.getByRole("button", { name: /Filters/ }));
+      const dialog = await screen.findByRole("dialog");
+      await userEvent.click(within(within(dialog).getByRole("group", { name: "Kind" })).getByRole("button", { name: "Technical" }));
+      expect(window.location.search).toContain("kind=technical");
+      await userEvent.click(within(within(dialog).getByRole("group", { name: "Capability" })).getByRole("button", { name: "ui" }));
+      expect(window.location.search).toContain("capability=ui");
     });
   });
 });

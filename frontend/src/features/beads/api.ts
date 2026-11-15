@@ -1,5 +1,6 @@
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
 
+export type BeadKind = "capability" | "technical" | "parity";
 export type BeadSummary = {
   id: string;
   title: string;
@@ -21,6 +22,10 @@ export type BeadSummary = {
   blocked_by: string[];
   closed_at: string | null;
   milestone: string | null;
+  kind: BeadKind | null;
+  capabilities: string[];
+  complexity: "low" | "medium" | "high" | null;
+  estimate_minutes: number | null;
 };
 export type MilestoneStatus = "active" | "scheduled" | "planned" | "closed";
 export type MilestoneOption = {
@@ -51,6 +56,9 @@ export class BeadNotFoundError extends Error {}
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
 const isStringOrUndefined = (value: unknown) => value === undefined || isStringOrNull(value);
 const isStringArray = (value: unknown) => Array.isArray(value) && value.every(isString);
+const isMissingOr = (value: unknown, ok: (v: unknown) => boolean) => value === undefined || value === null || ok(value);
+const KINDS: readonly unknown[] = ["capability", "technical", "parity"];
+const COMPLEXITIES: readonly unknown[] = ["low", "medium", "high"];
 
 function isSummary(value: unknown): value is BeadSummary {
   return (
@@ -63,7 +71,11 @@ function isSummary(value: unknown): value is BeadSummary {
     ) &&
     ["ready", "blocked"].every((k) => typeof field(value, k) === "boolean") &&
     isStringArray(field(value, "labels")) &&
-    isStringArray(field(value, "blocked_by"))
+    isStringArray(field(value, "blocked_by")) &&
+    isMissingOr(field(value, "kind"), (v) => KINDS.includes(v)) &&
+    isMissingOr(field(value, "capabilities"), isStringArray) &&
+    isMissingOr(field(value, "complexity"), (v) => COMPLEXITIES.includes(v)) &&
+    isMissingOr(field(value, "estimate_minutes"), isFiniteNumber)
   );
 }
 
@@ -84,8 +96,15 @@ function isProjectMilestones(value: unknown): value is ProjectMilestones {
   return Array.isArray(milestones) && milestones.every(isMilestoneOption) && isStringOrNull(field(value, "current"));
 }
 
-/** An answer from before `milestone` existed has no such key; it reads as no milestone. */
-const withMilestone = <T extends BeadSummary>(bead: T): T => ({ ...bead, milestone: bead.milestone ?? null });
+/** An answer from before `milestone`, `kind` or the estimate fields existed lacks those keys; they read as empty. */
+const withMilestone = <T extends BeadSummary>(bead: T): T => ({
+  ...bead,
+  milestone: bead.milestone ?? null,
+  kind: bead.kind ?? null,
+  capabilities: bead.capabilities ?? [],
+  complexity: bead.complexity ?? null,
+  estimate_minutes: bead.estimate_minutes ?? null,
+});
 
 function isRelation(value: unknown): value is Relation {
   return (

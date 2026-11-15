@@ -1,4 +1,4 @@
-import type { BeadSummary } from "./api";
+import type { BeadKind, BeadSummary } from "./api";
 import { matchesMilestone, type MilestoneInEffect } from "./milestoneChoice";
 
 export const VIEWS = ["list", "board", "focus", "graph"] as const;
@@ -12,6 +12,10 @@ export type BeadFilters = {
   label: string[];
   labelMode: "any" | "all";
   type: string;
+  /** The kind of the bead or of its epic (REQ-UI-108); `` for any. */
+  kind: "" | BeadKind;
+  /** Capabilities of the bead or of its epic (REQ-UI-108). */
+  capability: string[];
   closed: boolean;
   view: View;
   group: "" | "assignee";
@@ -24,6 +28,12 @@ export type BeadFilters = {
   /** The Graph view's container bead (REQ-UI-106); `` when absent. */
   scope: string;
 };
+
+export const KIND_OPTIONS: readonly { value: BeadKind; label: string }[] = [
+  { value: "capability", label: "Capability" },
+  { value: "technical", label: "Technical" },
+  { value: "parity", label: "Parity" },
+];
 
 const parseArray = (value: string | null): string[] => {
   if (!value) return [];
@@ -43,6 +53,8 @@ export function parseFilters(search: string): BeadFilters {
     label: parseArray(p.get("label")),
     labelMode: p.get("label_mode") === "all" ? "all" : "any",
     type: p.get("type") ?? "",
+    kind: KIND_OPTIONS.find((o) => o.value === p.get("kind"))?.value ?? "",
+    capability: parseArray(p.get("capability")),
     closed: p.get("closed") === "1",
     view: VIEWS.find((view) => view === p.get("view")) ?? "list",
     group: p.get("group") === "assignee" ? "assignee" : "",
@@ -64,6 +76,8 @@ export function filtersToSearch(filters: BeadFilters): string {
   if (filters.label.length > 0) p.set("label", filters.label.join(","));
   if (filters.labelMode === "all") p.set("label_mode", "all");
   if (filters.type !== "") p.set("type", filters.type);
+  if (filters.kind !== "") p.set("kind", filters.kind);
+  if (filters.capability.length > 0) p.set("capability", filters.capability.join(","));
   if (filters.closed) p.set("closed", "1");
   if (filters.view !== "list") p.set("view", filters.view);
   if (filters.group !== "") p.set("group", filters.group);
@@ -87,6 +101,18 @@ export const effectiveAssignee = (bead: BeadSummary): string | null => {
   return val ? val.trim() : null;
 };
 
+/** The bead itself when it is an epic, else its nearest epic ancestor among `byId`; null when there is none. */
+function nearestEpic(bead: BeadSummary, byId: ReadonlyMap<string, BeadSummary>): BeadSummary | null {
+  const seen = new Set<string>();
+  let current: BeadSummary | undefined = bead;
+  while (current && !seen.has(current.id)) {
+    if (current.issue_type === "epic") return current;
+    seen.add(current.id);
+    current = current.parent ? byId.get(current.parent) : undefined;
+  }
+  return null;
+}
+
 export function filterBeads(
   beads: readonly BeadSummary[],
   filters: BeadFilters,
@@ -106,6 +132,8 @@ export function filterBeads(
       if (sps.length > 0) sprintMap.set(bead.id, sps);
     }
   }
+
+  const byId = new Map(beads.map((b) => [b.id, b]));
 
   return beads.filter((bead) => {
     if (!matchesMilestone(bead, milestone)) return false;
@@ -138,6 +166,18 @@ export function filterBeads(
     }
 
     if (filters.type !== "" && bead.issue_type !== filters.type) return false;
+
+    // Kind and capability: the bead's own, or those of its nearest epic
+    if (filters.kind !== "" || filters.capability.length > 0) {
+      const owners = [bead, nearestEpic(bead, byId)];
+      if (filters.kind !== "" && !owners.some((o) => o?.kind === filters.kind)) return false;
+      if (
+        filters.capability.length > 0 &&
+        !owners.some((o) => o?.capabilities.some((c) => filters.capability.includes(c)))
+      ) {
+        return false;
+      }
+    }
 
     // Assignee filter: matches if bead matches ANY selected assignee
     if (filters.assignee.length > 0) {
@@ -217,6 +257,7 @@ export function optionsOf(beads: readonly BeadSummary[]) {
     statuses,
     priorities: unique(beads.map((b) => b.priority), (a, b) => a - b),
     labels,
+    capabilities: unique(beads.flatMap((b) => b.capabilities), text),
     types: unique(beads.map((b) => b.issue_type), text),
     assignees,
     sprints,

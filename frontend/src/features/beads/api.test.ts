@@ -25,6 +25,10 @@ const sampleSummary = {
   created_by: null,
   blocked_by: [],
   milestone: null,
+  kind: null,
+  capabilities: [],
+  complexity: null,
+  estimate_minutes: null,
 };
 
 const sampleDetail = {
@@ -72,6 +76,22 @@ describe("api", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([sampleSummary]))));
     const result = await fetchBeads("proj", false);
     expect(result).toEqual([sampleSummary]);
+  });
+
+  it("REQ-UI-108 accepts the kind and estimate fields and defaults them when missing", async () => {
+    const old = Object.fromEntries(
+      Object.entries(sampleSummary).filter(([key]) => !["kind", "capabilities", "complexity", "estimate_minutes"].includes(key)),
+    );
+    const full = { ...sampleSummary, kind: "technical", capabilities: ["ui"], complexity: "high", estimate_minutes: 90 };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([full, old]))));
+    const [withFields, without] = await fetchBeads("proj", false);
+    expect(withFields).toMatchObject({ kind: "technical", capabilities: ["ui"], complexity: "high", estimate_minutes: 90 });
+    expect(without).toMatchObject({ kind: null, capabilities: [], complexity: null, estimate_minutes: null });
+  });
+
+  it("REQ-UI-108 rejects an unknown kind", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleSummary, kind: "weird" }]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow("unexpected response");
   });
 
   // REQ-UI-029: unexpected shape - non-array body
