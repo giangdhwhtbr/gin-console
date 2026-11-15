@@ -42,6 +42,19 @@ describe("GraphPage", () => {
     expect(await node("b")).toBeInTheDocument();
   });
 
+  it("REQ-UI-075 prep task in the scope: drawn as a node, left out of the heading count", async () => {
+    open("/beads/p/e-1/graph", [
+      epic("e-1"),
+      task("t-1", "e-1", [], { status: "closed" }),
+      task("t-2", "e-1"),
+      task("p-1", "e-1", [], { labels: ["prep", "prep:mockup"] }),
+    ]);
+    await node("p-1");
+    expect(await node("t-1")).toBeInTheDocument();
+    expect(await node("t-2")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Scope" })).toHaveTextContent("1 of 2 done");
+  });
+
   it("REQ-UI-075 the project draws its top-level epics", async () => {
     open("/beads/p/graph", [epic("r-1"), epic("r-2", { blocked_by: ["r-1"] }), task("a", "r-1")]);
     expect(await node("r-1")).toBeInTheDocument();

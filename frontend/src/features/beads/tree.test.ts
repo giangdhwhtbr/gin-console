@@ -87,7 +87,7 @@ describe("tree", () => {
       ],
     );
     const [epic, , second] = expanded(index).rows;
-    expect(epic).toMatchObject({ level: 0, hasKids: true, open: true, totalKids: 2, closedKids: 1 });
+    expect(epic).toMatchObject({ level: 0, hasKids: true, open: true, counts: { tracks: 2, closedTracks: 1, prep: 0, closedPrep: 0 } });
     expect(second).toMatchObject({ level: 1, hasKids: false });
     expect(treeRows(index, new Set(), null).rows[0]).toMatchObject({ open: false });
   });

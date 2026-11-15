@@ -1,5 +1,7 @@
 import { Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PrepChip } from "./PrepChip";
+import { isPrep } from "./prep";
 import { NODE, stateOf, type GraphNode as Node, type Placed } from "./graph";
 import { StateMark, stateEdge } from "./StateMark";
 
@@ -48,10 +50,11 @@ export function GraphNodeButton({
       <span className="truncate text-sm font-medium text-card-foreground">{node.bead.title}</span>
       <span className="flex items-center gap-2">
         <StateMark bead={node.bead} className="text-xs" />
-        {node.total > 0 && (
+        {isPrep(node.bead.labels) && <PrepChip />}
+        {node.hasKids && (
           <span className="ml-auto inline-flex items-center gap-1 text-muted-foreground">
             <Layers aria-hidden className="size-3.5" />
-            {`${node.done} of ${node.total} done`}
+            {node.total > 0 && `${node.done} of ${node.total} done`}
           </span>
         )}
       </span>

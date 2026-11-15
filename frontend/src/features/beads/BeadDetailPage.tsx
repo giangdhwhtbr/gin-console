@@ -16,6 +16,7 @@ import { RelationList } from "./RelationList";
 import { SIDE_PANEL } from "./side-panel";
 import { TextSection } from "./TextSection";
 import { complexityOf } from "./complexity";
+import { childCounts, prepLabel } from "./prep";
 import { TypeBadge } from "./TypeBadge";
 
 type State =
@@ -75,8 +76,11 @@ export function BeadDetailPage({
   }
   const bead = state.status === "ok" ? state.bead : null;
   const complexity = bead?.issue_type === "epic" ? complexityOf(bead.description) : null;
-  const closed = bead?.children.filter((c) => c.status === "closed").length ?? 0;
-  const total = bead?.children.length ?? 0;
+  const children = bead?.children ?? [];
+  const counts = childCounts(children.map((c) => ({ labels: c.prep ? ["prep"] : [], status: c.status })));
+  const closed = counts.closedTracks;
+  const total = counts.tracks;
+  const prep = prepLabel(counts);
 
   return (
     <section className="flex flex-col gap-4">
@@ -175,10 +179,13 @@ export function BeadDetailPage({
                 <RelationList title="Depends on" project={project} items={bead.dependencies} />
                 <RelationList title="Blocks" project={project} items={bead.dependents} />
                 <RelationList title="Bugs found" titleClassName="text-type-bug" project={project} items={bead.bugs} />
-                {total > 0 && (
+                {(total > 0 || prep !== null) && (
                   <div className="flex flex-col gap-2">
-                    <ProgressBar label="Children closed" percent={(closed / total) * 100} />
-                    <span className="text-sm">{`${closed} of ${total} closed`}</span>
+                    {total > 0 && <ProgressBar label="Children closed" percent={(closed / total) * 100} />}
+                    <span className="flex items-center gap-3 text-sm">
+                      {total > 0 && <span>{`${closed} of ${total} closed`}</span>}
+                      {prep !== null && <span>{prep}</span>}
+                    </span>
                   </div>
                 )}
                 <RelationList title="Children" project={project} items={bead.children} />

@@ -32,6 +32,7 @@ export type MilestoneOption = {
 };
 export type ProjectMilestones = { milestones: MilestoneOption[]; current: string | null };
 export type Relation = { id: string; title: string; status: string; type: "blocks" | "parent-child" | "discovered-from" };
+export type Child = Relation & { prep: boolean };
 export type BeadDetail = BeadSummary & {
   description: string | null;
   design: string | null;
@@ -40,7 +41,7 @@ export type BeadDetail = BeadSummary & {
   close_reason: string | null;
   dependencies: Relation[];
   dependents: Relation[];
-  children: Relation[];
+  children: Child[];
   bugs: Relation[];
 };
 export type Comment = { id: string; author: string; text: string; created_at: string; truncated: boolean };
@@ -95,6 +96,8 @@ function isRelation(value: unknown): value is Relation {
 }
 
 const isRelations = (value: unknown) => Array.isArray(value) && value.every(isRelation);
+const isChildren = (value: unknown) =>
+  Array.isArray(value) && value.every((c) => isRelation(c) && typeof field(c, "prep") === "boolean");
 
 function isDetail(value: unknown): value is BeadDetail {
   return (
@@ -102,7 +105,8 @@ function isDetail(value: unknown): value is BeadDetail {
     ["description", "design", "notes", "acceptance_criteria", "close_reason"].every((k) =>
       isStringOrNull(field(value, k)),
     ) &&
-    ["dependencies", "dependents", "children", "bugs"].every((k) => isRelations(field(value, k)))
+    ["dependencies", "dependents", "bugs"].every((k) => isRelations(field(value, k))) &&
+    isChildren(field(value, "children"))
   );
 }
 
