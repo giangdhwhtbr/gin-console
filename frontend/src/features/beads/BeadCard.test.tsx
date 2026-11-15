@@ -15,6 +15,16 @@ const card = (item: ReturnType<typeof bead>) => {
 };
 
 describe("BeadCard", () => {
+  it("REQ-UI-065 REQ-UI-107 a long id is shortened with the full id as title and long text wraps anywhere", () => {
+    const id = "ex-payments-provider-migration-and-reconciliation-2026";
+    card(bead(id, { title: "T".repeat(80), assignee: "x".repeat(60) }));
+    expect(screen.getByText("ex-payments-pr…tion-2026")).toHaveAttribute("title", id);
+    expect(screen.getByText(id, { selector: ".sr-only" })).toBeInTheDocument();
+    expect(screen.getByRole("listitem")).toHaveTextContent(id);
+    expect(screen.getByRole("link", { name: "T".repeat(80) })).toHaveClass("wrap-anywhere");
+    expect(screen.getByText("x".repeat(60))).toHaveClass("wrap-anywhere");
+  });
+
   it("REQ-UI-065 shows the id, priority, title link, state, type, indicators and assignee", () => {
     const li = card(
       bead("a-1", { title: "Fix it", ready: true, priority: 1, assignee: "alice", comment_count: 2, dependency_count: 1 }),

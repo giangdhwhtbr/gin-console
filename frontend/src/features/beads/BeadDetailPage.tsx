@@ -106,7 +106,7 @@ export function BeadDetailPage({
               "lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8",
           )}
         >
-          <div className="flex flex-col gap-4">
+          <div className="flex min-w-0 flex-col gap-4">
             {bead.comment_count > 0 && (
               <DetailTabs
                 tab={tab}
@@ -120,7 +120,7 @@ export function BeadDetailPage({
               id={bead.comment_count > 0 ? "panel-details" : undefined}
               aria-labelledby={bead.comment_count > 0 ? "tab-details" : undefined}
               className={cn(
-                "flex flex-col gap-4",
+                "flex min-w-0 flex-col gap-4",
                 bead.comment_count > 0 && tab !== "details" && cn("hidden", !embedded && "lg:flex"),
               )}
             >
@@ -130,9 +130,9 @@ export function BeadDetailPage({
                 </Button>
               )}
                 <header className="flex flex-col gap-1">
-                  <h1 className="text-xl font-semibold">{bead.title}</h1>
+                  <h1 className="text-xl font-semibold wrap-anywhere">{bead.title}</h1>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-mono">{bead.id}</span>
+                    <span className="font-mono wrap-anywhere">{bead.id}</span>
                     <Badge variant="secondary">{bead.status}</Badge>
                     <span>{`P${bead.priority}`}</span>
                     <TypeBadge type={bead.issue_type} />
@@ -147,7 +147,7 @@ export function BeadDetailPage({
                       </Badge>
                     ))}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground wrap-anywhere">
                     {[
                       bead.owner && `Owner ${bead.owner}`,
                       bead.assignee && `Assignee ${bead.assignee}`,

@@ -18,6 +18,28 @@ afterEach(() => {
 });
 
 describe("ListView", () => {
+  it("REQ-UI-044 REQ-UI-107 Long id keeps the title", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    const id = "ex-payments-provider-migration-and-reconciliation-2026";
+    stubBeads(() =>
+      json([
+        bead(id, { issue_type: "epic", title: "Payments migration", assignee: "a-very-long-assignee-name" }),
+        bead("c-1", { parent: id, title: "Child" }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const tree = await screen.findByRole("tree");
+    const row = within(tree).getByRole("treeitem", { name: /Payments migration/ });
+    expect(within(row).getByRole("button", { name: `Expand ${id}` })).toBeInTheDocument();
+    expect(within(row).getByText(id, { selector: ".sr-only" })).toBeInTheDocument();
+    const shown = within(row).getByText("ex-payments-pr…tion-2026");
+    expect(shown).toHaveAttribute("title", id);
+    expect(shown).toHaveClass("min-w-0", "truncate");
+    expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-32");
+    expect(within(row).getByText("Payments migration").parentElement).toHaveAttribute("title", "Payments migration");
+    expect(within(row).getByText("a-very-long-assignee-name")).toHaveAttribute("title", "a-very-long-assignee-name");
+  });
+
   it("REQ-UI-030 List view: shown by default and kept when switching from the Board", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha");
     stubBeads(() => json([bead("t-1", { title: "Test task" })]));
