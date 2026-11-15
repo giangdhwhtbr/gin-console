@@ -25,3 +25,19 @@ export function workdaysAfter(end: string, finish: string): number {
   }
   return count;
 }
+
+/** REQ-MILESTONE-UI-020: "Away: ann 18–20 Nov, bao 25 Nov" from `{member: ["2026-11-18..2026-11-20", "2026-11-25"]}`; null when nobody is away. A range that is not a date or `from..to` is shown as it came. */
+export function awayLine(away: Readonly<Record<string, readonly string[]>>, today: string): string | null {
+  const ISO = /^\d{4}-\d{2}-\d{2}$/;
+  const range = (value: string) => {
+    const [from, to, ...rest] = value.split("..");
+    if (!ISO.test(from) || rest.length > 0 || (to !== undefined && !ISO.test(to))) return value;
+    if (to === undefined || to === from) return shortDate(from, today);
+    const a = shortDate(from, today);
+    const b = shortDate(to, today);
+    // the same month and year: "18–20 Nov"
+    return from.slice(0, 7) === to.slice(0, 7) ? `${a.split(" ")[0]}–${b}` : `${a}–${b}`;
+  };
+  const people = Object.entries(away).flatMap(([member, ranges]) => (ranges.length === 0 ? [] : [`${member} ${ranges.map(range).join(", ")}`]));
+  return people.length === 0 ? null : `Away: ${people.join(", ")}`;
+}

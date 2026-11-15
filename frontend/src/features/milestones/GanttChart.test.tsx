@@ -142,7 +142,7 @@ describe("GanttChart", () => {
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     draw(
       detail([
-        epicPlan("e-a", { spec_confirmed: false, warnings: [{ code: "late", days: null }] }),
+        epicPlan("e-a", { spec_confirmed: false, warnings: [{ code: "late", days: null, count: null }] }),
         epicPlan("e-b", { spec_confirmed: true }),
         epicPlan("e-c"),
       ]),
@@ -152,6 +152,25 @@ describe("GanttChart", () => {
     expect(rows.map((row) => row.style.height)).toEqual(["106px", "88px", "72px"]);
     const warning = within(rows[0]).getByText(/^Late: should have finished/);
     expect(warning).toHaveAttribute("title", warning.textContent);
+  });
+
+  it("REQ-MILESTONE-UI-013 remaining and assumed days", () => {
+    draw(
+      detail([
+        epicPlan("e-a", { status: "in_progress", estimate_days: 5, remaining_days: 2 }),
+        epicPlan("e-b", { estimate_days: null, assumed_days: 3 }),
+        epicPlan("e-c", { status: "in_progress", estimate_days: 5, remaining_days: 5 }),
+      ]),
+    );
+    expect(epicRow("e-a")).toHaveTextContent("2d left");
+    expect(epicRow("e-b")).toHaveTextContent("assumed 3d");
+    expect(epicRow("e-c")).toHaveTextContent("5d");
+    expect(epicRow("e-c")).not.toHaveTextContent("left");
+  });
+
+  it("REQ-MILESTONE-UI-003 newer warnings name the integration date", () => {
+    draw(detail([epicPlan("e-a", { warnings: [{ code: "after_integration", days: null, count: null }] })], { integration: "2026-11-24" }));
+    expect(epicRow("e-a")).toHaveTextContent("Ends after integration on 24 Nov");
   });
 
   it("REQ-MILESTONE-UI-013 no title after a bar that reaches the end", () => {

@@ -54,6 +54,7 @@ class MilestoneList(BaseModel):
 class EpicWarning(BaseModel):
     code: Text
     days: int | None = None
+    count: int | None = None
 
 
 class ExternalDependency(BaseModel):
@@ -72,6 +73,8 @@ class EpicPlan(BaseModel):
     external_depends_on: list[ExternalDependency]
     warnings: list[EpicWarning]
     spec_confirmed: bool | None = None
+    remaining_days: int | None = None
+    assumed_days: int | None = None
 
 
 class MilestoneDetail(BaseModel):
@@ -89,3 +92,6 @@ class MilestoneDetail(BaseModel):
     overflow_days: int
     epics: list[EpicPlan]
     lanes: int | None = None
+    integration: IsoDate | None = None
+    deadline: IsoDate | None = None
+    away: dict[str, list[Text]] = {}

@@ -49,6 +49,8 @@ export const epicPlan = (id: string, overrides: Partial<EpicPlan> = {}): EpicPla
   external_depends_on: [],
   warnings: [],
   spec_confirmed: null,
+  remaining_days: null,
+  assumed_days: null,
   ...overrides,
 });
 
@@ -67,6 +69,9 @@ export const detail = (epics: EpicPlan[], overrides: Partial<MilestoneDetail> = 
   overflow_days: 0,
   epics,
   lanes: null,
+  integration: null,
+  deadline: null,
+  away: {},
   ...overrides,
 });
 
