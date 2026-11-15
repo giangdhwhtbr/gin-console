@@ -723,7 +723,7 @@ The List view SHALL show for each row an open/close control when it has children
 - THEN each of the two rows shows its open/close control when it has children, its shortened id and at least the start of its title
 
 ### REQ-UI-045: Selection and detail panel
-WHILE the window is 1024px wide or more and the user clicks a row, the List view SHALL select it, keep its id in the URL as `select`, mark it selected, and show the bead in a panel beside the list with the content of the bead page (fields, text sections, relations and the discussion), without the breadcrumb and with an "Open page" link to `/beads/<project>/<id>`, the panel SHALL say "Select a bead to see its details" when nothing is selected, SHALL keep showing a selected bead that is not in the current list together with the note "Not in the current list", SHALL stay in view and scroll on its own as REQ-UI-078 describes, and a reload SHALL restore the selection, and WHILE the window is narrower than 1024px a click on a row SHALL open the bead page.
+WHILE the window is 1024px wide or more and the user clicks a row, the List view SHALL select it, keep its id in the URL as `select`, mark it selected, and show the bead in a panel beside the list with the content of the bead page (fields, text sections, relations and the discussion), without the breadcrumb and with an "Open page" link to `/beads/<project>/<id>`, SHALL show no panel while nothing is selected, the list then taking the full width, SHALL offer in the panel a button "Close details" that clears the selection, SHALL clear the selection on Escape when focus is not in a text field, and after clearing it SHALL hide the panel and move focus to the row that was selected, SHALL keep showing a selected bead that is not in the current list together with the note "Not in the current list", SHALL stay in view and scroll on its own as REQ-UI-078 describes, and a reload SHALL restore the selection, and WHILE the window is narrower than 1024px a click on a row SHALL open the bead page.
 
 #### Scenario: Select a row
 - GIVEN the List view and a window 1280px wide
@@ -731,9 +731,9 @@ WHILE the window is 1024px wide or more and the user clicks a row, the List view
 - THEN the URL has `select=t-1`, the row is marked selected and the panel shows its title, text and discussion
 
 #### Scenario: Nothing selected
-- GIVEN the URL has no `select`
+- GIVEN the URL has no `select` and a window 1280px wide
 - WHEN the List view is shown
-- THEN the panel says "Select a bead to see its details"
+- THEN there is no details panel and the list takes the full width of the page
 
 #### Scenario: Restored selection
 - GIVEN the URL has `view=list&select=t-1`
@@ -759,6 +759,21 @@ WHILE the window is 1024px wide or more and the user clicks a row, the List view
 - GIVEN a window 390px wide
 - WHEN the user taps the row of `t-1`
 - THEN the bead page of `t-1` is shown
+
+#### Scenario: Close the panel
+- GIVEN `t-1` is selected in a window 1280px wide
+- WHEN the user chooses "Close details"
+- THEN the URL has no `select`, the panel is gone, the list takes the full width and the row of `t-1` has focus
+
+#### Scenario: Escape closes the panel
+- GIVEN `t-1` is selected and focus is on its row
+- WHEN the user presses Escape
+- THEN the selection is cleared and the panel is gone
+
+#### Scenario: Escape in the search box
+- GIVEN `t-1` is selected and the search box has focus and text
+- WHEN the user presses Escape
+- THEN the text is cleared and `t-1` stays selected
 
 ### REQ-UI-046: List keyboard and roles
 The List view SHALL expose the hierarchy with `role="tree"` and each row with `role="treeitem"`, `aria-level`, `aria-selected` and, when it has children, `aria-expanded`, and WHILE a row has focus the Up and Down arrows SHALL move focus to the previous and next shown row, Right SHALL open a closed branch and otherwise move to its first child, Left SHALL close an open branch and otherwise move to its parent, and `Enter` SHALL select the row.
@@ -858,12 +873,12 @@ WHERE a drawn node, or a bead under it, has a `blocked_by` relation with a bead 
 - THEN both nodes are drawn, the page responds, and the warning names `a` and `b`
 
 ### REQ-UI-051: Selection and path
-WHEN the Dependencies page of a bead opens, it SHALL select the bead being viewed (for a bead with children, through its heading bar), WHEN the project page opens, it SHALL select nothing and the panel SHALL say "Select a bead to see its details", and WHEN the user clicks a node or presses Enter on it, it SHALL select that bead, keep its id in the URL as `select` without adding a history entry, highlight the node, all its direct and indirect blockers, all beads it blocks directly or indirectly and the arrows between them, dim every other node and arrow, and show the bead in a panel beside the graph (below it under 1024px) with the content of the bead page and an "Open page" link as REQ-UI-045 describes.
+WHEN the Dependencies page of a bead opens, it SHALL select the bead being viewed (for a bead with children, through its heading bar), WHEN the project page opens, it SHALL select nothing, SHALL show the panel only while a bead is selected, the graph then taking the full width, SHALL offer in the panel a button "Close details" that selects nothing, kept in the URL as `select=none` so that a reload keeps the panel closed, and after closing SHALL move focus to the node that was selected, and WHEN the user clicks a node or presses Enter on it, it SHALL select that bead, keep its id in the URL as `select` without adding a history entry, highlight the node, all its direct and indirect blockers, all beads it blocks directly or indirectly and the arrows between them, dim every other node and arrow, and show the bead in a panel beside the graph (below it under 1024px) with the content of the bead page and an "Open page" link as REQ-UI-045 describes.
 
 #### Scenario: Project page
-- GIVEN the project page
+- GIVEN the project page in a window 1280px wide
 - WHEN it is shown
-- THEN no node is selected and the panel says "Select a bead to see its details"
+- THEN no node is selected, there is no details panel and the graph takes the full width
 
 #### Scenario: Selected at first
 - GIVEN the page of task `b`
@@ -890,8 +905,13 @@ WHEN the Dependencies page of a bead opens, it SHALL select the bead being viewe
 - WHEN the page loads
 - THEN `b` is selected and its chain is highlighted
 
+#### Scenario: Close the panel
+- GIVEN the page of epic `e-1` with `e-1` selected
+- WHEN the user chooses "Close details"
+- THEN the URL has `select=none`, the panel is gone, the graph takes the full width, and a reload keeps it so
+
 ### REQ-UI-052: Graph keyboard
-WHILE a node has focus, the Dependencies page SHALL move focus along the arrows with ArrowDown to a blocked bead and ArrowUp to a blocker, and to the previous or next node of the same layer with ArrowLeft and ArrowRight, SHALL select the bead being viewed again on Escape, or nothing on the project page, and SHALL keep a single node in the tab order; and under 1024px it SHALL offer the buttons "n blockers" and "n blocked" for the selected bead that move the selection along the arrows.
+WHILE a node has focus, the Dependencies page SHALL move focus along the arrows with ArrowDown to a blocked bead and ArrowUp to a blocker, and to the previous or next node of the same layer with ArrowLeft and ArrowRight, SHALL select the bead being viewed again on Escape, and select nothing (closing the panel as REQ-UI-051 describes) on Escape while the bead being viewed or, on the project page, any bead is selected, and SHALL keep a single node in the tab order; and under 1024px it SHALL offer the buttons "n blockers" and "n blocked" for the selected bead that move the selection along the arrows.
 
 #### Scenario: Follow an arrow
 - GIVEN `a`→`b` and focus on `a`
@@ -907,6 +927,11 @@ WHILE a node has focus, the Dependencies page SHALL move focus along the arrows 
 - GIVEN a window 390px wide and a selected bead with 2 blockers and 1 blocked bead
 - WHEN the page is shown
 - THEN the buttons "2 blockers" and "1 blocked" are shown and each selects a bead of its side
+
+#### Scenario: Second Escape
+- GIVEN the page of epic `e-1` with `e-1` selected
+- WHEN the user presses Escape
+- THEN nothing is selected, the URL has `select=none` and the panel is gone
 
 ### REQ-UI-053: Dependencies button
 WHEN a bead page or a details panel shows a bead with at least one child, or a bead that has a blocker or blocks another bead, it SHALL offer the primary button "View dependencies" that goes to `/beads/<project>/<id>/graph` inside the console, and SHALL not offer it otherwise.
@@ -1973,7 +1998,7 @@ The My Tasks page SHALL offer a "Project" select with "All projects" (the defaul
 - [Browse a milestone's beads](use-cases/browse-milestone-beads.md)
 
 ### REQ-UI-106: Graph view
-The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of the Dependencies page (REQ-UI-048 to REQ-UI-050, REQ-UI-079), the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as the List view does. WHEN a node with children is opened, the view SHALL set `scope` to its id and show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it. WHEN a node without children is opened, the frontend SHALL open its bead page. WHILE nothing matches, the view SHALL say "No beads match these filters".
+The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of the Dependencies page (REQ-UI-048 to REQ-UI-050, REQ-UI-079), the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as the List view does, SHALL select the scope bead when `select` is absent and the scope is a bead, and SHALL show and close the panel as REQ-UI-051 and REQ-UI-052 describe. WHEN a node with children is opened, the view SHALL set `scope` to its id and show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it. WHEN a node without children is opened, the frontend SHALL open its bead page. WHILE nothing matches, the view SHALL say "No beads match these filters".
 
 #### Scenario: Milestone scope
 - GIVEN milestone `m2` with epics `e1` and `e2`, `e2` blocked by `x` under milestone `m3`
@@ -2014,6 +2039,11 @@ The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, wit
 - GIVEN a search that matches no bead
 - WHEN the Graph view is shown
 - THEN it says "No beads match these filters"
+
+#### Scenario: No panel on the project scope
+- GIVEN milestone "All" is selected and the URL has no `select`, in a window 1280px wide
+- WHEN the Graph view is shown
+- THEN there is no details panel and the graph takes the full width
 
 ### REQ-UI-107: Long text
 The frontend SHALL break a word that does not fit its box at any character in bead titles, ids on a page, assignees, owners and comments; SHALL show an id longer than 24 characters, wherever it is cut to fit a row, a card, a node or a Gantt label, as its first 14 characters, "…" and its last 9 characters, with the full id as `title`; SHALL give every text it cuts short with an ellipsis the full text as `title`; and SHALL keep every page from scrolling sideways at 360px and wider, a table or code block scrolling inside its own box.
