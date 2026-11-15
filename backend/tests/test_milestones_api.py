@@ -305,3 +305,22 @@ def test_milestone_ui_008_spec_confirmed_missing_is_null(tmp_path: Path) -> None
     epic = {k: v for k, v in SHOW["epics"][0].items() if k != "spec_confirmed"}
     api = make(tmp_path, FakeGw({"list": LIST, "show": {**SHOW, "epics": [epic]}}))
     assert api.get("/api/milestones/proj/gw-ab1").json()["epics"][0]["spec_confirmed"] is None
+
+
+# REQ-MILESTONE-UI-008 entry without dates
+def test_milestone_ui_008_entry_without_dates_is_listed(tmp_path: Path) -> None:
+    undated = {
+        **LIST["milestones"][0],
+        "id": "gw-m4",
+        "title": "M4",
+        "start": None,
+        "end": None,
+        "error": "M4 has no start/end metadata",
+    }
+    listed = {**LIST, "milestones": [LIST["milestones"][0], undated]}
+    api = make(tmp_path, FakeGw({"list": listed, "show": SHOW}))
+    response = api.get("/api/milestones", params={"project": "proj"})
+    assert response.status_code == 200
+    m4 = response.json()["milestones"][1]
+    assert m4["start"] is None and m4["end"] is None
+    assert m4["error"] == "M4 has no start/end metadata"

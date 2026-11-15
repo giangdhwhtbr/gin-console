@@ -10,7 +10,8 @@ import { MemberTable } from "./MemberTable";
 import { MilestoneLine } from "./MilestoneLine";
 import { TeamFigures } from "./TeamFigures";
 
-const selectClass = "rounded border bg-background px-2 py-1 text-sm";
+const selectClass = "min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm";
+const labelClass = "flex min-w-0 max-w-full items-center gap-2 text-sm text-muted-foreground";
 
 const byStart = (a: TeamMilestone, b: TeamMilestone) => a.start.localeCompare(b.start);
 const byEndDesc = (a: TeamMilestone, b: TeamMilestone) => b.end.localeCompare(a.end);
@@ -44,7 +45,7 @@ export function TeamSection({
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <label className={labelClass}>
           Milestone
           <select
             aria-label="Milestone"
@@ -65,7 +66,7 @@ export function TeamSection({
               ))}
           </select>
         </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+        <label className={labelClass}>
           Member
           <select
             aria-label="Member"

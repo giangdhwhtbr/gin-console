@@ -122,6 +122,19 @@ describe("GanttChart", () => {
     expect(li.querySelector("[data-tail]")).toHaveTextContent(title);
   });
 
+  it("REQ-MILESTONE-UI-013 long id: the meta line wraps below lg, its spans carry a title, the id is shortened", () => {
+    const id = "gin-workflow-rm-process-hygiene-and-more-things";
+    draw(detail([epicPlan(id, { planned_start: "2026-11-02", planned_end: "2026-11-02", estimate_days: 1 })]));
+    const meta = epicRow(id).querySelector<HTMLElement>(":scope > div > div > span:nth-child(2)");
+    expect(meta).toHaveClass("flex-wrap", "lg:flex-nowrap");
+    const [idLabel, period] = Array.from(meta?.children ?? []);
+    expect(period).toHaveAttribute("title", "2 Nov, 1d");
+    expect(period).toHaveClass("shrink-0");
+    expect(idLabel).toHaveAttribute("title", id);
+    expect(idLabel).toHaveTextContent("gin-workflow-r…re-things");
+    expect(screen.getByRole("link", { name: id })).toHaveAttribute("href", `/beads/alpha/${id}`);
+  });
+
   it("REQ-MILESTONE-UI-013 no title after a bar that reaches the end", () => {
     draw(MONTH);
     expect(epicRow("e-a").querySelector("[data-tail]")).toBeNull();

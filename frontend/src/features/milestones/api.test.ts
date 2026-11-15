@@ -25,6 +25,12 @@ describe("milestones api", () => {
     expect(error instanceof MilestonesError ? [error.message, error.kind] : []).toEqual(["no milestone command", "outdated"]);
   });
 
+  it("REQ-MILESTONE-UI-008 accepts an entry without dates, keeping its error", async () => {
+    stubMilestones(() => json(list([entry("m-4", { start: null, end: null, error: "M4 has no start/end metadata" })])));
+    const [m4] = (await fetchMilestones("alpha")).milestones;
+    expect([m4.start, m4.end, m4.error]).toEqual([null, null, "M4 has no start/end metadata"]);
+  });
+
   it("REQ-MILESTONE-UI-008 refuses an unexpected shape", async () => {
     stubMilestones(() => json({ milestones: [{ id: 1 }], unassigned_epics: 0, today: "2026-10-29" }));
     await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");

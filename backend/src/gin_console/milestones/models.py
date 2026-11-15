@@ -23,8 +23,8 @@ class MilestoneEntry(BaseModel):
     id: Text
     title: Text
     status: Text
-    start: IsoDate
-    end: IsoDate
+    start: IsoDate | None
+    end: IsoDate | None
     kickoff: IsoDate | None
     finish: IsoDate | None
     epics: EpicCount
