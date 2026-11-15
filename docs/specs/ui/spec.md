@@ -34,12 +34,17 @@ The Projects page SHALL show, for each project with `workflow` data, the `stage`
 - THEN the project's card shows `plan` and a chip naming `requirement_confirmed` as satisfied
 
 ### REQ-UI-004: Beads summary display
-The Projects page SHALL show, for each project with `beads` data, the counts open, in progress, blocked and ready, and the active epics as `id` and `title`, or a "no active epics" note when the list is empty.
+The Projects page SHALL show, for each project with `beads` data, the counts open, in progress, blocked and ready, the count `prep` as "prep <n>" when it is above 0, and the active epics as `id` and `title`, or a "no active epics" note when the list is empty.
 
 #### Scenario: Counts and epics
 - GIVEN a project with the counts 3, 1, 0, 2 and one active epic
 - WHEN the Projects page loads
 - THEN the card shows all four counts and the epic id and title
+
+#### Scenario: Prep count
+- GIVEN a project with the counts 3, 1, 0, 2 and `prep` 2, and a project with `prep` 0
+- WHEN the Projects page loads
+- THEN the first card shows the four counts and "prep 2", and the second card shows no prep count
 
 ### REQ-UI-005: Project links
 The Projects page SHALL link each project name to that project's Beads page `/beads?project=<name>` inside the console, in the same tab and without an external address, and SHALL link each active epic to the bead page `/beads/<project>/<id>`.
@@ -386,7 +391,7 @@ WHILE the page is visible, the bead list SHALL reload every 10 seconds without r
 - THEN the old list stays visible with an error message and a retry button
 
 ### REQ-UI-028: Bead detail
-The bead page SHALL show the bead's id, title, status, priority, type, labels, owner, assignee, creation and update times and comment count, its description rendered as GitHub-flavored Markdown (headings, emphasis, lists, task lists, inline code, code blocks, tables, block quotes and links), its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with a progress bar of closed children over all children. Raw HTML in the description SHALL be shown as text and SHALL NOT create elements, a link SHALL open in a new tab with `rel="noreferrer"`, and a link whose URL is not `http`, `https` or `mailto` SHALL be shown as text.
+The bead page SHALL show the bead's id, title, status, priority, type, labels, owner, assignee, creation and update times and comment count, its description rendered as GitHub-flavored Markdown (headings, emphasis, lists, task lists, inline code, code blocks, tables, block quotes and links), its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with a progress bar of closed tracks over all tracks when it has a track. WHEN an epic has prep tasks (REQ-BEADS-002), the bead page SHALL show "Prep x/y" next to the progress bar, where x is its closed prep tasks and y all its prep tasks, and SHALL mark each prep task in the children list with a "Prep" chip. Raw HTML in the description SHALL be shown as text and SHALL NOT create elements, a link SHALL open in a new tab with `rel="noreferrer"`, and a link whose URL is not `http`, `https` or `mailto` SHALL be shown as text.
 Source: `assets/2026-11-08/mockup/index.html#bead-detail`
 
 #### Scenario: Markdown description
@@ -413,6 +418,11 @@ Source: `assets/2026-11-08/mockup/index.html#bead-detail`
 - GIVEN an epic with 4 children of which 3 are closed
 - WHEN the page loads
 - THEN the children are listed and a progress bar reads 3 of 4
+
+#### Scenario: Epic with a prep task
+- GIVEN epic `e-1` with tracks `t-1` (closed) and `t-2` (open), and the closed prep task `p-1` labelled `prep` and `prep:mockup`
+- WHEN the page of `e-1` loads
+- THEN the progress bar reads 1 of 2, "Prep 1/1" is shown next to it, and the children list shows `t-1`, `t-2` and `p-1`, with a "Prep" chip on `p-1` only
 
 ### REQ-UI-029: Bead errors
 IF a request for the list or a bead fails, THEN the page SHALL show the error and a retry button that repeats the request, IF the server answers 404 for a bead, THEN the page SHALL say "Bead not found" with a link back to the list, and IF a response has an unexpected shape, THEN the page SHALL show an error instead of failing.
@@ -660,7 +670,7 @@ WHEN a search or a filter is active, the List view SHALL show only the beads tha
 - THEN the epic under `m2` and its child task are shown, the other epic is not, and no milestone bead is shown (REQ-MILESTONE-UI-009)
 
 ### REQ-UI-044: List rows
-The List view SHALL show for each row an open/close control when it has children, its id in the monospace face, its title as a link to `/beads/<project>/<id>`, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic how many of its direct children are closed with a progress bar, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
+The List view SHALL show for each row an open/close control when it has children, its id in the monospace face, its title as a link to `/beads/<project>/<id>`, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee or owner, up to three labels from 768px, and its last update, SHALL show for an epic with a track how many of its tracks are closed with a progress bar, SHALL show for an epic with prep tasks (REQ-BEADS-002) "Prep x/y", where x is its closed prep tasks and y all its prep tasks, SHALL show a "Prep" chip on the row of a prep task, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
 
 #### Scenario: Row content
 - GIVEN a blocked P1 bug assigned to alice with 2 comments
@@ -681,6 +691,11 @@ The List view SHALL show for each row an open/close control when it has children
 - GIVEN an epic with 5 children of which 3 are closed
 - WHEN the List view is shown with "Show closed" on
 - THEN the epic says "3/5 closed" with a progress bar
+
+#### Scenario: Epic with a prep task
+- GIVEN epic `e-1` with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`
+- WHEN the List view is shown with "Show closed" on and `e-1` open
+- THEN `e-1` says "1/2 closed" with a progress bar and "Prep 0/1", and the row of `p-1` shows a "Prep" chip while the rows of `t-1` and `t-2` do not
 
 #### Scenario: Plain text
 - GIVEN a title containing `<script>x</script>`
@@ -782,7 +797,7 @@ The Dependencies page SHALL place each node one layer below its furthest blocker
 - THEN all nodes are in layer 0 and the note "No blocking relations between these tasks" is shown
 
 ### REQ-UI-049: Node content
-The Dependencies page SHALL show on each node the content of a card: the bead id in the monospace face and `P<n>` on the first line, its title on one line with the full title as `title`, and its state as REQ-UI-064 describes, with the 4px left edge in the colour of the state, and on a node with children "n of m done" over its direct children with an icon that says it can be opened.
+The Dependencies page SHALL show on each node the content of a card: the bead id in the monospace face and `P<n>` on the first line, its title on one line with the full title as `title`, and its state as REQ-UI-064 describes, with the 4px left edge in the colour of the state, and on a node with children an icon that says it can be opened, with "n of m done" over its tracks (REQ-BEADS-002) when it has a track. The node of a prep task SHALL show a "Prep" chip.
 
 #### Scenario: Node with children
 - GIVEN epic `e-1` without a parent with 3 tasks, 1 of them closed
@@ -798,6 +813,11 @@ The Dependencies page SHALL show on each node the content of a card: the bead id
 - GIVEN a closed task
 - WHEN the epic is drawn
 - THEN it is drawn as "Done", whatever "Show closed" says on the Beads page
+
+#### Scenario: Node with a prep task
+- GIVEN epic `e-1` without a parent with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`
+- WHEN the project page is shown, and then the page of `e-1`
+- THEN the node `e-1` reads "1 of 2 done" with the open icon, and on the page of `e-1` the node `p-1` shows a "Prep" chip while `t-1` and `t-2` do not
 
 ### REQ-UI-050: Outside beads and cycles
 WHERE a drawn node, or a bead under it, has a `blocked_by` relation with a bead outside the scope, the Dependencies page SHALL draw that outside bead as a dimmed node with a dashed border, above with an arrow to the node when it blocks, and below with an arrow from the node when it is blocked, and IF the arrows form a cycle, THEN the page SHALL still draw every node, SHALL put the nodes of the cycle in layers without looping forever, and SHALL show the warning "Dependency cycle between …" naming the beads.
@@ -1245,7 +1265,7 @@ The List view SHALL remember for the current browser tab which branches of each 
 - THEN only the root level of `b` is open
 
 ### REQ-UI-075: Dependencies page
-The frontend SHALL show the Dependencies page of a scope, the project at `/beads/<project>/graph` or a bead at `/beads/<project>/<id>/graph`; WHERE the scope is the project or a bead with at least one child (found through `parent`), the page SHALL draw as nodes the beads of the project without a parent, or the direct children of the bead, with the arrows REQ-UI-079 describes, and a heading bar with the project's name or the bead's id as a link to its bead page and its title, "n of m done" over the nodes, and for a bead the beads that block it and the beads it blocks as links to their Dependencies pages; WHERE the scope is a bead without children, the page SHALL draw the bead itself, every bead that blocks it directly or not above it and every bead it blocks directly or not below it; and the page SHALL draw beads outside the scope as REQ-UI-050 describes, SHALL say "No dependencies" with a link to the bead when there is nothing to draw, "No beads in this project" for an empty project, "Bead not found" when the bead does not exist, and the error with a Retry button when the beads cannot be loaded, and SHALL refresh as REQ-UI-027 does.
+The frontend SHALL show the Dependencies page of a scope, the project at `/beads/<project>/graph` or a bead at `/beads/<project>/<id>/graph`; WHERE the scope is the project or a bead with at least one child (found through `parent`), the page SHALL draw as nodes the beads of the project without a parent, or the direct children of the bead, with the arrows REQ-UI-079 describes, and a heading bar with the project's name or the bead's id as a link to its bead page and its title, "n of m done" over the nodes that are not prep tasks (REQ-BEADS-002), and for a bead the beads that block it and the beads it blocks as links to their Dependencies pages; WHERE the scope is a bead without children, the page SHALL draw the bead itself, every bead that blocks it directly or not above it and every bead it blocks directly or not below it; and the page SHALL draw beads outside the scope as REQ-UI-050 describes, SHALL say "No dependencies" with a link to the bead when there is nothing to draw, "No beads in this project" for an empty project, "Bead not found" when the bead does not exist, and the error with a Retry button when the beads cannot be loaded, and SHALL refresh as REQ-UI-027 does.
 
 #### Scenario: Epic
 - GIVEN epic `e-1` with tasks `a` and `b`, `b` blocked by `a`
@@ -1296,6 +1316,11 @@ The frontend SHALL show the Dependencies page of a scope, the project at `/beads
 - GIVEN the request for the beads fails
 - WHEN the page is shown
 - THEN the error and a Retry button are shown, and the last graph stays when a later refresh fails
+
+#### Scenario: Prep task in the scope
+- GIVEN epic `e-1` with tasks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`
+- WHEN `/beads/p/e-1/graph` is shown
+- THEN `t-1`, `t-2` and `p-1` are nodes and the heading bar reads "1 of 2 done"
 
 ### REQ-UI-076: Closed beads and Hide done
 The Dependencies page SHALL draw closed beads whatever "Show closed" of the Beads page says, SHALL offer a switch "Hide done", off at first, that leaves out the closed beads and the arrows to them, and SHALL drop a lifted arrow between two open nodes when the underlying relation has a closed end.
@@ -1526,7 +1551,7 @@ The AI usage tab SHALL show, in this order:
 - A row of figures: tokens, estimated cost, tokens per closed bead, and cache reads (`totals.cache_ratio` as a percentage).
 - A horizontal bar chart of tokens per member, stacked by stage, with each member's total at the end of the bar. Each bar SHALL show, on hover and on focus, the member's closed beads, tokens, cost, tokens per bead and cache ratio.
 - A 100% bar of tokens per stage, with each stage's share written as text.
-- A table of the top epics. Each row SHALL link to the epic's bead page and show its tokens, its closed and total children, and one of three budget states:
+- A table of the top epics. Each row SHALL link to the epic's bead page and show its tokens, its closed and total tracks (`closed_children` and `children`), "Prep x/y" from `closed_prep_children` and `prep_children` when `prep_children` is above 0, and one of three budget states:
   - with a budget and a cost: a meter of `budget.cost` against `budget.budget_usd`, with the percentage, in the warning color above 100%;
   - with a budget but no cost: "no price";
   - without a budget: "No budget".
@@ -1542,6 +1567,11 @@ The AI usage tab SHALL show, in this order:
 - GIVEN top epics `a-1` with budget 10 and cost 11.7, and `a-2` without a budget
 - WHEN the AI usage tab is shown
 - THEN `a-1` shows a meter at 117% in the warning color and `a-2` shows "No budget"
+
+#### Scenario: epic with prep tasks
+- GIVEN top epics `e-1` with `closed_children` 1, `children` 2, `closed_prep_children` 1 and `prep_children` 1, and `e-2` with `prep_children` 0
+- WHEN the AI usage tab is shown
+- THEN the row of `e-1` shows "1/2" and "Prep 1/1", and the row of `e-2` shows no prep count
 
 ### REQ-UI-090: Delivery flow view
 The Delivery tab SHALL show, in this order:

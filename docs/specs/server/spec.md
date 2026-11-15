@@ -75,7 +75,7 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - THEN that project's `workflow` has `stage` `discuss` and the five gates with their states
 
 ### REQ-SERVER-006: Beads summary per project
-WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id` and `title`, taken from the project's `bd export` snapshot (REQ-BEADS-012) with readiness worked out as in REQ-BEADS-007, where `blocked` counts the beads that are not closed and blocked, and `ready` never counts a bead of type `milestone`.
+WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id` and `title`, taken from the project's `bd export` snapshot (REQ-BEADS-012) with readiness worked out as in REQ-BEADS-007, where `blocked` counts the beads that are not closed and blocked, and `ready` never counts a bead of type `milestone`. The counts `open`, `in_progress`, `blocked` and `ready` SHALL leave out prep tasks (REQ-BEADS-002). The `beads` object SHALL add `prep`, the number of prep tasks that are not closed.
 
 #### Scenario: Counts and active epics
 - GIVEN a project with 3 open, 1 in_progress and 2 ready issues, one in_progress epic and one ready open epic
@@ -91,6 +91,11 @@ WHEN a client requests `GET /api/projects`, the server SHALL include for each ex
 - GIVEN a project with 2 ready issues and an open milestone without blockers
 - WHEN a client requests `GET /api/projects`
 - THEN `beads.ready` is 2
+
+#### Scenario: Prep tasks counted apart
+- GIVEN a project whose only beads are the in_progress epic `e-1`, its open ready tracks `t-1` and `t-2`, its open prep task `p-1` labelled `prep` and `prep:mockup` without blockers, and its closed prep task `p-2` labelled `prep`
+- WHEN a client requests `GET /api/projects`
+- THEN `beads.open` is 2, `beads.in_progress` is 1, `beads.ready` is 2, `beads.blocked` is 0 and `beads.prep` is 1
 
 ### REQ-SERVER-007: Per-block errors
 IF a `gin` or `bd` command for a project is missing, times out, exits non-zero, or prints invalid JSON, THEN the server SHALL set that block (`workflow` or `beads`) to an object whose only content is an `error` message, and SHALL leave the other block and the other projects unaffected; for a project whose `exists` is false the server SHALL run no command and return both blocks as `null`.

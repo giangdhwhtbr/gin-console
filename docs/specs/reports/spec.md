@@ -49,7 +49,7 @@ The server SHALL read `metadata.ai_usage` (a JSON string or object with `version
 The report SHALL hold the following, over the own shares of the selected closed beads:
 - Totals: tokens, cost, closed beads, tokens per closed bead, the cache ratio `cache_read / (input + cache_read + cache_write)` summed over the models of every own share (absent when the denominator is 0), and the rework rate of REQ-REPORTS-005.
 - One row per member, keyed by `assignee` (beads without one fall under `Unassigned`). Each row holds closed beads, tokens, cost, tokens per closed bead, tokens per stage, and the cache ratio.
-- The 10 epics with the most tokens. An epic's tokens are its own share plus those of its selected descendants. Each epic row holds its project, `ai_usage.budget` when present, and its closed and total children.
+- The 10 epics with the most tokens. An epic's tokens are its own share plus those of its selected descendants. Each epic row holds its project, `ai_usage.budget` when present, its closed and total tracks as `closed_children` and `children`, and its closed and total prep tasks (REQ-BEADS-002) as `closed_prep_children` and `prep_children`. Prep tasks still count toward the epic's tokens and cost.
 - The 10 beads with the largest own share.
 - Tokens and cost per stage.
 - Tokens and cost per model and role.
@@ -68,6 +68,11 @@ The report SHALL hold the following, over the own shares of the selected closed 
 - GIVEN two closed beads whose own shares hold model tokens of input 100, cache_read 300, cache_write 0, and input 100, cache_read 0, cache_write 0
 - WHEN the report is built
 - THEN `totals.cache_ratio` is 0.6
+
+#### Scenario: epic with a prep task
+- GIVEN open epic `e-1` without `ai_usage`, its closed track `t-1` of 200 tokens, its open track `t-2`, and its closed prep task `p-1` labelled `prep` and `prep:mockup` of 100 tokens
+- WHEN the report is built
+- THEN `e-1` is in the epic list with 300 tokens, `closed_children` 1, `children` 2, `closed_prep_children` 1 and `prep_children` 1
 
 ### REQ-REPORTS-004: Delivery flow section
 The report SHALL hold:
@@ -218,7 +223,7 @@ Source: `assets/2026-11-12/mockup/index.html`
 - THEN both responses are 502 with an `error` and the failure is not cached
 
 ### REQ-REPORTS-009: Team scope and bead rows
-The scope of a milestone SHALL be every bead that is not a milestone, whose chain of parents (itself included) holds an epic whose parent is the milestone, and that is either not an epic or an epic that no bead has as its parent.
+The scope of a milestone SHALL be every bead that is not a milestone, whose chain of parents (itself included) holds an epic whose parent is the milestone, that is not a prep task (REQ-BEADS-002), and that is either not an epic or an epic that has no track.
 
 Each scope bead SHALL fall in one bucket:
 - `closed` for status `closed`;
@@ -260,6 +265,11 @@ The response SHALL hold `beads`, one row per scope bead, with:
 - GIVEN milestone `m2` ending on Friday 2026-11-27 and a scope bead closed on Tuesday 2026-12-01
 - WHEN the team report is built
 - THEN its `late_days` is 2
+
+#### Scenario: prep tasks left out
+- GIVEN milestone `m2` with epic `e-1` whose tracks are `t-1` and `t-2`, and whose prep task is `p-1` labelled `prep` and `prep:mockup`, and epic `e-2` whose only child is prep task `p-2` labelled `prep`
+- WHEN the team report for `m2` is built
+- THEN `beads` holds `t-1`, `t-2` and `e-2`, with `e-2` as its own epic, and neither `e-1`, `p-1` nor `p-2`
 
 ### REQ-REPORTS-010: Team and member KPIs
 The response SHALL hold `team`, over the whole scope, and `members`, with one row per member of REQ-REPORTS-009 sorted by scope count (largest first) and then by name, with `Unassigned` last. Each holds:
