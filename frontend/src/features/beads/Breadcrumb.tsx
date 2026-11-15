@@ -3,7 +3,7 @@ import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
 import { graphPath } from "./graph";
 import { useReturn } from "./returnState";
 
-const VIEW_NAME: Record<string, string> = { list: "List", board: "Board", focus: "Focus" };
+const VIEW_NAME: Record<string, string> = { list: "List", board: "Board", focus: "Focus", graph: "Graph" };
 const enc = encodeURIComponent;
 
 /** How many of the search, the status, priority, label, type, assignee and sprint filters and "Show closed" are on. */

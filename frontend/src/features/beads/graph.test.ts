@@ -5,6 +5,7 @@ import {
   chainOf,
   graphFor,
   graphPath,
+  keepWithAncestors,
   neighbourhoodOf,
   place,
   progressOf,
@@ -271,5 +272,21 @@ describe("layout", () => {
     const beads = [epic("e"), task("a", "e", ["b"]), task("b", "e", ["a"])];
     const g = scopeGraph(beads, "e", OFF);
     expect(g.cycle).toEqual(["a", "b"]);
+  });
+});
+
+describe("REQ-UI-106 keep", () => {
+  const beads = [epic("m2"), epic("e1", { parent: "m2" }), task("e1.1", "e1"), task("e2", "m2"), task("x", null, ["e2"])];
+
+  it("keepWithAncestors returns the matched ids and their ancestors", () => {
+    const keep = keepWithAncestors(beads, [beads[2]]);
+    expect([...keep].sort()).toEqual(["e1", "e1.1", "m2"]);
+  });
+
+  it("scopeGraph drops beads outside keep and the arrows from them", () => {
+    const keep = new Set(["m2", "e1", "e1.1"]);
+    const g = scopeGraph(beads, "m2", { hideDone: false, onlyLinked: false, keep });
+    expect(ids(g)).toEqual(["e1"]);
+    expect(g.edges).toEqual([]);
   });
 });

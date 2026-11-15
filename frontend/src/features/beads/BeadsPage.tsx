@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "@/app/Link";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, isStale, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
-import { graphPath } from "./graph";
 import { rememberSearch } from "./returnState";
 import { StaleNote } from "./StaleNote";
 
@@ -71,9 +69,6 @@ export function BeadsPage() {
                 ))}
               </select>
             </label>
-            <Link to={graphPath(selected, null)} className="text-sm underline underline-offset-2">
-              Dependencies
-            </Link>
           </div>
           <StaleNote projects={stale.includes(selected) ? [selected] : []} />
           <BeadsView key={selected} project={selected} filters={filters} onChange={change} />

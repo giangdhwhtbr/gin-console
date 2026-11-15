@@ -5,6 +5,7 @@ import { BeadFilterBar } from "./BeadFilterBar";
 import { BoardView } from "./BoardView";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
+import { GraphView } from "./GraphView";
 import { ListView } from "./ListView";
 import { isClosedMilestone, milestoneInEffect } from "./milestoneChoice";
 import { useBeads } from "./useBeads";
@@ -30,11 +31,17 @@ export function BeadsView({
   const { state, retry } = useBeads(
     project,
     filters.closed || (filters.sprint !== "" && filters.sprint !== "none") || closedMilestone,
+    true,
   );
 
   const errorMessage = state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
-  const beads = state.status === "ok" ? state.beads : [];
-  const shown = sortBeads(filterBeads(beads, { ...filters, closed: filters.closed || closedMilestone }, milestone));
+  const loaded = state.status === "ok" ? state.beads : [];
+  // Milestone beads only serve the Graph view's milestone scope (REQ-MILESTONE-UI-006, -009).
+  const beads = loaded.filter((b) => b.issue_type !== "milestone");
+  const withClosed = { ...filters, closed: filters.closed || closedMilestone };
+  const shown = sortBeads(filterBeads(beads, withClosed, milestone));
+  // Beads outside the milestone stay in the graph, so the milestone filters only the project scope.
+  const matched = filterBeads(beads, withClosed, milestone === "all" || milestone === "none" ? milestone : "all");
 
   return (
     <section className="flex flex-col gap-4">
@@ -61,6 +68,16 @@ export function BeadsView({
             onChange={onChange}
           />
           <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>
+          {filters.view === "graph" && (
+            <GraphView
+              project={project}
+              beads={loaded}
+              matched={matched}
+              milestone={milestone}
+              filters={filters}
+              onChange={onChange}
+            />
+          )}
           {filters.view === "board" && <BoardView project={project} beads={shown} filters={filters} />}
           {filters.view === "focus" && (
             <FocusView project={project} beads={shown} filters={filters} onChange={onChange} />

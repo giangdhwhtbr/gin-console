@@ -119,19 +119,56 @@ describe("BeadsPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("REQ-UI-081 the project picker is followed by a Dependencies link", async () => {
-    stub(() => json([bead("a-1")]));
-    render(<BeadsPage />);
-    expect(await screen.findByRole("link", { name: "Dependencies" })).toHaveAttribute("href", "/beads/alpha/graph");
-  });
-
-  it("REQ-UI-030 view=graph shows the List and there is no Graph tab", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=graph");
+  it("REQ-UI-081 no separate Dependencies entry; the View nav has Graph", async () => {
     stub(() => json([bead("a-1")]));
     render(<BeadsPage />);
     await screen.findByText("Title a-1");
-    expect(screen.getByRole("button", { name: "List" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.queryByRole("button", { name: "Graph" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Dependencies" })).toBeNull();
+    expect(within(screen.getByRole("navigation", { name: "View" })).getByRole("button", { name: "Graph" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-030 view=graph shows the Graph view with its tab pressed", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=graph");
+    stub(() => json([bead("a-1")]));
+    render(<BeadsPage />);
+    await screen.findByRole("navigation", { name: "Graph scope" });
+    expect(screen.getByRole("button", { name: "Graph" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("REQ-UI-104 REQ-UI-106 milestone=m2&view=graph draws the milestone's epics, not the milestone bead", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&milestone=m2&view=graph");
+    stub(
+      () =>
+        json([
+          bead("m2", { issue_type: "milestone" }),
+          bead("e-a", { issue_type: "epic", parent: "m2", milestone: "m2" }),
+          bead("e-b", { issue_type: "epic", parent: "m2", milestone: "m2" }),
+        ]),
+      defaultProjects,
+      () => json({ milestones: [{ id: "m2", title: "M2", status: "active", start: null, end: null }], current: null }),
+    );
+    render(<BeadsPage />);
+    expect(await screen.findByRole("button", { name: /^e-a/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^e-b/ })).toBeInTheDocument();
+    expect(screen.getByText("2 of 2")).toBeInTheDocument();
+    // only the scope breadcrumb names m2, no node does
+    expect(screen.getAllByRole("button", { name: /^m2/ })).toHaveLength(1);
+    expect(within(screen.getByRole("navigation", { name: "Graph scope" })).getByRole("button", { name: "m2" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-106 switching List to Graph keeps the search and loads nothing more", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&q=a-1");
+    const fetchMock = stub(() => json([bead("a-1"), bead("a-12", { blocked_by: ["a-1"] }), bead("b-2")]));
+    render(<BeadsPage />);
+    await screen.findByText("Title a-1");
+    const calls = () => fetchMock.mock.calls.filter(([i]) => String(i instanceof Request ? i.url : i).includes("/api/beads?")).length;
+    const before = calls();
+    await userEvent.click(screen.getByRole("button", { name: "Graph" }));
+    await screen.findByRole("navigation", { name: "Graph scope" });
+    expect(window.location.search).toContain("q=a-1");
+    expect(screen.getAllByRole("button", { name: /^a-1/ })).toHaveLength(2);
+    expect(screen.queryByRole("button", { name: /^b-2/ })).toBeNull();
+    expect(calls()).toBe(before);
   });
 
   it("REQ-MILESTONE-UI-009 list view: milestone not listed and its epics are roots", async () => {

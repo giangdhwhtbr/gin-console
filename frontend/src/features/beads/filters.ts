@@ -1,7 +1,7 @@
 import type { BeadSummary } from "./api";
 import { matchesMilestone, type MilestoneInEffect } from "./milestoneChoice";
 
-export const VIEWS = ["list", "board", "focus"] as const;
+export const VIEWS = ["list", "board", "focus", "graph"] as const;
 export type View = (typeof VIEWS)[number];
 
 export type BeadFilters = {
@@ -21,6 +21,8 @@ export type BeadFilters = {
   /** `all`, `none`, a milestone id, or `` for the project's current milestone (REQ-UI-104). */
   milestone: string;
   select: string;
+  /** The Graph view's container bead (REQ-UI-106); `` when absent. */
+  scope: string;
 };
 
 const parseArray = (value: string | null): string[] => {
@@ -49,6 +51,7 @@ export function parseFilters(search: string): BeadFilters {
     sprint: p.get("sprint") ?? "",
     milestone: p.get("milestone") ?? "",
     select: p.get("select") ?? "",
+    scope: p.get("scope") ?? "",
   };
 }
 
@@ -69,6 +72,7 @@ export function filtersToSearch(filters: BeadFilters): string {
   if (filters.sprint !== "") p.set("sprint", filters.sprint);
   if (filters.milestone !== "") p.set("milestone", filters.milestone);
   if (filters.select !== "") p.set("select", filters.select);
+  if (filters.scope !== "") p.set("scope", filters.scope);
   const text = p.toString();
   return text === "" ? "" : `?${text}`;
 }
