@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-062: Expand an epic shows its closed children
-REQ: REQ-MILESTONE-UI-015@f33e3903
+REQ: REQ-MILESTONE-UI-015@665bc3ff
 Priority: high
 Result: passed
 Run: qa/evidence/2026-11-06T04-18-00

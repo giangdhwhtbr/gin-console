@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-063: Epic without children has no expand button
-REQ: REQ-MILESTONE-UI-015@f33e3903
+REQ: REQ-MILESTONE-UI-015@665bc3ff
 Priority: medium
 Result: passed
 Run: qa/evidence/2026-11-06T04-18-00
