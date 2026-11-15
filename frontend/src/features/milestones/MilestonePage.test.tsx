@@ -205,6 +205,52 @@ describe("MilestonePage", () => {
     expect(window.location.search).toBe("?tab=beads&start=2026-11-10&zoom=2w");
   });
 
+  const retroNotes = [
+    { id: "1", author: "lead", created_at: "2026-11-10T10:00:00Z", text: "[gin close] m2\nDelivered: shipped", truncated: false },
+    { id: "2", author: "ann", created_at: "2026-11-11T10:00:00Z", text: "[gin retro] m2 ann\nWent well: x", truncated: false },
+    { id: "3", author: "bao", created_at: "2026-11-11T11:00:00Z", text: "[gin retro] m2 bao\nWent well: y", truncated: false },
+  ];
+  const openRetro = (search: string, notes: typeof retroNotes) => {
+    window.history.replaceState(null, "", `/milestones/alpha/m2${search}`);
+    stubMilestones(() => json(detail([epicPlan("e1")], { id: "m2" })), mBeads, notes);
+    render(<MilestonePage project="alpha" id="m2" />);
+  };
+
+  it("REQ-MILESTONE-UI-018 the tabs are Gantt, Beads and Retro", async () => {
+    openRetro("", []);
+    expect((await screen.findAllByRole("tab")).map((t) => t.id)).toEqual(["tab-gantt", "tab-beads", "tab-retro"]);
+  });
+
+  it("REQ-MILESTONE-UI-019 tab=retro opens the Retro tab, counted by member", async () => {
+    openRetro("?tab=retro", retroNotes);
+    expect(await screen.findByRole("tab", { name: "Retro 2", selected: true })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Close" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ann" })).toBeInTheDocument();
+  });
+
+  it("REQ-MILESTONE-UI-019 no retros: the tab has no number and the panel says how to add one", async () => {
+    openRetro("?tab=retro", []);
+    expect(await screen.findByText(/No retros yet/)).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Retro" })).toBeInTheDocument();
+  });
+
+  it("REQ-MILESTONE-UI-019 a comments failure shows in the tab and the label has no number", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m2?tab=retro");
+    stubMilestones(() => json(detail([epicPlan("e1")], { id: "m2" })), mBeads, () => json({ error: "boom" }, 500));
+    render(<MilestonePage project="alpha" id="m2" />);
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Retro" })).toBeInTheDocument();
+  });
+
+  it("REQ-MILESTONE-UI-018 changing from the Retro tab keeps only start and zoom", async () => {
+    openRetro("?tab=retro&start=2026-11-10&zoom=2w", retroNotes);
+    await userEvent.click(await screen.findByRole("tab", { name: /^Retro/ }));
+    await userEvent.click(screen.getByRole("tab", { name: "Gantt" }));
+    expect(window.location.search).toBe("?start=2026-11-10&zoom=2w");
+    await userEvent.click(screen.getByRole("tab", { name: /^Retro/ }));
+    expect(window.location.search).toBe("?tab=retro&start=2026-11-10&zoom=2w");
+  });
+
   it("REQ-MILESTONE-UI-018 the old Graph link opens the Graph view of the Beads tab", async () => {
     openBeads("?tab=graph");
     expect(await screen.findByRole("tab", { name: "Beads", selected: true })).toBeInTheDocument();

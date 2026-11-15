@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 import { json, milestoneOption, project, projectMilestones } from "@/features/beads/beadFixtures";
-import type { BeadSummary } from "@/features/beads/api";
+import type { BeadSummary, Comment } from "@/features/beads/api";
 import type { EpicPlan, Forecast, MilestoneDetail, MilestoneEntry, MilestoneList } from "./api";
 
 export const entry = (id: string, overrides: Partial<MilestoneEntry> = {}): MilestoneEntry => ({
@@ -75,14 +75,15 @@ const projectMilestones_ = projectMilestones(
   "m2",
 );
 
-/** Stub `fetch`: `/api/projects` lists "alpha", `/api/beads/milestones` lists m1 (closed), m2 (active, current) and m3, `/api/milestones…` goes to `handler`, `/api/beads` returns `beads` (or what `beads(url)` answers). */
-export function stubMilestones(handler: (url: URL) => Response | Promise<Response>, beads: BeadSummary[] | ((url: URL) => Response) = []) {
+/** Stub `fetch`: `/api/beads/<p>/<id>/comments` returns `comments`, `/api/projects` lists "alpha", `/api/beads/milestones` lists m1 (closed), m2 (active, current) and m3, `/api/milestones…` goes to `handler`, `/api/beads` returns `beads` (or what `beads(url)` answers). */
+export function stubMilestones(handler: (url: URL) => Response | Promise<Response>, beads: BeadSummary[] | ((url: URL) => Response) = [], comments: Comment[] | ((url: URL) => Response) = []) {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
     const url = new URL(text, "http://localhost");
     if (url.pathname === "/api/projects/beads") return Promise.resolve(json([project("alpha")]));
     if (url.pathname === "/api/beads/milestones") return Promise.resolve(json(projectMilestones_));
     if (url.pathname.startsWith("/api/milestones")) return Promise.resolve(handler(url));
+    if (/^\/api\/beads\/[^/]+\/[^/]+\/comments$/.test(url.pathname)) return Promise.resolve(typeof comments === "function" ? comments(url) : json(comments));
     if (url.pathname === "/api/beads") return Promise.resolve(typeof beads === "function" ? beads(url) : json(beads));
     return Promise.resolve(json({}, 404));
   });
