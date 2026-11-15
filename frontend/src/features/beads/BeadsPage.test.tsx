@@ -156,6 +156,17 @@ describe("BeadsPage", () => {
     expect(within(screen.getByRole("navigation", { name: "Graph scope" })).getByRole("button", { name: "m2" })).toBeInTheDocument();
   });
 
+  it("REQ-UI-106 a closed Graph panel (select=none) does not open a panel in List", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=graph&select=none");
+    stub(() => json([bead("a-1")]));
+    render(<BeadsPage />);
+    await screen.findByRole("navigation", { name: "Graph scope" });
+    await userEvent.click(within(screen.getByRole("navigation", { name: "View" })).getByRole("button", { name: "List" }));
+    await screen.findByText("Title a-1");
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect(window.location.search).not.toContain("select");
+  });
+
   it("REQ-UI-106 switching List to Graph keeps the search and loads nothing more", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&q=a-1");
     const fetchMock = stub(() => json([bead("a-1"), bead("a-12", { blocked_by: ["a-1"] }), bead("b-2")]));

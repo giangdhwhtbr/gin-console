@@ -122,7 +122,44 @@ describe("GraphPage", () => {
     cleanup();
     open("/beads/p/graph", [epic("r-1"), epic("r-2", { blocked_by: ["r-1"] })]);
     await node("r-1");
-    expect(panel()).toHaveTextContent("Select a bead to see its details");
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect(screen.getByRole("button", { name: /^r-1/ }).closest(".grid")?.className).not.toContain("lg:grid-cols");
+  });
+
+  it("REQ-UI-051 close: select=none, no panel, focus back to the heading bar; a reload keeps it closed", async () => {
+    open("/beads/p/e-1/graph", [epic("e-1"), task("a", "e-1"), task("b", "e-1", ["a"])]);
+    await node("a");
+    const before = window.history.length;
+    await userEvent.click(await within(panel()).findByRole("button", { name: "Close details" }));
+    expect(window.location.search).toBe("?select=none");
+    expect(window.history.length).toBe(before);
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect(within(screen.getByRole("region", { name: "Scope" })).getByRole("button", { name: /e-1|Title/ })).toHaveFocus();
+    cleanup();
+    open("/beads/p/e-1/graph?select=none", [epic("e-1"), task("a", "e-1"), task("b", "e-1", ["a"])]);
+    await node("a");
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+  });
+
+  it("REQ-UI-051 close returns focus to the selected node", async () => {
+    open("/beads/p/e-1/graph?select=a", [epic("e-1"), task("a", "e-1"), task("b", "e-1", ["a"])]);
+    await node("a");
+    await userEvent.click(await within(panel()).findByRole("button", { name: "Close details" }));
+    expect(await node("a")).toHaveFocus();
+  });
+
+  it("REQ-UI-052 open panel uses two columns; Escape goes back to the viewed bead, a second Escape closes", async () => {
+    open("/beads/p/e-1/graph?select=a", [epic("e-1"), task("a", "e-1"), task("b", "e-1", ["a"])]);
+    const a = await node("a");
+    expect(a.closest(".grid")).not.toBeNull();
+    expect(a.closest(".grid")?.className).toContain("lg:grid-cols");
+    a.focus();
+    await userEvent.keyboard("{Escape}");
+    expect(window.location.search).toBe("");
+    await userEvent.keyboard("{Escape}");
+    expect(window.location.search).toBe("?select=none");
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect((await node("a")).closest(".grid")?.className).not.toContain("lg:grid-cols");
   });
 
   it("REQ-UI-051 selecting replaces the history entry; an unknown select falls back", async () => {
