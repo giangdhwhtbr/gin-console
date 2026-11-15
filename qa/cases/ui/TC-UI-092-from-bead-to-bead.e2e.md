@@ -1,0 +1,16 @@
+# TC-UI-092: From bead to bead
+
+- **REQ:** REQ-UI-073@21bc1bf0
+- **Priority:** medium
+
+**Preconditions:**
+- Project `a` with bead `a-1` related to bead `a-2`
+
+**Steps:**
+1. Open `/beads?project=a&view=board&status=open`
+2. Open the bead page of `a-1`
+3. Open `a-2` from the related beads of `a-1`
+4. Use the first link of the breadcrumb
+
+**Expected:**
+- The Board with the same filters is shown
