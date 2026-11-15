@@ -31,6 +31,7 @@ describe("ListView", () => {
     const tree = await screen.findByRole("tree");
     const row = within(tree).getByRole("treeitem", { name: /Payments migration/ });
     expect(within(row).getByRole("button", { name: `Expand ${id}` })).toBeInTheDocument();
+    expect(within(row).getByText(id, { selector: ".sr-only" })).toBeInTheDocument();
     const shown = within(row).getByText("ex-payments-pr…tion-2026");
     expect(shown).toHaveAttribute("title", id);
     expect(shown).toHaveClass("min-w-0", "truncate");

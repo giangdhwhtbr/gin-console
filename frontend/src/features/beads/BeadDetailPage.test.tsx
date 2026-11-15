@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadDetail, Comment } from "./api";
@@ -75,13 +75,20 @@ afterEach(() => {
 
 describe("BeadDetailPage", () => {
   it("REQ-UI-107 Unbroken title on a phone and Wide table on a phone", async () => {
-    stubFetch(beadDetail("a-5", { title: "T".repeat(90), description: "| a | b |\n|---|---|\n| 1 | 2 |" }));
+    stubFetch(beadDetail("a-5", { title: "T".repeat(90), description: "| a | b |\n|---|---|\n| 1 | 2 |\n\n```\ncode block\n```" }));
     render(<BeadDetailPage project="alpha" id="a-5" />);
     const h1 = await screen.findByRole("heading", { name: "T".repeat(90) });
     expect(h1).toHaveClass("wrap-anywhere");
     expect(within(h1.parentElement!).getByText("a-5")).toHaveClass("wrap-anywhere");
     expect(screen.getByText(/Owner alice/)).toHaveClass("wrap-anywhere");
-    expect(h1.closest("div.flex-col")).toHaveClass("min-w-0");
+    const md = await waitFor(() => {
+      const el = document.querySelector<HTMLElement>(".markdown");
+      if (el === null) throw new Error("markdown not rendered");
+      return el;
+    });
+    expect(within(md).getByRole("table")).toBeInTheDocument();
+    expect(md.querySelector("pre")).not.toBeNull();
+    expect(md.parentElement).toHaveClass("min-w-0");
   });
 
   const bug = (id: string, status = "open") => ({ id, title: `Bug ${id}`, status, type: "discovered-from" as const });

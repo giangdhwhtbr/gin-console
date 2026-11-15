@@ -65,9 +65,10 @@ export function ListRow({
         ) : (
           <span className="size-6 shrink-0" />
         )}
-        <span className="min-w-0 shrink truncate font-mono text-xs text-muted-foreground" title={bead.id}>
+        <span className="min-w-0 shrink truncate font-mono text-xs text-muted-foreground" title={bead.id} aria-hidden={shortId(bead.id) !== bead.id || undefined}>
           {shortId(bead.id)}
         </span>
+        {shortId(bead.id) !== bead.id && <span className="sr-only">{bead.id}</span>}
         <span className="min-w-32 truncate font-medium" title={bead.title} onClick={(event) => event.stopPropagation()}>
           <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>{bead.title}</Link>
         </span>

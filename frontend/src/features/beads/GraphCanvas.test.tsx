@@ -33,11 +33,12 @@ const zoom = () => within(screen.getByRole("group", { name: "Zoom" }));
 const node = (id: string) => screen.getByRole("button", { name: new RegExp(`^${id}`) });
 
 describe("GraphNode content", () => {
-  it("REQ-UI-049 REQ-UI-107 Long state line: the row does not wrap and the id is shortened", () => {
+  it("REQ-UI-049 REQ-UI-054 REQ-UI-107 Long state line: the row does not wrap and the id is shortened", () => {
     const id = "ex-payments-provider-migration-and-reconciliation-2026";
     const kids = ["a", "b", "c", "d", "e"].map((k, i) => task(k, id, [], { status: i < 2 ? "closed" : "open" }));
     show(scopeGraph([epic(id, { status: "in_progress" }), ...kids], null, OFF));
-    const n = node("ex-payments-pr");
+    const n = node(id);
+    expect(n).toHaveAccessibleName(new RegExp(`^${id}`));
     expect(within(n).getByText("ex-payments-pr…tion-2026")).toHaveAttribute("title", id);
     const done = within(n).getByText("2 of 5 done");
     expect(done).toHaveClass("shrink-0");
@@ -166,7 +167,7 @@ describe("GraphCanvas", () => {
     const longId = "gin-console-rm-more-harnesses";
     const g = scopeGraph([epic(longId, { title: "More harnesses long title" })], null, OFF);
     show(g);
-    const btn = document.querySelector<HTMLElement>(`[data-node="${longId}"]`)!;
+    const btn = node(longId);
     expect(btn).toHaveClass("overflow-hidden");
     const idSpan = within(btn).getByTitle(longId);
     expect(idSpan).toHaveClass("truncate");

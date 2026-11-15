@@ -45,7 +45,10 @@ export function GraphNodeButton({
       )}
     >
       <span className="flex items-center justify-between gap-1 font-mono text-muted-foreground">
-        <span className="min-w-0 truncate" title={node.bead.id}>{shortId(node.bead.id)}</span>
+        <span className="min-w-0 truncate" title={node.bead.id} aria-hidden={shortId(node.bead.id) !== node.bead.id || undefined}>
+          {shortId(node.bead.id)}
+        </span>
+        {shortId(node.bead.id) !== node.bead.id && <span className="sr-only">{node.bead.id}</span>}
         <span className="shrink-0">{`P${node.bead.priority}`}</span>
       </span>
       <span className="truncate text-sm font-medium text-card-foreground">{node.bead.title}</span>

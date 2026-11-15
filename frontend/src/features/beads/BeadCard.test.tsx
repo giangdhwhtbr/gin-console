@@ -19,6 +19,8 @@ describe("BeadCard", () => {
     const id = "ex-payments-provider-migration-and-reconciliation-2026";
     card(bead(id, { title: "T".repeat(80), assignee: "x".repeat(60) }));
     expect(screen.getByText("ex-payments-pr…tion-2026")).toHaveAttribute("title", id);
+    expect(screen.getByText(id, { selector: ".sr-only" })).toBeInTheDocument();
+    expect(screen.getByRole("listitem")).toHaveTextContent(id);
     expect(screen.getByRole("link", { name: "T".repeat(80) })).toHaveClass("wrap-anywhere");
     expect(screen.getByText("x".repeat(60))).toHaveClass("wrap-anywhere");
   });
