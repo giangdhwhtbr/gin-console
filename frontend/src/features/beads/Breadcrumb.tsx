@@ -21,6 +21,16 @@ export function activeFilters(filters: BeadFilters): number {
   return set.filter(Boolean).length;
 }
 
+/** [project, milestone] of a remembered milestone path; null for another path or one that does not decode. */
+function milestonePlace(path: string): string[] | null {
+  if (!path.startsWith("/milestones/")) return null;
+  try {
+    return path.split("/").slice(2).map(decodeURIComponent);
+  } catch {
+    return null; // damaged text in storage
+  }
+}
+
 export function Breadcrumb({
   project,
   id,
@@ -35,7 +45,7 @@ export function Breadcrumb({
 }) {
   const saved = useReturn();
   // a milestone's Beads tab is remembered as /milestones/<project>/<milestone>
-  const place = saved.path.startsWith("/milestones/") ? saved.path.split("/").slice(2).map(decodeURIComponent) : null;
+  const place = milestonePlace(saved.path);
   const remembered =
     saved.search !== "" &&
     (place !== null ? place[0] === project && place.length === 2 : new URLSearchParams(saved.search).get("project") === project);

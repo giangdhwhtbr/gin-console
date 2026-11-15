@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Breadcrumb } from "./Breadcrumb";
-import { clearReturn, rememberPlace, rememberSearch } from "./returnState";
+import { RETURN_KEY, clearReturn, rememberPlace, rememberSearch } from "./returnState";
 
 beforeEach(() => clearReturn());
 afterEach(cleanup);
@@ -49,6 +49,12 @@ describe("Breadcrumb", () => {
     rememberPlace("/milestones/a/m2", "?tab=beads&view=board");
     render(<Breadcrumb project="b" id="b-1" parent={null} />);
     expect(crumb().getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=b");
+  });
+
+  it("REQ-UI-073 a damaged remembered milestone path falls back to Beads without an error", () => {
+    window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ path: "/milestones/%E0/x", search: "?tab=beads", open: {} }));
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=a");
   });
 
   it("REQ-UI-072 shows the parent as a link before the bead", () => {
