@@ -39,7 +39,7 @@ export type GraphNode = {
   hasKids: boolean;
 };
 export type Graph = { nodes: GraphNode[]; edges: GraphEdge[]; cycle: string[]; unlinked: number };
-export type GraphOptions = { hideDone: boolean; onlyLinked: boolean };
+export type GraphOptions = { hideDone: boolean; onlyLinked: boolean; keep?: ReadonlySet<string> };
 export type StepKey = "ArrowRight" | "ArrowLeft" | "ArrowUp" | "ArrowDown";
 
 export const edgeKey = (edge: Link) => `${edge.from}>${edge.to}`;
@@ -236,12 +236,22 @@ function layout(
   return { nodes, cycle: cycleNodes(edges) };
 }
 
+/** The ids of the beads, plus every loaded ancestor of each (through `parent`). */
+export function keepWithAncestors(all: readonly BeadSummary[], matched: readonly BeadSummary[]): Set<string> {
+  const keep = new Set<string>();
+  for (const b of matched) {
+    keep.add(b.id);
+    for (const a of ancestorsOf(all, b.id)) keep.add(a);
+  }
+  return keep;
+}
+
 export function scopeGraph(beads: readonly BeadSummary[], scope: string | null, options: GraphOptions): Graph {
   const byId = indexOf(beads);
   const holder = holders(byId, scope);
   const kept = (id: string) => {
     const b = byId.get(id);
-    return b !== undefined && !(options.hideDone && isDone(b));
+    return b !== undefined && !(options.hideDone && isDone(b)) && (options.keep === undefined || options.keep.has(id));
   };
   const merged = new Map<string, GraphEdge>();
   for (const b of beads) {

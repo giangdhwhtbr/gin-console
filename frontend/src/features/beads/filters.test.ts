@@ -50,6 +50,7 @@ describe("filters", () => {
       sprint: "1",
       milestone: "",
       select: "",
+      scope: "",
     });
   });
 
@@ -63,17 +64,25 @@ describe("filters", () => {
     expect(f.assignee).toEqual(["bob"]);
   });
 
-  it("REQ-UI-030 old Graph links fall back to the List and lose the epic", () => {
+  it("REQ-UI-030 an old Graph link opens the Graph view and loses the epic", () => {
     const filters = parseFilters("?project=a&view=graph&epic=e-1&select=t-1");
-    expect(filters.view).toBe("list");
-    expect(filtersToSearch(filters)).toBe("?project=a&select=t-1");
+    expect(filters.view).toBe("graph");
+    expect(filtersToSearch(filters)).toBe("?project=a&view=graph&select=t-1");
+  });
+
+  it("REQ-UI-106 scope round-trips through the URL", () => {
+    const filters = parseFilters("?view=graph&scope=e-1");
+    expect(filters.scope).toBe("e-1");
+    expect(filtersToSearch(filters)).toBe("?view=graph&scope=e-1");
+    expect(parseFilters("").scope).toBe("");
+    expect(filtersToSearch(parseFilters(""))).toBe("");
   });
 
   // REQ-UI-030
   it("REQ-UI-030 parses view from the URL", () => {
     expect(parseFilters("?view=board").view).toBe("board");
     expect(parseFilters("?view=tree").view).toBe("list");
-    expect(parseFilters("?view=graph").view).toBe("list");
+    expect(parseFilters("?view=graph").view).toBe("graph");
     expect(parseFilters("?view=kanban").view).toBe("list");
     expect(parseFilters("").view).toBe("list");
   });
