@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { SlidersHorizontal, X } from "lucide-react";
 import { activeFilters } from "./Breadcrumb";
-import type { BeadFilters, BeadOptions } from "./filters";
+import { KIND_OPTIONS, type BeadFilters, type BeadOptions } from "./filters";
 import { MilestoneFilter } from "./MilestoneFilter";
 import type { MilestoneInEffect, MilestonesState } from "./milestoneChoice";
 
@@ -239,6 +239,52 @@ export function MobileFiltersSheet({
             {/* Milestone */}
             {!hideMilestone && (
               <MilestoneFilter state={milestones} value={milestone} onChange={(value) => onChange({ milestone: value })} />
+            )}
+
+            {/* Kind */}
+            <div role="group" aria-label="Kind">
+              <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Kind</div>
+              <div className="flex flex-wrap gap-1.5">
+                {[{ value: "" as const, label: "All" }, ...KIND_OPTIONS].map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    aria-pressed={filters.kind === o.value}
+                    onClick={() => onChange({ kind: o.value })}
+                    className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
+                          filters.kind === o.value
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-foreground hover:bg-muted"
+                        }`}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Capability (hidden if no bead has one) */}
+            {options.capabilities.length > 0 && (
+              <div role="group" aria-label="Capability">
+                <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Capability</div>
+                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                  {options.capabilities.map((cap) => (
+                    <button
+                      key={cap}
+                      type="button"
+                      aria-pressed={filters.capability.includes(cap)}
+                      onClick={() => onChange({ capability: toggleArrayItem(filters.capability, cap) })}
+                      className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
+                          filters.capability.includes(cap)
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-background text-foreground hover:bg-muted"
+                        }`}
+                    >
+                      {cap}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Type */}

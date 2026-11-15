@@ -23,6 +23,10 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   blocked: false,
   blocked_by: [],
   milestone: null,
+  kind: null,
+  capabilities: [],
+  complexity: null,
+  estimate_minutes: null,
   ...overrides,
 });
 
@@ -42,6 +46,8 @@ describe("filters", () => {
       label: ["qa", "ui"],
       labelMode: "all",
       type: "bug",
+      kind: "",
+      capability: [],
       closed: true,
       view: "list",
       group: "",
@@ -254,6 +260,7 @@ describe("filters", () => {
       statuses: ["in_progress", "open"],
       priorities: [1, 2, 3],
       labels: ["a", "b"],
+      capabilities: [],
       types: ["bug", "task"],
       assignees: ["unassigned", "alice", "bob"],
       sprints: ["10", "2", "1"],
@@ -377,5 +384,57 @@ describe("filters", () => {
       bead("3", { status: "open", labels: ["sprint:old"] }),
     ];
     expect(filterBeads(beads, { ...empty, sprint: "old" }).map((b) => b.id)).toEqual(["1", "3"]);
+  });
+
+  it("REQ-UI-108 round-trips kind and capability through the URL; an unknown kind reads as empty", () => {
+    const f = parseFilters("?kind=technical&capability=milestone-ui,ui");
+    expect(f.kind).toBe("technical");
+    expect(f.capability).toEqual(["milestone-ui", "ui"]);
+    expect(filtersToSearch(f)).toBe("?kind=technical&capability=milestone-ui%2Cui");
+    expect(parseFilters("?kind=bogus").kind).toBe("");
+    expect(filtersToSearch(parseFilters("?kind=bogus"))).toBe("");
+  });
+
+  it("REQ-UI-108 Kind filter keeps the tracks of the epics of that kind", () => {
+    const beads = [
+      bead("e-1", { issue_type: "epic", kind: "technical" }),
+      bead("t-1", { parent: "e-1" }),
+      bead("e-2", { issue_type: "epic", kind: "capability" }),
+      bead("t-2", { parent: "e-2" }),
+      bead("loose"),
+    ];
+    const ids = (kind: "technical" | "capability") => filterBeads(beads, { ...empty, kind }).map((b) => b.id);
+    expect(ids("technical")).toEqual(["e-1", "t-1"]);
+    expect(ids("capability")).toEqual(["e-2", "t-2"]);
+  });
+
+  it("REQ-UI-108 Capability filter matches the bead's own or its epic's capabilities", () => {
+    const beads = [
+      bead("e-1", { issue_type: "epic", capabilities: ["milestone-ui"] }),
+      bead("t-1", { parent: "e-1" }),
+      bead("t-3", { capabilities: ["beads"] }),
+      bead("t-4"),
+    ];
+    const ids = (capability: string[]) => filterBeads(beads, { ...empty, capability }).map((b) => b.id);
+    expect(ids(["milestone-ui"])).toEqual(["e-1", "t-1"]);
+    expect(ids(["beads"])).toEqual(["t-3"]);
+    expect(ids(["beads", "milestone-ui"])).toEqual(["e-1", "t-1", "t-3"]);
+  });
+
+  it("REQ-UI-108 a sub-task matches through its nearest epic ancestor", () => {
+    const beads = [
+      bead("e-1", { issue_type: "epic", kind: "parity", capabilities: ["ui"] }),
+      bead("t-1", { parent: "e-1" }),
+      bead("s-1", { parent: "t-1" }),
+      bead("o-1", { parent: "gone" }),
+    ];
+    expect(filterBeads(beads, { ...empty, kind: "parity" }).map((b) => b.id)).toEqual(["e-1", "t-1", "s-1"]);
+    expect(filterBeads(beads, { ...empty, capability: ["ui"] }).map((b) => b.id)).toEqual(["e-1", "t-1", "s-1"]);
+  });
+
+  it("REQ-UI-108 optionsOf lists the capabilities sorted and unique", () => {
+    const beads = [bead("a", { capabilities: ["ui", "beads"] }), bead("b", { capabilities: ["beads"] })];
+    expect(optionsOf(beads).capabilities).toEqual(["beads", "ui"]);
+    expect(optionsOf([bead("c")]).capabilities).toEqual([]);
   });
 });
