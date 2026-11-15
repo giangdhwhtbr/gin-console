@@ -43,6 +43,16 @@ class Relation(BaseModel):
     type: Literal["blocks", "parent-child", "discovered-from"]
 
 
+class ChildRelation(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    id: Text
+    title: Text
+    status: Text
+    type: Literal["parent-child"]
+    prep: bool = False
+
+
 class Comment(BaseModel):
     model_config = ConfigDict(strict=True)
 
@@ -61,7 +71,7 @@ class BeadDetail(BeadSummary):
     close_reason: Text | None = None
     dependencies: list[Relation] = []
     dependents: list[Relation] = []
-    children: list[Relation] = []
+    children: list[ChildRelation] = []
     bugs: list[Relation] = []
 
 

@@ -6,6 +6,7 @@ from collections.abc import Callable, Iterable
 from datetime import UTC, date, datetime, timedelta
 from typing import NamedTuple
 
+from gin_console.beads.prep import is_prep
 from gin_console.reports.models import (
     AiUsage,
     BeadUsage,
@@ -268,7 +269,8 @@ def _usage(tree: _Tree, closed: list[ReportBead], measured: list[Measured]) -> U
     epics: list[EpicUsage] = []
     for key, rows in _by_epic(tree, measured).items():
         epic = tree.index[key]
-        kids = tree.children.get(key, [])
+        kids = [k for k in tree.children.get(key, []) if not is_prep(k.labels)]
+        prep = [k for k in tree.children.get(key, []) if is_prep(k.labels)]
         epics.append(
             EpicUsage(
                 project=epic.project,
@@ -279,6 +281,8 @@ def _usage(tree: _Tree, closed: list[ReportBead], measured: list[Measured]) -> U
                 cost=_cost(t.cost for m in rows for t in m.own.models.values()),
                 children=len(kids),
                 closed_children=sum(1 for k in kids if k.status == "closed"),
+                prep_children=len(prep),
+                closed_prep_children=sum(1 for k in prep if k.status == "closed"),
                 budget=epic.usage.budget if epic.usage is not None else None,
             )
         )

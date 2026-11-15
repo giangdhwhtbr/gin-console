@@ -111,6 +111,8 @@ class EpicUsage(BaseModel):
     cost: float | None
     children: int
     closed_children: int
+    prep_children: int = 0
+    closed_prep_children: int = 0
     budget: Budget | None
 
 
