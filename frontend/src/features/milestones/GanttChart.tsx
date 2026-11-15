@@ -3,6 +3,8 @@ import { useId, useLayoutEffect, useRef, useState, type RefObject, type UIEvent 
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
 import type { BeadSummary } from "@/features/beads/api";
+import { childCounts, isPrep, prepLabel } from "@/features/beads/prep";
+import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
 import { cn } from "@/lib/utils";
 import type { MilestoneDetail } from "./api";
@@ -367,7 +369,8 @@ function EpicRow({
   const x0 = xOf(axis, days[0]);
   const x1 = endOf(axis, days[days.length - 1]);
   const unestimated = epic.estimate_days === null;
-  const closed = kids.filter((b) => b.status === "closed").length;
+  const counts = childCounts(kids);
+  const prep = prepLabel(counts);
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
     <li data-epic={epic.id} data-faded={faded || undefined} onMouseEnter={onHot} onFocus={onHot} className="flex border-b" style={{ height: row.height }}>
@@ -400,7 +403,8 @@ function EpicRow({
               </Link>
             </span>
             <span className="min-w-0 truncate lg:shrink-0">{`${periodOf(epic.planned_start, epic.planned_end, today)}, ${unestimated ? "no estimate" : `${epic.estimate_days}d`}`}</span>
-            {kids.length > 0 && <span className="min-w-0 truncate lg:shrink-0">{`${closed}/${kids.length} closed`}</span>}
+            {counts.tracks > 0 && <span className="min-w-0 truncate lg:shrink-0">{`${counts.closedTracks}/${counts.tracks} closed`}</span>}
+            {prep !== null && <span className="min-w-0 truncate lg:shrink-0">{prep}</span>}
             {epic.spec_confirmed === true && (
               <span className="flex min-w-0 items-center gap-1 truncate text-state-ready lg:shrink-0">
                 <FileCheck aria-hidden className="size-3 flex-none" />
@@ -469,6 +473,7 @@ function ChildRow({ project, row, axis, label, today, faded }: { project: string
               {shortId}
             </Link>
           </span>
+          {isPrep(bead.labels) && <PrepChip />}
           <span title={bead.title} className="min-w-0 flex-1 truncate">
             {bead.title}
           </span>

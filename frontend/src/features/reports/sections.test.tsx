@@ -58,6 +58,23 @@ describe("report sections", () => {
     expect(screen.getByText(/a-2 — Bead two/)).toBeTruthy();
   });
 
+  it("REQ-UI-089 prep tasks shown as Prep x/y apart from the track count; absent field reads as 0", () => {
+    const base = report();
+    const e = base.usage.epics[0];
+    const r = report({
+      usage: {
+        ...base.usage,
+        epics: [
+          { ...e, id: "a-1", title: "With prep", children: 2, closed_children: 1, prep_children: 3, closed_prep_children: 2 },
+          { ...e, id: "a-2", title: "No prep", children: 2, closed_children: 1 },
+        ],
+      },
+    });
+    render(usageOf(r));
+    expect(within(screen.getByRole("row", { name: /a-1 — With prep/ })).getByText("Prep 2/3")).toBeTruthy();
+    expect(within(screen.getByRole("row", { name: /a-2 — No prep/ })).queryByText(/Prep/)).toBeNull();
+  });
+
   it("REQ-UI-089 stage share as text; model table", () => {
     render(usageOf(report()));
     expect(screen.getByText("implement 78%, review 22%")).toBeTruthy();

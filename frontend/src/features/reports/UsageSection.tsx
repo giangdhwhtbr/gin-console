@@ -95,6 +95,7 @@ export function UsageSection({ usage, project }: { usage: Usage; project: string
                   </TableCell>
                   <TableCell>
                     {e.closed_children}/{e.children}
+                    {(e.prep_children ?? 0) > 0 && <span className="block text-xs text-muted-foreground">{`Prep ${e.closed_prep_children ?? 0}/${e.prep_children ?? 0}`}</span>}
                   </TableCell>
                 </TableRow>
               ))}

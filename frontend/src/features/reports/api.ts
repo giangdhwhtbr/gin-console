@@ -28,6 +28,9 @@ export type EpicUsage = {
   cost: number | null;
   children: number;
   closed_children: number;
+  /** absent from an older backend: read as 0 */
+  prep_children?: number;
+  closed_prep_children?: number;
   budget: Budget | null;
 };
 export type BeadUsage = {

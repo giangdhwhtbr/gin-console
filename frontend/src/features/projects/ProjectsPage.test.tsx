@@ -111,6 +111,13 @@ describe("ProjectsPage", () => {
     expect(within(card).getByText(/Epic one/)).toBeInTheDocument();
   });
 
+  it("REQ-UI-004 shows prep <n> only when prep tasks exist", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ beads: { ...beads, prep: 2 } }), project({ name: "other", beads })])));
+    render(<ProjectsPage />);
+    expect(within(await screen.findByRole("article", { name: "qwikfone" })).getByText("prep 2")).toBeInTheDocument();
+    expect(within(cardOf("other")).queryByText(/^prep/)).toBeNull();
+  });
+
   // REQ-UI-004
   it("REQ-UI-004 says when there are no active epics", async () => {
     vi.stubGlobal(
