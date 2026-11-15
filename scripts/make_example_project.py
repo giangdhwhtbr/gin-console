@@ -453,7 +453,124 @@ def build(today: date, seed: int = 7) -> list[Row]:
         assignee="chi",
         priority=1,
     )
+    long_text(p, today, m2_start, p_id("m2"), m3_end)
     return p.rows
+
+
+# Long titles, ids, names and labels, to catch layout problems in every view.
+LONG_MEMBER = "nguyen.thi.thanh.huong.payments-team@example-company.com.vn"
+LONG_URL = "https://payments.example.com/api/v3/settlements/reconciliation/reports/daily"
+LONG_TOKEN = "PaymentReconciliationServiceTimeoutExceptionHandlerFactoryProviderBean"
+LONG_TITLES = [
+    f"Handle {LONG_TOKEN} in the worker",
+    "Xử lý đối soát giao dịch thanh toán đa tiền tệ khi nhà cung cấp trả về mã lỗi không xác định",
+    f"Document {LONG_URL}?currency=VND",
+    "Retry failed webhooks with exponential backoff, jitter, a dead letter queue, alerting, a "
+    "manual replay screen for support, and an audit trail that finance can export each month",
+    "Ok",
+]
+LONG_DESCRIPTION = "\n".join(
+    [
+        "Move every checkout payment to the new provider.",
+        "",
+        "| Currency | Old gateway fee | New gateway fee | Settlement delay | Reconciliation file |",
+        "|---|---|---|---|---|",
+        "| VND | 2.2% | 1.6% | T+2 | settlement_report_vnd_daily_reconciliation_2026_11_15.csv |",
+        "| USD | 2.9% + 0.30 | 2.4% + 0.25 | T+1 | settlement_report_usd_daily_2026_11_15.csv |",
+        "",
+        "```",
+        f"curl -X POST {LONG_URL} -H 'Authorization: Bearer <token>' "
+        + """-d '{"currency":"VND","provider":"new-gateway"}'""",
+        "```",
+        "",
+        "See https://wiki.example.com/payments/migration/2026/checkout-v2/provider-switch-runbook",
+    ]
+)
+
+
+def long_text(p: Project, today: date, start: date, milestone: str, after: date) -> None:
+    epic = p.add(
+        f"{PREFIX}-payments-provider-migration-and-reconciliation-2026",
+        "Migrate every checkout payment to the new provider, reconcile settlements across "
+        "currencies, and retire the legacy gateway without downtime",
+        "epic",
+        start - timedelta(days=4),
+        parent=milestone,
+        status="in_progress",
+        assignee=LONG_MEMBER,
+        priority=1,
+        estimated_minutes=480 * 10,
+        started_at=stamp(start),
+        labels=[
+            "sprint:s15",
+            "area:payments-reconciliation-service",
+            "domain:multi-currency-settlement",
+            "risk:high-regulatory-review",
+            "team:checkout-platform-squad",
+        ],
+        description=LONG_DESCRIPTION,
+    )
+    statuses = ["closed", "in_progress", "open", "blocked", "closed"]
+    tasks = [
+        p.task(
+            epic["id"],
+            title,
+            status,
+            start=start,
+            end=today,
+            assignee=LONG_MEMBER if i % 2 == 0 else "bao",
+            labels=["area:payments-reconciliation-service", "needs:security-review"],
+        )
+        for i, (title, status) in enumerate(zip(LONG_TITLES, statuses, strict=True))
+    ]
+    tasks[0]["comments"] = [
+        {
+            "id": "ex-c3",
+            "issue_id": tasks[0]["id"],
+            "author": LONG_MEMBER,
+            "created_at": stamp(start + timedelta(days=1), 15),
+            "text": "Stack trace: com.example.payments.reconciliation.SettlementWorker"
+            f".handleTimeout(SettlementWorker.java:418) caused by {LONG_TOKEN}",
+        }
+    ]
+    p.task(
+        epic["id"],
+        "Capture the legacy gateway's settlement export format, field by field, with samples",
+        "open",
+        start=today,
+        end=today,
+        labels=["prep", "prep:capture"],
+        assignee=LONG_MEMBER,
+    )
+    # Three levels under the epic: long ids such as ex-payments-...-2026.2.1.1
+    sub = p.task(
+        tasks[1]["id"],
+        "Split the settlement worker into fetch and match",
+        "open",
+        start=today,
+        end=today,
+        assignee="chi",
+    )
+    p.task(
+        sub["id"],
+        "Match settlements by provider reference, then by amount and date",
+        "open",
+        start=today,
+        end=today,
+        assignee=None,
+    )
+    m_start, m_end = (
+        workday(after + timedelta(days=7)),
+        workday(after + timedelta(days=28), back=True),
+    )
+    p.add(
+        f"{PREFIX}-m4",
+        "Platform hardening: performance budgets, an accessibility audit, and "
+        "observability for every critical journey",
+        "milestone",
+        today - timedelta(days=1),
+        metadata={"start": m_start.isoformat(), "end": m_end.isoformat()},
+    )
 
 
 # ---------- writing ----------
@@ -528,7 +645,7 @@ def check(out: Path, rows: list[Row]) -> list[str]:
                     f"{row['id']}.{key}: wrote {row.get(key)!r}, exported {got.get(key)!r}"
                 )
     kinds = Counter(r["issue_type"] for r in exported)
-    if kinds["milestone"] != 3 or kinds["epic"] < 8:
+    if kinds["milestone"] != 4 or kinds["epic"] < 9:
         problems.append(f"unexpected bead kinds: {dict(kinds)}")
     if not any("prep" in (r.get("labels") or []) for r in exported):
         problems.append("no prep task")
@@ -544,7 +661,7 @@ def check(out: Path, rows: list[Row]) -> list[str]:
             problems.append(f"gin milestone list failed: {listed.stderr.strip()[-300:]}")
         else:
             statuses = sorted(m["status"] for m in json.loads(listed.stdout)["milestones"])
-            if statuses != ["active", "closed", "planned"]:
+            if statuses != ["active", "closed", "planned", "planned"]:
                 problems.append(f"gin milestone list statuses: {statuses}")
     return problems
 
