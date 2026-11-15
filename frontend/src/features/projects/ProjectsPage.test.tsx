@@ -211,6 +211,44 @@ describe("ProjectsPage", () => {
   });
 
   // REQ-UI-004
+  it("REQ-UI-004 does not crash on a partial, null or malformed epic workflow", async () => {
+    const bad = (value: unknown) => value as Beads["epics"][number]["workflow"];
+    const epics: Beads["epics"] = [
+      { id: "p-1", title: "Partial", status: "in_progress", workflow: bad({ stage: "plan", gates: {} }) },
+      { id: "p-2", title: "Null", status: "in_progress", workflow: null },
+      { id: "p-3", title: "Bad", status: "in_progress", workflow: bad({ stage: "ship", warnings: "x", review_waivers: 3 }) },
+    ];
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ beads: { ...beads, epics } })])));
+    render(<ProjectsPage />);
+    const card = await screen.findByRole("article", { name: "qwikfone" });
+    const [partial, nul, malformed] = within(card).getAllByRole("listitem");
+    expect(within(partial).getByText("plan")).toBeInTheDocument();
+    expect(within(partial).queryByText(/⚠/)).not.toBeInTheDocument();
+    expect(within(nul).queryByText(/plan|⚠|unknown/)).not.toBeInTheDocument();
+    expect(within(malformed).getByText("ship")).toBeInTheDocument();
+    expect(within(malformed).queryByText(/⚠/)).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-003
+  it("REQ-UI-003 does not crash on a workspace without repos or non-array warnings", async () => {
+    const bad = (value: unknown) => value as Workflow;
+    const cases = [
+      bad({ ...workflow, workspace: { root: "/w" } }),
+      bad({ ...workflow, warnings: "x", remedies: 1, review_waivers: "y" }),
+    ];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        json([project({ workflow: cases[0] }), project({ name: "other", workflow: cases[1] })]),
+      ),
+    );
+    render(<ProjectsPage />);
+    await screen.findByRole("article", { name: "qwikfone" });
+    expect(within(cardOf("qwikfone")).getByText("workspace · 0 repos")).toBeInTheDocument();
+    expect(within(cardOf("other")).queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  // REQ-UI-004
   it("REQ-UI-004 says when there are no active epics", async () => {
     vi.stubGlobal(
       "fetch",

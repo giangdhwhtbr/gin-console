@@ -3,13 +3,20 @@ import { Badge } from "@/components/ui/badge";
 import { useId, useState } from "react";
 import { isBlockError, type Beads, type Epic, type Project, type Workflow } from "./api";
 
+// the backend may omit a field or send a malformed one: never crash the page
+const list = <T,>(value: readonly T[] | null | undefined): readonly T[] => {
+  if (!Array.isArray(value)) return [];
+  return value as readonly T[];
+};
+
 function HealthBlock({ workflow }: { workflow: Workflow }) {
   const [open, setOpen] = useState(false);
   const listId = useId();
   const { workspace, team } = workflow;
-  const warnings = workflow.warnings ?? [];
-  const remedies = workflow.remedies ?? [];
-  const waivers = workflow.review_waivers ?? [];
+  const warnings = list(workflow.warnings);
+  const remedies = list(workflow.remedies);
+  const waivers = list(workflow.review_waivers);
+  const repos = list(workspace?.repos);
   const hold = workflow.decision === "hold";
   const alert = hold || warnings.length > 0 || remedies.length > 0;
   const activeTeam = team?.enabled ? team : null;
@@ -18,7 +25,7 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
     <div className="flex flex-col gap-1 text-sm">
       {workspace && (
         <div>
-          <span>{`workspace · ${workspace.repos.length} repos`}</span>{" "}
+          <span>{`workspace · ${repos.length} repos`}</span>{" "}
           <button
             type="button"
             className="underline underline-offset-2"
@@ -30,9 +37,9 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
           </button>
           {open && (
             <ul id={listId} className="mt-1 flex flex-col gap-0.5">
-              {workspace.repos.map((repo) => (
+              {repos.map((repo) => (
                 <li key={repo.path} className="flex flex-wrap items-center gap-1">
-                  <span className="font-mono">{repo.path}</span>
+                  <span className="break-all font-mono">{repo.path}</span>
                   <span>{`${repo.branch ?? "-"} · ${repo.shape ?? "-"}`}</span>
                   {repo.frozen && <Badge variant="secondary">frozen</Badge>}
                   {!repo.present && <Badge variant="destructive">missing</Badge>}
@@ -47,11 +54,15 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
         <div role="alert" className="rounded border border-destructive/50 p-2 text-destructive">
           {workflow.decision && <p>{`decision: ${workflow.decision}`}</p>}
           <ul>
-            {warnings.map((text) => (
-              <li key={`w-${text}`}>{text}</li>
+            {warnings.map((text, i) => (
+              <li key={`w-${i}-${text}`} className="break-words">
+                {text}
+              </li>
             ))}
-            {remedies.map((text) => (
-              <li key={`r-${text}`}>{`remedy: ${text}`}</li>
+            {remedies.map((text, i) => (
+              <li key={`r-${i}-${text}`} className="break-words">
+                {`remedy: ${text}`}
+              </li>
             ))}
           </ul>
         </div>
@@ -60,8 +71,10 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
         <div>
           <span>{`${waivers.length} review waiver${waivers.length === 1 ? "" : "s"}`}</span>
           <ul>
-            {waivers.map((w) => (
-              <li key={w.task_id}>{`${w.task_id}: ${w.reason} (${w.actor})`}</li>
+            {waivers.map((w, i) => (
+              <li key={`${i}-${w.task_id}`} className="break-words">
+                {`${w.task_id}: ${w.reason} (${w.actor})`}
+              </li>
             ))}
           </ul>
         </div>
@@ -84,8 +97,8 @@ function EpicStage({ epic }: { epic: Epic }) {
     );
   }
   const details = [
-    ...workflow.warnings,
-    ...workflow.review_waivers.map((w) => `review waiver ${w.task_id}: ${w.reason} (${w.actor})`),
+    ...list(workflow.warnings),
+    ...list(workflow.review_waivers).map((w) => `review waiver ${w.task_id}: ${w.reason} (${w.actor})`),
   ];
   return (
     <>

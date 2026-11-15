@@ -34,7 +34,7 @@ export type Epic = {
   id: string;
   title: string;
   status?: string;
-  workflow?: EpicWorkflow | BlockError;
+  workflow?: EpicWorkflow | BlockError | null;
 };
 
 export type Beads = {
