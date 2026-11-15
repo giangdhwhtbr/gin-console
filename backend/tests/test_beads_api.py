@@ -298,7 +298,19 @@ def test_beads_005_bad_utf8_in_an_epic_title_answers_200(
     projects = api.get("/api/projects")
     assert projects.status_code == 200
     proj = next(p for p in projects.json() if p["name"] == "proj")
-    assert proj["beads"]["epics"] == [{"id": "e-1", "title": "x\ufffdy"}]
+    assert proj["beads"]["epics"] == [
+        {
+            "id": "e-1",
+            "title": "x\ufffdy",
+            "status": "in_progress",
+            "workflow": {
+                "stage": "plan",
+                "gates": {"requirement_confirmed": "satisfied"},
+                "warnings": [],
+                "review_waivers": [],
+            },
+        }
+    ]
     assert api.get("/api/reports", params={"project": "proj"}).status_code == 200
     assert api.get("/api/beads", params={"project": "proj"}).status_code == 200
 

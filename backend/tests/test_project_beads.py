@@ -82,3 +82,19 @@ def test_beads_013_project_beads_without_reuse(tmp_path: Path) -> None:
     assert api.get("/api/projects/beads").json()[0]["beads"]["stale"] is False
     (noms / "manifest").write_bytes(b"root-2")  # a bd write that was not exported
     assert api.get("/api/projects/beads").json()[0]["beads"]["stale"] is True
+
+
+# REQ-SERVER-006 (Project beads endpoint unchanged)
+def test_server_006_project_beads_epics_have_status_and_no_workflow(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    def refuse(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("a gin process was started")
+
+    monkeypatch.setattr(subprocess, "run", refuse)
+    alpha = project_dir(tmp_path, "alpha")
+    write_export(alpha, ISSUES)
+    body = client(tmp_path, ("alpha", alpha)).get("/api/projects/beads").json()
+    epics = body[0]["beads"]["epics"]
+    assert epics[0]["id"] == "e1" and epics[0]["status"] == "in_progress"
+    assert all(not e.get("workflow") for e in epics)

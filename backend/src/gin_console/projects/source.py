@@ -31,7 +31,7 @@ def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
             ready=len(ready),
             prep=sum(r.get("status") != "closed" for i, r in rows.rows.items() if i in prep_ids),
             epics=[
-                Epic(id=r["id"], title=r["title"])
+                Epic(id=r["id"], title=r["title"], status=r["status"])
                 for r in active
                 if r.get("issue_type") == "epic"
                 and (r["status"] == "in_progress" or r["id"] in ready)

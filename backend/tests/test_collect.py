@@ -7,13 +7,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_export import write_export
-from fakes import ISSUES, Fake
+from fake_export import bead, write_export
+from fakes import ISSUES, STATE, Fake
 
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import read_export
 from gin_console.projects.collect import Collector
-from gin_console.projects.models import Beads, BlockError, Workflow
+from gin_console.projects.models import Beads, BlockError, EpicWorkflow, Workflow
 from gin_console.projects.source import count_beads
 
 
@@ -45,6 +45,12 @@ def test_server_005_workflow_shape(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
         "stage": "plan",
         "layout": "sdd",
         "gates": {"requirement_confirmed": "satisfied"},
+        "workspace": None,
+        "team": None,
+        "decision": None,
+        "warnings": [],
+        "remedies": [],
+        "review_waivers": [],
     }
 
 
@@ -89,7 +95,7 @@ def test_server_006_beads_counts_and_epics(monkeypatch: pytest.MonkeyPatch, tmp_
     assert (beads.open, beads.in_progress, beads.blocked, beads.ready) == (3, 1, 1, 2)
     assert [e.id for e in beads.epics] == ["e1", "e2"]
     assert beads.stale is False
-    assert [c[0] for c in fake.calls] == ["gin"]  # REQ-BEADS-003: no bd
+    assert {c[0] for c in fake.calls} == {"gin"}  # REQ-BEADS-003: no bd
 
 
 # REQ-SERVER-006
@@ -312,3 +318,157 @@ def test_server_006_milestone_not_counted_as_ready(
     beads = beads_of(result)
     assert beads.ready == 2
     assert [e.id for e in beads.epics] == ["e1", "e2"]
+
+
+REPOS = [
+    {"path": f"r{i}", "shape": "backend", "branch": "main", "frozen": i == 0, "present": True}
+    for i in range(8)
+]
+
+
+def workflow_for(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, state: dict[str, Any]
+) -> Workflow:
+    patch(monkeypatch, Fake(state=state))
+    workflow, _ = collector().get("p", tmp_path)
+    return workflow_of(workflow)
+
+
+# REQ-SERVER-005 (Workspace, team and health)
+def test_server_005_workspace_team_and_health(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    state = {
+        **STATE,
+        "project": {"layout": "sdd", "team": {"enabled": True, "host": "github", "me": "gin"}},
+        "workspace": {"root": "/w", "current": "r0", "current_repo": "r0", "repos": REPOS},
+        "decision": "hold",
+        "warnings": ["event log unreadable", 3],
+        "remedies": ["run gin doctor", None],
+        "review_waivers": [{"task_id": "t-1", "reason": "solo", "actor": "gin"}, "junk"],
+    }
+    workflow = workflow_for(monkeypatch, tmp_path, state)
+    assert workflow.workspace is not None
+    assert len(workflow.workspace.repos) == 8 and workflow.workspace.repos[0].frozen is True
+    assert workflow.team is not None and workflow.team.host == "github"
+    assert workflow.decision == "hold"
+    assert workflow.warnings == ["event log unreadable"]
+    assert workflow.remedies == ["run gin doctor"]
+    assert [w.task_id for w in workflow.review_waivers] == ["t-1"]
+
+
+# REQ-SERVER-005 (Older gin)
+def test_server_005_older_gin_without_health_keys(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    workflow = workflow_for(monkeypatch, tmp_path, STATE)
+    assert workflow.workspace is None and workflow.team is None and workflow.decision is None
+    assert workflow.warnings == [] and workflow.remedies == [] and workflow.review_waivers == []
+
+
+# REQ-SERVER-005 (a malformed optional value never fails the block)
+def test_server_005_malformed_optional_values(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    state = {
+        **STATE,
+        "project": {"layout": "sdd", "team": "on"},
+        "workspace": "nope",
+        "decision": 7,
+        "warnings": "x",
+        "review_waivers": {"a": 1},
+    }
+    workflow = workflow_for(monkeypatch, tmp_path, state)
+    assert workflow.workspace is None and workflow.team is None and workflow.decision is None
+    assert workflow.warnings == [] and workflow.review_waivers == []
+    assert workflow.stage == "plan"
+
+
+# REQ-SERVER-005 (a repo missing frozen and present gets the defaults)
+def test_server_005_repo_defaults(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    state = {**STATE, "workspace": {"root": "/w", "repos": [{"path": "r"}]}}
+    workflow = workflow_for(monkeypatch, tmp_path, state)
+    assert workflow.workspace is not None
+    repo = workflow.workspace.repos[0]
+    assert (repo.frozen, repo.present, repo.branch, repo.shape) == (False, True, None, None)
+
+
+def epic_export(tmp_path: Path, *ids: str, ready: tuple[str, ...] = ()) -> None:
+    rows = [bead(i, issue_type="epic", status="in_progress") for i in ids]
+    rows += [bead(i, issue_type="epic", status="open") for i in ready]
+    write_export(tmp_path, rows)
+
+
+def epics_of(result: Beads | BlockError) -> dict[str, Any]:
+    return {e.id: e for e in beads_of(result).epics}
+
+
+# REQ-SERVER-006 (Stage of an epic in progress)
+def test_server_006_stage_of_epic_in_progress(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    states = {"e-1": {**STATE, "stage": "execute", "warnings": ["w"]}}
+    fake = Fake(epic_states=states)
+    patch(monkeypatch, fake)
+    epic_export(tmp_path, "e-1", ready=("e-2",))
+    _, result = collector().get("p", tmp_path)
+    epics = epics_of(result)
+    assert epics["e-1"].status == "in_progress"
+    assert isinstance(epics["e-1"].workflow, EpicWorkflow)
+    assert epics["e-1"].workflow.stage == "execute" and epics["e-1"].workflow.warnings == ["w"]
+    assert epics["e-2"].status == "open" and epics["e-2"].workflow is None
+    assert [c for c in fake.calls if "--workflow-id" in c] == [
+        ["gin", "state", "--workflow-id", "e-1", "--format", "json"]
+    ]
+
+
+# REQ-SERVER-006 (One epic fails)
+def test_server_006_one_epic_fails(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch(monkeypatch, Fake(fail_epics={"e-3"}))
+    epic_export(tmp_path, "e-1", "e-3")
+    workflow, result = collector().get("p", tmp_path)
+    epics = epics_of(result)
+    assert isinstance(epics["e-1"].workflow, EpicWorkflow)
+    assert isinstance(epics["e-3"].workflow, BlockError)
+    assert "boom" in epics["e-3"].workflow.error
+    assert isinstance(workflow, Workflow)
+
+
+# REQ-SERVER-006 (One epic fails: a timeout)
+def test_server_006_epic_timeout_isolated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    inner = Fake()
+
+    def run(cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
+        if "e-3" in cmd:
+            raise subprocess.TimeoutExpired(cmd, 10)
+        return inner(cmd, **kwargs)
+
+    patch(monkeypatch, run)
+    epic_export(tmp_path, "e-1", "e-3")
+    _, result = collector().get("p", tmp_path)
+    epics = epics_of(result)
+    assert epics["e-3"].workflow == BlockError(error="gin timed out")
+    assert isinstance(epics["e-1"].workflow, EpicWorkflow)
+
+
+# REQ-SERVER-006 (at most four commands at a time)
+def test_server_006_at_most_four_epic_states_at_once(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    fake = Fake()
+    patch(monkeypatch, fake)
+    epic_export(tmp_path, *(f"e-{i}" for i in range(6)))
+    _, result = collector().get("p", tmp_path)
+    assert all(isinstance(e.workflow, EpicWorkflow) for e in beads_of(result).epics)
+    assert 1 < fake.peak <= 4
+
+
+# REQ-SERVER-006 (Counts and active epics: epics carry status)
+def test_server_006_epics_carry_status(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    patch(monkeypatch, Fake())
+    write_export(tmp_path, ISSUES)
+    _, result = collector().get("p", tmp_path)
+    assert {e.id: e.status for e in beads_of(result).epics} == {
+        "e1": "in_progress",
+        "e2": "open",
+    }

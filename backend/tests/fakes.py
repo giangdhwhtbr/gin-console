@@ -2,6 +2,8 @@
 
 import json
 import subprocess
+import threading
+import time
 from typing import Any
 
 STATE = {
@@ -26,7 +28,19 @@ ISSUES: list[dict[str, Any]] = [
 
 
 class Fake:
-    def __init__(self, fail: dict[str, Exception | int] | None = None) -> None:
+    def __init__(
+        self,
+        fail: dict[str, Exception | int] | None = None,
+        state: dict[str, Any] | None = None,
+        epic_states: dict[str, dict[str, Any]] | None = None,
+        fail_epics: set[str] | None = None,
+    ) -> None:
+        self.state = state if state is not None else STATE
+        self.epic_states = epic_states or {}
+        self.fail_epics = fail_epics or set()
+        self.running = 0  # concurrent `gin state --workflow-id` calls, now and at most
+        self.peak = 0
+        self._lock = threading.Lock()
         self.calls: list[list[str]] = []
         self.envs: list[dict[str, str]] = []
         self.fail = fail or {}
@@ -39,5 +53,21 @@ class Fake:
             raise failure
         if failure:
             return subprocess.CompletedProcess(cmd, failure, "", "boom")
-        outputs: dict[str, Any] = {"state": STATE}
+        if "--workflow-id" in cmd:
+            return self._epic_state(cmd, cmd[cmd.index("--workflow-id") + 1])
+        outputs: dict[str, Any] = {"state": self.state}
         return subprocess.CompletedProcess(cmd, 0, json.dumps(outputs[cmd[1]]), "")
+
+    def _epic_state(self, cmd: list[str], epic_id: str) -> "subprocess.CompletedProcess[str]":
+        with self._lock:
+            self.running += 1
+            self.peak = max(self.peak, self.running)
+        try:
+            time.sleep(0.02)  # let concurrent calls overlap
+        finally:
+            with self._lock:
+                self.running -= 1
+        if epic_id in self.fail_epics:
+            return subprocess.CompletedProcess(cmd, 1, "", "boom")
+        out = json.dumps(self.epic_states.get(epic_id, STATE))
+        return subprocess.CompletedProcess(cmd, 0, out, "")

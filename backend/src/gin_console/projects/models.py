@@ -5,15 +5,55 @@ class BlockError(BaseModel):
     error: str
 
 
+class WorkspaceRepo(BaseModel):
+    path: str
+    branch: str | None = None
+    shape: str | None = None
+    frozen: bool = False
+    present: bool = True
+
+
+class Workspace(BaseModel):
+    root: str
+    repos: list[WorkspaceRepo] = []
+
+
+class Team(BaseModel):
+    enabled: bool = False
+    host: str | None = None
+    me: str | None = None
+
+
+class ReviewWaiver(BaseModel):
+    task_id: str
+    reason: str = ""
+    actor: str = ""
+
+
 class Workflow(BaseModel):
     stage: str
     layout: str
     gates: dict[str, str]
+    workspace: Workspace | None = None
+    team: Team | None = None
+    decision: str | None = None
+    warnings: list[str] = []
+    remedies: list[str] = []
+    review_waivers: list[ReviewWaiver] = []
+
+
+class EpicWorkflow(BaseModel):
+    stage: str
+    gates: dict[str, str]
+    warnings: list[str] = []
+    review_waivers: list[ReviewWaiver] = []
 
 
 class Epic(BaseModel):
     id: str
     title: str
+    status: str
+    workflow: EpicWorkflow | BlockError | None = None
 
 
 class Beads(BaseModel):
