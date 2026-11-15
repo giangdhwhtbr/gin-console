@@ -10,7 +10,8 @@
 - None
 
 **Steps:**
-1. Open `/milestones/P/M1`
+1. Set the window width to 1280 px
+2. Open `/milestones/P/M1`
 
 **Expected:**
 - A's second line reads "2d left"

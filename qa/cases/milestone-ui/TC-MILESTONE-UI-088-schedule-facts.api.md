@@ -13,4 +13,7 @@
 1. Request `GET /api/milestones/P/M1`
 
 **Expected:**
-- The response carries those values unchanged
+- The response carries `integration: 2026-11-24`
+- The response carries `deadline: null`
+- The response carries `away: {"ann": ["2026-11-18"]}`
+- The epic carries `remaining_days: 2` and `assumed_days: null`

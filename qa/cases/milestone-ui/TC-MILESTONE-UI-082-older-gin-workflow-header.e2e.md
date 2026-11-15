@@ -15,4 +15,4 @@
 
 **Expected:**
 - The header shows no Integration, Deadline or Away
-- The rest of the header is unchanged
+- The title, the status, the dates and the lanes are shown as before
