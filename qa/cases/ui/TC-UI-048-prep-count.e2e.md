@@ -1,6 +1,6 @@
 # TC-UI-048: Prep count
 
-- **REQ:** REQ-UI-004@fc5b08bf
+- **REQ:** REQ-UI-004@825967e7
 - **Priority:** medium
 
 **Preconditions:**

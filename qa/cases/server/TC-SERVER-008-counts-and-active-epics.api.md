@@ -1,6 +1,6 @@
 # TC-SERVER-008: Counts and active epics
 
-- **REQ:** REQ-SERVER-006@a80c9bc6
+- **REQ:** REQ-SERVER-006@a9789995
 - **Priority:** high
 
 **Preconditions:**
@@ -15,4 +15,4 @@
 
 **Expected:**
 - `alpha` has a `beads` object with those counts
-- `beads.epics` lists `e-1` and `e-2`, each with `id` and `title`
+- `beads.epics` lists `e-1` and `e-2`, each with `id`, `title` and `status`
