@@ -26,9 +26,9 @@ export function StateMark({ bead, className }: { bead: BeadSummary; className?: 
   const state = stateOf(bead);
   const Icon = ICON[state];
   return (
-    <span data-state={state} className={cn("inline-flex items-center gap-1 font-medium", TEXT[state], className)}>
+    <span data-state={state} className={cn("inline-flex min-w-0 items-center gap-1 font-medium", TEXT[state], className)}>
       <Icon aria-hidden className="size-3.5" />
-      {STATE_LABEL[state]}
+      <span className="truncate">{STATE_LABEL[state]}</span>
     </span>
   );
 }

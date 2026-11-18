@@ -14,7 +14,7 @@ describe("StateMark", () => {
     [bead("e", { status: "deferred" }), "Deferred", "deferred"],
   ])("REQ-UI-064 %# shows %s", (item, label, state) => {
     render(<StateMark bead={item} />);
-    expect(screen.getByText(label)).toHaveAttribute("data-state", state);
+    expect(screen.getByText(label).closest("[data-state]")).toHaveAttribute("data-state", state);
   });
 
   it("REQ-UI-064 the edge is 4px wide in the colour of the state", () => {

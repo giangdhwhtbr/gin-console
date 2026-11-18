@@ -54,7 +54,7 @@ export function GraphNodeButton({
       </span>
       <span className="truncate text-sm font-medium text-card-foreground">{node.bead.title}</span>
       <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
-        <span className="min-w-0 truncate" title={STATE_LABEL[state]}>
+        <span className="flex min-w-0" title={STATE_LABEL[state]}>
           <StateMark bead={node.bead} className="text-xs" />
         </span>
         {isPrep(node.bead.labels) && <PrepChip />}
