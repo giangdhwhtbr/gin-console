@@ -53,7 +53,7 @@ export function ListRow({
         selected ? "border-foreground bg-muted" : "border-transparent hover:bg-muted/60",
       )}
     >
-      <div className="flex min-w-0 items-center gap-2 overflow-hidden" style={{ paddingLeft: `${row.level * 1.25}rem` }}>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 overflow-hidden" style={{ paddingLeft: `${row.level * 1.25}rem` }}>
         {row.hasKids ? (
           <button
             type="button"

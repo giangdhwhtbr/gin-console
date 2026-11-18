@@ -60,7 +60,17 @@ test('TC-UI-121: Long id keeps the title', async ({ page, ev }) => {
       const link = row.getByRole('link', { name: title });
       await expect(link).toBeVisible();
       const cell = row.locator('span[title]').filter({ hasText: title });
-      expect(await cell.evaluate((el) => el.clientWidth)).toBeGreaterThan(40);
+      // visible width: the cell's right edge cut by every clipping ancestor
+      const visible = await cell.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        let right = Math.min(r.right, document.documentElement.clientWidth);
+        for (let a = el.parentElement; a; a = a.parentElement) {
+          const o = getComputedStyle(a).overflowX;
+          if (o !== 'visible') right = Math.min(right, a.getBoundingClientRect().right);
+        }
+        return right - r.left;
+      });
+      expect(visible).toBeGreaterThanOrEqual(128);
     }
   }
 });
