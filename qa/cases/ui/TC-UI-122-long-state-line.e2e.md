@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-049@24a50bbd
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `alpha` has an in-progress epic `e-1` without a parent with 2 of 5 tracks done and a title of 80 characters

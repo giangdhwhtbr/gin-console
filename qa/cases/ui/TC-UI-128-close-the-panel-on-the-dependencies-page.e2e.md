@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-051@704f443a
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `alpha` with epic `e-1`

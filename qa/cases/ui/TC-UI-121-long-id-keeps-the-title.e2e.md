@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-044@fa72c885
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `alpha` has epic `ex-payments-provider-migration-and-reconciliation-2026` with an open task and the title "Migrate every checkout payment to the new provider"

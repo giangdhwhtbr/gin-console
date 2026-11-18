@@ -1,8 +1,8 @@
 # TC-MILESTONE-UI-017: Markdown tracking names the Beads fix
-REQ: REQ-MILESTONE-UI-005@3ee8a9e1
+REQ: REQ-MILESTONE-UI-005@70130792
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-18T15-52-57
 
 Preconditions:
 - project P with `providers.task_tracking: markdown` (API responds 502 with `cause: "tracking"`)

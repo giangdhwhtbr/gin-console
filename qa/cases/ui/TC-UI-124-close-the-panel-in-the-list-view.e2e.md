@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-045@790904b3
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `alpha` with bead `t-1`

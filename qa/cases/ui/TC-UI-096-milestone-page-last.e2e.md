@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-073@21bc1bf0
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `a` with milestone `m2` and bead `a-1` under it with a dependency so that it is a node of the Graph view

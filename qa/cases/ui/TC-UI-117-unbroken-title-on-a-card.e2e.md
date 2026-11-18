@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-107@99b7498f
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `alpha` has a bead titled "Handle PaymentReconciliationServiceTimeoutExceptionHandlerFactoryProviderBean in the worker"

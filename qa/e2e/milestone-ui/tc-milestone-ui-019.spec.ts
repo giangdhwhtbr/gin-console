@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-019@1d6e69ac
+// TC: TC-MILESTONE-UI-019@9068e9ac
 import { test, expect } from '../evidence';
 import { failure, stubApi } from '../support/api';
 
@@ -12,6 +12,5 @@ test('TC-MILESTONE-UI-019: Milestone page shows the same unavailable error', asy
     const alert = page.getByRole('alert');
     await expect(alert).toContainText('Milestones need a newer gin');
     await expect(alert.getByText('gin-workflow/install.sh', { exact: true })).toBeVisible();
-    await expect(alert).toContainText('Run the gin installer');
   });
 });

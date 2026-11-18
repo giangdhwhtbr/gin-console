@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-048@bf494d4b
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Epic `e-1` in project `alpha` has tasks `a`, `b`, `c` and `d`, where `b` and `c` are blocked by `a` and `d` is blocked by `b` and `c`

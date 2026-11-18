@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-106@3747fc19
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `p` with milestone `m2` that has epics `e1` and `e2`, and `e2` blocked by `x` under milestone `m3`

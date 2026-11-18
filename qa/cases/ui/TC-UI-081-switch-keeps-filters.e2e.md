@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-030@44faaaad
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `a` with open beads; the List view is shown with the filter status "open" and the search "fix"

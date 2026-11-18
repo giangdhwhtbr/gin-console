@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-072@950311bf
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `a` with bead `a-1` and its child `a-2`

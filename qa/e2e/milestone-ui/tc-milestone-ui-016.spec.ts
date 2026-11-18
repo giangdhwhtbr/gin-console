@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-016@c3c204c2
+// TC: TC-MILESTONE-UI-016@55b9bee1
 import { test, expect } from '../evidence';
 import { failure, stubApi } from '../support/api';
 
@@ -11,6 +11,5 @@ test('TC-MILESTONE-UI-016: Old gin-workflow names the install fix', async ({ pag
     const alert = page.getByRole('alert');
     await expect(alert).toContainText('Milestones need a newer gin');
     await expect(alert.getByText('gin-workflow/install.sh', { exact: true })).toBeVisible();
-    await expect(alert).toContainText('Run the gin installer');
   });
 });

@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-072@950311bf
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `a` with milestone `m2` and bead `a-1` under it

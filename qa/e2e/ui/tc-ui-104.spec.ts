@@ -1,0 +1,43 @@
+// TC: TC-UI-104@59dd13dd
+import { test, expect } from '../evidence';
+import { bead, milestoneOption, stubApi } from '../support/api';
+
+test('TC-UI-104: Drill down and back', async ({ page, ev }) => {
+  // Precondition: m2 has epic e1 (with tasks) and epic e2.
+  const beads = [
+    bead('m2', { issue_type: 'milestone' }),
+    bead('e1', { issue_type: 'epic', parent: 'm2', milestone: 'm2' }),
+    bead('e1.1', { parent: 'e1', milestone: 'm2' }),
+    bead('e1.2', { parent: 'e1', milestone: 'm2', blocked_by: ['e1.1'], blocked: true }),
+    bead('e2', { issue_type: 'epic', parent: 'm2', milestone: 'm2', blocked_by: ['e1'], blocked: true }),
+  ];
+  await stubApi(page, {
+    projects: ['p'],
+    beads,
+    milestoneOptions: { milestones: [milestoneOption('m2')], current: null },
+  });
+  const node = (id: string) => page.getByRole('button', { name: new RegExp(`^${id}`) });
+  const trail = page.getByRole('navigation', { name: 'Graph scope' });
+
+  await ev.step('1. Open /beads?project=p&milestone=m2&view=graph', async () => {
+    await page.goto('/beads?project=p&milestone=m2&view=graph');
+    await expect(node('e1')).toBeVisible();
+    await expect(node('e2')).toBeVisible();
+  });
+
+  await ev.step('2. Open epic e1', async () => {
+    await node('e1').dblclick();
+    await expect(page).toHaveURL(/scope=e1/);
+    await expect(node('e1.1')).toBeVisible();
+    await expect(node('e1.2')).toBeVisible();
+    await expect(trail.getByRole('button')).toHaveText(['m2', 'e1']);
+  });
+
+  await ev.step('3. Choose m2 in the breadcrumb', async () => {
+    await trail.getByRole('button', { name: 'm2', exact: true }).click();
+    await expect(page).not.toHaveURL(/scope=e1/);
+    await expect(node('e1')).toBeVisible();
+    await expect(node('e2')).toBeVisible();
+    await expect(node('e1.1')).toHaveCount(0);
+  });
+});

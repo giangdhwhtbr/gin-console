@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-048@bf494d4b
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Epic `e-1` in project `alpha` has task `b` blocked by `a`, and tasks `c`, `d`, `e`, `f` without blockers that block nothing

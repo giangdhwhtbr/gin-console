@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-081@abf925c9
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `p` with open beads

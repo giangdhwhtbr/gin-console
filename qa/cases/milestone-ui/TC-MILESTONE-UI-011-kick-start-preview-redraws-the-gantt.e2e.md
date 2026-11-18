@@ -1,8 +1,8 @@
 # TC-MILESTONE-UI-011: Kick-start preview redraws the Gantt from the picked date
-REQ: REQ-MILESTONE-UI-004@ed8c64e1
+REQ: REQ-MILESTONE-UI-004@7f8bfee8
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-18T15-52-57
 
 Preconditions:
 - planned milestone M1 of project P
@@ -14,4 +14,4 @@ Steps:
 Expected:
 - The URL has `start=2026-11-16`
 - The Gantt is drawn from 2026-11-16 and labelled as a preview
-- The command `gin-workflow milestone kickstart M1 --date 2026-11-16` is shown
+- The command `gin milestone kickstart M1 --date 2026-11-16` is shown

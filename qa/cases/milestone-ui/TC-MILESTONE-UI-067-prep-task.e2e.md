@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-MILESTONE-UI-015@665bc3ff
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Project `alpha` has milestone `m2`

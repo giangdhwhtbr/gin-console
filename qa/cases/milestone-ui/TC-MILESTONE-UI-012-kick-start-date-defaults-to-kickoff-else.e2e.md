@@ -1,8 +1,8 @@
 # TC-MILESTONE-UI-012: Kick-start date defaults to kickoff, else start
-REQ: REQ-MILESTONE-UI-004@ed8c64e1
+REQ: REQ-MILESTONE-UI-004@7f8bfee8
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-18T15-52-57
 
 Preconditions:
 - planned milestone M1 with `kickoff: 2026-11-16` and `start: 2026-11-09`

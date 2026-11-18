@@ -2,6 +2,8 @@
 
 - **REQ:** REQ-UI-073@21bc1bf0
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-18T15-52-57
 
 **Preconditions:**
 - Projects `a` and `b`, each with a bead; the Beads page of project `a` was shown last
