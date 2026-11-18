@@ -69,7 +69,7 @@ export function ListRow({
         ) : (
           <span className="size-6 shrink-0" />
         )}
-        <span className="max-w-[40%] shrink-0 truncate font-mono text-xs text-muted-foreground" title={bead.id} aria-hidden={short !== bead.id || undefined}>
+        <span className="shrink-0 font-mono text-xs text-muted-foreground" title={bead.id} aria-hidden={short !== bead.id || undefined}>
           {short}
         </span>
         {short !== bead.id && <span className="sr-only">{bead.id}</span>}

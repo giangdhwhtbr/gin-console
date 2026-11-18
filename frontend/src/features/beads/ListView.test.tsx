@@ -35,7 +35,9 @@ describe("ListView", () => {
     expect(within(row).getByText(id, { selector: ".sr-only" })).toBeInTheDocument();
     const shown = within(row).getByText("ex-payments-pr…tion-2026");
     expect(shown).toHaveAttribute("title", id);
-    expect(shown).toHaveClass("shrink-0", "max-w-[40%]", "truncate");
+    // shortId caps the id at 24 chars: the span must not cut it again (REQ-UI-107)
+    expect(shown).toHaveClass("shrink-0");
+    expect(shown).not.toHaveClass("max-w-[40%]", "truncate");
     expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
     // the bar and the closed count give way to the title when the title cell is narrow
     expect(within(row).getByText(/\d+\/\d+ closed/)).toHaveClass("hidden", "@xl:flex");
