@@ -45,7 +45,7 @@ describe("GraphNode content", () => {
     expect(done.parentElement).toHaveClass("whitespace-nowrap", "min-w-0");
     const label = within(n).getByText("In progress");
     expect(label).toHaveClass("truncate");
-    expect(label.closest("[title]")).toHaveAttribute("title", "In progress");
+    expect(label.closest("[data-state]")).toHaveAttribute("title", "In progress");
   });
 });
 

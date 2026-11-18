@@ -3,7 +3,7 @@ import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import { PrepChip } from "./PrepChip";
 import { isPrep } from "./prep";
-import { NODE, STATE_LABEL, stateOf, type GraphNode as Node, type Placed } from "./graph";
+import { NODE, stateOf, type GraphNode as Node, type Placed } from "./graph";
 import { StateMark, stateEdge } from "./StateMark";
 
 export function GraphNodeButton({
@@ -54,7 +54,7 @@ export function GraphNodeButton({
       </span>
       <span className="truncate text-sm font-medium text-card-foreground">{node.bead.title}</span>
       <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
-        <span className="flex min-w-0" title={STATE_LABEL[state]}>
+        <span className="flex min-w-0">
           <StateMark bead={node.bead} className="text-xs" />
         </span>
         {isPrep(node.bead.labels) && <PrepChip />}

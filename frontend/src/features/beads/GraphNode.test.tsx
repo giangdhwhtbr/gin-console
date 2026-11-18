@@ -21,10 +21,10 @@ describe("GraphNodeButton state label", () => {
     );
     const label = screen.getByText("In progress");
     expect(label).toHaveClass("truncate");
-    expect(label.closest("[title]")).toHaveAttribute("title", "In progress");
+    expect(label.closest("[data-state]")).toHaveAttribute("title", "In progress");
     // every ancestor up to the node must be able to shrink, or the ellipsis never draws
     expect(label.closest("[data-state]")).toHaveClass("min-w-0");
-    expect(label.closest("[title]")).toHaveClass("min-w-0", "flex");
+    expect(label.closest("[data-state]")?.parentElement).toHaveClass("min-w-0", "flex");
     expect(screen.getByText("2 of 5 done")).toBeInTheDocument();
   });
 });
