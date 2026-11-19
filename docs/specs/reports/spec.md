@@ -511,6 +511,8 @@ Source: `assets/2026-11-12/mockup/index.html`
 
 ## Diagrams
 - [Team tab](diagrams/team-tab-activity.md)
+- [Velocity tab](diagrams/velocity-tab-activity.md)
 
 ## Use Cases
 - [Review the team in a milestone](use-cases/review-team-in-milestone.md)
+- [Review velocity](use-cases/review-velocity.md)
