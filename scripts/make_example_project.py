@@ -53,6 +53,17 @@ def stamp(d: date, hour: int = 10) -> str:
     return datetime(d.year, d.month, d.day, hour, 0, tzinfo=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def points_meta(n: int, reason: str, when: date, stage: str = "roadmap") -> dict[str, Any]:
+    """Epic metadata as `gin milestone points` writes it: points, reason and one history entry."""
+    return {
+        "points": n,
+        "points_reason": reason,
+        "points_history": [
+            {"from": None, "to": n, "stage": stage, "at": stamp(when, 11), "actor": "lead"}
+        ],
+    }
+
+
 # ---------- builders ----------
 class Project:
     def __init__(self, today: date, seed: int) -> None:
@@ -238,6 +249,8 @@ def build(today: date, seed: int = 7) -> list[Row]:
             "start": m1_start.isoformat(),
             "end": m1_end.isoformat(),
             "kickoff": m1_start.isoformat(),
+            "committed_points": 8,
+            "planned_days_per_point": 2.0,
         },
         closed_at=stamp(m1_closed, 17),
         updated_at=stamp(m1_closed, 17),
@@ -252,6 +265,8 @@ def build(today: date, seed: int = 7) -> list[Row]:
             "start": m2_start.isoformat(),
             "end": m2_end.isoformat(),
             "kickoff": m2_start.isoformat(),
+            "committed_points": 24,
+            "planned_days_per_point": 2.0,
         },
     )
     p.add(
@@ -273,7 +288,12 @@ def build(today: date, seed: int = 7) -> list[Row]:
         )
 
     # m1: closed milestone, everything done (some closed after its end date).
-    for ident, title in (("e1", "Signup flow"), ("e2", "Welcome tour")):
+    # e1 runs first and e2 after it, so each closed epic measures its own days per point.
+    e1_end = workday(m1_start + timedelta(days=13), back=True)
+    for ident, title, pts, e_start, e_end in (
+        ("e1", "Signup flow", 5, m1_start, e1_end),
+        ("e2", "Welcome tour", 3, workday(e1_end + timedelta(days=1)), m1_closed),
+    ):
         e = epic(
             ident,
             title,
@@ -281,15 +301,19 @@ def build(today: date, seed: int = 7) -> list[Row]:
             m1_start - timedelta(days=5),
             status="closed",
             priority=1,
-            estimated_minutes=480 * 6,
-            labels=["sprint:s13"],
+            labels=["roadmap", "sprint:s13"],
+            metadata=points_meta(
+                pts,
+                f"{pts} points: scored at planning",
+                m1_start - timedelta(days=4),
+            ),
             assignee="ann",
-            started_at=stamp(m1_start),
-            closed_at=stamp(m1_closed, 16),
-            updated_at=stamp(m1_closed, 16),
+            started_at=stamp(e_start),
+            closed_at=stamp(e_end, 16),
+            updated_at=stamp(e_end, 16),
         )
         for title_ in p.rng.sample(TITLES, 7):
-            p.task(e["id"], title_, "closed", start=m1_start, end=m1_closed)
+            p.task(e["id"], title_, "closed", start=e_start, end=e_end)
 
     # m2: active milestone with every kind of epic.
     e3 = epic(
@@ -299,8 +323,12 @@ def build(today: date, seed: int = 7) -> list[Row]:
         m2_start - timedelta(days=4),
         status="in_progress",
         priority=1,
-        estimated_minutes=480 * 8,
-        labels=["sprint:s15"],
+        labels=["roadmap", "sprint:s15"],
+        metadata=points_meta(
+            8,
+            "Two forms, card validation and a 3-D Secure redirect",
+            m2_start - timedelta(days=5),
+        ),
         assignee="bao",
         started_at=stamp(m2_start),
         description=(
@@ -356,7 +384,7 @@ def build(today: date, seed: int = 7) -> list[Row]:
         m2_start - timedelta(days=3),
         status="in_progress",
         estimated_minutes=480 * 5,
-        labels=["sprint:s15"],
+        labels=["roadmap", "sprint:s15"],
         assignee="chi",
         started_at=stamp(m2_start),
     )
@@ -386,9 +414,21 @@ def build(today: date, seed: int = 7) -> list[Row]:
         "m2",
         today - timedelta(days=6),
         assignee="dung",
-        estimated_minutes=480 * 3,
+        labels=["roadmap"],
+        metadata=points_meta(
+            3,
+            "Known pattern from the voucher code",
+            m2_start - timedelta(days=2),
+        ),
     )
-    epic("e6", "Saved payment methods", "m2", today - timedelta(days=5), assignee="dung")
+    epic(
+        "e6",
+        "Saved payment methods",
+        "m2",
+        today - timedelta(days=5),
+        assignee="dung",
+        labels=["roadmap"],
+    )
     epic(
         "e7",
         "Order history export",
@@ -397,6 +437,19 @@ def build(today: date, seed: int = 7) -> list[Row]:
         assignee="ann",
         status="in_progress",
         started_at=stamp(today - timedelta(days=2)),
+        labels=["roadmap"],
+        metadata={
+            **points_meta(3, "CSV export of the order list", today - timedelta(days=4)),
+            # moved into ex-m2 after its kick-off, so the milestone's added_points is 3
+            "milestone_moves": [
+                {
+                    "from": None,
+                    "to": p_id("m2"),
+                    "at": stamp(today - timedelta(days=4), 12),
+                    "actor": "lead",
+                }
+            ],
+        },
     )
 
     # An epic whose only children are prep tasks.
@@ -406,7 +459,7 @@ def build(today: date, seed: int = 7) -> list[Row]:
         "m2",
         today - timedelta(days=7),
         assignee="bao",
-        labels=["kind:technical"],
+        labels=["roadmap", "kind:technical"],
     )
     p.task(
         e8["id"],
@@ -429,10 +482,17 @@ def build(today: date, seed: int = 7) -> list[Row]:
     )
 
     # m3: planned milestone, work not started.
-    e9 = epic("e9", "Mobile checkout", "m3", today - timedelta(days=3), estimated_minutes=480 * 7)
+    e9 = epic(
+        "e9",
+        "Mobile checkout",
+        "m3",
+        today - timedelta(days=3),
+        labels=["roadmap"],
+        metadata=points_meta(5, "Reuse the web flow, new native inputs", today - timedelta(days=2)),
+    )
     for t in p.rng.sample(TITLES, 4):
         p.task(e9["id"], t, "open", start=today, end=today, assignee=None)
-    epic("e10", "Mobile push notifications", "m3", today - timedelta(days=2))
+    epic("e10", "Mobile push notifications", "m3", today - timedelta(days=2), labels=["roadmap"])
 
     # Outside milestones: an epic with work, and stray beads.
     e11 = epic(
@@ -519,9 +579,14 @@ def long_text(p: Project, today: date, start: date, milestone: str, after: date)
         status="in_progress",
         assignee=LONG_MEMBER,
         priority=1,
-        estimated_minutes=480 * 10,
+        metadata=points_meta(
+            13,
+            "Several providers, currencies and a cut-over plan",
+            start - timedelta(days=5),
+        ),
         started_at=stamp(start),
         labels=[
+            "roadmap",
             "sprint:s15",
             "area:payments-reconciliation-service",
             "domain:multi-currency-settlement",
