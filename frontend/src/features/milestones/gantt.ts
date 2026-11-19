@@ -154,6 +154,38 @@ export function stepDay(axis: Axis, from: number, direction: 1 | -1, span: numbe
   return Math.min(Math.max(next, axis.first), axis.last);
 }
 
+/** REQ-MILESTONE-UI-013: the label column is 300px under 1280px windows, 380px from 1280px and 440px from 1600px; 168px on a phone (under 1024px), so that the chart keeps some room. */
+export const labelWidthOf = (windowWidth: number): number => (windowWidth >= 1600 ? 440 : windowWidth >= 1280 ? 380 : windowWidth >= 1024 ? 300 : 168);
+
+/** REQ-MILESTONE-UI-013: room for a title after a bar ending at `barEnd`: up to the next stop (end or today line) at or after the bar, or `chartEnd`, with a gap on each side; never negative. */
+export function tailWidth(barEnd: number, stops: readonly number[], chartEnd: number, gap = 8): number {
+  const next = Math.min(chartEnd, ...stops.filter((x) => x >= barEnd));
+  return Math.max(0, next - barEnd - 2 * gap);
+}
+
+export const HEADER_HEIGHT = 60;
+const TODAY_CHIP = 44;
+const END_CHIP = 100;
+
+export type Markers = { today: "left" | "right"; end: "left" | "right"; todayShift: number };
+
+/**
+ * REQ-MILESTONE-UI-013: the side of its line each header chip sits on, so that none runs off the chart and the two never overlap.
+ * `todayShift`: px the Today chip moves further left of its line when both chips would be on the left and still meet.
+ */
+export function markerSides(todayX: number | null, endX: number, width: number): Markers {
+  const end = endX + 4 + END_CHIP > width ? "left" : "right";
+  if (todayX === null) return { today: "right", end, todayShift: 0 };
+  const span = (x: number, side: "left" | "right", w: number): [number, number] => (side === "right" ? [x + 4, x + 4 + w] : [x - 4 - w, x - 4]);
+  const meets = (a: [number, number], b: [number, number]) => a[0] < b[1] + 4 && b[0] < a[1] + 4;
+  const e = span(endX, end, END_CHIP);
+  const right = span(todayX, "right", TODAY_CHIP);
+  if (right[1] <= width && !meets(right, e)) return { today: "right", end, todayShift: 0 };
+  const left = span(todayX, "left", TODAY_CHIP);
+  if (!meets(left, e)) return { today: "left", end, todayShift: 0 };
+  return { today: "left", end, todayShift: Math.max(0, left[1] - (e[0] - 4)) };
+}
+
 export const ROW_HEIGHT = 56;
 export const WARNING_HEIGHT = 18;
 export const LABEL_LINE = 16;
@@ -166,10 +198,13 @@ export type Row =
   | { kind: "epic"; epic: EpicPlan; top: number; height: number }
   | { kind: "child"; epic: EpicPlan; bead: BeadSummary; top: number; height: number };
 
+/** REQ-MILESTONE-UI-013: the spec item of the label, left out when the warnings already say the spec is not confirmed. */
+export const showsSpec = (epic: EpicPlan): boolean => epic.spec_confirmed !== null && !epic.warnings.some((w) => w.code === "spec_not_ready");
+
 /** REQ-MILESTONE-UI-013: below lg the meta items wrap, so the row holds the title and one line per item shown (id, period, tracks, prep, spec). */
 function narrowHeight(epic: EpicPlan, kids: readonly BeadSummary[]): number {
   const counts = childCounts(kids);
-  const items = 2 + Number(counts.tracks > 0) + Number(prepLabel(counts) !== null) + Number(epic.spec_confirmed !== null);
+  const items = 2 + Number(counts.tracks > 0) + Number(prepLabel(counts) !== null) + Number(showsSpec(epic));
   return Math.max(ROW_HEIGHT, LABEL_PADDING + LABEL_LINE * (1 + items));
 }
 

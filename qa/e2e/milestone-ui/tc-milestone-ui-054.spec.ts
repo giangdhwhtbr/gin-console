@@ -16,7 +16,7 @@ test('TC-MILESTONE-UI-054: Label column stays visible while the chart scrolls', 
     icon: row.getByRole('img', { name: 'Open' }),
     title: row.getByTitle('Epic A', { exact: true }),
     id: row.getByRole('link', { name: 'A', exact: true }),
-    period: row.getByText('2 Nov – 27 Nov, 20d', { exact: true }),
+    period: row.getByText('2 Nov – 27 Nov', { exact: true }),
   };
   const boxes = async () => Object.fromEntries(await Promise.all(Object.entries(label).map(async ([k, l]) => [k, (await l.boundingBox())!])));
   let before: Record<string, { x: number; y: number; width: number; height: number }> = {};

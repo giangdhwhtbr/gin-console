@@ -119,9 +119,9 @@ describe("GanttChart", () => {
     const [first, second] = li.querySelectorAll(":scope > div > div > span");
     expect(first).toHaveTextContent(title);
     expect(first.querySelector(`[title="${title}"]`)).toHaveClass("truncate");
-    expect(second).toHaveTextContent("gin-workflow-rm-process-hygiene2 Nov, 1d");
-    expect(second).toHaveClass("whitespace-nowrap");
-    expect([...second.children].every((part) => part.classList.contains("truncate"))).toBe(true);
+    expect(second).toHaveTextContent("gin-workflow-rm-process-hygiene1d2 Nov");
+    expect(second).toHaveClass("whitespace-nowrap", "min-w-0", "overflow-hidden");
+    expect([...second.children].slice(1).map((part) => part.textContent)).toEqual(["1d", "2 Nov"]);
     expect(li.querySelector("[data-tail]")).toHaveTextContent(title);
   });
 
@@ -130,9 +130,10 @@ describe("GanttChart", () => {
     draw(detail([epicPlan(id, { planned_start: "2026-11-02", planned_end: "2026-11-02", estimate_days: 1 })]));
     const meta = epicRow(id).querySelector<HTMLElement>(":scope > div > div > span:nth-child(2)");
     expect(meta).toHaveClass("flex-wrap", "lg:flex-nowrap");
-    const [idLabel, period] = Array.from(meta?.children ?? []);
-    expect(period).toHaveAttribute("title", "2 Nov, 1d");
-    expect(period).toHaveClass("shrink-0");
+    const [idLabel, , period] = Array.from(meta?.children ?? []);
+    expect(idLabel).toHaveClass("lg:min-w-16", "lg:shrink-[100]");
+    expect(period).toHaveAttribute("title", "2 Nov");
+    expect(period).toHaveClass("min-w-0", "shrink", "truncate");
     expect(idLabel).toHaveAttribute("title", id);
     expect(idLabel).toHaveTextContent("gin-workflow-r…re-things");
     expect(screen.getByRole("link", { name: id })).toHaveAttribute("href", `/beads/alpha/${id}`);
@@ -152,6 +153,78 @@ describe("GanttChart", () => {
     expect(rows.map((row) => row.style.height)).toEqual(["106px", "88px", "72px"]);
     const warning = within(rows[0]).getByText(/^Late: should have finished/);
     expect(warning).toHaveAttribute("title", warning.textContent);
+  });
+
+  const labelOf = (id: string) => epicRow(id).firstElementChild as HTMLElement;
+  const stubWindow = (width: number) =>
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: width >= Number(/min-width: (\d+)px/.exec(query)?.[1]),
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+  const E3 = epicPlan("ex-e3", {
+    status: "in_progress",
+    points: 8,
+    estimate_days: 20,
+    remaining_days: 11,
+    spec_confirmed: false,
+    planned_start: "2026-11-09",
+    planned_end: "2026-11-23",
+    warnings: [{ code: "spec_not_ready", days: null, count: null }],
+  });
+  const TRACKS = new Map([["ex-e3", [track("ex-e3.1", "closed"), track("ex-e3.2")].map((b) => ({ ...b, parent: "ex-e3" }))]]);
+
+  it("REQ-MILESTONE-UI-013 label column width by window: 300 under 1280, 380 from 1280, 440 from 1600", () => {
+    const widths = [1024, 1279, 1280, 1599, 1600, 2000].map((width) => {
+      stubWindow(width);
+      const { unmount } = draw(detail([E3]));
+      const label = labelOf("ex-e3").style.width;
+      unmount();
+      return label;
+    });
+    expect(widths).toEqual(["300px", "300px", "380px", "380px", "440px", "440px"]);
+  });
+
+  it("REQ-MILESTONE-UI-013 Wide window: id, then '8 pt · 11d left', cut inside the column, no spec item", () => {
+    stubWindow(2000);
+    render(<GanttChart project="alpha" plan={detail([E3], { today: "2026-11-12" })} preview={false} zoom="all" onZoom={vi.fn()} childBeads={TRACKS} />);
+    expect(labelOf("ex-e3").style.width).toBe("440px");
+    const meta = labelOf("ex-e3").querySelector<HTMLElement>(":scope > div > span:nth-child(2)");
+    expect(meta).toHaveClass("min-w-0", "overflow-hidden", "lg:flex-nowrap");
+    const parts = [...(meta?.children ?? [])].map((part) => part.textContent);
+    expect(parts).toEqual(["ex-e3", "8 pt · 11d left", "9 Nov – 23 Nov", "1/2 closed"]);
+    expect(meta?.children[1]).toHaveClass("shrink-0");
+    expect(epicRow("ex-e3")).not.toHaveTextContent("No confirmed spec");
+    expect(epicRow("ex-e3")).toHaveTextContent("Spec not confirmed");
+    // the row label is an opaque layer above the lines
+    expect(labelOf("ex-e3")).toHaveClass("sticky", "z-10", "bg-card");
+  });
+
+  it("REQ-MILESTONE-UI-013 the size badge without points reads '<n>d', '<n>d left' or 'assumed <n>d', in a badge", () => {
+    draw(detail([epicPlan("e-a", { estimate_days: 4 }), epicPlan("e-b", { estimate_days: null, assumed_days: 3 })]));
+    expect(within(epicRow("e-a")).getByText("4d").closest("[data-slot='badge']")).not.toBeNull();
+    expect(within(epicRow("e-b")).getByText("assumed 3d").closest("[data-slot='badge']")).not.toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-013 Tail title stops at the end line: it is cut short before the line", () => {
+    const title = "A very long epic title that cannot fit between the bar and the end line";
+    draw(detail([epicPlan("e-a", { title, planned_start: "2026-11-02", planned_end: "2026-11-02", estimate_days: 1 })], { end: "2026-11-10", finish: "2026-11-13", today: "2026-11-20" }));
+    const tail = epicRow("e-a").querySelector<HTMLElement>("[data-tail]");
+    const endLine = document.querySelector<HTMLElement>("[data-line=end]");
+    const label = 300;
+    const room = parseFloat(endLine?.style.left ?? "") - label - parseFloat(tail?.style.left ?? "");
+    expect(tail).toHaveClass("truncate");
+    expect(parseFloat(tail?.style.maxWidth ?? "")).toBeGreaterThan(0);
+    expect(parseFloat(tail?.style.maxWidth ?? "")).toBeLessThanOrEqual(room - 8);
+  });
+
+  it("REQ-MILESTONE-UI-013 the End chip sits on its own row of the header, the lines start under it", () => {
+    draw(MONTH);
+    const chip = document.querySelector<HTMLElement>("[data-chip=end]");
+    expect(chip).toHaveTextContent("End 27 Nov");
+    expect(chip).toHaveClass("top-[22px]");
+    expect(document.querySelector<HTMLElement>("[data-line=end]")?.style.top).toBe("61px");
+    expect(document.querySelector("[data-line=end]")).toBeEmptyDOMElement();
   });
 
   it("REQ-MILESTONE-UI-013 points", () => {

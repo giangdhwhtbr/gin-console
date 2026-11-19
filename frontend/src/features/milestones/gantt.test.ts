@@ -11,12 +11,16 @@ import {
   endOf,
   fitDayWidth,
   isoOf,
+  labelWidthOf,
+  markerSides,
   middleOf,
   monthsOf,
   openingDay,
   rowsOf,
   sortEpics,
   stepDay,
+  tailWidth,
+  showsSpec,
   warningLines,
   xOf,
   zoomOf,
@@ -204,8 +208,8 @@ describe("gantt", () => {
       epicPlan("b"),
     ];
     const heights = (wide: boolean) => rowsOf(epics, "2026-10-29", new Set(), new Map(), wide).map((r) => [r.top, r.height]);
-    // 24 + title, id, period and spec lines of 16 = 88, plus 2 warnings of 18
-    expect(heights(false)).toEqual([[0, 124], [124, 72]]);
+    // 24 + title, id and period lines of 16 = 72 (no spec line: the warnings say it), plus 2 warnings of 18
+    expect(heights(false)).toEqual([[0, 108], [108, 72]]);
     expect(heights(true)).toEqual([[0, 92], [92, 56]]);
   });
 
@@ -226,5 +230,49 @@ describe("gantt", () => {
     const byParent = childrenOf([bead("e.10", { parent: "e" }), bead("e.2", { parent: "e" }), bead("f.1", { parent: "f" }), bead("g")]);
     expect(byParent.get("e")?.map((b) => b.id)).toEqual(["e.2", "e.10"]);
     expect([...byParent.keys()].sort()).toEqual(["e", "f"]);
+  });
+
+  it("REQ-MILESTONE-UI-013 label column width by window", () => {
+    expect([390, 1023, 1024, 1279, 1280, 1599, 1600, 2560].map(labelWidthOf)).toEqual([168, 168, 300, 300, 380, 380, 440, 440]);
+  });
+
+  it("REQ-MILESTONE-UI-013 tail title stops before the next end or today line, else the chart edge", () => {
+    expect(tailWidth(100, [160, 400], 500)).toBe(44); // 60px to the end line, a gap on each side
+    expect(tailWidth(100, [90, 400], 500)).toBe(284); // a line behind the bar end does not count
+    expect(tailWidth(100, [], 500)).toBe(384);
+    expect(tailWidth(100, [105], 500)).toBe(0);
+  });
+
+  it("REQ-MILESTONE-UI-013 the End chip keeps off the chart edge and off the Today chip", () => {
+    expect(markerSides(null, 300, 1000)).toEqual({ today: "right", end: "right", todayShift: 0 });
+    expect(markerSides(null, 950, 1000)).toEqual({ today: "right", end: "left", todayShift: 0 });
+    expect(markerSides(280, 300, 1000)).toMatchObject({ today: "left", end: "right", todayShift: 0 });
+    expect(markerSides(100, 300, 1000)).toMatchObject({ today: "right", end: "right" });
+  });
+
+  it("REQ-MILESTONE-UI-013 Today and End chips never intersect, wherever Today falls", () => {
+    const interval = (x: number, side: "left" | "right", w: number, shift = 0): [number, number] =>
+      side === "right" ? [x + 4, x + 4 + w] : [x - shift - 4 - w, x - shift - 4];
+    for (const endX of [300, 800, 900, 950, 998]) {
+      for (let t = 0; t <= 1000; t += 4) {
+        const m = markerSides(t, endX, 1000);
+        const a = interval(t, m.today, 44, m.todayShift);
+        const b = interval(endX, m.end, 100);
+        expect(a[0] < b[1] && b[0] < a[1], `today ${t} end ${endX}`).toBe(false);
+      }
+    }
+    expect(markerSides(940, 950, 1000)).toMatchObject({ today: "left", end: "left" });
+    expect(markerSides(940, 950, 1000).todayShift).toBeGreaterThan(0);
+    expect(markerSides(300, 300, 1000)).toMatchObject({ today: "left", end: "right", todayShift: 0 }); // Today on the End line
+  });
+
+  it("REQ-MILESTONE-UI-013 no spec item when the warnings already say it is not confirmed", () => {
+    const warn = [{ code: "spec_not_ready", days: null, count: null }];
+    expect(showsSpec(epicPlan("a", { spec_confirmed: false }))).toBe(true);
+    expect(showsSpec(epicPlan("a", { spec_confirmed: false, warnings: warn }))).toBe(false);
+    expect(showsSpec(epicPlan("a", { spec_confirmed: null }))).toBe(false);
+    // only spec_not_ready drops it: spec_due and the other warnings keep it
+    const due = [{ code: "spec_due", days: null, count: null }, { code: "late", days: null, count: null }];
+    expect(showsSpec(epicPlan("a", { spec_confirmed: false, warnings: due }))).toBe(true);
   });
 });
