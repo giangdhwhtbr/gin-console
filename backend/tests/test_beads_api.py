@@ -212,23 +212,41 @@ def test_beads_003_refresh_only_runs_bd_dolt_pull(
     assert sorted(started) == [(pull, tmp_path / "one"), (pull, tmp_path / "two")]
 
 
-# REQ-BEADS-012 (Refresh)
+# REQ-BEADS-012 (Refresh): the pull ends before the caches are dropped
 def test_beads_012_refresh_pulls_then_reads_again(tmp_path: Path) -> None:
     fake = FakeExport(FOUR)
-    reads_at_pull: list[int] = []
     bd = FakeBd()
+    clients: list[TestClient] = []
+    during_pull: list[tuple[int, int]] = []  # (status of a list request, reads after it)
 
     def run_bd(cwd: Path) -> PullRun:
-        reads_at_pull.append(len(fake.calls))
+        # a list request while the pull runs; a snapshot it fills must still be dropped after
+        status = clients[0].get("/api/beads", params={"project": "proj"}).status_code
+        during_pull.append((status, len(fake.calls)))
         return bd(cwd)
 
-    api = make(tmp_path, fake, run_bd)
+    clients.append(make(tmp_path, fake, run_bd))
+    api = clients[0]
     api.get("/api/beads", params={"project": "proj"})
     response = api.post("/api/refresh")
     assert response.status_code == 204 and response.content == b""
     assert bd.calls == [tmp_path / "proj"]  # pulled before the response; `gone` has no directory
     api.get("/api/beads", params={"project": "proj"})
-    assert reads_at_pull == [1] and len(fake.calls) == 2
+    assert during_pull == [(200, 1)]  # the snapshot from before the refresh was still kept
+    assert len(fake.calls) == 2  # and the first list request after the refresh read again
+    assert api.get("/api/projects/beads").json()[0]["pull"]["status"] == "ok"
+
+
+# REQ-BEADS-012, REQ-BEADS-016: an unexpected runner error does not fail the refresh
+def test_beads_012_refresh_survives_a_runner_error(tmp_path: Path) -> None:
+    fake = FakeExport(FOUR)
+    api = make(tmp_path, fake, FakeBd({tmp_path / "proj": RuntimeError("boom")}))
+    api.get("/api/beads", params={"project": "proj"})
+    assert api.post("/api/refresh").status_code == 204
+    api.get("/api/beads", params={"project": "proj"})
+    assert len(fake.calls) == 2  # the caches were dropped
+    pull = api.get("/api/projects/beads").json()[0]["pull"]
+    assert (pull["status"], pull["error"]) == ("error", "bd dolt pull failed")
 
 
 # REQ-BEADS-012 (Refresh after a failed pull), REQ-BEADS-016: both project routes show `pull`

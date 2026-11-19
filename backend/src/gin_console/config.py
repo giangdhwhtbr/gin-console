@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ipaddress
 import re
+import threading
 from collections.abc import Mapping
 from pathlib import Path, PureWindowsPath
 
@@ -52,6 +53,8 @@ class BeadsSettings(BaseModel):
         seconds = int(match[1]) * _UNIT[match[2]]
         if seconds < 60:
             raise ValueError("must be 0 or at least one minute")
+        if seconds > threading.TIMEOUT_MAX:  # the longest wait a thread can make
+            raise ValueError(f"must be at most {int(threading.TIMEOUT_MAX)} seconds")
         return float(seconds)
 
 

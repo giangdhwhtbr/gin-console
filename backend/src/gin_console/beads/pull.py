@@ -96,6 +96,9 @@ class PullService:
             message = str(exc)
             error = "bd dolt pull timed out" if message.endswith("timed out") else message
             return PullResult(at=self._clock(), status="error", error=error)
+        except Exception:  # a failed pull never fails the refresh or the scheduled run
+            logger.exception("bd dolt pull in %s failed", path)
+            return PullResult(at=self._clock(), status="error", error="bd dolt pull failed")
         if run.returncode == 0:
             return PullResult(at=self._clock(), status="ok")
         if "no remote" in run.output.lower():
@@ -132,7 +135,7 @@ class PullScheduler:
             self._thread.join()
 
     def _loop(self) -> None:
-        while not self._stop.wait(self._interval):
+        while not self._stop.wait(min(self._interval, threading.TIMEOUT_MAX)):
             try:
                 self.run_once()
             except Exception:

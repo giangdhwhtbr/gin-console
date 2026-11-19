@@ -149,6 +149,20 @@ def test_beads_016_runner_failures(tmp_path: Path, failure: CollectError, error:
     assert pulls.pull_all()["a"] == PullResult(at=NOW, status="error", error=error)
 
 
+# REQ-BEADS-016: an unexpected runner error is that project's failed pull, logged, not raised
+def test_beads_016_unexpected_runner_error_is_a_failed_pull(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    fake = FakeBd({tmp_path / "a": RuntimeError("boom")})
+    with caplog.at_level(logging.ERROR, logger="gin_console.beads.pull"):
+        results = service(projects(tmp_path, "a", "b"), fake).pull_all()
+    assert results["a"] == PullResult(at=NOW, status="error", error="bd dolt pull failed")
+    assert results["b"].status == "ok"
+    [record] = caplog.records
+    assert record.getMessage() == f"bd dolt pull in {tmp_path / 'a'} failed"
+    assert record.exc_info is not None and str(record.exc_info[1]) == "boom"
+
+
 # REQ-BEADS-016 (Timeout): the default runner stops bd after 30 seconds
 @pytest.mark.parametrize(
     ("raised", "error"),
@@ -256,25 +270,36 @@ def test_beads_017_stop_ends_the_thread(tmp_path: Path) -> None:
 def test_beads_017_an_error_in_a_run_does_not_stop_the_schedule(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
-    calls: list[Path] = []
+    fake = FakeBd()
     afters: list[int] = []
 
-    def run(cwd: Path) -> PullRun:
-        calls.append(cwd)
-        if len(calls) == 1:
+    def after() -> None:
+        afters.append(len(fake.calls))
+        if len(afters) == 1:
             raise RuntimeError("boom")
-        return PullRun(0, "")
 
-    pulls = PullService(projects(tmp_path, "a"), run, lambda: NOW)
-    scheduler = PullScheduler(pulls, 0.02, after=lambda: afters.append(len(calls)))
+    scheduler = PullScheduler(service(projects(tmp_path, "a"), fake), 0.02, after=after)
     with caplog.at_level(logging.ERROR, logger="gin_console.beads.pull"):
         scheduler.start()
-        until(lambda: len(afters) >= 1)
+        until(lambda: len(afters) >= 2)
         scheduler.stop()
-    assert afters[0] == 2  # the first run failed before `after`; the second ran in full
+    assert afters[:2] == [1, 2]  # the first run raised in `after`; the next run still came
     [record] = [r for r in caplog.records if r.exc_info]
     assert record.getMessage() == "scheduled pull failed"
     assert record.exc_info is not None and str(record.exc_info[1]) == "boom"
+
+
+# REQ-BEADS-017: an interval past the longest thread wait still waits instead of ending the thread
+def test_beads_017_interval_beyond_the_longest_wait(tmp_path: Path) -> None:
+    fake = FakeBd()
+    scheduler = PullScheduler(
+        service(projects(tmp_path, "a"), fake), threading.TIMEOUT_MAX * 10, after=lambda: None
+    )
+    scheduler.start()
+    time.sleep(0.05)
+    assert scheduler_alive()
+    scheduler.stop()
+    assert not scheduler_alive() and fake.calls == []
 
 
 def app_client(

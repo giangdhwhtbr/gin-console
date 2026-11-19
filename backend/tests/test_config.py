@@ -164,8 +164,11 @@ def test_config_006_interval_values(tmp_path: Path, text: str, seconds: float) -
     assert settings.beads.pull_interval == seconds
 
 
-# REQ-CONFIG-006 (Too short), REQ-CONFIG-003
-@pytest.mark.parametrize("text", ["30s", "59s", "0m", "5x", "5", "-5m", "5 m", "false", "''"])
+# REQ-CONFIG-006 (Too short), REQ-CONFIG-003; too long for a thread wait, or for a float
+@pytest.mark.parametrize(
+    "text",
+    ["30s", "59s", "0m", "5x", "5", "-5m", "5 m", "false", "''", "99999999999h", "9" * 400 + "s"],
+)
 def test_config_006_bad_interval_names_the_field(tmp_path: Path, text: str) -> None:
     path = write(tmp_path, f"beads: {{pull_interval: {text}}}\n")
     with pytest.raises(ConfigError, match=r"beads\.pull_interval"):
