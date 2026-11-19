@@ -52,3 +52,18 @@ def test_reports_006_missing_usage_and_bad_rows() -> None:
 def test_reports_007_export_not_a_list() -> None:
     with pytest.raises(BeadsError):
         snap({"error": "boom"})  # type: ignore[arg-type]
+
+
+# REQ-REPORTS-004
+def test_reports_004_points_read_from_metadata() -> None:
+    from report_beads import row, snap
+
+    from gin_console.reports.source import read_beads
+
+    rows = [
+        row("a-1", metadata={"points": 8}),
+        row("a-2", metadata={"points": "8"}),
+        row("a-3", metadata={"points": False}),
+        row("a-4"),
+    ]
+    assert [b.points for b in read_beads(snap(rows), "alpha")] == [8, None, None, None]

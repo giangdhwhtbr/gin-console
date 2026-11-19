@@ -73,6 +73,7 @@ class ReportBead(BaseModel):
     started_at: datetime | None = None
     closed_at: datetime | None = None
     estimated_minutes: int | None = None
+    points: int | None = None
     priority: int | None = None
     start: str | None = None  # milestone rows only: metadata.start as written
     end: str | None = None
@@ -172,8 +173,10 @@ class EstimateRow(BaseModel):
     project: str
     id: str
     title: str
-    estimate_days: float
+    estimate_days: float | None
+    points: int | None = None
     actual_days: int
+    days_per_point: float | None = None
 
 
 class DeliverySection(BaseModel):

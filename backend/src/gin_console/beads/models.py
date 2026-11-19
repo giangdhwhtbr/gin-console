@@ -36,6 +36,8 @@ class BeadSummary(BaseModel):
     kind: Kind | None = None
     capabilities: list[Text] = []
     complexity: Complexity | None = None
+    points: int | None = None
+    points_reason: Text | None = None
     estimate_minutes: int | None = None
 
 

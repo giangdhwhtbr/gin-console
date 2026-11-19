@@ -4,7 +4,7 @@
 milestone-forecast.
 """
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, StringConstraints
 
@@ -19,6 +19,22 @@ class EpicCount(BaseModel):
     closed: int
 
 
+class DaysPerPoint(BaseModel):
+    value: float
+    measured_epics: int = 0
+    assumed: bool = False
+
+
+class Velocity(BaseModel):
+    committed_points: int | None = None
+    completed_points: int = 0
+    added_points: int = 0
+    say_do: float | None = None
+    days_per_point: float | None = None
+    planned_days_per_point: float | None = None
+    accuracy: float | None = None
+
+
 class MilestoneEntry(BaseModel):
     id: Text
     title: Text
@@ -31,6 +47,7 @@ class MilestoneEntry(BaseModel):
     warnings: int | None
     error: Text | None
     lanes: int | None = None
+    velocity: Velocity | None = None
 
 
 class Forecast(BaseModel):
@@ -49,6 +66,7 @@ class MilestoneList(BaseModel):
     unassigned_epics: int
     today: IsoDate
     forecast: Forecast | None = None
+    days_per_point: DaysPerPoint | None = None
 
 
 class EpicWarning(BaseModel):
@@ -75,6 +93,11 @@ class EpicPlan(BaseModel):
     spec_confirmed: bool | None = None
     remaining_days: int | None = None
     assumed_days: int | None = None
+    points: int | None = None
+    points_reason: Text | None = None
+    estimate_source: Literal["points", "days", "assumed"] | None = None
+    actual_days: int | None = None
+    actual_days_per_point: float | None = None
 
 
 class MilestoneDetail(BaseModel):
@@ -95,3 +118,5 @@ class MilestoneDetail(BaseModel):
     integration: IsoDate | None = None
     deadline: IsoDate | None = None
     away: dict[str, list[Text]] = {}
+    days_per_point: DaysPerPoint | None = None
+    velocity: Velocity | None = None

@@ -314,6 +314,35 @@ def test_reports_004_estimate_against_working_days() -> None:
     ]
 
 
+# REQ-REPORTS-004
+def test_reports_004_pointed_epic_gives_days_per_point() -> None:
+    r = report(
+        [
+            closed(
+                "e-1",
+                "2026-11-10T17:00:00Z",
+                issue_type="epic",
+                created_at="2026-10-01T09:00:00Z",
+                started_at="2026-11-02T09:00:00Z",
+                metadata={"points": 5},
+            ),
+            closed("e-2", "2026-11-10T17:00:00Z", issue_type="epic", metadata={"points": 4}),
+        ],
+        days=60,
+    )
+    assert r.delivery.estimates == [
+        EstimateRow(
+            project="alpha",
+            id="e-1",
+            title="Title of e-1",
+            estimate_days=None,
+            points=5,
+            actual_days=7,
+            days_per_point=1.4,
+        )
+    ]
+
+
 # REQ-REPORTS-005
 def test_reports_005_rework_rate_and_findings() -> None:
     rows = [closed(f"a-{n}", ago(2), assignee="ann", ai=usage(100)) for n in range(3)]

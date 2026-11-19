@@ -347,3 +347,24 @@ def test_milestone_ui_008_older_output_has_no_schedule_facts(tmp_path: Path) -> 
     assert body["epics"][0]["remaining_days"] is None
     assert body["epics"][0]["assumed_days"] is None
     assert body["epics"][0]["warnings"][0]["count"] is None
+
+
+# REQ-MILESTONE-UI-008
+def test_milestone_ui_008_story_points_through_the_api(tmp_path: Path) -> None:
+    dpp = {"value": 1.4, "measured_epics": 6, "assumed": False}
+    velocity = {"committed_points": 21, "completed_points": 13, "say_do": 0.62}
+    listed = {
+        **LIST,
+        "days_per_point": dpp,
+        "milestones": [{**LIST["milestones"][0], "velocity": velocity}],
+    }
+    shown = {**SHOW, "velocity": velocity, "epics": [{**SHOW["epics"][0], "points": 8}]}
+    api = make(tmp_path, FakeGw({"list": listed, "show": shown}))
+    body = api.get("/api/milestones", params={"project": "proj"}).json()
+    assert body["days_per_point"] == dpp
+    assert body["milestones"][0]["velocity"]["say_do"] == 0.62
+    detail = api.get("/api/milestones/proj/gw-ab1").json()
+    assert detail["velocity"]["committed_points"] == 21 and detail["epics"][0]["points"] == 8
+    old = make(tmp_path, FakeGw())
+    assert old.get("/api/milestones", params={"project": "proj"}).json()["days_per_point"] is None
+    assert old.get("/api/milestones/proj/gw-ab1").json()["epics"][0]["points"] is None
