@@ -168,6 +168,7 @@ export function BeadDetailPage({
                       `Created ${new Date(bead.created_at).toLocaleString()}`,
                       `Updated ${new Date(bead.updated_at).toLocaleString()}`,
                       estimate !== null && `Estimate ${estimate}`,
+                      bead.points !== null && `Points ${bead.points}${bead.points_reason === null ? "" : ` (${bead.points_reason})`}`,
                       `${bead.comment_count} comment${bead.comment_count === 1 ? "" : "s"}`,
                     ]
                       .filter(Boolean)

@@ -382,7 +382,8 @@ function EpicRow({
   const counts = childCounts(kids);
   const prep = prepLabel(counts);
   const left = epic.status === "in_progress" && epic.estimate_days !== null && epic.remaining_days !== null && epic.remaining_days < epic.estimate_days;
-  const size = left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate";
+  const points = epic.points === null ? "" : `${epic.points} pt · `;
+  const size = points + (left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate");
   const period = `${periodOf(epic.planned_start, epic.planned_end, today)}, ${size}`;
   const closedTracks = `${counts.closedTracks}/${counts.tracks} closed`;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");

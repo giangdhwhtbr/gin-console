@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { json } from "@/features/beads/beadFixtures";
-import { fetchMilestone, fetchMilestones, milestonePath, MilestonesError, type Forecast } from "./api";
+import { daysPerPointOf, fetchMilestone, fetchMilestones, milestonePath, MilestonesError, velocityOf, type Forecast } from "./api";
 import { detail, entry, epicPlan, forecast, list, stubMilestones } from "./milestoneFixtures";
 
 afterEach(() => vi.unstubAllGlobals());
@@ -99,5 +99,50 @@ describe("milestones api", () => {
     expect(milestonePath("p", "m2", "beads", null, "all", "project=x&milestone=m9&view=graph")).toBe("/milestones/p/m2?tab=beads&view=graph");
     expect(milestonePath("alpha", "m-1", "gantt", null, "2w")).toBe("/milestones/alpha/m-1?zoom=2w"); // REQ-MILESTONE-UI-011
     expect(milestonePath("alpha", "m-1", "gantt", null, "all")).toBe("/milestones/alpha/m-1");
+  });
+
+  const VELOCITY = { committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86 };
+
+  it("REQ-MILESTONE-UI-008 reads days per point, velocity and the points of an epic", async () => {
+    stubMilestones((url) =>
+      url.pathname.endsWith("/m-1")
+        ? json(detail([epicPlan("e-a", { points: 5, points_reason: "new UI", estimate_source: "points", actual_days: 7, actual_days_per_point: 1.4 })], { days_per_point: { value: 1.4, measured_epics: 3, assumed: false }, velocity: VELOCITY }))
+        : json(list([entry("m-1", { velocity: VELOCITY })], { days_per_point: { value: 1, measured_epics: 0, assumed: true } })),
+    );
+    const body = await fetchMilestones("alpha");
+    expect(body.days_per_point).toEqual({ value: 1, measured_epics: 0, assumed: true });
+    expect(body.milestones[0].velocity).toEqual(VELOCITY);
+    const shown = await fetchMilestone("alpha", "m-1", null);
+    expect(shown.velocity).toEqual(VELOCITY);
+    expect(shown.days_per_point?.value).toBe(1.4);
+    expect(shown.epics[0]).toMatchObject({ points: 5, points_reason: "new UI", estimate_source: "points", actual_days: 7, actual_days_per_point: 1.4 });
+  });
+
+  it("REQ-MILESTONE-UI-008 older output: the points keys read as null", async () => {
+    const bare = (x: object, keys: string[]) => Object.fromEntries(Object.entries(x).filter(([k]) => !keys.includes(k)));
+    const epicKeys = ["points", "points_reason", "estimate_source", "actual_days", "actual_days_per_point"];
+    stubMilestones((url) =>
+      url.pathname.endsWith("/m-1")
+        ? json({ ...bare(detail([]), ["velocity", "days_per_point"]), epics: [bare(epicPlan("e-a"), epicKeys)] })
+        : json({ ...bare(list([]), ["days_per_point"]), milestones: [bare(entry("m-1"), ["velocity"])] }),
+    );
+    const body = await fetchMilestones("alpha");
+    expect(body.days_per_point).toBeNull();
+    expect(body.milestones[0].velocity).toBeNull();
+    const shown = await fetchMilestone("alpha", "m-1", null);
+    expect(shown.velocity).toBeNull();
+    expect(shown.days_per_point).toBeNull();
+    expect(shown.epics[0]).toMatchObject({ points: null, points_reason: null, estimate_source: null, actual_days: null, actual_days_per_point: null });
+  });
+
+  it("REQ-MILESTONE-UI-008 a malformed velocity or days per point reads as null and the page still loads", async () => {
+    stubMilestones(() => json({ ...list([]), milestones: [{ ...entry("m-1"), velocity: { say_do: "high" } }], days_per_point: "1.4" }));
+    const body = await fetchMilestones("alpha");
+    expect(body.milestones[0].velocity).toBeNull();
+    expect(body.days_per_point).toBeNull();
+    expect(velocityOf(null)).toBeNull();
+    expect(velocityOf({ ...VELOCITY, say_do: undefined })?.say_do).toBeNull();
+    expect(daysPerPointOf({ value: "x" })).toBeNull();
+    expect(daysPerPointOf({ value: 1.4 })).toEqual({ value: 1.4, measured_epics: 0, assumed: false });
   });
 });

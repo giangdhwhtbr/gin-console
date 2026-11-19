@@ -33,6 +33,8 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   capabilities: [],
   complexity: null,
   estimate_minutes: null,
+  points: null,
+  points_reason: null,
   ...overrides,
 });
 

@@ -51,6 +51,8 @@ const beadDetail = (id: string, overrides: Partial<BeadDetail> = {}): BeadDetail
   capabilities: [],
   complexity: null,
   estimate_minutes: null,
+  points: null,
+  points_reason: null,
   description: "A description",
   design: null,
   notes: null,

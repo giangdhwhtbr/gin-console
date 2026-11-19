@@ -1,6 +1,17 @@
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
 import type { Zoom } from "./gantt";
 
+export type DaysPerPoint = { value: number; measured_epics: number; assumed: boolean };
+export type Velocity = {
+  committed_points: number | null;
+  completed_points: number;
+  added_points: number;
+  say_do: number | null;
+  days_per_point: number | null;
+  planned_days_per_point: number | null;
+  accuracy: number | null;
+};
+export type EstimateSource = "points" | "days" | "assumed";
 export type Cause = "outdated" | "tracking" | "schema";
 export type MilestoneEntry = {
   id: string;
@@ -14,6 +25,7 @@ export type MilestoneEntry = {
   warnings: number | null;
   error: string | null;
   lanes: number | null;
+  velocity: Velocity | null;
 };
 export type Forecast = {
   deadline: string | null;
@@ -25,7 +37,7 @@ export type Forecast = {
   unestimated: number;
   error: string | null;
 };
-export type MilestoneList = { milestones: MilestoneEntry[]; unassigned_epics: number; today: string; forecast: Forecast | null };
+export type MilestoneList = { milestones: MilestoneEntry[]; unassigned_epics: number; today: string; forecast: Forecast | null; days_per_point: DaysPerPoint | null };
 export type EpicWarning = { code: string; days: number | null; count: number | null };
 export type ExternalDependency = { id: string; milestone: string | null };
 export type EpicPlan = {
@@ -41,6 +53,11 @@ export type EpicPlan = {
   spec_confirmed: boolean | null;
   remaining_days: number | null;
   assumed_days: number | null;
+  points: number | null;
+  points_reason: string | null;
+  estimate_source: EstimateSource | null;
+  actual_days: number | null;
+  actual_days_per_point: number | null;
 };
 export type MilestoneDetail = {
   id: string;
@@ -60,6 +77,8 @@ export type MilestoneDetail = {
   integration: string | null;
   deadline: string | null;
   away: Record<string, string[]>;
+  days_per_point: DaysPerPoint | null;
+  velocity: Velocity | null;
 };
 
 /** A failed milestones request; `kind` names a known cause the page explains with its fix. */
@@ -81,6 +100,39 @@ const isLanes = (value: unknown) => value === undefined || isNumberOrNull(value)
 const isAway = (value: unknown) =>
   value === undefined || (isObject(value) && Object.values(value).every((ranges) => every(ranges, isString)));
 const every = (value: unknown, check: (item: unknown) => boolean) => Array.isArray(value) && value.every(check);
+
+const numberOrNull = (value: unknown): number | null => (typeof value === "number" && Number.isFinite(value) ? value : null);
+const stringOrNull = (value: unknown): string | null => (typeof value === "string" ? value : null);
+
+/** REQ-MILESTONE-UI-008: gin's `velocity`; a missing or malformed one reads as null, never as a page error. */
+export function velocityOf(value: unknown): Velocity | null {
+  if (!isObject(value)) return null;
+  const completed = numberOrNull(field(value, "completed_points"));
+  const added = numberOrNull(field(value, "added_points"));
+  if (completed === null || added === null) return null;
+  return {
+    committed_points: numberOrNull(field(value, "committed_points")),
+    completed_points: completed,
+    added_points: added,
+    say_do: numberOrNull(field(value, "say_do")),
+    days_per_point: numberOrNull(field(value, "days_per_point")),
+    planned_days_per_point: numberOrNull(field(value, "planned_days_per_point")),
+    accuracy: numberOrNull(field(value, "accuracy")),
+  };
+}
+
+export function daysPerPointOf(value: unknown): DaysPerPoint | null {
+  if (!isObject(value)) return null;
+  const number = numberOrNull(field(value, "value"));
+  if (number === null) return null;
+  return {
+    value: number,
+    measured_epics: numberOrNull(field(value, "measured_epics")) ?? 0,
+    assumed: field(value, "assumed") === true,
+  };
+}
+
+const sourceOf = (value: unknown): EstimateSource | null => (value === "points" || value === "days" || value === "assumed" ? value : null);
 
 function isForecast(value: unknown): value is Forecast {
   return (
@@ -172,7 +224,12 @@ export async function fetchMilestones(project: string): Promise<MilestoneList> {
   if (!response.ok) throw await failure(response, "Project");
   const body: unknown = await response.json();
   if (!isList(body)) throw new MilestonesError("Could not load milestones (unexpected response)");
-  return { ...body, forecast: body.forecast ?? null, milestones: body.milestones.map((m) => ({ ...m, lanes: m.lanes ?? null })) };
+  return {
+    ...body,
+    forecast: body.forecast ?? null,
+    days_per_point: daysPerPointOf(field(body, "days_per_point")),
+    milestones: body.milestones.map((m) => ({ ...m, lanes: m.lanes ?? null, velocity: velocityOf(field(m, "velocity")) })),
+  };
 }
 
 export async function fetchMilestone(project: string, id: string, start: string | null): Promise<MilestoneDetail> {
@@ -187,11 +244,18 @@ export async function fetchMilestone(project: string, id: string, start: string 
     integration: body.integration ?? null,
     deadline: body.deadline ?? null,
     away: body.away ?? {},
+    days_per_point: daysPerPointOf(field(body, "days_per_point")),
+    velocity: velocityOf(field(body, "velocity")),
     epics: body.epics.map((e) => ({
       ...e,
       spec_confirmed: e.spec_confirmed ?? null,
       remaining_days: e.remaining_days ?? null,
       assumed_days: e.assumed_days ?? null,
+      points: numberOrNull(field(e, "points")),
+      points_reason: stringOrNull(field(e, "points_reason")),
+      estimate_source: sourceOf(field(e, "estimate_source")),
+      actual_days: numberOrNull(field(e, "actual_days")),
+      actual_days_per_point: numberOrNull(field(e, "actual_days_per_point")),
       warnings: e.warnings.map((w) => ({ ...w, count: w.count ?? null })),
     })),
   };

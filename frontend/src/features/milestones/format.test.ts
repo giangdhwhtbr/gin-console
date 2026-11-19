@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { awayLine, workdaysAfter } from "./format";
+import { awayLine, oneDecimal, percent, twoDecimals, workdaysAfter } from "./format";
 
 describe("workdaysAfter", () => {
   // REQ-MILESTONE-UI-016 spare days counted Monday to Friday in (end, finish]
@@ -21,5 +21,15 @@ describe("awayLine", () => {
     expect(awayLine({ ann: ["next week"] }, today)).toBe("Away: ann next week");
     expect(awayLine({}, today)).toBeNull();
     expect(awayLine({ ann: [] }, today)).toBeNull();
+  });
+});
+
+describe("points formats", () => {
+  it("REQ-MILESTONE-UI-021 percent, one and two decimals", () => {
+    expect(percent(0.62)).toBe("62%");
+    expect(percent(1)).toBe("100%");
+    expect(oneDecimal(1)).toBe("1.0");
+    expect(oneDecimal(1.4)).toBe("1.4");
+    expect(twoDecimals(0.86)).toBe("0.86");
   });
 });

@@ -12,6 +12,7 @@ import { awayLine, plural, shortDate } from "./format";
 import { dayOf, isoOf, zoomOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
+import { MilestoneVelocity } from "./MilestoneVelocity";
 import { MilestoneStatus } from "./MilestoneStatus";
 import { parseRetros } from "./retro";
 import { RetroTab } from "./RetroTab";
@@ -126,6 +127,7 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
         {plan.deadline !== null && <span>{`Deadline ${date(plan.deadline)}`}</span>}
         {away !== null && <span>{away}</span>}
       </div>
+      <MilestoneVelocity velocity={plan.velocity} />
       {plan.description !== "" && (
         <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">
           <p className={cn(!more && "line-clamp-2")}>{plan.description}</p>

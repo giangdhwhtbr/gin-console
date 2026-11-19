@@ -29,6 +29,8 @@ const sampleSummary = {
   capabilities: [],
   complexity: null,
   estimate_minutes: null,
+  points: null,
+  points_reason: null,
 };
 
 const sampleDetail = {
@@ -87,6 +89,13 @@ describe("api", () => {
     const [withFields, without] = await fetchBeads("proj", false);
     expect(withFields).toMatchObject({ kind: "technical", capabilities: ["ui"], complexity: "high", estimate_minutes: 90 });
     expect(without).toMatchObject({ kind: null, capabilities: [], complexity: null, estimate_minutes: null });
+  });
+
+  it("REQ-BEADS-001 Story points: points and reason are read, a malformed one reads as null", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleSummary, points: 5, points_reason: "new endpoint" }, { ...sampleSummary, id: "a-2", points: "5", points_reason: 3 }]))));
+    const [a, b] = await fetchBeads("alpha", false);
+    expect(a).toMatchObject({ points: 5, points_reason: "new endpoint" });
+    expect(b).toMatchObject({ points: null, points_reason: null });
   });
 
   it("REQ-UI-108 reads an unknown kind as null", async () => {

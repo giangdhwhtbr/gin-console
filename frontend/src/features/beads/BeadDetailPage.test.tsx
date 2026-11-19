@@ -54,6 +54,8 @@ const beadDetail = (id: string, overrides: Partial<BeadDetail> = {}): BeadDetail
   capabilities: [],
   complexity: null,
   estimate_minutes: null,
+  points: null,
+  points_reason: null,
   description: "A description",
   design: null,
   notes: null,
@@ -563,6 +565,13 @@ describe("BeadDetailPage", () => {
     const caps = screen.getByRole("list", { name: "Capabilities" });
     expect(within(caps).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["beads", "ui"]);
     expect(screen.getByText(/Estimate 3d/)).toBeInTheDocument();
+  });
+
+  it("REQ-UI-109 Pointed epic: the page shows Points 5 and its reason", async () => {
+    stubFetch(beadDetail("e-3", { issue_type: "epic", points: 5, points_reason: "new endpoint and UI" }));
+    render(<BeadDetailPage project="alpha" id="e-3" />);
+    expect(await screen.findByText(/Points 5/)).toBeInTheDocument();
+    expect(screen.getByText(/new endpoint and UI/)).toBeInTheDocument();
   });
 
   it("REQ-UI-109 Partial day: 240 minutes shows Estimate 0.5d", async () => {

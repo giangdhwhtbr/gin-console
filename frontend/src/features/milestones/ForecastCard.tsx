@@ -1,10 +1,10 @@
 import { TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Forecast } from "./api";
-import { plural, shortDate, workdaysAfter } from "./format";
+import type { DaysPerPoint, Forecast } from "./api";
+import { oneDecimal, plural, shortDate, workdaysAfter } from "./format";
 
 /** The project forecast of `milestone list --json` (REQ-MILESTONE-UI-016); nothing without one. */
-export function ForecastCard({ forecast: f, today }: { forecast: Forecast | null; today: string }) {
+export function ForecastCard({ forecast: f, today, daysPerPoint = null }: { forecast: Forecast | null; today: string; daysPerPoint?: DaysPerPoint | null }) {
   if (f === null) return null;
   const date = (iso: string) => shortDate(iso, today);
   let compare: { text: string; late: boolean } | null = null;
@@ -30,6 +30,9 @@ export function ForecastCard({ forecast: f, today }: { forecast: Forecast | null
       <Figure label="Default lanes" value={plural(f.lanes, "lane")} />
       <Figure label="Open epics" value={plural(f.open_epics, "open epic")} />
       <Figure label="Unestimated" value={`${f.unestimated} unestimated`} warn={f.unestimated > 0} />
+      {daysPerPoint !== null && (
+        <p className="text-sm text-muted-foreground md:col-span-4">{`${oneDecimal(daysPerPoint.value)} days per point${daysPerPoint.assumed ? " (assumed)" : ""}`}</p>
+      )}
       {f.error !== null && <p className="text-sm text-destructive md:col-span-4">{f.error}</p>}
     </section>
   );

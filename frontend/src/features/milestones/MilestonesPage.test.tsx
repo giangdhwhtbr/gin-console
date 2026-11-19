@@ -18,14 +18,14 @@ function open(body: Response, beads: Parameters<typeof stubMilestones>[1] = []) 
 const rowOf = async (title: string) => (await screen.findByRole("link", { name: title })).closest("li") ?? document.body;
 
 describe("MilestonesPage", () => {
-  it("REQ-UI-107 the six-column grid starts only when the list container is wide, so the title column never collapses", async () => {
+  it("REQ-UI-107 the seven-column grid starts only when the list container is wide, so the title column never collapses", async () => {
     open(json(list([entry("m-1", { title: "Beta" })])));
     const row = await rowOf("Beta");
     const list_ = screen.getByRole("list", { name: "Milestones" });
     expect(list_.parentElement).toHaveClass("@container");
-    expect(row).toHaveClass("@4xl:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_9rem_7rem]");
+    expect(row).toHaveClass("@5xl:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_6rem_9rem_7rem]");
     expect(row.className).not.toMatch(/(^|\s)md:/);
-    expect(list_.firstElementChild).toHaveClass("hidden", "@4xl:grid");
+    expect(list_.firstElementChild).toHaveClass("hidden", "@5xl:grid");
     expect(list_.firstElementChild?.className).not.toMatch(/(^|\s)md:/);
   });
 
@@ -197,8 +197,28 @@ describe("MilestonesPage", () => {
     expect(within(hardening).getByText("Finishes 1 Dec")).not.toHaveClass("text-state-blocked");
   });
 
+  it("REQ-MILESTONE-UI-001 say/do", async () => {
+    const v = { committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86 };
+    open(
+      json(
+        list([
+          entry("m-1", { title: "Beta", velocity: v }),
+          entry("m-2", { title: "Hardening", velocity: { ...v, say_do: null } }),
+          entry("m-3", { title: "Launch", velocity: null }),
+        ]),
+      ),
+    );
+    expect(await rowOf("Beta")).toHaveTextContent("Say/do 62%");
+    for (const title of ["Hardening", "Launch"]) {
+      const row = await rowOf(title);
+      expect(row).not.toHaveTextContent("Say/do");
+      expect(within(row).getByText("–", { selector: "span.tabular-nums" })).toBeInTheDocument();
+    }
+    expect(within(screen.getByRole("list", { name: "Milestones" })).getByText("Say/do", { selector: "li[aria-hidden] span" })).toBeInTheDocument();
+  });
+
   it("REQ-MILESTONE-UI-001 older gin-workflow: a dash for lanes", async () => {
     open(json(list([entry("m-1", { title: "Beta", lanes: null })])));
-    expect(within(await rowOf("Beta")).getByText("–")).toBeInTheDocument();
+    expect(within(await rowOf("Beta")).getAllByText("–")).toHaveLength(2); // lanes and say/do
   });
 });
