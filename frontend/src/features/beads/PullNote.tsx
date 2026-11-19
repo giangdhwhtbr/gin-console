@@ -1,11 +1,9 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+export type PullFailure = { project: string; path: string; error: string };
+
 /** One note per project whose Beads pull failed; nothing when none. */
-export function PullNote({
-  failures,
-}: {
-  failures: readonly { project: string; path: string; error: string }[];
-}) {
+export function PullNote({ failures }: { failures: readonly PullFailure[] }) {
   if (failures.length === 0) return null;
   return (
     <div className="flex flex-col gap-2">

@@ -107,7 +107,8 @@ export function pullOf(project: { pull?: unknown }): PullResult | null {
   return { at: pull.at, status: pull.status, error };
 }
 
-export const pullFailed = (project: { pull?: unknown }): boolean => pullOf(project)?.status === "error";
+/** The error of a pull, with one wording when the backend sent none. */
+export const pullError = (pull: PullResult): string => pull.error ?? "unknown error";
 
 export async function fetchProjects(): Promise<Project[]> {
   const response = await fetch("/api/projects");

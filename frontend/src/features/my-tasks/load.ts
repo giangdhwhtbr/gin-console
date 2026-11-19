@@ -1,10 +1,10 @@
 import { fetchBeads, type BeadSummary } from "@/features/beads/api";
-import { fetchProjectBeads, isStale, pullFailed, pullOf } from "@/features/projects/api";
+import { fetchProjectBeads, isStale, pullError, pullOf } from "@/features/projects/api";
+import type { PullFailure } from "@/features/beads/PullNote";
 import { isMine } from "./match";
 
 export type MyTask = { project: string; bead: BeadSummary };
 export type ProjectFailure = { project: string; message: string };
-export type PullFailure = { project: string; path: string; error: string };
 export type MyTasks = {
   tasks: MyTask[];
   failures: ProjectFailure[];
@@ -29,8 +29,10 @@ export async function loadMyTasks(email: string, closed: boolean, project = ""):
   const stale = existing.filter((p) => names.includes(p.name)).filter(isStale).map((p) => p.name);
   const pullFailures = existing
     .filter((p) => names.includes(p.name))
-    .filter(pullFailed)
-    .map((p) => ({ project: p.name, path: p.path, error: pullOf(p)?.error ?? "" }));
+    .flatMap((p) => {
+      const pull = pullOf(p);
+      return pull?.status === "error" ? [{ project: p.name, path: p.path, error: pullError(pull) }] : [];
+    });
   const results = await Promise.allSettled(names.map((name) => fetchBeads(name, closed)));
   const tasks: MyTask[] = [];
   const failures: ProjectFailure[] = [];

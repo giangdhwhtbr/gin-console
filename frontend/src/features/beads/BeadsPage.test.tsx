@@ -140,6 +140,13 @@ describe("BeadsPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("REQ-BEADS-018 a failed pull without an error text reads unknown error", async () => {
+    const failed: ProjectBeads = { ...withBeads("alpha"), pull: { at: "2026-11-19T10:00:00Z", status: "error", error: null } };
+    stub(() => json([bead("a-1")]), [failed]);
+    render(<BeadsPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Pulling Beads of alpha failed: unknown error. Run bd dolt pull in /home/gin/alpha.");
+  });
+
   it("REQ-BEADS-018 Older backend: no pull note", async () => {
     stub(() => json([bead("a-1")]), [withBeads("alpha"), { ...withBeads("omega"), pull: { status: "bad" } as never }]);
     render(<BeadsPage />);

@@ -1,7 +1,6 @@
 import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { useId, useState } from "react";
-import { useNow } from "@/lib/useNow";
 import { isBlockError, pullOf, type Beads, type Epic, type Project, type Workflow } from "./api";
 import { PullLine } from "./PullLine";
 
@@ -151,7 +150,6 @@ function BeadsBlock({ beads, projectName }: { beads: Beads; projectName: string 
 export function ProjectCard({ project }: { project: Project }) {
   const { workflow, beads } = project;
   const pull = pullOf(project);
-  const now = useNow(30_000);
   return (
     <article aria-label={project.name} className="flex flex-col gap-3 rounded-lg border p-4">
       <header className="flex flex-wrap items-center gap-2">
@@ -180,7 +178,7 @@ export function ProjectCard({ project }: { project: Project }) {
         ) : (
           <BeadsBlock beads={beads} projectName={project.name} />
         ))}
-      {pull !== null && <PullLine pull={pull} now={now} />}
+      {pull !== null && <PullLine pull={pull} />}
     </article>
   );
 }
