@@ -8,7 +8,7 @@
 //   reports only the part its ellipsis leaves visible);
 // - two texts, or a text and a shape, only collide where document.elementsFromPoint shows both of them
 //   (an opaque sticky layer over a text hides it, so it is not reported);
-// - sr-only, hidden, `title`/`desc`, disabled text, texts in different fixed layers (bottom nav) and texts in
+// - sr-only, hidden, `title`/`desc`, disabled text, texts in
 //   the same tooltip/popover are skipped.
 function inPage() {
   const cv = document.createElement("canvas");
@@ -159,13 +159,10 @@ function inPage() {
   const visibleTogether = (box, targets) =>
     samples(box).some((p) => atPoint(p, (stack) => stack.length === 0 || targets.every((t) => seenAt(t, stack))));
 
-  const fixedAnc = (e) => {
-    for (let x = e; x && x !== document.body; x = x.parentElement) if (cs(x).position === "fixed") return x;
-    return null;
-  };
   const POPUP = "[role=tooltip],[role=dialog],[data-radix-popper-content-wrapper],[data-slot=tooltip-content],[data-slot=popover-content]";
   const sameLayer = (a, b) => {
-    if (fixedAnc(a) !== fixedAnc(b)) return true;
+    // texts in different fixed layers are compared like any other: an opaque layer (the bottom nav at
+    // 390px) hides the text under it in the hit test, a translucent one does not
     const pa = a.closest(POPUP), pb = b.closest(POPUP);
     return pa && pa === pb;
   };

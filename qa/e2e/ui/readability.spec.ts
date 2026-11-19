@@ -134,7 +134,8 @@ const detailOf = (id: string) => {
   });
 };
 
-async function stub(page: Page) {
+async function stub(page: Page): Promise<string[]> {
+  const unstubbed: string[] = [];
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url());
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
@@ -155,8 +156,10 @@ async function stub(page: Page) {
     else if (parts[1] === 'beads' && parts.length === 4 && beads.some((x) => x.id === parts[3])) ok(detailOf(parts[3]));
     else if (p === '/api/reports/team') ok(team);
     else if (p === '/api/reports') ok(report);
+    if (status === 404 && body && (body as { error?: string }).error === 'not stubbed') unstubbed.push(url.pathname);
     await route.fulfill({ status, json: body });
   });
+  return unstubbed;
 }
 
 type Visit = { name: string; url: string; ready: (page: Page) => Promise<void>; after?: (page: Page) => Promise<void> };
@@ -213,21 +216,19 @@ for (const [group, visits] of Object.entries(groups)) {
     void ev; // signs in (REQ-UI-097)
     test.setTimeout(240_000);
     await page.addInitScript(() => { if (!localStorage.getItem('gin-console-theme')) localStorage.setItem('gin-console-theme', 'light'); });
-    await stub(page);
+    const unstubbed = await stub(page);
     const failures: string[] = [];
     for (const visit of visits) {
       for (const size of WIDTHS) {
         await page.setViewportSize(size);
         await page.goto(visit.url);
         await visit.ready(page);
-        await page.waitForLoadState('networkidle');
         for (const theme of THEMES) {
           if (theme === 'dark') {
             await page.evaluate(() => localStorage.setItem('gin-console-theme', 'dark'));
             await page.reload();
             await visit.ready(page);
-            await page.waitForLoadState('networkidle');
-          }
+              }
           await visit.after?.(page);
           const findings = await readabilityFindings(page);
           if (findings.length) failures.push(`${visit.name} @${size.width} ${theme}: ${findings.length} finding(s)\n${show(findings)}`);
@@ -235,6 +236,7 @@ for (const [group, visits] of Object.entries(groups)) {
         await page.evaluate(() => localStorage.setItem('gin-console-theme', 'light'));
       }
     }
+    expect([...new Set(unstubbed)], 'API calls the spec does not stub').toEqual([]);
     expect(failures, failures.join('\n\n')).toEqual([]);
   });
 }
