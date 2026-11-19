@@ -12,7 +12,7 @@ Epic: gin-console-3rr
 - **Bead page (`features/beads/BeadDetailPage.tsx`) and details panel (`DetailsPanel.tsx`)**: the state via `StateMark` (REQ-UI-064), `PriorityPill`, `SizeBadge` in one row with the type and kind badges; the points reason line; `FactList` grid for owner, assignee, created by, created, updated, comments; the `" · "`-joined meta line goes.
 - **List row (`ListRow.tsx`), Board/Focus card (`BeadCard.tsx`)**: `SizeBadge` at every width (it gives way before the title as the other items, REQ-UI-044); `PriorityPill` in place of plain `P<n>`; label chips `truncate` with `title`.
 - **Gantt (`features/milestones/GanttChart.tsx`, `gantt.ts`)**:
-  - Label column width from the window: `w-[300px] min-[1280px]:w-[380px] min-[1600px]:w-[440px]` (and the chart offset that depends on it).
+  - Label column width from the window: 168px under 1024px, `300px` from 1024px, `380px` from 1280px, `440px` from 1600px (and the chart offset that depends on it).
   - Second line: `min-w-0 overflow-hidden`, items `min-w-0 shrink truncate` except the id; order id, `SizeBadge` + days left, period, closed tracks, prep, spec; the spec item is left out when the epic's warnings include `spec_not_ready`.
   - Tail title (`data-tail`): max width = distance from the bar end to the next end/today line or chart edge minus a gap, `truncate`; the label column is an opaque sticky layer above the chart (z-index) so scrolled tails, lines and arrows pass under it.
   - Header: the "End <date>" label is placed on the day row or offset so it never shares space with a month label.

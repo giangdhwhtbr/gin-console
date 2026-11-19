@@ -34,7 +34,7 @@ Unclear requirements never raise the model or effort.
   - Presentation only: no API or data change.
   - Bead page: badge row (state mark "In progress", `P<n>` pill, size badge), points reason on its own line, label/value fact grid (Owner, Assignee, Created by, Created, Updated, Comments), dates "11 May 2026 16:00" without seconds; the details panel the same.
   - Priority pill: P0 destructive, P1 warning, P2+ neutral. Size badge: "<p> pt", else "<n>d" from `estimate_minutes`, else nothing.
-  - Gantt label column fixed by window width: 300px under 1280, 380px from 1280, 440px from 1600; second line id, size, period, closed tracks, prep, spec, cut with an ellipsis from 1024px; spec item dropped when a `spec_not_ready` warning shows; tail titles cut before the next end/today line or chart edge; nothing from the chart crosses the label column.
+  - Gantt label column fixed by window width: 168px under 1024, 300px from 1024, 380px from 1280, 440px from 1600; second line id, size, period, closed tracks, prep, spec, cut with an ellipsis from 1024px; spec item dropped when a `spec_not_ready` warning shows; tail titles cut before the next end/today line or chart edge; nothing from the chart crosses the label column.
   - Facts: label `text-muted-foreground` smaller, value `text-foreground` heavier. Contrast ≥ 4.5:1 (3:1 large) in light and dark.
   - Badges next to a title give way before the title (`min-w-0 shrink truncate`, `.planning/knowledge/beads-filters-and-epic-kind.md`); fixed-column lists switch by container query (`.planning/knowledge/container-queries-for-lists.md`).
   - No new dependency. New and changed tests carry their REQ-ID.

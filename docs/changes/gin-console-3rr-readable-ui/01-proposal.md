@@ -22,7 +22,7 @@ User decisions 2026-11-19: the bead page gets a badge row and a label/value fact
 - Shared pieces: a label/value fact list, a priority pill (P0 destructive, P1 warning), a size badge ("<p> pt" or "<n>d"), and the existing state mark for status.
 - Bead page and details panel: badge row (status, priority, size), points reason line, fact grid (Owner, Assignee, Created by, Created, Updated, Comments) with dates without seconds.
 - List rows, Board and Focus cards: the size badge at every width.
-- Gantt: label column 300/380/440px by window width; second line led by the size badge and cut with an ellipsis; spec state once; tail titles stop before end/today lines and never show through the label column; header labels and lines never cross label text.
+- Gantt: label column 168px under 1024px, then 300/380/440px by window width; second line led by the size badge and cut with an ellipsis; spec state once; tail titles stop before end/today lines and never show through the label column; header labels and lines never cross label text.
 - Milestone page velocity line, Reports tables and tab list, contrast of milestone ids, label chips, chart labels, Projects blocked count.
 - A reusable readability check (overlap, spill, contrast) from the audit scripts, run in TC-1.
 
