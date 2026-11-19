@@ -4,12 +4,13 @@
 - **Priority:** medium
 
 **Preconditions:**
-- Project A is configured; a pull of A is running (the fake `bd dolt pull` is held open)
+- Project A is configured; the fake `bd dolt pull` in A takes 2 seconds and exits 0
 
 **Steps:**
-1. Start a second pull of A while the first is running (`POST /api/refresh`)
-2. Let the fake `bd dolt pull` finish
+1. Send `POST /api/refresh`
+2. Send a second `POST /api/refresh` without waiting for the first
 
 **Expected:**
-- The second pull waited for the first and took its result
 - Only one `bd dolt pull` ran in A
+- Both refreshes answer 204
+- A's `pull` is that one result

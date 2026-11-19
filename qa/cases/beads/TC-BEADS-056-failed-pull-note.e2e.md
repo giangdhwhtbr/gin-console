@@ -4,7 +4,7 @@
 - **Priority:** high
 
 **Preconditions:**
-- Projects A and B are stubbed on `GET /api/projects` and `GET /api/projects/beads`; A's `pull.status` is `error` with an error text and a path, B's `pull` is `null`
+- `GET /api/projects` and `GET /api/projects/beads` are stubbed with project A (path `/tmp/a`, `pull` `{"status": "error", "error": "Merge conflict detected", "at": <1 minute ago>}`) and project B (`pull` `null`)
 - Beads lists for A and B are stubbed
 
 **Steps:**
@@ -12,6 +12,6 @@
 2. Open `/beads?project=A`
 
 **Expected:**
-- Each page shows one note naming A, its error, `bd dolt pull` and A's path
+- Each page shows one note: "Pulling Beads of A failed: Merge conflict detected. Run `bd dolt pull` in /tmp/a."
 - Neither note names B
 - The lists are shown below the note

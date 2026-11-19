@@ -11,3 +11,4 @@
 
 **Expected:**
 - A's card shows "pulled 2 minutes ago"
+- The pull line's title is the full `at` time
