@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe("ListView", () => {
-  it("REQ-UI-044 REQ-UI-107 Long id keeps the title", async () => {
+  it("REQ-UI-044 REQ-UI-107 Long id keeps the title and the first block does not wrap on a phone", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     const id = "ex-payments-provider-migration-and-reconciliation-2026";
     stubBeads(() =>
@@ -36,10 +36,11 @@ describe("ListView", () => {
     const shown = within(row).getByText("ex-payments-pr…tion-2026");
     expect(shown).toHaveAttribute("title", id);
     // shortId caps the id at 24 chars: the span must not cut it again (REQ-UI-107)
-    expect(shown).toHaveClass("shrink-0");
-    expect(shown).not.toHaveClass("max-w-[40%]", "truncate");
-    // when id + 8rem of title do not fit, the title wraps under the id instead of being clipped (REQ-UI-044)
-    expect(shown.parentElement).toHaveClass("flex-wrap");
+    expect(shown).toHaveClass("@2xl:shrink-0");
+    expect(shown).not.toHaveClass("max-w-[40%]");
+    // under 42rem the first block stays on one line and the id gives way (two-line rows, REQ-UI-044); from 42rem it wraps instead of clipping
+    expect(shown.parentElement).toHaveClass("flex-nowrap", "@2xl:flex-wrap");
+    expect(shown).toHaveClass("min-w-0", "shrink", "truncate");
     expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
     // the bar and the closed count give way to the title when the title cell is narrow
     expect(within(row).getByText(/\d+\/\d+ closed/)).toHaveClass("hidden", "@xl:flex");

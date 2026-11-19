@@ -53,7 +53,7 @@ export function ListRow({
         selected ? "border-foreground bg-muted" : "border-transparent hover:bg-muted/60",
       )}
     >
-      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 overflow-hidden" style={{ paddingLeft: `${row.level * 1.25}rem` }}>
+      <div className="flex min-w-0 flex-nowrap items-center gap-x-2 gap-y-0.5 overflow-hidden @2xl:flex-wrap" style={{ paddingLeft: `${row.level * 1.25}rem` }}>
         {row.hasKids ? (
           <button
             type="button"
@@ -69,7 +69,7 @@ export function ListRow({
         ) : (
           <span className="size-6 shrink-0" />
         )}
-        <span className="shrink-0 font-mono text-xs text-muted-foreground" title={bead.id} aria-hidden={short !== bead.id || undefined}>
+        <span className="min-w-0 shrink truncate font-mono text-xs text-muted-foreground @2xl:shrink-0" title={bead.id} aria-hidden={short !== bead.id || undefined}>
           {short}
         </span>
         {short !== bead.id && <span className="sr-only">{bead.id}</span>}
