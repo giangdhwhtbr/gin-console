@@ -63,7 +63,7 @@ export type UsageSection = {
 export type WeekRow = { week: string; counts: Record<string, number> };
 export type Stat = { n: number; median: number; p85: number };
 export type TimeRow = { key: string; cycle: Stat | null; lead: Stat | null };
-export type EstimateRow = { project: string; id: string; title: string; estimate_days: number; actual_days: number };
+export type EstimateRow = { project: string; id: string; title: string; estimate_days: number | null; points: number | null; actual_days: number; days_per_point: number | null };
 export type DeliverySection = {
   weeks: WeekRow[];
   by_type: TimeRow[];

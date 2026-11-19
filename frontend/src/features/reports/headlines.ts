@@ -1,3 +1,5 @@
+import type { DaysPerPoint } from "@/features/milestones/api";
+import { oneDecimal } from "@/features/milestones/format";
 import type { QualityRow, Report } from "./api";
 import type { ReportTab } from "./filters";
 import { formatCost, formatDays, formatPercent, formatTokens } from "./format";
@@ -26,7 +28,12 @@ export function teamHeadline(report: TeamReport): Headline {
   return { text: `${progress} · on pace`, warn: false };
 }
 
-export function headlines(report: Report): Record<Exclude<ReportTab, "team">, Headline> {
+export function velocityHeadline(daysPerPoint: DaysPerPoint | null): Headline | null {
+  if (daysPerPoint === null) return null;
+  return { text: `${oneDecimal(daysPerPoint.value)} d/pt${daysPerPoint.assumed ? " assumed" : ""}`, warn: false };
+}
+
+export function headlines(report: Report): Record<Exclude<ReportTab, "team" | "velocity">, Headline> {
   const { totals } = report;
   const gaps = gapCount(report);
   return {
@@ -49,6 +56,8 @@ export function figures(tab: ReportTab, report: Report): [string, string][] {
         ["Median cycle time", formatDays(delivery.overall.cycle?.median ?? null)],
         ["Median lead time", formatDays(delivery.overall.lead?.median ?? null)],
       ];
+    case "velocity":
+      return [];
     case "usage":
       return [
         ["Tokens", formatTokens(totals.tokens)],

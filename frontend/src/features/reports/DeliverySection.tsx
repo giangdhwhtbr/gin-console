@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { DeliverySection as Delivery, Stat, TimeRow } from "./api";
+import { oneDecimal } from "@/features/milestones/format";
 import { ChartBox, legendText } from "./ChartBox";
 import { TYPES, present, typeColor } from "./colors";
 import { beadPath, estimateDiff } from "./format";
@@ -83,10 +84,10 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
         <section className="flex flex-col gap-3">
           <h2 className="font-semibold">Estimate and actual</h2>
           <Table>
-            {heads(["Epic", "Estimate (working days)", "Actual (working days)", "Difference"])}
+            {heads(["Epic", "Estimate", "Actual (working days)", "Difference"])}
             <TableBody>
               {delivery.estimates.map((e) => {
-                const diff = estimateDiff(e.estimate_days, e.actual_days);
+                const diff = e.estimate_days === null ? null : estimateDiff(e.estimate_days, e.actual_days);
                 return (
                   <TableRow key={`${e.project}/${e.id}`}>
                     <TableCell>
@@ -94,10 +95,14 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
                         {e.id} — {e.title}
                       </Link>
                     </TableCell>
-                    <TableCell>{e.estimate_days}</TableCell>
+                    <TableCell>{e.points !== null ? `${e.points} pt` : `${e.estimate_days}d`}</TableCell>
                     <TableCell>{e.actual_days}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={cn(diff.late && "text-state-blocked")}>{diff.text}</Badge>
+                      {diff !== null ? (
+                        <Badge variant="outline" className={cn(diff.late && "text-state-blocked")}>{diff.text}</Badge>
+                      ) : (
+                        e.days_per_point !== null && `${oneDecimal(e.days_per_point)} d/pt`
+                      )}
                     </TableCell>
                   </TableRow>
                 );

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { navigate } from "@/app/route";
 import type { Report } from "./api";
+import { entry, list } from "@/features/milestones/milestoneFixtures";
 import { ReportsPage } from "./ReportsPage";
 import { report } from "./reportFixtures";
 import { teamReport as teamFixture } from "./team/teamFixtures";
@@ -15,12 +16,14 @@ const project = (name: string) => ({ name, path: `/x/${name}`, exists: true, bea
 const stub = (
   handler: (url: URL) => Response | Promise<Response> = () => json(report()),
   team: (url: URL) => Response | Promise<Response> = () => json(teamFixture()),
+  milestones: (url: URL) => Response | Promise<Response> = () => json(list([entry("m1")], { days_per_point: { value: 1.4, measured_epics: 6, assumed: false } })),
 ) => {
   const mock = vi.fn((input: RequestInfo | URL) => {
     const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url, "http://localhost");
     if (url.pathname === "/api/projects/beads") return Promise.resolve(json([project("alpha"), project("beta")]));
     if (url.pathname === "/api/reports") return Promise.resolve(handler(url));
     if (url.pathname === "/api/reports/team") return Promise.resolve(team(url));
+    if (url.pathname === "/api/milestones") return Promise.resolve(milestones(url));
     return Promise.resolve(json({}, 404));
   });
   vi.stubGlobal("fetch", mock);
@@ -171,12 +174,40 @@ describe("ReportsPage", () => {
     expect(screen.getByLabelText("Sprint")).toHaveValue("s7");
   });
 
+  it("REQ-UI-095 velocity tab requests the milestones once and shows the headline", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    const mock = stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual([]);
+    await userEvent.click(screen.getByRole("tab", { name: /^Velocity/ }));
+    expect(window.location.search).toContain("tab=velocity");
+    expect(await screen.findByRole("tab", { name: /^Velocity.*1\.4 d\/pt/ })).toBeTruthy();
+    expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
+    expect(screen.queryByLabelText("Sprint")).toBeNull();
+  });
+
+  it("REQ-UI-095 tab order puts Velocity after Delivery", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    const order = ["Team", "Delivery", "Velocity", "AI usage", "Quality", "Data coverage"];
+    screen.getAllByRole("tab").forEach((t, i) => expect(t.textContent?.startsWith(order[i])).toBe(true));
+    expect(screen.getAllByRole("tab")).toHaveLength(order.length);
+  });
+
   it("REQ-UI-095 moves between tabs with the arrow keys", async () => {
     window.history.replaceState(null, "", "/reports?tab=delivery");
     stub();
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
     screen.getByRole("tab", { name: /^Delivery/ }).focus();
+    await userEvent.keyboard("{ArrowRight}");
+    const velocity = screen.getByRole("tab", { name: /^Velocity/ });
+    expect(velocity).toHaveAttribute("aria-selected", "true");
+    expect(velocity).toHaveFocus();
+    expect(window.location.search).toContain("tab=velocity");
     await userEvent.keyboard("{ArrowRight}");
     const usage = screen.getByRole("tab", { name: /^AI usage/ });
     expect(usage).toHaveAttribute("aria-selected", "true");
