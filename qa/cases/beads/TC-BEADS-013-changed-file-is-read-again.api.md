@@ -1,6 +1,6 @@
 # TC-BEADS-013: Changed file is read again
 
-- **REQ:** REQ-BEADS-012@fa3e7871
+- **REQ:** REQ-BEADS-012@1a1b7a68
 - **Priority:** high
 
 **Preconditions:**
