@@ -38,6 +38,7 @@ def test_server_010_summary_per_project(tmp_path: Path) -> None:
     assert body[0]["beads"]["stale"] is False
     assert body[1]["exists"] is False and body[1]["beads"] is None
     assert all("workflow" not in p for p in body)
+    assert [p["pull"] for p in body] == [None, None]  # REQ-BEADS-016: not pulled since start
 
 
 # REQ-SERVER-010

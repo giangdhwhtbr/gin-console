@@ -71,6 +71,7 @@ def test_server_002_health(tmp_path: Path) -> None:
 
 
 # REQ-SERVER-003
+# REQ-BEADS-016: `pull` is null until the project is pulled
 def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
     present = tmp_path / "present"
     write_export(present, ISSUES)
@@ -88,6 +89,7 @@ def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
             "exists": True,
             "workflow": WORKFLOW,
             "beads": BEADS,
+            "pull": None,
         },
         {
             "name": "absent",
@@ -95,6 +97,7 @@ def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
             "exists": False,
             "workflow": None,
             "beads": None,
+            "pull": None,
         },
     ]
 
@@ -113,7 +116,7 @@ def test_server_003_no_scotty_fields(tmp_path: Path, fake: Fake) -> None:
     (tmp_path / "s").mkdir()
     client = make_client(tmp_path, [ProjectEntry(name="s", path=tmp_path / "s")])
     entry = client.get("/api/projects").json()[0]
-    assert set(entry) == {"name", "path", "exists", "workflow", "beads"}
+    assert set(entry) == {"name", "path", "exists", "workflow", "beads", "pull"}
 
 
 # REQ-SERVER-007

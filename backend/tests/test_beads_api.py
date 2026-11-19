@@ -5,13 +5,20 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fake_bd import FakeBd
 from fake_export import FakeExport, bead, comment, dep, related, write_export
 from fakes import Fake
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
+from gin_console.beads.pull import BdRunner, PullRun, run_bd_pull
 from gin_console.beads.source import BeadsError, read_export
 from gin_console.config import ProjectEntry, Settings
+
+CONFLICT = (
+    "Error: merge origin/main: Error 1105: Merge conflict detected, "
+    "@autocommit transaction rolled back."
+)
 
 
 class Clock:
@@ -22,9 +29,10 @@ class Clock:
         return self.now
 
 
-def make(tmp_path: Path, fake: Any = None) -> TestClient:
+def make(tmp_path: Path, fake: Any = None, run_bd: BdRunner | None = None) -> TestClient:
     """An app over project `proj` whose rows come from `fake`; `proj` has an export file so the
-    snapshot is kept until that file changes. Without `fake`, the real reader reads that file."""
+    snapshot is kept until that file changes. Without `fake`, the real reader reads that file.
+    Pulls go to `run_bd`, a FakeBd unless given."""
     (tmp_path / "proj").mkdir(exist_ok=True)
     (tmp_path / "dist").mkdir(exist_ok=True)
     if fake is not None:
@@ -40,6 +48,7 @@ def make(tmp_path: Path, fake: Any = None) -> TestClient:
         static_dir=tmp_path / "dist",
         claude_home=tmp_path,
         read_beads=read_export if fake is None else fake,
+        run_bd=run_bd or FakeBd(),
         clock=Clock(),
     )
     return TestClient(app, raise_server_exceptions=False)
@@ -114,7 +123,7 @@ def test_beads_003_odd_closed_values_mean_not_closed(tmp_path: Path, closed: str
     assert response.status_code == 200 and len(response.json()) == 4
 
 
-# REQ-BEADS-003 (No bd process)
+# REQ-BEADS-003 (No bd process): reading routes start no bd, even with the real bd runner
 def test_beads_003_no_bd_process(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     gin = Fake()  # `gin state` for /api/projects
     started: list[list[str]] = []
@@ -131,12 +140,13 @@ def test_beads_003_no_bd_process(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     monkeypatch.setattr(subprocess, "run", run)
     monkeypatch.setattr(subprocess, "Popen", popen)
     write_export(tmp_path / "proj", [*FOUR, bead("a-5", comments=[comment("a-5")])])
-    api = make(tmp_path)  # the default reader
+    api = make(tmp_path, run_bd=run_bd_pull)  # the default reader and bd runner
     for path in (
         "/api/beads?project=proj",
         "/api/beads/proj/a-5",
         "/api/beads/proj/a-5/comments",
         "/api/projects",
+        "/api/projects/beads",
         "/api/reports?project=proj",
     ):
         assert api.get(path).status_code == 200, path
@@ -176,15 +186,67 @@ def test_beads_012_a_changed_file_is_read_again(tmp_path: Path) -> None:
     assert len(fake.calls) == 2 and "a-9" in {b["id"] for b in body}
 
 
+# REQ-BEADS-003 (Only pull)
+def test_beads_003_refresh_only_runs_bd_dolt_pull(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    started: list[tuple[list[str], Path]] = []
+
+    def run(cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
+        started.append((cmd, kwargs["cwd"]))
+        return subprocess.CompletedProcess(cmd, 0, "", "")
+
+    def popen(cmd: list[str], *args: Any, **kwargs: Any) -> None:
+        raise AssertionError(f"process started: {cmd}")
+
+    monkeypatch.setattr(subprocess, "run", run)
+    monkeypatch.setattr(subprocess, "Popen", popen)
+    for name in ("one", "two"):
+        write_export(tmp_path / name, FOUR)
+    settings = Settings(
+        projects=[ProjectEntry(name=n, path=tmp_path / n) for n in ("one", "two")]
+    )
+    api = TestClient(create_app(settings, static_dir=tmp_path / "dist", claude_home=tmp_path))
+    assert api.post("/api/refresh").status_code == 204  # the default bd runner
+    pull = ["bd", "dolt", "pull"]
+    assert sorted(started) == [(pull, tmp_path / "one"), (pull, tmp_path / "two")]
+
+
 # REQ-BEADS-012 (Refresh)
-def test_beads_012_refresh_reads_again(tmp_path: Path) -> None:
+def test_beads_012_refresh_pulls_then_reads_again(tmp_path: Path) -> None:
     fake = FakeExport(FOUR)
-    api = make(tmp_path, fake)
+    reads_at_pull: list[int] = []
+    bd = FakeBd()
+
+    def run_bd(cwd: Path) -> PullRun:
+        reads_at_pull.append(len(fake.calls))
+        return bd(cwd)
+
+    api = make(tmp_path, fake, run_bd)
     api.get("/api/beads", params={"project": "proj"})
     response = api.post("/api/refresh")
     assert response.status_code == 204 and response.content == b""
+    assert bd.calls == [tmp_path / "proj"]  # pulled before the response; `gone` has no directory
     api.get("/api/beads", params={"project": "proj"})
-    assert len(fake.calls) == 2
+    assert reads_at_pull == [1] and len(fake.calls) == 2
+
+
+# REQ-BEADS-012 (Refresh after a failed pull), REQ-BEADS-016: both project routes show `pull`
+def test_beads_012_refresh_after_a_failed_pull(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(subprocess, "run", Fake())  # `gin state` for /api/projects
+    fake = FakeExport(FOUR)
+    api = make(tmp_path, fake, FakeBd({tmp_path / "proj": PullRun(1, f"{CONFLICT}\n")}))
+    api.get("/api/beads", params={"project": "proj"})
+    assert [p["pull"] for p in api.get("/api/projects/beads").json()] == [None, None]
+    assert api.post("/api/refresh").status_code == 204
+    api.get("/api/beads", params={"project": "proj"})
+    assert len(fake.calls) == 2  # the caches were dropped
+    failed = {"at": "2026-10-20T03:00:00Z", "status": "error", "error": CONFLICT}
+    for path in ("/api/projects/beads", "/api/projects"):
+        pulls = {p["name"]: p["pull"] for p in api.get(path).json()}
+        assert pulls == {"proj": failed, "gone": None}, path
 
 
 # REQ-BEADS-004 (Errors are not kept)

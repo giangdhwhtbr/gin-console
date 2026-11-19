@@ -2,10 +2,15 @@
 server:
   host: 127.0.0.1   # loopback only; exposed through `tailscale serve`
   port: 8700
+# Pull every project's Beads from its Dolt remote on this interval (90s, 5m, 1h; at least 1m).
+# Without it the console pulls only on "Refresh data".
+# beads:
+#   pull_interval: 5m
 projects:
   - name: qwikfone
     path: /home/gin/qwikfone
   - name: scotty
     path: /home/gin/scotty
+    pull: false   # never run `bd dolt pull` here
   - name: gin-workflow
     path: /home/gin/gin-workflow

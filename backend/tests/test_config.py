@@ -132,3 +132,55 @@ def test_config_005_old_project_id_is_refused(tmp_path: Path) -> None:
     path = write(tmp_path, "projects:\n  - {name: a, path: /a, scotty_id: a}\n")
     with pytest.raises(ConfigError, match="scotty_id"):
         load_settings(path)
+
+
+# REQ-CONFIG-006 (Interval and opt-out)
+def test_config_006_interval_and_opt_out(tmp_path: Path) -> None:
+    path = write(
+        tmp_path,
+        "beads: {pull_interval: 5m}\n"
+        "projects:\n"
+        "  - {name: a, path: /a, pull: false}\n"
+        "  - {name: b, path: /b}\n",
+    )
+    settings = load_settings(path)
+    assert settings.beads.pull_interval == 300
+    assert [p.pull for p in settings.projects] == [False, True]
+
+
+# REQ-CONFIG-006 (Defaults)
+def test_config_006_defaults(tmp_path: Path) -> None:
+    settings = load_settings(write(tmp_path, "projects:\n  - {name: a, path: /a}\n"))
+    assert settings.beads.pull_interval == 0
+    assert settings.projects[0].pull is True
+
+
+# REQ-CONFIG-006
+@pytest.mark.parametrize(
+    ("text", "seconds"), [("0", 0), ("'0'", 0), ("90s", 90), ("1m", 60), ("2h", 7200)]
+)
+def test_config_006_interval_values(tmp_path: Path, text: str, seconds: float) -> None:
+    settings = load_settings(write(tmp_path, f"beads: {{pull_interval: {text}}}\n"))
+    assert settings.beads.pull_interval == seconds
+
+
+# REQ-CONFIG-006 (Too short), REQ-CONFIG-003
+@pytest.mark.parametrize("text", ["30s", "59s", "0m", "5x", "5", "-5m", "5 m", "false", "''"])
+def test_config_006_bad_interval_names_the_field(tmp_path: Path, text: str) -> None:
+    path = write(tmp_path, f"beads: {{pull_interval: {text}}}\n")
+    with pytest.raises(ConfigError, match=r"beads\.pull_interval"):
+        load_settings(path)
+
+
+# REQ-CONFIG-006, REQ-CONFIG-003
+@pytest.mark.parametrize("text", ["'no'", "'true'", "1", "null"])
+def test_config_006_pull_must_be_a_boolean(tmp_path: Path, text: str) -> None:
+    path = write(tmp_path, f"projects:\n  - {{name: a, path: /a, pull: {text}}}\n")
+    with pytest.raises(ConfigError, match=r"projects\.0\.pull"):
+        load_settings(path)
+
+
+# REQ-CONFIG-006, REQ-CONFIG-003
+def test_config_006_unknown_beads_field(tmp_path: Path) -> None:
+    with pytest.raises(ConfigError, match=r"beads\.interval"):
+        load_settings(write(tmp_path, "beads: {interval: 5m}\n"))
