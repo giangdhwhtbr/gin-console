@@ -35,6 +35,7 @@ Dates are relative to the anchor date (today by default), so the charts always s
 | Usage | every closed child bead, except the spike in `ex-e8`, has a version 1 `ai_usage` with tokens, cost, and some reopens and bugs |
 | Planned milestone with a long title | `ex-m4` "Platform hardening: …", after `ex-m3`, no epics |
 | Long text | epic `ex-payments-provider-migration-and-reconciliation-2026` in `ex-m2`: a long title, a long email assignee, five long labels, a description with a wide table, a code block and long URLs; tasks with an unbroken CamelCase token, a Vietnamese title, a URL, a very long title and a two-letter title; a long-titled prep task; a comment with a stack trace; tasks nested three levels deep (`….2.1.1`) |
-| Sprints and estimates | `sprint:s13` and `sprint:s15` labels; `estimated_minutes` on several epics |
+| Sprints and estimates | `sprint:s13` and `sprint:s15` labels; `estimated_minutes` on `ex-e4` only (the day-estimated epic) |
+| Story points | milestone epics carry the `roadmap` label and `points`, `points_reason`, `points_history` metadata (`ex-e6` and `ex-e8` have no estimate). `ex-m1` has `committed_points` 8 and `planned_days_per_point` 2.0 and closed pointed epics `ex-e1` and `ex-e2` run one after the other, so its velocity has say/do and accuracy and `days_per_point` is measured (not assumed). `ex-m2` is kicked off with `committed_points` 24; `ex-e7` was moved in after kick-off (`milestone_moves`), so `added_points` is 3. Every milestone epic carries `roadmap`, so the forecast card is populated; `ex-m2` shows overflow, unestimated, oversized and spec_not_ready warnings, and `ex-m1` shows an overflow on `ex-e2` (closed late) |
 
 To add a case for a new feature, edit `build()` in the script and run it again.
