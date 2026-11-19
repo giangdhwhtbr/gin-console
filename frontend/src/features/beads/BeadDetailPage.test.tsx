@@ -224,8 +224,8 @@ describe("BeadDetailPage", () => {
     const depItem = depLink.closest("li");
     const blockedItem = blockedLink.closest("li");
     if (depItem === null || blockedItem === null) throw new Error("the relation items are missing");
-    expect(within(depItem).getByText("open")).toBeInTheDocument();
-    expect(within(blockedItem).getByText("closed")).toBeInTheDocument();
+    expect(within(depItem).getByText("Open")).toBeInTheDocument();
+    expect(within(blockedItem).getByText("Closed")).toBeInTheDocument();
 
     cleanup();
     render(<BeadDetailPage project="my proj" id="a-5" />);
@@ -632,5 +632,17 @@ describe("BeadDetailPage", () => {
     await screen.findByText("A description");
     expect(screen.queryByRole("list", { name: "Capabilities" })).toBeNull();
     expect(screen.queryByText(/Estimate|Technical|Parity|\d+d$| pt$/)).toBeNull();
+  });
+
+  it("REQ-UI-028 a child with status in_progress shows the label In progress, not the raw value", async () => {
+    stubFetch(
+      beadDetail("e-1", {
+        issue_type: "epic",
+        children: [{ id: "t-1", title: "Child", status: "in_progress", type: "parent-child", prep: false }],
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="e-1" />);
+    expect(await screen.findByText("In progress")).toBeInTheDocument();
+    expect(screen.queryByText("in_progress")).toBeNull();
   });
 });
