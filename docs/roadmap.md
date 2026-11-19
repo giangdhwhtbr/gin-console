@@ -17,7 +17,7 @@ Source: Product brief (/roadmap session, 2026-10-12)
 
 - Single machine: the console, all projects, and all agents run on the same host; the console reads the filesystem directly.
 - Only projects listed in the console's YAML config appear.
-- Read-only: the console never mutates projects, Beads, or sessions; it shows commands or deep links instead.
+- Read-only: the console never mutates projects, Beads, or sessions; it shows commands or deep links instead. The one exception is `bd dolt pull` in a configured project on refresh and on schedule ([ADR 0003](adr/0003-console-pulls-beads.md)).
 - Access only via Tailscale (bind to `127.0.0.1` behind `tailscale serve`); no public exposure, no separate login.
 - One account per harness.
 - Stack: React (TypeScript) frontend, FastAPI backend.

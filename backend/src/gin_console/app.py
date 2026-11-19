@@ -1,6 +1,8 @@
 """HTTP app: /api/* routes plus the built frontend with SPA fallback."""
 
-from collections.abc import Callable
+import asyncio
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
@@ -10,6 +12,7 @@ from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.responses import FileResponse, PlainTextResponse, Response
 from starlette.middleware.gzip import GZipMiddleware
 
+from gin_console.beads.pull import BdRunner, PullScheduler, PullService, run_bd_pull
 from gin_console.beads.router import build_router as build_beads_router
 from gin_console.beads.snapshot import Reader, SnapshotStore
 from gin_console.beads.source import read_export
@@ -39,8 +42,35 @@ def create_app(
     read_beads: Reader = read_export,
     run_gw: GwRunner = default_run_gw,
     clock: Callable[[], datetime] = utc_now,
+    run_bd: BdRunner = run_bd_pull,
+    schedule_pulls: bool = True,
 ) -> FastAPI:
-    app = FastAPI(title="gin-console", docs_url=None, redoc_url=None, openapi_url=None)
+    # one read of .beads/issues.jsonl per project, reused until the file changes or a refresh
+    snapshots = SnapshotStore(read_beads)
+    on_refresh: list[Callable[[], None]] = [snapshots.clear]
+    # the only bd command the console runs (ADR 0003): on refresh and on schedule
+    pulls = PullService(settings.projects, run_bd, clock)
+
+    def drop_caches() -> None:
+        for clear in on_refresh:
+            clear()
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        interval = settings.beads.pull_interval
+        if not (schedule_pulls and interval > 0):
+            yield
+            return
+        scheduler = PullScheduler(pulls, interval, after=drop_caches)
+        scheduler.start()
+        try:
+            yield
+        finally:
+            await asyncio.to_thread(scheduler.stop)  # waits for a running pull to end
+
+    app = FastAPI(
+        title="gin-console", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
+    )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
     api = APIRouter(prefix="/api")
@@ -49,17 +79,14 @@ def create_app(
     def health() -> dict[str, str]:
         return {"status": "ok", "version": version("gin-console")}
 
-    # one read of .beads/issues.jsonl per project, reused until the file changes or a refresh
-    snapshots = SnapshotStore(read_beads)
-    on_refresh: list[Callable[[], None]] = [snapshots.clear]
-
     @api.post("/refresh", status_code=204)
     def refresh() -> None:
-        """Drop every cached answer so the next request reads its sources again."""
-        for clear in on_refresh:
-            clear()
+        """Pull every project, then drop every cached answer so the next request reads its
+        sources again; a failed pull is kept as that project's result, not raised."""
+        pulls.pull_all()
+        drop_caches()
 
-    api.include_router(build_projects_router(settings, snapshots, on_refresh))
+    api.include_router(build_projects_router(settings, snapshots, pulls, on_refresh))
     api.include_router(build_sessions_router(settings, claude_home))
     api.include_router(build_quota_router(run_claude, run_codex, clock))
     api.include_router(build_beads_router(settings, snapshots, clock))

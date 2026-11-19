@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -66,12 +69,21 @@ class Beads(BaseModel):
     stale: bool = False
 
 
+class PullResult(BaseModel):
+    """The last `bd dolt pull` of a project (REQ-BEADS-016); `at` is when it ended."""
+
+    at: datetime
+    status: Literal["ok", "no_remote", "error"]
+    error: str | None = None
+
+
 class Project(BaseModel):
     name: str
     path: str
     exists: bool
     workflow: Workflow | BlockError | None
     beads: Beads | BlockError | None
+    pull: PullResult | None = None
 
 
 class ProjectBeads(BaseModel):
@@ -79,3 +91,4 @@ class ProjectBeads(BaseModel):
     path: str
     exists: bool
     beads: Beads | BlockError | None
+    pull: PullResult | None = None

@@ -3,15 +3,27 @@
 from __future__ import annotations
 
 import ipaddress
+import re
+import threading
 from collections.abc import Mapping
 from pathlib import Path, PureWindowsPath
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    StrictBool,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 CONFIG_ENV = "GIN_CONSOLE_CONFIG"
 ALLOW_NON_LOOPBACK_ENV = "GIN_CONSOLE_ALLOW_NON_LOOPBACK"
 HOST_ENV = "GIN_CONSOLE_HOST"
+_DURATION = re.compile(r"^(\d+)([smh])$")
+_UNIT = {"s": 1, "m": 60, "h": 3600}
 
 
 class ConfigError(Exception):
@@ -25,11 +37,33 @@ class ServerSettings(BaseModel):
     port: int = Field(default=8700, ge=1, le=65535)
 
 
+class BeadsSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pull_interval: float = 0  # seconds between scheduled pulls; 0 means none (REQ-CONFIG-006)
+
+    @field_validator("pull_interval", mode="before")
+    @classmethod
+    def _duration(cls, value: object) -> float:
+        if value in (0, "0") and not isinstance(value, bool):
+            return 0.0
+        match = _DURATION.match(value) if isinstance(value, str) else None
+        if match is None:
+            raise ValueError("must be 0 or a duration such as 90s, 5m or 1h")
+        seconds = int(match[1]) * _UNIT[match[2]]
+        if seconds < 60:
+            raise ValueError("must be 0 or at least one minute")
+        if seconds > threading.TIMEOUT_MAX:  # the longest wait a thread can make
+            raise ValueError(f"must be at most {int(threading.TIMEOUT_MAX)} seconds")
+        return float(seconds)
+
+
 class ProjectEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1)
     path: Path
+    pull: StrictBool = True  # run `bd dolt pull` here on refresh and on schedule
 
     @field_validator("path")
     @classmethod
@@ -43,6 +77,7 @@ class Settings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     server: ServerSettings = Field(default_factory=ServerSettings)
+    beads: BeadsSettings = Field(default_factory=BeadsSettings)
     projects: list[ProjectEntry] = Field(default_factory=list)
 
     @model_validator(mode="after")

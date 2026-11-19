@@ -23,7 +23,7 @@ Before installing, ensure the following are installed on your machine:
 - [**uv**](https://docs.astral.sh/uv/) (recommended fast Python package manager)
 - **Node.js (v20+ or v22+)** and [**pnpm**](https://pnpm.io/)
 - **Git** (on Windows, **Git for Windows** is required)
-- [**bd** (Beads CLI)](https://github.com/gastownhall/beads) in your system `PATH`, to write each project's export file. The console never runs `bd`; see [Beads export](#beads-export).
+- [**bd** (Beads CLI)](https://github.com/gastownhall/beads) in your system `PATH`, to write each project's export file. The console runs only `bd dolt pull`; see [Beads export](#beads-export) and [Pulling Beads](#pulling-beads).
 - *(Optional)* AI CLIs:
   - Claude Code: `npm install -g @anthropic-ai/claude-code`
   - OpenAI Codex: `npm install -g @openai/codex`
@@ -312,7 +312,7 @@ From another device, open `http://<machine-ip>:8700`. If `GIN_CONSOLE_ALLOW_NON_
 
 ## Beads export
 
-gin-console reads each project's beads from `.beads/issues.jsonl`. It never runs `bd`, so the file must exist and stay current. Run these three commands once in each project directory. They work the same in bash, PowerShell and cmd:
+gin-console reads each project's beads from `.beads/issues.jsonl`. The only `bd` command it runs is `bd dolt pull` (see [Pulling Beads](#pulling-beads)), so the file must exist and stay current. Run these three commands once in each project directory. They work the same in bash, PowerShell and cmd:
 
 ```bash
 bd config set export.auto true
@@ -327,6 +327,30 @@ Without the file, the console shows an error for that project that names these c
 `bd` skips an automatic export that comes less than `export.interval` after the previous one. The console then shows a note that the project's beads may be out of date. Run `bd export -o .beads/issues.jsonl`, or make another `bd` write after the interval, to refresh it.
 
 The bead page no longer shows a reopen count.
+
+---
+
+## Pulling Beads
+
+**Refresh data** runs `bd dolt pull` in each configured project before it reloads, so beads pushed to a project's Dolt remote from other machines show up. It pulls at most four projects at a time and stops a pull after 30 seconds. Each project card shows the last pull: "pulled 2 minutes ago", "no Dolt remote", or "pull failed: <error>". When a pull fails, the Beads and My Tasks pages show the command to run by hand.
+
+To pull on a schedule as well, set `beads.pull_interval` to whole seconds, minutes or hours of at least one minute, such as `90s`, `5m` or `1h`. Without it, or with `0`, the console pulls only on Refresh. To leave a project out of every pull, set `pull: false` on it:
+
+```yaml
+beads:
+  pull_interval: 5m
+projects:
+  - name: scratch
+    path: /home/gin/scratch
+    pull: false
+```
+
+The console only pulls. It never pushes, commits, exports, or resolves a merge conflict. When a card shows a merge conflict, resolve it with `bd` in that project, then select **Refresh data**. If `bd` does not export after a pull, the console shows the out-of-date note from [Beads export](#beads-export).
+
+Pulls run as the console's user:
+
+- The systemd user service has no SSH agent. A `git+ssh` remote needs an SSH key without a passphrase, and the remote's host in `~/.ssh/known_hosts`.
+- The Docker image has no SSH client or key, so pulls from SSH remotes fail there with ssh's message.
 
 ---
 
