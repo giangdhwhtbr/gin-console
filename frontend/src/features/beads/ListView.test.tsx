@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe("ListView", () => {
-  it("REQ-UI-044 REQ-UI-107 Long id keeps the title", async () => {
+  it("REQ-UI-044 REQ-UI-107 Long id keeps the title and the first block does not wrap on a phone", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     const id = "ex-payments-provider-migration-and-reconciliation-2026";
     stubBeads(() =>
@@ -36,15 +36,16 @@ describe("ListView", () => {
     const shown = within(row).getByText("ex-payments-pr…tion-2026");
     expect(shown).toHaveAttribute("title", id);
     // shortId caps the id at 24 chars: the span must not cut it again (REQ-UI-107)
-    expect(shown).toHaveClass("shrink-0");
-    expect(shown).not.toHaveClass("max-w-[40%]", "truncate");
-    // when id + 8rem of title do not fit, the title wraps under the id instead of being clipped (REQ-UI-044)
-    expect(shown.parentElement).toHaveClass("flex-wrap");
+    expect(shown).toHaveClass("@2xl:shrink-0");
+    expect(shown).not.toHaveClass("max-w-[40%]");
+    // under 42rem the first block stays on one line and the id gives way (two-line rows, REQ-UI-044); from 42rem it wraps instead of clipping
+    expect(shown.parentElement).toHaveClass("flex-nowrap", "@2xl:flex-wrap");
+    expect(shown).toHaveClass("min-w-0", "shrink", "truncate");
     expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
     // the bar and the closed count give way to the title when the title cell is narrow
     expect(within(row).getByText(/\d+\/\d+ closed/)).toHaveClass("hidden", "@xl:flex");
     expect(within(row).getByText(/^Prep /)).toHaveClass("hidden", "@xl:inline");
-    expect(within(row).getByText("p-label").parentElement).toHaveClass("hidden", "@3xl:flex");
+    expect(within(row).getByText("p-label").parentElement?.parentElement).toHaveClass("hidden", "@3xl:flex");
     // the extras clip before the title does
     const group = within(row).getByText(/\d+\/\d+ closed/).parentElement!;
     expect(group).toHaveClass("min-w-0", "shrink", "overflow-hidden");
@@ -421,10 +422,12 @@ describe("ListView", () => {
     expect(within(row).getByRole("link", { name: "Fix it" })).toHaveAttribute("href", "/beads/alpha/t-1");
     expect(within(row).getByText("Blocked")).toBeInTheDocument();
     expect(within(row).getByText("bug")).toHaveAttribute("data-type", "bug");
-    expect(within(row).getByText("P1")).toBeInTheDocument();
+    expect(within(row).getByText("P1")).toHaveClass("text-state-blocked");
     expect(within(row).getByRole("img", { name: "2 comments" })).toBeInTheDocument();
     expect(within(row).getByText("alice")).toBeInTheDocument();
     expect(within(row).getAllByText(/^(ui|qa|a)$/)).toHaveLength(3);
+    expect(within(row).getByText("ui")).toHaveClass("truncate");
+    expect(within(row).getByText("ui").parentElement).toHaveAttribute("title", "ui");
     expect(within(row).queryByText("b")).toBeNull();
   });
 
@@ -498,13 +501,17 @@ describe("ListView", () => {
     expect(badge).toHaveClass("min-w-0", "shrink");
     expect(badge).not.toHaveClass("shrink-0");
     expect(badge).toHaveAttribute("title", "Technical");
-    const chip = within(row).getByText("medium · 3d");
-    expect(chip.parentElement).toHaveClass("min-w-0", "shrink", "overflow-hidden");
+    expect(within(row).getByText("medium")).toHaveClass("min-w-0", "shrink", "truncate");
+    const chip = within(row).getByText("3d").parentElement;
+    // the size badge stays whole: the id and the complexity give way before it (REQ-UI-044)
+    expect(chip).toHaveClass("shrink-0");
+    expect(chip).not.toHaveClass("hidden");
+    expect(chip?.parentElement).not.toHaveClass("hidden");
     expect(within(row).getByText("Tech epic").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
     expect(within(within(tree).getByRole("treeitem", { name: /Sized epic/ })).getByText("high")).toBeInTheDocument();
   });
 
-  it("REQ-UI-109 Pointed epic: the row shows the complexity and points, or points alone", async () => {
+  it("REQ-UI-109 Size at every width: the row shows the complexity and the size badge, or the badge alone, outside the hidden group", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
@@ -514,7 +521,8 @@ describe("ListView", () => {
     );
     render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
-    expect(within(within(tree).getByRole("treeitem", { name: /Pointed epic/ })).getByText("medium · 5 pt")).toBeInTheDocument();
+    expect(within(within(tree).getByRole("treeitem", { name: /Pointed epic/ })).getByText("medium")).toBeInTheDocument();
+    expect(within(within(tree).getByRole("treeitem", { name: /Pointed epic/ })).getByText("5 pt")).toBeInTheDocument();
     expect(within(within(tree).getByRole("treeitem", { name: /Bare points/ })).getByText("3 pt")).toBeInTheDocument();
   });
 
@@ -526,5 +534,17 @@ describe("ListView", () => {
     expect(row).not.toHaveTextContent(/Technical|Parity/);
     expect(row).not.toHaveTextContent(/\d+(\.\d)?d\b/);
     expect(row).not.toHaveTextContent("·");
+  });
+
+  it("REQ-UI-110 Priority pill: P0 destructive, P1 warning, P2 neutral on the rows", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() =>
+      json([bead("p-0", { priority: 0, title: "Zero" }), bead("p-1", { priority: 1, title: "One" }), bead("p-2", { priority: 2, title: "Two" })]),
+    );
+    render(<BeadsPage />);
+    const tree = await screen.findByRole("tree");
+    expect(within(within(tree).getByRole("treeitem", { name: /Zero/ })).getByText("P0")).toHaveClass("text-destructive");
+    expect(within(within(tree).getByRole("treeitem", { name: /One/ })).getByText("P1")).toHaveClass("text-state-blocked");
+    expect(within(within(tree).getByRole("treeitem", { name: /Two/ })).getByText("P2")).toHaveClass("bg-secondary");
   });
 });

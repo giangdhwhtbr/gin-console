@@ -62,4 +62,13 @@ describe("BeadCard", () => {
     card(bead("e-2", { issue_type: "epic", kind: "capability" }));
     expect(screen.queryByText(/Technical|Parity/)).toBeNull();
   });
+
+  it("REQ-UI-065 Card with points: the last line shows the state, the type and the size badge 8 pt", () => {
+    const li = card(bead("e-8", { issue_type: "epic", status: "in_progress", points: 8 }));
+    expect(screen.getByText("8 pt")).toBeInTheDocument();
+    expect(li.lastElementChild).toHaveTextContent("8 pt");
+    expect(li.lastElementChild).toHaveTextContent("In progress");
+    cleanup();
+    expect(card(bead("a-9"))).not.toHaveTextContent(" pt");
+  });
 });

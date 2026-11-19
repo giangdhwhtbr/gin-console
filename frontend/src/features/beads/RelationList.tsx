@@ -5,6 +5,12 @@ import { cn } from "@/lib/utils";
 import type { Relation } from "./api";
 import { PrepChip } from "./PrepChip";
 
+/** REQ-UI-028: a relation's status as a word ("In progress"), never the raw value (`in_progress`). */
+const statusLabel = (status: string): string => {
+  const words = status.replaceAll("_", " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
 export function RelationList({
   title,
   titleClassName,
@@ -31,7 +37,7 @@ export function RelationList({
             </Link>
             <span className="min-w-0 wrap-anywhere">{item.title}</span>
             {item.prep === true && <PrepChip />}
-            <Badge variant="secondary">{item.status}</Badge>
+            <Badge variant="secondary">{statusLabel(item.status)}</Badge>
           </li>
         ))}
       </ul>
