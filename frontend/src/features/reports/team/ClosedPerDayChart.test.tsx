@@ -32,12 +32,14 @@ describe("ClosedPerDayChart", () => {
   it("REQ-REPORTS-014 markers", () => {
     const todayDays = [...days, { date: "2026-11-12", closed: {} }];
     const { unmount } = render(<ClosedPerDayChart {...base} days={todayDays} />);
-    expect(screen.getByText("Today").closest("li")).toHaveAttribute("aria-label", expect.stringContaining("12 Nov"));
+    expect(screen.getByText("Today")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^12 Nov:/)).toHaveClass("border-l");
     expect(screen.queryByText(/^End /)).toBeNull();
     unmount();
     const past: DayRow[] = [{ date: "2026-10-30", closed: {} }, { date: "2026-11-02", closed: { ann: 1 } }];
     render(<ClosedPerDayChart {...base} days={past} milestone={closedMilestone} />);
-    expect(screen.getByText("End 30 Oct").closest("li")).toHaveAttribute("aria-label", expect.stringContaining("30 Oct"));
+    expect(screen.getByText("End 30 Oct")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^30 Oct:/)).toHaveClass("border-r");
     expect(screen.queryByText("Today")).toBeNull();
   });
 
@@ -63,5 +65,11 @@ describe("ClosedPerDayChart", () => {
     const future = screen.getByLabelText("5 Nov: ann 1, total 1");
     expect(future.querySelectorAll("[aria-hidden] > span")).toHaveLength(1);
     expect(future.querySelector("[aria-hidden] > span")).toHaveClass("h-0.5");
+  });
+
+  it("REQ-UI-110 Today and End within three columns are on separate rows", () => {
+    const near: DayRow[] = ["2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12"].map((date) => ({ date, closed: {} }));
+    render(<ClosedPerDayChart {...base} days={near} milestone={{ ...active, end: "2026-11-10" }} />);
+    expect(screen.getByText("End 10 Nov").style.top).not.toBe(screen.getByText("Today").style.top);
   });
 });

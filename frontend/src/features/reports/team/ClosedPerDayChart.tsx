@@ -1,3 +1,4 @@
+import { Fragment, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { DayRow, TeamMilestone } from "../teamApi";
 import { formatDate, memberColor } from "./format";
@@ -26,6 +27,19 @@ export function ClosedPerDayChart({
   const withClosed = members.filter((m) => days.some((d) => (d.closed[m] ?? 0) > 0));
   const last = days[days.length - 1].date;
   const endMarked = last > milestone.end && days.some((d) => d.date === milestone.end);
+  const markerOf = (day: DayRow): string | null =>
+    day.date === today ? "Today" : endMarked && day.date === milestone.end ? `End ${formatDate(day.date)}` : null;
+  // a marker within 5 columns of the one before it goes on a second row above the plot, so two labels never overlap
+  const markers = days.flatMap((day, index) => {
+    const text = markerOf(day);
+    return text === null ? [] : [{ text, index }];
+  });
+  const rowOf = (k: number) => (k > 0 && markers[k].index - markers[k - 1].index < 5 ? 1 : 0);
+  const stacked = markers.some((_, k) => rowOf(k) === 1);
+  // labels sit in a layer over the columns, so one wider than a column does not spill out of it; the first and the last
+  // columns align their label to the chart edge so it stays inside
+  const placeOf = (index: number): CSSProperties =>
+    index === 0 ? { left: 0 } : index >= days.length - 3 ? { right: 0 } : { left: `${((index + 0.5) / days.length) * 100}%`, transform: "translateX(-50%)" };
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -39,7 +53,7 @@ export function ClosedPerDayChart({
           ))}
         </ul>
       </div>
-      <div className="relative h-52 pl-8">
+      <div className={cn("relative h-52 pl-8", stacked && "mt-4")}>
         <div aria-hidden className="absolute inset-y-0 left-0 right-0 bottom-5 top-2">
           {ticks.map((tick) => (
             <div key={tick} className="absolute inset-x-0 border-t border-border" style={{ bottom: `${(tick / max) * 100}%` }}>
@@ -54,7 +68,7 @@ export function ClosedPerDayChart({
             const date = formatDate(day.date);
             const label = `${date}: ${[...parts.map((m) => `${m} ${day.closed[m]}`), `total ${total}`].join(", ")}`;
             const future = day.date > today && milestone.status !== "closed";
-            const marker = day.date === today ? "Today" : endMarked && day.date === milestone.end ? `End ${date}` : null;
+            const marker = markerOf(day);
             return (
               <li
                 key={day.date}
@@ -80,12 +94,6 @@ export function ClosedPerDayChart({
                     ))
                   )}
                 </div>
-                {marker !== null && <span aria-hidden className="absolute -top-2 left-1 whitespace-nowrap text-xs">{marker}</span>}
-                {(isMonday(day.date) || day === days[0]) && (
-                  <span aria-hidden className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground">
-                    {date}
-                  </span>
-                )}
                 <span
                   role="tooltip"
                   className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 flex-col whitespace-nowrap rounded border bg-popover p-2 text-xs text-popover-foreground group-hover:flex group-focus:flex"
@@ -100,6 +108,24 @@ export function ClosedPerDayChart({
             );
           })}
         </ol>
+        <div aria-hidden className="pointer-events-none absolute inset-y-0 left-8 right-0">
+          {markers.map(({ text, index }, k) => (
+            <span key={text} className="absolute whitespace-nowrap text-xs" style={{ ...placeOf(index), top: rowOf(k) === 0 ? 0 : "-1rem" }}>
+              {text}
+            </span>
+          ))}
+          {days.map((day, index) => {
+            return (
+              <Fragment key={day.date}>
+                {(isMonday(day.date) || index === 0) && (
+                  <span className="absolute bottom-0 whitespace-nowrap text-xs text-muted-foreground" style={placeOf(index)}>
+                    {formatDate(day.date)}
+                  </span>
+                )}
+              </Fragment>
+            );
+          })}
+        </div>
       </div>
     </section>
   );

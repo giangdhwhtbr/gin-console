@@ -39,7 +39,7 @@ export function RangeChart({ title, ranges }: { title: string; ranges: Range[] }
       </ul>
       <div aria-hidden className="relative ml-[6.5rem] h-4 text-xs text-muted-foreground">
         {[0, 0.25, 0.5, 0.75, 1].map((f) => (
-          <span key={f} className="absolute -translate-x-1/2" style={{ left: `${f * 100}%` }}>
+          <span key={f} className={f === 0 ? "absolute" : f === 1 ? "absolute -translate-x-full" : "absolute -translate-x-1/2"} style={{ left: `${f * 100}%` }}>
             {`${+(f * max).toFixed(1)}d`}
           </span>
         ))}

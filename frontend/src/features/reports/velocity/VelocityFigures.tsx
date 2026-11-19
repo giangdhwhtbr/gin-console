@@ -16,7 +16,7 @@ export function VelocityFigures({ daysPerPoint, latest }: { daysPerPoint: DaysPe
           <dt className="text-xs text-muted-foreground">
             {label}
             {label === "Days per point" && daysPerPoint?.assumed === true && <span className="ml-1">assumed</span>}
-            {label !== "Days per point" && latest !== null && <span className="ml-1 opacity-70">{latest.id}</span>}
+            {label !== "Days per point" && latest !== null && <span className="ml-1">{latest.id}</span>}
           </dt>
           <dd className="text-2xl font-semibold tabular-nums">{value}</dd>
         </div>

@@ -174,6 +174,17 @@ describe("ProjectsPage", () => {
     expect(within(card).getByText(/Epic one/)).toBeInTheDocument();
   });
 
+  it("REQ-UI-004 Blocked work stands out", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ beads: { ...beads, blocked: 19 } }), project({ name: "other", beads })])));
+    render(<ProjectsPage />);
+    const first = within(await screen.findByRole("article", { name: "qwikfone" })).getByText("blocked 19");
+    expect(first).toHaveClass("text-state-blocked");
+    expect(first.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    const second = within(screen.getByRole("article", { name: "other" })).getByText("blocked 0");
+    expect(second).not.toHaveClass("text-state-blocked");
+    expect(second.querySelector("svg")).toBeNull();
+  });
+
   it("REQ-UI-004 shows prep <n> only when prep tasks exist", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ beads: { ...beads, prep: 2 } }), project({ name: "other", beads })])));
     render(<ProjectsPage />);

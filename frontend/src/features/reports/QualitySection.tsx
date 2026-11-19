@@ -6,7 +6,7 @@ import type { Point, QualityRow, QualitySection as Quality } from "./api";
 import { ChartBox, legendText } from "./ChartBox";
 import { beadPath, formatPercent, formatTokens } from "./format";
 
-const tick = { fill: "var(--color-muted-foreground)" };
+const tick = { fill: "var(--color-muted-foreground)", fontSize: 12 };
 const tooltipStyle = { background: "var(--color-popover)", border: "1px solid var(--color-border)" };
 
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
@@ -54,8 +54,8 @@ export function QualitySection({ quality }: { quality: Quality }) {
           <ChartBox height={280}>
             <ScatterChart>
               <CartesianGrid stroke="var(--color-border)" />
-              <XAxis type="number" dataKey="tokens" name="Tokens" tickFormatter={formatTokens} tick={tick} />
-              <YAxis type="number" dataKey="rework" name="Rework" allowDecimals={false} tick={tick} />
+              <XAxis type="number" dataKey="tokens" name="Tokens" tickFormatter={formatTokens} tick={tick} tickMargin={8} />
+              <YAxis type="number" dataKey="rework" name="Rework" allowDecimals={false} tick={tick} tickMargin={8} />
               <Tooltip contentStyle={tooltipStyle} content={<PointTip />} />
               <Legend formatter={legendText} />
               <Scatter name="No rework" data={quality.points.filter((p) => p.rework === 0)} fill="var(--series-1)" onClick={openPoint} isAnimationActive={false} />

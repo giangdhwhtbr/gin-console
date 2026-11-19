@@ -3,7 +3,7 @@ import { VELOCITY_COLORS } from "../colors";
 import { ChartBox, legendText } from "../ChartBox";
 import type { VelocityPoint } from "./velocity";
 
-const tick = { fill: "var(--color-muted-foreground)" };
+const tick = { fill: "var(--color-muted-foreground)", fontSize: 12 };
 const tooltipStyle = { background: "var(--color-popover)", border: "1px solid var(--color-border)" };
 
 /** REQ-REPORTS-018: committed vs completed points, and days per point against the plan; null points are left out. */
@@ -23,8 +23,8 @@ export function VelocityCharts({ points }: { points: readonly VelocityPoint[] })
           <ChartBox height={220}>
             <BarChart data={data}>
               <CartesianGrid stroke="var(--color-border)" />
-              <XAxis dataKey="id" tick={tick} />
-              <YAxis allowDecimals={false} tick={tick} />
+              <XAxis dataKey="id" tick={tick} tickMargin={8} />
+              <YAxis allowDecimals={false} tick={tick} tickMargin={8} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend formatter={legendText} />
               <Bar dataKey="Committed" fill={VELOCITY_COLORS.committed} radius={[4, 4, 0, 0]} isAnimationActive={false} />
@@ -39,8 +39,8 @@ export function VelocityCharts({ points }: { points: readonly VelocityPoint[] })
           <ChartBox height={220}>
             <LineChart data={data}>
               <CartesianGrid stroke="var(--color-border)" />
-              <XAxis dataKey="id" tick={tick} />
-              <YAxis tick={tick} />
+              <XAxis dataKey="id" tick={tick} tickMargin={8} />
+              <YAxis tick={tick} tickMargin={8} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend formatter={legendText} />
               <Line dataKey="Days per point" stroke={VELOCITY_COLORS.daysPerPoint} connectNulls isAnimationActive={false} />

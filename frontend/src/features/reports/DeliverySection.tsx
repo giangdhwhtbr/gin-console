@@ -12,7 +12,7 @@ import { TYPES, present, typeColor } from "./colors";
 import { beadPath, estimateDiff } from "./format";
 import { RangeChart, type Range } from "./RangeChart";
 
-const tick = { fill: "var(--color-muted-foreground)" };
+const tick = { fill: "var(--color-muted-foreground)", fontSize: 12 };
 const tooltipStyle = { background: "var(--color-popover)", border: "1px solid var(--color-border)" };
 const heads = (names: string[]) => (
   <TableHeader>
@@ -44,8 +44,8 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
         <ChartBox height={240}>
           <BarChart data={delivery.weeks.map((w) => ({ week: w.week, ...w.counts }))}>
             <CartesianGrid stroke="var(--color-border)" />
-            <XAxis dataKey="week" tick={tick} />
-            <YAxis allowDecimals={false} tick={tick} />
+            <XAxis dataKey="week" tick={tick} tickMargin={8} />
+            <YAxis allowDecimals={false} tick={tick} tickMargin={8} />
             <Tooltip contentStyle={tooltipStyle} />
             {types.length >= 2 && <Legend formatter={legendText} />}
             {types.map((type, i) => (
