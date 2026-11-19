@@ -154,6 +154,19 @@ describe("GanttChart", () => {
     expect(warning).toHaveAttribute("title", warning.textContent);
   });
 
+  it("REQ-MILESTONE-UI-013 points", () => {
+    draw(
+      detail([
+        epicPlan("e-c", { points: 5, estimate_days: 7 }),
+        epicPlan("e-d", { status: "in_progress", points: 3, estimate_days: 4, remaining_days: 1 }),
+        epicPlan("e-e", { estimate_days: 2 }),
+      ]),
+    );
+    expect(epicRow("e-c")).toHaveTextContent("5 pt · 7d");
+    expect(epicRow("e-d")).toHaveTextContent("3 pt · 1d left");
+    expect(epicRow("e-e")).not.toHaveTextContent("pt");
+  });
+
   it("REQ-MILESTONE-UI-013 remaining and assumed days", () => {
     draw(
       detail([

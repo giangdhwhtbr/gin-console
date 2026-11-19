@@ -27,6 +27,8 @@ export type BeadSummary = {
   capabilities: string[];
   complexity: BeadComplexity | null;
   estimate_minutes: number | null;
+  points: number | null;
+  points_reason: string | null;
 };
 export type MilestoneStatus = "active" | "scheduled" | "planned" | "closed";
 export type MilestoneOption = {
@@ -105,6 +107,9 @@ const withMilestone = <T extends BeadSummary>(bead: T): T => ({
   capabilities: bead.capabilities ?? [],
   complexity: COMPLEXITIES.find((c) => c === bead.complexity) ?? null,
   estimate_minutes: bead.estimate_minutes ?? null,
+  // a malformed points or reason reads as none, it never fails the list
+  points: typeof bead.points === "number" && Number.isFinite(bead.points) ? bead.points : null,
+  points_reason: typeof bead.points_reason === "string" ? bead.points_reason : null,
 });
 
 function isRelation(value: unknown): value is Relation {

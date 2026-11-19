@@ -56,4 +56,16 @@ describe("ForecastCard", () => {
     const { container } = render(<ForecastCard forecast={null} today={TODAY} />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("REQ-MILESTONE-UI-016 days per point", () => {
+    const { rerender } = render(<ForecastCard forecast={forecast()} today={TODAY} daysPerPoint={{ value: 1.4, measured_epics: 3, assumed: false }} />);
+    expect(card()).toHaveTextContent("1.4 days per point");
+    expect(card()).not.toHaveTextContent("(assumed)");
+    rerender(<ForecastCard forecast={forecast()} today={TODAY} daysPerPoint={{ value: 1, measured_epics: 0, assumed: true }} />);
+    expect(card()).toHaveTextContent("1.0 days per point (assumed)");
+    rerender(<ForecastCard forecast={forecast()} today={TODAY} daysPerPoint={null} />);
+    expect(card()).not.toHaveTextContent("per point");
+    rerender(<ForecastCard forecast={forecast()} today={TODAY} />);
+    expect(card()).not.toHaveTextContent("per point");
+  });
 });

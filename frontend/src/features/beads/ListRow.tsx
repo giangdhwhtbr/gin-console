@@ -37,7 +37,7 @@ export function ListRow({
 }) {
   const { bead } = row;
   const short = shortId(bead.id);
-  const sizeText = [bead.complexity, estimateText(bead.estimate_minutes)].filter(Boolean).join(" · ");
+  const sizeText = [bead.complexity, bead.points === null ? estimateText(bead.estimate_minutes) : `${bead.points} pt`].filter(Boolean).join(" · ");
   return (
     <li
       role="treeitem"

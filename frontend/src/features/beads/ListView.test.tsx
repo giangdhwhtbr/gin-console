@@ -504,6 +504,20 @@ describe("ListView", () => {
     expect(within(within(tree).getByRole("treeitem", { name: /Sized epic/ })).getByText("high")).toBeInTheDocument();
   });
 
+  it("REQ-UI-109 Pointed epic: the row shows the complexity and points, or points alone", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() =>
+      json([
+        bead("e-3", { issue_type: "epic", title: "Pointed epic", complexity: "medium", points: 5, estimate_minutes: 1440 }),
+        bead("e-4", { issue_type: "epic", title: "Bare points", points: 3 }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const tree = await screen.findByRole("tree");
+    expect(within(within(tree).getByRole("treeitem", { name: /Pointed epic/ })).getByText("medium · 5 pt")).toBeInTheDocument();
+    expect(within(within(tree).getByRole("treeitem", { name: /Bare points/ })).getByText("3 pt")).toBeInTheDocument();
+  });
+
   it("REQ-UI-109 Capability epic: no kind badge and no estimate", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() => json([bead("e-2", { issue_type: "epic", title: "Cap epic", kind: "capability" })]));

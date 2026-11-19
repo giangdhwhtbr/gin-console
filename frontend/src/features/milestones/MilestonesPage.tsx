@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
 import { ForecastCard } from "./ForecastCard";
-import { plural, shortDate } from "./format";
+import { percent, plural, shortDate } from "./format";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
 import { UnassignedEpics } from "./UnassignedEpics";
@@ -18,7 +18,7 @@ type Projects = { status: "loading" } | { status: "error"; message: string } | {
 
 const ORDER = ["active", "scheduled", "planned", "closed"];
 const rank = (status: string) => (ORDER.includes(status) ? ORDER.indexOf(status) : ORDER.length);
-const COLUMNS = "@4xl:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_9rem_7rem]";
+const COLUMNS = "@min-[60rem]:grid-cols-[8rem_minmax(0,1fr)_11rem_4rem_5.5rem_8.5rem_6rem]";
 
 export function MilestonesPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
@@ -79,12 +79,12 @@ function MilestoneTable({ project }: { project: string }) {
   const { state, retry } = useLoad(fetcher, true);
   if (state.status === "loading") return <p className="text-muted-foreground">Loading milestones…</p>;
   if (state.status === "error") return <MilestoneError error={state.error} onRetry={retry} />;
-  const { milestones, today, forecast } = state.data;
+  const { milestones, today, forecast, days_per_point } = state.data;
   const rows = [...milestones].sort((a, b) => rank(a.status) - rank(b.status) || byStart(a, b));
   return (
     <div className="@container flex min-w-0 flex-col gap-3">
       {state.error !== null && <p role="status" className="text-sm text-destructive">{`Refresh failed: ${state.error.message}`}</p>}
-      <ForecastCard forecast={forecast} today={today} />
+      <ForecastCard forecast={forecast} today={today} daysPerPoint={days_per_point} />
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-2 text-sm">
           <p>{`No milestones in ${project} yet. Create one with:`}</p>
@@ -92,11 +92,12 @@ function MilestoneTable({ project }: { project: string }) {
         </div>
       ) : (
         <ul aria-label="Milestones" className="flex flex-col divide-y rounded border bg-card">
-          <li aria-hidden className={cn("hidden gap-3 px-3 py-2 text-sm text-muted-foreground @4xl:grid", COLUMNS)}>
+          <li aria-hidden className={cn("hidden gap-3 px-3 py-2 text-sm text-muted-foreground @min-[60rem]:grid", COLUMNS)}>
             <span>Status</span>
             <span>Milestone</span>
             <span>Period</span>
             <span>Lanes</span>
+            <span>Say/do</span>
             <span>Epics</span>
             <span>Warnings</span>
           </li>
@@ -113,7 +114,8 @@ function MilestoneTable({ project }: { project: string }) {
 function Row({ project, milestone: m, today }: { project: string; milestone: MilestoneEntry; today: string }) {
   const date = (iso: string) => shortDate(iso, today);
   const warnings = m.warnings ?? 0;
-  const percent = m.epics.total === 0 ? 0 : (100 * m.epics.closed) / m.epics.total;
+  const sayDo = m.velocity?.say_do ?? null;
+  const share = m.epics.total === 0 ? 0 : (100 * m.epics.closed) / m.epics.total;
   return (
     <li
       className={cn(
@@ -141,6 +143,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
         )}
       </span>
       <span className="text-sm">{m.lanes === null ? "–" : plural(m.lanes, "lane")}</span>
+      <span className="text-sm tabular-nums">{sayDo === null ? "–" : `Say/do ${percent(sayDo)}`}</span>
       {m.error !== null ? (
         <span className="col-span-2 text-sm text-destructive">{m.error}</span>
       ) : (
@@ -154,7 +157,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
               aria-valuenow={m.epics.closed}
               className="h-1.5 w-16 overflow-hidden rounded bg-muted"
             >
-              <span className="block h-full bg-state-done" style={{ width: `${percent}%` }} />
+              <span className="block h-full bg-state-done" style={{ width: `${share}%` }} />
             </span>
             {`${m.epics.closed} of ${m.epics.total}`}
           </span>

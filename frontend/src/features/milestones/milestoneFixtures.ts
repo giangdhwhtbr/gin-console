@@ -15,6 +15,7 @@ export const entry = (id: string, overrides: Partial<MilestoneEntry> = {}): Mile
   warnings: 0,
   error: null,
   lanes: null,
+  velocity: null,
   ...overrides,
 });
 
@@ -23,6 +24,7 @@ export const list = (milestones: MilestoneEntry[], overrides: Partial<MilestoneL
   unassigned_epics: 0,
   today: "2026-10-29",
   forecast: null,
+  days_per_point: null,
   ...overrides,
 });
 
@@ -51,6 +53,11 @@ export const epicPlan = (id: string, overrides: Partial<EpicPlan> = {}): EpicPla
   spec_confirmed: null,
   remaining_days: null,
   assumed_days: null,
+  points: null,
+  points_reason: null,
+  estimate_source: null,
+  actual_days: null,
+  actual_days_per_point: null,
   ...overrides,
 });
 
@@ -72,6 +79,8 @@ export const detail = (epics: EpicPlan[], overrides: Partial<MilestoneDetail> = 
   integration: null,
   deadline: null,
   away: {},
+  days_per_point: null,
+  velocity: null,
   ...overrides,
 });
 

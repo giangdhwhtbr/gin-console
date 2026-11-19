@@ -15,6 +15,10 @@ export const monthName = (index: number): string => MONTHS[index];
 export const weekday = (iso: string): string => WEEKDAYS[utcOf(iso).getUTCDay()];
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+export const percent = (ratio: number) => `${Math.round(100 * ratio)}%`;
+export const oneDecimal = (n: number) => n.toFixed(1);
+export const twoDecimals = (n: number) => n.toFixed(2);
+
 /** Working days (Monday to Friday) after `end` up to and including `finish`, as gin-workflow `workdays_after`. */
 export function workdaysAfter(end: string, finish: string): number {
   let count = 0;
