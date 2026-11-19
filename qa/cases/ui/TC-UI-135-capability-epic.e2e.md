@@ -1,6 +1,6 @@
 # TC-UI-135: Capability epic
 
-- **REQ:** REQ-UI-109@c2b6a5c4
+- **REQ:** REQ-UI-109@89f8d56b
 - **Priority:** medium
 
 **Preconditions:**

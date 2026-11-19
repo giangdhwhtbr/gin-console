@@ -1,5 +1,7 @@
 import { shortId } from "@/lib/shortId";
 import { Link } from "@/app/Link";
+import { PriorityPill } from "@/components/PriorityPill";
+import { SizeBadge } from "@/components/SizeBadge";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { CountBadge } from "./CountBadge";
@@ -17,7 +19,7 @@ export function BeadCard({ project, bead }: { project: string; bead: BeadSummary
           {short}
         </span>
         {short !== bead.id && <span className="sr-only">{bead.id}</span>}
-        <span>{`P${bead.priority}`}</span>
+        <PriorityPill priority={bead.priority} />
       </div>
       <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`} className="font-medium wrap-anywhere">
         {bead.title}
@@ -26,6 +28,7 @@ export function BeadCard({ project, bead }: { project: string; bead: BeadSummary
         <StateMark bead={bead} />
         <TypeBadge type={bead.issue_type} />
         <KindBadge kind={bead.kind} />
+        <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />
         <CountBadge kind="comments" count={bead.comment_count} />
         <CountBadge kind="dependencies" count={bead.dependency_count} />
         {(bead.assignee ?? bead.owner ?? "") !== "" && (

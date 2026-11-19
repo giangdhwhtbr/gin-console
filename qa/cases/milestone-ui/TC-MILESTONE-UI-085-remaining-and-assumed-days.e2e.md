@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-085: Remaining and assumed days
 
-- **REQ:** REQ-MILESTONE-UI-013@569753ea
+- **REQ:** REQ-MILESTONE-UI-013@50a2ef46
 - **Priority:** medium
 
 **Preconditions:**

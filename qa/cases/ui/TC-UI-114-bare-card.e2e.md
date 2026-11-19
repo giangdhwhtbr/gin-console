@@ -1,6 +1,6 @@
 # TC-UI-114: Bare card
 
-- **REQ:** REQ-UI-065@15f2bcc9
+- **REQ:** REQ-UI-065@f724b828
 - **Priority:** low
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
