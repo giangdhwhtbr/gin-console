@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-098: Forecast card with every epic unestimated
 
-- **REQ:** REQ-MILESTONE-UI-016@f4425100
+- **REQ:** REQ-MILESTONE-UI-016@8231be50
 - **Priority:** medium
 
 **Preconditions:**
@@ -15,5 +15,5 @@
 
 **Expected:**
 - The card reads "No estimate: every open epic is unestimated"
-- The card reads "2 unestimated" with a warning mark
+- The card shows the pair Unestimated "2 unestimated" with a warning mark
 - The card shows no deadline comparison
