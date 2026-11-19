@@ -503,8 +503,9 @@ describe("ListView", () => {
     expect(badge).toHaveAttribute("title", "Technical");
     expect(within(row).getByText("medium")).toHaveClass("min-w-0", "shrink", "truncate");
     const chip = within(row).getByText("3d").parentElement;
-    expect(chip).toHaveClass("min-w-0", "shrink");
-    expect(chip).not.toHaveClass("shrink-0", "hidden");
+    // the size badge stays whole: the id and the complexity give way before it (REQ-UI-044)
+    expect(chip).toHaveClass("shrink-0");
+    expect(chip).not.toHaveClass("hidden");
     expect(chip?.parentElement).not.toHaveClass("hidden");
     expect(within(row).getByText("Tech epic").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
     expect(within(within(tree).getByRole("treeitem", { name: /Sized epic/ })).getByText("high")).toBeInTheDocument();

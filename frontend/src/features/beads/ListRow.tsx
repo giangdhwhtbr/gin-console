@@ -83,7 +83,7 @@ export function ListRow({
             {bead.complexity}
           </span>
         )}
-        {bead.issue_type === "epic" && <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />}
+        {bead.issue_type === "epic" && <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} className="shrink-0" />}
         <div className="hidden min-w-0 shrink items-center gap-2 overflow-hidden @xl:flex">
           {bead.issue_type === "epic" && row.counts.tracks > 0 && (
             <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground @xl:flex">
