@@ -15,4 +15,4 @@
 6. Open `/reports?project=example&tab=velocity`
 
 **Expected:**
-- On both tabs in both themes, the id and label of `ex-m1` and `ex-m2` has a contrast of at least 4.5:1 with its background
+- On both tabs in both themes, the id and label of `ex-m1` and `ex-m2` have a contrast of at least 4.5:1 with its background
