@@ -1,6 +1,6 @@
 # TC-BEADS-004: No bd process is started
 
-- **REQ:** REQ-BEADS-003@a779b303
+- **REQ:** REQ-BEADS-003@f92fbf6c
 - **Priority:** high
 
 **Preconditions:**
@@ -12,7 +12,8 @@
 2. Request one bead of P
 3. Request the comments of that bead
 4. Request `GET /api/projects`
-5. Request the report of P
+5. Request `GET /api/projects/beads`
+6. Request the report of P
 
 **Expected:**
 - All responses succeed

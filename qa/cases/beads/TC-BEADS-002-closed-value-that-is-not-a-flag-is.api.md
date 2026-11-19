@@ -1,6 +1,6 @@
 # TC-BEADS-002: Closed value that is not a flag is ignored
 
-- **REQ:** REQ-BEADS-003@a779b303
+- **REQ:** REQ-BEADS-003@f92fbf6c
 - **Priority:** low
 
 **Preconditions:**

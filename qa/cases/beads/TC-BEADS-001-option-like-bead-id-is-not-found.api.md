@@ -1,6 +1,6 @@
 # TC-BEADS-001: Option-like bead id is not found
 
-- **REQ:** REQ-BEADS-003@a779b303
+- **REQ:** REQ-BEADS-003@f92fbf6c
 - **Priority:** high
 
 **Preconditions:**
