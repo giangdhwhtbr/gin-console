@@ -20,7 +20,7 @@ const components: Components = {
 /** Bead text as GitHub-flavored Markdown; raw HTML is escaped by react-markdown (no rehype-raw). */
 export function MarkdownView({ text }: { text: string }) {
   return (
-    <div className="markdown break-words">
+    <div className="markdown break-words [overflow-wrap:anywhere]">
       <Markdown remarkPlugins={[remarkGfm, remarkBreaks]} urlTransform={safeUrl} components={components}>
         {text}
       </Markdown>

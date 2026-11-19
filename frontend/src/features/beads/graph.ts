@@ -392,3 +392,33 @@ export function edgePath(from: Placed, to: Placed): string {
   const mid = (y1 + y2) / 2;
   return `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
 }
+
+export const LINK_LABEL = { w: 48, h: 12 } as const;
+
+/**
+ * Where each "n links" label of the multi-link edges is drawn: in the gap under the blocker, around the middle
+ * of the edge, moved down and up by one label height (in turn) for as long as it would sit over a label already
+ * placed. A label with no free slot in the gap is left out (the links stay listed for screen readers), so a
+ * label never overlaps another label or a node.
+ */
+export function linkLabels(graph: Graph, at: ReadonlyMap<string, Placed>): Map<string, Placed> {
+  const spots = new Map<string, Placed>();
+  for (const edge of graph.edges) {
+    const from = at.get(edge.from);
+    const to = at.get(edge.to);
+    if (from === undefined || to === undefined || edge.links.length < 2) continue;
+    const x = (from.x + to.x) / 2 + NODE.w / 2;
+    const top = from.y + NODE.h;
+    const low = top + LINK_LABEL.h; // the baseline of the first slot
+    const high = top + NODE.gapY;
+    const mid = Math.min(high, Math.max(low, (top + to.y) / 2));
+    for (let k = 0; k < 2 * Math.floor(NODE.gapY / LINK_LABEL.h); k += 1) {
+      const y = mid + (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * LINK_LABEL.h;
+      if (y < low || y > high) continue;
+      if ([...spots.values()].some((s) => Math.abs(s.x - x) < LINK_LABEL.w && Math.abs(s.y - y) < LINK_LABEL.h)) continue;
+      spots.set(edgeKey(edge), { x, y });
+      break;
+    }
+  }
+  return spots;
+}

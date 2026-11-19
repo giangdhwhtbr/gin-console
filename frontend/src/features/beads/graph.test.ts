@@ -6,6 +6,8 @@ import {
   graphFor,
   graphPath,
   keepWithAncestors,
+  LINK_LABEL,
+  linkLabels,
   NODE,
   neighbourhoodOf,
   place,
@@ -311,5 +313,50 @@ describe("REQ-UI-106 keep", () => {
     const g = scopeGraph(beads, "m2", { hideDone: false, onlyLinked: false, keep });
     expect(ids(g)).toEqual(["e1"]);
     expect(g.edges).toEqual([]);
+  });
+});
+
+describe("link labels", () => {
+  const n = (id: string, layer: number, order: number) => ({
+    bead: bead(id), external: false, layer, order, done: 0, total: 0, hasKids: false, group: "layer" as const,
+  });
+  const link = (from: string, to: string, count: number) => ({
+    from, to, links: Array.from({ length: count }, (_, i) => ({ from: `${from}.${i}`, to: `${to}.${i}` })),
+  });
+
+  it("REQ-UI-110 two multi-link edges with the same middle get labels that do not overlap", () => {
+    const graph = {
+      nodes: [n("a", 0, 0), n("b", 0, 2), n("c", 1, 0), n("d", 1, 2)],
+      edges: [link("a", "d", 8), link("b", "c", 2)],
+      cycle: [], unlinked: 0,
+    };
+    const spots = [...linkLabels(graph, place(graph).at).values()];
+    expect(spots).toHaveLength(2);
+    const [p, q] = spots;
+    expect(Math.abs(p.x - q.x) >= LINK_LABEL.w || Math.abs(p.y - q.y) >= LINK_LABEL.h).toBe(true);
+  });
+
+  it("REQ-UI-110 three colliding labels stay apart and inside the gap under their blockers", () => {
+    const graph = {
+      nodes: [n("a", 0, 0), n("b", 0, 1), n("c", 0, 2), n("d", 1, 0), n("e", 1, 1), n("f", 1, 2)],
+      edges: [link("a", "f", 3), link("b", "e", 2), link("c", "d", 5)],
+      cycle: [], unlinked: 0,
+    };
+    const { at } = place(graph);
+    const spots = [...linkLabels(graph, at).values()];
+    expect(spots).toHaveLength(3);
+    const top = at.get("a")!.y + NODE.h;
+    for (const s of spots) {
+      expect(s.y).toBeGreaterThanOrEqual(top + LINK_LABEL.h);
+      expect(s.y).toBeLessThanOrEqual(top + NODE.gapY);
+    }
+    for (const [i, p] of spots.entries())
+      for (const q of spots.slice(i + 1))
+        expect(Math.abs(p.x - q.x) >= LINK_LABEL.w || Math.abs(p.y - q.y) >= LINK_LABEL.h).toBe(true);
+  });
+
+  it("REQ-UI-110 an edge with one link has no label", () => {
+    const graph = { nodes: [n("a", 0, 0), n("c", 1, 0)], edges: [link("a", "c", 1)], cycle: [], unlinked: 0 };
+    expect(linkLabels(graph, place(graph).at).size).toBe(0);
   });
 });
