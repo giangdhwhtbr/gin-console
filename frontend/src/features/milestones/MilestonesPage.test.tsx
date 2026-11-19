@@ -18,6 +18,17 @@ function open(body: Response, beads: Parameters<typeof stubMilestones>[1] = []) 
 const rowOf = async (title: string) => (await screen.findByRole("link", { name: title })).closest("li") ?? document.body;
 
 describe("MilestonesPage", () => {
+  it("REQ-UI-107 the six-column grid starts only when the list container is wide, so the title column never collapses", async () => {
+    open(json(list([entry("m-1", { title: "Beta" })])));
+    const row = await rowOf("Beta");
+    const list_ = screen.getByRole("list", { name: "Milestones" });
+    expect(list_.parentElement).toHaveClass("@container");
+    expect(row).toHaveClass("@4xl:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_9rem_7rem]");
+    expect(row.className).not.toMatch(/(^|\s)md:/);
+    expect(list_.firstElementChild).toHaveClass("hidden", "@4xl:grid");
+    expect(list_.firstElementChild?.className).not.toMatch(/(^|\s)md:/);
+  });
+
   it("REQ-MILESTONE-UI-001 lists milestones with status, period, progress and warnings", async () => {
     open(
       json(

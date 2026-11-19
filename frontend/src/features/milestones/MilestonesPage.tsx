@@ -18,7 +18,7 @@ type Projects = { status: "loading" } | { status: "error"; message: string } | {
 
 const ORDER = ["active", "scheduled", "planned", "closed"];
 const rank = (status: string) => (ORDER.includes(status) ? ORDER.indexOf(status) : ORDER.length);
-const COLUMNS = "md:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_9rem_7rem]";
+const COLUMNS = "@4xl:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_9rem_7rem]";
 
 export function MilestonesPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
@@ -82,7 +82,7 @@ function MilestoneTable({ project }: { project: string }) {
   const { milestones, today, forecast } = state.data;
   const rows = [...milestones].sort((a, b) => rank(a.status) - rank(b.status) || byStart(a, b));
   return (
-    <div className="flex flex-col gap-3">
+    <div className="@container flex min-w-0 flex-col gap-3">
       {state.error !== null && <p role="status" className="text-sm text-destructive">{`Refresh failed: ${state.error.message}`}</p>}
       <ForecastCard forecast={forecast} today={today} />
       {rows.length === 0 ? (
@@ -92,7 +92,7 @@ function MilestoneTable({ project }: { project: string }) {
         </div>
       ) : (
         <ul aria-label="Milestones" className="flex flex-col divide-y rounded border bg-card">
-          <li aria-hidden className={cn("hidden gap-3 px-3 py-2 text-sm text-muted-foreground md:grid", COLUMNS)}>
+          <li aria-hidden className={cn("hidden gap-3 px-3 py-2 text-sm text-muted-foreground @4xl:grid", COLUMNS)}>
             <span>Status</span>
             <span>Milestone</span>
             <span>Period</span>
@@ -129,7 +129,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
             {m.title}
           </Link>
         </span>
-        <span className="font-mono text-xs text-muted-foreground">{m.id}</span>
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">{m.id}</span>
       </span>
       <span className="flex flex-col text-sm">
         {m.kickoff !== null && <span>{`Kicks off ${date(m.kickoff)}`}</span>}
