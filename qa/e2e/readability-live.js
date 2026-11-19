@@ -89,6 +89,9 @@ async function settle(page) {
             await page.setViewportSize({ width, height: Math.min(full, 8000) });
             await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
           }
+          // transitions of 0.01ms (reduced motion) must have ended: a width that just changed reads its old value until then
+          await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+          await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
           const findings = (await page.evaluate(inPage)).map(({ box, ...f }) => f);
           if (findings.length) {
             const shot = path.join('screenshots', `${tag}.png`);

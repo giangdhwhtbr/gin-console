@@ -28,6 +28,9 @@ export async function readabilityFindings(page: Page, opts: { tall?: boolean } =
     }
   }
   try {
+    // the reduced-motion rule gives every element a 0.01ms transition: a width that just changed reads its old value until it ends
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
+    await frame();
     const found = await page.evaluate(inPage);
     return found.map(({ kind, text, other, selector, detail }) => ({ kind, text, ...(other === undefined ? {} : { other }), selector, detail }));
   } finally {

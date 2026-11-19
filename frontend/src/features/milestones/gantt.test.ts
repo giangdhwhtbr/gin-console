@@ -297,7 +297,10 @@ describe("labelledDays (REQ-UI-110, REQ-MILESTONE-UI-013)", () => {
       const { axis, cols } = shown(width);
       expect(cols.length).toBeGreaterThan(0);
       expect(cols.every((c) => !c.weekend)).toBe(true);
-      expect(set1(axis, cols[0].day)).toBe(true); // the first day of the plan is the first of its month in view
+      const working = axis.columns.filter((c) => !c.weekend);
+      for (const [i, c] of working.entries()) {
+        if (i === 0 || c.iso.slice(0, 7) !== working[i - 1].iso.slice(0, 7)) expect(cols.map((x) => x.day)).toContain(c.day);
+      }
       const labelWidth = width >= 56 ? 6 * 6.5 + 6 : need;
       for (let i = 1; i < cols.length; i += 1) {
         const gap = cols[i].x + cols[i].width / 2 - (cols[i - 1].x + cols[i - 1].width / 2);
@@ -325,5 +328,3 @@ describe("labelledDays (REQ-UI-110, REQ-MILESTONE-UI-013)", () => {
     }
   });
 });
-
-const set1 = (axis: ReturnType<typeof axisOf>, day: number) => axis.columns.some((c) => c.day === day);

@@ -76,7 +76,7 @@ const DIGIT_WIDTH = 6.5; // an 11px tabular digit, rounded up
 
 /**
  * The days of the header that get a number (REQ-MILESTONE-UI-013): every working day when its column fits a
- * two-digit number plus LABEL_GAP, else every 2nd working day, else Mondays, else every other Monday.
+ * two-digit number plus LABEL_GAP, else every 2nd working day, else Mondays (always at least `need` apart, so no further step).
  * The first working day of each month is always labelled; a number that would then sit closer than the gap to it is dropped.
  */
 export function labelledDays(axis: Axis): Set<number> {
@@ -84,12 +84,10 @@ export function labelledDays(axis: Axis): Set<number> {
   const dayWidth = working[0]?.width ?? 0;
   const need = (working.length > 0 && dayWidth >= 56 ? 6 : 2) * DIGIT_WIDTH + LABEL_GAP; // "Mon 9" is wider
   const mondays = working.filter((c) => new Date(c.day * DAY_MS).getUTCDay() === 1);
-  const week = 5 * dayWidth + 2 * WEEKEND_WIDTH;
   let shown: Column[];
   if (dayWidth >= need) shown = working;
   else if (2 * dayWidth >= need) shown = working.filter((_, i) => i % 2 === 0);
-  else if (week >= need) shown = mondays;
-  else shown = mondays.filter((_, i) => i % 2 === 0);
+  else shown = mondays; // Monday to Monday is 5 columns and a weekend: over 56px at the narrowest column
   const centre = (c: Column) => c.x + c.width / 2;
   const firsts = working.filter((c, i) => i === 0 || c.iso.slice(0, 7) !== working[i - 1].iso.slice(0, 7));
   const kept = shown.filter((c) => firsts.every((f) => f.day === c.day || Math.abs(centre(f) - centre(c)) >= need));

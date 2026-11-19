@@ -193,10 +193,11 @@ function inPage() {
   }
 
   // crowd: two texts of different layout items on one line that touch (gap under 2px) run together, like the
-  // Gantt day numbers "10111213". Only flex/grid items and absolutely positioned labels count: words of one
+  // Gantt day numbers "10111213". Only flex/grid items, absolutely positioned labels and SVG <text> count: words of one
   // sentence (inline elements, inline code, "P1" inside a line of text) are one text flow and may touch, and
   // texts without a letter or digit are separators.
   const layoutItem = (el) => {
+    if (el instanceof SVGTextElement) return true; // each <text> is placed on its own (graph labels, axis ticks)
     const s = cs(el);
     if (s.position === "absolute" || s.position === "fixed") return true;
     const p = el.parentElement && cs(el.parentElement);
