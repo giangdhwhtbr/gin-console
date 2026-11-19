@@ -282,7 +282,7 @@ WHILE the Gantt is zoomed to `1 week` or `2 weeks`, gin-console SHALL draw the w
 - THEN ‹, › and the label of days in view are not shown and dragging does not move the chart
 
 ### REQ-MILESTONE-UI-013: Readable Gantt rows
-Each epic row of the Gantt SHALL show, in a label column that stays visible while the chart scrolls, the status icon and title on one line and the epic id (linking to its bead page), period and estimate on the next, the estimate reading "<n>d", or "<n>d left" when the epic is in progress and its `remaining_days` is below its estimate, or "assumed <n>d" when it has no estimate and `assumed_days` is set, preceded by "<p> pt · " when the epic has `points`, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, period and estimate, closed tracks, prep, spec) wrap onto further lines rather than being cut, followed by the epic's warnings; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar.
+Each epic row of the Gantt SHALL show, in a label column 168px wide under 1024px windows, 300px from 1024px, 380px from 1280px and 440px from 1600px that stays visible while the chart scrolls and that no chart line, arrow, bar or title crosses, the status icon and title on one line and the epic id (linking to its bead page), the estimate as a size badge, the period, the closed tracks, prep and spec on the next, the estimate reading "<n>d", or "<n>d left" when the epic is in progress and its `remaining_days` is below its estimate, or "assumed <n>d" when it has no estimate and `assumed_days` is set, preceded by "<p> pt · " when the epic has `points`, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, estimate, period, closed tracks, prep, spec) wrap onto further lines rather than being cut, followed by the epic's warnings, the spec item being left out when the warnings already say the spec is not confirmed; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar, cut short with an ellipsis before the next end or today line or the edge of the chart.
 
 #### Scenario: long id
 - GIVEN epic `gin-workflow-rm-process-hygiene` titled "Process hygiene: consistent skills, rules that bind where it matters"
@@ -303,6 +303,16 @@ Each epic row of the Gantt SHALL show, in a label column that stays visible whil
 - GIVEN an open epic C with `points: 5` and `estimate_days: 7`, and an in-progress epic D with `points: 3`, `estimate_days: 4` and `remaining_days: 1`
 - WHEN the Gantt is shown
 - THEN C's second line reads "5 pt · 7d" and D's reads "3 pt · 1d left"
+
+#### Scenario: Wide window
+- GIVEN in-progress epic `ex-e3` with `points: 8`, `estimate_days: 20`, `remaining_days: 11`, 5 of 11 tracks closed and no confirmed spec, in an active milestone that warns "Spec not confirmed"
+- WHEN the Gantt is shown at 2000px
+- THEN the label column is 440px wide, the second line starts with the id and "8 pt · 11d left" and is cut with an ellipsis inside the column, it does not say "No confirmed spec", and no text of the label column overlaps a bar or a line
+
+#### Scenario: Tail title stops at the end line
+- GIVEN an epic whose bar ends 60px before the milestone's end line and whose title is longer than that
+- WHEN the Gantt is shown
+- THEN its title after the bar ends with an ellipsis before the end line
 
 ### REQ-MILESTONE-UI-014: Dependency arrows on the Gantt
 For each epic B of the milestone and each id A in B's `depends_on` that is an epic of the same milestone, the Gantt SHALL draw an arrow from the end of A's last bead to the start of B's first bead, in the blocked color IF B's `planned_start` is not after A's `planned_end`, and SHALL draw no arrow for an id that is not an epic of the milestone. WHILE the pointer is over an epic's row or bar, or focus is inside its row, the Gantt SHALL highlight that epic, every epic it depends on or that depends on it directly or through other epics, and the arrows between them, and SHALL fade the other epics and arrows.
@@ -363,15 +373,15 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 
 ### REQ-MILESTONE-UI-016: Project forecast card
 WHEN the Milestones list of a project has a non-null `forecast`, gin-console SHALL show a forecast card above the milestone list with:
-- the forecast `finish` ("Finishes <date>"), or "No estimate: every open epic is unestimated" when `finish` is null;
+- the forecast `finish` ("Finishes <date>") as its most prominent text, or "No estimate: every open epic is unestimated" when `finish` is null;
 - the `deadline` and how `finish` compares with it:
   - "<n> working days past the deadline" in the warning color when `overflow_days` is above 0;
   - "on the deadline" when `finish` equals `deadline`;
   - "<n> working days spare" otherwise. `<n>` counts the days Monday to Friday after `finish` up to and including `deadline`, the same count as gin-workflow `workdays_after`.
   - The comparison is left out when `finish` is null.
 - "No deadline" when `deadline` is null, with the roadmap line `- Deadline: YYYY-MM-DD` to add;
-- the default lanes (`lanes`), the open epic count (`open_epics`), and the unestimated epic count (`unestimated`), with a warning mark when `unestimated` is above 0;
-- the list's `days_per_point` as "<x> days per point" to one decimal, followed by "(assumed)" when `assumed` is true, left out when `days_per_point` is `null` or missing;
+- as label/value pairs (REQ-UI-110): Default lanes "<n> lanes" (`lanes`), Open epics "<n> open epics" (`open_epics`), and Unestimated "<n> unestimated" (`unestimated`), with a warning mark when `unestimated` is above 0;
+- the pair Days per point "<x>" from the list's `days_per_point` to one decimal, followed by "(assumed)" when `assumed` is true, left out when `days_per_point` is `null` or missing;
 - the forecast `error`, when set, in the destructive color, with the other figures still shown.
 Source: `assets/2026-11-08/mockup/index.html#milestones`
 
@@ -400,7 +410,7 @@ The page SHALL NOT show the card when `forecast` is null or missing.
 #### Scenario: days per point
 - GIVEN project P whose list has a forecast and `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}`, and project Q whose list has a forecast and `days_per_point: {value: 1.0, measured_epics: 0, assumed: true}`
 - WHEN the user opens Milestones for P and then for Q
-- THEN P's card reads "1.4 days per point" and Q's reads "1.0 days per point (assumed)"
+- THEN P's card shows the pair Days per point "1.4" and Q's shows Days per point "1.0 (assumed)"
 
 #### Scenario: forecast error
 - GIVEN project P whose forecast has `error: "Deadline: soon is not a date (YYYY-MM-DD)"`, `deadline: null`, `finish: 2026-11-20`
@@ -501,17 +511,17 @@ WHEN a milestone's `show` output has `integration`, `deadline` or a non-empty `a
 - THEN the header shows none of them and the rest of the header is unchanged
 
 ### REQ-MILESTONE-UI-021: Velocity on the milestone page
-WHEN the shown milestone's `show` output has a `velocity`, the milestone page header SHALL show "Committed <c> pt · Completed <d> pt · Added <a> pt · Say/do <s>%" (`say_do` as a whole percent, "–" when `null`), or "Not kicked off · Completed <d> pt" when `committed_points` is `null`, and, when `velocity.days_per_point` is not `null`, "<x> d/pt (planned <y>, accuracy <z>)" with `<x>` and `<y>` to one decimal and `<z>` to two decimals, leaving out "planned" or "accuracy" when it is `null`; it SHALL show none of this when `velocity` is `null` or missing, and nothing per member.
+WHEN the shown milestone's `show` output has a `velocity`, the milestone page header SHALL show it as label/value pairs (REQ-UI-110): Committed "<c> pt", Completed "<d> pt", Added "<a> pt" and Say/do "<s>%" (`say_do` as a whole percent, "–" when `null`), or Kick-off "Not kicked off" and Completed "<d> pt" when `committed_points` is `null`, and, when `velocity.days_per_point` is not `null`, d/pt "<x> (planned <y>, accuracy <z>)" with `<x>` and `<y>` to one decimal and `<z>` to two decimals, leaving out "planned" or "accuracy" when it is `null`; it SHALL show none of this when `velocity` is `null` or missing, and nothing per member.
 
 #### Scenario: Kicked off
 - GIVEN milestone `m1` whose `show` output has `velocity` `{committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86}`
 - WHEN the user opens `m1`
-- THEN the header shows "Committed 13 pt · Completed 8 pt · Added 3 pt · Say/do 62%" and "1.4 d/pt (planned 1.2, accuracy 0.86)"
+- THEN the header shows the pairs Committed "13 pt", Completed "8 pt", Added "3 pt", Say/do "62%" and d/pt "1.4 (planned 1.2, accuracy 0.86)"
 
 #### Scenario: Not kicked off
 - GIVEN milestone `m2` whose `velocity` has `committed_points: null`, `completed_points: 0`, `say_do: null` and `days_per_point: null`
 - WHEN the user opens `m2`
-- THEN the header shows "Not kicked off · Completed 0 pt" and no "d/pt"
+- THEN the header shows the pairs Kick-off "Not kicked off" and Completed "0 pt", and no d/pt pair
 
 #### Scenario: Older gin-workflow
 - GIVEN milestone `m1` whose `show` output has no `velocity` key
