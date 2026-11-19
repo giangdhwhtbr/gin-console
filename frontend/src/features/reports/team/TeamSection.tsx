@@ -77,7 +77,7 @@ export function TeamSection({
             <option value="">All members ({report.members.length})</option>
             {report.members.map((m) => (
               <option key={m.member} value={m.member}>
-                {m.member} · {m.scope}
+                {m.member} ({m.scope})
               </option>
             ))}
           </select>

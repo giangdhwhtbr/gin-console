@@ -20,7 +20,11 @@ function Cell({ label, aside, value, sub, warnValue = false, warnSub = false }: 
         {aside !== undefined && <span className="ml-1">{aside}</span>}
       </span>
       <span className={cn("text-2xl font-semibold", warnValue && WARN)}>{value}</span>
-      <span className={cn("text-xs text-muted-foreground", warnSub && WARN)}>{sub}</span>
+      <span className={cn("flex flex-wrap gap-x-3 text-xs text-muted-foreground", warnSub && WARN)}>
+        {sub.split(" · ").map((part) => (
+          <span key={part}>{part}</span>
+        ))}
+      </span>
     </div>
   );
 }

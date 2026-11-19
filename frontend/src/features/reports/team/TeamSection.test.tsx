@@ -29,8 +29,8 @@ describe("TeamSection", () => {
   it("REQ-REPORTS-012 member select, pick and clear", async () => {
     const onChange = show(teamReport());
     expect(screen.getByRole("option", { name: "All members (2)" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "ann · 4" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "Unassigned · 1" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "ann (4)" })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Unassigned (1)" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Clear member" })).toBeNull();
     await userEvent.selectOptions(screen.getByLabelText("Member"), "ann");
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ member: "ann" }));

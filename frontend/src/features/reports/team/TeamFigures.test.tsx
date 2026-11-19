@@ -14,7 +14,10 @@ const ann: MemberFigures = report.members[0];
 function show(team: Partial<TeamTotals>, milestone = active, member: MemberFigures | null = null) {
   render(<TeamFigures team={{ ...teamTotals, ...team }} member={member} milestone={milestone} />);
 }
-const warn = (text: string) => expect(screen.getByText(text)).toHaveClass("text-state-blocked");
+const warn = (text: string) => {
+  const el = screen.getByText(text);
+  expect(el.classList.contains("text-state-blocked") || el.parentElement?.classList.contains("text-state-blocked")).toBe(true);
+};
 
 describe("TeamFigures", () => {
   it("REQ-REPORTS-013 behind pace", () => {
@@ -46,7 +49,8 @@ describe("TeamFigures", () => {
   it("REQ-REPORTS-013 in progress and open", () => {
     show({ oldest_in_progress: 4.9, blocked: 3, unclaimed: 8, late_open: 4 });
     warn("oldest 4.9 d");
-    warn("3 blocked · 8 unclaimed");
+    warn("3 blocked");
+    warn("8 unclaimed");
     warn("4 still open after end");
   });
 
@@ -65,5 +69,18 @@ describe("TeamFigures", () => {
     for (const name of ["Closed", "In progress", "Open", "Blocked"]) {
       expect(screen.getByText(name, { selector: "li" })).toBeInTheDocument();
     }
+  });
+
+  it("REQ-UI-110 Facts as label and value: the figures strip has no run of dot-separated text", () => {
+    show({ blocked: 2, unclaimed: 1 });
+    const strip = screen.getByRole("group", { name: "Key figures" });
+    expect(strip.textContent).not.toMatch(/ · /);
+    expect(screen.getByText("Done")).toHaveClass("text-muted-foreground");
+    expect(screen.getByText("1 / 4")).toHaveClass("font-semibold");
+  });
+
+  it("REQ-UI-110 Contrast: the milestone aside is not faded with an opacity class", () => {
+    show({ pace: 2, pace_needed: 3.4 });
+    expect(screen.getByText("last 5 days").className).not.toMatch(/opacity-/);
   });
 });
