@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from gin_console.beads.kinds import points_of
 from gin_console.beads.snapshot import Snapshot
 from gin_console.reports.models import AiUsage, ReportBead
 
@@ -56,6 +57,8 @@ def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
             for key in ("start", "end", "kickoff"):
                 if isinstance(metadata.get(key), str):
                     fields[key] = metadata[key]
+        if (points := points_of(metadata)) is not None:
+            fields["points"] = points
         if ident in snapshot.parents:
             fields["parent"] = snapshot.parents[ident]
         try:

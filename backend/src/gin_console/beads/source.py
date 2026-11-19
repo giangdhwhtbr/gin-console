@@ -15,6 +15,7 @@ from gin_console.beads.kinds import (
     complexity_of,
     declared_capabilities,
     kind_of,
+    points_of,
     req_capabilities,
 )
 from gin_console.beads.milestones import (
@@ -136,9 +137,16 @@ def _estimate(raw: dict[str, Any]) -> int | None:
     )
 
 
+def _points(raw: dict[str, Any]) -> tuple[int | None, str | None]:
+    points = points_of(raw.get("metadata"))
+    reason = raw["metadata"].get("points_reason") if points is not None else None
+    return points, reason if isinstance(reason, str) else None
+
+
 def _fields(snapshot: Snapshot, ident: str) -> dict[str, Any]:
     raw = snapshot.rows[ident]
     issue_type = raw.get("issue_type")
+    points, points_reason = _points(raw)
     return {
         **{k: raw[k] for k in _SUMMARY_KEYS if k in raw},
         "parent": snapshot.parents.get(ident),
@@ -148,6 +156,8 @@ def _fields(snapshot: Snapshot, ident: str) -> dict[str, Any]:
         "capabilities": _capabilities(snapshot, ident),
         "complexity": complexity_of(_description(raw)),
         "estimate_minutes": _estimate(raw),
+        "points": points,
+        "points_reason": points_reason,
         # a milestone is not work, even when nothing blocks it (REQ-MILESTONE-UI-007)
         "ready": ident in snapshot.ready and raw.get("issue_type") != "milestone",
         "blocked": ident in snapshot.blocked or raw.get("status") == "blocked",

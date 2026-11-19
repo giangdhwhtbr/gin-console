@@ -365,11 +365,16 @@ def _delivery(
             project=b.project,
             id=b.id,
             title=b.title,
-            estimate_days=round(b.estimated_minutes / WORKDAY_MINUTES, 1),
-            actual_days=_weekdays((b.started_at or b.created_at).date(), _closed_at(b).date()),
+            estimate_days=(
+                round(b.estimated_minutes / WORKDAY_MINUTES, 1) if b.estimated_minutes else None
+            ),
+            points=b.points,
+            actual_days=actual,
+            days_per_point=round(actual / b.points, 1) if b.points else None,
         )
         for b in closed
-        if b.issue_type == "epic" and b.estimated_minutes
+        if b.issue_type == "epic" and (b.estimated_minutes or b.points)
+        for actual in [_weekdays((b.started_at or b.created_at).date(), _closed_at(b).date())]
     ]
     return DeliverySection(
         weeks=[WeekRow(week=w, counts=dict(counts.get(w, Counter()))) for w in weeks],

@@ -422,3 +422,24 @@ def test_beads_002_bugs_found() -> None:
     ]
     assert [r.id for r in detail.dependents] == ["a-6"]
     assert detail.children == [] and detail.dependencies == []
+
+
+# REQ-BEADS-001
+def test_beads_001_story_points() -> None:
+    snapshot = snap(
+        bead("e-1", metadata={"points": 5, "points_reason": "new endpoint and UI"}),
+        bead("e-2", metadata={"points": 4, "points_reason": "x"}),
+        bead("e-3", metadata={"points": "5"}),
+        bead("e-4", metadata={"points": True}),
+        bead("e-5", metadata={"points": 5, "points_reason": 7}),
+        bead("e-6"),
+    )
+    got = {b.id: (b.points, b.points_reason) for b in list_beads(snapshot, closed=False)}
+    assert got == {
+        "e-1": (5, "new endpoint and UI"),
+        "e-2": (None, None),
+        "e-3": (None, None),
+        "e-4": (None, None),
+        "e-5": (5, None),
+        "e-6": (None, None),
+    }

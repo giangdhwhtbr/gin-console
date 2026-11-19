@@ -100,3 +100,60 @@ def test_milestone_ui_008_dates_must_be_iso() -> None:
     bad = {**SHOW, "today": "Oct 29"}
     with pytest.raises(MilestonesError):
         show_milestone(FakeGw({"show": bad}), CWD, "gw-ab1", None)
+
+
+DPP = {"value": 1.4, "measured_epics": 6, "assumed": False}
+VELOCITY = {
+    "committed_points": 21,
+    "completed_points": 13,
+    "added_points": 3,
+    "say_do": 0.62,
+    "days_per_point": 1.4,
+    "planned_days_per_point": 1.2,
+    "accuracy": 0.86,
+}
+
+
+# REQ-MILESTONE-UI-008
+def test_milestone_ui_008_story_points_round_trip() -> None:
+    listed = {
+        **LIST,
+        "days_per_point": DPP,
+        "milestones": [{**LIST["milestones"][0], "velocity": VELOCITY}],
+    }
+    out = list_milestones(FakeGw({"list": listed}), CWD).model_dump()
+    assert out["days_per_point"] == DPP
+    assert out["milestones"][0]["velocity"] == VELOCITY
+    epic = {
+        "points": 5,
+        "points_reason": "new endpoint",
+        "estimate_source": "points",
+        "actual_days": 6,
+        "actual_days_per_point": 1.2,
+    }
+    shown = {
+        **SHOW,
+        "epics": [{**SHOW["epics"][0], **epic}],
+        "days_per_point": DPP,
+        "velocity": VELOCITY,
+    }
+    detail = show_milestone(FakeGw({"show": shown}), CWD, "gw-ab1", None).model_dump()
+    assert detail["days_per_point"] == DPP and detail["velocity"] == VELOCITY
+    assert {k: detail["epics"][0][k] for k in epic} == epic
+
+
+# REQ-MILESTONE-UI-008
+def test_milestone_ui_008_older_gin_output_has_no_points_keys() -> None:
+    out = list_milestones(FakeGw(), CWD).model_dump()
+    assert out["days_per_point"] is None and out["milestones"][0]["velocity"] is None
+    detail = show_milestone(FakeGw(), CWD, "gw-ab1", None).model_dump()
+    assert detail["days_per_point"] is None and detail["velocity"] is None
+    epic = detail["epics"][0]
+    for key in (
+        "points",
+        "points_reason",
+        "estimate_source",
+        "actual_days",
+        "actual_days_per_point",
+    ):
+        assert epic[key] is None

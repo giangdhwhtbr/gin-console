@@ -12,6 +12,15 @@ _NEW = re.compile(r"\s*\(new\)\s*$")
 _COMPLEXITY = re.compile(r"^Complexity:\s*(low|medium|high)\b", re.MULTILINE)
 
 
+POINT_SCALE = frozenset({1, 2, 3, 5, 8, 13, 21})
+
+
+def points_of(metadata: object) -> int | None:
+    """Story points from `metadata.points`: an int on the scale, else no points."""
+    value = metadata.get("points") if isinstance(metadata, dict) else None
+    return value if type(value) is int and value in POINT_SCALE else None
+
+
 def kind_of(issue_type: str, labels: Sequence[str]) -> Kind | None:
     """Epic kind: the first `kind:technical` or `kind:parity` label, else `capability`."""
     if issue_type != "epic":
