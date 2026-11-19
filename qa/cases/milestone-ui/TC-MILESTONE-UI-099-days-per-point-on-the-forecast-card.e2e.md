@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-099: Days per point on the forecast card
 
-- **REQ:** REQ-MILESTONE-UI-016@f4425100
+- **REQ:** REQ-MILESTONE-UI-016@8231be50
 - **Priority:** medium
 
 **Preconditions:**
@@ -16,5 +16,5 @@
 3. Open `/milestones?project=Q`
 
 **Expected:**
-- After step 2, P's card reads "1.4 days per point"
-- After step 3, Q's card reads "1.0 days per point (assumed)"
+- After step 2, P's card shows the pair Days per point "1.4"
+- After step 3, Q's card shows the pair Days per point "1.0 (assumed)"

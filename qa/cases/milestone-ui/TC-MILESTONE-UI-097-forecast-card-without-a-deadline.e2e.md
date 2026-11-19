@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-097: Forecast card without a deadline
 
-- **REQ:** REQ-MILESTONE-UI-016@f4425100
+- **REQ:** REQ-MILESTONE-UI-016@8231be50
 - **Priority:** medium
 
 **Preconditions:**

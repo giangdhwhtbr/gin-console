@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-053: Long title cut with an ellipsis, id and period wrap on a phone
-REQ: REQ-MILESTONE-UI-013@50a2ef46
+REQ: REQ-MILESTONE-UI-013@b3bb8e48
 Priority: medium
 Result: passed
 Run: qa/evidence/2026-11-15T14-02-27

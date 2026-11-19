@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-090: Not kicked off
 
-- **REQ:** REQ-MILESTONE-UI-021@92676633
+- **REQ:** REQ-MILESTONE-UI-021@0b96b90c
 - **Priority:** medium
 
 **Preconditions:**
@@ -14,5 +14,5 @@
 2. Open `/milestones/P/m2`
 
 **Expected:**
-- The header shows "Not kicked off · Completed 0 pt"
-- The header shows no "d/pt"
+- The header shows the pairs Kick-off "Not kicked off" and Completed "0 pt"
+- The header shows no d/pt pair
