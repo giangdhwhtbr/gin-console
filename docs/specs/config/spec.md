@@ -63,3 +63,21 @@ IF the config has `server.scotty_base_url` or a project with `scotty_id`, THEN t
 
 ## Diagrams
 - [Pull settings](diagrams/pull-settings-activity.md)
+
+### REQ-CONFIG-006: Pull settings
+The config SHALL accept an optional top-level `beads` section whose `pull_interval` is `0` or a duration of whole seconds, minutes or hours written as `<n>s`, `<n>m` or `<n>h`, of at least one minute, and an optional `pull` boolean (default `true`) on each project entry; IF `pull_interval` does not parse, is under one minute and not `0`, or `pull` is not a boolean, THEN the console SHALL exit with a non-zero status and a message naming the field (REQ-CONFIG-003).
+
+#### Scenario: Interval and opt-out
+- GIVEN a config with `beads: {pull_interval: 5m}` and a project with `pull: false`
+- WHEN the console starts
+- THEN the pull interval is 300 seconds and that project is left out of pulls
+
+#### Scenario: Defaults
+- GIVEN a config without `beads` and projects without `pull`
+- WHEN the console starts
+- THEN there is no scheduled pull and every project is pulled on refresh
+
+#### Scenario: Too short
+- GIVEN a config with `beads: {pull_interval: 30s}`
+- WHEN the console starts
+- THEN it exits non-zero and the message names `beads.pull_interval`
