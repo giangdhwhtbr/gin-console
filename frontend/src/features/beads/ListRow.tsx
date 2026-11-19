@@ -2,9 +2,10 @@ import { shortId } from "@/lib/shortId";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
+import { PriorityPill } from "@/components/PriorityPill";
+import { SizeBadge } from "@/components/SizeBadge";
 import { cn } from "@/lib/utils";
 import { CountBadge } from "./CountBadge";
-import { estimateText } from "./estimate";
 import { KindBadge } from "./KindBadge";
 import { isPrep, prepLabel } from "./prep";
 import { PrepChip } from "./PrepChip";
@@ -37,7 +38,6 @@ export function ListRow({
 }) {
   const { bead } = row;
   const short = shortId(bead.id);
-  const sizeText = [bead.complexity, bead.points === null ? estimateText(bead.estimate_minutes) : `${bead.points} pt`].filter(Boolean).join(" · ");
   return (
     <li
       role="treeitem"
@@ -78,6 +78,12 @@ export function ListRow({
         </span>
         <KindBadge kind={bead.kind} className="min-w-0 shrink" />
         {isPrep(bead.labels) && <PrepChip />}
+        {bead.issue_type === "epic" && bead.complexity !== null && (
+          <span className="min-w-0 shrink truncate text-xs text-muted-foreground" title={bead.complexity}>
+            {bead.complexity}
+          </span>
+        )}
+        {bead.issue_type === "epic" && <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />}
         <div className="hidden min-w-0 shrink items-center gap-2 overflow-hidden @xl:flex">
           {bead.issue_type === "epic" && row.counts.tracks > 0 && (
             <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground @xl:flex">
@@ -93,13 +99,10 @@ export function ListRow({
           {bead.issue_type === "epic" && prepLabel(row.counts) !== null && (
             <span className="hidden shrink-0 text-xs text-muted-foreground @xl:inline">{prepLabel(row.counts)}</span>
           )}
-          {bead.issue_type === "epic" && sizeText !== "" && (
-            <span className="hidden shrink-0 text-xs text-muted-foreground @xl:inline">{sizeText}</span>
-          )}
-          <span className="hidden shrink-0 items-center gap-1 @3xl:flex">
+          <span className="hidden min-w-0 shrink items-center gap-1 @3xl:flex">
             {bead.labels.slice(0, 3).map((label) => (
-              <Badge key={label} variant="outline">
-                {label}
+              <Badge key={label} variant="outline" title={label} className="min-w-0 shrink">
+                <span className="truncate">{label}</span>
               </Badge>
             ))}
           </span>
@@ -108,7 +111,7 @@ export function ListRow({
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-8 @2xl:contents @2xl:pl-0">
         <StateMark bead={bead} />
         <TypeBadge type={bead.issue_type} className="justify-self-start" />
-        <span className="text-xs text-muted-foreground">{`P${bead.priority}`}</span>
+        <PriorityPill priority={bead.priority} />
         <span className="flex items-center gap-1">
           <CountBadge kind="comments" count={bead.comment_count} />
           <CountBadge kind="dependencies" count={bead.dependency_count} />

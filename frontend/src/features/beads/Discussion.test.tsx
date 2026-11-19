@@ -177,7 +177,7 @@ describe("Discussion", () => {
 
   it("REQ-UI-071 each comment is a block with the author in bold, the time and the text apart", async () => {
     await open(2);
-    const authors = await screen.findAllByText("alice");
+    const authors = await screen.findAllByText("alice", { selector: ":not(dd)" });
     expect(authors).toHaveLength(2);
     expect(authors[0]).toHaveClass("font-semibold");
     const text = screen.getByText("Text of c-1");

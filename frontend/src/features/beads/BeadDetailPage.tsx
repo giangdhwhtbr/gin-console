@@ -3,19 +3,23 @@ import { Link } from "@/app/Link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { FactList, type Fact } from "@/components/FactList";
+import { PriorityPill } from "@/components/PriorityPill";
+import { SizeBadge } from "@/components/SizeBadge";
+import { factDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { ProgressBar } from "@/features/quota/ProgressBar";
 import { BeadNotFoundError, fetchBead, type BeadDetail } from "./api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
-import { estimateText } from "./estimate";
 import { graphPath } from "./graph";
 import { KindBadge } from "./KindBadge";
 import { MarkdownText } from "./MarkdownText";
 import { useDiscussionHidden } from "./discussion";
 import { RelationList } from "./RelationList";
 import { SIDE_PANEL } from "./side-panel";
+import { StateMark } from "./StateMark";
 import { TextSection } from "./TextSection";
 import { complexityOf } from "./complexity";
 import { childCounts, prepLabel } from "./prep";
@@ -78,7 +82,17 @@ export function BeadDetailPage({
   }
   const bead = state.status === "ok" ? state.bead : null;
   const complexity = bead?.issue_type === "epic" ? complexityOf(bead.description) : null;
-  const estimate = estimateText(bead?.estimate_minutes ?? null);
+  const facts: Fact[] =
+    bead === null
+      ? []
+      : [
+          { label: "Owner", value: bead.owner },
+          { label: "Assignee", value: bead.assignee },
+          { label: "Created by", value: bead.created_by },
+          { label: "Created", value: factDate(bead.created_at) },
+          { label: "Updated", value: factDate(bead.updated_at) },
+          { label: "Comments", value: bead.comment_count },
+        ].filter((fact) => fact.value !== null && fact.value !== "");
   const children = bead?.children ?? [];
   const counts = childCounts(children.map((c) => ({ labels: c.prep ? ["prep"] : [], status: c.status })));
   const closed = counts.closedTracks;
@@ -136,8 +150,9 @@ export function BeadDetailPage({
                   <h1 className="text-xl font-semibold wrap-anywhere">{bead.title}</h1>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-mono wrap-anywhere">{bead.id}</span>
-                    <Badge variant="secondary">{bead.status}</Badge>
-                    <span>{`P${bead.priority}`}</span>
+                    <StateMark bead={bead} />
+                    <PriorityPill priority={bead.priority} />
+                    <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />
                     <TypeBadge type={bead.issue_type} />
                     <KindBadge kind={bead.kind} />
                     {complexity !== null && (
@@ -160,20 +175,10 @@ export function BeadDetailPage({
                       ))}
                     </ul>
                   )}
-                  <div className="text-sm text-muted-foreground wrap-anywhere">
-                    {[
-                      bead.owner && `Owner ${bead.owner}`,
-                      bead.assignee && `Assignee ${bead.assignee}`,
-                      bead.created_by && `Created by ${bead.created_by}`,
-                      `Created ${new Date(bead.created_at).toLocaleString()}`,
-                      `Updated ${new Date(bead.updated_at).toLocaleString()}`,
-                      estimate !== null && `Estimate ${estimate}`,
-                      bead.points !== null && `Points ${bead.points}${bead.points_reason === null || bead.points_reason.trim() === "" ? "" : ` (${bead.points_reason})`}`,
-                      `${bead.comment_count} comment${bead.comment_count === 1 ? "" : "s"}`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </div>
+                  {bead.points_reason !== null && bead.points_reason.trim() !== "" && (
+                    <p className="text-sm text-muted-foreground wrap-anywhere">{bead.points_reason}</p>
+                  )}
+                  <FactList facts={facts} />
                   {bead.id !== graphScope &&
                     (bead.children.length > 0 ||
                       [...bead.dependencies, ...bead.dependents].some((r) => r.type === "blocks")) && (

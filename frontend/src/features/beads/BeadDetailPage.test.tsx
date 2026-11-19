@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadDetail, Comment } from "./api";
+import { factDate } from "@/lib/dates";
 import { BeadDetailPage } from "./BeadDetailPage";
 
 const json = (body: unknown, status = 200) =>
@@ -86,7 +87,7 @@ describe("BeadDetailPage", () => {
     const h1 = await screen.findByRole("heading", { name: "T".repeat(90) });
     expect(h1).toHaveClass("wrap-anywhere");
     expect(within(h1.parentElement!).getByText("a-5")).toHaveClass("wrap-anywhere");
-    expect(screen.getByText(/Owner alice/)).toHaveClass("wrap-anywhere");
+    expect(screen.getByText("alice")).toBeInTheDocument();
     const md = await waitFor(() => {
       const el = document.querySelector<HTMLElement>(".markdown");
       if (el === null) throw new Error("markdown not rendered");
@@ -182,21 +183,19 @@ describe("BeadDetailPage", () => {
     const header = screen.getByRole("heading", { name: "Bead five" }).closest("header");
     if (header === null) throw new Error("the bead header is missing");
     expect(within(header).getByText("a-5")).toBeInTheDocument();
-    expect(screen.getByText("open")).toBeInTheDocument();
+    expect(screen.getByText("Deferred")).toBeInTheDocument();
     expect(screen.getByText("P1")).toBeInTheDocument();
     expect(screen.getByText("task")).toBeInTheDocument();
     expect(screen.getByText("frontend")).toBeInTheDocument();
     expect(screen.getByText("urgent")).toBeInTheDocument();
 
-    const meta = screen.getByText(
-      (content) =>
-        content.includes("Owner alice") &&
-        content.includes("Assignee bob") &&
-        content.includes(`Created ${new Date(created_at).toLocaleString()}`) &&
-        content.includes(`Updated ${new Date(updated_at).toLocaleString()}`) &&
-        content.includes("3 comments"),
-    );
-    expect(meta).toBeInTheDocument();
+    const facts = within(header).getByText("Owner").closest("dl");
+    if (facts === null) throw new Error("the facts are missing");
+    expect(facts).toHaveTextContent("Owner" + "alice");
+    expect(facts).toHaveTextContent("Assignee" + "bob");
+    expect(within(facts).getByText(factDate(created_at))).toBeInTheDocument();
+    expect(within(facts).getByText(factDate(updated_at))).toBeInTheDocument();
+    expect(facts).toHaveTextContent("Comments" + "3");
 
     expect(await screen.findByText("bold", { selector: "strong" })).toBeInTheDocument();
     expect(screen.getByText(/<script>window\.hacked = 1<\/script>/)).toBeInTheDocument();
@@ -375,7 +374,8 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-5" />);
 
     expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
-    expect(screen.getByText(/Created by gin/)).toBeInTheDocument();
+    expect(screen.getByText("Created by")).toBeInTheDocument();
+    expect(screen.getByText("gin")).toBeInTheDocument();
 
     const headings = screen
       .getAllByRole("heading", { level: 2 })
@@ -413,7 +413,7 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-5" />);
 
     expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
-    expect(screen.queryByText(/Created by/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Created by")).not.toBeInTheDocument();
   });
 
   // REQ-UI-039
@@ -442,7 +442,7 @@ describe("BeadDetailPage", () => {
     expect(await screen.findByRole("heading", { name: "Discussion (2)" })).toBeInTheDocument();
     expect(screen.getByText("Text of c-2")).toBeInTheDocument();
     expect(screen.getByText("Text of c-1")).toBeInTheDocument();
-    expect(screen.getAllByText("alice")).toHaveLength(2);
+    expect(screen.getAllByText("alice", { selector: ":not(dd)" })).toHaveLength(2);
     expect(screen.getByText(new Date("2026-10-06T10:00:00Z").toLocaleString())).toBeInTheDocument();
     expect(screen.getByText(new Date("2026-10-05T10:00:00Z").toLocaleString())).toBeInTheDocument();
   });
@@ -564,27 +564,66 @@ describe("BeadDetailPage", () => {
     expect(await screen.findByText("Technical")).toBeInTheDocument();
     const caps = screen.getByRole("list", { name: "Capabilities" });
     expect(within(caps).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["beads", "ui"]);
-    expect(screen.getByText(/Estimate 3d/)).toBeInTheDocument();
+    expect(screen.getByText("3d")).toBeInTheDocument();
   });
 
-  it("REQ-UI-109 Pointed epic: the page shows Points 5 and its reason", async () => {
+  it("REQ-UI-109 Pointed epic: the page shows the size badge 5 pt and its reason on the line under it", async () => {
     stubFetch(beadDetail("e-3", { issue_type: "epic", points: 5, points_reason: "new endpoint and UI" }));
     render(<BeadDetailPage project="alpha" id="e-3" />);
-    expect(await screen.findByText(/Points 5/)).toBeInTheDocument();
-    expect(screen.getByText(/new endpoint and UI/)).toBeInTheDocument();
+    expect(await screen.findByText("5 pt")).toBeInTheDocument();
+    expect(screen.getByText("new endpoint and UI")).toBeInTheDocument();
+    expect(screen.queryByText(/Points 5|Estimate/)).toBeNull();
   });
 
-  it("REQ-UI-109 Pointed epic: a blank reason shows Points 5 alone", async () => {
+  it("REQ-UI-109 Pointed epic: a blank reason shows the badge alone", async () => {
     stubFetch(beadDetail("e-3", { issue_type: "epic", points: 5, points_reason: "  " }));
     render(<BeadDetailPage project="alpha" id="e-3" />);
-    expect(await screen.findByText(/Points 5/)).not.toHaveTextContent("()");
-    expect(screen.getByText(/Points 5/)).not.toHaveTextContent("(");
+    const badge = await screen.findByText("5 pt");
+    expect(badge.closest("header")?.querySelectorAll("p")).toHaveLength(0);
   });
 
-  it("REQ-UI-109 Partial day: 240 minutes shows Estimate 0.5d", async () => {
+  it("REQ-UI-109 Partial day: 240 minutes shows the size badge 0.5d", async () => {
     stubFetch(beadDetail("a-5", { estimate_minutes: 240 }));
     render(<BeadDetailPage project="alpha" id="a-5" />);
-    expect(await screen.findByText(/Estimate 0\.5d/)).toBeInTheDocument();
+    expect(await screen.findByText("0.5d")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-028 Badges and facts: badge row, reason line and label/value facts", async () => {
+    const at = new Date(2026, 4, 11, 16, 0).toISOString();
+    stubFetch(
+      beadDetail("e-3", {
+        issue_type: "epic",
+        status: "in_progress",
+        priority: 1,
+        points: 5,
+        points_reason: "new endpoint and UI",
+        owner: "lead@example.com",
+        assignee: "bao",
+        created_by: "lead",
+        created_at: at,
+        updated_at: at,
+        comment_count: 0,
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="e-3" />);
+    expect(await screen.findByText("In progress")).toBeInTheDocument();
+    expect(screen.getByText("P1")).toBeInTheDocument();
+    expect(screen.getByText("5 pt")).toBeInTheDocument();
+    expect(screen.getByText("new endpoint and UI")).toBeInTheDocument();
+    const facts = screen.getByText("Owner").closest("dl");
+    if (facts === null) throw new Error("the facts are missing");
+    const pairs = Array.from(facts.querySelectorAll("dt")).map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]);
+    expect(pairs).toEqual([
+      ["Owner", "lead@example.com"],
+      ["Assignee", "bao"],
+      ["Created by", "lead"],
+      ["Created", "11 May 2026 16:00"],
+      ["Updated", "11 May 2026 16:00"],
+      ["Comments", "0"],
+    ]);
+    expect(within(facts).getByText("lead@example.com")).toHaveClass("text-foreground", "font-medium");
+    expect(within(facts).getByText("Owner")).toHaveClass("text-muted-foreground");
+    expect(screen.queryByText(/ · /)).toBeNull();
   });
 
   it("REQ-UI-109 without kind, capabilities or estimate the page shows none of them", async () => {
@@ -592,6 +631,6 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-5" />);
     await screen.findByText("A description");
     expect(screen.queryByRole("list", { name: "Capabilities" })).toBeNull();
-    expect(screen.queryByText(/Estimate|Technical|Parity/)).toBeNull();
+    expect(screen.queryByText(/Estimate|Technical|Parity|\d+d$| pt$/)).toBeNull();
   });
 });
