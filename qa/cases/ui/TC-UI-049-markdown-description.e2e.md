@@ -1,6 +1,6 @@
 # TC-UI-049: Markdown description
 
-- **REQ:** REQ-UI-028@cf0b4f43
+- **REQ:** REQ-UI-028@286b7a7b
 - **Priority:** medium
 
 **Preconditions:**

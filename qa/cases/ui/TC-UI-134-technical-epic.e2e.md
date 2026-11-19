@@ -1,6 +1,6 @@
 # TC-UI-134: Technical epic
 
-- **REQ:** REQ-UI-109@c2b6a5c4
+- **REQ:** REQ-UI-109@89f8d56b
 - **Priority:** medium
 
 **Preconditions:**
@@ -12,5 +12,5 @@
 3. Open the bead page `/beads/alpha/e-1`
 
 **Expected:**
-- The List row of `e-1` shows "Technical" and "medium · 3d"
-- The bead page shows "Technical", the chips `beads` and `ui`, and "Estimate 3d"
+- The List row of `e-1` shows "Technical", "medium" and the size badge "3d"
+- The bead page shows "Technical", the chips `beads` and `ui`, and the size badge "3d"

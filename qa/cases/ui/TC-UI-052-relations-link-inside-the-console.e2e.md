@@ -1,6 +1,6 @@
 # TC-UI-052: Relations link inside the console
 
-- **REQ:** REQ-UI-028@cf0b4f43
+- **REQ:** REQ-UI-028@286b7a7b
 - **Priority:** medium
 
 **Preconditions:**

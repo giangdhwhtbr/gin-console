@@ -1,6 +1,6 @@
 # TC-UI-027: Change tab
 
-- **REQ:** REQ-UI-095@04f9b5dd
+- **REQ:** REQ-UI-095@bf1627ff
 - **Priority:** medium
 
 **Preconditions:**
