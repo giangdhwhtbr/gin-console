@@ -63,7 +63,7 @@ Acceptance criteria:
 
 - `ui`: ADDED REQ-UI-110; MODIFIED REQ-UI-004, REQ-UI-028, REQ-UI-065, REQ-UI-095, REQ-UI-109.
   - Diagram: `docs/specs/ui/diagrams/readability-check-activity.md`.
-- `milestone-ui`: MODIFIED REQ-MILESTONE-UI-013.
+- `milestone-ui`: MODIFIED REQ-MILESTONE-UI-013, REQ-MILESTONE-UI-016, REQ-MILESTONE-UI-021.
 - Assets: none.
 
 ## Non-goals
