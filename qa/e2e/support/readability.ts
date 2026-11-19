@@ -7,7 +7,7 @@ import type { Page } from '@playwright/test';
 const { inPage } = require('./readability-inpage.js') as { inPage: () => Array<Finding & { box?: unknown }> };
 
 export type Finding = {
-  kind: 'overlap' | 'shape' | 'spill' | 'contrast';
+  kind: 'overlap' | 'shape' | 'spill' | 'contrast' | 'crowd';
   text: string;
   other?: string;
   selector: string;

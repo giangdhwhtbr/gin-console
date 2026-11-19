@@ -28,6 +28,7 @@ import {
   fitDayWidth,
   HEADER_HEIGHT,
   isoOf,
+  labelledDays,
   markerSides,
   middleOf,
   mondayOf,
@@ -296,6 +297,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
 function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: number; today: string; todayX: number | null; endX: number; end: string }) {
   const sides = markerSides(todayX, endX, axis.width);
   const chip = (side: "left" | "right") => (side === "right" ? "ml-1" : "right-full mr-1");
+  const labelled = labelledDays(axis);
   return (
     <div aria-hidden className="relative flex border-b text-[11px] text-muted-foreground">
       <div className="sticky left-0 z-10 flex-none bg-card" style={{ width: label }} />
@@ -306,7 +308,7 @@ function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: 
           </span>
         ))}
         {axis.columns
-          .filter((c) => !c.weekend)
+          .filter((c) => !c.weekend && labelled.has(c.day))
           .map((c) => (
             <span key={c.day} className="absolute bottom-1 text-center tabular-nums" style={{ left: c.x, width: c.width }}>
               {c.width >= 56 ? `${weekday(c.iso)} ${Number(c.iso.slice(8))}` : Number(c.iso.slice(8))}
