@@ -1,11 +1,10 @@
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts";
+import { VELOCITY_COLORS } from "../colors";
 import { ChartBox, legendText } from "../ChartBox";
 import type { VelocityPoint } from "./velocity";
 
 const tick = { fill: "var(--color-muted-foreground)" };
 const tooltipStyle = { background: "var(--color-popover)", border: "1px solid var(--color-border)" };
-const COMMITTED = "var(--series-1)";
-const COMPLETED = "var(--series-2)";
 
 /** REQ-REPORTS-018: committed vs completed points, and days per point against the plan; null points are left out. */
 export function VelocityCharts({ points }: { points: readonly VelocityPoint[] }) {
@@ -28,8 +27,8 @@ export function VelocityCharts({ points }: { points: readonly VelocityPoint[] })
               <YAxis allowDecimals={false} tick={tick} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend formatter={legendText} />
-              <Bar dataKey="Committed" fill={COMMITTED} radius={[4, 4, 0, 0]} isAnimationActive={false} />
-              <Bar dataKey="Completed" fill={COMPLETED} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="Committed" fill={VELOCITY_COLORS.committed} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+              <Bar dataKey="Completed" fill={VELOCITY_COLORS.completed} radius={[4, 4, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ChartBox>
         </div>
@@ -44,8 +43,8 @@ export function VelocityCharts({ points }: { points: readonly VelocityPoint[] })
               <YAxis tick={tick} />
               <Tooltip contentStyle={tooltipStyle} />
               <Legend formatter={legendText} />
-              <Line dataKey="Days per point" stroke={COMPLETED} connectNulls isAnimationActive={false} />
-              <Line dataKey="Planned days per point" stroke={COMMITTED} strokeDasharray="4 3" connectNulls isAnimationActive={false} />
+              <Line dataKey="Days per point" stroke={VELOCITY_COLORS.daysPerPoint} connectNulls isAnimationActive={false} />
+              <Line dataKey="Planned days per point" stroke={VELOCITY_COLORS.planned} strokeDasharray="4 3" connectNulls isAnimationActive={false} />
             </LineChart>
           </ChartBox>
         </div>

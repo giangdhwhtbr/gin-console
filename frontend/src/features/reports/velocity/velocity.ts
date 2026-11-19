@@ -13,8 +13,9 @@ export function velocityMilestones(list: MilestoneList): VelocityPoint[] {
     .sort((a, b) => (a.start ?? "9999").localeCompare(b.start ?? "9999"));
 }
 
-/** The milestone with the latest start among those whose say/do is known. */
-export function latestSayDo(points: readonly VelocityPoint[]): VelocityPoint | null {
-  const known = points.filter((p) => p.velocity.say_do !== null);
-  return known.reduce<VelocityPoint | null>((latest, p) => (latest === null || (p.start ?? "") >= (latest.start ?? "") ? p : latest), null);
+/** The milestone with the latest start among all those whose say/do is known, qualifying or not. */
+export function latestSayDo(list: MilestoneList): VelocityPoint | null {
+  return list.milestones
+    .flatMap((m) => (m.velocity !== null && m.velocity.say_do !== null ? [{ id: m.id, title: m.title, start: m.start, velocity: m.velocity }] : []))
+    .reduce<VelocityPoint | null>((latest, p) => (latest === null || (p.start ?? "") >= (latest.start ?? "") ? p : latest), null);
 }

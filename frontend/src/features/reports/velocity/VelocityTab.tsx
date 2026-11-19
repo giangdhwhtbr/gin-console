@@ -22,7 +22,7 @@ function VelocityBlock({ project, named, onDaysPerPoint }: { project: string; na
       {state.status === "error" && <MilestoneError error={state.error} onRetry={retry} />}
       {loaded !== null && (
         <>
-          <VelocityFigures daysPerPoint={loaded.days_per_point} latest={latestSayDo(points)} />
+          <VelocityFigures daysPerPoint={loaded.days_per_point} latest={latestSayDo(loaded)} />
           {points.length === 0 ? (
             <p className="text-muted-foreground">No kicked-off milestones with points yet</p>
           ) : (

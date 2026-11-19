@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { json } from "@/features/beads/beadFixtures";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
 import { VelocityTab } from "./VelocityTab";
-import { vel } from "./velocity.test";
+import { vel } from "./velocityFixtures";
 
 afterEach(() => {
   cleanup();
@@ -54,7 +54,7 @@ describe("VelocityTab", () => {
   });
 
   it("REQ-REPORTS-018 nothing kicked off yet", async () => {
-    stub(() => json(list([entry("m1", { velocity: vel({ committed_points: null, completed_points: 0 }) }), entry("m2")], { days_per_point: null })));
+    stub(() => json(list([entry("m1", { velocity: vel({ committed_points: null, completed_points: 0, say_do: null }) }), entry("m2")], { days_per_point: null })));
     show(["alpha"]);
     expect(await screen.findByText("No kicked-off milestones with points yet")).toBeTruthy();
     expect(screen.queryByRole("img")).toBeNull();
