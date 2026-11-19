@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchProjectBeads, fetchProjects, isStale } from "./api";
+import { fetchProjectBeads, fetchProjects, isStale, pullOf } from "./api";
 
 const beads = (extra: object) => ({ open: 0, in_progress: 0, blocked: 0, ready: 0, epics: [], ...extra });
 const project = (b: unknown) => ({ name: "alpha", path: "/p/alpha", exists: true, workflow: null, beads: b });
@@ -77,5 +77,24 @@ describe("fetchProjectBeads", () => {
   it("REQ-UI-102 rejects HTTP 500", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response("{}", { status: 500 }))));
     await expect(fetchProjectBeads()).rejects.toThrow("Could not load projects (HTTP 500)");
+  });
+});
+
+describe("pullOf", () => {
+  const at = "2026-11-19T10:00:00Z";
+
+  it("REQ-BEADS-018 accepts the three statuses", () => {
+    expect(pullOf({ pull: { at, status: "ok", error: null } })).toEqual({ at, status: "ok", error: null });
+    expect(pullOf({ pull: { at, status: "no_remote", error: null } })?.status).toBe("no_remote");
+    expect(pullOf({ pull: { at, status: "error", error: "boom" } })).toEqual({ at, status: "error", error: "boom" });
+  });
+
+  it("REQ-BEADS-018 reads a missing, null or malformed pull as null", () => {
+    expect(pullOf({})).toBeNull();
+    expect(pullOf({ pull: null })).toBeNull();
+    expect(pullOf({ pull: "ok" })).toBeNull();
+    expect(pullOf({ pull: { at, status: "weird", error: null } })).toBeNull();
+    expect(pullOf({ pull: { at: 5, status: "ok", error: null } })).toBeNull();
+    expect(pullOf({ pull: { at, status: "error", error: 7 } })).toBeNull();
   });
 });

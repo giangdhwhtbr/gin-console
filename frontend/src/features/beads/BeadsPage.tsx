@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { fetchProjectBeads, isStale, type ProjectBeads } from "@/features/projects/api";
+import { fetchProjectBeads, isStale, pullFailed, pullOf, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
 import { rememberPlace } from "./returnState";
+import { PullNote } from "./PullNote";
 import { StaleNote } from "./StaleNote";
+
+type PullFailure = { project: string; path: string; error: string };
 
 type Projects =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ok"; names: string[]; stale: string[] };
+  | { status: "ok"; names: string[]; stale: string[]; pullFailures: PullFailure[] };
 
 export function BeadsPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
@@ -21,7 +24,9 @@ export function BeadsPage() {
     void fetchProjectBeads().then(
       (list: ProjectBeads[]) => {
         const existing = list.filter((p) => p.exists);
-        setProjects({ status: "ok", names: existing.map((p) => p.name), stale: existing.filter(isStale).map((p) => p.name) });
+        setProjects({ status: "ok", names: existing.map((p) => p.name), stale: existing.filter(isStale).map((p) => p.name),
+          pullFailures: existing.filter(pullFailed).map((p) => ({ project: p.name, path: p.path, error: pullOf(p)?.error ?? "" })),
+        });
       },
       (error: unknown) =>
         setProjects({ status: "error", message: error instanceof Error ? error.message : String(error) }),
@@ -31,6 +36,7 @@ export function BeadsPage() {
   const change = (next: BeadFilters) => navigate(`/beads${filtersToSearch(next)}`, { replace: true });
   const names = projects.status === "ok" ? projects.names : [];
   const stale = projects.status === "ok" ? projects.stale : [];
+  const pullFailures = projects.status === "ok" ? projects.pullFailures : [];
   // the default is not written back into the URL
   const selected = names.includes(filters.project) ? filters.project : (names[0] ?? "");
 
@@ -71,6 +77,7 @@ export function BeadsPage() {
             </label>
           </div>
           <StaleNote projects={stale.includes(selected) ? [selected] : []} />
+          <PullNote failures={pullFailures.filter((failure) => failure.project === selected)} />
           <BeadsView key={selected} project={selected} filters={filters} onChange={change} />
         </>
       )}
