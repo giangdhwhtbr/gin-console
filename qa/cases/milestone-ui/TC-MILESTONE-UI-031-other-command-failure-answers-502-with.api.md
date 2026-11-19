@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-031: Other command failure answers 502 with null cause
-REQ: REQ-MILESTONE-UI-008@d38e632d
+REQ: REQ-MILESTONE-UI-008@3fdbaeb8
 Priority: medium
 Result: passed
 Run: qa/evidence/2026-11-06T04-03-21-api

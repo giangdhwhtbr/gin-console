@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-003: Unassigned epics count not shown
-REQ: REQ-MILESTONE-UI-001@edeac124
+REQ: REQ-MILESTONE-UI-001@ecd0d02b
 Priority: medium
 Result: passed
 Run: qa/evidence/2026-11-15T14-02-27

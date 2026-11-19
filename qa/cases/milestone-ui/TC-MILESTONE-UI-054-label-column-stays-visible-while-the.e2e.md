@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-054: Label column stays visible while the chart scrolls
-REQ: REQ-MILESTONE-UI-013@ad4d4b1f
+REQ: REQ-MILESTONE-UI-013@569753ea
 Priority: medium
 Result: passed
 Run: qa/evidence/2026-11-15T14-02-27

@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-088: Schedule facts
 
-- **REQ:** REQ-MILESTONE-UI-008@d38e632d
+- **REQ:** REQ-MILESTONE-UI-008@3fdbaeb8
 - **Priority:** medium
 
 **Preconditions:**
