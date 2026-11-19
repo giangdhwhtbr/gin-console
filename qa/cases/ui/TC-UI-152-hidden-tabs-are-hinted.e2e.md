@@ -5,7 +5,7 @@
 
 **Preconditions:**
 - Project `alpha` exists
-- The window is 768 px wide, so the Data coverage tab does not fit
+- The Data coverage tab does not fit in a 768 px window
 
 **Steps:**
 1. Set the window width to 768 px

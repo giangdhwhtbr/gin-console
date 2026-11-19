@@ -1,26 +1,38 @@
-# TC-UI-144: No overlapping text
+# TC-UI-144: No overlapping text on Projects and My Tasks
 
 - **REQ:** REQ-UI-110@796f0bc7
 - **Priority:** high
 
 **Preconditions:**
-- The example project is shown in the light theme
+- The example project is shown
 
 **Steps:**
-1. Set the window width to 390 px
-2. Open `/`
-3. Open `/beads?project=example&view=list`
-4. Open `/beads?project=example&view=board`
-5. Open `/beads?project=example&view=focus`
-6. Open `/beads?project=example&view=graph`
-7. Open `/beads/example/ex-e3`
-8. Open `/my-tasks`
-9. Open `/milestones`
-10. Open `/milestones/example/ex-m2`
-11. Open `/reports?project=example&tab=team`
-12. Open `/reports?project=example&tab=coverage`
-13. Set the window width to 1024 px, then 1440 px, then 1920 px and repeat the opens above at each width
-14. Switch to the dark theme and repeat the opens above at each of the four widths
+1. Set the theme to light
+2. Set the window width to 390 px
+3. Open `/`
+4. Open `/my-tasks`
+5. Set the window width to 1024 px
+6. Open `/`
+7. Open `/my-tasks`
+8. Set the window width to 1440 px
+9. Open `/`
+10. Open `/my-tasks`
+11. Set the window width to 1920 px
+12. Open `/`
+13. Open `/my-tasks`
+14. Set the theme to dark
+15. Set the window width to 390 px
+16. Open `/`
+17. Open `/my-tasks`
+18. Set the window width to 1024 px
+19. Open `/`
+20. Open `/my-tasks`
+21. Set the window width to 1440 px
+22. Open `/`
+23. Open `/my-tasks`
+24. Set the window width to 1920 px
+25. Open `/`
+26. Open `/my-tasks`
 
 **Expected:**
 - At every width and in both themes, no text overlaps other text or a bar, line or arrow it does not belong to
