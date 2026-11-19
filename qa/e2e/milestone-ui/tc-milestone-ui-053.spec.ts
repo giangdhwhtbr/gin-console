@@ -34,14 +34,14 @@ test('TC-MILESTONE-UI-053: Long title cut with an ellipsis, id and period wrap o
     // The id, the period and the closed tracks wrap onto the following lines, none of them cut.
     const title = await row.getByTitle(TITLE, { exact: true }).boundingBox();
     const id = await row.getByTitle(ID).boundingBox();
-    const period = await row.getByTitle(/, 3d$/).boundingBox();
+    const period = await row.getByTitle(/ – /).boundingBox();
     const closed = await row.getByTitle('1/2 closed', { exact: true }).boundingBox();
     if (!title || !id || !period || !closed) throw new Error('a line of the epic row has no box');
     expect(id.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
     expect(period.y).toBeGreaterThanOrEqual(id.y + id.height - 1);
     expect(closed.y).toBeGreaterThanOrEqual(period.y + period.height - 1);
     // The period and the closed tracks are whole; the id may be cut but keeps at least 64 px, so its link stays reachable.
-    for (const line of [row.getByTitle(/, 3d$/), row.getByTitle('1/2 closed', { exact: true })]) {
+    for (const line of [row.getByTitle(/ – /), row.getByTitle('1/2 closed', { exact: true })]) {
       expect(await line.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     }
     expect(id.width).toBeGreaterThanOrEqual(64);

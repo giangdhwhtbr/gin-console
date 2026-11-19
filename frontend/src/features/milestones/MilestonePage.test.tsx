@@ -390,14 +390,24 @@ describe("MilestonePage", () => {
   it("REQ-MILESTONE-UI-021 Kicked off", async () => {
     open({ ...OVERFLOW, velocity: { committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86 } });
     const header = await headerOf();
-    expect(within(header).getByText("Committed 13 pt · Completed 8 pt · Added 3 pt · Say/do 62%")).toBeInTheDocument();
-    expect(within(header).getByText("1.4 d/pt (planned 1.2, accuracy 0.86)")).toBeInTheDocument();
+    const fact = (label: string) => within(header).getByText(label).nextElementSibling;
+    expect(["Committed", "Completed", "Added", "Say/do", "d/pt"].map((label) => `${label} ${fact(label)?.textContent}`)).toEqual([
+      "Committed 13 pt",
+      "Completed 8 pt",
+      "Added 3 pt",
+      "Say/do 62%",
+      "d/pt 1.4 (planned 1.2, accuracy 0.86)",
+    ]);
+    // REQ-UI-110: labels muted, values strong
+    expect(within(header).getByText("Committed")).toHaveClass("text-muted-foreground");
+    expect(within(header).getByText("13 pt")).toHaveClass("font-medium");
   });
 
   it("REQ-MILESTONE-UI-021 Not kicked off", async () => {
     open({ ...OVERFLOW, velocity: { committed_points: null, completed_points: 0, added_points: 0, say_do: null, days_per_point: null, planned_days_per_point: null, accuracy: null } });
     const header = await headerOf();
-    expect(within(header).getByText("Not kicked off · Completed 0 pt")).toBeInTheDocument();
+    expect(within(header).getByText("Not kicked off")).toBeInTheDocument();
+    expect(within(header).getByText("Completed").nextElementSibling).toHaveTextContent("0 pt");
     expect(header).not.toHaveTextContent("d/pt");
   });
 

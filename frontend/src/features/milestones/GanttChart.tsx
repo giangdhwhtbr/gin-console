@@ -3,6 +3,8 @@ import { useId, useLayoutEffect, useRef, useState, type RefObject, type UIEvent 
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
 import type { BeadKind, BeadSummary } from "@/features/beads/api";
+import { Badge } from "@/components/ui/badge";
+import { SizeBadge } from "@/components/SizeBadge";
 import { KindBadge } from "@/features/beads/KindBadge";
 import { childCounts, isPrep, prepLabel } from "@/features/beads/prep";
 import { PrepChip } from "@/features/beads/PrepChip";
@@ -24,22 +26,27 @@ import {
   dependencyArrows,
   endOf,
   fitDayWidth,
+  HEADER_HEIGHT,
   isoOf,
+  markerSides,
   middleOf,
   mondayOf,
   monthsOf,
   openingDay,
   periodOf,
   rowsOf,
+  showsSpec,
   sortEpics,
   spanOf,
   stepDay,
+  tailWidth,
   warningLines,
   xOf,
   type Axis,
   type Row,
   type Zoom,
 } from "./gantt";
+import { useLabelWidth } from "./useLabelWidth";
 import { usePan } from "./usePan";
 
 const LOOK = {
@@ -65,6 +72,7 @@ const ZOOMS = [
 ] as const;
 const DEFAULT_WIDTH = 960; // until the first measure, and in tests, which have no layout
 const TAIL_ROOM = 90;
+const MIN_TAIL = 24;
 const NO_KINDS: ReadonlyMap<string, BeadKind> = new Map();
 
 type Props = {
@@ -107,7 +115,7 @@ function useWidth(ref: RefObject<HTMLElement | null>) {
 
 function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KINDS }: Props) {
   const wide = useWide();
-  const label = wide ? 300 : 168;
+  const label = useLabelWidth();
   const scroller = useRef<HTMLDivElement>(null);
   const plot = useWidth(scroller) - label;
   const span = spanOf(zoom);
@@ -175,6 +183,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
   const height = rows.reduce((sum, r) => sum + r.height, 0);
   const chain = hot === null ? null : chainOf(epics, hot);
   const faded = (id: string) => chain !== null && !chain.has(id);
+  const stops = todayX === null ? [endX] : [todayX, endX];
   const date = (day: number) => shortDate(isoOf(day), plan.today);
 
   return (
@@ -216,7 +225,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
               ))}
             <span className="absolute inset-y-0 bg-state-blocked/5" style={{ left: endX, width: Math.max(0, axis.width - endX) }} />
           </div>
-          <Header axis={axis} label={label} today={plan.today} />
+          <Header axis={axis} label={label} today={plan.today} todayX={todayX} endX={endX} end={plan.end} />
           <div className="relative">
             <Arrows rows={rows} axis={axis} label={label} height={height} chain={chain} />
             <ol aria-label="Epics" onMouseLeave={() => setHot(null)} onBlur={() => setHot(null)}>
@@ -229,6 +238,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
                     axis={axis}
                     label={label}
                     today={plan.today}
+                    stops={stops}
                     integration={plan.integration}
                     kids={childBeads.get(row.epic.id) ?? []}
                     kind={kinds.get(row.epic.id) ?? null}
@@ -243,16 +253,11 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
               )}
             </ol>
           </div>
+          {/* the lines start under the header, so that they never cross a day label; the row labels (z-10) cover them when scrolled */}
           {todayX !== null && (
-            <div data-line="today" aria-hidden className="absolute inset-y-0 z-[5] border-l border-dashed border-foreground" style={{ left: label + todayX }}>
-              <span className="absolute top-0 ml-1 rounded bg-foreground px-1 text-[11px] text-background">Today</span>
-            </div>
+            <div data-line="today" aria-hidden className="absolute bottom-0 z-[5] border-l border-dashed border-foreground" style={{ left: label + todayX, top: HEADER_HEIGHT + 1 }} />
           )}
-          <div data-line="end" aria-hidden className="absolute inset-y-0 z-[5] border-l-2 border-foreground" style={{ left: label + endX }}>
-            <span
-              className={cn("absolute top-1 whitespace-nowrap text-[11px] font-medium", endX > axis.width - 80 ? "right-full mr-1" : "ml-1")}
-            >{`End ${shortDate(plan.end, plan.today)}`}</span>
-          </div>
+          <div data-line="end" aria-hidden className="absolute bottom-0 z-[5] border-l-2 border-foreground" style={{ left: label + endX, top: HEADER_HEIGHT + 1 }} />
         </div>
       </div>
       <ul aria-label="Legend" className="flex flex-wrap gap-x-4 gap-y-1 border-t px-3 py-2 text-xs text-muted-foreground">
@@ -287,11 +292,14 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
   );
 }
 
-function Header({ axis, label, today }: { axis: Axis; label: number; today: string }) {
+/** The months and days; the Today and End chips sit between them on a row of their own, so that they cover no label. */
+function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: number; today: string; todayX: number | null; endX: number; end: string }) {
+  const sides = markerSides(todayX, endX, axis.width);
+  const chip = (side: "left" | "right") => (side === "right" ? "ml-1" : "right-full mr-1");
   return (
     <div aria-hidden className="relative flex border-b text-[11px] text-muted-foreground">
       <div className="sticky left-0 z-10 flex-none bg-card" style={{ width: label }} />
-      <div className="relative h-11 flex-none" style={{ width: axis.width }}>
+      <div className="relative flex-none" style={{ width: axis.width, height: HEADER_HEIGHT }}>
         {monthsOf(axis, today).map((m) => (
           <span key={m.key} className="absolute top-1 truncate pl-1 font-medium text-foreground" style={{ left: m.x, width: m.width }}>
             {m.label}
@@ -304,6 +312,14 @@ function Header({ axis, label, today }: { axis: Axis; label: number; today: stri
               {c.width >= 56 ? `${weekday(c.iso)} ${Number(c.iso.slice(8))}` : Number(c.iso.slice(8))}
             </span>
           ))}
+        {todayX !== null && (
+          <span data-chip="today" className="absolute top-[22px]" style={{ left: todayX }}>
+            <span className={cn("absolute whitespace-nowrap rounded bg-foreground px-1 text-[11px] text-background", chip(sides.today))}>Today</span>
+          </span>
+        )}
+        <span data-chip="end" className="absolute top-[22px]" style={{ left: endX }}>
+          <span className={cn("absolute whitespace-nowrap text-[11px] font-medium text-foreground", chip(sides.end))}>{`End ${shortDate(end, today)}`}</span>
+        </span>
       </div>
     </div>
   );
@@ -351,6 +367,7 @@ function EpicRow({
   axis,
   label,
   today,
+  stops,
   integration,
   kids,
   kind,
@@ -364,6 +381,7 @@ function EpicRow({
   axis: Axis;
   label: number;
   today: string;
+  stops: readonly number[];
   integration: string | null;
   kids: readonly BeadSummary[];
   kind: BeadKind | null;
@@ -382,9 +400,9 @@ function EpicRow({
   const counts = childCounts(kids);
   const prep = prepLabel(counts);
   const left = epic.status === "in_progress" && epic.estimate_days !== null && epic.remaining_days !== null && epic.remaining_days < epic.estimate_days;
-  const points = epic.points === null ? "" : `${epic.points} pt · `;
-  const size = points + (left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate");
-  const period = `${periodOf(epic.planned_start, epic.planned_end, today)}, ${size}`;
+  const size = left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate";
+  const period = periodOf(epic.planned_start, epic.planned_end, today);
+  const tail = tailWidth(x1, stops, axis.width);
   const closedTracks = `${counts.closedTracks}/${counts.tracks} closed`;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
@@ -410,25 +428,34 @@ function EpicRow({
               {epic.title}
             </span>
           </span>
-          {/* below lg the items keep their size and wrap; from lg only the id shrinks, but keeps 64 px, so its link stays reachable */}
-          <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 whitespace-nowrap pl-[26px] text-xs text-muted-foreground lg:flex-nowrap">
+          {/* below lg the items keep their size and wrap; from lg the line is one row cut with an ellipsis inside the column, the size badge whole and the id giving way last-but-one, so its link stays reachable */}
+          <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 overflow-hidden whitespace-nowrap pl-[26px] text-xs text-muted-foreground lg:flex-nowrap">
             <span title={epic.id} className="max-w-full shrink-0 truncate lg:min-w-16 lg:shrink-[100]">
               <Link to={`/beads/${enc(project)}/${enc(epic.id)}`} className="font-mono underline-offset-2 hover:underline">
                 <span aria-hidden={shortId(epic.id) !== epic.id || undefined}>{shortId(epic.id)}</span>
                 {shortId(epic.id) !== epic.id && <span className="sr-only">{epic.id}</span>}
               </Link>
             </span>
+            {epic.points === null ? (
+              <Badge variant="outline" title={size} className="max-w-full shrink-0">
+                <span className="truncate">{size}</span>
+              </Badge>
+            ) : (
+              <SizeBadge points={epic.points} suffix={size} className="max-w-full shrink-0" />
+            )}
             <KindBadge kind={kind} className="max-w-full" />
-            <span title={period} className="max-w-full shrink-0 truncate">{period}</span>
-            {counts.tracks > 0 && <span title={closedTracks} className="max-w-full shrink-0 truncate">{closedTracks}</span>}
-            {prep !== null && <span title={prep} className="max-w-full shrink-0 truncate">{prep}</span>}
-            {epic.spec_confirmed === true && (
-              <span title="Spec confirmed" className="flex max-w-full shrink-0 items-center gap-1 truncate text-state-ready">
+            <span title={period} className="min-w-0 max-w-full shrink truncate">{period}</span>
+            {counts.tracks > 0 && <span title={closedTracks} className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>}
+            {prep !== null && <span title={prep} className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>}
+            {showsSpec(epic) && epic.spec_confirmed === true && (
+              <span title="Spec confirmed" className="flex min-w-0 max-w-full shrink-[8] items-center gap-1 truncate text-state-ready">
                 <FileCheck aria-hidden className="size-3 flex-none" />
                 Spec confirmed
               </span>
             )}
-            {epic.spec_confirmed === false && <span title="No confirmed spec" className="max-w-full shrink-0 truncate text-muted-foreground">No confirmed spec</span>}
+            {showsSpec(epic) && epic.spec_confirmed === false && (
+              <span title="No confirmed spec" className="min-w-0 max-w-full shrink-[8] truncate text-muted-foreground">No confirmed spec</span>
+            )}
           </span>
           {warningLines(epic, today, integration).map((text) => (
             <span key={text} title={text} className="flex min-w-0 items-center gap-1 pl-[26px] text-xs text-state-blocked">
@@ -454,12 +481,12 @@ function EpicRow({
             />
           ))}
         </div>
-        {axis.width - x1 >= TAIL_ROOM && (
+        {axis.width - x1 >= TAIL_ROOM && tail >= MIN_TAIL && (
           <span
             data-tail
             aria-hidden
             className="absolute truncate text-xs text-muted-foreground"
-            style={{ left: x1 + 8, top: BAR_TOP, lineHeight: `${BEAD_HEIGHT}px`, maxWidth: axis.width - x1 - 16 }}
+            style={{ left: x1 + 8, top: BAR_TOP, lineHeight: `${BEAD_HEIGHT}px`, maxWidth: tail }}
           >
             {epic.title}
           </span>

@@ -52,6 +52,19 @@ describe("ForecastCard", () => {
     expect(card()).toHaveTextContent("Finishes 20 Nov");
   });
 
+  it("REQ-UI-110 the finish date is prominent; the figures are label/value pairs, label muted, value strong", () => {
+    render(<ForecastCard forecast={forecast({ unestimated: 2 })} today={TODAY} />);
+    expect(screen.getByText("Finishes 23 Dec")).toHaveClass("text-2xl", "font-bold");
+    for (const [label, value] of [["Default lanes", "2 lanes"], ["Open epics", "5 open epics"], ["Unestimated", "2 unestimated"]]) {
+      const term = screen.getByText(label);
+      expect(term.tagName).toBe("DT");
+      expect(term).toHaveClass("text-muted-foreground");
+      expect(term.nextElementSibling).toHaveClass("font-medium");
+      expect(term.nextElementSibling).toHaveTextContent(value);
+    }
+    expect(screen.getByRole("img", { name: "Warning" }).parentElement).toHaveClass("text-state-blocked");
+  });
+
   it("REQ-MILESTONE-UI-016 no forecast", () => {
     const { container } = render(<ForecastCard forecast={null} today={TODAY} />);
     expect(container).toBeEmptyDOMElement();
@@ -59,10 +72,10 @@ describe("ForecastCard", () => {
 
   it("REQ-MILESTONE-UI-016 days per point", () => {
     const { rerender } = render(<ForecastCard forecast={forecast()} today={TODAY} daysPerPoint={{ value: 1.4, measured_epics: 3, assumed: false }} />);
-    expect(card()).toHaveTextContent("1.4 days per point");
+    expect(screen.getByText("Days per point").nextElementSibling).toHaveTextContent("1.4");
     expect(card()).not.toHaveTextContent("(assumed)");
     rerender(<ForecastCard forecast={forecast()} today={TODAY} daysPerPoint={{ value: 1, measured_epics: 0, assumed: true }} />);
-    expect(card()).toHaveTextContent("1.0 days per point (assumed)");
+    expect(screen.getByText("Days per point").nextElementSibling).toHaveTextContent("1.0 (assumed)");
     rerender(<ForecastCard forecast={forecast()} today={TODAY} daysPerPoint={null} />);
     expect(card()).not.toHaveTextContent("per point");
     rerender(<ForecastCard forecast={forecast()} today={TODAY} />);
