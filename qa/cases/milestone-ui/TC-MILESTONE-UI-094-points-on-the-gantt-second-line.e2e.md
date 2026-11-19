@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-094: Points on the Gantt second line
 
-- **REQ:** REQ-MILESTONE-UI-013@50a2ef46
+- **REQ:** REQ-MILESTONE-UI-013@b3bb8e48
 - **Priority:** medium
 
 **Preconditions:**

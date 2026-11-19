@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-055: Title shown after the bar when room is left
-REQ: REQ-MILESTONE-UI-013@50a2ef46
+REQ: REQ-MILESTONE-UI-013@b3bb8e48
 Priority: low
 Result: passed
 Run: qa/evidence/2026-11-15T14-02-27
