@@ -327,7 +327,7 @@ def build(today: date, seed: int = 7) -> list[Row]:
         metadata=points_meta(
             8,
             "Two forms, card validation and a 3-D Secure redirect",
-            m2_start - timedelta(days=5),
+            m2_start - timedelta(days=3),
         ),
         assignee="bao",
         started_at=stamp(m2_start),
@@ -412,7 +412,7 @@ def build(today: date, seed: int = 7) -> list[Row]:
         "e5",
         "Gift cards",
         "m2",
-        today - timedelta(days=6),
+        m2_start - timedelta(days=3),
         assignee="dung",
         labels=["roadmap"],
         metadata=points_meta(
@@ -582,7 +582,7 @@ def long_text(p: Project, today: date, start: date, milestone: str, after: date)
         metadata=points_meta(
             13,
             "Several providers, currencies and a cut-over plan",
-            start - timedelta(days=5),
+            start - timedelta(days=3),
         ),
         started_at=stamp(start),
         labels=[
