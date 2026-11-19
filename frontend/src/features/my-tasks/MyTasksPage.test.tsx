@@ -31,6 +31,25 @@ describe("MyTasksPage", () => {
     expect(select.closest("div")).toHaveClass("flex-wrap");
   });
 
+  it("REQ-BEADS-018 Failed pull note: one note naming the failed project, the list still shown", async () => {
+    const fetchMock = stubBeads(() => json([bead("a-1", { assignee: "giangdhwhtbr" })]), ["alpha", "omega"]);
+    const base = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (!requested(input).startsWith("/api/projects/beads")) return base?.(input) ?? Promise.resolve(json({}, 404));
+      return Promise.resolve(
+        json([
+          { ...projectEntry("alpha"), pull: { at: "2026-11-19T10:00:00Z", status: "error", error: "Merge conflict detected" } },
+          { ...projectEntry("omega"), pull: null },
+        ]),
+      );
+    });
+    open("/my-tasks");
+    const note = await screen.findByText(/Pulling Beads of alpha failed/);
+    expect(note).toHaveTextContent("Pulling Beads of alpha failed: Merge conflict detected. Run bd dolt pull in /home/gin/alpha.");
+    expect(screen.queryByText(/Pulling Beads of omega/)).not.toBeInTheDocument();
+    expect(await screen.findAllByText("Title a-1")).toHaveLength(2);
+  });
+
   it("REQ-UI-099 the My Tasks link opens /my-tasks and is current", async () => {
     stubBeads(() => json([]));
     open("/");

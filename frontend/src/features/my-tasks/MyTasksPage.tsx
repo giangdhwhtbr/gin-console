@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { isClosedMilestone, matchesMilestone, milestoneInEffect } from "@/features/beads/milestoneChoice";
 import { MilestoneFilter } from "@/features/beads/MilestoneFilter";
 import { useMilestones } from "@/features/beads/useMilestones";
+import { PullNote } from "@/features/beads/PullNote";
 import { StaleNote } from "@/features/beads/StaleNote";
 import { StateMark } from "@/features/beads/StateMark";
 import { TypeBadge } from "@/features/beads/TypeBadge";
@@ -112,6 +113,7 @@ export function MyTasksPage() {
       {state.status === "ok" && (
         <>
           <StaleNote projects={state.data.stale} />
+          <PullNote failures={state.data.pullFailures} />
           {state.data.failures.map((failure) => (
             <Alert key={failure.project} variant="destructive">
               <AlertTitle>{failure.project} could not be loaded</AlertTitle>

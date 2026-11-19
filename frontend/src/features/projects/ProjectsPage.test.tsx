@@ -380,4 +380,46 @@ describe("ProjectsPage", () => {
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
   });
+
+  describe("pull line", () => {
+    const load = async (projects: unknown[]) => {
+      vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(projects))));
+      render(<ProjectsPage />);
+      await screen.findByRole("article", { name: "A" });
+    };
+    const pullAt = (secondsAgo: number) => new Date(Date.now() - secondsAgo * 1000).toISOString();
+
+    it("REQ-BEADS-018 Pulled: the card shows the age of the pull", async () => {
+      const at = pullAt(120);
+      await load([project({ name: "A", beads, pull: { at, status: "ok", error: null } })]);
+      const line = within(cardOf("A")).getByText("pulled 2 minutes ago");
+      expect(line).toHaveAttribute("title", expect.stringContaining("UTC"));
+    });
+
+    it("REQ-BEADS-018 No remote: the card shows no Dolt remote and no error", async () => {
+      await load([project({ name: "A", pull: { at: pullAt(5), status: "no_remote", error: null } })]);
+      const card = within(cardOf("A"));
+      expect(card.getByText("no Dolt remote")).not.toHaveClass("text-destructive");
+      expect(card.queryByText(/pull failed/)).not.toBeInTheDocument();
+    });
+
+    it("REQ-BEADS-018 Failed pull on the card: the error shows and the counts stay", async () => {
+      await load([
+        project({ name: "A", beads, pull: { at: pullAt(5), status: "error", error: "Merge conflict detected" } }),
+      ]);
+      const card = within(cardOf("A"));
+      expect(card.getByText("pull failed: Merge conflict detected")).toHaveClass("text-destructive");
+      expect(card.getByText("open 3")).toBeInTheDocument();
+    });
+
+    it("REQ-BEADS-018 Older backend: no pull line, and a malformed pull does not crash the page", async () => {
+      await load([
+        project({ name: "A", beads }),
+        project({ name: "B", pull: null }),
+        project({ name: "C", pull: { at: 5, status: "weird" } as never }),
+      ]);
+      expect(screen.queryByText(/pulled|pull failed|no Dolt remote/)).not.toBeInTheDocument();
+      expect(cardOf("C")).toBeInTheDocument();
+    });
+  });
 });

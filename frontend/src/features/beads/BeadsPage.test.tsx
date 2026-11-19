@@ -123,6 +123,37 @@ describe("BeadsPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("REQ-BEADS-018 Failed pull note: one note for the selected project, none for others, list shown", async () => {
+    const failed: ProjectBeads = {
+      ...withBeads("alpha"),
+      pull: { at: "2026-11-19T10:00:00Z", status: "error", error: "Merge conflict detected" },
+    };
+    stub(() => json([bead("a-1")]), [failed, { ...withBeads("omega"), pull: null }]);
+    render(<BeadsPage />);
+    const note = await screen.findByRole("alert");
+    expect(note).toHaveTextContent(
+      "Pulling Beads of alpha failed: Merge conflict detected. Run bd dolt pull in /home/gin/alpha.",
+    );
+    expect(await screen.findByText("Title a-1")).toBeInTheDocument();
+    await userEvent.selectOptions(screen.getByLabelText("Project"), "omega");
+    await screen.findByLabelText("Project");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("REQ-BEADS-018 a failed pull without an error text reads unknown error", async () => {
+    const failed: ProjectBeads = { ...withBeads("alpha"), pull: { at: "2026-11-19T10:00:00Z", status: "error", error: null } };
+    stub(() => json([bead("a-1")]), [failed]);
+    render(<BeadsPage />);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Pulling Beads of alpha failed: unknown error. Run bd dolt pull in /home/gin/alpha.");
+  });
+
+  it("REQ-BEADS-018 Older backend: no pull note", async () => {
+    stub(() => json([bead("a-1")]), [withBeads("alpha"), { ...withBeads("omega"), pull: { status: "bad" } as never }]);
+    render(<BeadsPage />);
+    expect(await screen.findByText("Title a-1")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("REQ-UI-081 no separate Dependencies entry; the View nav has Graph", async () => {
     stub(() => json([bead("a-1")]));
     render(<BeadsPage />);

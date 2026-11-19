@@ -48,15 +48,19 @@ export type Beads = {
   stale?: boolean;
 };
 
+export type PullResult = { at: string; status: "ok" | "no_remote" | "error"; error: string | null };
+
 export type Project = {
   name: string;
   path: string;
   exists: boolean;
   workflow: Workflow | BlockError | null;
   beads: Beads | BlockError | null;
+  /** absent from an older backend; read it with `pullOf` */
+  pull?: PullResult | null;
 };
 
-export type ProjectBeads = Pick<Project, "name" | "path" | "exists" | "beads">;
+export type ProjectBeads = Pick<Project, "name" | "path" | "exists" | "beads" | "pull">;
 
 export function isBlockError(value: unknown): value is BlockError {
   return (
@@ -91,6 +95,20 @@ function isProject(value: unknown): value is Project {
 
 export const isStale = (project: Pick<Project, "beads">): boolean =>
   project.beads !== null && !isBlockError(project.beads) && project.beads.stale === true;
+
+/** The pull of a project when it is well formed; a missing, null or malformed one is null. */
+export function pullOf(project: { pull?: unknown }): PullResult | null {
+  const { pull } = project;
+  if (typeof pull !== "object" || pull === null) return null;
+  if (!("at" in pull) || typeof pull.at !== "string") return null;
+  if (!("status" in pull) || (pull.status !== "ok" && pull.status !== "no_remote" && pull.status !== "error")) return null;
+  const error = "error" in pull ? pull.error : null;
+  if (error !== null && typeof error !== "string") return null;
+  return { at: pull.at, status: pull.status, error };
+}
+
+/** The error of a pull, with one wording when the backend sent none. */
+export const pullError = (pull: PullResult): string => pull.error ?? "unknown error";
 
 export async function fetchProjects(): Promise<Project[]> {
   const response = await fetch("/api/projects");

@@ -31,6 +31,19 @@ describe("loadMyTasks", () => {
     expect(result.stale).toEqual(["A"]);
   });
 
+  it("REQ-BEADS-018 lists failed pulls of the chosen projects", async () => {
+    const pull = (status: "ok" | "error") => ({ at: "2026-11-19T10:00:00Z", status, error: status === "error" ? "boom" : null });
+    projects.mockResolvedValue([
+      { ...project("A"), pull: pull("error") },
+      { ...project("B"), pull: null },
+      { ...project("C"), pull: pull("ok") },
+      { ...project("D") },
+    ]);
+    beads.mockResolvedValue([]);
+    expect((await loadMyTasks(email, false)).pullFailures).toEqual([{ project: "A", path: "/home/gin/A", error: "boom" }]);
+    expect((await loadMyTasks(email, false, "B")).pullFailures).toEqual([]);
+  });
+
   it("REQ-UI-100 gathers my beads across projects in order", async () => {
     beads.mockImplementation((name) =>
       Promise.resolve(

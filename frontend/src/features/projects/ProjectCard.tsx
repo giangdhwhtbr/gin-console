@@ -1,7 +1,8 @@
 import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { useId, useState } from "react";
-import { isBlockError, type Beads, type Epic, type Project, type Workflow } from "./api";
+import { isBlockError, pullOf, type Beads, type Epic, type Project, type Workflow } from "./api";
+import { PullLine } from "./PullLine";
 
 // the backend may omit a field or send a malformed one: never crash the page
 const list = <T,>(value: readonly T[] | null | undefined): readonly T[] => {
@@ -148,6 +149,7 @@ function BeadsBlock({ beads, projectName }: { beads: Beads; projectName: string 
 
 export function ProjectCard({ project }: { project: Project }) {
   const { workflow, beads } = project;
+  const pull = pullOf(project);
   return (
     <article aria-label={project.name} className="flex flex-col gap-3 rounded-lg border p-4">
       <header className="flex flex-wrap items-center gap-2">
@@ -176,6 +178,7 @@ export function ProjectCard({ project }: { project: Project }) {
         ) : (
           <BeadsBlock beads={beads} projectName={project.name} />
         ))}
+      {pull !== null && <PullLine pull={pull} />}
     </article>
   );
 }
