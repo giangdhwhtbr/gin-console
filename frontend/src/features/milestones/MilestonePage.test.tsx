@@ -407,7 +407,10 @@ describe("MilestonePage", () => {
     open({ ...OVERFLOW, velocity: { committed_points: null, completed_points: 0, added_points: 0, say_do: null, days_per_point: null, planned_days_per_point: null, accuracy: null } });
     const header = await headerOf();
     expect(within(header).getByText("Not kicked off")).toBeInTheDocument();
-    expect(within(header).getByText("Completed").nextElementSibling).toHaveTextContent("0 pt");
+    expect([...header.querySelectorAll("dt")].map((dt) => [dt.textContent, dt.nextElementSibling?.textContent])).toEqual([
+      ["Kick-off", "Not kicked off"],
+      ["Completed", "0 pt"],
+    ]);
     expect(header).not.toHaveTextContent("d/pt");
   });
 

@@ -244,10 +244,26 @@ describe("gantt", () => {
   });
 
   it("REQ-MILESTONE-UI-013 the End chip keeps off the chart edge and off the Today chip", () => {
-    expect(markerSides(null, 300, 1000)).toEqual({ today: "right", end: "right" });
-    expect(markerSides(null, 950, 1000)).toEqual({ today: "right", end: "left" });
-    expect(markerSides(280, 300, 1000)).toEqual({ today: "left", end: "right" });
-    expect(markerSides(100, 300, 1000)).toEqual({ today: "right", end: "right" });
+    expect(markerSides(null, 300, 1000)).toEqual({ today: "right", end: "right", todayShift: 0 });
+    expect(markerSides(null, 950, 1000)).toEqual({ today: "right", end: "left", todayShift: 0 });
+    expect(markerSides(280, 300, 1000)).toMatchObject({ today: "left", end: "right", todayShift: 0 });
+    expect(markerSides(100, 300, 1000)).toMatchObject({ today: "right", end: "right" });
+  });
+
+  it("REQ-MILESTONE-UI-013 Today and End chips never intersect, wherever Today falls", () => {
+    const interval = (x: number, side: "left" | "right", w: number, shift = 0): [number, number] =>
+      side === "right" ? [x + 4, x + 4 + w] : [x - shift - 4 - w, x - shift - 4];
+    for (const endX of [300, 800, 900, 950, 998]) {
+      for (let t = 0; t <= 1000; t += 4) {
+        const m = markerSides(t, endX, 1000);
+        const a = interval(t, m.today, 44, m.todayShift);
+        const b = interval(endX, m.end, 100);
+        expect(a[0] < b[1] && b[0] < a[1], `today ${t} end ${endX}`).toBe(false);
+      }
+    }
+    expect(markerSides(940, 950, 1000)).toMatchObject({ today: "left", end: "left" });
+    expect(markerSides(940, 950, 1000).todayShift).toBeGreaterThan(0);
+    expect(markerSides(300, 300, 1000)).toMatchObject({ today: "left", end: "right", todayShift: 0 }); // Today on the End line
   });
 
   it("REQ-MILESTONE-UI-013 no spec item when the warnings already say it is not confirmed", () => {
@@ -255,5 +271,8 @@ describe("gantt", () => {
     expect(showsSpec(epicPlan("a", { spec_confirmed: false }))).toBe(true);
     expect(showsSpec(epicPlan("a", { spec_confirmed: false, warnings: warn }))).toBe(false);
     expect(showsSpec(epicPlan("a", { spec_confirmed: null }))).toBe(false);
+    // only spec_not_ready drops it: spec_due and the other warnings keep it
+    const due = [{ code: "spec_due", days: null, count: null }, { code: "late", days: null, count: null }];
+    expect(showsSpec(epicPlan("a", { spec_confirmed: false, warnings: due }))).toBe(true);
   });
 });

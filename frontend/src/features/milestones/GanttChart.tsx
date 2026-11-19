@@ -313,7 +313,7 @@ function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: 
             </span>
           ))}
         {todayX !== null && (
-          <span data-chip="today" className="absolute top-[22px]" style={{ left: todayX }}>
+          <span data-chip="today" className="absolute top-[22px]" style={{ left: todayX - sides.todayShift }}>
             <span className={cn("absolute whitespace-nowrap rounded bg-foreground px-1 text-[11px] text-background", chip(sides.today))}>Today</span>
           </span>
         )}

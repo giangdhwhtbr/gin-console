@@ -167,14 +167,23 @@ export const HEADER_HEIGHT = 60;
 const TODAY_CHIP = 44;
 const END_CHIP = 100;
 
-/** REQ-MILESTONE-UI-013: the side of its line each header chip sits on, so that none runs off the chart and the two never overlap. */
-export function markerSides(todayX: number | null, endX: number, width: number): { today: "left" | "right"; end: "left" | "right" } {
+export type Markers = { today: "left" | "right"; end: "left" | "right"; todayShift: number };
+
+/**
+ * REQ-MILESTONE-UI-013: the side of its line each header chip sits on, so that none runs off the chart and the two never overlap.
+ * `todayShift`: px the Today chip moves further left of its line when both chips would be on the left and still meet.
+ */
+export function markerSides(todayX: number | null, endX: number, width: number): Markers {
   const end = endX + 4 + END_CHIP > width ? "left" : "right";
-  if (todayX === null) return { today: "right", end };
+  if (todayX === null) return { today: "right", end, todayShift: 0 };
   const span = (x: number, side: "left" | "right", w: number): [number, number] => (side === "right" ? [x + 4, x + 4 + w] : [x - 4 - w, x - 4]);
-  const [t0, t1] = span(todayX, "right", TODAY_CHIP);
-  const [e0, e1] = span(endX, end, END_CHIP);
-  return { today: t0 < e1 && e0 < t1 ? "left" : "right", end };
+  const meets = (a: [number, number], b: [number, number]) => a[0] < b[1] + 4 && b[0] < a[1] + 4;
+  const e = span(endX, end, END_CHIP);
+  const right = span(todayX, "right", TODAY_CHIP);
+  if (right[1] <= width && !meets(right, e)) return { today: "right", end, todayShift: 0 };
+  const left = span(todayX, "left", TODAY_CHIP);
+  if (!meets(left, e)) return { today: "left", end, todayShift: 0 };
+  return { today: "left", end, todayShift: Math.max(0, left[1] - (e[0] - 4)) };
 }
 
 export const ROW_HEIGHT = 56;

@@ -65,6 +65,22 @@ describe("ForecastCard", () => {
     expect(screen.getByRole("img", { name: "Warning" }).parentElement).toHaveClass("text-state-blocked");
   });
 
+  it("REQ-UI-110 exact label to value texts of the card", () => {
+    const pairs = () => [...card().querySelectorAll("dt")].map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]);
+    const { rerender } = render(<ForecastCard forecast={forecast({ unestimated: 2 })} today={TODAY} daysPerPoint={{ value: 1.4, measured_epics: 3, assumed: false }} />);
+    expect(pairs()).toEqual([
+      ["Default lanes", "2 lanes"],
+      ["Open epics", "5 open epics"],
+      ["Unestimated", "2 unestimated"],
+      ["Days per point", "1.4"],
+    ]);
+    expect(screen.getByText("Project forecast · open roadmap epics")).toBeInTheDocument();
+    expect(screen.getByText("Deadline 31 Dec")).toBeInTheDocument();
+    rerender(<ForecastCard forecast={forecast({ deadline: null })} today={TODAY} daysPerPoint={{ value: 1, measured_epics: 0, assumed: true }} />);
+    expect(screen.getByText("No deadline").parentElement).toHaveTextContent("No deadline add - Deadline: YYYY-MM-DD to the roadmap");
+    expect(pairs().at(-1)).toEqual(["Days per point", "1.0 (assumed)"]);
+  });
+
   it("REQ-MILESTONE-UI-016 no forecast", () => {
     const { container } = render(<ForecastCard forecast={null} today={TODAY} />);
     expect(container).toBeEmptyDOMElement();
