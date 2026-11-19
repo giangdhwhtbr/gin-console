@@ -126,7 +126,7 @@ const comments = [
 const detailOf = (id: string) => {
   const s = beads.find((x) => x.id === id) ?? beads[2];
   return full(s, {
-    description: 'Export every ledger row.\n\n- one\n- two with `code`', design: 'Stream rows.', notes: 'See the finance runbook.', acceptance_criteria: 'Totals match.', close_reason: null,
+    description: 'Export every ledger row.\n\n- one\n- two with `code`\n\nPR opened: https://github.com/Qwikfoneoffice/QwikFone_Office_Backend/pull/263 (branch fix/long-name)\n\n| column one | column two | column three | column four | column five | column six | column seven | column eight |\n|---|---|---|---|---|---|---|---|\n| value number one | value number two | value number three | value number four | value number five | value number six | value number seven | value number eight |', design: 'Stream rows.', notes: 'See the finance runbook.', acceptance_criteria: 'Totals match.', close_reason: null,
     dependencies: [{ id: 'ex-e2', title: 'Search relevance', status: 'in_progress', type: 'blocks' }],
     dependents: [{ id: 'ex-e4', title: LONG_TITLE, status: 'open', type: 'blocks' }],
     children: beads.filter((x) => x.parent === s.id).map((c) => ({ id: c.id, title: c.title, status: c.status, type: 'parent-child', prep: false })),
@@ -240,3 +240,18 @@ for (const [group, visits] of Object.entries(groups)) {
     expect(failures, failures.join('\n\n')).toEqual([]);
   });
 }
+
+test('REQ-UI-110 REQ-UI-107: a wide table scrolls in its own box while a long URL wraps', async ({ page, ev }) => {
+  void ev;
+  await stub(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/beads/example/ex-e3.1');
+  await expect(page.locator('.markdown table').first()).toBeVisible();
+  const m = await page.evaluate(() => {
+    const t = document.querySelector('.markdown table') as HTMLElement;
+    return { overflows: t.scrollWidth > t.clientWidth, page: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+  });
+  expect(m.overflows).toBe(true);
+  expect(m.page).toBeLessThanOrEqual(0);
+  expect(await readabilityFindings(page)).toEqual([]);
+});
