@@ -60,3 +60,6 @@ IF the config has `server.scotty_base_url` or a project with `scotty_id`, THEN t
 - GIVEN a config with a project that has `scotty_id`
 - WHEN the console starts
 - THEN it exits non-zero and the message names `scotty_id`
+
+## Diagrams
+- [Pull settings](diagrams/pull-settings-activity.md)
