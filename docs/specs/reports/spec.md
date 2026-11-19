@@ -78,7 +78,7 @@ The report SHALL hold the following, over the own shares of the selected closed 
 The report SHALL hold:
 - Beads closed per ISO week, by `issue_type`.
 - The median and 85th percentile cycle time (`started_at` to `closed_at`) and lead time (`created_at` to `closed_at`), in days, per `issue_type`, per member, and over all selected closed beads together (`overall`). A time SHALL leave a bead out when a timestamp is missing or the close is before the start. Within a row, a time SHALL be absent when no bead has it.
-- For each selected closed epic with `estimated_minutes`: its estimate in working days (`estimated_minutes / 480`), against the weekdays from its `started_at` (else `created_at`) to its `closed_at`, both dates counted.
+- For each selected closed epic with `estimated_minutes`, or with `metadata.points` one of 1, 2, 3, 5, 8, 13 and 21: its estimate in working days (`estimated_minutes / 480`, or `null` without `estimated_minutes`), its `points` (or `null`), the weekdays from its `started_at` (else `created_at`) to its `closed_at`, both dates counted, and, for an epic with points, those weekdays per point (`days_per_point`, rounded to one decimal).
 
 The report SHALL NOT hold in-progress beads; the Team report (REQ-REPORTS-010) holds them per milestone.
 
@@ -96,6 +96,11 @@ The report SHALL NOT hold in-progress beads; the Team report (REQ-REPORTS-010) h
 - GIVEN an epic with `estimated_minutes` 2400 created on a Monday and closed on the Tuesday of the next week
 - WHEN the report is built
 - THEN it shows 5 estimated and 7 actual working days
+
+#### Scenario: points
+- GIVEN an epic without `estimated_minutes` whose metadata has `points: 5`, started on a Monday and closed on the Tuesday of the next week
+- WHEN the report is built
+- THEN its estimate row has `estimate_days: null`, `points: 5`, 7 actual working days and `days_per_point: 1.4`
 
 #### Scenario: overall
 - GIVEN a closed task with cycle time 1 day and a closed bug with cycle time 3 days
@@ -516,3 +521,35 @@ Source: `assets/2026-11-12/mockup/index.html`
 ## Use Cases
 - [Review the team in a milestone](use-cases/review-team-in-milestone.md)
 - [Review velocity](use-cases/review-velocity.md)
+
+### REQ-REPORTS-018: Velocity tab
+WHEN the Velocity tab is selected, the frontend SHALL request `GET /api/milestones?project=<p>` (REQ-MILESTONE-UI-008) for the selected project, or for every configured project when "All projects" is selected, and SHALL show for each project (under the project's name when all are selected):
+- a row of figures: the project's `days_per_point.value` to one decimal as "<x> d/pt", with "assumed" when `days_per_point.assumed` is true and "—" when `days_per_point` is `null` or missing; and the say/do (whole percent) and accuracy (two decimals) of the milestone with the latest `start` among those whose `velocity.say_do` is not `null`, or "—";
+- for the milestones whose `velocity` has a `committed_points` that is not `null` or a `completed_points` above 0, oldest `start` first:
+  - a column chart of `committed_points` and `completed_points` per milestone;
+  - a line chart of `days_per_point` and `planned_days_per_point` per milestone, leaving out `null` points;
+  - a table with committed, completed and added points, say/do, days per point, planned days per point and accuracy, "—" for `null`;
+- "No kicked-off milestones with points yet" when no milestone qualifies;
+- the error and cause of a project whose request failed (REQ-MILESTONE-UI-005), with the other projects still shown.
+
+The tab SHALL hold no period or sprint choice, SHALL show nothing per member, and the Reports backend SHALL NOT run `gin` for it.
+
+#### Scenario: Milestones with velocity
+- GIVEN project `alpha` whose milestones list has `days_per_point` `{value: 1.4, measured_epics: 6, assumed: false}`, closed `m1` (start 1 Oct) with `velocity` `{committed_points: 10, completed_points: 8, added_points: 0, say_do: 0.8, days_per_point: 1.5, planned_days_per_point: 1.2, accuracy: 0.8}`, active `m2` (start 3 Nov) with `{committed_points: 13, completed_points: 5, added_points: 2, say_do: 0.38, days_per_point: 1.3, planned_days_per_point: 1.4, accuracy: 1.08}`, and planned `m3` with `{committed_points: null, completed_points: 0, …}`
+- WHEN the user opens `/reports?project=alpha&tab=velocity`
+- THEN the figures read "1.4 d/pt", "38%" and "1.08", the charts and the table hold `m1` then `m2`, and `m3` is not shown
+
+#### Scenario: Assumed days per point
+- GIVEN project `alpha` whose `days_per_point` is `{value: 1.0, measured_epics: 0, assumed: true}`
+- WHEN the Velocity tab is shown
+- THEN the figure reads "1.0 d/pt" with "assumed"
+
+#### Scenario: Nothing kicked off yet
+- GIVEN project `alpha` whose milestones all have `committed_points: null` and `completed_points: 0`, or no `velocity` key
+- WHEN the Velocity tab is shown
+- THEN it shows "No kicked-off milestones with points yet" and no chart
+
+#### Scenario: All projects with one failing
+- GIVEN projects `alpha` with velocity and `beta` whose `GET /api/milestones?project=beta` answers 502 with `cause: "outdated"`
+- WHEN the user opens `/reports?project=all&tab=velocity`
+- THEN `alpha` shows its figures, charts and table, and `beta` shows the outdated error

@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-MILESTONE-UI-001: Milestones list
-gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), lanes, forecast finish, epic progress, and warning count, from `gin milestone list --all --json`. Lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" when the entry's `finish` is set, in the warning color when it is after the entry's `end`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, SHALL show "No dates" in place of the period of an entry whose `start` or `end` is `null`, SHALL cut a long title short with the full title as `title`, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
+gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), lanes, forecast finish, epic progress, say/do, and warning count, from `gin milestone list --all --json`. Lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" when the entry's `finish` is set, in the warning color when it is after the entry's `end`. Say/do SHALL read "Say/do <n>%" with the entry's `velocity.say_do` as a whole percent, or "–" when the entry has no `velocity` or its `say_do` is `null`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, SHALL show "No dates" in place of the period of an entry whose `start` or `end` is `null`, SHALL cut a long title short with the full title as `title`, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
 Source: `assets/2026-11-08/mockup/index.html#milestones`
 
 #### Scenario: list
@@ -17,6 +17,11 @@ Source: `assets/2026-11-08/mockup/index.html#milestones`
 - GIVEN project P whose `milestone list` reports M1 with `lanes: 2`, `end: 2026-11-12`, `finish: 2026-11-23`, and M2 with `lanes: 1`, `end: 2026-12-04`, `finish: 2026-12-01`
 - WHEN the user opens Milestones for P
 - THEN M1 shows "2 lanes" and "Finishes 23 Nov" in the warning color, and M2 shows "1 lane" and "Finishes 1 Dec" without it
+
+#### Scenario: say/do
+- GIVEN project P whose `milestone list` reports M1 with `velocity.say_do: 0.62`, M2 with `velocity.say_do: null`, and M3 without `velocity`
+- WHEN the user opens Milestones for P
+- THEN M1 shows "Say/do 62%", and M2 and M3 show "–" for say/do
 
 #### Scenario: older gin-workflow
 - GIVEN project P whose `milestone list` entries have no `lanes` key
@@ -132,7 +137,7 @@ gin-console SHALL exclude beads of type `milestone` from the ready work it colle
 - THEN M1 is not counted or flagged as ready
 
 ### REQ-MILESTONE-UI-008: Milestones API
-WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin milestone list --all --json` or `gin milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast`, the `lanes` of each list entry and of the shown milestone, the shown milestone's `integration`, `deadline` and `away`, and each epic's `remaining_days` and `assumed_days`, with `null` (`{}` for `away`) for each of them that the output lacks, and SHALL accept a list entry whose `start` and `end` are `null` and return them as `null`. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
+WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milestones/{project}/{id}` with an optional `start=YYYY-MM-DD`, the server SHALL return the output of `gin milestone list --all --json` or `gin milestone show <id> [--start <date>] --json` run in the project directory, including the list's `forecast`, the `days_per_point` (`value`, `measured_epics`, `assumed`) of the list and of the shown milestone, the `lanes` and `velocity` (`committed_points`, `completed_points`, `added_points`, `say_do`, `days_per_point`, `planned_days_per_point`, `accuracy`) of each list entry and of the shown milestone, the shown milestone's `integration`, `deadline` and `away`, and each epic's `remaining_days`, `assumed_days`, `points`, `points_reason`, `estimate_source`, `actual_days` and `actual_days_per_point`, with `null` (`{}` for `away`) for each of them that the output lacks, and SHALL accept a list entry whose `start` and `end` are `null` and return them as `null`. It SHALL cache a response without `start` for 5 seconds and never cache one with `start`, SHALL respond 404 for an unknown project or missing directory, 422 without running any command for a `start` that is not an ISO date, and IF the command fails or its output is not `schema: 1`, THEN SHALL respond 502 with `error` and `cause` set to `outdated` (no `milestone` command), `tracking` (project not on Beads tracking), `schema` (schema not 1), or `null`.
 
 #### Scenario: list
 - GIVEN project P whose `milestone list --all --json` prints schema 1 with M1
@@ -144,10 +149,15 @@ WHEN a client requests `GET /api/milestones?project=<name>` or `GET /api/milesto
 - WHEN a client requests `GET /api/milestones?project=P`
 - THEN the response carries M1 with `lanes: 2` and that `forecast` unchanged
 
-#### Scenario: output from an older gin-workflow
-- GIVEN project P whose `milestone list` prints schema 1 without `forecast` and without `lanes`, and whose `milestone show M1` prints no `lanes`
+#### Scenario: story points
+- GIVEN project P whose `milestone list` prints `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}` and M1 with `velocity: {committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86}`, and whose `milestone show M1` prints the same `days_per_point` and `velocity` and an epic with `points: 5`, `points_reason: "new endpoint and UI"`, `estimate_source: "points"`, `estimate_days: 7`, `actual_days: 6` and `actual_days_per_point: 1.2`
 - WHEN a client requests the list and M1
-- THEN both responses are 200, the list has `forecast: null` and M1 entry `lanes: null`, and M1 has `lanes: null`
+- THEN both responses carry those values unchanged
+
+#### Scenario: output from an older gin-workflow
+- GIVEN project P whose `milestone list` prints schema 1 without `forecast`, `lanes`, `days_per_point` and `velocity`, and whose `milestone show M1` prints none of `lanes`, `days_per_point`, `velocity` and the epic keys `points`, `points_reason`, `estimate_source`, `actual_days` and `actual_days_per_point`
+- WHEN a client requests the list and M1
+- THEN both responses are 200, the list has `forecast: null` and `days_per_point: null` and M1 entry `lanes: null` and `velocity: null`, and M1 has `lanes: null`, `days_per_point: null`, `velocity: null` and each of those epic keys `null`
 
 #### Scenario: preview not cached
 - GIVEN a request for M1 with `start=2026-11-16` answered less than 5 seconds ago
@@ -272,7 +282,7 @@ WHILE the Gantt is zoomed to `1 week` or `2 weeks`, gin-console SHALL draw the w
 - THEN ‹, › and the label of days in view are not shown and dragging does not move the chart
 
 ### REQ-MILESTONE-UI-013: Readable Gantt rows
-Each epic row of the Gantt SHALL show, in a label column that stays visible while the chart scrolls, the status icon and title on one line and the epic id (linking to its bead page), period and estimate on the next, the estimate reading "<n>d", or "<n>d left" when the epic is in progress and its `remaining_days` is below its estimate, or "assumed <n>d" when it has no estimate and `assumed_days` is set, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, period and estimate, closed tracks, prep, spec) wrap onto further lines rather than being cut, followed by the epic's warnings; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar.
+Each epic row of the Gantt SHALL show, in a label column that stays visible while the chart scrolls, the status icon and title on one line and the epic id (linking to its bead page), period and estimate on the next, the estimate reading "<n>d", or "<n>d left" when the epic is in progress and its `remaining_days` is below its estimate, or "assumed <n>d" when it has no estimate and `assumed_days` is set, preceded by "<p> pt · " when the epic has `points`, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, period and estimate, closed tracks, prep, spec) wrap onto further lines rather than being cut, followed by the epic's warnings; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar.
 
 #### Scenario: long id
 - GIVEN epic `gin-workflow-rm-process-hygiene` titled "Process hygiene: consistent skills, rules that bind where it matters"
@@ -288,6 +298,11 @@ Each epic row of the Gantt SHALL show, in a label column that stays visible whil
 - GIVEN an in-progress epic A with `estimate_days: 5` and `remaining_days: 2`, and an open epic B without an estimate and with `assumed_days: 3`
 - WHEN the Gantt is shown
 - THEN A's second line reads "2d left" and B's reads "assumed 3d"
+
+#### Scenario: points
+- GIVEN an open epic C with `points: 5` and `estimate_days: 7`, and an in-progress epic D with `points: 3`, `estimate_days: 4` and `remaining_days: 1`
+- WHEN the Gantt is shown
+- THEN C's second line reads "5 pt · 7d" and D's reads "3 pt · 1d left"
 
 ### REQ-MILESTONE-UI-014: Dependency arrows on the Gantt
 For each epic B of the milestone and each id A in B's `depends_on` that is an epic of the same milestone, the Gantt SHALL draw an arrow from the end of A's last bead to the start of B's first bead, in the blocked color IF B's `planned_start` is not after A's `planned_end`, and SHALL draw no arrow for an id that is not an epic of the milestone. WHILE the pointer is over an epic's row or bar, or focus is inside its row, the Gantt SHALL highlight that epic, every epic it depends on or that depends on it directly or through other epics, and the arrows between them, and SHALL fade the other epics and arrows.
@@ -356,6 +371,7 @@ WHEN the Milestones list of a project has a non-null `forecast`, gin-console SHA
   - The comparison is left out when `finish` is null.
 - "No deadline" when `deadline` is null, with the roadmap line `- Deadline: YYYY-MM-DD` to add;
 - the default lanes (`lanes`), the open epic count (`open_epics`), and the unestimated epic count (`unestimated`), with a warning mark when `unestimated` is above 0;
+- the list's `days_per_point` as "<x> days per point" to one decimal, followed by "(assumed)" when `assumed` is true, left out when `days_per_point` is `null` or missing;
 - the forecast `error`, when set, in the destructive color, with the other figures still shown.
 Source: `assets/2026-11-08/mockup/index.html#milestones`
 
@@ -380,6 +396,11 @@ The page SHALL NOT show the card when `forecast` is null or missing.
 - GIVEN project P whose forecast has `finish: null`, `open_epics: 2`, `unestimated: 2`
 - WHEN the user opens Milestones for P
 - THEN the card reads "No estimate: every open epic is unestimated" and "2 unestimated" with a warning mark, and shows no deadline comparison
+
+#### Scenario: days per point
+- GIVEN project P whose list has a forecast and `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}`, and project Q whose list has a forecast and `days_per_point: {value: 1.0, measured_epics: 0, assumed: true}`
+- WHEN the user opens Milestones for P and then for Q
+- THEN P's card reads "1.4 days per point" and Q's reads "1.0 days per point (assumed)"
 
 #### Scenario: forecast error
 - GIVEN project P whose forecast has `error: "Deadline: soon is not a date (YYYY-MM-DD)"`, `deadline: null`, `finish: 2026-11-20`
@@ -478,3 +499,21 @@ WHEN a milestone's `show` output has `integration`, `deadline` or a non-empty `a
 - GIVEN milestone `m1` whose `show` output has no `integration`, `deadline` or `away` key
 - WHEN the user opens `m1`
 - THEN the header shows none of them and the rest of the header is unchanged
+
+### REQ-MILESTONE-UI-021: Velocity on the milestone page
+WHEN the shown milestone's `show` output has a `velocity`, the milestone page header SHALL show "Committed <c> pt · Completed <d> pt · Added <a> pt · Say/do <s>%" (`say_do` as a whole percent, "–" when `null`), or "Not kicked off · Completed <d> pt" when `committed_points` is `null`, and, when `velocity.days_per_point` is not `null`, "<x> d/pt (planned <y>, accuracy <z>)" with `<x>` and `<y>` to one decimal and `<z>` to two decimals, leaving out "planned" or "accuracy" when it is `null`; it SHALL show none of this when `velocity` is `null` or missing, and nothing per member.
+
+#### Scenario: Kicked off
+- GIVEN milestone `m1` whose `show` output has `velocity` `{committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86}`
+- WHEN the user opens `m1`
+- THEN the header shows "Committed 13 pt · Completed 8 pt · Added 3 pt · Say/do 62%" and "1.4 d/pt (planned 1.2, accuracy 0.86)"
+
+#### Scenario: Not kicked off
+- GIVEN milestone `m2` whose `velocity` has `committed_points: null`, `completed_points: 0`, `say_do: null` and `days_per_point: null`
+- WHEN the user opens `m2`
+- THEN the header shows "Not kicked off · Completed 0 pt" and no "d/pt"
+
+#### Scenario: Older gin-workflow
+- GIVEN milestone `m1` whose `show` output has no `velocity` key
+- WHEN the user opens `m1`
+- THEN the header shows no velocity and the rest of the header is unchanged

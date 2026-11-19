@@ -1648,10 +1648,12 @@ The Delivery tab SHALL show, in this order:
 - A row of figures: beads closed (`totals.closed`), and the median cycle time and median lead time from `delivery.overall` ("—" when absent).
 - Beads closed per ISO week, as a column chart stacked by type with a legend.
 - Cycle time and lead time as two range charts side by side, each with a dot at the median and a tick at the 85th percentile. A switch SHALL choose between By type (the default) and By member. Each range SHALL show, on hover and on focus, its type or member, the number of beads, the median and the 85th percentile.
-- The estimate table of REQ-REPORTS-004, when it has rows. Each row SHALL hold a chip with the actual minus the estimated working days, rounded to one decimal:
+- The estimate table of REQ-REPORTS-004, when it has rows. Each row SHALL show its estimate as "<n>d", or "<p> pt" when it has `points`, and its actual working days. A row with an estimate in days SHALL hold a chip with the actual minus the estimated working days, rounded to one decimal:
   - "+<n> d" in the warning color when the difference is above 0;
   - "on estimate" when it is 0;
   - "−<n> d" when it is below 0.
+
+  A row with points and no estimate in days SHALL show "<x> d/pt" from its `days_per_point` in place of the chip.
 
 The Delivery tab SHALL NOT show beads in progress; the Team tab shows them (REQ-REPORTS-013 to REQ-REPORTS-016).
 Source: `assets/2026-11-12/mockup/index.html`
@@ -1670,6 +1672,11 @@ Source: `assets/2026-11-12/mockup/index.html`
 - GIVEN epics estimated at 5 working days that took 7, 3 and 4.5
 - WHEN the Delivery tab is shown
 - THEN their chips read "+2 d" in the warning color, "−2 d" and "−0.5 d"
+
+#### Scenario: points row
+- GIVEN an estimate row with `estimate_days: null`, `points: 5`, `actual_days: 7` and `days_per_point: 1.4`
+- WHEN the Delivery tab is shown
+- THEN the row reads "5 pt", "7" and "1.4 d/pt", with no chip
 
 #### Scenario: no work in progress
 - GIVEN the Delivery tab is shown
@@ -1769,7 +1776,7 @@ From 1024px the frontend SHALL show, at the top of the "Main" navigation's sideb
 - THEN no collapse control is shown and the theme control is under the brand mark, above the links
 
 ### REQ-UI-095: Report tabs
-The Reports page SHALL show the tabs Team, Delivery, AI usage, Quality and Data coverage, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:
+The Reports page SHALL show the tabs Team, Delivery, Velocity, AI usage, Quality and Data coverage, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:
 - Team, from the team report of the selected milestone:
   - "Finished on time", or "Finished <n> d late" with a warning icon, for a closed milestone;
   - "Starts <start>" before its start;
@@ -1778,11 +1785,12 @@ The Reports page SHALL show the tabs Team, Delivery, AI usage, Quality and Data 
   - "No milestones" when the project has none;
   - no headline while "All projects" is selected.
 - Delivery: "<closed> beads closed", where `<closed>` is `totals.closed`.
+- Velocity: "<x> d/pt" from the selected project's `days_per_point` (REQ-REPORTS-018), with "assumed" when it is assumed, once the Velocity tab has loaded it; no headline while "All projects" is selected or when `days_per_point` is `null`.
 - AI usage: "<tokens> tokens, <cost>", with "no price" in place of `<cost>` when `totals.cost` is absent.
 - Quality: "<rate> rework", with "—" in place of `<rate>` when `totals.rework_rate` is absent.
 - Data coverage: "<n> gaps" ("1 gap" when `<n>` is 1), with a warning icon when `<n>` is above 0. `<n>` is the sum of five counts: beads not collected, beads with unreadable usage, models without a price, beads with incomplete logs (`coverage.sources`), and projects under `errors`.
 
-The page SHALL request the team report whenever a single project is selected, whatever the tab, so that the Team headline shows. It SHALL show no headline for a tab while its report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`team`, `delivery`, `usage`, `quality` or `coverage`), SHALL select Team when `tab` is missing or holds another value, and SHALL keep the project, period, sprint, milestone and member when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page.
+The page SHALL request the team report whenever a single project is selected, whatever the tab, so that the Team headline shows, and SHALL request the Milestones list for the Velocity tab only once that tab has been selected. It SHALL show no headline for a tab while its report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`team`, `delivery`, `velocity`, `usage`, `quality` or `coverage`), SHALL select Team when `tab` is missing or holds another value, and SHALL keep the project, period, sprint, milestone and member when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page.
 Source: `assets/2026-11-12/mockup/index.html`
 
 #### Scenario: shared link
@@ -1799,6 +1807,11 @@ Source: `assets/2026-11-12/mockup/index.html`
 - GIVEN the Reports page for `alpha`, 90 days and the Delivery tab
 - WHEN the user picks the AI usage tab
 - THEN the URL becomes `/reports?project=alpha&days=90&tab=usage` without a reload and no new report is requested
+
+#### Scenario: velocity tab
+- GIVEN the Reports page for `alpha` on the Delivery tab, whose milestones list has `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}`
+- WHEN the user picks the Velocity tab
+- THEN the URL has `tab=velocity`, `GET /api/milestones?project=alpha` is requested once, and the Velocity headline reads "1.4 d/pt"
 
 #### Scenario: headlines
 - GIVEN a report with 41 closed beads, 12,400,000 tokens, cost 38.2, rework rate 0.09, 3 beads not collected, 1 unreadable bead and 1 unpriced model
@@ -1818,7 +1831,7 @@ Source: `assets/2026-11-12/mockup/index.html`
 #### Scenario: keyboard
 - GIVEN the Delivery tab is selected and has focus
 - WHEN the user presses Right
-- THEN the AI usage tab is selected and has focus
+- THEN the Velocity tab is selected and has focus
 
 ### REQ-UI-096: Refresh
 The frontend SHALL show on every page a "Refresh data" control, in the top bar below 768px and with the theme control at the top of the navigation column from 768px, and WHEN the user activates it, SHALL send `POST /api/refresh` (REQ-BEADS-012) and then load the current page's data again without a full reload and without changing the URL, showing the control as busy and disabled until the request ends; IF the request fails, THEN the page SHALL still load its data again and show its own error.
@@ -2112,7 +2125,7 @@ The bead filter bar and its mobile sheet SHALL offer a "Kind" select (All, Capab
 - THEN there is no "Capability" filter
 
 ### REQ-UI-109: Kind, capabilities and estimate in the Beads views
-The frontend SHALL show a "Technical" or "Parity" badge for an epic of that kind, and no kind badge for a capability epic, on its List row, its Board and Focus card, its bead page and its Gantt label; SHALL show the bead's capabilities as chips on its bead page; SHALL show "Estimate <n>d" on the bead page of a bead with `estimate_minutes`, counting 480 minutes as one working day and rounding to one decimal; and SHALL show on an epic's List row its complexity (REQ-UI-028) and estimate as "<complexity> · <n>d", or either alone, among the items that give way before the title (REQ-UI-044).
+The frontend SHALL show a "Technical" or "Parity" badge for an epic of that kind, and no kind badge for a capability epic, on its List row, its Board and Focus card, its bead page and its Gantt label; SHALL show the bead's capabilities as chips on its bead page; SHALL show "Estimate <n>d" on the bead page of a bead with `estimate_minutes`, counting 480 minutes as one working day and rounding to one decimal, and "Points <p>" with its `points_reason` on the bead page of a bead with `points`; and SHALL show on an epic's List row its complexity (REQ-UI-028) and size as "<complexity> · <p> pt" when it has `points`, else "<complexity> · <n>d", or either part alone, among the items that give way before the title (REQ-UI-044).
 
 #### Scenario: Technical epic
 - GIVEN technical epic `e-1` with capabilities `beads` and `ui`, complexity `medium` and `estimate_minutes: 1440`
@@ -2128,3 +2141,8 @@ The frontend SHALL show a "Technical" or "Parity" badge for an epic of that kind
 - GIVEN a task with `estimate_minutes: 240`
 - WHEN its bead page is shown
 - THEN it shows "Estimate 0.5d"
+
+#### Scenario: Pointed epic
+- GIVEN epic `e-3` with complexity `medium`, `points: 5` and `points_reason: "new endpoint and UI"`, and epic `e-4` with `points: 3` and no complexity
+- WHEN their List rows and the bead page of `e-3` are shown
+- THEN `e-3`'s row shows "medium · 5 pt", `e-4`'s shows "3 pt", and the bead page of `e-3` shows "Points 5" and "new endpoint and UI"
