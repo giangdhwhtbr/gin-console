@@ -192,6 +192,42 @@ function inPage() {
     }
   }
 
+  // crowd: two texts of different layout items on one line that touch (gap under 2px) run together, like the
+  // Gantt day numbers "10111213". Only flex/grid items, absolutely positioned labels and SVG <text> count: words of one
+  // sentence (inline elements, inline code, "P1" inside a line of text) are one text flow and may touch, and
+  // texts without a letter or digit are separators.
+  const layoutItem = (el) => {
+    if (el instanceof SVGTextElement) return true; // each <text> is placed on its own (graph labels, axis ticks)
+    const s = cs(el);
+    if (s.position === "absolute" || s.position === "fixed") return true;
+    const p = el.parentElement && cs(el.parentElement);
+    return !!p && /flex|grid/.test(p.display) && s.display !== "inline";
+  };
+  for (let i = 0; i < runs.length; i++) {
+    for (let j = i + 1; j < runs.length; j++) {
+      const A = runs[i], B = runs[j];
+      if (A.el.contains(B.el) || B.el.contains(A.el) || sameLayer(A.el, B.el)) continue;
+      if (!layoutItem(A.el) || !layoutItem(B.el)) continue;
+      if (!/[\p{L}\p{N}]/u.test(A.text) || !/[\p{L}\p{N}]/u.test(B.text)) continue; // a separator ("·", "/") belongs to its neighbours
+      let best = null;
+      for (const ra of A.rects) for (const rb of B.rects) {
+        const v = Math.min(ra.b, rb.b) - Math.max(ra.t, rb.t);
+        if (v < 0.5 * Math.min(ra.b - ra.t, rb.b - rb.t)) continue;
+        const gap = Math.max(ra.l, rb.l) - Math.min(ra.r, rb.r);
+        if (gap >= -1.5 && gap < 2 && (!best || gap < best.gap)) {
+          const m = (Math.max(ra.l, rb.l) + Math.min(ra.r, rb.r)) / 2;
+          best = { gap, l: m - 1, r: m + 1, t: Math.max(ra.t, rb.t), b: Math.min(ra.b, rb.b) };
+        }
+      }
+      if (!best || !visibleTogether(best, [A.el, B.el])) continue;
+      findings.push({
+        kind: "crowd", text: short(A.text), other: short(B.text), selector: path(A.el) + "  x  " + path(B.el),
+        detail: `${best.gap.toFixed(1)}px between them at (${Math.round(best.l)}, ${Math.round(best.t)})`,
+        box: best,
+      });
+    }
+  }
+
   // shapes: svg fills, gantt lines and bars
   const shapes = [];
   for (const el of document.querySelectorAll("svg rect, svg path, svg circle, svg ellipse, svg polygon")) {

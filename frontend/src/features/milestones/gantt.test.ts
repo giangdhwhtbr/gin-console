@@ -11,6 +11,7 @@ import {
   endOf,
   fitDayWidth,
   isoOf,
+  labelledDays,
   labelWidthOf,
   markerSides,
   middleOf,
@@ -274,5 +275,56 @@ describe("gantt", () => {
     // only spec_not_ready drops it: spec_due and the other warnings keep it
     const due = [{ code: "spec_due", days: null, count: null }, { code: "late", days: null, count: null }];
     expect(showsSpec(epicPlan("a", { spec_confirmed: false, warnings: due }))).toBe(true);
+  });
+});
+
+describe("labelledDays (REQ-UI-110, REQ-MILESTONE-UI-013)", () => {
+  const plan = detail([], { start: "2026-11-02", end: "2026-12-04", schedule_start: "2026-11-02", finish: null });
+  const need = 2 * 6.5 + 6;
+  const shown = (width: number) => {
+    const axis = axisOf(plan, width);
+    const set = labelledDays(axis);
+    return { axis, set, cols: axis.columns.filter((c) => set.has(c.day)) };
+  };
+
+  it("labels every working day when a column fits a number and a gap", () => {
+    const { axis, set } = shown(20);
+    expect(set.size).toBe(axis.columns.filter((c) => !c.weekend).length);
+  });
+
+  for (let width = 8; width <= 60; width += 1) {
+    it(`keeps the numbers apart at a ${width}px column`, () => {
+      const { axis, cols } = shown(width);
+      expect(cols.length).toBeGreaterThan(0);
+      expect(cols.every((c) => !c.weekend)).toBe(true);
+      const working = axis.columns.filter((c) => !c.weekend);
+      for (const [i, c] of working.entries()) {
+        if (i === 0 || c.iso.slice(0, 7) !== working[i - 1].iso.slice(0, 7)) expect(cols.map((x) => x.day)).toContain(c.day);
+      }
+      const labelWidth = width >= 56 ? 6 * 6.5 + 6 : need;
+      for (let i = 1; i < cols.length; i += 1) {
+        const gap = cols[i].x + cols[i].width / 2 - (cols[i - 1].x + cols[i - 1].width / 2);
+        expect(gap).toBeGreaterThanOrEqual(labelWidth);
+      }
+    });
+  }
+
+  it("thins out step by step as columns narrow", () => {
+    const counts = [60, 20, 18, 12, 9, 8].map((w) => shown(w).cols.length);
+    for (let i = 1; i < counts.length; i += 1) expect(counts[i]).toBeLessThanOrEqual(counts[i - 1]);
+    expect(counts[2]).toBeLessThan(counts[1]);
+  });
+
+  it("labels Mondays only when every 2nd day does not fit", () => {
+    const { cols } = shown(8);
+    expect(cols.filter((c) => new Date(c.day * 86_400_000).getUTCDay() !== 1).every((c) => c.iso.endsWith("-01") || c.iso === "2026-12-01")).toBe(true);
+  });
+
+  it("keeps the first working day of each month", () => {
+    for (const width of [8, 12, 18]) {
+      const { set } = shown(width);
+      expect(set.has(dayOf("2026-11-02"))).toBe(true);
+      expect(set.has(dayOf("2026-12-01"))).toBe(true);
+    }
   });
 });

@@ -70,6 +70,30 @@ export const sortEpics = (epics: readonly EpicPlan[]) =>
     (a, b) => a.planned_start.localeCompare(b.planned_start) || a.planned_end.localeCompare(b.planned_end) || a.id.localeCompare(b.id),
   );
 
+/** Space kept free between two day numbers (REQ-UI-110: texts that touch run together). */
+export const LABEL_GAP = 6;
+const DIGIT_WIDTH = 6.5; // an 11px tabular digit, rounded up
+
+/**
+ * The days of the header that get a number (REQ-MILESTONE-UI-013): every working day when its column fits a
+ * two-digit number plus LABEL_GAP, else every 2nd working day, else Mondays (always at least `need` apart, so no further step).
+ * The first working day of each month is always labelled; a number that would then sit closer than the gap to it is dropped.
+ */
+export function labelledDays(axis: Axis): Set<number> {
+  const working = axis.columns.filter((c) => !c.weekend);
+  const dayWidth = working[0]?.width ?? 0;
+  const need = (working.length > 0 && dayWidth >= 56 ? 6 : 2) * DIGIT_WIDTH + LABEL_GAP; // "Mon 9" is wider
+  const mondays = working.filter((c) => new Date(c.day * DAY_MS).getUTCDay() === 1);
+  let shown: Column[];
+  if (dayWidth >= need) shown = working;
+  else if (2 * dayWidth >= need) shown = working.filter((_, i) => i % 2 === 0);
+  else shown = mondays; // Monday to Monday is 5 columns and a weekend: over 56px at the narrowest column
+  const centre = (c: Column) => c.x + c.width / 2;
+  const firsts = working.filter((c, i) => i === 0 || c.iso.slice(0, 7) !== working[i - 1].iso.slice(0, 7));
+  const kept = shown.filter((c) => firsts.every((f) => f.day === c.day || Math.abs(centre(f) - centre(c)) >= need));
+  return new Set([...kept, ...firsts].map((c) => c.day));
+}
+
 export type Month = { key: string; label: string; x: number; width: number };
 
 export function monthsOf(axis: Axis, today: string): Month[] {
