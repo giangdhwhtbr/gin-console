@@ -29,6 +29,13 @@ export function ClosedPerDayChart({
   const endMarked = last > milestone.end && days.some((d) => d.date === milestone.end);
   const markerOf = (day: DayRow): string | null =>
     day.date === today ? "Today" : endMarked && day.date === milestone.end ? `End ${formatDate(day.date)}` : null;
+  // a marker within 5 columns of the one before it goes on a second row above the plot, so two labels never overlap
+  const markers = days.flatMap((day, index) => {
+    const text = markerOf(day);
+    return text === null ? [] : [{ text, index }];
+  });
+  const rowOf = (k: number) => (k > 0 && markers[k].index - markers[k - 1].index < 5 ? 1 : 0);
+  const stacked = markers.some((_, k) => rowOf(k) === 1);
   // labels sit in a layer over the columns, so one wider than a column does not spill out of it; the first and the last
   // columns align their label to the chart edge so it stays inside
   const placeOf = (index: number): CSSProperties =>
@@ -46,7 +53,7 @@ export function ClosedPerDayChart({
           ))}
         </ul>
       </div>
-      <div className="relative h-52 pl-8">
+      <div className={cn("relative h-52 pl-8", stacked && "mt-4")}>
         <div aria-hidden className="absolute inset-y-0 left-0 right-0 bottom-5 top-2">
           {ticks.map((tick) => (
             <div key={tick} className="absolute inset-x-0 border-t border-border" style={{ bottom: `${(tick / max) * 100}%` }}>
@@ -102,15 +109,14 @@ export function ClosedPerDayChart({
           })}
         </ol>
         <div aria-hidden className="pointer-events-none absolute inset-y-0 left-8 right-0">
+          {markers.map(({ text, index }, k) => (
+            <span key={text} className="absolute whitespace-nowrap text-xs" style={{ ...placeOf(index), top: rowOf(k) === 0 ? 0 : "-1rem" }}>
+              {text}
+            </span>
+          ))}
           {days.map((day, index) => {
-            const marker = markerOf(day);
             return (
               <Fragment key={day.date}>
-                {marker !== null && (
-                  <span className="absolute top-0 whitespace-nowrap text-xs" style={placeOf(index)}>
-                    {marker}
-                  </span>
-                )}
                 {(isMonday(day.date) || index === 0) && (
                   <span className="absolute bottom-0 whitespace-nowrap text-xs text-muted-foreground" style={placeOf(index)}>
                     {formatDate(day.date)}

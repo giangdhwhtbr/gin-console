@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { formatDays, formatPercent } from "../format";
 import type { MemberFigures, TeamFigures as Figures, TeamMilestone, TeamTotals } from "../teamApi";
@@ -13,6 +14,7 @@ function Cell({ label, aside, value, sub, warnValue = false, warnSub = false }: 
   warnValue?: boolean;
   warnSub?: boolean;
 }) {
+  const parts = sub.split(" · ");
   return (
     <div className="flex flex-col gap-1 p-3">
       <span className="text-xs text-muted-foreground">
@@ -20,10 +22,20 @@ function Cell({ label, aside, value, sub, warnValue = false, warnSub = false }: 
         {aside !== undefined && <span className="ml-1">{aside}</span>}
       </span>
       <span className={cn("text-2xl font-semibold", warnValue && WARN)}>{value}</span>
-      <span className={cn("flex flex-wrap gap-x-3 text-xs text-muted-foreground", warnSub && WARN)}>
-        {sub.split(" · ").map((part) => (
-          <span key={part}>{part}</span>
-        ))}
+      <span className={cn("flex flex-wrap text-xs text-muted-foreground", warnSub && WARN)}>
+        {parts.map((part, i) => {
+          // joined facts ("3 blocked · 8 unclaimed") get a strong number; a single line stays plain text
+          const [, count = "", rest = part] = (parts.length > 1 ? /^(\d+(?:\.\d+)?)(.*)$/.exec(part) : null) ?? [];
+          return (
+            <Fragment key={part}>
+              {i > 0 && <span className="whitespace-pre"> · </span>}
+              <span>
+                {count !== "" && <b className="font-semibold">{count}</b>}
+                {rest}
+              </span>
+            </Fragment>
+          );
+        })}
       </span>
     </div>
   );

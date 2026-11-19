@@ -66,4 +66,10 @@ describe("ClosedPerDayChart", () => {
     expect(future.querySelectorAll("[aria-hidden] > span")).toHaveLength(1);
     expect(future.querySelector("[aria-hidden] > span")).toHaveClass("h-0.5");
   });
+
+  it("REQ-UI-110 Today and End within three columns are on separate rows", () => {
+    const near: DayRow[] = ["2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12"].map((date) => ({ date, closed: {} }));
+    render(<ClosedPerDayChart {...base} days={near} milestone={{ ...active, end: "2026-11-10" }} />);
+    expect(screen.getByText("End 10 Nov").style.top).not.toBe(screen.getByText("Today").style.top);
+  });
 });

@@ -18,7 +18,10 @@ export function TabStrip({ children }: { children: ReactNode }) {
     update();
     list.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    observer?.observe(list);
     return () => {
+      observer?.disconnect();
       list.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
