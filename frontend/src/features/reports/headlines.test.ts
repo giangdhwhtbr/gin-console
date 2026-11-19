@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { figures, gapCount, headlines, teamHeadline } from "./headlines";
+import { figures, gapCount, headlines, teamHeadline, velocityHeadline } from "./headlines";
 import { teamReport, teamTotals } from "./team/teamFixtures";
 import { report } from "./reportFixtures";
 
@@ -7,6 +7,11 @@ const base = report();
 const bead = (id: string) => ({ project: "alpha", id, title: id, detail: "" });
 
 describe("report headlines", () => {
+  it("REQ-UI-095 velocity headline", () => {
+    expect(velocityHeadline({ value: 1.44, measured_epics: 6, assumed: false })).toEqual({ text: "1.4 d/pt", warn: false });
+    expect(velocityHeadline({ value: 1, measured_epics: 0, assumed: true })).toEqual({ text: "1.0 d/pt assumed", warn: false });
+    expect(velocityHeadline(null)).toBeNull();
+  });
   it("REQ-UI-095 headlines", () => {
     const r = report({
       totals: { ...base.totals, closed: 41, tokens: 12_400_000, cost: 38.2, rework_rate: 0.09 },

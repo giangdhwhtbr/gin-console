@@ -1,9 +1,10 @@
 import { TriangleAlert } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
+import type { DaysPerPoint } from "@/features/milestones/api";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { cn } from "@/lib/utils";
 import { fetchReport, type Report } from "./api";
@@ -11,11 +12,12 @@ import { PERIODS, TABS, parseReportSearch, reportSearch, type ReportFilters, typ
 import { CoverageSection } from "./CoverageSection";
 import { DeliverySection } from "./DeliverySection";
 import { Figures } from "./Figures";
-import { figures, headlines, teamHeadline, type Headline } from "./headlines";
+import { figures, headlines, teamHeadline, velocityHeadline, type Headline } from "./headlines";
 import { QualitySection } from "./QualitySection";
 import { TeamSection } from "./team/TeamSection";
 import { fetchTeam, type TeamReport } from "./teamApi";
 import { UsageSection } from "./UsageSection";
+import { VelocityTab } from "./velocity/VelocityTab";
 
 type Projects =
   | { status: "loading" }
@@ -27,7 +29,7 @@ type Loaded = { status: "loading" } | Settled;
 type SettledTeam = { status: "error"; message: string } | { status: "ok"; report: TeamReport };
 type LoadedTeam = { status: "loading" } | SettledTeam;
 
-const LABELS: Record<ReportTab, string> = { team: "Team", delivery: "Delivery", usage: "AI usage", quality: "Quality", coverage: "Data coverage" };
+const LABELS: Record<ReportTab, string> = { team: "Team", delivery: "Delivery", velocity: "Velocity", usage: "AI usage", quality: "Quality", coverage: "Data coverage" };
 const hintOf = (h: Headline) => (
   <span className={cn("inline-flex items-center gap-1", h.warn && "text-state-blocked")}>
     {h.warn && <TriangleAlert aria-hidden className="size-3.5" />}
@@ -43,6 +45,7 @@ export function ReportsPage() {
   const [attempt, setAttempt] = useState(0);
   const [settledTeam, setSettledTeam] = useState<{ base: string; requested: string; value: SettledTeam } | null>(null);
   const [teamAttempt, setTeamAttempt] = useState(0);
+  const [daysPerPoint, setDaysPerPoint] = useState<{ project: string; value: DaysPerPoint | null } | null>(null);
   const { search } = useLocation();
   const filters = parseReportSearch(search);
 
@@ -56,6 +59,8 @@ export function ReportsPage() {
   const names = projects.status === "ok" ? projects.names : [];
   const selected = filters.project === "all" || names.includes(filters.project) ? filters.project : (names[0] ?? "");
   const { days, sprint, tab } = filters;
+  // the Velocity tab asks for the Milestones lists only once it is selected; its headline stays after that
+  const onDaysPerPoint = useCallback((project: string, value: DaysPerPoint | null) => setDaysPerPoint({ project, value }), []);
 
   // an answer counts only for the request it was made for, so a change of filters shows "loading" without a reset
   const key = JSON.stringify([selected, days, sprint, attempt]);
@@ -118,6 +123,10 @@ export function ReportsPage() {
   }, [selected, days, sprint, key]);
 
   const hintFor = (value: ReportTab) => {
+    if (value === "velocity") {
+      const h = selected === "all" || daysPerPoint === null || daysPerPoint.project !== selected ? null : velocityHeadline(daysPerPoint.value);
+      return h === null ? undefined : hintOf(h);
+    }
     if (value === "team") return teamReport === null ? undefined : hintOf(teamHeadline(teamReport));
     return loaded.status === "ok" ? hintOf(headlines(loaded.report)[value]) : undefined;
   };
@@ -163,7 +172,7 @@ export function ReportsPage() {
       {projects.status === "ok" && names.length === 0 && <p className="text-muted-foreground">No projects configured.</p>}
       {selected !== "" && (
         <>
-          {tab !== "team" && loaded.status === "ok" && loaded.report.errors.length > 0 && (
+          {tab !== "team" && tab !== "velocity" && loaded.status === "ok" && loaded.report.errors.length > 0 && (
             <Alert>
               <AlertTitle>Some projects could not be read</AlertTitle>
               <AlertDescription>
@@ -203,6 +212,8 @@ export function ReportsPage() {
                 )}
                 {teamReport !== null && <TeamSection project={selected} report={teamReport} filters={filters} onChange={change} />}
               </>
+            ) : tab === "velocity" ? (
+              <VelocityTab projects={selected === "all" ? names : [selected]} onDaysPerPoint={onDaysPerPoint} />
             ) : (
               <>
               <div className="flex flex-wrap items-center gap-3">

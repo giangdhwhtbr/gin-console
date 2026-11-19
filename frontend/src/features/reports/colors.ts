@@ -17,3 +17,11 @@ export function present(order: readonly string[], seen: Iterable<string>): strin
   const set = new Set(seen);
   return [...order.filter((name) => set.has(name)), ...[...set].filter((name) => !order.includes(name))];
 }
+
+/** Velocity tab series: one color per series, never shared between its two charts. */
+export const VELOCITY_COLORS = {
+  committed: "var(--series-1)",
+  completed: "var(--series-2)",
+  daysPerPoint: "var(--series-3)",
+  planned: "var(--series-4)",
+} as const;

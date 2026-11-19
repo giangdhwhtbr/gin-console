@@ -1,7 +1,7 @@
 export type Period = 7 | 30 | 90;
 export const PERIODS: readonly Period[] = [7, 30, 90];
-export type ReportTab = "team" | "delivery" | "usage" | "quality" | "coverage";
-export const TABS: readonly ReportTab[] = ["team", "delivery", "usage", "quality", "coverage"];
+export type ReportTab = "team" | "delivery" | "velocity" | "usage" | "quality" | "coverage";
+export const TABS: readonly ReportTab[] = ["team", "delivery", "velocity", "usage", "quality", "coverage"];
 export type BeadStatus = "open" | "in_progress" | "closed" | "all";
 export const STATUSES: readonly BeadStatus[] = ["open", "in_progress", "closed", "all"];
 export type ReportFilters = {

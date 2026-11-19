@@ -5,6 +5,9 @@ describe("report filters", () => {
   it("REQ-UI-088 parses a shared link", () => {
     expect(parseReportSearch("?project=all&days=7")).toEqual({ project: "all", days: 7, sprint: "", tab: "team", milestone: "", member: "", status: "" });
   });
+  it("REQ-UI-095 parses the velocity tab", () => {
+    expect(parseReportSearch("?tab=velocity").tab).toBe("velocity");
+  });
   it("REQ-UI-095 defaults to the team tab", () => {
     expect(parseReportSearch("?tab=quality").tab).toBe("quality");
     expect(parseReportSearch("?project=a").tab).toBe("team");
