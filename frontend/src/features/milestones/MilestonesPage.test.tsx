@@ -23,9 +23,9 @@ describe("MilestonesPage", () => {
     const row = await rowOf("Beta");
     const list_ = screen.getByRole("list", { name: "Milestones" });
     expect(list_.parentElement).toHaveClass("@container");
-    expect(row).toHaveClass("@5xl:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_6rem_9rem_7rem]");
+    expect(row).toHaveClass("@min-[60rem]:grid-cols-[8rem_minmax(0,1fr)_11rem_4rem_5.5rem_8.5rem_6rem]");
     expect(row.className).not.toMatch(/(^|\s)md:/);
-    expect(list_.firstElementChild).toHaveClass("hidden", "@5xl:grid");
+    expect(list_.firstElementChild).toHaveClass("hidden", "@min-[60rem]:grid");
     expect(list_.firstElementChild?.className).not.toMatch(/(^|\s)md:/);
   });
 

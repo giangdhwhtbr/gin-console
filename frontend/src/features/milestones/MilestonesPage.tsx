@@ -18,7 +18,7 @@ type Projects = { status: "loading" } | { status: "error"; message: string } | {
 
 const ORDER = ["active", "scheduled", "planned", "closed"];
 const rank = (status: string) => (ORDER.includes(status) ? ORDER.indexOf(status) : ORDER.length);
-const COLUMNS = "@5xl:grid-cols-[8rem_minmax(0,1fr)_11rem_5rem_6rem_9rem_7rem]";
+const COLUMNS = "@min-[60rem]:grid-cols-[8rem_minmax(0,1fr)_11rem_4rem_5.5rem_8.5rem_6rem]";
 
 export function MilestonesPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
@@ -92,7 +92,7 @@ function MilestoneTable({ project }: { project: string }) {
         </div>
       ) : (
         <ul aria-label="Milestones" className="flex flex-col divide-y rounded border bg-card">
-          <li aria-hidden className={cn("hidden gap-3 px-3 py-2 text-sm text-muted-foreground @5xl:grid", COLUMNS)}>
+          <li aria-hidden className={cn("hidden gap-3 px-3 py-2 text-sm text-muted-foreground @min-[60rem]:grid", COLUMNS)}>
             <span>Status</span>
             <span>Milestone</span>
             <span>Period</span>

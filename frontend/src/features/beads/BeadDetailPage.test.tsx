@@ -574,6 +574,13 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText(/new endpoint and UI/)).toBeInTheDocument();
   });
 
+  it("REQ-UI-109 Pointed epic: a blank reason shows Points 5 alone", async () => {
+    stubFetch(beadDetail("e-3", { issue_type: "epic", points: 5, points_reason: "  " }));
+    render(<BeadDetailPage project="alpha" id="e-3" />);
+    expect(await screen.findByText(/Points 5/)).not.toHaveTextContent("()");
+    expect(screen.getByText(/Points 5/)).not.toHaveTextContent("(");
+  });
+
   it("REQ-UI-109 Partial day: 240 minutes shows Estimate 0.5d", async () => {
     stubFetch(beadDetail("a-5", { estimate_minutes: 240 }));
     render(<BeadDetailPage project="alpha" id="a-5" />);
