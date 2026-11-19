@@ -1,6 +1,6 @@
 # TC-UI-136: Partial day
 
-- **REQ:** REQ-UI-109@c5b34f38
+- **REQ:** REQ-UI-109@c2b6a5c4
 - **Priority:** medium
 
 **Preconditions:**

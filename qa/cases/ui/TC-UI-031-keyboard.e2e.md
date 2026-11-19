@@ -1,6 +1,6 @@
 # TC-UI-031: Keyboard
 
-- **REQ:** REQ-UI-095@bd16d69a
+- **REQ:** REQ-UI-095@04f9b5dd
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,4 +13,4 @@
 1. Press Right
 
 **Expected:**
-- The AI usage tab is selected and has focus
+- The Velocity tab is selected and has focus
