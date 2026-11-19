@@ -16,6 +16,7 @@ import { figures, headlines, teamHeadline, velocityHeadline, type Headline } fro
 import { QualitySection } from "./QualitySection";
 import { TeamSection } from "./team/TeamSection";
 import { fetchTeam, type TeamReport } from "./teamApi";
+import { TabStrip } from "./TabStrip";
 import { UsageSection } from "./UsageSection";
 import { VelocityTab } from "./velocity/VelocityTab";
 
@@ -186,16 +187,18 @@ export function ReportsPage() {
               </AlertDescription>
             </Alert>
           )}
-          <Tabs
-            label="Report"
-            tab={tab}
-            onChange={(next) => change({ ...filters, project: selected, tab: next })}
-            tabs={TABS.map((value) => ({
-              value,
-              label: LABELS[value],
-              hint: hintFor(value),
-            }))}
-          />
+          <TabStrip>
+            <Tabs
+              label="Report"
+              tab={tab}
+              onChange={(next) => change({ ...filters, project: selected, tab: next })}
+              tabs={TABS.map((value) => ({
+                value,
+                label: LABELS[value],
+                hint: hintFor(value),
+              }))}
+            />
+          </TabStrip>
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-6">
             {tab === "team" ? (
               <>

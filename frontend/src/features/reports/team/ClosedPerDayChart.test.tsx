@@ -32,12 +32,14 @@ describe("ClosedPerDayChart", () => {
   it("REQ-REPORTS-014 markers", () => {
     const todayDays = [...days, { date: "2026-11-12", closed: {} }];
     const { unmount } = render(<ClosedPerDayChart {...base} days={todayDays} />);
-    expect(screen.getByText("Today").closest("li")).toHaveAttribute("aria-label", expect.stringContaining("12 Nov"));
+    expect(screen.getByText("Today")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^12 Nov:/)).toHaveClass("border-l");
     expect(screen.queryByText(/^End /)).toBeNull();
     unmount();
     const past: DayRow[] = [{ date: "2026-10-30", closed: {} }, { date: "2026-11-02", closed: { ann: 1 } }];
     render(<ClosedPerDayChart {...base} days={past} milestone={closedMilestone} />);
-    expect(screen.getByText("End 30 Oct").closest("li")).toHaveAttribute("aria-label", expect.stringContaining("30 Oct"));
+    expect(screen.getByText("End 30 Oct")).toBeInTheDocument();
+    expect(screen.getByLabelText(/^30 Oct:/)).toHaveClass("border-r");
     expect(screen.queryByText("Today")).toBeNull();
   });
 

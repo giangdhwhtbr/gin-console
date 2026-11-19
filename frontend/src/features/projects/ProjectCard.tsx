@@ -1,4 +1,5 @@
 import { Link } from "@/app/Link";
+import { TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useId, useState } from "react";
 import { isBlockError, pullOf, type Beads, type Epic, type Project, type Workflow } from "./api";
@@ -125,9 +126,16 @@ function BeadsBlock({ beads, projectName }: { beads: Beads; projectName: string 
   return (
     <div className="flex flex-col gap-2 text-sm">
       <div className="flex flex-wrap gap-3">
-        {counts.map(([label, count]) => (
-          <span key={label}>{`${label} ${count}`}</span>
-        ))}
+        {counts.map(([label, count]) =>
+          label === "blocked" && count > 0 ? (
+            <span key={label} className="inline-flex items-center gap-1 font-medium text-state-blocked">
+              <TriangleAlert aria-hidden className="size-3.5" />
+              {`${label} ${count}`}
+            </span>
+          ) : (
+            <span key={label}>{`${label} ${count}`}</span>
+          ),
+        )}
       </div>
       {beads.epics.length === 0 ? (
         <p className="text-muted-foreground">no active epics</p>

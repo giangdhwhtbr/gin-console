@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { navigate } from "@/app/route";
@@ -408,5 +408,30 @@ describe("ReportsPage", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.getByText("Closed · 2 d late")).toBeInTheDocument();
     expect(screen.queryByText("working day 9 of 20 · 11 left")).not.toBeInTheDocument();
+  });
+
+  it("REQ-UI-095 Hidden tabs are hinted", async () => {
+    const size = (el: HTMLElement, values: Record<string, number>) =>
+      Object.entries(values).forEach(([key, value]) => Object.defineProperty(el, key, { configurable: true, writable: true, value }));
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    const list = await screen.findByRole("tablist", { name: "Report" });
+    const fades = () => ({ left: screen.queryByTestId("tabs-fade-left"), right: screen.queryByTestId("tabs-fade-right") });
+    // wide window: everything fits
+    size(list, { clientWidth: 900, scrollWidth: 900, scrollLeft: 0 });
+    fireEvent.resize(window);
+    expect(fades().left).toBeNull();
+    expect(fades().right).toBeNull();
+    // 768px: the right tabs are hidden
+    size(list, { clientWidth: 700, scrollWidth: 900, scrollLeft: 0 });
+    fireEvent.resize(window);
+    expect(fades().left).toBeNull();
+    expect(fades().right).not.toBeNull();
+    // scrolled to the end: right fade gone, left shown
+    size(list, { scrollLeft: 200 });
+    fireEvent.scroll(list);
+    expect(fades().right).toBeNull();
+    expect(fades().left).not.toBeNull();
   });
 });

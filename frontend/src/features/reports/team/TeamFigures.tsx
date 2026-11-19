@@ -17,7 +17,7 @@ function Cell({ label, aside, value, sub, warnValue = false, warnSub = false }: 
     <div className="flex flex-col gap-1 p-3">
       <span className="text-xs text-muted-foreground">
         {label}
-        {aside !== undefined && <span className="ml-1 opacity-70">{aside}</span>}
+        {aside !== undefined && <span className="ml-1">{aside}</span>}
       </span>
       <span className={cn("text-2xl font-semibold", warnValue && WARN)}>{value}</span>
       <span className={cn("text-xs text-muted-foreground", warnSub && WARN)}>{sub}</span>

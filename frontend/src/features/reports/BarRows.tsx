@@ -15,7 +15,9 @@ export function BarRows({ rows }: { rows: BarRow[] }) {
           aria-label={`${row.key}: ${row.detail}`}
           className="group relative grid grid-cols-[6rem_1fr] items-center gap-2 rounded focus-visible:outline-2 focus-visible:outline-ring"
         >
-          <span aria-hidden title={row.key} className="truncate text-right text-sm">{row.key}</span>
+          <span aria-hidden className="min-w-0 overflow-hidden text-sm">
+            <span title={row.key} className="block truncate text-right">{row.key}</span>
+          </span>
           <span aria-hidden className="flex min-w-0 items-center gap-2">
             <span className="flex h-4 overflow-hidden rounded-sm" style={{ width: `${(sumOf(row) / max) * 85}%` }}>
               {row.segments
