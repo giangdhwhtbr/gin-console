@@ -75,4 +75,10 @@ describe("MarkdownView", () => {
       "",
     ]);
   });
+
+  it("REQ-UI-110 a long URL breaks inside the description instead of spilling", () => {
+    const url = "https://github.com/Qwikfoneoffice/QwikFone_Office_Backend/pull/263";
+    const { container } = render(<MarkdownView text={`PR opened: ${url}`} />);
+    expect(container.firstElementChild?.className).toContain("[overflow-wrap:anywhere]");
+  });
 });

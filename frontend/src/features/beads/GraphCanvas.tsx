@@ -3,7 +3,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { GraphNodeButton } from "./GraphNode";
-import { chainOf, edgeKey, edgePath, NODE, place, step, type Graph, type StepKey } from "./graph";
+import { chainOf, edgeKey, edgePath, linkLabels, NODE, place, step, type Graph, type StepKey } from "./graph";
 
 const KEYS: readonly StepKey[] = ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"];
 export const ZOOM = { min: 0.4, max: 2, step: 0.1 } as const;
@@ -51,6 +51,7 @@ export function GraphCanvas({
     return () => el.removeEventListener("wheel", wheel);
   }, []);
 
+  const labels = linkLabels(graph, at);
   const group = graph.nodes.filter((n) => n.group === "unlinked");
   const groupTop = group.length === 0 ? null : (at.get(group[0].bead.id)?.y ?? 0) - NODE.head;
   const chain = at.has(selected) ? chainOf(graph, selected) : null;
@@ -99,15 +100,16 @@ export function GraphCanvas({
                 const from = at.get(edge.from);
                 const to = at.get(edge.to);
                 if (from === undefined || to === undefined) return null;
+                const label = labels.get(edgeKey(edge));
                 const hot = chain?.edges.has(edgeKey(edge)) ?? false;
                 const faded = chain !== null && !hot;
                 return (
                   <g key={edgeKey(edge)} className={cn("transition-opacity motion-reduce:transition-none", hot && "text-foreground", faded && "opacity-30")}>
                     <path d={edgePath(from, to)} fill="none" stroke="currentColor" strokeWidth={hot ? 2 : 1} markerEnd="url(#graph-arrow)" />
-                    {edge.links.length > 1 && (
+                    {label !== undefined && (
                       <text
-                        x={(from.x + to.x) / 2 + NODE.w / 2}
-                        y={(from.y + NODE.h + to.y) / 2}
+                        x={label.x}
+                        y={label.y}
                         textAnchor="middle"
                         className="fill-current text-[10px]"
                       >

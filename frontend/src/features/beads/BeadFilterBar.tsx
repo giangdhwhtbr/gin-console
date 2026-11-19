@@ -73,7 +73,7 @@ export function BeadFilterBar({
       </div>
 
       {/* Desktop view: individual button popovers */}
-      <div className="hidden md:flex flex-wrap items-center gap-2">
+      <div className="hidden md:flex min-w-0 max-w-full flex-wrap items-center gap-2">
         <MultiSelectPopover
           label="Status"
           values={filters.status}

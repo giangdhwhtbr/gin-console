@@ -392,3 +392,23 @@ export function edgePath(from: Placed, to: Placed): string {
   const mid = (y1 + y2) / 2;
   return `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
 }
+
+export const LINK_LABEL = { w: 48, h: 12 } as const;
+
+/**
+ * Where each "n links" label of the multi-link edges is drawn: the middle of the edge, moved down by one
+ * label height for as long as it would sit over a label already placed, so two labels never overlap.
+ */
+export function linkLabels(graph: Graph, at: ReadonlyMap<string, Placed>): Map<string, Placed> {
+  const spots = new Map<string, Placed>();
+  for (const edge of graph.edges) {
+    const from = at.get(edge.from);
+    const to = at.get(edge.to);
+    if (from === undefined || to === undefined || edge.links.length < 2) continue;
+    const x = (from.x + to.x) / 2 + NODE.w / 2;
+    let y = (from.y + NODE.h + to.y) / 2;
+    while ([...spots.values()].some((s) => Math.abs(s.x - x) < LINK_LABEL.w && Math.abs(s.y - y) < LINK_LABEL.h)) y += LINK_LABEL.h;
+    spots.set(edgeKey(edge), { x, y });
+  }
+  return spots;
+}

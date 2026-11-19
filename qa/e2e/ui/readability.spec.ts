@@ -27,7 +27,7 @@ const b = (id: string, o: object = {}) =>
 
 const beads = [
   b('ex-e1', { title: 'Onboarding revamp', issue_type: 'epic', status: 'closed', milestone: 'ex-m1', points: 8, closed_at: '2026-10-20T00:00:00Z' }),
-  b('ex-e2', { title: 'Search relevance', issue_type: 'epic', status: 'in_progress', milestone: 'ex-m2', points: 13, assignee: 'qa', kind: 'capability' }),
+  b('ex-e2', { title: 'Search relevance', issue_type: 'epic', status: 'in_progress', milestone: 'ex-m2', points: 13, assignee: 'qa', kind: 'capability', capabilities: ['export-state-json-v2'], labels: ['sprint:s1'] }),
   b('ex-e3', { title: 'Billing exports for finance', issue_type: 'epic', status: 'open', milestone: 'ex-m2', points: 5, kind: 'technical', complexity: 'high', ready: true }),
   b('ex-e4', { title: 'Mobile push notifications', issue_type: 'epic', status: 'open', milestone: 'ex-m2', points: 21, kind: 'parity', blocked: true, blocked_by: ['ex-e2'] }),
   b(LONG_ID, { title: LONG_TITLE, issue_type: 'epic', status: 'open', milestone: 'ex-m2', points: 3, labels: ['payments', 'migration', 'finance-ops-long-label'], assignee: LONG_MEMBER }),
@@ -42,7 +42,7 @@ const beads = [
 const options = [
   milestoneOption('ex-m1', { title: 'Foundations', status: 'closed', start: '2026-09-28', end: '2026-10-30' }),
   milestoneOption('ex-m2', { title: 'Beta readiness for the regional launch', status: 'active', start: '2026-11-02', end: '2026-11-27' }),
-  milestoneOption('ex-m3', { title: 'General availability', status: 'planned', start: '2026-11-30', end: '2026-12-18' }),
+  milestoneOption('ex-m3', { title: 'General availability of every regional launch, the migration cutover and the legacy decommission programme', status: 'planned', start: '2026-11-30', end: '2026-12-18' }),
 ];
 
 const TODAY = '2026-11-12';
