@@ -649,4 +649,67 @@ describe("BeadDetailPage", () => {
     expect(await screen.findByText("In progress")).toBeInTheDocument();
     expect(screen.queryByText("in_progress")).toBeNull();
   });
+
+  it("REQ-UI-115 Facts and Chip in every view (bead page)", async () => {
+    stubFetch(
+      beadDetail("a-5", {
+        lane: "be",
+        track: { plan: "docs/plans/2026-11-17-team-checkout.md", number: 2 },
+        claim: { holder: "w", expires_at: "2999-01-01T00:00:00Z" },
+        labels: ["lane:be", "track:2", "urgent"],
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    const h1 = await screen.findByRole("heading", { name: "Title a-5" });
+    const header = h1.parentElement!;
+    expect(within(header).getByTitle("Lane be")).toBeInTheDocument();
+    expect(within(header).getByText("urgent")).toBeInTheDocument();
+    expect(within(header).queryByText("lane:be")).toBeNull();
+    expect(within(header).queryByText("track:2")).toBeNull();
+    expect(within(header).getByText("Lane").nextElementSibling).toHaveTextContent("be");
+    expect(within(header).getByText("Track").nextElementSibling).toHaveTextContent("#2 2026-11-17-team-checkout.md");
+    expect(within(header).getByText("Lease").nextElementSibling).toHaveTextContent(`until ${factDate("2999-01-01T00:00:00Z")}`);
+  });
+
+  it("REQ-UI-115 Facts: an expired lease", async () => {
+    stubFetch(beadDetail("a-5", { lane: "be", claim: { holder: "w", expires_at: "2020-01-01T00:00:00Z" } }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByText(`expired ${factDate("2020-01-01T00:00:00Z")}`)).toBeInTheDocument();
+  });
+
+  it("REQ-UI-116 gate bead page", async () => {
+    stubFetch(
+      beadDetail("a-5", {
+        title: "gate placeholder",
+        waits_for: { plan: "docs/plans/p.md", number: 2, track_id: "a-2", lane: "be" },
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Waits for be #2 to merge" })).toBeInTheDocument();
+    expect(screen.getByText("Waiting")).toBeInTheDocument();
+    expect(screen.getByText("Placeholder").nextElementSibling).toHaveTextContent("gate placeholder");
+    expect(screen.getByText("Waits for").nextElementSibling).toHaveTextContent("docs/plans/p.md #2");
+  });
+
+  it("REQ-UI-116 gate bead page: merged", async () => {
+    stubFetch(beadDetail("a-5", { status: "closed", waits_for: { plan: "p.md", number: 7, track_id: null, lane: null } }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Waits for track 7 to merge" })).toBeInTheDocument();
+    expect(screen.getByText("Merged")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-116 Not counted as a child (bead page)", async () => {
+    const gate = { plan: "p.md", number: 2, track_id: null, lane: "be" };
+    stubFetch(
+      beadDetail("a-5", {
+        issue_type: "epic",
+        children: [
+          { id: "a-6", title: "T6", status: "closed", type: "parent-child", prep: false },
+          { id: "a-7", title: "gate", status: "open", type: "parent-child", prep: false, waits_for: gate },
+        ],
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByText("1 of 1 closed")).toBeInTheDocument();
+  });
 });
