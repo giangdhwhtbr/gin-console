@@ -284,8 +284,10 @@ export function laneStep(board: LaneBoard, id: string, key: LaneKey): string | n
   return best?.bead.id ?? null;
 }
 
-/** REQ-UI-114: the lines a screen reader reads, one per lane and one per merge gate. */
-export function laneSummary(board: LaneBoard): string[] {
+export type LaneLine = { key: string; text: string };
+
+/** REQ-UI-114: the lines a screen reader reads, one per lane and one per merge gate, each with a stable key. */
+export function laneLines(board: LaneBoard): LaneLine[] {
   const cards = new Map(board.rows.flatMap((r) => r.cards.map((c) => [c.bead.id, c.bead] as const)));
   const words = (bead: BeadSummary | undefined) =>
     bead === undefined ? "" : bead.track === null ? bead.id : `${laneName(bead.lane)} #${bead.track.number}`;
@@ -297,12 +299,15 @@ export function laneSummary(board: LaneBoard): string[] {
       if (row.lease !== null) parts.push(`lease ${row.lease.text}`);
     }
     parts.push(`${row.tracks.closed}/${row.tracks.total} closed`);
-    return `${laneName(row.lane)}: ${parts.join(", ")}`;
+    return { key: `lane:${row.lane ?? ""}`, text: `${laneName(row.lane)}: ${parts.join(", ")}` };
   });
   const gates = board.markers.map((m) => {
     const from = board.arrows.find((a) => a.gate?.id === m.gate.id && a.to === m.to)?.from;
     const waits = from === undefined ? (m.gate.waits_for === null ? "" : gateWords(m.gate.waits_for)) : words(cards.get(from));
-    return `${words(cards.get(m.to))} waits for ${waits}: ${m.gate.status === "closed" ? "merged" : "merge pending"}`;
+    return { key: `gate:${m.gate.id}>${m.to}`, text: `${words(cards.get(m.to))} waits for ${waits}: ${m.gate.status === "closed" ? "merged" : "merge pending"}` };
   });
   return [...lanes, ...gates];
 }
+
+/** The texts of `laneLines`. */
+export const laneSummary = (board: LaneBoard): string[] => laneLines(board).map((l) => l.text);

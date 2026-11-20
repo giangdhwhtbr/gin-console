@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { progressOf, type GraphNode, type GraphState } from "./graph";
 import { GraphNodeButton } from "./GraphNode";
-import { LANE, laneStep, laneSummary, MARKER, type LaneBoard, type LaneKey, type LaneRow, type LaneStateKind } from "./lanes";
+import { LANE, laneLines, laneStep, MARKER, type LaneBoard, type LaneKey, type LaneRow, type LaneStateKind } from "./lanes";
 import { StateWord } from "./StateMark";
 import { useLaneHeaderWidth } from "./useLaneHeaderWidth";
 
@@ -154,8 +154,8 @@ export function LanesCanvas({
         </div>
       </div>
       <ul aria-label="Lanes" className="sr-only">
-        {laneSummary(board).map((line) => (
-          <li key={line}>{line}</li>
+        {laneLines(board).map((line) => (
+          <li key={line.key}>{line.text}</li>
         ))}
       </ul>
     </div>

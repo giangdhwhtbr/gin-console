@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { e12, E12, tracks, t4 } from "./laneFixtures";
+import { bead } from "./beadFixtures";
+import { e12, E12, g2, tracks, t4 } from "./laneFixtures";
 import { lanesOf } from "./lanes";
 import { LanesCanvas } from "./LanesCanvas";
 
@@ -42,5 +43,18 @@ describe("LanesCanvas", () => {
   it("REQ-UI-114 keys: the list for screen readers has one item per lane and gate", () => {
     render(<LanesCanvas {...props} />);
     expect(screen.getByRole("list", { name: "Lanes" }).children).toHaveLength(board.rows.length + board.markers.length);
+  });
+
+  it("REQ-UI-114 two merge gates between the same tracks give two list items and no duplicate key warning", () => {
+    const twin = bead(`${E12}.11`, { parent: E12, waits_for: g2.waits_for });
+    const beads = e12.map((b) => (b.id === t4.id ? { ...b, blocked_by: [...b.blocked_by, twin.id] } : b)).concat(twin);
+    const twinBoard = lanesOf(beads, E12, new Set(tracks.map((t) => t.id)), new Date("2026-11-20T10:00:00Z"));
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    render(<LanesCanvas {...props} board={twinBoard} beads={beads} />);
+    const items = screen.getByRole("list", { name: "Lanes" }).children;
+    expect(items).toHaveLength(twinBoard.rows.length + 3);
+    expect(Array.from(items).filter((li) => li.textContent === "qa #4 waits for be #2: merge pending")).toHaveLength(2);
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
   });
 });
