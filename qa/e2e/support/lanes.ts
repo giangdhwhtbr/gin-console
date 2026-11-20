@@ -165,3 +165,114 @@ export const collisions = (g: Geometry): string[] => {
   }
   return found;
 };
+
+export type GraphGeometry = {
+  /** The lane boxes by lane name (`""` is "No lane"), with their tier row found by the caller from `y`. */
+  boxes: Record<string, Box>;
+  /** The cards by bead id. */
+  cards: Record<string, Box>;
+  /** The rectangles of the header texts (name, state, meta) of every box. */
+  texts: Box[];
+  /** The chips by gate id, with their words. */
+  chips: Record<string, Box & { text: string; kind: string }>;
+  /** Each arrow `from>to` sampled along its path, in page coordinates. */
+  arrows: Record<string, { x: number; y: number }[]>;
+};
+
+/** The lane boxes, cards, header texts, chips and sampled arrow paths of the Graph canvas, in page coordinates. */
+export const graphGeometry = (page: Page): Promise<GraphGeometry> =>
+  page.getByTestId('graph-canvas').evaluate((canvas) => {
+    const box = (r: DOMRect): Box => ({ x: r.x, y: r.y, w: r.width, h: r.height });
+    const boxes: GraphGeometry['boxes'] = {};
+    const texts: Box[] = [];
+    for (const el of canvas.querySelectorAll<HTMLElement>('section[data-lane]')) {
+      boxes[el.dataset.lane!] = box(el.getBoundingClientRect());
+      const walker = document.createTreeWalker(el.querySelector('header')!, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n !== null; n = walker.nextNode()) {
+        if ((n.textContent ?? '').trim() === '') continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        texts.push(box(range.getBoundingClientRect()));
+      }
+    }
+    const cards: GraphGeometry['cards'] = {};
+    for (const el of canvas.querySelectorAll<HTMLElement>('[data-node]')) cards[el.dataset.node!] = box(el.getBoundingClientRect());
+    const chips: GraphGeometry['chips'] = {};
+    for (const el of canvas.querySelectorAll<HTMLElement>('[data-chip]')) {
+      chips[el.dataset.chip!] = { ...box(el.getBoundingClientRect()), text: el.textContent ?? '', kind: el.dataset.kind ?? '' };
+    }
+    const arrows: GraphGeometry['arrows'] = {};
+    for (const path of canvas.querySelectorAll<SVGPathElement>('path[data-arrow]')) {
+      const m = path.getScreenCTM()!;
+      const length = path.getTotalLength();
+      const points: { x: number; y: number }[] = [];
+      const steps = Math.max(2, Math.ceil(length / 2));
+      for (let s = 0; s <= steps; s += 1) {
+        const p = path.getPointAtLength((length * s) / steps).matrixTransform(m);
+        points.push({ x: p.x, y: p.y });
+      }
+      arrows[path.dataset.arrow!] = points;
+    }
+    return { boxes, cards, texts, chips, arrows };
+  });
+
+/** Whether any sampled point of an arrow lies strictly inside the rectangle. */
+export const passesThrough = (points: { x: number; y: number }[], r: Box, by = 2): boolean => points.some((p) => inside(r, p.x, p.y, by));
+
+/** What the Graph canvas draws over something it should not: arrows or chips over cards and header texts, chips over chips. */
+export const graphCollisions = (g: GraphGeometry): string[] => {
+  const found: string[] = [];
+  const solids = [...Object.entries(g.cards), ...g.texts.map((t, i) => [`header text ${i}`, t] as const)];
+  for (const [id, points] of Object.entries(g.arrows)) {
+    for (const [name, r] of solids) if (passesThrough(points, r)) found.push(`arrow ${id} crosses ${name}`);
+  }
+  const chips = Object.entries(g.chips);
+  for (const [id, c] of chips) {
+    for (const [name, r] of solids) if (overlaps(c, r)) found.push(`chip ${id} overlaps ${name}`);
+  }
+  chips.forEach(([a, c], i) => chips.slice(i + 1).forEach(([b, d]) => overlaps(c, d) && found.push(`chip ${a} overlaps chip ${b}`)));
+  return found;
+};
+
+/** The first point of a sampled arrow is on the right of its card, the last is on the left of its card or on the top edge of a box. */
+export const endsOf = (points: { x: number; y: number }[]) => ({ start: points[0], end: points[points.length - 1] });
+export const onTopEdge = (p: { x: number; y: number }, r: Box) => Math.abs(p.y - r.y) < 2 && p.x >= r.x - 1 && p.x <= r.x + r.w + 1;
+export const within = (p: { x: number; y: number }, r: Box, slack = 2) =>
+  p.x >= r.x - slack && p.x <= r.x + r.w + slack && p.y >= r.y - slack && p.y <= r.y + r.h + slack;
+
+/** A copy of `b` that is open again. */
+export const reopen = (b: BeadSummary): BeadSummary => ({ ...b, status: 'open', closed_at: null });
+/** The ex-e12 beads of `e12()` with every closed track open (the closed merge gate ex-g3 stays), so that the Graph draws them without "Show closed". */
+export const e12Open = (): BeadSummary[] => e12().map((b) => (b.status === 'closed' && b.waits_for === null ? reopen(b) : b));
+
+/** Lane x (track 1) and lane y (track 2) that wait for each other. */
+export const loop = (): BeadSummary[] => [
+  epic(),
+  track(1, 'x', { blocked: true, blocked_by: [`${E12}.2`], dependency_count: 1 }),
+  track(2, 'y', { blocked: true, blocked_by: [`${E12}.1`], dependency_count: 1 }),
+];
+
+/** Lane qa (track 4) blocked by an open merge gate for track 7 of another plan, which is not a child of the epic. */
+export const OTHER_PLAN = '.planning/plans/other.md';
+export const externalGate = (): BeadSummary =>
+  gate('ex-g7', 7, null, null, { title: `external: ${OTHER_PLAN}#7`, waits_for: { plan: OTHER_PLAN, number: 7, track_id: null, lane: null } });
+export const external = (): BeadSummary[] => [epic(), track(4, 'qa', { blocked: true, blocked_by: ['ex-g7'], dependency_count: 1 }), externalGate()];
+
+/** Tracks 7 and 8 have no lane: track 7 is blocked by track 2 of lane be, and track 3 of lane fe by track 8. */
+export const noLaneLinks = (): BeadSummary[] =>
+  e12Open().map((b) => {
+    if (b.id === `${E12}.7`) return { ...b, blocked: true, ready: false, blocked_by: [`${E12}.2`], dependency_count: 1 };
+    if (b.id === `${E12}.3`) return { ...b, blocked: true, blocked_by: [`${E12}.8`], dependency_count: 1 };
+    return b;
+  });
+
+/** Opens the Graph of `scope` and waits for the canvas. */
+export async function openGraph(page: Page, query = ''): Promise<void> {
+  await page.goto(`/beads?project=${PROJECT}&milestone=all&view=graph&scope=${E12}${query}`);
+  await page.getByTestId('graph-canvas').waitFor();
+}
+/** Turns "Show closed" on and waits for the URL to say so. */
+export async function showClosed(page: Page): Promise<void> {
+  await page.getByRole('checkbox', { name: 'Show closed' }).check();
+  await page.waitForURL(/closed=1/);
+}

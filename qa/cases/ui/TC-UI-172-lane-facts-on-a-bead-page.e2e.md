@@ -1,6 +1,6 @@
 # TC-UI-172: Lane facts on a bead page
 
-- **REQ:** REQ-UI-115@e3b272f6
+- **REQ:** REQ-UI-115@ef4a2116
 - **Priority:** medium
 
 **Preconditions:**

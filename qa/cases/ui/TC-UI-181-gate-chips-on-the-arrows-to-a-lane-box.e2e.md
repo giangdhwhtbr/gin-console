@@ -1,6 +1,6 @@
 # TC-UI-181: Gate chips on the arrows to a lane box
 
-- **REQ:** REQ-UI-117@11c49b18
+- **REQ:** REQ-UI-117@d860e924
 - **Priority:** high
 
 **Preconditions:**

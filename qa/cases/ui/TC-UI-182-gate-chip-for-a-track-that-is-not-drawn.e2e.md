@@ -1,6 +1,6 @@
 # TC-UI-182: Gate chip for a track that is not drawn
 
-- **REQ:** REQ-UI-117@11c49b18
+- **REQ:** REQ-UI-117@d860e924
 - **Priority:** medium
 
 **Preconditions:**

@@ -185,6 +185,7 @@ const groups: Record<string, Visit[]> = {
   'beads views': ['list', 'board', 'focus', 'graph'].map(beadsView),
   'beads lanes': [
     { name: 'beads lanes', url: '/beads?project=example&milestone=all&view=lanes&scope=ex-e12', ready: async (page) => { await expect(page.getByTestId('lanes-canvas')).toBeVisible(); await expect(page.locator('[data-marker]').first()).toBeVisible(); } },
+    { name: 'beads graph lanes', url: '/beads?project=example&milestone=all&view=graph&scope=ex-e12&closed=1', ready: async (page) => { await expect(page.locator('section[data-lane]').first()).toBeVisible(); await expect(page.locator('[data-chip]').first()).toBeVisible(); } },
     { name: 'bead lane track', url: '/beads/example/ex-e12.2', ready: heading('Track 2') },
     { name: 'bead merge gate', url: '/beads/example/ex-e12.9', ready: heading(/Waits for be #2 to merge/) },
   ],

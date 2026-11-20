@@ -1,6 +1,6 @@
 # TC-UI-189: No lane box with dependencies
 
-- **REQ:** REQ-UI-117@11c49b18
+- **REQ:** REQ-UI-117@d860e924
 - **Priority:** medium
 
 **Preconditions:**
