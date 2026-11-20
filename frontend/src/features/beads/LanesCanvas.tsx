@@ -3,26 +3,17 @@ import type { KeyboardEvent } from "react";
 import { FactList, type Fact } from "@/components/FactList";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
-import { progressOf, type GraphNode, type GraphState } from "./graph";
+import { progressOf, type GraphNode } from "./graph";
 import { GraphNodeButton } from "./GraphNode";
-import { LANE, laneLines, laneStep, MARKER, type LaneBoard, type LaneKey, type LaneRow, type LaneStateKind } from "./lanes";
+import { GRAPH_STATE_OF, LANE, laneLines, laneStep, MARKER, type LaneBoard, type LaneKey, type LaneRow } from "./lanes";
 import { StateWord } from "./StateMark";
 import { useLaneHeaderWidth } from "./useLaneHeaderWidth";
 
 const KEYS: readonly LaneKey[] = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
-const STATE_OF: Record<LaneStateKind, GraphState> = {
-  closed: "done",
-  running: "in_progress",
-  waiting: "blocked",
-  blocked: "blocked",
-  not_started: "ready",
-  idle: "ready",
-};
-
 function factsOf(row: LaneRow): Fact[] {
   const tracks = { label: "Tracks", value: `${row.tracks.closed}/${row.tracks.total} closed` };
   if (row.state === null) return [tracks];
-  const facts: Fact[] = [{ label: "State", value: <StateWord state={STATE_OF[row.state.kind]} words={row.state.words} /> , title: row.state.words }];
+  const facts: Fact[] = [{ label: "State", value: <StateWord state={GRAPH_STATE_OF[row.state.kind]} words={row.state.words} /> , title: row.state.words }];
   if (row.state.kind !== "closed") {
     facts.push({ label: "Held by", value: row.holders.length > 0 ? row.holders.join(", ") : "Unclaimed" });
     if (row.lease !== null) facts.push({ label: "Lease", value: row.lease.text });

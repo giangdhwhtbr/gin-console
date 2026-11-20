@@ -1,18 +1,8 @@
 import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
-import type { GraphState } from "./graph";
 import { LANE_GRAPH, type LaneBoxLayout } from "./laneGraph";
-import type { LaneStateKind } from "./lanes";
+import { GRAPH_STATE_OF } from "./lanes";
 import { StateWord } from "./StateMark";
-
-const STATE_OF: Record<LaneStateKind, GraphState> = {
-  closed: "done",
-  running: "in_progress",
-  waiting: "blocked",
-  blocked: "blocked",
-  not_started: "ready",
-  idle: "ready",
-};
 
 type BoxStyle = CSSProperties & Record<"--box", string>;
 
@@ -38,7 +28,7 @@ export function LaneBox({ box }: { box: LaneBoxLayout }) {
           <h3 className="min-w-0 truncate text-sm font-bold" title={name}>
             {name}
           </h3>
-          {box.state !== null && <StateWord state={STATE_OF[box.state.kind]} words={box.state.words} className="shrink-0 text-xs" />}
+          {box.state !== null && <StateWord state={GRAPH_STATE_OF[box.state.kind]} words={box.state.words} className="shrink-0 text-xs" />}
         </div>
         <p className="m-0 max-w-full truncate text-xs text-muted-foreground" title={box.meta}>
           {box.meta}

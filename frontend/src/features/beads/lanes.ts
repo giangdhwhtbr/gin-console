@@ -1,5 +1,5 @@
 import type { BeadSummary } from "./api";
-import { cycleNodes, type Link } from "./graph";
+import { cycleNodes, type GraphState, type Link } from "./graph";
 import { leaseOf } from "./laneFacts";
 import { gateState, gateTarget, gateWords, isMergeGate } from "./mergeGates";
 
@@ -8,6 +8,15 @@ export const LANE = { cardW: 184, cardH: 64, rowH: 144, gapX: 48, gapY: 32, padX
 export const MARKER = { h: 20, wide: 84, long: 152, step: 8, clear: 4 } as const;
 
 export type LaneStateKind = "closed" | "running" | "waiting" | "blocked" | "not_started" | "idle";
+/** The graph state whose colour and icon a lane state shows (REQ-UI-112). */
+export const GRAPH_STATE_OF: Record<LaneStateKind, GraphState> = {
+  closed: "done",
+  running: "in_progress",
+  waiting: "blocked",
+  blocked: "blocked",
+  not_started: "ready",
+  idle: "ready",
+};
 export type LaneState = { kind: LaneStateKind; words: string };
 export type LaneCard = { bead: BeadSummary; row: number; column: number; x: number; y: number };
 export type LaneRow = {

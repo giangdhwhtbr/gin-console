@@ -208,4 +208,41 @@ describe("GraphView merge gates", () => {
     expect(screen.getByRole("region", { name: "Lane be" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Lane qa" })).toBeNull();
   });
+
+  const lane = (n: number, name: string | null, over: Partial<BeadSummary> = {}) =>
+    bead(`ex-l.${n}`, { parent: "ex-l", lane: name, track: { plan: "p", number: n }, ...over });
+  const lanesView = (children: BeadSummary[]) => {
+    const all2 = [bead("ex-l", { issue_type: "epic" }), ...children];
+    view({ beads: all2, matched: all2, filters: { scope: "ex-l", closed: true } });
+  };
+  const box = (name: string) => screen.getByRole("region", { name: `Lane ${name}` });
+  const left = (name: string) => Number.parseFloat(box(name).style.left);
+  const top = (name: string) => Number.parseFloat(box(name).style.top);
+
+  it("REQ-UI-117 Lanes in a loop: the boxes share a tier, both arrows are drawn and the cycle line names the lanes", () => {
+    const a1 = lane(1, "a");
+    const b1 = lane(2, "b", { blocked_by: [a1.id] });
+    const a2 = lane(3, "a", { blocked_by: [b1.id] });
+    lanesView([a1, b1, a2]);
+    expect(top("a")).toBe(top("b"));
+    expect(document.querySelector(`[data-arrow="${a1.id}>${b1.id}"]`)).not.toBeNull();
+    expect(document.querySelector(`[data-arrow="${b1.id}>${a2.id}"]`)).not.toBeNull();
+    const line = screen.getByRole("status");
+    expect(line).toHaveTextContent(/^Dependency cycle between /);
+    expect(line).toHaveTextContent("a");
+    expect(line).toHaveTextContent("b");
+  });
+
+  it("REQ-UI-117 No lane box with dependencies: No lane sits in the tier after be, with arrows to it and from it", () => {
+    const be = lane(1, "be");
+    const n = lane(2, null, { blocked_by: [be.id] });
+    const qa = lane(3, "qa", { blocked_by: [n.id] });
+    lanesView([be, n, qa]);
+    expect(top("No lane")).toBeGreaterThan(top("be"));
+    expect(top("qa")).toBeGreaterThan(top("No lane"));
+    expect(document.querySelector(`[data-arrow="${be.id}>${n.id}"]`)).not.toBeNull();
+    expect(document.querySelector(`[data-arrow="${n.id}>${qa.id}"]`)).not.toBeNull();
+    expect(screen.queryByRole("status")).toBeNull();
+    expect(left("be")).toBeGreaterThanOrEqual(0);
+  });
 });
