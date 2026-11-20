@@ -48,7 +48,7 @@ Acceptance criteria:
 ## Capabilities Affected
 
 - `ui`:
-  - ADDED REQ-UI-117, REQ-UI-118; MODIFIED REQ-UI-116.
+  - ADDED REQ-UI-117, REQ-UI-118; MODIFIED REQ-UI-115, REQ-UI-116.
   - Assets: `docs/specs/ui/assets/2026-11-20/mockup/index.html`, `docs/specs/ui/assets/2026-11-20/shots/b-light.png`, `docs/specs/ui/assets/2026-11-20/shots/b-dark.png`.
   - Diagram: `docs/specs/ui/diagrams/lane-clusters-activity.md`.
   - Use case: `docs/specs/ui/use-cases/follow-epic-lanes.md` (its Requirements gain REQ-UI-117 and REQ-UI-118).
