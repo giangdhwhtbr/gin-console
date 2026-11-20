@@ -1,6 +1,6 @@
 # TC-UI-183: Scope without lanes has no boxes
 
-- **REQ:** REQ-UI-117@8334c195
+- **REQ:** REQ-UI-117@11c49b18
 - **Priority:** medium
 
 **Preconditions:**
