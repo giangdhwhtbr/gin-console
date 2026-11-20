@@ -1,5 +1,5 @@
 import type { BeadSummary } from "./api";
-import { cycleNodes, type Link } from "./graph";
+import { cycleNodes, type GraphState, type Link } from "./graph";
 import { leaseOf } from "./laneFacts";
 import { gateState, gateTarget, gateWords, isMergeGate } from "./mergeGates";
 
@@ -8,6 +8,15 @@ export const LANE = { cardW: 184, cardH: 64, rowH: 144, gapX: 48, gapY: 32, padX
 export const MARKER = { h: 20, wide: 84, long: 152, step: 8, clear: 4 } as const;
 
 export type LaneStateKind = "closed" | "running" | "waiting" | "blocked" | "not_started" | "idle";
+/** The graph state whose colour and icon a lane state shows (REQ-UI-112). */
+export const GRAPH_STATE_OF: Record<LaneStateKind, GraphState> = {
+  closed: "done",
+  running: "in_progress",
+  waiting: "blocked",
+  blocked: "blocked",
+  not_started: "ready",
+  idle: "ready",
+};
 export type LaneState = { kind: LaneStateKind; words: string };
 export type LaneCard = { bead: BeadSummary; row: number; column: number; x: number; y: number };
 export type LaneRow = {
@@ -35,12 +44,12 @@ export type LaneBoard = {
 };
 export type LaneKey = "ArrowLeft" | "ArrowRight" | "ArrowUp" | "ArrowDown";
 
-type Dep = Link & { gate: BeadSummary | null };
-type Loose = { gate: BeadSummary; card: BeadSummary };
+export type Dep = Link & { gate: BeadSummary | null };
+export type Loose = { gate: BeadSummary; card: BeadSummary };
 
 const isOpen = (bead: BeadSummary) => bead.status !== "closed";
-const laneName = (lane: string | null) => lane ?? "No lane";
-const trackNumber = (bead: BeadSummary) => bead.track?.number ?? Number.MAX_SAFE_INTEGER;
+export const laneName = (lane: string | null) => lane ?? "No lane";
+export const trackNumber = (bead: BeadSummary) => bead.track?.number ?? Number.MAX_SAFE_INTEGER;
 
 /** The children of the scope that are tracks (merge gates are not work). */
 const tracksOf = (beads: readonly BeadSummary[], scopeId: string) =>
@@ -51,7 +60,7 @@ export const hasLanes = (beads: readonly BeadSummary[], scopeId: string | null):
   scopeId !== null && tracksOf(beads, scopeId).some((b) => b.lane !== null);
 
 /** The edges between `cards`: their blockers, and the track a merge gate waits for; gates whose track is not among `cards` are `loose`. */
-function depsOf(cards: readonly BeadSummary[], byId: ReadonlyMap<string, BeadSummary>): { deps: Dep[]; loose: Loose[] } {
+export function depsOf(cards: readonly BeadSummary[], byId: ReadonlyMap<string, BeadSummary>): { deps: Dep[]; loose: Loose[] } {
   const inSet = new Set(cards.map((c) => c.id));
   const deps = new Map<string, Dep>();
   const loose: Loose[] = [];
@@ -72,7 +81,7 @@ function depsOf(cards: readonly BeadSummary[], byId: ReadonlyMap<string, BeadSum
 }
 
 /** The longest path to each id; an edge that closes a cycle is ignored. */
-function depthsOf(ids: readonly string[], edges: readonly Link[]): Map<string, number> {
+export function depthsOf(ids: readonly string[], edges: readonly Link[]): Map<string, number> {
   const into = new Map<string, string[]>();
   for (const e of edges) into.set(e.to, [...(into.get(e.to) ?? []), e.from]);
   const depth = new Map<string, number>();
