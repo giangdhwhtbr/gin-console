@@ -575,3 +575,13 @@ describe("ListView lanes", () => {
     expect(within(tree).queryByText("external: p#2")).toBeNull();
   });
 });
+
+describe("ListView without a lane", () => {
+  it("REQ-UI-115 Bead without a lane: no chip on its row", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() => json([bead("a-1", { title: "Plain", lane: null })]));
+    render(<BeadsPage />);
+    const row = within(await screen.findByRole("tree")).getByRole("treeitem", { name: /Plain/ });
+    expect(row.querySelector("[title^='Lane ']")).toBeNull();
+  });
+});
