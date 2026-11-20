@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import type { Relation } from "./api";
+import { gateWords } from "./mergeGates";
 import { PrepChip } from "./PrepChip";
 
 /** REQ-UI-028: a relation's status as a word ("In progress"), never the raw value (`in_progress`). */
@@ -35,9 +36,17 @@ export function RelationList({
               </span>
               {shortId(item.id) !== item.id && <span className="sr-only">{item.id}</span>}
             </Link>
-            <span className="min-w-0 wrap-anywhere">{item.title}</span>
-            {item.prep === true && <PrepChip />}
-            <Badge variant="secondary">{statusLabel(item.status)}</Badge>
+            {item.waits_for != null ? (
+              <span className="min-w-0 wrap-anywhere">
+                {`Waits for ${gateWords(item.waits_for)} · ${item.status === "closed" ? "merged" : "merge pending"}`}
+              </span>
+            ) : (
+              <>
+                <span className="min-w-0 wrap-anywhere">{item.title}</span>
+                {item.prep === true && <PrepChip />}
+                <Badge variant="secondary">{statusLabel(item.status)}</Badge>
+              </>
+            )}
           </li>
         ))}
       </ul>

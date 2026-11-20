@@ -15,6 +15,9 @@ import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
 import { graphPath } from "./graph";
 import { KindBadge } from "./KindBadge";
+import { LaneChip } from "./LaneChip";
+import { leaseOf, trackText, visibleLabels } from "./laneFacts";
+import { gateState, gateWords } from "./mergeGates";
 import { MarkdownText } from "./MarkdownText";
 import { useDiscussionHidden } from "./discussion";
 import { RelationList } from "./RelationList";
@@ -82,10 +85,17 @@ export function BeadDetailPage({
   }
   const bead = state.status === "ok" ? state.bead : null;
   const complexity = bead?.issue_type === "epic" ? complexityOf(bead.description) : null;
+  const gate = bead?.waits_for ?? null;
+  const lease = bead === null ? null : leaseOf([bead.claim], new Date());
   const facts: Fact[] =
     bead === null
       ? []
       : [
+          { label: "Lane", value: bead.lane },
+          { label: "Track", value: bead.track === null ? null : trackText(bead.track) },
+          { label: "Lease", value: lease?.text ?? null },
+          { label: "Placeholder", value: gate === null ? null : bead.title },
+          { label: "Waits for", value: gate === null ? null : `${gate.plan} #${gate.number}` },
           { label: "Owner", value: bead.owner },
           { label: "Assignee", value: bead.assignee },
           { label: "Created by", value: bead.created_by },
@@ -94,7 +104,7 @@ export function BeadDetailPage({
           { label: "Comments", value: bead.comment_count },
         ].filter((fact) => fact.value !== null && fact.value !== "");
   const children = bead?.children ?? [];
-  const counts = childCounts(children.map((c) => ({ labels: c.prep ? ["prep"] : [], status: c.status })));
+  const counts = childCounts(children.map((c) => ({ labels: c.prep ? ["prep"] : [], status: c.status, waits_for: c.waits_for })));
   const closed = counts.closedTracks;
   const total = counts.tracks;
   const prep = prepLabel(counts);
@@ -147,10 +157,11 @@ export function BeadDetailPage({
                 </Button>
               )}
                 <header className="flex flex-col gap-1">
-                  <h1 className="text-xl font-semibold wrap-anywhere">{bead.title}</h1>
+                  <h1 className="text-xl font-semibold wrap-anywhere">{gate === null ? bead.title : `Waits for ${gateWords(gate)} to merge`}</h1>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-mono wrap-anywhere">{bead.id}</span>
-                    <StateMark bead={bead} />
+                    {gate === null ? <StateMark bead={bead} /> : <Badge variant="secondary">{gateState(bead.status)}</Badge>}
+                    {bead.lane !== null && <LaneChip lane={bead.lane} />}
                     <PriorityPill priority={bead.priority} />
                     <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />
                     <TypeBadge type={bead.issue_type} />
@@ -160,7 +171,7 @@ export function BeadDetailPage({
                         {`Complexity: ${complexity}`}
                       </Badge>
                     )}
-                    {bead.labels.map((label) => (
+                    {visibleLabels(bead).map((label) => (
                       <Badge key={label} variant="outline">
                         {label}
                       </Badge>
