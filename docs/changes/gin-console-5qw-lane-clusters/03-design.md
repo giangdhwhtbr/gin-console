@@ -28,7 +28,7 @@ Epic: gin-console-5qw
   - **Chips:** each chip sits on its arrow in the gap between tiers. Chips in one gap are spaced so that none overlaps another (the `linkLabels` idea).
 - **View:**
   - `GraphView.tsx`: when `hasLanes(beads, scopeId)`, it renders the lane graph and hides "Only linked"; otherwise it renders as today.
-  - `GraphCanvas.tsx` gains an optional precomputed layout (card positions, boxes, chips, arrows) and keeps one implementation of zoom, fit to view, focus, selection and the screen-reader list.
+  - `LaneGraphCanvas.tsx` (new) draws the computed layout. The zoom state, fit and Ctrl/⌘-wheel zoom move from `GraphCanvas.tsx` into `useZoom.ts` and `ZoomBar.tsx`, shared by both canvases, so zoom keeps one implementation and the layered canvas stays as it is (planning decision, see `04-plan.md`).
   - `LaneBox.tsx` (new) draws one box. Its header shows the swatch, the name in bold and a `StateWord` on line 1, and an inline `FactList`-style muted line 2 with ellipsis and title.
   - Cards are `GraphNodeButton` with `showLane={false}`. Chips are opaque HTML elements with an icon (`Clock`/`Check`) and words, drawn above the SVG.
 - **Keys:** a `laneGraphStep(layout, id, key)` helper. Left and right move within a box in card order. Up and down move to the nearest card in the nearest box of the tier above or below.
