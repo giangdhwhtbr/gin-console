@@ -2,7 +2,7 @@
 
 Actor: Team lead
 Trigger: The team lead wants to know who runs which tracks of an epic, how far each lane is, and which lane waits for another lane's merge.
-Requirements: REQ-UI-111, REQ-UI-112, REQ-UI-113, REQ-UI-114, REQ-UI-115, REQ-UI-116, REQ-BEADS-019
+Requirements: REQ-UI-111, REQ-UI-112, REQ-UI-113, REQ-UI-114, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-118, REQ-BEADS-019
 
 ## Goal
 
@@ -32,6 +32,10 @@ See an epic's lanes, their holders, leases, progress and waits at a glance, and 
 
 ### 4b. A merge gate waits for a track that is not in the epic
 1. The system draws a "Waiting for track <N>" or "Merged track <N>" marker above the waiting card instead of an arrow.
+2. Resume at step 5.
+
+### 3a. The team lead chooses Graph instead of Lanes
+1. The system draws each lane as a coloured box, the boxes in tiers by the dependencies between lanes, the tracks left to right inside each box, and a Waiting or Merged chip on each arrow through a merge gate (REQ-UI-117, REQ-UI-118).
 2. Resume at step 5.
 
 ## Business rules
