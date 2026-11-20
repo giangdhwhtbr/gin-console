@@ -45,12 +45,13 @@ export function BeadsView({
   const loaded = state.status === "ok" ? state.beads : [];
   // Milestone beads only serve the Graph view's milestone scope (REQ-MILESTONE-UI-006, -009).
   // Merge gates are not work: only the Graph keeps them (REQ-UI-116).
-  const beads = withoutMergeGates(loaded.filter((b) => b.issue_type !== "milestone"));
+  const withGates = loaded.filter((b) => b.issue_type !== "milestone");
+  const beads = withoutMergeGates(withGates);
   const withClosed = { ...filters, closed: filters.closed || closedMilestone };
   const shown = sortBeads(filterBeads(beads, withClosed, milestone));
   // Beads outside the milestone stay in the graph, so the milestone filters only the project scope.
   const matchedMilestone = milestone === "all" || milestone === "none" ? milestone : "all";
-  const matched = filterBeads(beads, withClosed, matchedMilestone);
+  const matched = filterBeads(withGates, withClosed, matchedMilestone);
 
   const lanesMatched = filters.view === "lanes" ? filterBeads(beads, { ...withClosed, closed: true }, matchedMilestone) : [];
 

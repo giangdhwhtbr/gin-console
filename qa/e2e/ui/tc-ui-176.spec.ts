@@ -4,10 +4,6 @@ import { E12, stubExample } from '../support/lanes';
 
 test('TC-UI-176: Merge gate node', async ({ page, ev }) => {
   // Precondition: an open merge gate waits for track 2 of lane be in epic ex-e12.
-  // KNOWN PRODUCT BUG (gin-console-9ix, reported with Track 7): BeadsView builds `matched` from the beads without merge
-  // gates, so scopeGraph never keeps a gate and the Graph draws no gate node (GraphView.test passes gates in `matched`).
-  // Remove this line when the Graph draws the gate; Playwright then reports "expected to fail but passed".
-  test.fail(true, 'Graph does not draw merge gate nodes: BeadsView leaves the gates out of `matched`');
   await stubExample(page);
   await page.setViewportSize({ width: 1440, height: 900 });
 
