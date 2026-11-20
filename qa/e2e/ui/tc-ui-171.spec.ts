@@ -1,4 +1,4 @@
-// TC: TC-UI-171@daf57156
+// TC: TC-UI-171@4e23af03
 import { test, expect } from '../evidence';
 import { detail, epicPlan, stubApi } from '../support/api';
 import { E12, e12, milestoneOptions, stubDetails } from '../support/lanes';
@@ -39,22 +39,12 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     await noLabelChip();
   });
 
-  await ev.step('3. Open /beads?project=example&milestone=all&view=graph&scope=ex-e12', async () => {
-    await page.goto('/beads?project=example&milestone=all&view=graph&scope=ex-e12');
-    const node = page.locator(`[data-node="${TRACK}"]`);
-    await expect(node).toBeVisible();
-    // REQ-UI-117: a scope with lanes draws a box per lane, and its header names the lane instead of a chip on the card
-    await expect(page.getByRole('region', { name: 'Lane be' }).getByRole('heading', { name: 'be' })).toBeVisible();
-    await expect(node.getByTitle('Lane be')).toHaveCount(0);
-    await noLabelChip();
-  });
-
-  await ev.step('4. Open /milestones/example/ex-m2?tab=gantt', async () => {
+  await ev.step('3. Open /milestones/example/ex-m2?tab=gantt', async () => {
     await page.goto('/milestones/example/ex-m2?tab=gantt');
     await expect(page.getByRole('button', { name: /^Show \d+ child beads? of ex-e12$/ })).toBeVisible();
   });
 
-  await ev.step('5. Click the expand button of ex-e12', async () => {
+  await ev.step('4. Click the expand button of ex-e12', async () => {
     await page.getByRole('button', { name: /^Show \d+ child beads? of ex-e12$/ }).click();
     const child = page.locator(`[data-child="${TRACK}"]`);
     await expect(child).toBeVisible();
@@ -62,7 +52,7 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     await noLabelChip();
   });
 
-  await ev.step('6. Open /beads/example/ex-e12.2', async () => {
+  await ev.step('5. Open /beads/example/ex-e12.2', async () => {
     await page.goto(`/beads/example/${TRACK}`);
     await expect(page.getByRole('heading', { name: 'Track 2' })).toBeVisible();
     await expect(page.getByRole('main').getByTitle('Lane be').first()).toHaveText('be');

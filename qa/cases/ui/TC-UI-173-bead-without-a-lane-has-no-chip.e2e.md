@@ -1,6 +1,6 @@
 # TC-UI-173: Bead without a lane has no chip
 
-- **REQ:** REQ-UI-115@e3b272f6
+- **REQ:** REQ-UI-115@ef4a2116
 - **Priority:** low
 
 **Preconditions:**

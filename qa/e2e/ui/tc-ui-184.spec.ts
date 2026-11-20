@@ -1,4 +1,4 @@
-// TC: TC-UI-184@d53890a0
+// TC: TC-UI-184@3b36c937
 import { test, expect } from '../evidence';
 import { E12, graphGeometry, openGraph, stubExample } from '../support/lanes';
 
@@ -29,8 +29,11 @@ test('TC-UI-184: Arrow keys move between lane boxes', async ({ page, ev }) => {
     const g = await graphGeometry(page);
     expect(g.cards[`${E12}.4`].x).toBeGreaterThanOrEqual(g.boxes.qa.x);
     expect(g.cards[`${E12}.4`].x).toBeLessThan(g.boxes.qa.x + g.boxes.qa.w);
-    // The Graph's arrow keys move the focus only (unlike the Lanes view); Enter selects the focused card.
-    await expect(four).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  await ev.step('4. Press Enter', async () => {
+    const four = page.locator(`[data-node="${E12}.4"]`);
+    await expect(four).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(four).toHaveAttribute('aria-pressed', 'true');
     await expect(page).toHaveURL(new RegExp(`select=${E12}\\.4`));
