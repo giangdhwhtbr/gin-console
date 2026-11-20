@@ -7,6 +7,7 @@ import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
 import { GraphView } from "./GraphView";
 import { ListView } from "./ListView";
+import { withoutMergeGates } from "./mergeGates";
 import { isClosedMilestone, milestoneInEffect } from "./milestoneChoice";
 import { useBeads } from "./useBeads";
 import { useCardKeys } from "./useCardKeys";
@@ -40,7 +41,8 @@ export function BeadsView({
   const errorMessage = state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
   const loaded = state.status === "ok" ? state.beads : [];
   // Milestone beads only serve the Graph view's milestone scope (REQ-MILESTONE-UI-006, -009).
-  const beads = loaded.filter((b) => b.issue_type !== "milestone");
+  // Merge gates are not work: only the Graph keeps them (REQ-UI-116).
+  const beads = withoutMergeGates(loaded.filter((b) => b.issue_type !== "milestone"));
   const withClosed = { ...filters, closed: filters.closed || closedMilestone };
   const shown = sortBeads(filterBeads(beads, withClosed, milestone));
   // Beads outside the milestone stay in the graph, so the milestone filters only the project scope.

@@ -134,6 +134,30 @@ def test_reports_001_sprint_takes_the_labelled_epic_tree_whatever_the_date() -> 
     assert [b.id for b in r.usage.beads] == ["a-1.1"]
 
 
+# REQ-REPORTS-001
+def test_reports_001_merge_gates_left_out() -> None:
+    gate = "external: .planning/plans/x.md#2"
+    r = report(
+        [
+            closed("a-1", ago(3)),
+            closed("g-1", ago(3), title=gate),
+            row("e-1", issue_type="epic", labels=["sprint:s7"]),
+            closed("g-2", ago(50), parent="e-1", title=gate),
+            closed("a-2", ago(50), parent="e-1"),
+        ]
+    )
+    assert r.totals.closed == 1
+    sprint = report(
+        [
+            row("e-1", issue_type="epic", labels=["sprint:s7"]),
+            closed("g-2", ago(50), parent="e-1", title=gate),
+            closed("a-2", ago(50), parent="e-1"),
+        ],
+        sprint="s7",
+    )
+    assert sprint.totals.closed == 1
+
+
 # REQ-REPORTS-003
 def test_reports_003_member_rows() -> None:
     r = report(

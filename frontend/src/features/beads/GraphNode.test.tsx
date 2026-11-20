@@ -28,3 +28,36 @@ describe("GraphNodeButton state label", () => {
     expect(screen.getByText("2 of 5 done")).toBeInTheDocument();
   });
 });
+
+const place = (b: ReturnType<typeof bead>, showLane?: boolean) => {
+  const node = { bead: b, external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, done: 0, total: 0 };
+  render(
+    <GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} showLane={showLane} />,
+  );
+};
+
+describe("GraphNodeButton lanes", () => {
+  it("REQ-UI-115 Chip in every view: a track shows its lane chip, and showLane false hides it", () => {
+    place(bead("t-1", { lane: "be" }));
+    expect(screen.getByTitle("Lane be")).toBeInTheDocument();
+    cleanup();
+    place(bead("t-1", { lane: "be" }), false);
+    expect(screen.queryByTitle("Lane be")).toBeNull();
+    cleanup();
+    place(bead("t-2"));
+    expect(screen.queryByTitle(/^Lane /)).toBeNull();
+  });
+
+  it("REQ-UI-116 Merge gate node: dashed, words and state, edge colour kept", () => {
+    place(bead("g-1", { title: "external: be#2", waits_for: { plan: "p", number: 2, track_id: "t-2", lane: "be" } }));
+    const node = screen.getByRole("button");
+    expect(node).toHaveAttribute("title", "Waits for be #2 to merge");
+    expect(node).toHaveClass("border-dashed");
+    expect(screen.getByText("Waits for be #2 to merge")).toHaveClass("truncate");
+    expect(screen.getByText("Waiting")).toBeInTheDocument();
+    cleanup();
+    place(bead("g-1", { status: "closed", waits_for: { plan: "p", number: 7, track_id: null, lane: null } }));
+    expect(screen.getByText("Waits for track 7 to merge")).toBeInTheDocument();
+    expect(screen.getByText("Merged")).toBeInTheDocument();
+  });
+});

@@ -1,4 +1,5 @@
 import { fetchBeads, type BeadSummary } from "@/features/beads/api";
+import { withoutMergeGates } from "@/features/beads/mergeGates";
 import { fetchProjectBeads, isStale, pullError, pullOf } from "@/features/projects/api";
 import type { PullFailure } from "@/features/beads/PullNote";
 import { isMine } from "./match";
@@ -41,7 +42,7 @@ export async function loadMyTasks(email: string, closed: boolean, project = ""):
     if (result.status === "rejected") {
       failures.push({ project, message: result.reason instanceof Error ? result.reason.message : String(result.reason) });
     } else {
-      for (const bead of result.value) if (isMine(bead, email)) tasks.push({ project, bead });
+      for (const bead of withoutMergeGates(result.value)) if (isMine(bead, email)) tasks.push({ project, bead });
     }
   });
   return { tasks: tasks.sort(compareTasks), failures, stale, pullFailures, projects };

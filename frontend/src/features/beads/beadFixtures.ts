@@ -32,6 +32,10 @@ export const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSumm
   estimate_minutes: null,
   points: null,
   points_reason: null,
+  lane: null,
+  track: null,
+  claim: null,
+  waits_for: null,
   ...overrides,
 });
 

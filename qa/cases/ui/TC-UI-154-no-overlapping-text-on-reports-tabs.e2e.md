@@ -1,6 +1,6 @@
 # TC-UI-154: No overlapping text on Reports tabs
 
-- **REQ:** REQ-UI-110@796f0bc7
+- **REQ:** REQ-UI-110@e3c2a1a9
 - **Priority:** medium
 
 **Preconditions:**
