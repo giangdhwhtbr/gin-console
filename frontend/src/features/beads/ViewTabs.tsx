@@ -1,12 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { VIEWS, type BeadFilters } from "./filters";
 
-const TITLES = { list: "List", board: "Board", focus: "Focus", graph: "Graph" } as const;
+const TITLES = { list: "List", board: "Board", focus: "Focus", graph: "Graph", lanes: "Lanes" } as const;
 
-export function ViewTabs({ filters, onChange }: { filters: BeadFilters; onChange: (next: BeadFilters) => void }) {
+/** `lanes`: the scope has tracks with lanes, so the Lanes tab is offered (REQ-UI-111). */
+export function ViewTabs({ filters, lanes, onChange }: { filters: BeadFilters; lanes: boolean; onChange: (next: BeadFilters) => void }) {
   return (
     <nav aria-label="View" className="flex gap-2">
-      {VIEWS.map((view) => (
+      {VIEWS.filter((view) => view !== "lanes" || lanes).map((view) => (
         <Button
           key={view}
           size="sm"

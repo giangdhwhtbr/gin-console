@@ -1,7 +1,7 @@
 import type { BeadKind, BeadSummary } from "./api";
 import { matchesMilestone, type MilestoneInEffect } from "./milestoneChoice";
 
-export const VIEWS = ["list", "board", "focus", "graph"] as const;
+export const VIEWS = ["list", "board", "focus", "graph", "lanes"] as const;
 export type View = (typeof VIEWS)[number];
 
 export type BeadFilters = {

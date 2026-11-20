@@ -6,6 +6,8 @@ import { DetailsPanel } from "./DetailsPanel";
 import type { BeadFilters } from "./filters";
 import { GraphCanvas } from "./GraphCanvas";
 import { ancestorsOf, hasChildren, keepWithAncestors, scopeGraph } from "./graph";
+import { scopeOf } from "./scope";
+import { ScopeTrail } from "./ScopeTrail";
 import type { MilestoneInEffect } from "./milestoneChoice";
 
 const enc = encodeURIComponent;
@@ -24,12 +26,7 @@ type Props = {
 /** The dependency graph of one container: a milestone, an epic, or the project (REQ-UI-106). */
 export function GraphView(props: Props) {
   const { beads, milestone, filters } = props;
-  const scopeId =
-    filters.scope !== "" && hasChildren(beads, filters.scope) && beads.find((b) => b.id === filters.scope)?.issue_type !== "milestone"
-      ? filters.scope
-      : milestone !== "all" && milestone !== "none"
-        ? milestone
-        : null;
+  const scopeId = scopeOf(beads, filters, milestone);
   return <GraphBody key={scopeId ?? ""} {...props} scopeId={scopeId} />;
 }
 
@@ -64,21 +61,7 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
   return (
     <div className={cn("grid gap-4", selected !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
       <div className="flex min-w-0 flex-col gap-3">
-        <nav aria-label="Graph scope" className="flex flex-wrap items-center gap-2 text-sm">
-          {[["", top], ...rest.map((id) => [id, id])].map(([id, label], i) => (
-            <span key={id} className="flex items-center gap-2">
-              {i > 0 && <span aria-hidden>›</span>}
-              <button
-                type="button"
-                aria-current={i === rest.length ? "location" : undefined}
-                onClick={() => to(id)}
-                className="font-mono underline underline-offset-2"
-              >
-                {label}
-              </button>
-            </span>
-          ))}
-        </nav>
+        <ScopeTrail label="Graph scope" top={top} rest={rest} onScope={to} />
         <div className="flex flex-wrap items-center gap-4 text-sm">
           <label className="flex items-center gap-2">
             <input type="checkbox" role="switch" checked={onlyLinked} onChange={(e) => setOnlyLinked(e.target.checked)} />

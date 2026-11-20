@@ -1,0 +1,46 @@
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { e12, E12, tracks, t4 } from "./laneFixtures";
+import { lanesOf } from "./lanes";
+import { LanesCanvas } from "./LanesCanvas";
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
+
+const board = lanesOf(e12, E12, new Set(tracks.map((t) => t.id)), new Date("2026-11-20T10:00:00Z"));
+const props = { board, beads: e12, selected: "", tabStop: t4.id, onSelect: vi.fn(), onOpen: vi.fn(), onEscape: vi.fn() };
+
+describe("LanesCanvas", () => {
+  it("REQ-UI-111 the header column is opaque and sticky, the cards sit at the board's positions", () => {
+    render(<LanesCanvas {...props} />);
+    const header = screen.getByRole("region", { name: "Lane be" }).parentElement!;
+    expect(header.className).toContain("sticky");
+    expect(header.className).toContain("bg-card");
+    expect(header.style.width).toBe("240px"); // the jsdom fallback
+    const card = screen.getByRole("button", { name: new RegExp(`^${t4.id}`) });
+    const placed = board.rows.flatMap((r) => r.cards).find((c) => c.bead.id === t4.id)!;
+    expect(card.style.left).toBe(`${placed.x}px`);
+    expect(card.style.top).toBe(`${placed.y}px`);
+  });
+
+  it("REQ-UI-111 the header is 168px under 1024px windows", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+    render(<LanesCanvas {...props} />);
+    expect(screen.getByRole("region", { name: "Lane be" }).parentElement!.style.width).toBe("168px");
+  });
+
+  it("REQ-UI-113 one arrow per link, and an opaque marker with its words above the arrows", () => {
+    const { container } = render(<LanesCanvas {...props} />);
+    expect(container.querySelectorAll("svg polyline")).toHaveLength(board.arrows.length);
+    const marker = container.querySelector<HTMLElement>("[data-marker]")!;
+    expect(marker.className).toContain("bg-card");
+    expect(marker).toHaveTextContent(/Waiting|Merged/);
+  });
+
+  it("REQ-UI-114 keys: the list for screen readers has one item per lane and gate", () => {
+    render(<LanesCanvas {...props} />);
+    expect(screen.getByRole("list", { name: "Lanes" }).children).toHaveLength(board.rows.length + board.markers.length);
+  });
+});
