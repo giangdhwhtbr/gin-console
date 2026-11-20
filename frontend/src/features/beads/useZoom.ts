@@ -3,17 +3,16 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 export const ZOOM = { min: 0.4, max: 2, step: 0.1 } as const;
 const clamp = (scale: number) => Math.min(ZOOM.max, Math.max(ZOOM.min, Math.round(scale * 100) / 100));
 
-/** The scale that shows the whole graph in the canvas, never above 100%. */
-export const fitScale = (width: number, height: number, boxW: number, boxH: number) =>
-  clamp(Math.min(1, boxW / width, boxH / height));
+/** The scale that shows the whole width of the graph in the canvas, never above 100%. */
+export const fitWidth = (width: number, boxW: number) => (width === 0 || boxW === 0 ? 1 : clamp(Math.min(1, boxW / width)));
 
 /** The zoom of a canvas: fitted once when it opens, Ctrl/Cmd and the wheel zoom the scroll box in `box`. */
-export function useZoom(width: number, height: number) {
+export function useZoom(width: number) {
   const box = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const fit = () => {
     const el = box.current;
-    if (el !== null) setScale(fitScale(width, height, el.clientWidth, el.clientHeight));
+    if (el !== null) setScale(fitWidth(width, el.clientWidth));
   };
   // fitted once when the canvas opens; a refresh keeps the user's zoom
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -22,7 +21,7 @@ export function useZoom(width: number, height: number) {
     const el = box.current;
     if (el === null) return;
     const wheel = (event: WheelEvent) => {
-      if ((!event.ctrlKey && !event.metaKey) || event.deltaY === 0) return;
+      if ((!event.ctrlKey && !event.metaKey) || event.deltaY === 0) return; // a plain wheel scrolls the page
       event.preventDefault();
       const delta = Math.abs(event.deltaY) < 10 ? -event.deltaY * 0.01 : (event.deltaY < 0 ? ZOOM.step : -ZOOM.step);
       setScale((s) => clamp(s + delta));

@@ -131,15 +131,18 @@ describe("GraphView", () => {
     expect(screen.getByRole("switch", { name: "Only linked" })).toBeChecked();
   });
 
-  it("REQ-UI-106 no panel on the project scope; a milestone scope shows its bead", () => {
+  it("REQ-UI-106 No panel on opening an epic: neither the project nor a milestone scope opens the panel", () => {
     view();
     expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
     expect(screen.getByRole("switch", { name: "Only linked" }).closest(".grid")?.className).not.toContain("lg:grid-cols");
     cleanup();
     view({ milestone: "m2" });
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect(screen.getByRole("switch", { name: "Only linked" }).closest(".grid")?.className).not.toContain("lg:grid-cols");
+    cleanup();
+    view({ milestone: "m2", filters: { select: "e1" } });
     const panel = screen.getByRole("complementary", { name: "Bead details" });
     expect(panel.closest(".grid")?.className).toContain("lg:grid-cols");
-    expect(screen.queryByText("Select a bead to see its details")).toBeNull();
   });
 
   it("REQ-UI-051 close writes select=none and focus returns to the node", async () => {
@@ -153,16 +156,11 @@ describe("GraphView", () => {
     expect(node("e1")).toHaveFocus();
   });
 
-  it("REQ-UI-052 Escape goes up to the scope bead, a second Escape closes", async () => {
+  it("REQ-UI-052 Escape with a selection goes to no selection", async () => {
     const onChange = view({ milestone: "m2", filters: { select: "e1" } });
     node("e1")!.focus();
     await userEvent.keyboard("{Escape}");
-    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "m2" }));
-    cleanup();
-    const second = view({ milestone: "m2", filters: { select: "m2" } });
-    node("e1")!.focus();
-    await userEvent.keyboard("{Escape}");
-    expect(second).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
   });
 
   it("REQ-UI-052 Escape on the project scope closes", async () => {

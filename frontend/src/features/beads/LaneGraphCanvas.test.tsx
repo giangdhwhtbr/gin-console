@@ -74,9 +74,19 @@ describe("LaneGraphCanvas", () => {
   it("REQ-UI-077 zoom works as in the layered graph", async () => {
     show();
     const zoom = within(screen.getByRole("group", { name: "Zoom" }));
-    expect(zoom.getByText("40%")).toBeInTheDocument();
+    expect(zoom.getByText("100%")).toBeInTheDocument();
     await userEvent.click(zoom.getByRole("button", { name: "Zoom in" }));
-    expect(zoom.getByText("50%")).toBeInTheDocument();
+    expect(zoom.getByText("110%")).toBeInTheDocument();
     expect(fireEvent.wheel(screen.getByTestId("graph-canvas"), { deltaY: -100, ctrlKey: true })).toBe(false);
+  });
+
+  it("REQ-UI-122 Wheel over the Graph view: a lane box canvas scrolls only sideways, is as tall as its graph and a plain wheel is not prevented", () => {
+    show();
+    const canvas = screen.getByTestId("graph-canvas");
+    for (const c of ["isolate", "overflow-x-auto", "overflow-y-hidden", "overscroll-x-contain"]) expect(canvas.classList.contains(c)).toBe(true);
+    for (const c of ["overflow-auto", "overscroll-contain"]) expect(canvas.classList.contains(c)).toBe(false);
+    expect(canvas.className).not.toContain("100dvh");
+    expect(Number.parseFloat(canvas.style.height)).toBeGreaterThanOrEqual(graph.height);
+    expect(fireEvent.wheel(canvas, { deltaY: 600 })).toBe(true);
   });
 });
