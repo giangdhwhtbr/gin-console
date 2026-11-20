@@ -1,4 +1,5 @@
 # TC-UI-197: Fit a wide graph
+
 - **REQ:** REQ-UI-077@703ea43a
 - **Priority:** medium
 

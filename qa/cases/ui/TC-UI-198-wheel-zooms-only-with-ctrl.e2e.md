@@ -1,4 +1,5 @@
 # TC-UI-198: Wheel zooms only with Ctrl
+
 - **REQ:** REQ-UI-077@703ea43a
 - **Priority:** medium
 
