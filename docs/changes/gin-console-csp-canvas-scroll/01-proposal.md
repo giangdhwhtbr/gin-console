@@ -86,5 +86,5 @@ Acceptance criteria:
 
 - Every scenario of REQ-UI-122 and the modified REQ-UI-077 has an automated test that carries its REQ-ID, with the wheel scenarios checked in a browser.
 - TC-1 passes on the deployed console:
-  - A wheel over the Lanes view and the Graph view of `ex-e12` scrolls the page at 1440 and 1920px.
+  - A wheel over the Lanes view and the Graph view of `ex-e12` goes to the page at 1440 and 1920px: the page scrolls wherever it is taller than the window, and no canvas scrolls up or down.
   - The readability check reports no finding on those pages at 390, 1024, 1440 and 1920px in both themes.
