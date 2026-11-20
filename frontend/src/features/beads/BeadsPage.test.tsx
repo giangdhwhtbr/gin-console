@@ -243,10 +243,13 @@ describe("BeadsPage", () => {
     });
 
     it("REQ-UI-116 Merge gate node: the List view of the same data does not show the gate", async () => {
-      window.history.replaceState(null, "", "/beads?project=alpha&view=list&q=Title");
+      window.history.replaceState(null, "", "/beads?project=alpha&view=list&q=ex-e12");
       stub(() => json(data));
       render(<BeadsPage />);
       expect(await screen.findByText("Title ex-e12.1")).toBeInTheDocument();
+      // q=ex-e12 matches the gate's id too, so the gate is absent only because the List leaves it out
+      expect(screen.getByText("2 of 2")).toBeInTheDocument();
+      expect(document.querySelector('[data-id="ex-e12.9"]')).toBeNull();
       expect(screen.queryByText("external: plan#2")).toBeNull();
       expect(screen.queryByText(/Waits for/)).toBeNull();
     });
