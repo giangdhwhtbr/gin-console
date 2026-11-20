@@ -2,6 +2,7 @@
 
 - **REQ:** REQ-UI-118@e68b6fe0
 - **Priority:** medium
+
 **Preconditions:**
 - Epic `ex-e12` has two tracks without a lane, one of them closed
 
