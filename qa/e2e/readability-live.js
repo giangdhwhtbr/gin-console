@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // TC-1 of gin-console-3rr (REQ-UI-110): the readability check against a running console with real projects.
 //   node qa/e2e/readability-live.js --base http://127.0.0.1:8700 --project example --project qwikfone --out <dir>
-// Visits Projects, Beads (List, Board, Focus, Graph), an epic and a bead with points, My Tasks, Milestones, the
+// Visits Projects, Beads (List, Board, Focus, Graph), an epic and a bead with points, the Lanes view of an epic with lanes and its track and merge gate pages, My Tasks, Milestones, the
 // milestone with velocity (Gantt at every zoom, Beads, Retro) and Reports (every tab) at 390, 1024, 1440 and
 // 1920 px in light and dark, runs the in-page detector of qa/e2e/support/readability-inpage.js (the one
 // qa/e2e/ui/readability.spec.ts uses), saves a screenshot of every page with findings and findings.json, and
@@ -41,6 +41,14 @@ async function pagesOf(project) {
     if (b) add(`bead ${label} ${b.id}`, `/beads/${enc(project)}/${enc(b.id)}`);
   }
   if (epic) add(`beads list panel ${epic.id}`, `/beads?project=${enc(project)}&milestone=all&view=list&select=${enc(epic.id)}`);
+  // REQ-UI-111..116: the Lanes view of the first epic with a lane track, a lane track and a merge gate of it
+  const laneTrack = beads.find((b) => b.lane != null && b.parent && beads.some((e) => e.id === b.parent && e.issue_type === 'epic'));
+  if (laneTrack) {
+    add(`beads lanes ${laneTrack.parent}`, `/beads?project=${enc(project)}&milestone=all&view=lanes&scope=${enc(laneTrack.parent)}`);
+    add(`bead lane track ${laneTrack.id}`, `/beads/${enc(project)}/${enc(laneTrack.id)}`);
+    const gate = beads.find((b) => b.waits_for != null && b.parent === laneTrack.parent) ?? beads.find((b) => b.waits_for != null);
+    if (gate) add(`bead merge gate ${gate.id}`, `/beads/${enc(project)}/${enc(gate.id)}`);
+  }
   add('bead graph', `/beads/${enc(project)}/graph`);
   add('milestones', `/milestones?project=${enc(project)}`);
   const list = await json(`/api/milestones?project=${enc(project)}`);
