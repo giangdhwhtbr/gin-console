@@ -1,6 +1,6 @@
 # TC-UI-190: Lanes in a loop
 
-- **REQ:** REQ-UI-117@d860e924
+- **REQ:** REQ-UI-117@280e2ec2
 - **Priority:** medium
 
 **Preconditions:**
@@ -12,5 +12,5 @@
 
 **Expected:**
 - Boxes x and y are in the same tier
-- Both arrows run in the channel to the right of the boxes
+- Both arrows run in the channel below the boxes
 - The cycle warning names x and y

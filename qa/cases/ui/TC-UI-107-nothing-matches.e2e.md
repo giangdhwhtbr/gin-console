@@ -1,6 +1,6 @@
 # TC-UI-107: Nothing matches
 
-- **REQ:** REQ-UI-106@3747fc19
+- **REQ:** REQ-UI-106@19fab77c
 - **Priority:** low
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
