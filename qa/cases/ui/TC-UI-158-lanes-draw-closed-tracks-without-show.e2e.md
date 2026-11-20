@@ -1,6 +1,6 @@
 # TC-UI-158: Lanes draw closed tracks without Show closed
 
-- **REQ:** REQ-UI-111@d8deca93
+- **REQ:** REQ-UI-111@c5095b0c
 - **Priority:** medium
 
 **Preconditions:**
