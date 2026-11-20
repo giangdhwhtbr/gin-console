@@ -43,6 +43,6 @@ No data change. The browser lays the canvas out at its content height. The page 
     - Its style height equals the content height at the scale.
 - **vitest (layout and selection):** `laneGraph.test.ts` invariants are rewritten for columns: tiers left to right, boxes of a tier stacked, no arrow crossing a card or header text, chips in the tier gap without overlap, loop arrows below the boxes, and the keys rule. `GraphView`/`LanesView` tests check that no panel shows without `select` and that a click opens it.
 - **Playwright:** gin-qa cases for the REQ-UI-122 and REQ-UI-077 scenarios. The wheel specs use `page.mouse.wheel` over the canvas and assert that `window.scrollY` grows while the canvas `scrollTop` stays 0. The `readability.spec.ts` groups stay green.
-- **TC-1:** on the deployed console, the wheel checks at 1440 and 1920px, plus the live readability check.
+- **TC-1:** on the deployed console, the wheel checks at 1440 and 1920px (the page scrolls wherever it is taller than the window; the canvas never scrolls up or down), plus the live readability check.
 
 ## Open Technical Questions

@@ -3,8 +3,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 export const ZOOM = { min: 0.4, max: 2, step: 0.1 } as const;
 const clamp = (scale: number) => Math.min(ZOOM.max, Math.max(ZOOM.min, Math.round(scale * 100) / 100));
 
-/** The scale that shows the whole width of the graph in the canvas, never above 100%. */
-export const fitWidth = (width: number, boxW: number) => (width === 0 || boxW === 0 ? 1 : clamp(Math.min(1, boxW / width)));
+/** The scale that shows the whole width of the graph in the canvas, never above 100%, floored to a whole percent so it fits. */
+export const fitWidth = (width: number, boxW: number) => (width === 0 || boxW === 0 ? 1 : clamp(Math.floor(Math.min(1, boxW / width) * 100 + 1e-6) / 100));
 
 /** The zoom of a canvas: fitted once when it opens, Ctrl/Cmd and the wheel zoom the scroll box in `box`. */
 export function useZoom(width: number) {

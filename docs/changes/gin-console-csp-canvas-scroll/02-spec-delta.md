@@ -13,7 +13,7 @@ The canvas of the Graph view (REQ-UI-106), with its nodes or lane boxes (REQ-UI-
 - THEN the page scrolls down and the canvas has no vertical scroll bar
 
 #### Scenario: Wheel over the Graph view
-- GIVEN the Graph view of `ex-e12` with "Show closed" on at 1920×1080, with the pointer over a lane box
+- GIVEN the Graph view of `ex-e12` with "Show closed" on at 1440×900, where the page is taller than the window, with the pointer over a lane box
 - WHEN the user turns the wheel down
 - THEN the page scrolls down
 
