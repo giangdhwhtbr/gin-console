@@ -1,17 +1,13 @@
-import { Minus, Plus } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Button } from "@/components/ui/button";
+import { type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import { GraphNodeButton } from "./GraphNode";
 import { chainOf, edgeKey, edgePath, linkLabels, NODE, place, step, type Graph, type StepKey } from "./graph";
+import { useZoom } from "./useZoom";
+import { ZoomBar } from "./ZoomBar";
+
+export { fitScale, ZOOM } from "./useZoom";
 
 const KEYS: readonly StepKey[] = ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"];
-export const ZOOM = { min: 0.4, max: 2, step: 0.1 } as const;
-const clamp = (scale: number) => Math.min(ZOOM.max, Math.max(ZOOM.min, Math.round(scale * 100) / 100));
-
-/** The scale that shows the whole graph in the canvas, never above 100%. */
-export const fitScale = (width: number, height: number, boxW: number, boxH: number) =>
-  clamp(Math.min(1, boxW / width, boxH / height));
 
 export function GraphCanvas({
   graph,
@@ -28,28 +24,8 @@ export function GraphCanvas({
   onOpen: (id: string) => void;
   onEscape: () => void;
 }) {
-  const box = useRef<HTMLDivElement>(null);
   const { at, width, height } = place(graph);
-  const [scale, setScale] = useState(1);
-  const fit = () => {
-    const el = box.current;
-    if (el !== null) setScale(fitScale(width, height, el.clientWidth, el.clientHeight));
-  };
-  // fitted once when the canvas opens; a refresh keeps the user's zoom
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(fit, []);
-  useEffect(() => {
-    const el = box.current;
-    if (el === null) return;
-    const wheel = (event: WheelEvent) => {
-      if ((!event.ctrlKey && !event.metaKey) || event.deltaY === 0) return;
-      event.preventDefault();
-      const delta = Math.abs(event.deltaY) < 10 ? -event.deltaY * 0.01 : (event.deltaY < 0 ? ZOOM.step : -ZOOM.step);
-      setScale((s) => clamp(s + delta));
-    };
-    el.addEventListener("wheel", wheel, { passive: false });
-    return () => el.removeEventListener("wheel", wheel);
-  }, []);
+  const { box, scale, fit, zoomIn, zoomOut } = useZoom(width, height);
 
   const labels = linkLabels(graph, at);
   const group = graph.nodes.filter((n) => n.group === "unlinked");
@@ -70,18 +46,7 @@ export function GraphCanvas({
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <div role="group" aria-label="Zoom" className="flex items-center gap-2">
-        <Button size="sm" variant="outline" aria-label="Zoom out" onClick={() => setScale((s) => clamp(s - ZOOM.step))}>
-          <Minus aria-hidden />
-        </Button>
-        <span className="w-12 text-center text-sm tabular-nums">{`${Math.round(scale * 100)}%`}</span>
-        <Button size="sm" variant="outline" aria-label="Zoom in" onClick={() => setScale((s) => clamp(s + ZOOM.step))}>
-          <Plus aria-hidden />
-        </Button>
-        <Button size="sm" variant="outline" onClick={fit}>
-          Fit to view
-        </Button>
-      </div>
+      <ZoomBar scale={scale} onOut={zoomOut} onIn={zoomIn} onFit={fit} />
       <div
         ref={box}
         data-testid="graph-canvas"

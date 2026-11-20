@@ -231,15 +231,44 @@ describe("BeadsPage", () => {
       }),
     ];
 
-    it("REQ-UI-116 Merge gate node (Graph through BeadsView)", async () => {
-      window.history.replaceState(null, "", "/beads?project=alpha&view=graph&scope=ex-e12");
-      stub(() => json(data));
+    it("REQ-UI-116 Merge gate node: a parentless closed gate is a dashed node in the project Graph", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=graph&closed=1");
+      stub(() =>
+        json([
+          bead("ex-g3", { status: "closed", title: "external: plan#3", waits_for: { plan: "plan", number: 3, track_id: "ex-t3", lane: "fe" } }),
+          bead("ex-w", { blocked_by: ["ex-g3"] }),
+        ]),
+      );
       render(<BeadsPage />);
       await screen.findByRole("navigation", { name: "Graph scope" });
-      await waitFor(() => expect(document.querySelector('[data-node="ex-e12.9"]')).not.toBeNull());
-      const node = document.querySelector('[data-node="ex-e12.9"]');
-      expect(node).toHaveTextContent("Waits for be #2 to merge");
-      expect(node).toHaveTextContent("Waiting");
+      await waitFor(() => expect(document.querySelector('[data-node="ex-g3"]')).not.toBeNull());
+      const node = document.querySelector('[data-node="ex-g3"]');
+      expect(node).toHaveTextContent("Waits for fe #3 to merge");
+      expect(node).toHaveTextContent("Merged");
+      expect(node?.className).toContain("border-dashed");
+    });
+
+    it("REQ-UI-116 Merge gate chip in lane boxes (Graph through BeadsView)", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=graph&scope=ex-e12");
+      stub(() =>
+        json([
+          data[0],
+          bead("ex-e12.2", { parent: "ex-e12", lane: "be", track: { plan: "plan", number: 2 } }),
+          bead("ex-e12.4", { parent: "ex-e12", lane: "qa", track: { plan: "plan", number: 4 }, blocked_by: ["ex-e12.9"] }),
+          bead("ex-e12.9", {
+            parent: "ex-e12",
+            title: "external: plan#2",
+            waits_for: { plan: "plan", number: 2, track_id: "ex-e12.2", lane: "be" },
+          }),
+        ]),
+      );
+      render(<BeadsPage />);
+      await screen.findByRole("navigation", { name: "Graph scope" });
+      await waitFor(() => expect(document.querySelector('[data-node="ex-e12.2"]')).not.toBeNull());
+      expect(document.querySelector('[data-node="ex-e12.9"]')).toBeNull();
+      expect(screen.queryByRole("button", { name: /Waits for be #2 to merge/ })).toBeNull();
+      expect(document.querySelector('[data-chip="ex-e12.9"]')).toHaveTextContent("Waiting · be #2");
+      expect(screen.getByRole("region", { name: "Lane qa" })).toBeInTheDocument();
     });
 
     it("REQ-UI-116 Merge gate node: the List view of the same data does not show the gate", async () => {
