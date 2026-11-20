@@ -50,8 +50,8 @@ Source: `assets/2026-11-20/mockup/index.html`, `assets/2026-11-20/shots/b-light.
 
 #### Scenario: Keys between boxes
 - GIVEN the focus on track 2 in the be box
-- WHEN the user presses Arrow Down
-- THEN the focus and the selection move to track 4 in the qa box, and the details panel shows it
+- WHEN the user presses Arrow Down, then Enter
+- THEN the focus moves to track 4 in the qa box, and Enter selects it and the details panel shows it
 
 ### REQ-UI-118: Lane box header and colours
 Each lane box of REQ-UI-117 SHALL show a header with a colour swatch, the lane name in a heavier weight and the lane's state as an icon and words (REQ-UI-112) on its first line, and the holder, the lease and "<closed>/<total> closed" (REQ-UI-112) in the muted colour on its second line, cut with an ellipsis and with the full text as `title`. The box SHALL have a background tint and a border in the lane's colour: lane colour `k` of eight categorical colours with a light and a dark step each, `k` being the position of the lane name among the names of the scope's lanes sorted, counted again from 1 after 8, so that a filter never changes a lane's colour. Text in a box SHALL keep the text colours, never the lane colour, at a contrast of at least 4.5:1 (REQ-UI-110). The "No lane" box SHALL have a dashed neutral border, no swatch and no state.
@@ -73,6 +73,30 @@ Source: `assets/2026-11-20/mockup/index.html`, `assets/2026-11-20/shots/b-dark.p
 - THEN they sit in a dashed box "No lane" with "1/2 closed" and no swatch or state
 
 ## MODIFIED
+
+### REQ-UI-115: Lane chip
+<!-- base: e3b272f63bc1af178a677c32c35939398215a782fa60b66964c7c6d461c9c31d -->
+WHERE a bead's `lane` is not `null` (REQ-BEADS-019), its List row, its Board and Focus cards, its Graph node, its Gantt child row (REQ-MILESTONE-UI-015), its bead page and its details panel SHALL show a lane chip: an icon and the lane name, cut with an ellipsis and with the title "Lane <name>"; the cards of the Lanes view and the cards inside the lane boxes of the Graph view (REQ-UI-117), whose row or box names the lane, SHALL NOT. The label chips of a bead SHALL NOT show its `lane:<name>` label when it has a `lane`, nor its `track:<N>` label when it has a `track`. The facts of a bead page (REQ-UI-110) SHALL add Lane (the name), Track ("#<N>", followed by the plan's file name when `track.plan` is known) and Lease ("until <date>" or "expired <date>" as in REQ-UI-112) when the bead has them.
+
+#### Scenario: Chip in every view
+- GIVEN track 2 of `ex-e12` in lane `be`, labelled `lane:be` and `track:2`
+- WHEN its List row, Board card, Gantt child row and bead page are shown
+- THEN each shows the chip "be" with the title "Lane be", and no label chip reads `lane:be` or `track:2`
+
+#### Scenario: No chip inside a lane box
+- GIVEN the Graph view with `scope=ex-e12`, whose tracks have lanes
+- WHEN it is shown
+- THEN the card of track 2 sits in the box headed "be" and has no lane chip
+
+#### Scenario: Facts
+- GIVEN track 2 with `track` `{"plan": ".planning/plans/2026-11-20-shop.md", "number": 2}` and a `claim` expiring tomorrow at 16:00
+- WHEN its bead page is shown
+- THEN the facts include Lane "be", Track "#2 2026-11-20-shop.md" and Lease "until <tomorrow> 16:00"
+
+#### Scenario: Bead without a lane
+- GIVEN a bead whose `lane` is `null`
+- WHEN its List row is shown
+- THEN it has no lane chip
 
 ### REQ-UI-116: Merge gates in the views
 <!-- base: cc77932357ec6e36b49630c6fefc806a1183919de0e93e1d89606a8f07aecf5e -->
