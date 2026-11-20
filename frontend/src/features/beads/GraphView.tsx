@@ -6,6 +6,9 @@ import { DetailsPanel } from "./DetailsPanel";
 import type { BeadFilters } from "./filters";
 import { GraphCanvas } from "./GraphCanvas";
 import { ancestorsOf, hasChildren, keepWithAncestors, scopeGraph } from "./graph";
+import { laneGraph } from "./laneGraph";
+import { LaneGraphCanvas } from "./LaneGraphCanvas";
+import { hasLanes } from "./lanes";
 import { scopeOf } from "./scope";
 import { ScopeTrail } from "./ScopeTrail";
 import type { MilestoneInEffect } from "./milestoneChoice";
@@ -33,13 +36,17 @@ export function GraphView(props: Props) {
 function GraphBody({ project, beads, matched, milestone, filters, onChange, scopeId }: Props & { scopeId: string | null }) {
   const [onlyLinked, setOnlyLinked] = useState(scopeId === null);
   const graphBeads = scopeId === milestone ? beads : beads.filter((b) => b.issue_type !== "milestone");
-  const graph = scopeGraph(graphBeads, scopeId, { hideDone: false, onlyLinked, keep: keepWithAncestors(beads, matched) });
-  const known = new Set(graph.nodes.map((n) => n.bead.id));
+  const keep = keepWithAncestors(beads, matched);
+  // REQ-UI-117: a scope with lanes draws a box per lane instead of the layers
+  const lanes = scopeId !== null && hasLanes(beads, scopeId) ? laneGraph(beads, scopeId, keep, new Date()) : null;
+  const graph = scopeGraph(graphBeads, scopeId, { hideDone: false, onlyLinked, keep });
+  const ids = lanes === null ? graph.nodes.map((n) => n.bead.id) : lanes.cards.map((c) => c.bead.id);
+  const known = new Set(ids);
   const focus = scopeId ?? "";
   const asked = filters.select;
   const selected =
     asked === "none" ? "" : asked !== "" && (known.has(asked) || asked === scopeId) ? asked : focus;
-  const tabStop = known.has(selected) ? selected : (graph.nodes[0]?.bead.id ?? "");
+  const tabStop = known.has(selected) ? selected : (ids[0] ?? "");
   // closing returns focus to the node that was selected, or to the canvas tab stop when it is gone
   const closed = useRef<string | null>(null);
   useEffect(() => {
@@ -58,36 +65,35 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
   const rest = scopeId === null || scopeId === milestone ? [] : [...ancestorsOf(plain, scopeId), scopeId];
   const top = milestone !== "all" && milestone !== "none" ? milestone : project;
 
+  const cycle = lanes === null ? graph.cycle : lanes.cycle;
+  const handlers = {
+    onSelect: (id: string) => onChange({ ...filters, select: id }),
+    onOpen: (id: string) =>
+      hasChildren(beads, id) ? onChange({ ...filters, scope: id, select: "" }) : navigate(`/beads/${enc(project)}/${enc(id)}`),
+    onEscape: () => onChange({ ...filters, select: selected !== "" && selected !== focus ? focus || "none" : "none" }),
+  };
+
   return (
     <div className={cn("grid gap-4", selected !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
       <div className="flex min-w-0 flex-col gap-3">
         <ScopeTrail label="Graph scope" top={top} rest={rest} onScope={to} />
         <div className="flex flex-wrap items-center gap-4 text-sm">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" role="switch" checked={onlyLinked} onChange={(e) => setOnlyLinked(e.target.checked)} />
-            Only linked
-          </label>
-          {graph.unlinked > 0 && <span className="text-muted-foreground">{`${graph.unlinked} without dependencies`}</span>}
+          {lanes === null && (
+            <label className="flex items-center gap-2">
+              <input type="checkbox" role="switch" checked={onlyLinked} onChange={(e) => setOnlyLinked(e.target.checked)} />
+              Only linked
+            </label>
+          )}
+          {lanes === null && graph.unlinked > 0 && <span className="text-muted-foreground">{`${graph.unlinked} without dependencies`}</span>}
           {scopeId === milestone && <span className="text-muted-foreground">Dashed nodes are outside this milestone.</span>}
         </div>
-        {graph.cycle.length > 0 && (
-          <p role="status" className="text-sm text-state-blocked">{`Dependency cycle between ${graph.cycle.join(", ")}`}</p>
-        )}
-        {graph.nodes.length === 0 ? (
+        {cycle.length > 0 && <p role="status" className="text-sm text-state-blocked">{`Dependency cycle between ${cycle.join(", ")}`}</p>}
+        {ids.length === 0 ? (
           <p className="text-muted-foreground">No beads match these filters</p>
+        ) : lanes !== null ? (
+          <LaneGraphCanvas graph={lanes} beads={beads} selected={selected} tabStop={tabStop} {...handlers} />
         ) : (
-          <GraphCanvas
-            graph={graph}
-            selected={selected}
-            tabStop={tabStop}
-            onSelect={(id) => onChange({ ...filters, select: id })}
-            onOpen={(id) =>
-              hasChildren(beads, id)
-                ? onChange({ ...filters, scope: id, select: "" })
-                : navigate(`/beads/${enc(project)}/${enc(id)}`)
-            }
-            onEscape={() => onChange({ ...filters, select: selected !== "" && selected !== focus ? focus || "none" : "none" })}
-          />
+          <GraphCanvas graph={graph} selected={selected} tabStop={tabStop} {...handlers} />
         )}
       </div>
       {selected !== "" && <DetailsPanel project={project} id={selected} graphScope={scopeId} onClose={close} />}

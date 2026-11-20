@@ -5,6 +5,7 @@ import type { BeadSummary } from "./api";
 import { bead, json, stubBeads } from "./beadFixtures";
 import { parseFilters, type BeadFilters } from "./filters";
 import { GraphView } from "./GraphView";
+import { e12, g2 } from "./laneFixtures";
 
 const m2 = bead("m2", { issue_type: "milestone" });
 const e1 = bead("e1", { issue_type: "epic", parent: "m2", milestone: "m2" });
@@ -186,5 +187,25 @@ describe("GraphView merge gates", () => {
     const found = node("g1");
     expect(found).toHaveClass("border-dashed");
     expect(found).toHaveTextContent("Waits for track 2 to merge");
+  });
+
+  it("REQ-UI-117 Boxes in tiers: a scope with lanes draws a box per lane, no gate node and no Only linked", () => {
+    view({ beads: e12, matched: e12, filters: { scope: "ex-e12", closed: true } });
+    expect(screen.getByRole("region", { name: "Lane be" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Lane qa" })).toBeInTheDocument();
+    expect(node(g2.id)).toBeNull();
+    expect(screen.queryByRole("switch", { name: "Only linked" })).toBeNull();
+  });
+
+  it("REQ-UI-117 Scope without lanes: layers and Only linked as before", () => {
+    view({ milestone: "m2" });
+    expect(screen.queryByRole("region", { name: /^Lane / })).toBeNull();
+    expect(screen.getByRole("switch", { name: "Only linked" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-117 filters leave out boxes with no drawn card", () => {
+    view({ beads: e12, matched: e12.filter((b) => b.lane === "be" || b.lane === null && b.id === "ex-e12"), filters: { scope: "ex-e12", closed: true } });
+    expect(screen.getByRole("region", { name: "Lane be" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Lane qa" })).toBeNull();
   });
 });
