@@ -224,7 +224,8 @@ describe("GraphView merge gates", () => {
     const b1 = lane(2, "b", { blocked_by: [a1.id] });
     const a2 = lane(3, "a", { blocked_by: [b1.id] });
     lanesView([a1, b1, a2]);
-    expect(top("a")).toBe(top("b"));
+    expect(left("a")).toBe(left("b"));
+    expect(top("b")).toBeGreaterThan(top("a"));
     expect(document.querySelector(`[data-arrow="${a1.id}>${b1.id}"]`)).not.toBeNull();
     expect(document.querySelector(`[data-arrow="${b1.id}>${a2.id}"]`)).not.toBeNull();
     const line = screen.getByRole("status");
@@ -233,13 +234,13 @@ describe("GraphView merge gates", () => {
     expect(line).toHaveTextContent("b");
   });
 
-  it("REQ-UI-117 No lane box with dependencies: No lane sits in the tier after be, with arrows to it and from it", () => {
+  it("REQ-UI-117 No lane box with dependencies: No lane sits in the tier to the right of be, with arrows to it and from it", () => {
     const be = lane(1, "be");
     const n = lane(2, null, { blocked_by: [be.id] });
     const qa = lane(3, "qa", { blocked_by: [n.id] });
     lanesView([be, n, qa]);
-    expect(top("No lane")).toBeGreaterThan(top("be"));
-    expect(top("qa")).toBeGreaterThan(top("No lane"));
+    expect(left("No lane")).toBeGreaterThan(left("be"));
+    expect(left("qa")).toBeGreaterThan(left("No lane"));
     expect(document.querySelector(`[data-arrow="${be.id}>${n.id}"]`)).not.toBeNull();
     expect(document.querySelector(`[data-arrow="${n.id}>${qa.id}"]`)).not.toBeNull();
     expect(screen.queryByRole("status")).toBeNull();

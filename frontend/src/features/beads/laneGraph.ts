@@ -4,7 +4,7 @@ import { depsOf, depthsOf, LANE, laneName, lanesOf, trackNumber, type Dep, type 
 import { gateState, gateWords } from "./mergeGates";
 
 /** REQ-UI-117, REQ-UI-118: the sizes of the lane boxes in the Graph view in px. */
-export const LANE_GRAPH = { margin: 16, pad: 14, head: 52, cardGap: 32, stackGap: 16, boxGap: 24, tierGap: 88 } as const;
+export const LANE_GRAPH = { margin: 16, pad: 14, head: 52, cardGap: 32, stackGap: 16, boxGap: 32, tierGap: 140 } as const;
 /** The chips on the arrows: `wide` fits "Waiting · be #2", `long` fits "Waiting for track 7". */
 export const LANE_CHIP = { h: 20, wide: 120, long: 152, step: 8, clear: 4 } as const;
 /** The number of lane colours (`--lane-1..8`). */
@@ -29,7 +29,7 @@ export type LaneGraphCard = { bead: BeadSummary; lane: string | null; x: number;
 export type LaneGraphArrow = {
   from: string;
   to: string;
-  /** The arrow ends on the top edge of the box of `to`. */
+  /** The arrow ends on the left edge of the box of `to`. */
   toBox: boolean;
   gate: BeadSummary | null;
   /** Through a gate that is not closed. */
@@ -66,7 +66,7 @@ type Lane = string | null;
 type Pt = { x: number; y: number };
 type Rect = { x: number; y: number; w: number; h: number };
 type Shaped = { bead: BeadSummary; layer: number; stack: number };
-type Wanted = { chip: LaneGraphChip; arrow: LaneGraphArrow | null };
+type Wanted = { chip: LaneGraphChip; arrow: LaneGraphArrow | null; slide?: { lo: number; hi: number; avoid: () => readonly Rect[] } };
 
 /** REQ-UI-118: the colour of a lane is its position among the sorted lane names of the scope, counted again from 1 after 8. */
 export function laneSlots(beads: readonly BeadSummary[], scopeId: string): Map<string, number> {
@@ -194,13 +194,6 @@ function path(points: readonly Pt[]): string {
   return kept.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
 }
 
-/** The point of a cubic at `t`. */
-function cubic(a: Pt, b: Pt, c: Pt, d: Pt, t: number): Pt {
-  const u = 1 - t;
-  const f = (p: number, q: number, r: number, s: number) => u ** 3 * p + 3 * u * u * t * q + 3 * u * t * t * r + t ** 3 * s;
-  return { x: f(a.x, b.x, c.x, d.x), y: f(a.y, b.y, c.y, d.y) };
-}
-
 const chipWidth = (words: string, loose: boolean) => {
   if (loose) return LANE_CHIP.long;
   const length = [...words].length;
@@ -211,15 +204,30 @@ const chipRect = (c: { x: number; y: number; w: number }): Rect => ({ x: c.x, y:
 const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const grown = (r: Rect, by: number): Rect => ({ x: r.x - by, y: r.y - by, w: r.w + 2 * by, h: r.h + 2 * by });
 
-/** Chips are pushed right by `LANE_CHIP.step` until none meets another chip or an obstacle (an arrowhead). */
+/**
+ * Chips are pushed right by `LANE_CHIP.step` until none meets another chip or an obstacle (an arrowhead). A chip with
+ * `slide` sits on a vertical run of its arrow and moves along it: first to a spot clear of the other arrows of its gap,
+ * then to any spot on the run, then up or down beyond it.
+ */
 function spaced(wanted: readonly Wanted[], obstacles: readonly Rect[]): LaneGraphChip[] {
   const placed: LaneGraphChip[] = [];
-  for (const { chip, arrow } of wanted) {
+  const clear = (c: LaneGraphChip, soft: readonly Rect[]) => {
+    const probe = grown(chipRect(c), LANE_CHIP.clear);
+    return !placed.some((p) => overlap(probe, chipRect(p))) && !obstacles.some((o) => overlap(probe, o)) && !soft.some((s) => overlap(probe, s));
+  };
+  for (const { chip, arrow, slide } of wanted) {
     let at = chip;
-    for (let tries = 0; tries < 400; tries += 1) {
-      const probe = grown(chipRect(at), LANE_CHIP.clear);
-      if (!placed.some((p) => overlap(probe, chipRect(p))) && !obstacles.some((o) => overlap(probe, o))) break;
-      at = { ...at, x: at.x + LANE_CHIP.step };
+    if (slide === undefined) {
+      for (let tries = 0; tries < 400 && !clear(at, []); tries += 1) at = { ...at, x: at.x + LANE_CHIP.step };
+    } else {
+      const offsets = [0, ...Array.from({ length: 300 }, (_, i) => (Math.floor(i / 2) + 1) * 4 * (i % 2 === 0 ? 1 : -1))];
+      const centre = chip.y + LANE_CHIP.h / 2;
+      const at0 = (dy: number): LaneGraphChip => ({ ...chip, y: chip.y + dy });
+      const onRun = (dy: number) => centre + dy >= slide.lo - 1 && centre + dy <= slide.hi + 1;
+      const avoid = slide.avoid();
+      const pick =
+        offsets.find((dy) => onRun(dy) && clear(at0(dy), avoid)) ?? offsets.find((dy) => onRun(dy) && clear(at0(dy), [])) ?? offsets.find((dy) => clear(at0(dy), [])) ?? 0;
+      at = at0(pick);
     }
     placed.push(at);
     if (arrow !== null) arrow.chip = { x: at.x, y: at.y };
@@ -227,7 +235,13 @@ function spaced(wanted: readonly Wanted[], obstacles: readonly Rect[]): LaneGrap
   return placed;
 }
 
-/** REQ-UI-117, REQ-UI-118: boxes in tiers, the cards inside them, the arrows and the chips of the merge gates. */
+/** A thin rectangle along a horizontal or vertical run, to keep chips off it. */
+const run = (a: Pt, b: Pt): Rect => ({ x: Math.min(a.x, b.x) - 1, y: Math.min(a.y, b.y) - 1, w: Math.abs(a.x - b.x) + 2, h: Math.abs(a.y - b.y) + 2 });
+
+/** How a dependency between two boxes is drawn: in the gap after its tier, or in the channel below every box. */
+type Plan = { dep: Dep; ta: number; tb: number; channel: boolean; words: string | null; w: number; kind: "waiting" | "merged"; k: number; kLeave: number; kEnter: number };
+
+/** REQ-UI-117, REQ-UI-118: boxes in tiers from left to right, the cards inside them, the arrows and the chips of the merge gates. */
 export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matched: ReadonlySet<string>, now: Date): LaneGraph {
   const { margin, pad, head, cardGap, stackGap, boxGap, tierGap } = LANE_GRAPH;
   const board = lanesOf(beads, scopeId, matched, now);
@@ -242,8 +256,9 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
   const shaped = new Map<Lane, Shaped[]>(board.rows.map((r) => [r.lane, shapeCards(r.cards.map((c) => c.bead), deps)]));
   const shapeOf = new Map([...shaped.values()].flat().map((s) => [s.bead.id, s] as const));
   const tierOf = (lane: Lane) => tier.get(lane) ?? 0;
+  const tiers = Math.max(...board.rows.map((r) => tierOf(r.lane))) + 1;
 
-  // the arrows that are drawn: forwards inside a box, and every dependency between boxes (a back edge or a same-tier one runs in the side channel)
+  // the arrows that are drawn: forwards inside a box, and every dependency between boxes (a back edge or a same-tier one runs in the channel)
   const arrowsWanted = oneArrowEach(deps).filter((dep) => {
     const a = shapeOf.get(dep.from);
     const b = shapeOf.get(dep.to);
@@ -255,12 +270,42 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
     const lane = laneOf.get(d.from) ?? null;
     if (d.gate !== null && lane === laneOf.get(d.to)) gatedInside.set(lane, (gatedInside.get(lane) ?? 0) + 1);
   }
-  const backToTier0 = arrowsWanted.some((d) => laneOf.get(d.from) !== laneOf.get(d.to) && tierOf(laneOf.get(d.to) ?? null) <= tierOf(laneOf.get(d.from) ?? null) && tierOf(laneOf.get(d.to) ?? null) === 0);
-  const backFromLast = arrowsWanted.some((d) => laneOf.get(d.from) !== laneOf.get(d.to) && tierOf(laneOf.get(d.to) ?? null) <= tierOf(laneOf.get(d.from) ?? null) && tierOf(laneOf.get(d.from) ?? null) === Math.max(...board.rows.map((r) => tierOf(r.lane))));
-  const looseTier0 = loose.some((l) => tierOf(laneOf.get(l.card.id) ?? null) === 0);
 
-  // boxes in tiers
-  // each gated arrow inside a box has its own row under the cards for its chip
+  // how each arrow between boxes is routed, and the room its chip and its channel need in the gaps
+  const inGap = new Array<number>(tiers).fill(0);
+  const leaving = new Array<number>(tiers).fill(0);
+  const entering = new Array<number>(tiers).fill(0);
+  const widest = new Array<number>(tiers).fill(0);
+  const plans = new Map<Dep, Plan>();
+  for (const dep of arrowsWanted) {
+    const ta = tierOf(laneOf.get(dep.from) ?? null);
+    const tb = tierOf(laneOf.get(dep.to) ?? null);
+    if (laneOf.get(dep.from) === laneOf.get(dep.to)) continue;
+    const gate = dep.gate;
+    const words = gate !== null && gate.waits_for !== null ? `${gateState(gate.status)} · ${gateWords(gate.waits_for)}` : null;
+    const channel = tb !== ta + 1;
+    const w = words === null ? 0 : chipWidth(words, false);
+    plans.set(dep, {
+      dep,
+      ta,
+      tb,
+      channel,
+      words,
+      w,
+      kind: gate !== null && gate.status === "closed" ? "merged" : "waiting",
+      k: channel ? 0 : inGap[ta]++,
+      kLeave: channel ? leaving[ta]++ : 0,
+      kEnter: channel ? entering[tb]++ : 0,
+    });
+    if (!channel) widest[ta] = Math.max(widest[ta], w);
+  }
+  const leftRoom = entering[0] > 0 ? 10 + 6 * entering[0] : 0;
+  const zoneL = (t: number) => 10 + 6 * leaving[t];
+  // the right zone also keeps the arrowhead (10px) and the clear space of a chip off the left edge of the next box
+  const zoneR = (t: number) => (t + 1 < tiers ? 22 + 6 * entering[t + 1] : 0);
+  const gapW = (t: number) => (t + 1 < tiers ? Math.max(tierGap, widest[t] + zoneL(t) + zoneR(t)) : leaving[t] > 0 ? zoneL(t) : 0);
+
+  // boxes in columns, one per tier; each gated arrow inside a box has its own row under the cards for its chip
   const rowH = LANE_CHIP.h + 4;
   const room = (lane: Lane) => ((gatedInside.get(lane) ?? 0) === 0 ? 0 : ((gatedInside.get(lane) ?? 1) - 1) * rowH + LANE_CHIP.h - 2);
   const sizes = new Map<Lane, { layers: number; stacks: number; w: number; h: number }>();
@@ -274,26 +319,29 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
       h: head + 2 * pad + stacks * LANE.cardH + (stacks - 1) * stackGap + room(lane),
     });
   }
-  const tiers = Math.max(...board.rows.map((r) => tierOf(r.lane))) + 1;
-  const tierTop: number[] = [];
-  const tierBottom: number[] = [];
   const boxes: LaneBoxLayout[] = [];
-  let top = Math.max(margin + (looseTier0 ? LANE_CHIP.h : 0), backToTier0 ? tierGap / 2 : 0);
+  const colX: number[] = [];
+  const colRight: number[] = [];
+  const top = margin + (loose.length > 0 ? LANE_CHIP.h : 0);
+  let maxBottom = top;
+  let x = margin + leftRoom;
   for (let t = 0; t < tiers; t += 1) {
-    let x = margin;
-    let tall = 0;
+    let y = top;
+    let wide = 0;
     for (const row of board.rows.filter((r) => tierOf(r.lane) === t)) {
       const size = sizes.get(row.lane);
       if (size === undefined) continue;
       const open = row.state !== null && row.state.kind !== "closed";
       const facts = [...(open ? [row.holders.length > 0 ? row.holders.join(", ") : "Unclaimed", ...(row.lease === null ? [] : [row.lease.text.replace(/^until/, "lease until").replace(/^expired/, "lease expired")])] : []), `${row.tracks.closed}/${row.tracks.total} closed`];
-      boxes.push({ lane: row.lane, slot: row.lane === null ? 0 : (slots.get(row.lane) ?? 0), tier: t, x, y: top, w: size.w, h: size.h, state: row.state, meta: facts.join(" · ") });
-      x += size.w + boxGap;
-      tall = Math.max(tall, size.h);
+      boxes.push({ lane: row.lane, slot: row.lane === null ? 0 : (slots.get(row.lane) ?? 0), tier: t, x, y, w: size.w, h: size.h, state: row.state, meta: facts.join(" · ") });
+      y += size.h;
+      maxBottom = Math.max(maxBottom, y);
+      y += boxGap;
+      wide = Math.max(wide, size.w);
     }
-    tierTop.push(top);
-    tierBottom.push(top + tall);
-    top += tall + tierGap;
+    colX.push(x);
+    colRight.push(x + wide);
+    x += wide + gapW(t);
   }
   const boxAt = new Map(boxes.map((b) => [b.lane, b]));
 
@@ -311,13 +359,14 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
   const cardAt = new Map(cards.map((c) => [c.bead.id, c]));
 
   // arrows and their chips
-  const right = Math.max(...boxes.map((b) => b.x + b.w));
   const mid = LANE.cardH / 2;
   const arrows: LaneGraphArrow[] = [];
   const wanted: Wanted[] = [];
-  let channels = 0;
-  const rows = new Map<Lane, number>();
   const ends: Rect[] = [];
+  const rows = new Map<Lane, number>();
+  const gapSegs = new Map<number, { plan: Plan; segs: Rect[] }[]>();
+  let channelY = maxBottom + 18;
+  let channelEnd = maxBottom;
   for (const dep of arrowsWanted) {
     const a = cardAt.get(dep.from);
     const b = cardAt.get(dep.to);
@@ -328,9 +377,11 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
     if (boxA === undefined || boxB === undefined || sizeA === undefined) continue;
     const gate = dep.gate;
     const arrow: LaneGraphArrow = { from: dep.from, to: dep.to, toBox: a.lane !== b.lane, gate, dashed: gate !== null && gate.status !== "closed", d: "", chip: null };
+    const start = { x: a.x + LANE.cardW, y: a.y + mid };
+    let chipOn: Wanted["slide"] | null = null;
     let chipAt: Pt | null = null;
-    if (!arrow.toBox) {
-      const start = { x: a.x + LANE.cardW, y: a.y + mid };
+    const plan = plans.get(dep);
+    if (plan === undefined) {
       const end = { x: b.x, y: b.y + mid };
       const gap = start.x + cardGap / 2;
       if (gate === null && b.layer === a.layer + 1) {
@@ -346,42 +397,44 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
         chipAt = { x: (gap + back) / 2, y: under };
       }
     } else {
-      const ta = boxA.tier;
-      const tb = boxB.tier;
-      const bottom = tierBottom[ta];
-      const topB = tierTop[tb];
-      const lowest = !cards.some((c) => c.lane === a.lane && c.layer === a.layer && c.stack > a.stack);
-      const centre = a.x + LANE.cardW / 2;
+      // out of the box: straight from the last layer, else down the gap beside the card and along the gap under its row
+      const ty = b.y + mid;
       const lastLayer = a.layer === sizeA.layers - 1;
-      const side = a.x + LANE.cardW + (lastLayer ? pad / 2 : cardGap / 2);
-      const exit = lowest ? centre : side;
-      const leave: Pt[] = lowest
-        ? [{ x: centre, y: a.y + LANE.cardH }, { x: centre, y: bottom }]
-        : [{ x: centre, y: a.y + LANE.cardH }, { x: centre, y: a.y + LANE.cardH + stackGap / 2 }, { x: side, y: a.y + LANE.cardH + stackGap / 2 }, { x: side, y: bottom }];
-      const x2 = b.x + LANE.cardW / 2;
-      const from = { x: exit, y: bottom };
-      if (tb === ta + 1) {
-        ends.push({ x: x2 - 6, y: topB - 10, w: 12, h: 10 });
-        const y = bottom + tierGap / 2;
-        arrow.d = `${path(leave)} C ${exit} ${y} ${x2} ${y} ${x2} ${topB}`;
-        chipAt = cubic(from, { x: exit, y }, { x: x2, y }, { x: x2, y: topB }, 0.3);
+      const exitY = lastLayer ? start.y : a.y + LANE.cardH + 10;
+      const side = a.x + LANE.cardW + cardGap / 2;
+      const leave: Pt[] = lastLayer ? [start] : [start, { x: side, y: start.y }, { x: side, y: exitY }];
+      const endPt = { x: boxB.x, y: ty };
+      ends.push({ x: boxB.x - 10, y: ty - 6, w: 10, h: 12 });
+      if (!plan.channel) {
+        const left = colRight[plan.ta] + zoneL(plan.ta);
+        const window = boxB.x - zoneR(plan.ta) - left;
+        const centre = left + window / 2;
+        const cx = Math.round(centre + (plan.k - (inGap[plan.ta] - 1) / 2) * 6);
+        arrow.d = path([...leave, { x: cx, y: exitY }, { x: cx, y: ty }, endPt]);
+        const lo = Math.min(exitY, ty);
+        const hi = Math.max(exitY, ty);
+        const segs = [run({ x: colRight[plan.ta], y: exitY }, { x: cx, y: exitY }), run({ x: cx, y: lo }, { x: cx, y: hi }), run({ x: cx, y: ty }, endPt)];
+        gapSegs.set(plan.ta, [...(gapSegs.get(plan.ta) ?? []), { plan, segs }]);
+        chipAt = { x: centre, y: (lo + hi) / 2 };
+        chipOn = { lo, hi, avoid: () => [] };
       } else {
-        ends.push({ x: x2 - 6, y: topB - 10, w: 12, h: 10 });
-        const channel = right + 12 + channels * LANE_CHIP.step;
-        channels += 1;
-        const out = bottom + tierGap / 2;
-        const into = topB - tierGap / 2;
-        arrow.d = `${path(leave)} C ${exit} ${bottom + tierGap / 4} ${channel} ${bottom + tierGap / 4} ${channel} ${out} L ${channel} ${into} C ${channel} ${topB - tierGap / 4} ${x2} ${topB - tierGap / 4} ${x2} ${topB}`;
-        chipAt = cubic(from, { x: exit, y: bottom + tierGap / 4 }, { x: channel, y: bottom + tierGap / 4 }, { x: channel, y: out }, 0.3);
+        // down beside the source tier, along a channel under every box, up beside the target tier
+        const vx = colRight[plan.ta] + 6 + plan.kLeave * 6;
+        const ux = (plan.tb === 0 ? colX[0] : colX[plan.tb]) - 6 - plan.kEnter * 6;
+        const chY = channelY;
+        channelY += plan.words === null ? 12 : 28;
+        channelEnd = plan.words === null ? chY : chY + LANE_CHIP.h / 2;
+        arrow.d = path([...leave, { x: vx, y: exitY }, { x: vx, y: chY }, { x: ux, y: chY }, { x: ux, y: ty }, endPt]);
+        chipAt = { x: (vx + ux) / 2, y: chY };
       }
     }
     arrows.push(arrow);
     if (gate !== null && chipAt !== null && gate.waits_for !== null) {
-      const words = `${gateState(gate.status)} · ${gateWords(gate.waits_for)}`;
+      const words = plan?.words ?? `${gateState(gate.status)} · ${gateWords(gate.waits_for)}`;
       const w = chipWidth(words, false);
       const kind = gate.status === "closed" ? "merged" : "waiting";
       const chip = { gate, kind, words, x: Math.round(chipAt.x - w / 2), y: Math.round(chipAt.y - LANE_CHIP.h / 2), w, box: null } as const;
-      wanted.push({ chip, arrow });
+      wanted.push({ chip, arrow, slide: chipOn === null ? undefined : { lo: chipOn.lo, hi: chipOn.hi, avoid: () => (gapSegs.get(plan?.ta ?? -1) ?? []).flatMap((s) => (s.plan.dep === dep ? [] : s.segs)) } });
     }
   }
   const seen = new Set<string>();
@@ -395,29 +448,44 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
   }
   const chips = spaced(wanted, ends);
 
-  const edge = Math.max(right, ...chips.map((c) => c.x + c.w), channels === 0 ? 0 : right + 12 + (channels - 1) * LANE_CHIP.step);
+  const right = colRight[tiers - 1] + gapW(tiers - 1);
+  const edge = Math.max(right, ...chips.map((c) => c.x + c.w));
+  const bottom = Math.max(channelEnd, ...chips.map((c) => c.y + LANE_CHIP.h));
   const cycle = [...laneCycle, ...cycleNodes(deps.filter((d) => d.from !== d.to))];
-  return { boxes, cards, arrows, chips, cycle, width: edge + margin, height: tierBottom[tiers - 1] + margin + (backFromLast ? tierGap / 2 : 0) };
+  return { boxes, cards, arrows, chips, cycle, width: edge + margin, height: bottom + margin };
 }
 
-const orderOf = (graph: LaneGraph, id: string) => graph.cards.filter((c) => c.lane === graph.cards.find((x) => x.bead.id === id)?.lane);
+const orderOf = (graph: LaneGraph, card: LaneGraphCard) => graph.cards.filter((c) => c.lane === card.lane);
 const tierOfCard = (graph: LaneGraph, card: LaneGraphCard) => graph.boxes.find((b) => b.lane === card.lane)?.tier ?? 0;
+const nearest = (list: readonly LaneGraphCard[], key: (c: LaneGraphCard) => number, to: number): LaneGraphCard | null => {
+  let best: LaneGraphCard | null = null;
+  for (const c of list) if (best === null || Math.abs(key(c) - to) < Math.abs(key(best) - to)) best = c;
+  return best;
+};
 
-/** REQ-UI-117: Left and Right stay in the box; Up and Down go to the card its arrows lead to (or come from) in the tier below (or above), else to a card there; the nearest by x in both cases. */
+/**
+ * REQ-UI-117: Left and Right move to the previous or next card of the box; from the first or last card they go to the card
+ * an arrow of the focused card comes from in the tier on the left or leads to in the tier on the right (the nearest by y),
+ * else to the card of that tier nearest by y. Up and Down go to the card nearest by x in the box above or below in the same tier.
+ */
 export function laneGraphStep(graph: LaneGraph, id: string, key: StepKey): string | null {
   const card = graph.cards.find((c) => c.bead.id === id);
   if (card === undefined) return null;
+  const tier = tierOfCard(graph, card);
   if (key === "ArrowLeft" || key === "ArrowRight") {
-    const row = orderOf(graph, id);
-    return row[row.indexOf(card) + (key === "ArrowRight" ? 1 : -1)]?.bead.id ?? null;
+    const row = orderOf(graph, card);
+    const at = row.indexOf(card) + (key === "ArrowRight" ? 1 : -1);
+    if (at >= 0 && at < row.length) return row[at].bead.id;
+    const there = graph.cards.filter((c) => tierOfCard(graph, c) === tier + (key === "ArrowRight" ? 1 : -1));
+    const linked = new Set(graph.arrows.flatMap((a) => (key === "ArrowRight" ? (a.from === id ? [a.to] : []) : a.to === id ? [a.from] : [])));
+    const direct = there.filter((c) => linked.has(c.bead.id));
+    return nearest(direct.length > 0 ? direct : there, (c) => c.y, card.y)?.bead.id ?? null;
   }
-  const want = tierOfCard(graph, card) + (key === "ArrowDown" ? 1 : -1);
-  const there = graph.cards.filter((c) => tierOfCard(graph, c) === want);
-  const linked = new Set(graph.arrows.flatMap((a) => (key === "ArrowDown" ? (a.from === id ? [a.to] : []) : a.to === id ? [a.from] : [])));
-  const direct = there.filter((c) => linked.has(c.bead.id));
-  let best: LaneGraphCard | null = null;
-  for (const c of direct.length > 0 ? direct : there) if (best === null || Math.abs(c.x - card.x) < Math.abs(best.x - card.x)) best = c;
-  return best?.bead.id ?? null;
+  const mine = graph.boxes.find((b) => b.lane === card.lane);
+  if (mine === undefined) return null;
+  const beside = graph.boxes.filter((b) => b.tier === mine.tier && (key === "ArrowDown" ? b.y > mine.y : b.y < mine.y));
+  const next = beside.reduce<LaneBoxLayout | null>((best, b) => (best === null || Math.abs(b.y - mine.y) < Math.abs(best.y - mine.y) ? b : best), null);
+  return next === null ? null : (nearest(graph.cards.filter((c) => c.lane === next.lane), (c) => c.x, card.x)?.bead.id ?? null);
 }
 
 /** The card, all its direct and indirect blockers and blocked cards, and the arrows (`from>to`) inside either side. */

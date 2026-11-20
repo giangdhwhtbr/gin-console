@@ -48,13 +48,17 @@ describe("LaneGraphCanvas", () => {
     expect(fns.onOpen).toHaveBeenCalledWith(`${E12}.2`);
   });
 
-  it("REQ-UI-117 Keys between boxes: Right stays in the box, Down moves to the box below, Escape escapes", async () => {
+  it("REQ-UI-117 Keys between boxes: Right stays in the box, then crosses to track 4 in qa, Enter selects it, Escape escapes", async () => {
     const fns = show();
     node(1)!.focus();
     await userEvent.keyboard("{ArrowRight}");
     expect(node(2)).toHaveFocus();
-    await userEvent.keyboard("{ArrowDown}");
+    await userEvent.keyboard("{ArrowRight}");
     expect(node(4)).toHaveFocus();
+    await userEvent.keyboard("{Enter}");
+    expect(fns.onSelect).toHaveBeenCalledWith(`${E12}.4`);
+    await userEvent.keyboard("{ArrowDown}");
+    expect(node(7)).toHaveFocus();
     await userEvent.keyboard("{Escape}");
     expect(fns.onEscape).toHaveBeenCalled();
   });

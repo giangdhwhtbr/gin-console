@@ -81,7 +81,7 @@ const cardRect = (c: { x: number; y: number }): Rect => ({ x: c.x, y: c.y, w: LA
 const headRect = (b: LaneBoxLayout): Rect => ({ x: b.x + LANE_GRAPH.pad, y: b.y, w: b.w - 2 * LANE_GRAPH.pad, h: LANE_GRAPH.head });
 
 /**
- * Arrowheads are not modelled by the layout: the check treats the end of an arrow and the 10px before it as the
+ * Arrowheads are not modelled by the layout: the check treats the end of an arrow and the 10px before it (to its left) as the
  * head, and keeps every chip off it.
  */
 function expectClear(g: LaneGraph) {
@@ -97,7 +97,7 @@ function expectClear(g: LaneGraph) {
     const points = sample(a.d);
     const end = points[points.length - 1];
     for (const c of g.chips) {
-      for (const head of [end, { x: end.x, y: end.y - 10 }]) expect(inside({ x: c.x, y: c.y, w: c.w, h: 20 }, head), `chip ${c.words} over the end of ${a.from}>${a.to}`).toBe(false);
+      for (const head of [end, { x: end.x - 10, y: end.y }]) expect(inside({ x: c.x, y: c.y, w: c.w, h: 20 }, head), `chip ${c.words} over the end of ${a.from}>${a.to}`).toBe(false);
     }
   }
   for (const [i, a] of g.chips.entries()) {
@@ -110,22 +110,56 @@ function expectEndsOnBox(g: LaneGraph, from: string, to: string) {
   const target = cardOf(g, to);
   const box = boxOf(g, target.lane);
   expect(arrow, `${from}>${to}`).toMatchObject({ toBox: true });
-  expect(sample(arrow?.d ?? "").at(-1)).toEqual({ x: target.x + LANE.cardW / 2, y: box.y });
+  expect(sample(arrow?.d ?? "").at(-1)).toEqual({ x: box.x, y: target.y + LANE.cardH / 2 });
+}
+
+/** Tiers are columns left to right, and the boxes of a tier stand one under another without touching. */
+function expectColumns(g: LaneGraph) {
+  const tiers = [...new Set(g.boxes.map((b) => b.tier))].sort((a, b) => a - b);
+  let edge = -Infinity;
+  for (const t of tiers) {
+    const col = g.boxes.filter((b) => b.tier === t);
+    expect(new Set(col.map((b) => b.x)).size, `tier ${t} shares one x`).toBe(1);
+    expect(col[0].x, `tier ${t} is right of the earlier one`).toBeGreaterThanOrEqual(edge + LANE_GRAPH.tierGap);
+    edge = Math.max(...col.map((b) => b.x + b.w));
+    for (const [i, a] of col.entries()) for (const b of col.slice(i + 1)) expect(overlap(a, b), `${String(a.lane)} / ${String(b.lane)}`).toBe(false);
+  }
+}
+
+/** A chip on an arrow between neighbouring tiers lies inside the gap between them. */
+function expectChipsInGaps(g: LaneGraph) {
+  const bottom = Math.max(...g.boxes.map((b) => b.y + b.h));
+  for (const a of g.arrows.filter((x) => x.toBox && x.chip !== null)) {
+    const chip = g.chips.find((c) => c.x === a.chip?.x && c.y === a.chip?.y);
+    const from = boxOf(g, cardOf(g, a.from).lane);
+    const to = boxOf(g, cardOf(g, a.to).lane);
+    if (chip === undefined) throw new Error(`no chip for ${a.from}>${a.to}`);
+    if (to.tier === from.tier + 1) {
+      const left = Math.max(...g.boxes.filter((b) => b.tier === from.tier).map((b) => b.x + b.w));
+      expect(chip.x, `${chip.words} left`).toBeGreaterThanOrEqual(left);
+      expect(chip.x + chip.w, `${chip.words} right`).toBeLessThanOrEqual(to.x);
+    } else {
+      expect(chip.y, `${chip.words} in the channel`).toBeGreaterThanOrEqual(bottom);
+    }
+  }
 }
 
 describe("laneGraph", () => {
   // REQ-UI-117 scenario "Boxes in tiers"
-  it("REQ-UI-117 Boxes in tiers: be, fe and infra first, then qa and No lane, and no gate node", () => {
+  it("REQ-UI-117 Boxes in tiers: be, fe and infra stacked on the left, qa and No lane stacked to their right, and no gate node", () => {
     const g = graphOf();
     expect(g.boxes.map((b) => [b.lane, b.tier])).toEqual([["be", 0], ["fe", 0], ["infra", 0], ["qa", 1], [null, 1]]);
-    const be = boxOf(g, "be");
-    const qa = boxOf(g, "qa");
-    expect(boxOf(g, "fe").y).toBe(be.y);
-    expect(qa.y).toBe(be.y + be.h + LANE_GRAPH.tierGap);
-    expect(boxOf(g, null).x).toBe(qa.x + qa.w + LANE_GRAPH.boxGap);
-    expect(g.boxes.filter((b) => b.tier === 0).map((b) => b.x)).toEqual([16, 16 + be.w + 24, 16 + be.w + 24 + boxOf(g, "fe").w + 24]);
+    const [be, fe, infra, qa, none] = ["be", "fe", "infra", "qa", null].map((l) => boxOf(g, l));
+    const top = LANE_GRAPH.margin;
+    expect([be.x, fe.x, infra.x]).toEqual([LANE_GRAPH.margin, LANE_GRAPH.margin, LANE_GRAPH.margin]);
+    expect([be.y, fe.y, infra.y]).toEqual([top, top + be.h + LANE_GRAPH.boxGap, top + be.h + fe.h + 2 * LANE_GRAPH.boxGap]);
+    const widest = Math.max(be.w, fe.w, infra.w);
+    expect(qa.x).toBeGreaterThanOrEqual(LANE_GRAPH.margin + widest + LANE_GRAPH.tierGap);
+    expect(none.x).toBe(qa.x);
+    expect([qa.y, none.y]).toEqual([top, top + qa.h + LANE_GRAPH.boxGap]);
     expect(g.cards.some((c) => c.bead.waits_for !== null)).toBe(false);
     expect(g.cycle).toEqual([]);
+    expectColumns(g);
   });
 
   it("REQ-UI-117 keeps boxes with no drawn card out and puts No lane in tier 0 when it is alone", () => {
@@ -199,10 +233,14 @@ describe("laneGraph", () => {
     const chip = g.chips.find((c) => c.words === "Waiting · be #2");
     expect(waiting?.chip).toEqual({ x: chip?.x, y: chip?.y });
     expect(chip?.w).toBe(120);
-    // the arrow ends on the top edge of qa, over the centre of the card of track 4
+    // the arrows start at the right edge of their card and end on the left edge of qa, level with the card of track 4
     const qa = boxOf(g, "qa");
-    const last = sample(waiting?.d ?? "").at(-1);
-    expect(last).toEqual({ x: cardOf(g, t4.id).x + LANE.cardW / 2, y: qa.y });
+    const c4 = cardOf(g, t4.id);
+    expect(sample(waiting?.d ?? "")[0]).toEqual({ x: cardOf(g, t2.id).x + LANE.cardW, y: cardOf(g, t2.id).y + 32 });
+    expect(sample(waiting?.d ?? "").at(-1)).toEqual({ x: qa.x, y: c4.y + 32 });
+    expect(sample(merged?.d ?? "")[0]).toEqual({ x: cardOf(g, t3.id).x + LANE.cardW, y: cardOf(g, t3.id).y + 32 });
+    expect(sample(merged?.d ?? "").at(-1)).toEqual({ x: qa.x, y: c4.y + 32 });
+    expectChipsInGaps(g);
     expectClear(g);
   });
 
@@ -229,9 +267,6 @@ describe("laneGraph", () => {
       ["waiting", "Waiting for track 7", 152],
     ]);
     for (const c of loose) expect(c.y + 20).toBe(qa.y); // sits on the top edge, outside the header
-    // the chips keep right of the end of the arrows that reach the top edge of the box
-    const arrowEnd = cardOf(g, t4.id).x + LANE.cardW / 2;
-    expect(Math.min(...loose.map((c) => c.x))).toBeGreaterThan(arrowEnd);
     expect(Math.min(...loose.map((c) => c.x))).toBeGreaterThanOrEqual(qa.x + LANE_GRAPH.pad);
     expect(g.arrows.filter((a) => a.gate?.id === far.id || a.gate?.id === closedFar.id)).toEqual([]);
     expect(g.arrows).toHaveLength(3); // t1>t2, t2>qa, t3>qa
@@ -262,29 +297,35 @@ describe("laneGraph", () => {
   });
 
   // REQ-UI-117 scenario "Keys between boxes"
-  it("REQ-UI-117 Keys between boxes: Arrow Down from track 2 reaches track 4, and Up goes back", () => {
+  it("REQ-UI-117 Keys between boxes: Arrow Right from track 2 reaches track 4, and Left goes back", () => {
     const g = graphOf();
-    expect(laneGraphStep(g, t2.id, "ArrowDown")).toBe(t4.id);
-    expect(laneGraphStep(g, t4.id, "ArrowUp")).toBe(t2.id);
-    expect(laneGraphStep(g, t2.id, "ArrowUp")).toBeNull();
-    expect(laneGraphStep(g, t4.id, "ArrowDown")).toBeNull();
-    expect(laneGraphStep(g, t1.id, "ArrowRight")).toBe(t2.id);
-    expect(laneGraphStep(g, t2.id, "ArrowLeft")).toBe(t1.id);
+    expect(laneGraphStep(g, t2.id, "ArrowRight")).toBe(t4.id);
+    expect(laneGraphStep(g, t4.id, "ArrowLeft")).toBe(t2.id);
     expect(laneGraphStep(g, t1.id, "ArrowLeft")).toBeNull();
-    expect(laneGraphStep(g, t2.id, "ArrowRight")).toBeNull();
-    expect(laneGraphStep(g, "nope", "ArrowDown")).toBeNull();
+    expect(laneGraphStep(g, t4.id, "ArrowRight")).toBeNull();
+    expect(laneGraphStep(g, t1.id, "ArrowRight")).toBe(t2.id);
+    expect(laneGraphStep(g, t2.id, "ArrowUp")).toBeNull();
+    expect(laneGraphStep(g, "nope", "ArrowRight")).toBeNull();
   });
 
-  it("REQ-UI-117 without an arrow, Up and Down go to the nearest card of the tier below or above", () => {
+  it("REQ-UI-117 Keys between boxes: Arrow Up and Down move to the card nearest by x in the box above or below in the same tier", () => {
     const g = graphOf();
-    // track 3 (fe) has an arrow to qa; infra's track 5 has none, so the nearest card of tier 1 by x is used
-    const fromInfra = laneGraphStep(g, t5.id, "ArrowDown");
+    expect(laneGraphStep(g, t2.id, "ArrowDown")).toBe(t3.id); // be below is fe; its one card
+    expect(laneGraphStep(g, t3.id, "ArrowUp")).toBe(t1.id); // be: track 1 is at the same x as track 3
+    expect(laneGraphStep(g, t3.id, "ArrowDown")).toBe(t5.id); // infra: tracks 5 and 6, 5 is nearest
+    expect(laneGraphStep(g, t4.id, "ArrowDown")).toBe(t7.id);
+    expect(laneGraphStep(g, t7.id, "ArrowDown")).toBeNull();
+    expect(laneGraphStep(g, t4.id, "ArrowUp")).toBeNull();
+  });
+
+  it("REQ-UI-117 Keys between boxes: without an arrow, Right goes to the card of the next tier nearest by y, Left to the previous tier", () => {
+    const g = graphOf();
+    // track 6 (infra) has no arrow to tier 1, so the card of tier 1 nearest by y is used
+    const y6 = cardOf(g, t6.id).y;
     const tier1 = g.cards.filter((c) => boxOf(g, c.lane).tier === 1);
-    const centre = (c: { x: number }) => c.x + LANE.cardW / 2;
-    const x5 = centre(cardOf(g, t5.id));
-    const nearest = [...tier1].sort((a, b) => Math.abs(centre(a) - x5) - Math.abs(centre(b) - x5))[0];
-    expect(fromInfra).toBe(nearest.bead.id);
-    expect(laneGraphStep(g, t7.id, "ArrowUp")).not.toBeNull();
+    const best = [...tier1].sort((a, b) => Math.abs(a.y - y6) - Math.abs(b.y - y6))[0];
+    expect(laneGraphStep(g, t6.id, "ArrowRight")).toBe(best.bead.id);
+    expect(laneGraphStep(g, t7.id, "ArrowLeft")).not.toBeNull();
   });
 
   it("REQ-UI-117 laneGraphChain follows the arrows up and down and names them from>to", () => {
@@ -312,6 +353,8 @@ describe("laneGraph", () => {
   it("REQ-UI-117 no arrow crosses a card or a header and no two chips meet, in the ex-e12 shape", () => {
     const g = graphOf();
     expect(g.arrows.length).toBeGreaterThan(0);
+    expectColumns(g);
+    expectChipsInGaps(g);
     expectClear(g);
   });
 
@@ -325,7 +368,7 @@ describe("laneGraph", () => {
     expectClear(g);
   });
 
-  it("REQ-UI-117 an arrow that skips a tier runs in a channel right of all boxes", () => {
+  it("REQ-UI-117 an arrow that skips a tier runs in a channel below every box", () => {
     const a = track(11, "a");
     const b = track(12, "b", { blocked_by: [a.id] });
     const c = track(13, "c", { blocked_by: [b.id, a.id] });
@@ -333,9 +376,11 @@ describe("laneGraph", () => {
     const g = graphOf(beads, new Set(beads.map((x) => x.id)));
     expect(g.boxes.map((x) => [x.lane, x.tier])).toEqual([["a", 0], ["b", 1], ["c", 2]]);
     const skip = arrowOf(g, a.id, c.id);
-    const right = Math.max(...g.boxes.map((x) => x.x + x.w));
-    expect(Math.max(...sample(skip?.d ?? "").map((p) => p.x))).toBeGreaterThan(right);
-    expect(g.width).toBeGreaterThan(right);
+    const bottom = Math.max(...g.boxes.map((x) => x.y + x.h));
+    expect(Math.max(...sample(skip?.d ?? "").map((p) => p.y))).toBeGreaterThan(bottom);
+    expect(g.height).toBeGreaterThan(bottom);
+    expectEndsOnBox(g, a.id, c.id);
+    expectColumns(g);
     expectClear(g);
   });
 
@@ -346,10 +391,12 @@ describe("laneGraph", () => {
     const beads = [epic, ...sources, ...gates, sink];
     const g = graphOf(beads, new Set(beads.map((b) => b.id)));
     expect(g.chips).toHaveLength(4);
+    expectChipsInGaps(g);
+    expectColumns(g);
     expectClear(g);
   });
 
-  it("REQ-UI-117 lanes in a cycle share one tier, are listed in cycle and draw no back arrow", () => {
+  it("REQ-UI-117 Lanes in a loop: they share one tier, are listed in cycle, and both arrows run in the channel below the boxes", () => {
     const a = track(11, "a");
     const b = track(12, "b", { blocked_by: [a.id] });
     const a2 = track(13, "a", { blocked_by: [b.id] });
@@ -360,9 +407,12 @@ describe("laneGraph", () => {
     expect(boxOf(g, "c").tier).toBe(boxOf(g, "a").tier + 1);
     expect(g.cycle).toEqual(expect.arrayContaining(["a", "b"]));
     expect(g.cycle).not.toContain("c");
-    // every dependency between boxes is drawn, also the ones inside a tier, and ends on the top edge of its box
+    // every dependency between boxes is drawn, also the ones inside a tier, and ends on the left edge of its box
     expect(g.arrows.map((x) => `${x.from}>${x.to}`).sort()).toEqual([`${a.id}>${b.id}`, `${b.id}>${a2.id}`, `${a2.id}>${c.id}`].sort());
     for (const arrow of g.arrows) expectEndsOnBox(g, arrow.from, arrow.to);
+    const bottom = Math.max(...g.boxes.map((x) => x.y + x.h));
+    for (const [from, to] of [[a.id, b.id], [b.id, a2.id]]) expect(Math.max(...sample(arrowOf(g, from, to)?.d ?? "").map((p) => p.y)), `${from}>${to}`).toBeGreaterThan(bottom);
+    expectColumns(g);
     expect(laneGraphLines(g).map((l) => l.key)).toEqual(expect.arrayContaining([`arrow:${a.id}>${b.id}`, `arrow:${b.id}>${a2.id}`]));
     expectClear(g);
   });
@@ -388,7 +438,7 @@ describe("laneGraph", () => {
     expectClear(g);
   });
 
-  it("REQ-UI-117 an arrow back to an earlier tier runs in the side channel and ends on the top edge of its box", () => {
+  it("REQ-UI-117 an arrow back to an earlier tier runs in the channel below and ends on the left edge of its box", () => {
     const a = track(11, "a");
     const b = track(12, "b", { blocked_by: [a.id] });
     const c = track(13, "c", { blocked_by: [b.id] });
@@ -397,10 +447,12 @@ describe("laneGraph", () => {
     const g = graphOf(beads, new Set(beads.map((x) => x.id)));
     expect(g.cycle.slice(0, 3)).toEqual(["a", "b", "c"]);
     for (const [from, to] of [[a.id, b.id], [b.id, c.id], [c.id, a.id]]) expectEndsOnBox(g, from, to);
-    const right = Math.max(...g.boxes.map((x) => x.x + x.w));
-    expect(Math.max(...sample(arrowOf(g, c.id, a.id)?.d ?? "").map((p) => p.x))).toBeGreaterThan(right);
-    expect(Math.min(...sample(arrowOf(g, c.id, a.id)?.d ?? "").map((p) => p.y))).toBeGreaterThanOrEqual(0);
-    expect(Math.max(...sample(arrowOf(g, c.id, a.id)?.d ?? "").map((p) => p.y))).toBeLessThanOrEqual(g.height);
+    const bottom = Math.max(...g.boxes.map((x) => x.y + x.h));
+    const ys = sample(arrowOf(g, c.id, a.id)?.d ?? "").map((p) => p.y);
+    expect(Math.max(...ys)).toBeGreaterThan(bottom);
+    expect(Math.min(...sample(arrowOf(g, c.id, a.id)?.d ?? "").map((p) => p.x))).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...ys)).toBeLessThanOrEqual(g.height);
+    expectColumns(g);
     expectClear(g);
   });
 
@@ -441,7 +493,7 @@ describe("laneGraph", () => {
   it("REQ-UI-117 width and height cover every box, chip and the margin", () => {
     const g = graphOf();
     expect(g.width).toBe(Math.max(...g.boxes.map((b) => b.x + b.w), ...g.chips.map((c) => c.x + c.w)) + LANE_GRAPH.margin);
-    expect(g.height).toBe(Math.max(...g.boxes.map((b) => b.y + b.h)) + LANE_GRAPH.margin);
+    expect(g.height).toBe(Math.max(...g.boxes.map((b) => b.y + b.h), ...g.chips.map((c) => c.y + 20)) + LANE_GRAPH.margin);
   });
 });
 
