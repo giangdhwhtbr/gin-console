@@ -1,6 +1,6 @@
 # TC-UI-106: Details panel
 
-- **REQ:** REQ-UI-106@3747fc19
+- **REQ:** REQ-UI-106@19fab77c
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
@@ -10,8 +10,10 @@
 
 **Steps:**
 1. Open `/beads?project=p&milestone=all&view=graph`
-2. Select `e1`
+2. Look at the page without selecting a node
+3. Select `e1`
 
 **Expected:**
-- The URL has `select=e1`
+- After step 2 the URL has no `select` and no details panel is shown
+- After step 3 the URL has `select=e1`
 - The details panel shows `e1`

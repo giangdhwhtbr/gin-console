@@ -1,6 +1,6 @@
 # TC-UI-105: Open a leaf
 
-- **REQ:** REQ-UI-106@3747fc19
+- **REQ:** REQ-UI-106@19fab77c
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
