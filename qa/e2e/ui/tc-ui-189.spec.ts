@@ -1,6 +1,6 @@
-// TC: TC-UI-189@5fb9f66c
+// TC: TC-UI-189@d7a9be4c
 import { test, expect } from '../evidence';
-import { E12, endsOf, graphCollisions, graphGeometry, noLaneLinks, onTopEdge, openGraph, stubExample, within } from '../support/lanes';
+import { E12, endsOf, graphCollisions, graphGeometry, levelWith, noLaneLinks, onLeftEdge, openGraph, stubExample, within } from '../support/lanes';
 
 test('TC-UI-189: No lane box with dependencies', async ({ page, ev }) => {
   // Precondition: lanes be (tracks 1, 2) and fe (track 3), tracks 7 and 8 without a lane; track 7 waits for track 2, track 3 for track 8.
@@ -12,17 +12,19 @@ test('TC-UI-189: No lane box with dependencies', async ({ page, ev }) => {
     const g = await graphGeometry(page);
     const none = g.boxes[''];
     // the "No lane" box is in the tier after the be box
-    expect(none.y).toBeGreaterThan(g.boxes.be.y + g.boxes.be.h - 1);
-    // an arrow from track 2 to the top edge of the "No lane" box
+    expect(none.x).toBeGreaterThan(g.boxes.be.x + g.boxes.be.w - 1);
+    // an arrow from track 2 to the left edge of the "No lane" box, level with the waiting card
     const toNone = g.arrows[`${E12}.2>${E12}.7`];
     expect(toNone).toBeDefined();
     expect(within(endsOf(toNone).start, g.cards[`${E12}.2`])).toBe(true);
-    expect(onTopEdge(endsOf(toNone).end, none)).toBe(true);
-    // another arrow from track 8 to the top edge of the fe box
+    expect(onLeftEdge(endsOf(toNone).end, none)).toBe(true);
+    expect(levelWith(endsOf(toNone).end, g.cards[`${E12}.7`])).toBe(true);
+    // another arrow from track 8 to the left edge of the fe box, level with the waiting card
     const toFe = g.arrows[`${E12}.8>${E12}.3`];
     expect(toFe).toBeDefined();
     expect(within(endsOf(toFe).start, g.cards[`${E12}.8`])).toBe(true);
-    expect(onTopEdge(endsOf(toFe).end, g.boxes.fe)).toBe(true);
+    expect(onLeftEdge(endsOf(toFe).end, g.boxes.fe)).toBe(true);
+    expect(levelWith(endsOf(toFe).end, g.cards[`${E12}.3`])).toBe(true);
     expect(graphCollisions(g)).toEqual([]);
   });
 });

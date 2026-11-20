@@ -1,4 +1,4 @@
-// TC: TC-UI-190@32af5079
+// TC: TC-UI-190@12c352ec
 import { test, expect } from '../evidence';
 import { E12, graphCollisions, graphGeometry, loop, openGraph, stubExample } from '../support/lanes';
 
@@ -11,13 +11,13 @@ test('TC-UI-190: Lanes in a loop', async ({ page, ev }) => {
     await openGraph(page);
     const g = await graphGeometry(page);
     const { x, y } = g.boxes;
-    // x and y are in the same tier
-    expect(Math.abs(x.y - y.y)).toBeLessThan(2);
-    // both arrows run in the channel to the right of the boxes
-    const right = Math.max(x.x + x.w, y.x + y.w);
+    // x and y are in the same tier (one column)
+    expect(Math.abs(x.x - y.x)).toBeLessThan(2);
+    // both arrows run in the channel below the boxes
+    const bottom = Math.max(x.y + x.h, y.y + y.h);
     const arrows = Object.entries(g.arrows);
     expect(arrows.map(([id]) => id).sort()).toEqual([`${E12}.1>${E12}.2`, `${E12}.2>${E12}.1`]);
-    for (const [, points] of arrows) expect(Math.max(...points.map((p) => p.x))).toBeGreaterThan(right);
+    for (const [, points] of arrows) expect(Math.max(...points.map((p) => p.y))).toBeGreaterThan(bottom);
     // the cycle warning names x and y
     await expect(page.getByRole('status').filter({ hasText: 'Dependency cycle' })).toHaveText(/^Dependency cycle between x, y(,|$)/);
     expect(graphCollisions(g)).toEqual([]);
