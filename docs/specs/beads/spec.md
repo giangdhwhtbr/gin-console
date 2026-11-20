@@ -291,6 +291,7 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 - [Scheduled pull](diagrams/scheduled-pull-activity.md)
 - [Pull status](diagrams/pull-status-state.md)
 - [Lane fields](diagrams/lane-fields-activity.md)
+- [Workflow of an epic](diagrams/epic-workflow-activity.md)
 
 ## Use Cases
 - [Refresh pulls Beads](use-cases/refresh-pulls-beads.md)

@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup: epic page with Overview, Graph, Lanes and Discussion tabs</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --fg: #12161c; --muted: #5d6573; --border: #cfd5de; --soft: #eceff3;
+    --ready: #0f766e; --progress: #1d4ed8; --blocked: #a3470a; --done: #5d6573; --epic: #7e22ce;
+    --lane-1: #2a78d6; --lane-2: #eb6834; --lane-3: #1baf7a; --lane-4: #eda100;
+    --tint: 9%; --edge: 55%; color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1217; --card: #161b22; --fg: #e7eaf0; --muted: #9aa4b2; --border: #2c343f; --soft: #1d242d;
+    --ready: #2dd4bf; --progress: #93c5fd; --blocked: #fbbf24; --done: #9ca3af; --epic: #c084fc;
+    --lane-1: #3987e5; --lane-2: #d95926; --lane-3: #199e70; --lane-4: #c98500;
+    --tint: 16%; --edge: 60%; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  nav.side { border-right: 1px solid var(--border); padding: 16px 12px; }
+  nav.side .brand { font-weight: 700; margin-bottom: 18px; }
+  nav.side a { display: block; padding: 7px 10px; border-radius: 6px; color: var(--fg); text-decoration: none; }
+  nav.side a.on { background: var(--soft); font-weight: 600; }
+  main { padding: 20px 28px 40px; max-width: 1180px; }
+  .mock { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; padding: 6px 10px; border: 1px dashed var(--muted); border-radius: 6px; font-size: 12px; color: var(--muted); }
+  .mock button { border: 1px solid var(--border); background: var(--card); color: var(--fg); border-radius: 6px; padding: 3px 10px; font: inherit; cursor: pointer; }
+  .crumb { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  .crumb a { color: var(--fg); }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 10px; }
+  .badge { border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px; font-size: 12px; }
+  .badge.state { border: none; color: var(--progress); font-weight: 600; padding-left: 0; }
+  .badge.p2 { background: var(--soft); border-color: transparent; font-weight: 600; }
+  .badge.epic { color: var(--epic); border-color: color-mix(in srgb, var(--epic) 40%, transparent); }
+  .badge.pt { font-weight: 600; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px 28px; margin-bottom: 14px; }
+  .facts div { min-width: 0; }
+  .facts dt { font-size: 12px; color: var(--muted); }
+  .facts dd { margin: 0; font-weight: 500; }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .tabs button { border: none; background: none; color: var(--muted); font: inherit; padding: 8px 14px; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tabs button[aria-selected="true"] { color: var(--fg); font-weight: 600; border-bottom-color: var(--fg); }
+  .tabs .count { font-size: 11px; background: var(--soft); border-radius: 999px; padding: 0 6px; margin-left: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+  .card h2 { font-size: 13px; margin: 0 0 8px; color: var(--muted); font-weight: 600; text-transform: none; }
+  .big { font-size: 22px; font-weight: 700; }
+  .seg { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; margin: 8px 0; }
+  .seg span { display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted); }
+  .legend b { color: var(--fg); font-weight: 600; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; }
+  .steps { display: flex; gap: 4px; margin: 6px 0 8px; flex-wrap: wrap; }
+  .steps span { font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+  .steps span.ok { color: var(--ready); border-color: color-mix(in srgb, var(--ready) 45%, var(--border)); }
+  .steps span.now { color: var(--card); background: var(--fg); border-color: var(--fg); font-weight: 600; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 13px; }
+  .kv dt { color: var(--muted); font-size: 12px; }
+  .kv dd { margin: 0; font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  section.block { margin-top: 16px; }
+  section.block > header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+  section.block > header h2 { font-size: 15px; margin: 0; }
+  section.block > header a { font-size: 12px; color: var(--muted); }
+  .lanes { display: grid; gap: 6px; }
+  .lane { display: grid; grid-template-columns: 14px 64px 150px minmax(0,1fr) 90px; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px;
+          border: 1px solid color-mix(in srgb, var(--lane) var(--edge), transparent); background: color-mix(in srgb, var(--lane) var(--tint), var(--card)); }
+  .lane .sw { width: 10px; height: 10px; border-radius: 3px; background: var(--lane); }
+  .lane .nm { font-weight: 700; }
+  .lane .meta { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lane .cnt { text-align: right; font-size: 12px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border); font-size: 13px; white-space: nowrap; }
+  th { font-size: 12px; color: var(--muted); font-weight: 600; background: color-mix(in srgb, var(--soft) 60%, var(--card)); }
+  th.sort::after { content: " ↕"; color: var(--muted); }
+  td.id { font-family: ui-monospace, monospace; color: var(--muted); }
+  td.title { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+  tr:last-child td { border-bottom: none; }
+  .st { font-weight: 600; font-size: 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; font-size: 12px; }
+  .chip i { width: 8px; height: 8px; border-radius: 2px; background: var(--lane); display: inline-block; }
+  .muted { color: var(--muted); }
+  .wait { color: var(--blocked); font-size: 12px; }
+  .panel { display: none; }
+  .panel.on { display: block; }
+  /* graph tab */
+  .canvas { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: auto; }
+  .stage { position: relative; }
+  svg.edges { position: absolute; inset: 0; overflow: visible; }
+  svg.edges path { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+  svg.edges path.dash { stroke-dasharray: 5 4; }
+  .box { position: absolute; border-radius: 10px; border: 1.5px solid color-mix(in srgb, var(--lane) var(--edge), transparent); background: color-mix(in srgb, var(--lane) var(--tint), var(--card)); }
+  .box.none { --lane: var(--muted); border-style: dashed; background: color-mix(in srgb, var(--muted) 5%, var(--card)); }
+  .box header { padding: 8px 12px 0; }
+  .box header .l1 { display: flex; gap: 8px; align-items: center; }
+  .box header .l2 { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node { position: absolute; width: 184px; height: 64px; background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--s); border-radius: 6px; padding: 6px 10px;
+          display: flex; flex-direction: column; justify-content: space-between; }
+  .node .t { display: flex; justify-content: space-between; font: 12px ui-monospace, monospace; color: var(--muted); }
+  .node .n { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node .s { font-size: 12px; color: var(--s); }
+  .marker { position: absolute; transform: translate(-50%, -50%); background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 2px 10px; font-size: 12px; white-space: nowrap; }
+  .marker.w { color: var(--blocked); } .marker.m { color: var(--ready); }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  .toolbar .fake { border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; background: var(--card); font-size: 13px; }
+  .comment { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
+  .comment .who { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .note { margin-top: 18px; font-size: 12px; color: var(--muted); border-top: 1px dashed var(--border); padding-top: 10px; }
+</style>
+</head>
+<body>
+<div class="shell">
+  <nav class="side">
+    <div class="brand">● gin-console</div>
+    <a href="#">Projects</a><a class="on" href="#">Beads</a><a href="#">My Tasks</a><a href="#">Milestones</a><a href="#">Reports</a>
+  </nav>
+  <main>
+    <div class="mock">Mockup controls (not part of the design):
+      <button data-theme="light">Light</button><button data-theme="dark">Dark</button>
+    </div>
+    <div class="crumb"><a href="#">Beads</a> › <a href="#">ex-m2 Checkout v2</a> › ex-e12</div>
+    <h1>Team checkout</h1>
+    <div class="badges">
+      <span class="badge state">◔ In progress</span><span class="badge p2">P2</span><span class="badge epic">epic</span>
+      <span class="badge">capability</span><span class="badge pt">21 pt</span><span class="badge">roadmap</span>
+    </div>
+    <dl class="facts">
+      <div><dt>Owner</dt><dd>lead@example.com</dd></div>
+      <div><dt>Milestone</dt><dd>ex-m2 Checkout v2</dd></div>
+      <div><dt>Created</dt><dd>8 Nov 2026 09:00</dd></div>
+      <div><dt>Updated</dt><dd>20 Nov 2026 02:42</dd></div>
+    </dl>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="overview" aria-selected="true">Overview</button>
+      <button role="tab" data-tab="graph" aria-selected="false">Graph</button>
+      <button role="tab" data-tab="lanes" aria-selected="false">Lanes</button>
+      <button role="tab" data-tab="discussion" aria-selected="false">Discussion <span class="count">2</span></button>
+    </div>
+
+    <!-- Overview -->
+    <div class="panel on" id="overview">
+      <div class="grid">
+        <div class="card">
+          <h2>Progress</h2>
+          <div><span class="big">4</span> <span class="muted">of 8 tracks closed · 50%</span></div>
+          <div class="seg" aria-label="4 done, 1 in progress, 2 ready, 1 blocked">
+            <span style="flex:4;background:var(--done)"></span><span style="flex:1;background:var(--progress)"></span>
+            <span style="flex:2;background:var(--ready)"></span><span style="flex:1;background:var(--blocked)"></span>
+          </div>
+          <div class="legend">
+            <span><i class="dot" style="background:var(--done)"></i>Done <b>4</b></span>
+            <span><i class="dot" style="background:var(--progress)"></i>In progress <b>1</b></span>
+            <span><i class="dot" style="background:var(--ready)"></i>Ready <b>2</b></span>
+            <span><i class="dot" style="background:var(--blocked)"></i>Blocked <b>1</b></span>
+          </div>
+          <dl class="kv" style="margin-top:8px">
+            <dt>Points</dt><dd>8 of 21 pt done</dd>
+            <dt>Bugs</dt><dd>0 open</dd>
+            <dt>Prep</dt><dd>none</dd>
+          </dl>
+        </div>
+        <div class="card">
+          <h2>Workflow</h2>
+          <div class="steps"><span class="ok">✓ discuss</span><span class="ok">✓ plan</span><span class="ok">✓ orchestrate</span><span class="now">execute</span><span>ship</span></div>
+          <dl class="kv">
+            <dt>Gates</dt><dd>4 of 6 satisfied</dd>
+            <dt>Warnings</dt><dd>none</dd>
+            <dt>Waivers</dt><dd>none</dd>
+            <dt>Spec</dt><dd>docs/changes/ex-e12-team-checkout</dd>
+          </dl>
+        </div>
+        <div class="card">
+          <h2>Milestone</h2>
+          <div><span class="big" style="font-size:18px">ex-m2 Checkout v2</span></div>
+          <dl class="kv" style="margin-top:6px">
+            <dt>Status</dt><dd>Active</dd>
+            <dt>Window</dt><dd>10 Nov – 1 Dec 2026</dd>
+            <dt>Ends in</dt><dd>9 working days</dd>
+            <dt>Forecast</dt><dd style="color:var(--blocked)">⚠ finish 16 Feb 2027, after the end</dd>
+          </dl>
+        </div>
+      </div>
+
+      <section class="block">
+        <header><h2>Lanes</h2><a href="#" data-goto="lanes">Open the Lanes tab →</a></header>
+        <div class="lanes">
+          <div class="lane" style="--lane:var(--lane-1)"><span class="sw"></span><span class="nm">be</span><span class="st" style="color:var(--progress)">◔ Running</span><span class="meta">ann · lease until 21 Nov 16:00</span><span class="cnt">1/2 closed</span></div>
+          <div class="lane" style="--lane:var(--lane-2)"><span class="sw"></span><span class="nm">fe</span><span class="st" style="color:var(--done)">✓ All tracks closed</span><span class="meta">bao</span><span class="cnt">1/1 closed</span></div>
+          <div class="lane" style="--lane:var(--lane-3)"><span class="sw"></span><span class="nm">infra</span><span class="st" style="color:var(--ready)">◎ Idle</span><span class="meta">chi · lease expired 19 Nov 09:00</span><span class="cnt">1/2 closed</span></div>
+          <div class="lane" style="--lane:var(--lane-4)"><span class="sw"></span><span class="nm">qa</span><span class="st" style="color:var(--blocked)">⊘ Waiting for be</span><span class="meta">Unclaimed · waits for be #2 (merge pending), fe #3 merged</span><span class="cnt">0/1 closed</span></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <header><h2>Tracks</h2><span class="muted" style="font-size:12px">8 tracks · merge gates are shown in the lane rows, not here</span></header>
+        <table>
+          <thead><tr><th class="sort">Id</th><th class="sort">Title</th><th class="sort">State</th><th class="sort">Lane</th><th class="sort">Assignee</th><th class="sort">Points</th><th>Blocked by</th></tr></thead>
+          <tbody>
+            <tr><td class="id">ex-e12.1</td><td class="title">Order API</td><td class="st" style="color:var(--done)">✓ Done</td><td><span class="chip" style="--lane:var(--lane-1)"><i></i>be</span></td><td>ann</td><td>3</td><td class="muted">–</td></tr>
+            <tr><td class="id">ex-e12.2</td><td class="title">Payment API</td><td class="st" style="color:var(--progress)">◔ In progress</td><td><span class="chip" style="--lane:var(--lane-1)"><i></i>be</span></td><td>ann</td><td>5</td><td class="muted">–</td></tr>
+            <tr><td class="id">ex-e12.3</td><td class="title">Checkout page</td><td class="st" style="color:var(--done)">✓ Done</td><td><span class="chip" style="--lane:var(--lane-2)"><i></i>fe</span></td><td>bao</td><td>3</td><td class="muted">–</td></tr>
+            <tr><td class="id">ex-e12.4</td><td class="title">End-to-end checkout QA</td><td class="st" style="color:var(--blocked)">⊘ Blocked</td><td><span class="chip" style="--lane:var(--lane-4)"><i></i>qa</span></td><td class="muted">Unclaimed</td><td>3</td><td class="wait">be #2 · merge pending</td></tr>
+            <tr><td class="id">ex-e12.5</td><td class="title">Deploy pipeline</td><td class="st" style="color:var(--done)">✓ Done</td><td><span class="chip" style="--lane:var(--lane-3)"><i></i>infra</span></td><td>chi</td><td>2</td><td class="muted">–</td></tr>
+            <tr><td class="id">ex-e12.6</td><td class="title">Monitoring</td><td class="st" style="color:var(--ready)">◎ Ready</td><td><span class="chip" style="--lane:var(--lane-3)"><i></i>infra</span></td><td>chi</td><td>2</td><td class="muted">–</td></tr>
+            <tr><td class="id">ex-e12.7</td><td class="title">Release notes</td><td class="st" style="color:var(--ready)">◎ Ready</td><td class="muted">No lane</td><td>dung</td><td>1</td><td class="muted">–</td></tr>
+            <tr><td class="id">ex-e12.8</td><td class="title">Old checkout cleanup</td><td class="st" style="color:var(--done)">✓ Done</td><td class="muted">No lane</td><td>dung</td><td>2</td><td class="muted">–</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="block">
+        <header><h2>Description</h2></header>
+        <div class="card">Sample epic for the gin-console example project.</div>
+      </section>
+    </div>
+
+    <!-- Graph -->
+    <div class="panel" id="graph">
+      <div class="toolbar"><span class="fake">Search id, title, label</span><span class="fake">Status ▾</span><span class="fake">Assignee ▾</span><span class="fake">☐ Show closed</span><span class="fake">−</span><span class="fake">100%</span><span class="fake">+</span><span class="fake">Fit to view</span></div>
+      <div class="canvas"><div class="stage" id="stage"></div></div>
+      <p class="muted" style="font-size:12px">Same Graph view as the Beads page (filters, zoom, details panel), scoped to this epic; lane boxes from epic gin-console-5qw.</p>
+    </div>
+
+    <!-- Lanes -->
+    <div class="panel" id="lanes">
+      <div class="toolbar"><span class="fake">Search id, title, label</span><span class="fake">Status ▾</span><span class="fake">Assignee ▾</span></div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="display:grid;grid-template-columns:200px 1fr">
+          <div style="border-right:1px solid var(--border);padding:10px 12px"><b>be</b><div class="st" style="color:var(--progress)">◔ Running</div><div class="muted" style="font-size:12px">ann · 1/2 closed</div></div>
+          <div style="padding:10px 12px;color:var(--muted)">[ex-e12.1 Order API ✓] → [ex-e12.2 Payment API ◔]</div>
+          <div style="border-right:1px solid var(--border);border-top:1px solid var(--border);padding:10px 12px"><b>fe</b><div class="st" style="color:var(--done)">✓ All tracks closed</div><div class="muted" style="font-size:12px">1/1 closed</div></div>
+          <div style="padding:10px 12px;border-top:1px solid var(--border);color:var(--muted)">[ex-e12.3 Checkout page ✓]</div>
+          <div style="border-right:1px solid var(--border);border-top:1px solid var(--border);padding:10px 12px"><b>infra</b><div class="st" style="color:var(--ready)">◎ Idle</div><div class="muted" style="font-size:12px">chi · 1/2 closed</div></div>
+          <div style="padding:10px 12px;border-top:1px solid var(--border);color:var(--muted)">[ex-e12.5 Deploy pipeline ✓] → [ex-e12.6 Monitoring ◎]</div>
+          <div style="border-right:1px solid var(--border);border-top:1px solid var(--border);padding:10px 12px"><b>qa</b><div class="st" style="color:var(--blocked)">⊘ Waiting for be</div><div class="muted" style="font-size:12px">Unclaimed · 0/1 closed</div></div>
+          <div style="padding:10px 12px;border-top:1px solid var(--border);color:var(--muted)">◷ Waiting · be #2 &nbsp; ✓ Merged · fe #3 &nbsp;→ [ex-e12.4 End-to-end checkout QA ⊘]</div>
+        </div>
+      </div>
+      <p class="muted" style="font-size:12px">The existing Lanes view (REQ-UI-111..114), scoped to this epic; sketched here, unchanged.</p>
+    </div>
+
+    <!-- Discussion -->
+    <div class="panel" id="discussion">
+      <div class="comment"><div class="who">ann · 19 Nov 2026 16:10</div>Payment API needs the provider sandbox keys before track 2 can close.</div>
+      <div class="comment"><div class="who">lead · 20 Nov 2026 09:02</div>QA lane waits for the payment PR; fe merged yesterday.</div>
+      <p class="muted" style="font-size:12px">The existing comments and discussion of the bead page (REQ-UI-039, REQ-UI-068..071), moved into a tab.</p>
+    </div>
+
+    <div class="note">Sample data from the example project's epic ex-e12; points, comments and the workflow card are illustrative. The old Dependencies page (/beads/&lt;project&gt;/&lt;epic&gt;/graph) redirects to the Graph tab.</div>
+  </main>
+</div>
+<script>
+const ST = { done: ["--done", "✓ Done"], progress: ["--progress", "◔ In progress"], ready: ["--ready", "◎ Ready"], blocked: ["--blocked", "⊘ Blocked"] };
+const W = 184, H = 64, head = 52, pad = 14, gx = 32, boxH = head + pad + H + pad;
+const box = (n) => n * W + (n - 1) * gx + 2 * pad;
+const r0 = 16, r1 = r0 + boxH + 88;
+const B = [
+  { l: "be", s: 1, st: ["--progress", "◔ Running"], m: "ann · lease until 21 Nov 16:00 · 1/2 closed", x: 16, y: r0, n: 2 },
+  { l: "fe", s: 2, st: ["--done", "✓ All tracks closed"], m: "1/1 closed", x: 16 + box(2) + 24, y: r0, n: 1 },
+  { l: "infra", s: 3, st: ["--ready", "◎ Idle"], m: "chi · lease expired · 1/2 closed", x: 16 + box(2) + 24 + box(1) + 24, y: r0, n: 2 },
+  { l: "qa", s: 4, st: ["--blocked", "⊘ Waiting for be"], m: "Unclaimed · 0/1 closed", x: 16 + box(2) - box(1) / 2 + 12, y: r1, n: 1 },
+  { l: "No lane", s: 0, st: null, m: "1/2 closed", x: 16 + box(2) + 24 + box(1) + 24, y: r1, n: 2 },
+];
+const N = [
+  ["be", 0, "ex-e12.1", "P2", "Order API", "done"], ["be", 1, "ex-e12.2", "P2", "Payment API", "progress"],
+  ["fe", 0, "ex-e12.3", "P3", "Checkout page", "done"], ["infra", 0, "ex-e12.5", "P1", "Deploy pipeline", "done"],
+  ["infra", 1, "ex-e12.6", "P3", "Monitoring", "ready"], ["qa", 0, "ex-e12.4", "P2", "End-to-end checkout QA", "blocked"],
+  ["No lane", 0, "ex-e12.7", "P3", "Release notes", "ready"], ["No lane", 1, "ex-e12.8", "P2", "Old checkout cleanup", "done"],
+];
+function graph() {
+  const by = Object.fromEntries(B.map((b) => [b.l, b]));
+  const at = {};
+  let html = "";
+  for (const b of B) {
+    const w = box(b.n);
+    html += `<div class="box ${b.s ? "" : "none"}" style="--lane:var(--lane-${b.s});left:${b.x}px;top:${b.y}px;width:${w}px;height:${boxH}px"><header><div class="l1">${b.s ? '<span class="sw" style="width:10px;height:10px;border-radius:3px;background:var(--lane)"></span>' : ""}<b>${b.l}</b>${b.st ? `<span class="st" style="color:var(${b.st[0]})">${b.st[1]}</span>` : ""}</div><div class="l2">${b.m}</div></header></div>`;
+  }
+  let nodes = "";
+  for (const [l, i, id, p, t, s] of N) {
+    const b = by[l]; const x = b.x + pad + i * (W + gx), y = b.y + head + pad; at[id] = [x, y];
+    nodes += `<div class="node" style="--s:var(${ST[s][0]});left:${x}px;top:${y}px"><div class="t"><span>${id}</span><span>${p}</span></div><div class="n">${t}</div><div class="s">${ST[s][1]}</div></div>`;
+  }
+  const curve = (a, tx, ty) => { const x1 = a[0] + W / 2, y1 = a[1] + H, m = (y1 + ty) / 2; return [`M ${x1} ${y1} C ${x1} ${m}, ${tx} ${m}, ${tx} ${ty - 6}`, (t) => { const u = 1 - t; return [u*u*u*x1 + 3*u*u*t*x1 + 3*u*t*t*tx + t*t*t*tx, u*u*u*y1 + 3*u*u*t*m + 3*u*t*t*m + t*t*t*ty]; }]; };
+  const side = (a, b) => `M ${a[0] + W} ${a[1] + H / 2} L ${b[0] - 6} ${b[1] + H / 2}`;
+  const qx = at["ex-e12.4"][0] + W / 2, qy = by.qa.y;
+  const [p1, f1] = curve(at["ex-e12.2"], qx, qy), [p2, f2] = curve(at["ex-e12.3"], qx, qy);
+  const [m1x, m1y] = f1(0.3), [m2x, m2y] = f2(0.3);
+  const width = Math.max(...B.map((b) => b.x + box(b.n))) + 16, height = r1 + boxH + 16;
+  const svg = `<svg class="edges" width="${width}" height="${height}"><defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0 L8 4 L0 8 z" style="fill:var(--muted);stroke:none"/></marker></defs>
+    <path d="${side(at["ex-e12.1"], at["ex-e12.2"])}" marker-end="url(#a)"/><path d="${side(at["ex-e12.5"], at["ex-e12.6"])}" marker-end="url(#a)"/>
+    <path class="dash" d="${p1}" marker-end="url(#a)"/><path d="${p2}" marker-end="url(#a)"/></svg>`;
+  const stage = document.getElementById("stage");
+  stage.style.width = width + "px"; stage.style.height = height + "px";
+  stage.innerHTML = html + svg + nodes + `<div class="marker w" style="left:${m1x}px;top:${m1y}px">◷ Waiting · be #2</div><div class="marker m" style="left:${m2x}px;top:${m2y}px">✓ Merged · fe #3</div>`;
+}
+function show(tab) {
+  document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+  document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("on", p.id === tab));
+  if (tab === "graph") graph();
+}
+document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => show(b.dataset.tab)));
+document.querySelectorAll("[data-goto]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); show(a.dataset.goto); }));
+document.querySelectorAll("[data-theme]").forEach((b) => b.addEventListener("click", () => { document.documentElement.dataset.theme = b.dataset.theme; }));
+const q = new URLSearchParams(location.search);
+if (q.get("theme")) document.documentElement.dataset.theme = q.get("theme");
+show(q.get("tab") || "overview");
+</script>
+</body>
+</html>

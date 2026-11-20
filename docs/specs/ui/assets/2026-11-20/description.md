@@ -31,3 +31,13 @@ Mockup of the Graph view of epic `ex-e12` with each lane drawn as a coloured con
 | `shots/a-light.png`, `shots/a-dark.png` | Variant A, not chosen. |
 
 ## Open questions
+
+## Epic page (second batch, discuss of gin-console-atl, 2026-11-20)
+Mockup of the epic page with tabs, confirmed by the user on 2026-11-20: header (title, badges, facts), tabs Overview · Graph · Lanes · Discussion; Overview with the Progress, Workflow and Milestone cards, the Lanes summary, the Tracks table and the description; the Graph tab shows the Graph view with lane boxes; the separate Dependencies page is retired.
+
+| File | Shows |
+|---|---|
+| `epic-page/mockup/index.html` | Interactive mockup (`?tab=overview\|graph\|lanes\|discussion`, `&theme=dark`); the dashed "Mockup controls" bar is not part of the design; points, comments and the workflow card hold sample values. |
+| `epic-page/shots/overview-light.png`, `overview-dark.png` | The Overview tab. |
+| `epic-page/shots/graph-light.png`, `graph-dark.png` | The Graph tab. |
+| `epic-page/shots/current-epic-page.png`, `current-dependencies-page.png` | The pages before the change (legacy reference). |
