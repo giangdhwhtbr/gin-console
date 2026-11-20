@@ -1,7 +1,7 @@
 // The ex-e12 epic of the example project, as the server reports it for the Lanes view (REQ-UI-111..116):
 // lanes be (T1 closed, T2 in progress with a lease), fe (T3 closed), qa (T4, blocked by two merge gates),
 // infra (T5 closed, T6 open with an expired lease) and two tracks without a lane. Shared by the lanes specs.
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { bead, stubApi, type BeadSummary, type Stub } from './api';
 
 export const PROJECT = 'example';
@@ -249,6 +249,14 @@ export const tall = (): BeadSummary[] => [...e12(), ...[9, 10, 11, 12, 13, 14].m
 export async function scaleOf(page: Page): Promise<number> {
   const text = (await page.getByRole('group', { name: 'Zoom' }).locator('span').first().textContent()) ?? '';
   return Number.parseInt(text, 10) / 100;
+}
+/**
+ * Waits until the Graph canvas box has reached the height its style asks for. The reduced-motion rule gives every element a 0.01ms
+ * transition, so for one frame after a zoom or fit change the box (and the page height) still has the old value.
+ */
+export async function settled(page: Page): Promise<void> {
+  const canvas = page.getByTestId('graph-canvas');
+  await expect.poll(() => canvas.evaluate((el) => Math.abs(el.getBoundingClientRect().height - Number.parseFloat(el.style.height)) < 1)).toBe(true);
 }
 /** The page scroll position and the vertical and horizontal scroll of the canvas `testid`. */
 export const scrolled = (page: Page, testid: string) =>

@@ -1,6 +1,6 @@
 // TC: TC-UI-198@92ba2976
 import { test, expect } from '../evidence';
-import { E12, PROJECT, scaleOf, scrolled, stubExample } from '../support/lanes';
+import { E12, PROJECT, scaleOf, scrolled, settled, stubExample } from '../support/lanes';
 
 test('TC-UI-198: Wheel zooms only with Ctrl (REQ-UI-077)', async ({ page, ev }) => {
   // Precondition: the Graph view of ex-e12 with "Show closed" on at 1440x900, where the page is taller than the window.
@@ -12,6 +12,7 @@ test('TC-UI-198: Wheel zooms only with Ctrl (REQ-UI-077)', async ({ page, ev }) 
     await page.goto(`/beads?project=${PROJECT}&milestone=all&view=graph&scope=${E12}&closed=1`);
     await expect(page.getByTestId('graph-canvas')).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(true);
+    await settled(page);
     before = await scaleOf(page);
   });
 
@@ -26,6 +27,7 @@ test('TC-UI-198: Wheel zooms only with Ctrl (REQ-UI-077)', async ({ page, ev }) 
     await page.keyboard.up('Control');
     await expect.poll(() => scaleOf(page)).not.toBe(before);
     expect((await scrolled(page, 'graph-canvas')).y).toBe(0);
+    await settled(page);
     before = await scaleOf(page);
   });
 

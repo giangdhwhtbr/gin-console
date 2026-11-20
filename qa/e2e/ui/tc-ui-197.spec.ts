@@ -1,6 +1,6 @@
 // TC: TC-UI-197@b5b19a70
 import { test, expect } from '../evidence';
-import { E12, PROJECT, scaleOf, stubExample } from '../support/lanes';
+import { E12, PROJECT, scaleOf, settled, stubExample } from '../support/lanes';
 
 test('TC-UI-197: Fit a wide graph (REQ-UI-077)', async ({ page, ev }) => {
   // Precondition: the Graph view of ex-e12 with "Show closed" on at 390x844; the graph is wider than the canvas.
@@ -8,6 +8,7 @@ test('TC-UI-197: Fit a wide graph (REQ-UI-077)', async ({ page, ev }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const wholeWidth = async () => {
     const canvas = page.getByTestId('graph-canvas');
+    await settled(page);
     await expect.poll(() => canvas.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     // the right edge of the last lane box is inside the canvas
     const frame = (await canvas.boundingBox())!;
