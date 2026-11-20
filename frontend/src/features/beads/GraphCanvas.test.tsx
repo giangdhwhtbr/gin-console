@@ -2,8 +2,8 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bead } from "./beadFixtures";
-import { fitScale, GraphCanvas } from "./GraphCanvas";
-import { NODE, scopeGraph } from "./graph";
+import { fitWidth, GraphCanvas } from "./GraphCanvas";
+import { NODE, place, scopeGraph } from "./graph";
 
 const OFF = { hideDone: false, onlyLinked: false };
 const epic = (id: string, extra = {}) => bead(id, { issue_type: "epic", ...extra });
@@ -88,14 +88,47 @@ describe("GraphCanvas", () => {
   });
 
   it("REQ-UI-077 starts fitted and Fit to view brings it back below 100%", async () => {
-    box(300, 200);
+    box(100, 200);
     show();
     const first = zoom().getByText(/%$/).textContent;
     expect(Number.parseInt(first ?? "", 10)).toBeLessThan(100);
     await userEvent.click(zoom().getByRole("button", { name: "Zoom in" }));
     await userEvent.click(zoom().getByRole("button", { name: "Fit to view" }));
     expect(zoom().getByText(/%$/).textContent).toBe(first);
-    expect(fitScale(100, 100, 1000, 1000)).toBe(1);
+  });
+
+  it("REQ-UI-077 Fit a tall graph: fitWidth looks at the width only and stays within 40%-200%", () => {
+    expect(fitWidth(100, 1000)).toBe(1);
+    expect(fitWidth(1000, 500)).toBe(0.5);
+    expect(fitWidth(1000, 10)).toBe(0.4);
+    expect(fitWidth(0, 500)).toBe(1);
+    expect(fitWidth(500, 0)).toBe(1);
+  });
+
+  it("REQ-UI-077 Fit a tall graph: a graph narrower than the canvas stays at 100% whatever its height", () => {
+    box(5000, 100);
+    show();
+    expect(zoom().getByText("100%")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-122 Wheel over the Graph view: the box is as tall as its graph, scrolls only sideways and a plain wheel is not prevented", () => {
+    box(5000, 100);
+    const g = scopeGraph([epic("e"), task("a", "e"), task("b", "e", ["a"]), task("c", "e")], "e", OFF);
+    show(g);
+    const canvas = screen.getByTestId("graph-canvas");
+    for (const c of ["isolate", "overflow-x-auto", "overflow-y-hidden", "overscroll-x-contain"]) expect(canvas.classList.contains(c)).toBe(true);
+    for (const c of ["overflow-auto", "overscroll-contain"]) expect(canvas.classList.contains(c)).toBe(false);
+    expect(canvas.className).not.toContain("100dvh");
+    const height = Number.parseFloat(canvas.style.height);
+    expect(height).toBeGreaterThanOrEqual(place(g).height);
+    expect(height).toBeLessThan(place(g).height + 40);
+    expect(fireEvent.wheel(canvas, { deltaY: 600 })).toBe(true);
+  });
+
+  it("REQ-UI-122 Sideways: a horizontal wheel is not prevented, so the canvas moves and the page does not", () => {
+    box(5000, 100);
+    show();
+    expect(fireEvent.wheel(screen.getByTestId("graph-canvas"), { deltaX: 200, deltaY: 0 })).toBe(true);
   });
 
   it("REQ-UI-077 the wheel zooms only with Ctrl or Cmd held", () => {

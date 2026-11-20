@@ -90,9 +90,9 @@ describe("LanesView", () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "", select: "" }));
   });
 
-  it("REQ-UI-111 selecting a card sets select; the panel shows the scope by default and the card when selected", async () => {
+  it("REQ-UI-106 No panel on opening an epic: selecting a card sets select and opens the panel", async () => {
     const onChange = view();
-    expect(screen.getByRole("complementary", { name: "Bead details" })).toBeInTheDocument();
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
     await userEvent.click(card(t2.id));
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: t2.id }));
     cleanup();
@@ -133,7 +133,7 @@ describe("LanesView", () => {
     await userEvent.keyboard("{ArrowRight}");
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: t2.id }));
     await userEvent.keyboard("{Escape}");
-    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: E12 }));
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
     await userEvent.keyboard("{Enter}"); // a button: Enter clicks it
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ select: t2.id }));
   });

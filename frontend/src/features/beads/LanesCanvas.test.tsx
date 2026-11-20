@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bead } from "./beadFixtures";
 import { e12, E12, g2, tracks, t4 } from "./laneFixtures";
@@ -29,6 +29,18 @@ describe("LanesCanvas", () => {
   it("REQ-UI-110 the lanes canvas keeps its layers inside (isolate)", () => {
     render(<LanesCanvas {...props} />);
     expect(screen.getByTestId("lanes-canvas").className).toContain("isolate");
+  });
+
+  it("REQ-UI-122 Wheel over the Lanes view: the box is as tall as the board, scrolls only sideways and a plain wheel is not prevented", () => {
+    render(<LanesCanvas {...props} />);
+    const canvas = screen.getByTestId("lanes-canvas");
+    for (const c of ["isolate", "overflow-x-auto", "overflow-y-hidden", "overscroll-x-contain"]) expect(canvas.classList.contains(c)).toBe(true);
+    for (const c of ["overflow-auto", "overscroll-contain"]) expect(canvas.classList.contains(c)).toBe(false);
+    expect(canvas.className).not.toContain("100dvh");
+    const height = Number.parseFloat(canvas.style.height);
+    expect(height).toBeGreaterThanOrEqual(board.height);
+    expect(height).toBeLessThan(board.height + 40);
+    expect(fireEvent.wheel(canvas, { deltaY: 600 })).toBe(true);
   });
 
   it("REQ-UI-111 the header is 168px under 1024px windows", () => {
