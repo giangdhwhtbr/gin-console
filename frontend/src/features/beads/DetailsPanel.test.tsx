@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { BeadSummary } from "./api";
 import { bead, json } from "./beadFixtures";
 import { DetailsPanel } from "./DetailsPanel";
 
@@ -9,7 +10,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const stub = () =>
+const stub = (overrides: Partial<BeadSummary> = {}) =>
   vi.stubGlobal(
     "fetch",
     vi.fn((input: RequestInfo | URL) => {
@@ -17,7 +18,7 @@ const stub = () =>
       if (url.endsWith("/comments")) return Promise.resolve(json([]));
       return Promise.resolve(
         json({
-          ...bead("t-1", { title: "Task One" }),
+          ...bead("t-1", { title: "Task One", ...overrides }),
           description: null,
           design: null,
           notes: null,
@@ -50,5 +51,16 @@ describe("DetailsPanel", () => {
     stub();
     render(<DetailsPanel project="alpha" id="t-1" onClose={() => {}} />);
     expect(screen.queryByText("Not in the current list")).toBeNull();
+  });
+
+  it("REQ-UI-115 Chip in every view (details panel) and REQ-UI-116 gate words", async () => {
+    stub({ lane: "be", track: { plan: null, number: 3 } });
+    render(<DetailsPanel project="alpha" id="t-1" onClose={() => {}} />);
+    expect(await screen.findByTitle("Lane be")).toBeInTheDocument();
+    expect(screen.getByText("#3")).toBeInTheDocument();
+    cleanup();
+    stub({ waits_for: { plan: "p.md", number: 2, track_id: null, lane: "be" } });
+    render(<DetailsPanel project="alpha" id="t-1" onClose={() => {}} />);
+    expect(await screen.findByRole("heading", { name: "Waits for be #2 to merge" })).toBeInTheDocument();
   });
 });

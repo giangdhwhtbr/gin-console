@@ -1,5 +1,6 @@
 import type { BeadSummary } from "./api";
 import { boardColumn } from "./columns";
+import { isMergeGate } from "./mergeGates";
 import { isPrep } from "./prep";
 
 export type GraphState = "ready" | "in_progress" | "blocked" | "done" | "deferred";
@@ -66,7 +67,7 @@ export function progressOf(beads: readonly BeadSummary[]): Map<string, { done: n
   const byId = indexOf(beads);
   const counts = new Map<string, { done: number; total: number }>();
   for (const b of beads) {
-    if (isPrep(b.labels)) continue;
+    if (isPrep(b.labels) || isMergeGate(b)) continue;
     const key = parentOf(byId, b) ?? "";
     const c = counts.get(key) ?? { done: 0, total: 0 };
     counts.set(key, { done: c.done + (isDone(b) ? 1 : 0), total: c.total + 1 });
@@ -123,7 +124,7 @@ function holders(byId: ReadonlyMap<string, BeadSummary>, scope: string | null): 
   };
 }
 
-function cycleNodes(edges: readonly Link[]): string[] {
+export function cycleNodes(edges: readonly Link[]): string[] {
   const inDegree = new Map<string, number>();
   const outDegree = new Map<string, number>();
   const outAdj = new Map<string, string[]>();

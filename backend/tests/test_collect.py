@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_export import bead, write_export
+from fake_export import bead, dep, write_export
 from fakes import ISSUES, STATE, Fake
 
 from gin_console.beads.snapshot import SnapshotStore
@@ -96,6 +96,33 @@ def test_server_006_beads_counts_and_epics(monkeypatch: pytest.MonkeyPatch, tmp_
     assert [e.id for e in beads.epics] == ["e1", "e2"]
     assert beads.stale is False
     assert {c[0] for c in fake.calls} == {"gin"}  # REQ-BEADS-003: no bd
+
+
+# REQ-SERVER-006
+def test_server_006_merge_gates_not_counted(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    patch(monkeypatch, Fake())
+    write_export(
+        tmp_path,
+        [
+            bead("e1", issue_type="epic", status="in_progress"),
+            bead("t1", dependencies=[dep("t1", "g1", "blocks")]),
+            bead("g1", title="external: .planning/plans/x.md#2", labels=["prep"]),
+            bead("g2", title="external: .planning/plans/x.md#3", status="in_progress"),
+            bead(
+                "g3",
+                title="external: .planning/plans/x.md#4",
+                issue_type="epic",
+                dependencies=[dep("g3", "g2", "blocks")],
+            ),
+        ],
+    )
+    _, result = collector().get("p", tmp_path)
+    beads = beads_of(result)
+    counts = (beads.open, beads.in_progress, beads.blocked, beads.ready, beads.prep)
+    assert counts == (1, 1, 1, 0, 0)
+    assert [e.id for e in beads.epics] == ["e1"]
 
 
 # REQ-SERVER-006

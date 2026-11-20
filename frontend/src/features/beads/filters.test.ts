@@ -29,6 +29,10 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   estimate_minutes: null,
   points: null,
   points_reason: null,
+  lane: null,
+  track: null,
+  claim: null,
+  waits_for: null,
   ...overrides,
 });
 
@@ -84,6 +88,11 @@ describe("filters", () => {
     expect(filtersToSearch(filters)).toBe("?view=graph&scope=e-1");
     expect(parseFilters("").scope).toBe("");
     expect(filtersToSearch(parseFilters(""))).toBe("");
+  });
+
+  it("REQ-UI-030 Lanes tab: view=lanes round-trips through the URL", () => {
+    expect(parseFilters("?view=lanes").view).toBe("lanes");
+    expect(filtersToSearch(parseFilters("?view=lanes&scope=e-1"))).toBe("?view=lanes&scope=e-1");
   });
 
   // REQ-UI-030

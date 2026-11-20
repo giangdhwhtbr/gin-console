@@ -1,6 +1,6 @@
 # TC-UI-153: No overlapping text on Beads pages
 
-- **REQ:** REQ-UI-110@796f0bc7
+- **REQ:** REQ-UI-110@e3c2a1a9
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,50 +13,58 @@
 4. Open `/beads?project=example&view=board`
 5. Open `/beads?project=example&view=focus`
 6. Open `/beads?project=example&view=graph`
-7. Open `/beads/example/ex-e3`
-8. Set the window width to 1024 px
-9. Open `/beads?project=example&view=list`
-10. Open `/beads?project=example&view=board`
-11. Open `/beads?project=example&view=focus`
-12. Open `/beads?project=example&view=graph`
-13. Open `/beads/example/ex-e3`
-14. Set the window width to 1440 px
-15. Open `/beads?project=example&view=list`
-16. Open `/beads?project=example&view=board`
-17. Open `/beads?project=example&view=focus`
-18. Open `/beads?project=example&view=graph`
-19. Open `/beads/example/ex-e3`
-20. Set the window width to 1920 px
-21. Open `/beads?project=example&view=list`
-22. Open `/beads?project=example&view=board`
-23. Open `/beads?project=example&view=focus`
-24. Open `/beads?project=example&view=graph`
-25. Open `/beads/example/ex-e3`
-26. Set the theme to dark
-27. Set the window width to 390 px
-28. Open `/beads?project=example&view=list`
-29. Open `/beads?project=example&view=board`
-30. Open `/beads?project=example&view=focus`
-31. Open `/beads?project=example&view=graph`
-32. Open `/beads/example/ex-e3`
-33. Set the window width to 1024 px
-34. Open `/beads?project=example&view=list`
-35. Open `/beads?project=example&view=board`
-36. Open `/beads?project=example&view=focus`
-37. Open `/beads?project=example&view=graph`
-38. Open `/beads/example/ex-e3`
-39. Set the window width to 1440 px
-40. Open `/beads?project=example&view=list`
-41. Open `/beads?project=example&view=board`
-42. Open `/beads?project=example&view=focus`
-43. Open `/beads?project=example&view=graph`
+7. Open `/beads?project=example&view=lanes&scope=ex-e12`
+8. Open `/beads/example/ex-e3`
+9. Set the window width to 1024 px
+10. Open `/beads?project=example&view=list`
+11. Open `/beads?project=example&view=board`
+12. Open `/beads?project=example&view=focus`
+13. Open `/beads?project=example&view=graph`
+14. Open `/beads?project=example&view=lanes&scope=ex-e12`
+15. Open `/beads/example/ex-e3`
+16. Set the window width to 1440 px
+17. Open `/beads?project=example&view=list`
+18. Open `/beads?project=example&view=board`
+19. Open `/beads?project=example&view=focus`
+20. Open `/beads?project=example&view=graph`
+21. Open `/beads?project=example&view=lanes&scope=ex-e12`
+22. Open `/beads/example/ex-e3`
+23. Set the window width to 1920 px
+24. Open `/beads?project=example&view=list`
+25. Open `/beads?project=example&view=board`
+26. Open `/beads?project=example&view=focus`
+27. Open `/beads?project=example&view=graph`
+28. Open `/beads?project=example&view=lanes&scope=ex-e12`
+29. Open `/beads/example/ex-e3`
+30. Set the theme to dark
+31. Set the window width to 390 px
+32. Open `/beads?project=example&view=list`
+33. Open `/beads?project=example&view=board`
+34. Open `/beads?project=example&view=focus`
+35. Open `/beads?project=example&view=graph`
+36. Open `/beads?project=example&view=lanes&scope=ex-e12`
+37. Open `/beads/example/ex-e3`
+38. Set the window width to 1024 px
+39. Open `/beads?project=example&view=list`
+40. Open `/beads?project=example&view=board`
+41. Open `/beads?project=example&view=focus`
+42. Open `/beads?project=example&view=graph`
+43. Open `/beads?project=example&view=lanes&scope=ex-e12`
 44. Open `/beads/example/ex-e3`
-45. Set the window width to 1920 px
+45. Set the window width to 1440 px
 46. Open `/beads?project=example&view=list`
 47. Open `/beads?project=example&view=board`
 48. Open `/beads?project=example&view=focus`
 49. Open `/beads?project=example&view=graph`
-50. Open `/beads/example/ex-e3`
+50. Open `/beads?project=example&view=lanes&scope=ex-e12`
+51. Open `/beads/example/ex-e3`
+52. Set the window width to 1920 px
+53. Open `/beads?project=example&view=list`
+54. Open `/beads?project=example&view=board`
+55. Open `/beads?project=example&view=focus`
+56. Open `/beads?project=example&view=graph`
+57. Open `/beads?project=example&view=lanes&scope=ex-e12`
+58. Open `/beads/example/ex-e3`
 
 **Expected:**
 - At every width and in both themes, no text overlaps other text or a bar, line or arrow it does not belong to

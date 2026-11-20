@@ -35,6 +35,10 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   estimate_minutes: null,
   points: null,
   points_reason: null,
+  lane: null,
+  track: null,
+  claim: null,
+  waits_for: null,
   ...overrides,
 });
 
@@ -170,6 +174,50 @@ describe("BeadsPage", () => {
     render(<BeadsPage />);
     await screen.findByRole("navigation", { name: "Graph scope" });
     expect(screen.getByRole("button", { name: "Graph" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  describe("Lanes", () => {
+    const epic = bead("ex-e12", { issue_type: "epic" });
+    const lanesBeads = [
+      epic,
+      bead("ex-e12.1", { parent: "ex-e12", lane: "be", status: "closed", track: { plan: null, number: 1 } }),
+      bead("ex-e12.2", { parent: "ex-e12", lane: "fe", track: { plan: null, number: 2 } }),
+    ];
+
+    it("REQ-UI-030 Lanes tab: offered when the scope has lanes, not otherwise", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=graph");
+      stub(() => json(lanesBeads.map((b) => ({ ...b, lane: null }))));
+      const { unmount } = render(<BeadsPage />);
+      await screen.findByRole("navigation", { name: "Graph scope" });
+      expect(screen.queryByRole("button", { name: "Lanes" })).toBeNull();
+      unmount();
+      window.history.replaceState(null, "", "/beads?project=alpha&view=graph&scope=ex-e12");
+      stub(() => json(lanesBeads));
+      render(<BeadsPage />);
+      expect(await screen.findByRole("button", { name: "Lanes" })).toBeInTheDocument();
+    });
+
+    it("REQ-UI-030 Lanes tab: choosing Lanes sets view=lanes, keeps the filters and loads the closed beads", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=graph&scope=ex-e12&q=ex");
+      const fetchMock = stub((url) => json(url.searchParams.get("closed") === "1" ? lanesBeads : lanesBeads.filter((b) => b.status !== "closed")));
+      render(<BeadsPage />);
+      await userEvent.click(await screen.findByRole("button", { name: "Lanes" }));
+      expect(window.location.search).toContain("view=lanes");
+      expect(window.location.search).toContain("q=ex");
+      expect(window.location.search).not.toContain("closed");
+      await screen.findByRole("navigation", { name: "Lanes scope" });
+      await waitFor(() => expect(screen.getByRole("button", { name: /^ex-e12\.1/ })).toBeInTheDocument());
+      const asked = fetchMock.mock.calls.map(([u]) => (typeof u === "string" ? u : "")).filter((u) => u.startsWith("/api/beads?"));
+      expect(asked.some((u) => u.includes("closed=1"))).toBe(true);
+    });
+
+    it("REQ-UI-111 view=lanes without lanes shows the message", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=lanes");
+      stub(() => json([bead("a-1")]));
+      render(<BeadsPage />);
+      expect(await screen.findByText("Lanes show for an epic whose tracks have lanes")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Lanes" })).toBeNull();
+    });
   });
 
   it("REQ-UI-104 REQ-UI-106 milestone=m2&view=graph draws the milestone's epics, not the milestone bead", async () => {

@@ -279,6 +279,21 @@ def test_beads_007_milestone_is_never_ready() -> None:
     assert (by_id["m-1"].ready, by_id["r-1"].ready) == (False, True)
 
 
+# REQ-BEADS-007
+def test_beads_007_merge_gate_is_never_ready() -> None:
+    rows = [
+        bead("e-1", issue_type="epic"),
+        bead("t-1", dependencies=[dep("t-1", "g-1", "blocks")]),
+        bead("t-2"),
+        bead("g-1", title="external: .planning/plans/x.md#2"),
+    ]
+    by_id = {b.id: b for b in list_beads(snap(*rows), closed=False)}
+    assert (by_id["g-1"].ready, by_id["g-1"].blocked) == (False, False)
+    # the gate still blocks the track it holds back
+    assert by_id["t-1"].blocked is True
+    assert by_id["t-2"].ready is True
+
+
 # REQ-BEADS-008
 def test_beads_008_comments_in_order() -> None:
     first = comment("a-5", "first", created_at="2026-10-11T10:00:00Z")

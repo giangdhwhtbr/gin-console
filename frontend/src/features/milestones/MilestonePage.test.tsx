@@ -435,3 +435,20 @@ describe("MilestonePage", () => {
     expect(beads(await row("e-b"))).toEqual(["2026-11-11", "2026-11-12"]);
   });
 });
+
+describe("MilestonePage Gantt merge gates", () => {
+  it("REQ-MILESTONE-UI-015 merge gate and lane", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m-1");
+    const kids = [
+      bead("t-1", { parent: "e-1", lane: "be", labels: ["track:1"] }),
+      bead("g-1", { parent: "e-1", title: "external: p#2", waits_for: { plan: "p", number: 2, track_id: null, lane: null } }),
+    ];
+    stubMilestones(() => json(detail([epicPlan("e-1")])), kids);
+    render(<MilestonePage project="alpha" id="m-1" />);
+    await userEvent.click(await screen.findByRole("button", { name: /child bead of e-1/ }));
+    expect(document.querySelector("[data-epic='e-1']")).toHaveTextContent("0/1 closed");
+    const rows = [...document.querySelectorAll<HTMLElement>("[data-child]")];
+    expect(rows.map((r) => r.dataset.child)).toEqual(["t-1"]);
+    expect(within(rows[0]).getByTitle("Lane be")).toBeInTheDocument();
+  });
+});
