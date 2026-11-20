@@ -1874,6 +1874,8 @@ The frontend SHALL show on every page a "Refresh data" control, in the top bar b
 - [Graph layout](diagrams/graph-layout-activity.md)
 - [Details panel](diagrams/details-panel-activity.md)
 - [Readability check](diagrams/readability-check-activity.md)
+- [Lanes view](diagrams/lanes-view-activity.md)
+- [Lane state](diagrams/lane-state.md)
 
 ### REQ-UI-097: Email login
 WHILE the browser holds no email for the console, the frontend SHALL show, at every URL, a login screen with one email field and a "Continue" control instead of the navigation and the page; WHEN the user submits a value that, trimmed, has text before and after one `@` and no whitespace, the frontend SHALL keep it lower-cased in localStorage under `gin-console.email` and show the page of the current URL without a full reload; IF the value is not such an email, THEN the frontend SHALL keep the login screen and say the email is not valid; IF the browser refuses to store the email, THEN the frontend SHALL keep it for the current visit without an error. The email SHALL NOT be sent to the server.
@@ -2045,6 +2047,7 @@ The My Tasks page SHALL offer a "Project" select with "All projects" (the defaul
 ## Use Cases
 - [Filter beads by milestone](use-cases/filter-by-milestone.md)
 - [Browse a milestone's beads](use-cases/browse-milestone-beads.md)
+- [Follow an epic's lanes](use-cases/follow-epic-lanes.md)
 
 ### REQ-UI-106: Graph view
 The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of the Dependencies page (REQ-UI-048 to REQ-UI-050, REQ-UI-079), the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as the List view does, SHALL select the scope bead when `select` is absent and the scope is a bead, and SHALL show and close the panel as REQ-UI-051 and REQ-UI-052 describe. WHEN a node with children is opened, the view SHALL set `scope` to its id and show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it. WHEN a node without children is opened, the frontend SHALL open its bead page. WHILE nothing matches, the view SHALL say "No beads match these filters".
