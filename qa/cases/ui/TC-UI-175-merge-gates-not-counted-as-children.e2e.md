@@ -1,6 +1,6 @@
 # TC-UI-175: Merge gates not counted as children
 
-- **REQ:** REQ-UI-116@cc779323
+- **REQ:** REQ-UI-116@85edbd50
 - **Priority:** medium
 
 **Preconditions:**
