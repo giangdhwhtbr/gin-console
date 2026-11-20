@@ -468,7 +468,7 @@ IF a request for the list or a bead fails, THEN the page SHALL show the error an
 - THEN an error and a retry button are shown, not a blank page
 
 ### REQ-UI-030: Views
-The Beads page, and the Beads tab of a milestone page (REQ-MILESTONE-UI-018), SHALL offer the views List, Board, Focus and Graph (REQ-UI-106) kept in the URL as `view` (`list` when absent or unknown), SHALL load the beads once for all four views with the project, search, filters and "Show closed" of the list applying to each of them, and SHALL refresh them as in REQ-UI-027 without reloading the data when the view changes.
+The Beads page, and the Beads tab of a milestone page (REQ-MILESTONE-UI-018), SHALL offer the views List, Board, Focus and Graph (REQ-UI-106), and Lanes (REQ-UI-111) while the scope has lanes, kept in the URL as `view` (`list` when absent or unknown), SHALL load the beads once for all the views with the project, search, filters and "Show closed" of the list applying to each of them, except that the Lanes view loads closed beads whatever "Show closed" says, and SHALL refresh them as in REQ-UI-027 without reloading the data when the view changes, other than to load the closed beads when the Lanes view opens while "Show closed" is off.
 
 #### Scenario: Switch keeps filters
 - GIVEN the List view with the filter status "open" and the search "fix"
@@ -479,6 +479,11 @@ The Beads page, and the Beads tab of a milestone page (REQ-MILESTONE-UI-018), SH
 - GIVEN the URL has `?project=a&view=focus`
 - WHEN the page loads
 - THEN the Focus view is shown for project `a`
+
+#### Scenario: Lanes tab
+- GIVEN the Graph view with `scope=ex-e12`, an epic whose tracks have lanes, and "Show closed" off
+- WHEN the user chooses Lanes
+- THEN the URL has `view=lanes`, the filters are unchanged and the closed beads are loaded
 
 #### Scenario: Unknown view
 - GIVEN the URL has `view=kanban`
@@ -2181,11 +2186,11 @@ On every page, at every window width from 360px and in the light and the dark th
 
 #### Scenario: No overlapping text
 - GIVEN the example project
-- WHEN the Projects, Beads (List, Board, Focus, Graph), bead, My Tasks, Milestones, milestone (Gantt at each zoom, Beads, Retro) and Reports (each tab) pages are shown at 390, 1024, 1440 and 1920px in both themes
+- WHEN the Projects, Beads (List, Board, Focus, Graph, and Lanes of the epic `ex-e12`), bead, My Tasks, Milestones, milestone (Gantt at each zoom, Beads, Retro) and Reports (each tab) pages are shown at 390, 1024, 1440 and 1920px in both themes
 - THEN no text overlaps other text or a bar, line or arrow it does not belong to, and no text spills out of its box without an ellipsis
 
 #### Scenario: Facts as label and value
-- GIVEN the bead page of an epic and the velocity line of a kicked-off milestone
+- GIVEN the bead page of an epic, the velocity line of a kicked-off milestone and the header of a lane
 - WHEN they are shown
 - THEN each fact shows its label in the muted color and its value in the text color with a heavier weight
 
@@ -2198,3 +2203,143 @@ On every page, at every window width from 360px and in the light and the dark th
 - GIVEN the Reports Team and Velocity tabs in the light and the dark theme
 - WHEN they are shown
 - THEN every milestone id and label has a contrast of at least 4.5:1 with its background
+
+### REQ-UI-111: Lanes view
+The Beads views SHALL offer the view Lanes (`view=lanes`) WHILE the scope, resolved as for the Graph view (REQ-UI-106), is a bead with at least one loaded child that is not a merge gate and whose `lane` is not `null` (REQ-BEADS-019); closed children count only while closed beads are loaded ("Show closed", a sprint or a closed milestone, or the Lanes view itself). The view SHALL draw one row per lane of the scope's children that are not merge gates, then a row "No lane" for those children without a `lane` when there is any, the lane rows ordered by the column of their first card, then by name. Each row SHALL show its header (REQ-UI-112) in a column that stays visible while the cards scroll sideways, 168px wide under 1024px windows and 240px from 1024px, and its beads as cards with the content of a Graph node (REQ-UI-049) on columns shared by every row: a card's column SHALL be after the columns of the cards it depends on (its blockers among the drawn cards and, through a merge gate, the card of the track that gate waits for) and after the column of the previous card of its row, the cards of a row ordered by their dependency order, then by track number, then by id. The view SHALL load closed beads whatever "Show closed" says, SHALL draw a card only when its bead matches the search and the filters, SHALL leave out a row with no card, and SHALL say "No beads match these filters" when it draws no card. WHEN a card is selected or opened, the view SHALL behave as the Graph view does with a node (REQ-UI-106). IF `view=lanes` while the scope has no child with a lane, THEN the view SHALL say "Lanes show for an epic whose tracks have lanes" with a link to the Graph view.
+
+#### Scenario: Offered for an epic with lanes
+- GIVEN the example project with epic `ex-e12`, whose tracks have lanes, and epic `ex-e3`, whose tracks have none
+- WHEN the user opens the Beads views with `scope=ex-e12`, then with `scope=ex-e3`, then without a scope
+- THEN the Lanes tab is offered for `ex-e12` only
+
+#### Scenario: Rows and columns
+- GIVEN epic `ex-e12` with lanes `be` (tracks 1 and 2, track 2 blocked by track 1), `fe` (track 3), `qa` (track 4, blocked by merge gates waiting for tracks 2 and 3), `infra` (tracks 5 and 6) and two children without a lane
+- WHEN the user opens its Lanes view
+- THEN the rows are `be`, `fe`, `infra`, `qa` and "No lane", track 2 is in a later column than track 1, and track 4 is in a later column than tracks 2 and 3
+
+#### Scenario: Closed tracks without Show closed
+- GIVEN "Show closed" is off and track 1 of `ex-e12` is closed
+- WHEN the user opens the Lanes view of `ex-e12`
+- THEN the card of track 1 is drawn
+
+#### Scenario: Filters
+- GIVEN the assignee filter selects `bao`, who holds only lane `fe`
+- WHEN the user opens the Lanes view of `ex-e12`
+- THEN only the row `fe` is drawn, with its header
+
+#### Scenario: Scope without lanes
+- GIVEN the URL has `view=lanes&scope=ex-e3`
+- WHEN the page loads
+- THEN the view says "Lanes show for an epic whose tracks have lanes" with a link to the Graph view
+
+### REQ-UI-112: Lane header and state
+Each lane row's header SHALL show the lane name in a heavier weight, then as label/value facts (REQ-UI-110):
+- State: the lane's state as an icon and its words;
+- Held by: the distinct assignees of the lane's tracks that are not closed, or "Unclaimed" when none has one; left out when every track is closed;
+- Lease: "until <date>" from the latest `claim.expires_at` among the lane's tracks that are not closed when it is later than now, "expired <date>" when it is not, left out when none of them has a `claim`;
+- Tracks: "<closed>/<total> closed" over all the lane's tracks whatever the search and filters.
+The state SHALL be the first of these that holds:
+1. "All tracks closed": every track is closed;
+2. "Running": a track is `in_progress`, or a track that is not closed has a `claim` whose `expires_at` is later than now;
+3. "Waiting for <lanes>": the lane's first card that is not closed is blocked by merge gates that are not closed, `<lanes>` being their `waits_for.lane` values, joined by ", ", or "another lane" for a gate whose `waits_for.lane` is `null`;
+4. "Blocked": that card is blocked (REQ-BEADS-007);
+5. "Not started": no track is closed;
+6. "Idle": otherwise.
+The header of the row "No lane" SHALL show its name and Tracks only.
+
+#### Scenario: Running lane with a lease
+- GIVEN lane `be` with track 1 closed and track 2 `in_progress`, both assigned to `ann`, track 2 with a `claim` expiring tomorrow at 16:00
+- WHEN the Lanes view is shown
+- THEN the `be` header shows State "Running", Held by `ann`, Lease "until <tomorrow> 16:00" and Tracks "1/2 closed"
+
+#### Scenario: Waiting for another lane
+- GIVEN lane `qa` whose only track, open and unassigned, is blocked by an open merge gate waiting for track 2 of lane `be` and a closed merge gate waiting for track 3 of lane `fe`
+- WHEN the Lanes view is shown
+- THEN the `qa` header shows State "Waiting for be", Held by "Unclaimed" and Tracks "0/1 closed"
+
+#### Scenario: Idle lane with an expired lease
+- GIVEN lane `infra` with track 5 closed and track 6 open, assigned to `chi` with a `claim` that expired yesterday
+- WHEN the Lanes view is shown
+- THEN the `infra` header shows State "Idle", Held by `chi` and Lease "expired <yesterday date and time>"
+
+#### Scenario: All tracks closed
+- GIVEN lane `fe` whose only track is closed
+- WHEN the Lanes view is shown
+- THEN the `fe` header shows State "All tracks closed" and Tracks "1/1 closed", and no Held by or Lease
+
+#### Scenario: Not started and blocked
+- GIVEN lane `x` with two open unassigned tracks without blockers, and lane `y` whose first open track is blocked by an open bead that is not a merge gate
+- WHEN the Lanes view is shown
+- THEN `x` shows State "Not started" and `y` shows State "Blocked"
+
+### REQ-UI-113: Arrows and merge markers between cards
+The Lanes view SHALL draw an arrow from each drawn card to each drawn card it blocks, and from the card of the track a merge gate waits for to each drawn card that gate blocks, as a line of horizontal and vertical segments that runs only in the gaps between columns and between rows and never across a card or a header. On each arrow through a merge gate it SHALL draw, in a gap between rows, a marker with an icon and the word "Waiting" while the gate is not closed or "Merged" when it is closed, markers in one gap moved apart so that none overlaps another or an arrow's turn. IF the track a merge gate waits for is not drawn, THEN the view SHALL draw no arrow for it and SHALL draw the marker in the gap between rows above the waiting card, from its left edge, with the words "Waiting for track <N>" or "Merged track <N>".
+
+#### Scenario: Waiting and merged
+- GIVEN epic `ex-e12`, where track 4 of lane `qa` is blocked by an open merge gate waiting for track 2 and a closed one waiting for track 3
+- WHEN the Lanes view is shown
+- THEN an arrow runs from track 2 to track 4 with the marker "Waiting", an arrow runs from track 3 to track 4 with the marker "Merged", and no arrow segment or marker crosses a card or a header
+
+#### Scenario: Arrow inside a lane
+- GIVEN track 2 of lane `be` blocked by track 1
+- WHEN the Lanes view is shown
+- THEN an arrow runs from track 1 to track 2 without a marker
+
+#### Scenario: Track not drawn
+- GIVEN a merge gate titled `external: .planning/plans/other.md#7` that blocks track 4 and matches no child of the scope
+- WHEN the Lanes view is shown
+- THEN no arrow is drawn for it and the marker "Waiting for track 7" is drawn above the card of track 4
+
+### REQ-UI-114: Lanes keyboard and screen readers
+In the Lanes view, WHEN a card has focus, the keys Arrow Left and Arrow Right SHALL move the focus and the selection to the previous or next card of its row, and Arrow Up and Arrow Down to the card of the row above or below whose column is nearest, the earlier column on a tie, and SHALL do nothing at an edge; Escape, Enter and double-click SHALL behave as in the Graph view (REQ-UI-052, REQ-UI-106). The view SHALL hold a list that only screen readers read, naming each lane with its state, holder, lease and tracks, then each arrow through a merge gate as "<lane> #<N> waits for <lane> #<M>: merge pending" or "…: merged".
+
+#### Scenario: Moving between rows
+- GIVEN the focus on track 2 of lane `be`
+- WHEN the user presses Arrow Down
+- THEN the focus and the selection move to track 3, the only card of lane `fe`, the row below, and the details panel shows it
+
+#### Scenario: Screen reader list
+- GIVEN the Lanes view of `ex-e12`
+- WHEN a screen reader reads the view
+- THEN it reads "be: Running, held by ann, lease until …, 1/2 closed" and "qa #4 waits for be #2: merge pending"
+
+### REQ-UI-115: Lane chip
+WHERE a bead's `lane` is not `null` (REQ-BEADS-019), its List row, its Board and Focus cards, its Graph node, its Gantt child row (REQ-MILESTONE-UI-015), its bead page and its details panel SHALL show a lane chip: an icon and the lane name, cut with an ellipsis and with the title "Lane <name>"; the cards of the Lanes view, whose row names the lane, SHALL NOT. The label chips of a bead SHALL NOT show its `lane:<name>` label when it has a `lane`, nor its `track:<N>` label when it has a `track`. The facts of a bead page (REQ-UI-110) SHALL add Lane (the name), Track ("#<N>", followed by the plan's file name when `track.plan` is known) and Lease ("until <date>" or "expired <date>" as in REQ-UI-112) when the bead has them.
+
+#### Scenario: Chip in every view
+- GIVEN track 2 of `ex-e12` in lane `be`, labelled `lane:be` and `track:2`
+- WHEN its List row, Board card, Graph node, Gantt child row and bead page are shown
+- THEN each shows the chip "be" with the title "Lane be", and no label chip reads `lane:be` or `track:2`
+
+#### Scenario: Facts
+- GIVEN track 2 with `track` `{"plan": ".planning/plans/2026-11-20-shop.md", "number": 2}` and a `claim` expiring tomorrow at 16:00
+- WHEN its bead page is shown
+- THEN the facts include Lane "be", Track "#2 2026-11-20-shop.md" and Lease "until <tomorrow> 16:00"
+
+#### Scenario: Bead without a lane
+- GIVEN a bead whose `lane` is `null`
+- WHEN its List row is shown
+- THEN it has no lane chip
+
+### REQ-UI-116: Merge gates in the views
+The List, Board, Focus and My Tasks views SHALL NOT show merge gates (REQ-BEADS-019), and no count of children or tracks that the frontend shows ("n of m done" of a Graph node, the child counts of a List row and of a bead page) SHALL count them. The Graph view SHALL draw a merge gate as a node with a dashed border and a merge icon that reads, in place of its title, "Waits for <lane> #<N> to merge" (`<lane>` its `waits_for.lane`, else "track" without the `#`) and, in place of its state, "Waiting" while it is not closed or "Merged" when it is closed. The bead page of a merge gate SHALL show the same words as its title and state, keep its own title as a fact "Placeholder", and add the fact "Waits for" with the plan path and the track number. In the Dependencies of a bead page (REQ-UI-028), a merge gate SHALL read "Waits for <lane> #<N> · merge pending" or "Waits for <lane> #<N> · merged", with `<lane> #<N>` written as on its Graph node.
+
+#### Scenario: Not on the Board
+- GIVEN an open merge gate without blockers and an open task without blockers
+- WHEN the user opens the Board, List and Focus views
+- THEN the task is shown and the merge gate is not
+
+#### Scenario: Not counted as a child
+- GIVEN epic `ex-e12` with 8 tracks and a merge gate whose parent is `ex-e12`
+- WHEN its Graph node is shown in the project scope
+- THEN it reads "n of 8 done"
+
+#### Scenario: Merge gate node
+- GIVEN an open merge gate waiting for track 2 of lane `be`, in the Graph view of `ex-e12`
+- WHEN the view is shown
+- THEN the gate is a dashed node with a merge icon reading "Waits for be #2 to merge" and "Waiting"
+
+#### Scenario: Dependencies of a track
+- GIVEN track 4 blocked by an open merge gate waiting for track 2 of lane `be` and a closed one waiting for track 3 of lane `fe`
+- WHEN the bead page of track 4 is shown
+- THEN its Dependencies read "Waits for be #2 · merge pending" and "Waits for fe #3 · merged"

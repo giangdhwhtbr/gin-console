@@ -148,7 +148,7 @@ The server SHALL replace lone surrogate characters in every string it returns.
 - THEN both responses are 200 with the character replaced
 
 ### REQ-BEADS-007: Readiness and closing time
-WHEN a client requests the bead list or a bead detail, the server SHALL add to each bead `ready`, `blocked` and `closed_at` (the time it was closed, absent for a bead that is not closed), working out readiness from the export as `bd ready` and `bd blocked` do: a bead that is not closed is blocked WHEN it has a `blocks` or `blocked-by` dependency on a bead of the same export that is not closed, or WHEN an ancestor along its `parent-child` dependencies is blocked so; `blocked` is also true for a bead whose status is `blocked`; `ready` is true for an open bead that is not blocked and whose type is not `milestone`. A dependency on a bead the export does not hold (an `external:` reference or a deleted bead) SHALL block nothing.
+WHEN a client requests the bead list or a bead detail, the server SHALL add to each bead `ready`, `blocked` and `closed_at` (the time it was closed, absent for a bead that is not closed), working out readiness from the export as `bd ready` and `bd blocked` do: a bead that is not closed is blocked WHEN it has a `blocks` or `blocked-by` dependency on a bead of the same export that is not closed, or WHEN an ancestor along its `parent-child` dependencies is blocked so; `blocked` is also true for a bead whose status is `blocked`; `ready` is true for an open bead that is not blocked, whose type is not `milestone` and that is not a merge gate (REQ-BEADS-019). A dependency on a bead the export does not hold (an `external:` reference or a deleted bead) SHALL block nothing.
 
 #### Scenario: Flags
 - GIVEN an open unblocked bead, an open bead with an in-progress blocker, an in-progress bead and a closed bead
@@ -169,6 +169,11 @@ WHEN a client requests the bead list or a bead detail, the server SHALL add to e
 - GIVEN an open milestone without blockers
 - WHEN a client requests the list
 - THEN the milestone has `ready` false
+
+#### Scenario: Merge gate is never ready
+- GIVEN an open bead titled `external: .planning/plans/p.md#2` without blockers
+- WHEN a client requests the list
+- THEN the bead has `ready` false and `blocked` false
 
 #### Scenario: External blocker
 - GIVEN an open bead whose only blocker is `external:gin-workflow:cap`
@@ -458,3 +463,46 @@ The Projects page SHALL show on each project card whose `pull` is not `null`: "p
 - GIVEN projects without a `pull` key
 - WHEN the Projects, Beads and My Tasks pages load
 - THEN no pull line and no pull note is shown
+
+### REQ-BEADS-019: Lane fields and merge gates
+WHEN a client requests the bead list or a bead detail, the server SHALL add to each bead `lane`, `track`, `claim` and `waits_for`, read from the export without running a command:
+- `lane`: the name on the first description line `Lane: <name>` (the name may be in backticks), else the name of the first label `lane:<name>`, a name being lower-case letters, digits and `-` starting with a letter or digit; `null` when there is none;
+- `track`: `{"plan": <path>, "number": <N>}` from the first description line `Plan: <path>, Track <N>` (the path may be in backticks), else `{"plan": null, "number": <N>}` from the first label `track:<N>`; `null` when there is neither;
+- `claim`: `{"holder": <text>, "expires_at": <UTC time>}` from `metadata.claim`, given as an object or as a JSON string, when `holder` is a non-empty string and `expires_at` a time written `YYYY-MM-DDTHH:MM:SSZ`; `null` otherwise;
+- `waits_for`: `{"plan": <path>, "number": <N>, "track_id": <id>, "lane": <name>}` when the title is `external: <path>#<N>`, `null` otherwise; `track_id` and `lane` name the track the gate waits for, `null` when it is not found: among the children of the gate's parent, or, for a gate without a parent, of the parent of the first bead (by id) it blocks, the child that is not a merge gate whose `track` has that plan and number, else the only such child whose `track` has that number.
+A bead whose `waits_for` is not `null` is a merge gate: the placeholder that gin-workflow's team mode makes block a track that needs another lane's merged pull request, closed when that pull request merges. Each relation of a bead detail (its dependencies, dependents and children) SHALL carry the `waits_for` of the related bead.
+
+#### Scenario: Track of a lane
+- GIVEN a bead with the description lines `Plan: .planning/plans/2026-11-20-shop.md, Track 2` and `Lane: be`, the labels `lane:be` and `track:2`, and `metadata.claim` `{"holder": "ann@x.io", "expires_at": "2026-11-20T16:00:00Z"}`
+- WHEN a client requests the bead list
+- THEN the bead has `lane` `be`, `track` `{"plan": ".planning/plans/2026-11-20-shop.md", "number": 2}` and `claim` `{"holder": "ann@x.io", "expires_at": "2026-11-20T16:00:00Z"}`
+
+#### Scenario: Labels only
+- GIVEN a bead without `Plan:` or `Lane:` lines, labelled `lane:fe` and `track:3`
+- WHEN a client requests the bead list
+- THEN the bead has `lane` `fe` and `track` `{"plan": null, "number": 3}`
+
+#### Scenario: Claim as a JSON string
+- GIVEN a bead whose `metadata.claim` is the string `{"holder": "bao@x.io", "expires_at": "2026-11-21T09:00:00Z"}`, and a bead whose `metadata.claim` is the string `soon`
+- WHEN a client requests the bead list
+- THEN the first has `claim` `{"holder": "bao@x.io", "expires_at": "2026-11-21T09:00:00Z"}` and the second has `claim` `null`
+
+#### Scenario: Not a lane name
+- GIVEN a bead with the description line `Lane: Back End` and no `lane:` label
+- WHEN a client requests the bead list
+- THEN the bead has `lane` `null`
+
+#### Scenario: Merge gate
+- GIVEN epic `e-1` with track `e-1.2` in lane `be` described `Plan: .planning/plans/2026-11-20-shop.md, Track 2`, track `e-1.4`, and a bead without a parent titled `external: .planning/plans/2026-11-20-shop.md#2` that blocks `e-1.4`
+- WHEN a client requests the bead list
+- THEN the gate has `waits_for` `{"plan": ".planning/plans/2026-11-20-shop.md", "number": 2, "track_id": "e-1.2", "lane": "be"}`, and every other bead has `waits_for` `null`
+
+#### Scenario: Track not found
+- GIVEN a gate titled `external: .planning/plans/other.md#7` whose parent is `e-1`, and no child of `e-1` with track 7
+- WHEN a client requests the bead list
+- THEN the gate has `waits_for` `{"plan": ".planning/plans/other.md", "number": 7, "track_id": null, "lane": null}`
+
+#### Scenario: Gate in the relations
+- GIVEN track `e-1.4` blocked by that first gate
+- WHEN a client requests the detail of `e-1.4`
+- THEN its dependency on the gate carries the gate's `waits_for`

@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-REPORTS-001: Report request
-WHEN a client requests `GET /api/reports` with `project` (a configured project name or `all`), `days` (7, 30 or 90, default 30) and optionally `sprint`, the server SHALL read every bead of each selected project from its `bd export` snapshot (REQ-BEADS-012), SHALL select the beads closed in the last `days` days or, when `sprint` is given, the epics labelled `sprint:<sprint>` and their descendants whatever their close date, SHALL return the sections of REQ-REPORTS-003 to REQ-REPORTS-006 together with `generated_at`, SHALL serve the same answer for the same `project`, `days` and `sprint` for 60 seconds without running `bd` again unless `POST /api/refresh` dropped it, SHALL respond 404 when `project` is neither `all` nor configured, and SHALL respond 422 when `days` is another value or `sprint` holds a character outside letters, digits, `.`, `_` and `-`.
+WHEN a client requests `GET /api/reports` with `project` (a configured project name or `all`), `days` (7, 30 or 90, default 30) and optionally `sprint`, the server SHALL read every bead of each selected project from its `bd export` snapshot (REQ-BEADS-012), SHALL select the beads closed in the last `days` days or, when `sprint` is given, the epics labelled `sprint:<sprint>` and their descendants whatever their close date, leaving out merge gates (REQ-BEADS-019) in both cases, SHALL return the sections of REQ-REPORTS-003 to REQ-REPORTS-006 together with `generated_at`, SHALL serve the same answer for the same `project`, `days` and `sprint` for 60 seconds without running `bd` again unless `POST /api/refresh` dropped it, SHALL respond 404 when `project` is neither `all` nor configured, and SHALL respond 422 when `days` is another value or `sprint` holds a character outside letters, digits, `.`, `_` and `-`.
 
 #### Scenario: default period
 - GIVEN project `alpha` with beads closed 3, 20 and 40 days ago
@@ -16,6 +16,11 @@ WHEN a client requests `GET /api/reports` with `project` (a configured project n
 - GIVEN epic `a-1` labelled `sprint:s7` with a child closed 50 days ago, and epic `a-2` without the label
 - WHEN a client requests `/api/reports?project=alpha&sprint=s7`
 - THEN the report counts `a-1` and its child and nothing of `a-2`
+
+#### Scenario: merge gates left out
+- GIVEN project `alpha` with a task and a merge gate titled `external: .planning/plans/p.md#2`, both closed 3 days ago
+- WHEN a client requests `/api/reports?project=alpha`
+- THEN the report counts the task and not the merge gate, and the merge gate is not listed without `ai_usage`
 
 #### Scenario: cached
 - GIVEN a report for `alpha` and 30 days was answered 20 seconds ago
@@ -228,7 +233,7 @@ Source: `assets/2026-11-12/mockup/index.html`
 - THEN both responses are 502 with an `error` and the failure is not cached
 
 ### REQ-REPORTS-009: Team scope and bead rows
-The scope of a milestone SHALL be every bead that is not a milestone, whose chain of parents (itself included) holds an epic whose parent is the milestone, that is not a prep task (REQ-BEADS-002), and that is either not an epic or an epic that has no track.
+The scope of a milestone SHALL be every bead that is not a milestone, whose chain of parents (itself included) holds an epic whose parent is the milestone, that is not a prep task (REQ-BEADS-002) or a merge gate (REQ-BEADS-019), and that is either not an epic or an epic that has no track, a track being a child that is neither a prep task nor a merge gate.
 
 Each scope bead SHALL fall in one bucket:
 - `closed` for status `closed`;
@@ -275,6 +280,11 @@ The response SHALL hold `beads`, one row per scope bead, with:
 - GIVEN milestone `m2` with epic `e-1` whose tracks are `t-1` and `t-2`, and whose prep task is `p-1` labelled `prep` and `prep:mockup`, and epic `e-2` whose only child is prep task `p-2` labelled `prep`
 - WHEN the team report for `m2` is built
 - THEN `beads` holds `t-1`, `t-2` and `e-2`, with `e-2` as its own epic, and neither `e-1`, `p-1` nor `p-2`
+
+#### Scenario: merge gates left out
+- GIVEN milestone `m2` with epic `e-1` whose children are track `t-1` and merge gate `g-1` titled `external: .planning/plans/p.md#1`, and epic `e-2` whose only child is merge gate `g-2`
+- WHEN the team report for `m2` is built
+- THEN `beads` holds `t-1` and `e-2`, with `e-2` as its own epic, and neither `e-1`, `g-1` nor `g-2`
 
 ### REQ-REPORTS-010: Team and member KPIs
 The response SHALL hold `team`, over the whole scope, and `members`, with one row per member of REQ-REPORTS-009 sorted by scope count (largest first) and then by name, with `Unassigned` last. Each holds:

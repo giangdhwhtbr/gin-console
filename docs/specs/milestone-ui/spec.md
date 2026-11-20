@@ -338,7 +338,7 @@ For each epic B of the milestone and each id A in B's `depends_on` that is an ep
 - THEN the arrow from A to B is drawn in the blocked color
 
 ### REQ-MILESTONE-UI-015: Child beads on the Gantt
-The Gantt SHALL load the project's beads, open and closed, and for each epic with beads whose `parent` is that epic SHALL show an expand button in its row, with "N/M closed" (closed tracks over all tracks) when it has a track and "Prep x/y" (closed prep tasks over all prep tasks, REQ-BEADS-002) when it has a prep task; WHEN the user expands an epic, the Gantt SHALL show under it one row per child, prep tasks included, ordered by id, with the child's status icon, its id (linking to its bead page), its title, a "Prep" chip for a prep task, and "closed <date>" from `closed_at` for a closed child or its status otherwise, and SHALL shade the parent epic's period in those rows without drawing bars for them. Epics SHALL start collapsed, and expanding or collapsing one SHALL leave the others as they are. IF the beads cannot be loaded, THEN the Gantt SHALL be drawn without expand buttons or counts.
+The Gantt SHALL load the project's beads, open and closed, and for each epic with beads whose `parent` is that epic and that are not merge gates (REQ-BEADS-019) SHALL show an expand button in its row, with "N/M closed" (closed tracks over all tracks) when it has a track and "Prep x/y" (closed prep tasks over all prep tasks, REQ-BEADS-002) when it has a prep task, a track being a child that is neither a prep task nor a merge gate; WHEN the user expands an epic, the Gantt SHALL show under it one row per child that is not a merge gate, prep tasks included, ordered by id, with the child's status icon, its id (linking to its bead page), its title, a "Prep" chip for a prep task, its lane chip (REQ-UI-115), and "closed <date>" from `closed_at` for a closed child or its status otherwise, and SHALL shade the parent epic's period in those rows without drawing bars for them. Epics SHALL start collapsed, and expanding or collapsing one SHALL leave the others as they are. IF the beads cannot be loaded, THEN the Gantt SHALL be drawn without expand buttons or counts.
 
 #### Scenario: expand
 - GIVEN epic `gin-workflow-rm-cost-control` with four closed children, closed on 2026-11-01
@@ -364,6 +364,11 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 - GIVEN epic `e-1` with tracks `t-1` (closed) and `t-2` (open), and the closed prep task `p-1` labelled `prep` and `prep:mockup`, and epic `e-2` whose only child is the open prep task `p-2` labelled `prep`
 - WHEN the user expands `e-1` and `e-2`
 - THEN `e-1` shows "1/2 closed" and "Prep 1/1" with rows `p-1`, `t-1` and `t-2`, `e-2` shows "Prep 0/1" and no closed count with the row `p-2`, and only `p-1` and `p-2` have a "Prep" chip
+
+#### Scenario: merge gate and lane
+- GIVEN epic `e-1` with track `t-1` in lane `be` (open) and merge gate `g-1` (open) whose parent is `e-1`
+- WHEN the user expands `e-1`
+- THEN `e-1` shows "0/1 closed", the only row is `t-1` with the lane chip "be", and `g-1` has no row
 
 ## Diagrams
 - [Milestones forecast](diagrams/milestones-forecast-activity.md)
