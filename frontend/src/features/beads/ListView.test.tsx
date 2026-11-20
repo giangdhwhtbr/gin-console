@@ -548,3 +548,30 @@ describe("ListView", () => {
     expect(within(within(tree).getByRole("treeitem", { name: /Two/ })).getByText("P2")).toHaveClass("bg-secondary");
   });
 });
+
+describe("ListView lanes", () => {
+  it("REQ-UI-115 REQ-UI-116 Lane chip in the list, no lane: or track: chip, no merge gate row", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() =>
+      json([
+        bead("e-1", { issue_type: "epic", title: "Checkout" }),
+        bead("e-1.1", { parent: "e-1", title: "Track one", lane: "be", track: { plan: null, number: 1 }, labels: ["lane:be", "track:1", "x-label"] }),
+        bead("e-1.2", { parent: "e-1", title: "No lane" }),
+        bead("e-1.3", { parent: "e-1", title: "external: p#2", waits_for: { plan: "p", number: 2, track_id: null, lane: null } }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const tree = await screen.findByRole("tree");
+    const epic = within(tree).getByRole("treeitem", { name: /Checkout/ });
+    // the gate is not counted as a child: one track and one task
+    expect(within(epic).getByText("0/2 closed")).toBeInTheDocument();
+    await userEvent.click(within(epic).getByRole("button", { name: "Expand e-1" }));
+    const row = within(tree).getByRole("treeitem", { name: /Track one/ });
+    expect(within(row).getByText("be")).toBeInTheDocument();
+    expect(within(row).queryByText("lane:be")).toBeNull();
+    expect(within(row).queryByText("track:1")).toBeNull();
+    expect(within(row).getByText("x-label")).toBeInTheDocument();
+    expect(within(tree).getByRole("treeitem", { name: /No lane/ }).querySelector("[title^='Lane ']")).toBeNull();
+    expect(within(tree).queryByText("external: p#2")).toBeNull();
+  });
+});

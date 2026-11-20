@@ -31,6 +31,10 @@ const sampleSummary = {
   estimate_minutes: null,
   points: null,
   points_reason: null,
+  lane: null,
+  track: null,
+  claim: null,
+  waits_for: null,
 };
 
 const sampleDetail = {

@@ -6,6 +6,7 @@ import type { BeadKind, BeadSummary } from "@/features/beads/api";
 import { Badge } from "@/components/ui/badge";
 import { SizeBadge } from "@/components/SizeBadge";
 import { KindBadge } from "@/features/beads/KindBadge";
+import { LaneChip } from "@/features/beads/LaneChip";
 import { childCounts, isPrep, prepLabel } from "@/features/beads/prep";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
@@ -520,6 +521,7 @@ function ChildRow({ project, row, axis, label, today, faded }: { project: string
             </Link>
           </span>
           {isPrep(bead.labels) && <PrepChip />}
+          {bead.lane !== null && <LaneChip lane={bead.lane} />}
           <span title={bead.title} className="min-w-0 flex-1 truncate">
             {bead.title}
           </span>

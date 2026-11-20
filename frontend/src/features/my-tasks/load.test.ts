@@ -107,3 +107,14 @@ describe("loadMyTasks", () => {
     await expect(loadMyTasks(email, false)).rejects.toThrow("Could not load projects");
   });
 });
+
+describe("loadMyTasks merge gates", () => {
+  it("REQ-UI-116 Not on the Board: a merge gate is not a task of mine", async () => {
+    beads.mockResolvedValue([
+      bead("a-1", { assignee: email }),
+      bead("a-2", { assignee: email, waits_for: { plan: "p", number: 1, track_id: null, lane: null } }),
+    ]);
+    const result = await loadMyTasks(email, false, "A");
+    expect(result.tasks.map((t) => t.bead.id)).toEqual(["a-1"]);
+  });
+});

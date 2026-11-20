@@ -2,6 +2,9 @@ import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
 
 export type BeadKind = "capability" | "technical" | "parity";
 export type BeadComplexity = "low" | "medium" | "high";
+export type TrackRef = { plan: string | null; number: number };
+export type GateRef = { plan: string; number: number; track_id: string | null; lane: string | null };
+export type Claim = { holder: string; expires_at: string };
 export type BeadSummary = {
   id: string;
   title: string;
@@ -29,6 +32,10 @@ export type BeadSummary = {
   estimate_minutes: number | null;
   points: number | null;
   points_reason: string | null;
+  lane: string | null;
+  track: TrackRef | null;
+  claim: Claim | null;
+  waits_for: GateRef | null;
 };
 export type MilestoneStatus = "active" | "scheduled" | "planned" | "closed";
 export type MilestoneOption = {
@@ -39,7 +46,13 @@ export type MilestoneOption = {
   end: string | null;
 };
 export type ProjectMilestones = { milestones: MilestoneOption[]; current: string | null };
-export type Relation = { id: string; title: string; status: string; type: "blocks" | "parent-child" | "discovered-from" };
+export type Relation = {
+  id: string;
+  title: string;
+  status: string;
+  type: "blocks" | "parent-child" | "discovered-from";
+  waits_for?: GateRef | null;
+};
 export type Child = Relation & { prep: boolean };
 export type BeadDetail = BeadSummary & {
   description: string | null;
@@ -60,6 +73,16 @@ const isObject = (value: unknown): value is object => typeof value === "object" 
 const isStringOrUndefined = (value: unknown) => value === undefined || isStringOrNull(value);
 const isStringArray = (value: unknown) => Array.isArray(value) && value.every(isString);
 const isMissingOr = (value: unknown, ok: (v: unknown) => boolean) => value === undefined || value === null || ok(value);
+const isTrackRef = (value: unknown) =>
+  isObject(value) && isMissingOr(field(value, "plan"), isString) && isFiniteNumber(field(value, "number"));
+const isClaim = (value: unknown) =>
+  isObject(value) && isString(field(value, "holder")) && isString(field(value, "expires_at"));
+const isGateRef = (value: unknown) =>
+  isObject(value) &&
+  isString(field(value, "plan")) &&
+  isFiniteNumber(field(value, "number")) &&
+  isMissingOr(field(value, "track_id"), isString) &&
+  isMissingOr(field(value, "lane"), isString);
 const KINDS: readonly BeadKind[] = ["capability", "technical", "parity"];
 const COMPLEXITIES: readonly BeadComplexity[] = ["low", "medium", "high"];
 
@@ -78,7 +101,11 @@ function isSummary(value: unknown): value is BeadSummary {
     isMissingOr(field(value, "kind"), isString) &&
     isMissingOr(field(value, "capabilities"), isStringArray) &&
     isMissingOr(field(value, "complexity"), isString) &&
-    isMissingOr(field(value, "estimate_minutes"), isFiniteNumber)
+    isMissingOr(field(value, "estimate_minutes"), isFiniteNumber) &&
+    isMissingOr(field(value, "lane"), isString) &&
+    isMissingOr(field(value, "track"), isTrackRef) &&
+    isMissingOr(field(value, "claim"), isClaim) &&
+    isMissingOr(field(value, "waits_for"), isGateRef)
   );
 }
 
@@ -110,13 +137,18 @@ const withMilestone = <T extends BeadSummary>(bead: T): T => ({
   // a malformed points or reason reads as none, it never fails the list
   points: typeof bead.points === "number" && Number.isFinite(bead.points) ? bead.points : null,
   points_reason: typeof bead.points_reason === "string" ? bead.points_reason : null,
+  lane: bead.lane ?? null,
+  track: bead.track ?? null,
+  claim: bead.claim ?? null,
+  waits_for: bead.waits_for ?? null,
 });
 
 function isRelation(value: unknown): value is Relation {
   return (
     isObject(value) &&
     ["id", "title", "status"].every((k) => isString(field(value, k))) &&
-    ["blocks", "parent-child", "discovered-from"].includes(String(field(value, "type")))
+    ["blocks", "parent-child", "discovered-from"].includes(String(field(value, "type"))) &&
+    isMissingOr(field(value, "waits_for"), isGateRef)
   );
 }
 

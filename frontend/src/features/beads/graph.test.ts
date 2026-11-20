@@ -360,3 +360,11 @@ describe("link labels", () => {
     expect(linkLabels(graph, place(graph).at).size).toBe(0);
   });
 });
+
+describe("progressOf merge gates", () => {
+  it("REQ-UI-116 Not counted as a child: a gate child is ignored", () => {
+    const gate = task("e.2", "e", [], { waits_for: { plan: "p", number: 1, track_id: null, lane: null } });
+    const counts = progressOf([epic("e"), task("e.1", "e", [], { status: "closed" }), gate]);
+    expect(counts.get("e")).toEqual({ done: 1, total: 1 });
+  });
+});
