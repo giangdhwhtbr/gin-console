@@ -4,7 +4,7 @@
 - **Priority:** low
 
 **Preconditions:**
-- A project whose Graph view is wider than the window, such as `ex-e12` with "Show closed" on at 390x844
+- The Graph view of `ex-e12` with "Show closed" on at 390x844 is wider than the window
 
 **Steps:**
 1. Open `/beads?project=example&milestone=all&view=graph&scope=ex-e12&closed=1`
