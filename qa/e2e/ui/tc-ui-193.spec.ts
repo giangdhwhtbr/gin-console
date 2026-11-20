@@ -1,11 +1,11 @@
-// TC: TC-UI-193@19f419d5
+// TC: TC-UI-193@3d195f4a
 import { test, expect } from '../evidence';
-import { E12, PROJECT, scrolled, stubExample, tall } from '../support/lanes';
+import { E12, PROJECT, scrolled, stubExample } from '../support/lanes';
 
 test('TC-UI-193: Wheel over the Graph view (REQ-UI-122)', async ({ page, ev }) => {
-  // Precondition: ex-e12 has lanes be, fe, infra, qa and tracks without a lane (more of them, so that the page is taller than the 1920x1080 window).
-  await stubExample(page, tall());
-  await page.setViewportSize({ width: 1920, height: 1080 });
+  // Precondition: ex-e12 has lanes be, fe, infra, qa and two tracks without a lane; the window is 1440x900 and the page is taller than it.
+  await stubExample(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
 
   await ev.step(`1. Open /beads?project=${PROJECT}&milestone=all&view=graph&scope=${E12}&closed=1`, async () => {
     await page.goto(`/beads?project=${PROJECT}&milestone=all&view=graph&scope=${E12}&closed=1`);

@@ -8,8 +8,7 @@ test('TC-UI-197: Fit a wide graph (REQ-UI-077)', async ({ page, ev }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const wholeWidth = async () => {
     const canvas = page.getByTestId('graph-canvas');
-    // the scale is rounded to a whole percent, so the stage may exceed the canvas by about 1%
-    await expect.poll(() => canvas.evaluate((el) => el.scrollWidth <= el.clientWidth * 1.02)).toBe(true);
+    await expect.poll(() => canvas.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     // the right edge of the last lane box is inside the canvas
     const frame = (await canvas.boundingBox())!;
     const right = await page.locator('section[data-lane]').evaluateAll((els) => Math.max(...els.map((el) => el.getBoundingClientRect().right)));
