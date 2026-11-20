@@ -80,6 +80,10 @@ function sample(d: string): Pt[] {
 const cardRect = (c: { x: number; y: number }): Rect => ({ x: c.x, y: c.y, w: LANE.cardW, h: LANE.cardH });
 const headRect = (b: LaneBoxLayout): Rect => ({ x: b.x + LANE_GRAPH.pad, y: b.y, w: b.w - 2 * LANE_GRAPH.pad, h: LANE_GRAPH.head });
 
+/**
+ * Arrowheads are not modelled by the layout: the check treats the end of an arrow and the 10px before it as the
+ * head, and keeps every chip off it.
+ */
 function expectClear(g: LaneGraph) {
   const rects = [...g.cards.map(cardRect), ...g.boxes.map(headRect)];
   for (const a of g.arrows) {
@@ -89,9 +93,24 @@ function expectClear(g: LaneGraph) {
     const chip = { x: c.x, y: c.y, w: c.w, h: 20 };
     for (const r of rects) expect(overlap(chip, r), `chip ${c.words}`).toBe(false);
   }
+  for (const a of g.arrows.filter((x) => x.toBox)) {
+    const points = sample(a.d);
+    const end = points[points.length - 1];
+    for (const c of g.chips) {
+      for (const head of [end, { x: end.x, y: end.y - 10 }]) expect(inside({ x: c.x, y: c.y, w: c.w, h: 20 }, head), `chip ${c.words} over the end of ${a.from}>${a.to}`).toBe(false);
+    }
+  }
   for (const [i, a] of g.chips.entries()) {
     for (const b of g.chips.slice(i + 1)) expect(overlap({ x: a.x, y: a.y, w: a.w, h: 20 }, { x: b.x, y: b.y, w: b.w, h: 20 }), `${a.words} / ${b.words}`).toBe(false);
   }
+}
+
+function expectEndsOnBox(g: LaneGraph, from: string, to: string) {
+  const arrow = arrowOf(g, from, to);
+  const target = cardOf(g, to);
+  const box = boxOf(g, target.lane);
+  expect(arrow, `${from}>${to}`).toMatchObject({ toBox: true });
+  expect(sample(arrow?.d ?? "").at(-1)).toEqual({ x: target.x + LANE.cardW / 2, y: box.y });
 }
 
 describe("laneGraph", () => {
@@ -210,7 +229,10 @@ describe("laneGraph", () => {
       ["waiting", "Waiting for track 7", 152],
     ]);
     for (const c of loose) expect(c.y + 20).toBe(qa.y); // sits on the top edge, outside the header
-    expect(Math.min(...loose.map((c) => c.x))).toBe(qa.x + LANE_GRAPH.pad);
+    // the chips keep right of the end of the arrows that reach the top edge of the box
+    const arrowEnd = cardOf(g, t4.id).x + LANE.cardW / 2;
+    expect(Math.min(...loose.map((c) => c.x))).toBeGreaterThan(arrowEnd);
+    expect(Math.min(...loose.map((c) => c.x))).toBeGreaterThanOrEqual(qa.x + LANE_GRAPH.pad);
     expect(g.arrows.filter((a) => a.gate?.id === far.id || a.gate?.id === closedFar.id)).toEqual([]);
     expect(g.arrows).toHaveLength(3); // t1>t2, t2>qa, t3>qa
     expectClear(g);
@@ -338,7 +360,71 @@ describe("laneGraph", () => {
     expect(boxOf(g, "c").tier).toBe(boxOf(g, "a").tier + 1);
     expect(g.cycle).toEqual(expect.arrayContaining(["a", "b"]));
     expect(g.cycle).not.toContain("c");
-    expect(g.arrows.map((x) => `${x.from}>${x.to}`)).toEqual([`${a2.id}>${c.id}`]);
+    // every dependency between boxes is drawn, also the ones inside a tier, and ends on the top edge of its box
+    expect(g.arrows.map((x) => `${x.from}>${x.to}`).sort()).toEqual([`${a.id}>${b.id}`, `${b.id}>${a2.id}`, `${a2.id}>${c.id}`].sort());
+    for (const arrow of g.arrows) expectEndsOnBox(g, arrow.from, arrow.to);
+    expect(laneGraphLines(g).map((l) => l.key)).toEqual(expect.arrayContaining([`arrow:${a.id}>${b.id}`, `arrow:${b.id}>${a2.id}`]));
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 a dependency from a lane to No lane gets an arrow, and No lane is tiered after the lane", () => {
+    const a = track(11, "x");
+    const n = track(12, null, { blocked_by: [a.id] });
+    const beads = [epic, a, n];
+    const g = graphOf(beads, new Set(beads.map((b) => b.id)));
+    expect(g.boxes.map((b) => [b.lane, b.tier])).toEqual([["x", 0], [null, 1]]);
+    expectEndsOnBox(g, a.id, n.id);
+    expect(laneGraphLines(g).map((l) => l.key)).toContain(`arrow:${a.id}>${n.id}`);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 a dependency from No lane to a lane gets an arrow, and No lane is tiered before the lane", () => {
+    const n = track(11, null);
+    const a = track(12, "x", { blocked_by: [n.id] });
+    const beads = [epic, n, a];
+    const g = graphOf(beads, new Set(beads.map((b) => b.id)));
+    expect(g.boxes.map((b) => [b.lane, b.tier])).toEqual([[null, 0], ["x", 1]]);
+    expectEndsOnBox(g, n.id, a.id);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 an arrow back to an earlier tier runs in the side channel and ends on the top edge of its box", () => {
+    const a = track(11, "a");
+    const b = track(12, "b", { blocked_by: [a.id] });
+    const c = track(13, "c", { blocked_by: [b.id] });
+    const back = { ...a, blocked_by: [c.id] };
+    const beads = [epic, back, b, c];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    expect(g.cycle.slice(0, 3)).toEqual(["a", "b", "c"]);
+    for (const [from, to] of [[a.id, b.id], [b.id, c.id], [c.id, a.id]]) expectEndsOnBox(g, from, to);
+    const right = Math.max(...g.boxes.map((x) => x.x + x.w));
+    expect(Math.max(...sample(arrowOf(g, c.id, a.id)?.d ?? "").map((p) => p.x))).toBeGreaterThan(right);
+    expect(Math.min(...sample(arrowOf(g, c.id, a.id)?.d ?? "").map((p) => p.y))).toBeGreaterThanOrEqual(0);
+    expect(Math.max(...sample(arrowOf(g, c.id, a.id)?.d ?? "").map((p) => p.y))).toBeLessThanOrEqual(g.height);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 two gated arrows that skip a layer keep their chips inside the box, apart, and off the other arrows", () => {
+    const a = track(11, "x");
+    const g1 = bead(`${E12}.31`, { parent: E12, waits_for: { plan: "p/team.md", number: 11, track_id: a.id, lane: "x" } });
+    const b = track(12, "x", { blocked_by: [a.id] });
+    const g2b = bead(`${E12}.32`, { parent: E12, waits_for: { plan: "p/team.md", number: 12, track_id: b.id, lane: "x" } });
+    const c = track(13, "x", { blocked_by: [b.id, g1.id] });
+    const d = track(14, "x", { blocked_by: [c.id, g2b.id] });
+    const beads = [epic, a, b, c, d, g1, g2b];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    const box = boxOf(g, "x");
+    expect(g.chips).toHaveLength(2);
+    for (const chip of g.chips) {
+      const rect = { x: chip.x, y: chip.y, w: chip.w, h: 20 };
+      expect(rect.x).toBeGreaterThanOrEqual(box.x);
+      expect(rect.x + rect.w).toBeLessThanOrEqual(box.x + box.w);
+      expect(rect.y).toBeGreaterThanOrEqual(box.y);
+      expect(rect.y + rect.h).toBeLessThanOrEqual(box.y + box.h);
+      for (const other of g.arrows.filter((x) => x.chip?.x !== chip.x || x.chip?.y !== chip.y)) {
+        for (const p of sample(other.d)) expect(inside(rect, p), `${chip.words} over ${other.from}>${other.to}`).toBe(false);
+      }
+    }
     expectClear(g);
   });
 

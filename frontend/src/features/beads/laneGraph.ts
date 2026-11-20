@@ -107,19 +107,28 @@ function components(nodes: readonly string[], next: ReadonlyMap<string, readonly
   return result;
 }
 
-/** The tier of each lane: after every lane it waits for; lanes that wait for each other share one; "No lane" takes the last. */
+/** "No lane" is a node of the lane graph like a lane; no lane is named this. */
+const NO_LANE = "\u0000";
+
+/**
+ * The tier of each lane: after every lane it waits for; lanes that wait for each other share one.
+ * "No lane" is tiered the same way, and stays in the last tier when it has no dependency with a lane.
+ */
 function tiersOf(lanes: readonly Lane[], deps: readonly Dep[], laneOf: ReadonlyMap<string, Lane>): { tier: Map<Lane, number>; cycle: string[] } {
-  const named = lanes.flatMap((l) => (l === null ? [] : [l]));
+  const nodes = lanes.map((l) => l ?? NO_LANE);
   const next = new Map<string, string[]>();
   const into = new Map<string, Set<string>>();
+  const linked = new Set<string>();
   for (const { from, to } of deps) {
     const a = laneOf.get(from);
     const b = laneOf.get(to);
-    if (a == null || b == null || a === b) continue;
-    next.set(a, [...(next.get(a) ?? []), b]);
-    into.set(b, (into.get(b) ?? new Set<string>()).add(a));
+    if (a === undefined || b === undefined || a === b) continue;
+    const [x, y] = [a ?? NO_LANE, b ?? NO_LANE];
+    next.set(x, [...(next.get(x) ?? []), y]);
+    into.set(y, (into.get(y) ?? new Set<string>()).add(x));
+    linked.add(x).add(y);
   }
-  const parts = components(named, next);
+  const parts = components(nodes, next);
   const partOf = new Map(parts.flatMap((part, i) => part.map((lane) => [lane, i] as const)));
   const depth = new Map<number, number>();
   const depthOf = (part: number): number => {
@@ -135,9 +144,13 @@ function tiersOf(lanes: readonly Lane[], deps: readonly Dep[], laneOf: ReadonlyM
     depth.set(part, longest);
     return longest;
   };
-  const tier = new Map<Lane, number>(named.map((lane) => [lane, depthOf(partOf.get(lane) ?? 0)]));
-  tier.set(null, Math.max(0, ...tier.values()));
-  const cycle = parts.filter((part) => part.length > 1).flat().sort((a, b) => a.localeCompare(b));
+  const tier = new Map<Lane, number>(lanes.map((lane) => [lane, depthOf(partOf.get(lane ?? NO_LANE) ?? 0)]));
+  if (tier.has(null) && !linked.has(NO_LANE)) tier.set(null, Math.max(0, ...[...tier].flatMap(([lane, t]) => (lane === null ? [] : [t]))));
+  const cycle = parts
+    .filter((part) => part.length > 1)
+    .flat()
+    .map((lane) => (lane === NO_LANE ? "No lane" : lane))
+    .sort((a, b) => a.localeCompare(b));
   return { tier, cycle };
 }
 
@@ -198,14 +211,14 @@ const chipRect = (c: { x: number; y: number; w: number }): Rect => ({ x: c.x, y:
 const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const grown = (r: Rect, by: number): Rect => ({ x: r.x - by, y: r.y - by, w: r.w + 2 * by, h: r.h + 2 * by });
 
-/** Chips are pushed right by `LANE_CHIP.step` until none meets another. */
-function spaced(wanted: readonly Wanted[]): LaneGraphChip[] {
+/** Chips are pushed right by `LANE_CHIP.step` until none meets another chip or an obstacle (an arrowhead). */
+function spaced(wanted: readonly Wanted[], obstacles: readonly Rect[]): LaneGraphChip[] {
   const placed: LaneGraphChip[] = [];
   for (const { chip, arrow } of wanted) {
     let at = chip;
     for (let tries = 0; tries < 400; tries += 1) {
       const probe = grown(chipRect(at), LANE_CHIP.clear);
-      if (!placed.some((p) => overlap(probe, chipRect(p)))) break;
+      if (!placed.some((p) => overlap(probe, chipRect(p))) && !obstacles.some((o) => overlap(probe, o))) break;
       at = { ...at, x: at.x + LANE_CHIP.step };
     }
     placed.push(at);
@@ -230,18 +243,26 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
   const shapeOf = new Map([...shaped.values()].flat().map((s) => [s.bead.id, s] as const));
   const tierOf = (lane: Lane) => tier.get(lane) ?? 0;
 
-  // the arrows that are drawn: forwards inside a box, and down to a later tier between boxes
+  // the arrows that are drawn: forwards inside a box, and every dependency between boxes (a back edge or a same-tier one runs in the side channel)
   const arrowsWanted = oneArrowEach(deps).filter((dep) => {
     const a = shapeOf.get(dep.from);
     const b = shapeOf.get(dep.to);
     if (a === undefined || b === undefined) return false;
-    return a.bead.lane === b.bead.lane ? b.layer > a.layer : tierOf(b.bead.lane) > tierOf(a.bead.lane);
+    return a.bead.lane !== b.bead.lane || b.layer > a.layer;
   });
-  const gatedInside = new Set(arrowsWanted.filter((d) => d.gate !== null && laneOf.get(d.from) === laneOf.get(d.to)).map((d) => laneOf.get(d.from)));
+  const gatedInside = new Map<Lane, number>();
+  for (const d of arrowsWanted) {
+    const lane = laneOf.get(d.from) ?? null;
+    if (d.gate !== null && lane === laneOf.get(d.to)) gatedInside.set(lane, (gatedInside.get(lane) ?? 0) + 1);
+  }
+  const backToTier0 = arrowsWanted.some((d) => laneOf.get(d.from) !== laneOf.get(d.to) && tierOf(laneOf.get(d.to) ?? null) <= tierOf(laneOf.get(d.from) ?? null) && tierOf(laneOf.get(d.to) ?? null) === 0);
+  const backFromLast = arrowsWanted.some((d) => laneOf.get(d.from) !== laneOf.get(d.to) && tierOf(laneOf.get(d.to) ?? null) <= tierOf(laneOf.get(d.from) ?? null) && tierOf(laneOf.get(d.from) ?? null) === Math.max(...board.rows.map((r) => tierOf(r.lane))));
   const looseTier0 = loose.some((l) => tierOf(laneOf.get(l.card.id) ?? null) === 0);
 
   // boxes in tiers
-  const room = (lane: Lane) => (gatedInside.has(lane) ? LANE_CHIP.h - pad + 4 : 0);
+  // each gated arrow inside a box has its own row under the cards for its chip
+  const rowH = LANE_CHIP.h + 4;
+  const room = (lane: Lane) => ((gatedInside.get(lane) ?? 0) === 0 ? 0 : ((gatedInside.get(lane) ?? 1) - 1) * rowH + LANE_CHIP.h - 2);
   const sizes = new Map<Lane, { layers: number; stacks: number; w: number; h: number }>();
   for (const [lane, cards] of shaped) {
     const layers = Math.max(...cards.map((c) => c.layer)) + 1;
@@ -257,7 +278,7 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
   const tierTop: number[] = [];
   const tierBottom: number[] = [];
   const boxes: LaneBoxLayout[] = [];
-  let top = margin + (looseTier0 ? LANE_CHIP.h : 0);
+  let top = Math.max(margin + (looseTier0 ? LANE_CHIP.h : 0), backToTier0 ? tierGap / 2 : 0);
   for (let t = 0; t < tiers; t += 1) {
     let x = margin;
     let tall = 0;
@@ -295,6 +316,8 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
   const arrows: LaneGraphArrow[] = [];
   const wanted: Wanted[] = [];
   let channels = 0;
+  const rows = new Map<Lane, number>();
+  const ends: Rect[] = [];
   for (const dep of arrowsWanted) {
     const a = cardAt.get(dep.from);
     const b = cardAt.get(dep.to);
@@ -315,7 +338,9 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
       } else {
         // the gap under the cards, where a chip fits
         const cardsBottom = boxA.y + head + pad + sizeA.stacks * LANE.cardH + (sizeA.stacks - 1) * stackGap;
-        const under = cardsBottom + (gate === null ? pad / 2 : LANE_CHIP.h / 2 + 2);
+        const row = rows.get(a.lane) ?? 0;
+        if (gate !== null) rows.set(a.lane, row + 1);
+        const under = cardsBottom + (gate === null ? pad / 2 : LANE_CHIP.h + row * rowH);
         const back = end.x - cardGap / 2;
         arrow.d = path([start, { x: gap, y: start.y }, { x: gap, y: under }, { x: back, y: under }, { x: back, y: end.y }, end]);
         chipAt = { x: (gap + back) / 2, y: under };
@@ -336,10 +361,12 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
       const x2 = b.x + LANE.cardW / 2;
       const from = { x: exit, y: bottom };
       if (tb === ta + 1) {
+        ends.push({ x: x2 - 6, y: topB - 10, w: 12, h: 10 });
         const y = bottom + tierGap / 2;
         arrow.d = `${path(leave)} C ${exit} ${y} ${x2} ${y} ${x2} ${topB}`;
         chipAt = cubic(from, { x: exit, y }, { x: x2, y }, { x: x2, y: topB }, 0.3);
       } else {
+        ends.push({ x: x2 - 6, y: topB - 10, w: 12, h: 10 });
         const channel = right + 12 + channels * LANE_CHIP.step;
         channels += 1;
         const out = bottom + tierGap / 2;
@@ -366,17 +393,17 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
     const words = gate.status === "closed" ? `Merged track ${gate.waits_for.number}` : `Waiting for track ${gate.waits_for.number}`;
     wanted.push({ chip: { gate, kind: gate.status === "closed" ? "merged" : "waiting", words, x: box.x + pad, y: box.y - LANE_CHIP.h, w: chipWidth(words, true), box: lane ?? "" }, arrow: null });
   }
-  const chips = spaced(wanted);
+  const chips = spaced(wanted, ends);
 
   const edge = Math.max(right, ...chips.map((c) => c.x + c.w), channels === 0 ? 0 : right + 12 + (channels - 1) * LANE_CHIP.step);
   const cycle = [...laneCycle, ...cycleNodes(deps.filter((d) => d.from !== d.to))];
-  return { boxes, cards, arrows, chips, cycle, width: edge + margin, height: tierBottom[tiers - 1] + margin };
+  return { boxes, cards, arrows, chips, cycle, width: edge + margin, height: tierBottom[tiers - 1] + margin + (backFromLast ? tierGap / 2 : 0) };
 }
 
 const orderOf = (graph: LaneGraph, id: string) => graph.cards.filter((c) => c.lane === graph.cards.find((x) => x.bead.id === id)?.lane);
 const tierOfCard = (graph: LaneGraph, card: LaneGraphCard) => graph.boxes.find((b) => b.lane === card.lane)?.tier ?? 0;
 
-/** REQ-UI-117: Left and Right stay in the box; Up and Down go to the card the arrows lead to in the tier above or below, else to the nearest card there by x. */
+/** REQ-UI-117: Left and Right stay in the box; Up and Down go to the card its arrows lead to (or come from) in the tier below (or above), else to a card there; the nearest by x in both cases. */
 export function laneGraphStep(graph: LaneGraph, id: string, key: StepKey): string | null {
   const card = graph.cards.find((c) => c.bead.id === id);
   if (card === undefined) return null;
@@ -386,11 +413,10 @@ export function laneGraphStep(graph: LaneGraph, id: string, key: StepKey): strin
   }
   const want = tierOfCard(graph, card) + (key === "ArrowDown" ? 1 : -1);
   const there = graph.cards.filter((c) => tierOfCard(graph, c) === want);
-  const linked = graph.arrows.flatMap((a) => (key === "ArrowDown" ? (a.from === id ? [a.to] : []) : a.to === id ? [a.from] : []));
-  const direct = linked.find((other) => there.some((c) => c.bead.id === other));
-  if (direct !== undefined) return direct;
+  const linked = new Set(graph.arrows.flatMap((a) => (key === "ArrowDown" ? (a.from === id ? [a.to] : []) : a.to === id ? [a.from] : [])));
+  const direct = there.filter((c) => linked.has(c.bead.id));
   let best: LaneGraphCard | null = null;
-  for (const c of there) if (best === null || Math.abs(c.x - card.x) < Math.abs(best.x - card.x)) best = c;
+  for (const c of direct.length > 0 ? direct : there) if (best === null || Math.abs(c.x - card.x) < Math.abs(best.x - card.x)) best = c;
   return best?.bead.id ?? null;
 }
 
