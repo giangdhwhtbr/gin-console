@@ -643,10 +643,10 @@ def lanes_block(p: Project, epic: Callable[..., Row], today: date, m2_start: dat
         track(8, "Old checkout cleanup", None, "closed", "dung")
         done = stamp(min(start + timedelta(days=2), today), 16)
         gates = (
-            p.add(p.child_id(e12["id"]), "external: P#2", "task", start, parent=e12["id"]),
+            p.add(p.child_id(e12["id"]), f"external: {plan}#2", "task", start, parent=e12["id"]),
             p.add(
                 f"{PREFIX}-g3",
-                "external: P#3",
+                f"external: {plan}#3",
                 "task",
                 start,
                 status="closed",
