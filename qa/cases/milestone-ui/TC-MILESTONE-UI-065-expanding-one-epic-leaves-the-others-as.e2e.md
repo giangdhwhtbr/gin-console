@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-065: Expanding one epic leaves the others as they are
-REQ: REQ-MILESTONE-UI-015@665bc3ff
+REQ: REQ-MILESTONE-UI-015@0df09dc6
 Priority: low
 Result: passed
 Run: qa/evidence/2026-11-15T14-02-27

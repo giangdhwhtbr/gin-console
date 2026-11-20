@@ -1,6 +1,6 @@
 # TC-UI-081: Switch keeps filters
 
-- **REQ:** REQ-UI-030@44faaaad
+- **REQ:** REQ-UI-030@0f5a1d68
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57

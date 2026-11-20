@@ -1,6 +1,6 @@
 # TC-SERVER-017: Project beads endpoint unchanged
 
-- **REQ:** REQ-SERVER-006@a9789995
+- **REQ:** REQ-SERVER-006@8dcdf4d5
 - **Priority:** high
 
 **Preconditions:**
