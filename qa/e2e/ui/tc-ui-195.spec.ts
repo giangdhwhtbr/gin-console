@@ -16,16 +16,25 @@ test('TC-UI-195: Fit a tall graph (REQ-UI-077)', async ({ page, ev }) => {
   });
 
   await ev.step('2. Press "Fit to view"', async () => {
+    // the three Zoom out clicks are setup: Fit to view has something to undo
     await page.getByRole('button', { name: 'Zoom out' }).click({ clickCount: 3 });
     await expect.poll(() => scaleOf(page)).toBeLessThan(1);
     await page.getByRole('button', { name: 'Fit to view' }).click();
     // the scale reads 100%: the graph is narrower than the canvas
     await expect(page.getByRole('group', { name: 'Zoom' })).toContainText('100%');
-    // the page scrolls to show the rest of the graph
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
-    const canvas = (await page.getByTestId('graph-canvas').boundingBox())!;
-    expect(canvas.y + canvas.height).toBeLessThanOrEqual(1080 + 1);
-    expect((await page.locator('[data-node]').last().boundingBox())!.y).toBeLessThan(1080);
+    // the page scrolls to show the rest of the graph: poll until the layout has settled and the canvas bottom is in the window
+    const canvas = page.getByTestId('graph-canvas');
+    await expect
+      .poll(async () => {
+        await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+        const b = await canvas.boundingBox();
+        return b === null ? Infinity : b.y + b.height;
+      })
+      .toBeLessThanOrEqual(1081);
+    const at = await page.evaluate(() => ({ y: window.scrollY, bottom: window.scrollY + window.innerHeight, height: document.documentElement.scrollHeight }));
+    expect(at.y).toBeGreaterThan(0);
+    expect(at.bottom).toBeGreaterThanOrEqual(at.height - 1);
+    const last = await page.locator('[data-node]').last().boundingBox();
+    expect(last === null ? Infinity : last.y).toBeLessThan(1080);
   });
 });
