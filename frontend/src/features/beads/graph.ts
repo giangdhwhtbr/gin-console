@@ -124,7 +124,7 @@ function holders(byId: ReadonlyMap<string, BeadSummary>, scope: string | null): 
   };
 }
 
-function cycleNodes(edges: readonly Link[]): string[] {
+export function cycleNodes(edges: readonly Link[]): string[] {
   const inDegree = new Map<string, number>();
   const outDegree = new Map<string, number>();
   const outAdj = new Map<string, string[]>();

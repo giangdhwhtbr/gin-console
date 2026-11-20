@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { bead } from "./beadFixtures";
-import { StateMark, stateEdge } from "./StateMark";
+import { StateMark, StateWord, stateEdge } from "./StateMark";
 
 afterEach(cleanup);
 
@@ -25,5 +25,12 @@ describe("StateMark", () => {
   it("REQ-UI-064 the edge is 4px wide in the colour of the state", () => {
     expect(stateEdge("blocked")).toBe("border-l-4 border-l-state-blocked");
     expect(stateEdge("in_progress")).toBe("border-l-4 border-l-state-progress");
+  });
+
+  it("REQ-UI-112 StateWord draws the state's colour with the given words", () => {
+    render(<StateWord state="blocked" words="Waiting for be" />);
+    const word = screen.getByText("Waiting for be").closest("[data-state]");
+    expect(word).toHaveAttribute("data-state", "blocked");
+    expect(word?.className).toContain("text-state-blocked");
   });
 });

@@ -6,7 +6,10 @@ import { BoardView } from "./BoardView";
 import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
 import { GraphView } from "./GraphView";
+import { LanesView } from "./LanesView";
 import { ListView } from "./ListView";
+import { hasLanes } from "./lanes";
+import { scopeOf } from "./scope";
 import { withoutMergeGates } from "./mergeGates";
 import { isClosedMilestone, milestoneInEffect } from "./milestoneChoice";
 import { useBeads } from "./useBeads";
@@ -34,7 +37,7 @@ export function BeadsView({
   const closedMilestone = isClosedMilestone(milestone, milestones);
   const { state, retry } = useBeads(
     project,
-    filters.closed || (filters.sprint !== "" && filters.sprint !== "none") || closedMilestone,
+    filters.closed || filters.view === "lanes" || (filters.sprint !== "" && filters.sprint !== "none") || closedMilestone,
     true,
   );
 
@@ -46,7 +49,10 @@ export function BeadsView({
   const withClosed = { ...filters, closed: filters.closed || closedMilestone };
   const shown = sortBeads(filterBeads(beads, withClosed, milestone));
   // Beads outside the milestone stay in the graph, so the milestone filters only the project scope.
-  const matched = filterBeads(beads, withClosed, milestone === "all" || milestone === "none" ? milestone : "all");
+  const matchedMilestone = milestone === "all" || milestone === "none" ? milestone : "all";
+  const matched = filterBeads(beads, withClosed, matchedMilestone);
+
+  const lanesMatched = filters.view === "lanes" ? filterBeads(beads, { ...withClosed, closed: true }, matchedMilestone) : [];
 
   return (
     <section className="flex flex-col gap-4">
@@ -64,7 +70,7 @@ export function BeadsView({
       )}
       {state.status === "ok" && (
         <>
-          <ViewTabs filters={filters} onChange={onChange} />
+          <ViewTabs filters={filters} lanes={hasLanes(loaded, scopeOf(loaded, filters, milestone))} onChange={onChange} />
           <BeadFilterBar
             filters={filters}
             options={optionsOf(beads)}
@@ -79,6 +85,16 @@ export function BeadsView({
               project={project}
               beads={loaded}
               matched={matched}
+              milestone={milestone}
+              filters={filters}
+              onChange={onChange}
+            />
+          )}
+          {filters.view === "lanes" && (
+            <LanesView
+              project={project}
+              beads={loaded}
+              matched={lanesMatched}
               milestone={milestone}
               filters={filters}
               onChange={onChange}

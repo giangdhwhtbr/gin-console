@@ -90,6 +90,11 @@ describe("filters", () => {
     expect(filtersToSearch(parseFilters(""))).toBe("");
   });
 
+  it("REQ-UI-030 Lanes tab: view=lanes round-trips through the URL", () => {
+    expect(parseFilters("?view=lanes").view).toBe("lanes");
+    expect(filtersToSearch(parseFilters("?view=lanes&scope=e-1"))).toBe("?view=lanes&scope=e-1");
+  });
+
   // REQ-UI-030
   it("REQ-UI-030 parses view from the URL", () => {
     expect(parseFilters("?view=board").view).toBe("board");
