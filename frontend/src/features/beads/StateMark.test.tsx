@@ -33,4 +33,12 @@ describe("StateMark", () => {
     expect(word).toHaveAttribute("data-state", "blocked");
     expect(word?.className).toContain("text-state-blocked");
   });
+
+  it("REQ-UI-110 StateWord is capped to its container so the words end with an ellipsis and keep the title", () => {
+    render(<StateWord state="done" words="All tracks closed" />);
+    const word = screen.getByText("All tracks closed");
+    expect(word).toHaveClass("truncate");
+    expect(word.parentElement).toHaveClass("max-w-full", "min-w-0");
+    expect(word.parentElement).toHaveAttribute("title", "All tracks closed");
+  });
 });

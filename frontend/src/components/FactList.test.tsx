@@ -20,4 +20,11 @@ describe("FactList", () => {
     rerender(<FactList layout="inline" facts={[{ label: "A", value: "b" }]} />);
     expect(container.querySelector("dl")).toHaveClass("flex", "flex-wrap");
   });
+
+  it("REQ-UI-110 an inline fact stays inside its column so a long value ends with an ellipsis", () => {
+    const { container } = render(<FactList layout="inline" facts={[{ label: "State", value: "All tracks closed" }]} />);
+    expect(container.querySelector("dl > div")).toHaveClass("min-w-0", "max-w-full");
+    expect(screen.getByText("All tracks closed")).toHaveClass("min-w-0", "truncate");
+    expect(screen.getByText("All tracks closed")).toHaveAttribute("title", "All tracks closed");
+  });
 });

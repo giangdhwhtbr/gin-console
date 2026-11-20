@@ -37,7 +37,7 @@ export function StateMark({ bead, className }: { bead: BeadSummary; className?: 
 export function StateWord({ state, words, className }: { state: GraphState; words: string; className?: string }) {
   const Icon = ICON[state];
   return (
-    <span data-state={state} title={words} className={cn("inline-flex min-w-0 items-center gap-1 font-medium", TEXT[state], className)}>
+    <span data-state={state} title={words} className={cn("inline-flex max-w-full min-w-0 items-center gap-1 font-medium", TEXT[state], className)}>
       <Icon aria-hidden className="size-3.5 shrink-0" />
       <span className="truncate">{words}</span>
     </span>
