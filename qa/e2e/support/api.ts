@@ -34,6 +34,9 @@ export type BeadSummary = {
   created_at: string; updated_at: string; dependency_count: number; dependent_count: number;
   comment_count: number; ready: boolean; blocked: boolean; created_by: string | null;
   blocked_by: string[]; closed_at: string | null; milestone: string | null;
+  lane: string | null; track: { plan: string | null; number: number } | null;
+  claim: { holder: string; expires_at: string } | null;
+  waits_for: { plan: string; number: number; track_id: string | null; lane: string | null } | null;
 };
 
 export const entry = (id: string, o: Partial<MilestoneEntry> = {}): MilestoneEntry => ({
@@ -64,7 +67,8 @@ export const bead = (id: string, o: Partial<BeadSummary> = {}): BeadSummary => (
   id, title: `Title ${id}`, status: 'open', priority: 2, issue_type: 'task', labels: [], owner: null,
   assignee: null, parent: null, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-10T00:00:00Z',
   dependency_count: 0, dependent_count: 0, comment_count: 0, ready: false, blocked: false,
-  created_by: null, blocked_by: [], closed_at: null, milestone: null, ...o,
+  created_by: null, blocked_by: [], closed_at: null, milestone: null,
+  lane: null, track: null, claim: null, waits_for: null, ...o,
 });
 
 /** A 502 from the milestones API, as the backend sends it (REQ-MILESTONE-UI-008). */

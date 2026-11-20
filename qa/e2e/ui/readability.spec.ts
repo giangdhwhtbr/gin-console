@@ -5,6 +5,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from '../evidence';
 import { bead, detail, entry, epicPlan, milestoneOption } from '../support/api';
+import { e12 } from '../support/lanes';
 import { readabilityFindings, type Finding } from '../support/readability';
 
 const WIDTHS = [
@@ -23,7 +24,7 @@ const velocity = { committed_points: 40, completed_points: 31, added_points: 6, 
 // the builders of support/api.ts cover the older shapes; these fields are the newer ones
 const full = <T extends object>(base: T, extra: object): T => ({ ...base, ...extra });
 const b = (id: string, o: object = {}) =>
-  full(bead(id), { kind: null, capabilities: [], complexity: null, estimate_minutes: null, points: null, points_reason: null, ...o });
+  full(bead(id), { kind: null, capabilities: [], complexity: null, estimate_minutes: null, points: null, points_reason: null, lane: null, track: null, claim: null, waits_for: null, ...o });
 
 const beads = [
   b('ex-e1', { title: 'Onboarding revamp', issue_type: 'epic', status: 'closed', milestone: 'ex-m1', points: 8, closed_at: '2026-10-20T00:00:00Z' }),
@@ -37,6 +38,8 @@ const beads = [
   b('ex-e2.1', { title: 'Tune ranking weights', parent: 'ex-e2', status: 'blocked', blocked: true, blocked_by: ['ex-e3.1'], assignee: 'qa', priority: 0 }),
   b('ex-e2.2', { title: LONG_TITLE, parent: 'ex-e2', status: 'open', labels: ['a', 'b', 'c', 'd'], dependency_count: 2, comment_count: 3 }),
   b('ex-e4.1', { title: 'Register device tokens', parent: 'ex-e4', status: 'open', assignee: 'someone.else@example.com' }),
+  // ex-e12: the lanes of an epic (REQ-UI-111..116): tracks with lane, track and claim, and two merge gates with waits_for
+  ...e12().map((x) => b(x.id, x)),
 ];
 
 const options = [
@@ -180,6 +183,11 @@ const gantt = (zoom: string): Visit => ({ name: `gantt ${zoom}`, url: `/mileston
 const groups: Record<string, Visit[]> = {
   projects: [{ name: 'projects', url: '/', ready: async (page) => { await expect(page.getByText('qwikfone', { exact: true }).first()).toBeVisible(); } }],
   'beads views': ['list', 'board', 'focus', 'graph'].map(beadsView),
+  'beads lanes': [
+    { name: 'beads lanes', url: '/beads?project=example&milestone=all&view=lanes&scope=ex-e12', ready: async (page) => { await expect(page.getByTestId('lanes-canvas')).toBeVisible(); await expect(page.locator('[data-marker]').first()).toBeVisible(); } },
+    { name: 'bead lane track', url: '/beads/example/ex-e12.2', ready: heading('Track 2') },
+    { name: 'bead merge gate', url: '/beads/example/ex-e12.9', ready: heading(/Waits for be #2 to merge/) },
+  ],
   'beads with a panel': [
     { name: 'beads list panel', url: '/beads?project=example&milestone=all&view=list&select=ex-e3', ready: text('Billing exports for finance') },
     { name: 'beads board panel', url: '/beads?project=example&milestone=all&view=board&select=ex-e3', ready: text('Billing exports for finance') },
