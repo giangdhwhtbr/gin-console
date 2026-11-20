@@ -14,7 +14,7 @@ export function FactList({ facts, layout = "grid" }: { facts: readonly Fact[]; l
       )}
     >
       {facts.map((fact) => (
-        <div key={fact.label} className={cn("min-w-0", layout === "inline" && "flex items-baseline gap-1.5")}>
+        <div key={fact.label} className={cn("min-w-0", layout === "inline" && "flex max-w-full items-baseline gap-1.5")}>
           <dt className="text-xs text-muted-foreground">{fact.label}</dt>
           <dd className="min-w-0 truncate text-sm font-medium text-foreground" title={fact.title ?? (typeof fact.value === "string" ? fact.value : undefined)}>
             {fact.value}
