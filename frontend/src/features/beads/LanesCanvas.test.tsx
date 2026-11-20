@@ -26,6 +26,11 @@ describe("LanesCanvas", () => {
     expect(card.style.top).toBe(`${placed.y}px`);
   });
 
+  it("REQ-UI-110 the lanes canvas keeps its layers inside (isolate)", () => {
+    render(<LanesCanvas {...props} />);
+    expect(screen.getByTestId("lanes-canvas").className).toContain("isolate");
+  });
+
   it("REQ-UI-111 the header is 168px under 1024px windows", () => {
     vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
     render(<LanesCanvas {...props} />);
