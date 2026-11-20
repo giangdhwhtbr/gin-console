@@ -43,7 +43,9 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     await page.goto('/beads?project=example&milestone=all&view=graph&scope=ex-e12');
     const node = page.locator(`[data-node="${TRACK}"]`);
     await expect(node).toBeVisible();
-    await expect(node.getByTitle('Lane be')).toHaveText('be');
+    // REQ-UI-117: a scope with lanes draws a box per lane, and its header names the lane instead of a chip on the card
+    await expect(page.getByRole('region', { name: 'Lane be' }).getByRole('heading', { name: 'be' })).toBeVisible();
+    await expect(node.getByTitle('Lane be')).toHaveCount(0);
     await noLabelChip();
   });
 
