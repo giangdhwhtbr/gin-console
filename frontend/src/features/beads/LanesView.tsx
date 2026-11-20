@@ -46,7 +46,7 @@ function LanesBody({ project, beads, matched, milestone, filters, onChange, scop
   const board = lanesOf(beads, scopeId, new Set(matched.map((b) => b.id)), new Date());
   const cards = board.rows.flatMap((r) => r.cards.map((c) => c.bead.id));
   const asked = filters.select;
-  const selected = asked === "none" ? "" : asked !== "" && (cards.includes(asked) || asked === scopeId) ? asked : scopeId;
+  const selected = asked !== "" && asked !== "none" && (cards.includes(asked) || asked === scopeId) ? asked : "";
   const tabStop = cards.includes(selected) ? selected : (cards[0] ?? "");
   // closing returns focus to the card that was selected, or to the tab stop when it is gone
   const closed = useRef<string | null>(null);
@@ -85,7 +85,7 @@ function LanesBody({ project, beads, matched, milestone, filters, onChange, scop
                 ? onChange({ ...filters, scope: id, select: "" })
                 : navigate(`/beads/${enc(project)}/${enc(id)}`)
             }
-            onEscape={() => onChange({ ...filters, select: selected !== "" && selected !== scopeId ? scopeId : "none" })}
+            onEscape={() => onChange({ ...filters, select: "none" })}
           />
         )}
       </div>

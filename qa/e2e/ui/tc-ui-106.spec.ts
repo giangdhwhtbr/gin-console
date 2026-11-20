@@ -1,4 +1,4 @@
-// TC: TC-UI-106@2fab9b21
+// TC: TC-UI-106@ede8dd88
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
@@ -16,7 +16,12 @@ test('TC-UI-106: Details panel', async ({ page, ev }) => {
     await expect(node('e1')).toBeVisible();
   });
 
-  await ev.step('2. Select e1', async () => {
+  await ev.step('2. Look at the page without selecting a node', async () => {
+    await expect(page).not.toHaveURL(/[?&]select=/);
+    await expect(page.getByRole('complementary', { name: 'Bead details' })).toHaveCount(0);
+  });
+
+  await ev.step('3. Select e1', async () => {
     await node('e1').click();
     await expect(page).toHaveURL(/[?&]select=e1(&|$)/);
     const panel = page.getByRole('complementary', { name: 'Bead details' });

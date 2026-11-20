@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup: lanes as containers in the Graph view</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --fg: #12161c; --muted: #5d6573; --border: #cfd5de;
+    --ready: #0f766e; --progress: #1d4ed8; --blocked: #a3470a; --done: #5d6573;
+    --lane-1: #2a78d6; --lane-2: #eb6834; --lane-3: #1baf7a; --lane-4: #eda100;
+    --lane-5: #e87ba4; --lane-6: #008300; --lane-7: #6250d6; --lane-8: #e34948;
+    --tint: 9%; --edge: 55%;
+    color-scheme: light;
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1217; --card: #161b22; --fg: #e7eaf0; --muted: #9aa4b2; --border: #2c343f;
+    --ready: #2dd4bf; --progress: #93c5fd; --blocked: #fbbf24; --done: #9ca3af;
+    --lane-1: #3987e5; --lane-2: #d95926; --lane-3: #199e70; --lane-4: #c98500;
+    --lane-5: #d55181; --lane-6: #008300; --lane-7: #9085e9; --lane-8: #e66767;
+    --tint: 16%; --edge: 60%;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 16px; max-width: 900px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .tabs button, .theme button { border: 1px solid var(--border); background: var(--card); color: var(--fg); border-radius: 6px; padding: 6px 12px; font: inherit; cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: var(--fg); color: var(--card); border-color: var(--fg); }
+  .theme { margin-left: auto; }
+  .crumb { margin: 4px 0 10px; font-family: ui-monospace, monospace; }
+  .crumb a { color: var(--fg); }
+  .canvas { position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: auto; }
+  .stage { position: relative; }
+  svg.edges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+  svg.edges path { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+  svg.edges path.gate-wait { stroke-dasharray: 5 4; }
+  .lane { position: absolute; border-radius: 10px; border: 1.5px solid color-mix(in srgb, var(--lane) var(--edge), transparent);
+          background: color-mix(in srgb, var(--lane) var(--tint), var(--card)); }
+  .lane.nolane { --lane: var(--muted); border-style: dashed; background: color-mix(in srgb, var(--muted) 5%, var(--card)); }
+  .lane header { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 8px; height: 52px; padding: 8px 12px 0; min-width: 0; }
+  .lane header .meta { grid-column: 1 / -1; }
+  .lane header .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--lane); flex: none; }
+  .lane header b { font-size: 14px; }
+  .lane header .meta { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .lane header .state { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .node { position: absolute; width: 184px; height: 64px; background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--st);
+          border-radius: 6px; padding: 6px 10px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 2px rgb(0 0 0 / .06); }
+  .node .top { display: flex; justify-content: space-between; font: 12px ui-monospace, monospace; color: var(--muted); }
+  .node .title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .node .st { font-size: 12px; color: var(--st); white-space: nowrap; }
+  .marker { position: absolute; transform: translate(-50%, -50%); background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+            padding: 2px 10px; font-size: 12px; white-space: nowrap; box-shadow: 0 1px 2px rgb(0 0 0 / .08); }
+  .marker.wait { color: var(--blocked); border-color: color-mix(in srgb, var(--blocked) 50%, var(--border)); }
+  .marker.merged { color: var(--ready); border-color: color-mix(in srgb, var(--ready) 50%, var(--border)); }
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 16px; }
+  .notes section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .notes h2 { font-size: 14px; margin: 0 0 6px; }
+  .notes ul { margin: 0; padding-left: 18px; color: var(--muted); }
+  .notes li { margin: 2px 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--c); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Graph view: lanes as coloured containers</h1>
+  <p class="lead">Scope <code>ex-e12</code> (Team checkout) with "Show closed" on. Each lane's tracks sit in one container with its own background colour and a header (name, state, holder, closed/total). The merge gate is no longer a node: it is a chip on the arrow between two lanes. Tracks without a lane sit in a neutral dashed "No lane" container.</p>
+
+  <div class="bar">
+    <div class="tabs" role="group" aria-label="Variant">
+      <button data-variant="a" aria-pressed="true">A · Lanes as columns</button>
+      <button data-variant="b" aria-pressed="false">B · Clusters, tiers top → bottom (shipped)</button>
+      <button data-variant="c" aria-pressed="false">C · Clusters, tiers left → right (proposed)</button>
+    </div>
+    <div class="theme" role="group" aria-label="Theme">
+      <button data-theme="light">Light</button>
+      <button data-theme="dark">Dark</button>
+    </div>
+  </div>
+  <div class="crumb"><a href="#">example</a> › <a href="#">ex-e12</a></div>
+  <div class="canvas"><div class="stage" id="stage"></div></div>
+  <div class="legend" id="legend"></div>
+
+  <div class="notes">
+    <section>
+      <h2>A · Lanes as columns</h2>
+      <ul>
+        <li>One vertical container per lane; the graph keeps flowing top → bottom by dependency layer.</li>
+        <li>Lanes are ordered so a lane that waits sits next to the lanes it waits for (be, qa, fe, infra).</li>
+        <li>Close to the Lanes view, turned 90°: easy to scan "who does what, in which order".</li>
+      </ul>
+    </section>
+    <section>
+      <h2>B · Lanes as clusters</h2>
+      <ul>
+        <li>Each lane is a box laid out by the dependencies between lanes; tracks run left → right inside it.</li>
+        <li>Shows "which lane waits for which" as a small graph of lanes.</li>
+        <li>Wider; more boxes to move when many lanes exist.</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Colours</h2>
+      <ul>
+        <li>Categorical palette (validated for colour-blind separation), assigned by lane name in the epic so a filter never repaints a lane.</li>
+        <li>Pale tint as background, stronger tone as border and swatch; every container is labelled, so colour is never the only cue.</li>
+        <li>Node state keeps its own 4px edge, icon and word.</li>
+      </ul>
+    </section>
+  </div>
+</main>
+<script>
+const ST = { done: ["--done", "✓ Done"], progress: ["--progress", "◔ In progress"], ready: ["--ready", "◎ Ready"], blocked: ["--blocked", "⊘ Blocked"] };
+const N = {
+  t1: { id: "ex-e12.1", p: "P2", title: "Order API", st: "done" },
+  t2: { id: "ex-e12.2", p: "P2", title: "Payment API", st: "progress" },
+  t3: { id: "ex-e12.3", p: "P3", title: "Checkout page", st: "done" },
+  t4: { id: "ex-e12.4", p: "P2", title: "End-to-end checkout QA", st: "blocked" },
+  t5: { id: "ex-e12.5", p: "P1", title: "Deploy pipeline", st: "done" },
+  t6: { id: "ex-e12.6", p: "P3", title: "Monitoring", st: "ready" },
+  t7: { id: "ex-e12.7", p: "P3", title: "Release notes", st: "ready" },
+  t8: { id: "ex-e12.8", p: "P2", title: "Old checkout cleanup", st: "done" },
+};
+const LANES = {
+  be: { slot: 1, state: ["--progress", "Running"], meta: "ann · lease until 21 Nov 16:00 · 1/2 closed" },
+  fe: { slot: 2, state: ["--done", "All tracks closed"], meta: "1/1 closed" },
+  infra: { slot: 3, state: ["--ready", "Idle"], meta: "chi · lease expired · 1/2 closed" },
+  qa: { slot: 4, state: ["--blocked", "Waiting for be"], meta: "Unclaimed · 0/1 closed" },
+  none: { slot: 0, state: null, meta: "1/2 closed" },
+};
+const W = 184, H = 64;
+
+const VARIANTS = {
+
+  c: () => {
+    const head = 52, pad = 14, gx = 32, boxH = head + pad + H + pad, tierGap = 140, boxGap = 20;
+    const box = (n) => n * W + (n - 1) * gx + 2 * pad;
+    const c0 = 16, c0w = box(2), c1 = c0 + c0w + tierGap;
+    const lanes = [
+      { lane: "be", x: c0, y: 16, w: box(2), h: boxH },
+      { lane: "fe", x: c0, y: 16 + boxH + boxGap, w: box(1), h: boxH },
+      { lane: "infra", x: c0, y: 16 + 2 * (boxH + boxGap), w: box(2), h: boxH },
+      { lane: "qa", x: c1, y: 16 + (boxH + boxGap) / 2, w: box(1), h: boxH },
+      { lane: "none", x: c1, y: 16 + (boxH + boxGap) / 2 + boxH + boxGap, w: box(2), h: boxH },
+    ];
+    const L = Object.fromEntries(lanes.map((l) => [l.lane, l]));
+    const inBox = (l, i) => [L[l].x + pad + i * (W + gx), L[l].y + head + pad];
+    const at = { t1: inBox("be", 0), t2: inBox("be", 1), t3: inBox("fe", 0), t5: inBox("infra", 0), t6: inBox("infra", 1),
+                 t4: inBox("qa", 0), t7: inBox("none", 0), t8: inBox("none", 1) };
+    const edges = [
+      { a: "t1", b: "t2", side: true }, { a: "t5", b: "t6", side: true },
+      { a: "t2", b: "t4", gate: ["wait", "◷ Waiting · be #2"], toX: L.qa.x, lr: true },
+      { a: "t3", b: "t4", gate: ["merged", "✓ Merged · fe #3"], toX: L.qa.x, lr: true },
+    ];
+    const right = lanes.reduce((m, l) => Math.max(m, l.x + l.w), 0);
+    const bottom = lanes.reduce((m, l) => Math.max(m, l.y + l.h), 0);
+    return { at, lanes, edges, width: right + 16, height: bottom + 16, markerT: 0.55 };
+  },
+  a: () => {
+    const colW = W + 32, gap = 24, x0 = 16, top = 16, head = 56, row = H + 56;
+    const cols = ["be", "qa", "fe", "infra", "none"];
+    const cx = (i) => x0 + i * (colW + gap);
+    const ny = (layer) => top + head + 12 + layer * row;
+    const at = {
+      t1: [cx(0) + 16, ny(0)], t2: [cx(0) + 16, ny(1)], t4: [cx(1) + 16, ny(2)], t3: [cx(2) + 16, ny(0)],
+      t5: [cx(3) + 16, ny(0)], t6: [cx(3) + 16, ny(1)], t7: [cx(4) + 16, ny(0)], t8: [cx(4) + 16, ny(1)],
+    };
+    const height = ny(2) + H + 16 - top;
+    const lanes = cols.map((l, i) => ({ lane: l, x: cx(i), y: top, w: colW, h: height }));
+    const edges = [
+      { a: "t1", b: "t2" }, { a: "t5", b: "t6" },
+      { a: "t2", b: "t4", gate: ["wait", "◷ Waiting · be #2"] },
+      { a: "t3", b: "t4", gate: ["merged", "✓ Merged · fe #3"] },
+    ];
+    return { at, lanes, edges, width: cx(5) - gap + 16, height: top + height + 16, markerT: 0.5 };
+  },
+  b: () => {
+    const head = 52, pad = 14, gx = 32, boxH = head + pad + H + pad;
+    const box = (n) => n * W + (n - 1) * gx + 2 * pad;
+    const r0 = 16, r1 = r0 + boxH + 88;
+    const lanes = [
+      { lane: "be", x: 16, y: r0, w: box(2), h: boxH },
+      { lane: "fe", x: 16 + box(2) + 24, y: r0, w: box(1), h: boxH },
+      { lane: "infra", x: 16 + box(2) + 24 + box(1) + 24, y: r0, w: box(2), h: boxH },
+      { lane: "qa", x: 16 + box(2) - box(1) / 2 + 12, y: r1, w: box(1), h: boxH },
+      { lane: "none", x: 16 + box(2) + 24 + box(1) + 24, y: r1, w: box(2), h: boxH },
+    ];
+    const L = Object.fromEntries(lanes.map((l) => [l.lane, l]));
+    const inBox = (l, i) => [L[l].x + pad + i * (W + gx), L[l].y + head + pad];
+    const at = { t1: inBox("be", 0), t2: inBox("be", 1), t3: inBox("fe", 0), t5: inBox("infra", 0), t6: inBox("infra", 1),
+                 t4: inBox("qa", 0), t7: inBox("none", 0), t8: inBox("none", 1) };
+    const edges = [
+      { a: "t1", b: "t2", side: true }, { a: "t5", b: "t6", side: true },
+      { a: "t2", b: "t4", gate: ["wait", "◷ Waiting · be #2"], toY: L.qa.y },
+      { a: "t3", b: "t4", gate: ["merged", "✓ Merged · fe #3"], toY: L.qa.y },
+    ];
+    const right = lanes.reduce((m, l) => Math.max(m, l.x + l.w), 0);
+    return { at, lanes, edges, width: right + 16, height: r1 + boxH + 16, markerT: 0.3 };
+  },
+};
+
+function path(e, at) {
+  const [ax, ay] = at[e.a], [bx, by] = at[e.b];
+  if (e.side || (ax === bx && false)) {
+    const x1 = ax + W, y1 = ay + H / 2, x2 = bx, y2 = by + H / 2;
+    return { d: `M ${x1} ${y1} L ${x2 - 6} ${y2}`, mid: [(x1 + x2) / 2, y1], end: [x2, y2], dir: "right" };
+  }
+  if (e.lr) {
+    const x1 = ax + W, y1 = ay + H / 2, x2 = e.toX, y2 = by + H / 2, m = (x1 + x2) / 2;
+    const along = (t) => { const u = 1 - t; return [u*u*u*x1 + 3*u*u*t*m + 3*u*t*t*m + t*t*t*x2, u*u*u*y1 + 3*u*u*t*y1 + 3*u*t*t*y2 + t*t*t*y2]; };
+    return { d: `M ${x1} ${y1} C ${m} ${y1}, ${m} ${y2}, ${x2 - 6} ${y2}`, mid: [m, (y1 + y2) / 2], along, end: [x2, y2], dir: "right" };
+  }
+  const x1 = ax + W / 2, y1 = ay + H, x2 = bx + W / 2, y2 = e.toY ?? by;
+  const m = (y1 + y2) / 2;
+  const along = (t) => { const u = 1 - t; return [u*u*u*x1 + 3*u*u*t*x1 + 3*u*t*t*x2 + t*t*t*x2, u*u*u*y1 + 3*u*u*t*m + 3*u*t*t*m + t*t*t*y2]; };
+  return { d: `M ${x1} ${y1} C ${x1} ${m}, ${x2} ${m}, ${x2} ${y2 - 6}`, mid: [(x1 + x2) / 2, m], along, end: [x2, y2], dir: "down" };
+}
+
+function render(variant) {
+  const v = VARIANTS[variant]();
+  const stage = document.getElementById("stage");
+  stage.style.width = v.width + "px"; stage.style.height = v.height + "px";
+  let lanesHtml = "";
+  for (const l of v.lanes) {
+    const info = LANES[l.lane];
+    const name = l.lane === "none" ? "No lane" : l.lane;
+    const state = info.state ? `<span class="state" style="color:var(${info.state[0]})">${info.state[1]}</span>` : "";
+    lanesHtml += `<div class="lane ${l.lane === "none" ? "nolane" : ""}" style="--lane:var(--lane-${info.slot});left:${l.x}px;top:${l.y}px;width:${l.w}px;height:${l.h}px">
+      <header>${l.lane === "none" ? "" : '<span class="swatch"></span>'}<b>${name}</b>${state}<span class="meta">${info.meta}</span></header></div>`;
+  }
+  let svg = `<svg class="edges" width="${v.width}" height="${v.height}"><defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L8 4 L0 8 z" fill="currentColor" style="color:var(--muted)"/></marker></defs>`;
+  const markers = [];
+  for (const e of v.edges) {
+    const p = path(e, v.at);
+    svg += `<path d="${p.d}" class="${e.gate && e.gate[0] === "wait" ? "gate-wait" : ""}" marker-end="url(#arrow)"/>`;
+    const [mx, my] = p.along ? p.along(v.markerT) : p.mid;
+    if (e.gate) markers.push(`<div class="marker ${e.gate[0]}" style="left:${mx}px;top:${my}px">${e.gate[1]}</div>`);
+  }
+  svg += "</svg>";
+  let html = "";
+  for (const [k, [x, y]] of Object.entries(v.at)) {
+    const n = N[k], [c, word] = ST[n.st];
+    html += `<div class="node" style="--st:var(${c});left:${x}px;top:${y}px"><div class="top"><span>${n.id}</span><span>${n.p}</span></div><div class="title" title="${n.title}">${n.title}</div><div class="st">${word}</div></div>`;
+  }
+  stage.innerHTML = lanesHtml + svg + html + markers.join("");
+  document.getElementById("legend").innerHTML = Object.entries(LANES).filter(([, i]) => i.slot)
+    .map(([l, i]) => `<span style="--c:var(--lane-${i.slot})">${l}</span>`).join("") + '<span style="--c:var(--muted)">No lane (dashed, neutral)</span>';
+  document.querySelectorAll("[data-variant]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.variant === variant)));
+}
+document.querySelectorAll("[data-variant]").forEach((b) => b.addEventListener("click", () => render(b.dataset.variant)));
+document.querySelectorAll("[data-theme]").forEach((b) => b.addEventListener("click", () => { document.documentElement.dataset.theme = b.dataset.theme; }));
+const params = new URLSearchParams(location.search);
+if (params.get("theme")) document.documentElement.dataset.theme = params.get("theme");
+render(params.get("variant") || "a");
+</script>
+</body>
+</html>

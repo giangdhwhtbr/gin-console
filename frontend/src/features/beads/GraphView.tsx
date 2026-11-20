@@ -42,10 +42,8 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
   const graph = lanes === null ? scopeGraph(graphBeads, scopeId, { hideDone: false, onlyLinked, keep }) : null;
   const ids = graph !== null ? graph.nodes.map((n) => n.bead.id) : (lanes?.cards.map((c) => c.bead.id) ?? []);
   const known = new Set(ids);
-  const focus = scopeId ?? "";
   const asked = filters.select;
-  const selected =
-    asked === "none" ? "" : asked !== "" && (known.has(asked) || asked === scopeId) ? asked : focus;
+  const selected = asked !== "" && asked !== "none" && (known.has(asked) || asked === scopeId) ? asked : "";
   const tabStop = known.has(selected) ? selected : (ids[0] ?? "");
   // closing returns focus to the node that was selected, or to the canvas tab stop when it is gone
   const closed = useRef<string | null>(null);
@@ -70,7 +68,7 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
     onSelect: (id: string) => onChange({ ...filters, select: id }),
     onOpen: (id: string) =>
       hasChildren(beads, id) ? onChange({ ...filters, scope: id, select: "" }) : navigate(`/beads/${enc(project)}/${enc(id)}`),
-    onEscape: () => onChange({ ...filters, select: selected !== "" && selected !== focus ? focus || "none" : "none" }),
+    onEscape: () => onChange({ ...filters, select: "none" }),
   };
 
   return (

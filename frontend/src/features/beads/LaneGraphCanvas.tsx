@@ -30,7 +30,7 @@ export function LaneGraphCanvas({
   onOpen: (id: string) => void;
   onEscape: () => void;
 }) {
-  const { box, scale, fit, zoomIn, zoomOut } = useZoom(graph.width, graph.height);
+  const { box, scale, fit, zoomIn, zoomOut } = useZoom(graph.width);
   const progress = progressOf(beads);
   const parents = new Set(beads.flatMap((b) => (b.parent === null ? [] : [b.parent])));
   const chain = graph.cards.some((c) => c.bead.id === selected) ? laneGraphChain(graph, selected) : null;
@@ -64,7 +64,8 @@ export function LaneGraphCanvas({
         ref={box}
         data-testid="graph-canvas"
         onKeyDown={onKeyDown}
-        className="isolate h-[calc(100dvh-14rem)] min-h-80 overflow-auto overscroll-contain rounded border"
+        className="isolate min-h-40 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded border"
+        style={{ height: graph.height * scale + 20 }}
       >
         <div style={{ width: graph.width * scale, height: graph.height * scale }}>
           <div className="relative origin-top-left" style={{ width: graph.width, height: graph.height, transform: `scale(${scale})` }}>

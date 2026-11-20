@@ -1,6 +1,6 @@
 # TC-UI-189: No lane box with dependencies
 
-- **REQ:** REQ-UI-117@d860e924
+- **REQ:** REQ-UI-117@280e2ec2
 - **Priority:** medium
 
 **Preconditions:**
@@ -12,5 +12,5 @@
 
 **Expected:**
 - The "No lane" box is in the tier after the be box
-- An arrow runs from the card of track 2 to the top edge of the "No lane" box
-- Another arrow runs from the card of track 8 to the top edge of the fe box
+- An arrow runs from the card of track 2 to the left edge of the "No lane" box, level with the waiting card
+- Another arrow runs from the card of track 8 to the left edge of the fe box, level with the waiting card
