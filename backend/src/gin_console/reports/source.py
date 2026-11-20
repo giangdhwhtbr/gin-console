@@ -7,6 +7,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from gin_console.beads.kinds import points_of
+from gin_console.beads.lanes import is_merge_gate
 from gin_console.beads.snapshot import Snapshot
 from gin_console.reports.models import AiUsage, ReportBead
 
@@ -50,6 +51,8 @@ def parse_usage(metadata: Any) -> tuple[AiUsage | None, str | None]:
 def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
     beads: list[ReportBead] = []
     for ident, raw in snapshot.rows.items():
+        if is_merge_gate(raw):
+            continue  # a placeholder, not work (REQ-BEADS-019)
         usage, problem = parse_usage(raw.get("metadata"))
         fields = {key: raw[key] for key in _KEYS if raw.get(key) is not None}
         metadata = raw.get("metadata")

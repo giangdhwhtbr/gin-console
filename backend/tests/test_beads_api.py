@@ -85,6 +85,33 @@ def test_beads_001_unknown_project_or_missing_directory_is_404(
     assert fake.calls == []
 
 
+# REQ-BEADS-019
+def test_beads_019_gate_relation_carries_waits_for_over_http(tmp_path: Path) -> None:
+    plan = ".planning/plans/x.md"
+    rows = [
+        bead("e-1", issue_type="epic"),
+        bead(
+            "e-1.2",
+            description=f"Plan: {plan}, Track 2\nLane: be",
+            dependencies=[dep("e-1.2", "e-1", "parent-child")],
+        ),
+        bead(
+            "e-1.4",
+            dependencies=[dep("e-1.4", "e-1", "parent-child"), dep("e-1.4", "g-1", "blocks")],
+        ),
+        bead("g-1", title=f"external: {plan}#2"),
+    ]
+    body = make(tmp_path, FakeExport(rows)).get("/api/beads/proj/e-1.4").json()
+    gate_relation = next(d for d in body["dependencies"] if d["id"] == "g-1")
+    assert gate_relation["waits_for"] == {
+        "plan": plan,
+        "number": 2,
+        "track_id": "e-1.2",
+        "lane": "be",
+    }
+    assert body["waits_for"] is None
+
+
 # REQ-BEADS-002
 def test_beads_002_detail_over_http(tmp_path: Path) -> None:
     shown = bead("a-5", description="Why", dependencies=[dep("a-5", "a-4", "blocks")])
