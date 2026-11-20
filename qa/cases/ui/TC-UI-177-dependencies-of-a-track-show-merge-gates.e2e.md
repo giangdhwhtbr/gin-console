@@ -1,6 +1,6 @@
 # TC-UI-177: Dependencies of a track show merge gates
 
-- **REQ:** REQ-UI-116@cc779323
+- **REQ:** REQ-UI-116@85edbd50
 - **Priority:** medium
 
 **Preconditions:**
