@@ -3,6 +3,7 @@ import { factDate } from "@/lib/dates";
 import type { BeadSummary } from "./api";
 import { bead } from "./beadFixtures";
 import {
+  LANE_CHIP,
   LANE_GRAPH,
   laneGraph,
   laneGraphChain,
@@ -10,6 +11,7 @@ import {
   laneGraphStep,
   laneSlots,
   type LaneBoxLayout,
+  type LaneGraphArrow,
   type LaneGraph,
 } from "./laneGraph";
 import { E12, epic, g2, g3, t1, t2, t3, t4, t7 } from "./laneFixtures";
@@ -87,7 +89,7 @@ const headRect = (b: LaneBoxLayout): Rect => ({ x: b.x + LANE_GRAPH.pad, y: b.y,
 function expectClear(g: LaneGraph) {
   const rects = [...g.cards.map(cardRect), ...g.boxes.map(headRect)];
   for (const a of g.arrows) {
-    for (const p of sample(a.d)) for (const r of rects) expect(inside(r, p), `${a.from}>${a.to} at ${p.x},${p.y}`).toBe(false);
+    for (const p of sample(a.d)) for (const r of rects) if (inside(r, p)) expect.fail(`${a.from}>${a.to} runs through a card or header at ${p.x},${p.y}`);
   }
   for (const c of g.chips) {
     const chip = { x: c.x, y: c.y, w: c.w, h: 20 };
@@ -495,6 +497,101 @@ describe("laneGraph", () => {
     expect(g.width).toBe(Math.max(...g.boxes.map((b) => b.x + b.w), ...g.chips.map((c) => c.x + c.w)) + LANE_GRAPH.margin);
     expect(g.height).toBe(Math.max(...g.boxes.map((b) => b.y + b.h), ...g.chips.map((c) => c.y + 20)) + LANE_GRAPH.margin);
   });
+});
+
+/** The sampled points of every arrow but `own`, inside the chip grown by `by`. */
+function crossing(g: LaneGraph, chip: { x: number; y: number; w: number }, own: LaneGraphArrow | undefined, by: number) {
+  const rect = { x: chip.x - by, y: chip.y - by, w: chip.w + 2 * by, h: 20 + 2 * by };
+  return g.arrows.filter((a) => a !== own).flatMap((a) => sample(a.d).filter((p) => inside(rect, p)).map(() => `${a.from}>${a.to}`));
+}
+
+describe("laneGraph chips and arrows", () => {
+  it("REQ-UI-117 Gate chips: six lanes gated to one lane keep every chip off the other arrows in the gap", () => {
+    const sources = [1, 2, 3, 4, 5, 6].map((n) => track(10 + n, `l${n}`));
+    const gates = sources.map((s, i) => bead(`${E12}.${40 + i}`, { parent: E12, waits_for: { plan: "p/team.md", number: 11 + i, track_id: s.id, lane: s.lane } }));
+    const sink = track(20, "z", { blocked_by: gates.map((x) => x.id) });
+    const beads = [epic, ...sources, ...gates, sink];
+    const g = graphOf(beads, new Set(beads.map((b) => b.id)));
+    expect(g.chips).toHaveLength(6);
+    for (const chip of g.chips) expect(crossing(g, chip, g.arrows.find((a) => a.chip?.x === chip.x && a.chip?.y === chip.y), 0), chip.words).toEqual([]);
+    expectChipsInGaps(g);
+    expectColumns(g);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 Gate chips: the line that leaves a card of an earlier layer keeps clear of a chip inside the box", () => {
+    const a1 = track(11, "a");
+    const a2 = track(12, "a", { blocked_by: [a1.id] });
+    const gate = bead(`${E12}.31`, { parent: E12, waits_for: { plan: "p/team.md", number: 11, track_id: a1.id, lane: "a" } });
+    const a3 = track(13, "a", { blocked_by: [a2.id, gate.id] });
+    const b1 = track(14, "b", { blocked_by: [a1.id] });
+    const beads = [epic, a1, a2, a3, b1, gate];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    const chip = g.chips[0];
+    expect(chip.words).toBe("Waiting · a #11");
+    expect(crossing(g, chip, g.arrows.find((x) => x.chip !== null), LANE_CHIP.clear)).toEqual([]);
+    expectClear(g);
+  });
+});
+
+/** A small deterministic generator (mulberry32), so the random graphs are the same on every run. */
+function seeded(seed: number) {
+  let a = seed;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+describe("laneGraph random graphs", () => {
+  it("REQ-UI-117 a few hundred random graphs keep columns, chips in gaps, clear arrows and chips off other arrows", () => {
+    for (let seed = 1; seed <= 300; seed += 1) {
+      const rnd = seeded(seed);
+      const pick = (n: number) => Math.floor(rnd() * n);
+      const lanes = 2 + pick(5);
+      const tracks: BeadSummary[] = [];
+      const gates: BeadSummary[] = [];
+      let number = 11;
+      const names: (string | null)[] = [...Array.from({ length: lanes }, (_, i) => `l${i}`), ...(rnd() < 0.5 ? [null] : [])];
+      for (const lane of names) for (let k = 0, n = 1 + pick(2); k < n; k += 1) tracks.push(track(number++, lane));
+      const linked = tracks.map((t) => {
+        const blockers: string[] = [];
+        for (const other of tracks) {
+          if (other.id === t.id || rnd() > 0.2) continue;
+          if (rnd() < 0.5) blockers.push(other.id);
+          else {
+            const gate = bead(`${E12}.${100 + gates.length}`, {
+              parent: E12,
+              status: rnd() < 0.5 ? "closed" : "open",
+              waits_for: { plan: "p/team.md", number: other.track?.number ?? 0, track_id: other.id, lane: other.lane },
+            });
+            gates.push(gate);
+            blockers.push(gate.id);
+          }
+        }
+        return { ...t, blocked_by: blockers };
+      });
+      const beads = [epic, ...linked, ...gates];
+      const g = graphOf(beads, new Set(beads.map((b) => b.id)));
+      const label = `seed ${seed}`;
+      try {
+        expectColumns(g);
+        expectChipsInGaps(g);
+        expectClear(g);
+        // chips between boxes; the chips of arrows inside a box share their layer gaps and keep the checks of their own tests
+        for (const chip of g.chips.filter((c) => c.box === null && g.arrows.some((a) => a.toBox && a.chip?.x === c.x && a.chip?.y === c.y))) {
+          const own = g.arrows.find((a) => a.chip?.x === chip.x && a.chip?.y === chip.y);
+          for (const a of g.arrows.filter((x) => x !== own)) {
+            for (const p of sample(a.d)) if (inside({ x: chip.x, y: chip.y, w: chip.w, h: 20 }, p)) expect.fail(`${chip.words} over ${a.from}>${a.to} at ${p.x},${p.y}`);
+          }
+        }
+      } catch (error) {
+        throw new Error(`${label}: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+      }
+    }
+  }, 120_000);
 });
 
 describe("laneGraph header and colours", () => {
