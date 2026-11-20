@@ -220,6 +220,41 @@ describe("BeadsPage", () => {
     });
   });
 
+  describe("REQ-UI-116 Merge gate node", () => {
+    const data = [
+      bead("ex-e12", { issue_type: "epic" }),
+      bead("ex-e12.1", { parent: "ex-e12", lane: "fe", track: { plan: null, number: 1 }, blocked_by: ["ex-e12.9"] }),
+      bead("ex-e12.9", {
+        parent: "ex-e12",
+        title: "external: plan#2",
+        waits_for: { plan: "plan", number: 2, track_id: "ex-e12.1", lane: "be" },
+      }),
+    ];
+
+    it("REQ-UI-116 Merge gate node (Graph through BeadsView)", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=graph&scope=ex-e12");
+      stub(() => json(data));
+      render(<BeadsPage />);
+      await screen.findByRole("navigation", { name: "Graph scope" });
+      await waitFor(() => expect(document.querySelector('[data-node="ex-e12.9"]')).not.toBeNull());
+      const node = document.querySelector('[data-node="ex-e12.9"]');
+      expect(node).toHaveTextContent("Waits for be #2 to merge");
+      expect(node).toHaveTextContent("Waiting");
+    });
+
+    it("REQ-UI-116 Merge gate node: the List view of the same data does not show the gate", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&view=list&q=ex-e12");
+      stub(() => json(data));
+      render(<BeadsPage />);
+      expect(await screen.findByText("Title ex-e12.1")).toBeInTheDocument();
+      // q=ex-e12 matches the gate's id too, so the gate is absent only because the List leaves it out
+      expect(screen.getByText("2 of 2")).toBeInTheDocument();
+      expect(document.querySelector('[data-id="ex-e12.9"]')).toBeNull();
+      expect(screen.queryByText("external: plan#2")).toBeNull();
+      expect(screen.queryByText(/Waits for/)).toBeNull();
+    });
+  });
+
   it("REQ-UI-104 REQ-UI-106 milestone=m2&view=graph draws the milestone's epics, not the milestone bead", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&milestone=m2&view=graph");
     stub(
