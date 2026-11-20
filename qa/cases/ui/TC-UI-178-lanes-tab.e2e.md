@@ -5,13 +5,14 @@
 
 **Preconditions:**
 - "Show closed" is off
+- A bead of `ex-e12` has a title containing "Payment"
 - `ex-e12` is an epic whose tracks have lanes
 
 **Steps:**
-1. Open `/beads?project=example&view=graph&scope=ex-e12`
+1. Open `/beads?project=example&view=graph&scope=ex-e12&q=Payment`
 2. Choose Lanes in the views
 
 **Expected:**
 - The URL has `view=lanes`
-- The filters are unchanged
+- The search "Payment" is unchanged
 - The closed beads are loaded

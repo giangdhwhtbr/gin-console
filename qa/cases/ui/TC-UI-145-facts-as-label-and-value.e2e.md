@@ -6,7 +6,7 @@
 **Preconditions:**
 - Epic `e-3` of project `alpha` has owner `lead@example.com`, assignee `bao` and 0 comments
 - Milestone `M1` of project `P` is kicked off and shows a velocity line
-- Lane `be` of epic `ex-e12` in project `example` has a header
+- Lane `be` of epic `ex-e12` in project `example` has a header, and a track of `be` has a `claim` expiring tomorrow
 
 **Steps:**
 1. Open `/beads/alpha/e-3`

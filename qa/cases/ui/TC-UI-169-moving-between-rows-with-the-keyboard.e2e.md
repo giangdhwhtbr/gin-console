@@ -4,7 +4,7 @@
 - **Priority:** medium
 
 **Preconditions:**
-- Track 2 of lane `be` has the focus; lane `fe` is the row below with track 3 as its only card
+- Lane `be` has track 2; lane `fe` is the row below with track 3 as its only card
 
 **Steps:**
 1. Open `/beads?project=example&view=lanes&scope=ex-e12`
