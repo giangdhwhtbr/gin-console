@@ -7,6 +7,8 @@ import { SizeBadge } from "@/components/SizeBadge";
 import { cn } from "@/lib/utils";
 import { CountBadge } from "./CountBadge";
 import { KindBadge } from "./KindBadge";
+import { LaneChip } from "./LaneChip";
+import { visibleLabels } from "./laneFacts";
 import { isPrep, prepLabel } from "./prep";
 import { PrepChip } from "./PrepChip";
 import { StateMark } from "./StateMark";
@@ -78,6 +80,7 @@ export function ListRow({
         </span>
         <KindBadge kind={bead.kind} className="min-w-0 shrink" />
         {isPrep(bead.labels) && <PrepChip />}
+        {bead.lane !== null && <LaneChip lane={bead.lane} />}
         {bead.issue_type === "epic" && bead.complexity !== null && (
           <span className="min-w-0 shrink truncate text-xs text-muted-foreground" title={bead.complexity}>
             {bead.complexity}
@@ -100,7 +103,7 @@ export function ListRow({
             <span className="hidden shrink-0 text-xs text-muted-foreground @xl:inline">{prepLabel(row.counts)}</span>
           )}
           <span className="hidden min-w-0 shrink items-center gap-1 @3xl:flex">
-            {bead.labels.slice(0, 3).map((label) => (
+            {visibleLabels(bead).slice(0, 3).map((label) => (
               <Badge key={label} variant="outline" title={label} className="min-w-0 shrink">
                 <span className="truncate">{label}</span>
               </Badge>

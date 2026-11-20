@@ -1,6 +1,6 @@
 # TC-UI-082: Restored from the URL
 
-- **REQ:** REQ-UI-030@44faaaad
+- **REQ:** REQ-UI-030@0f5a1d68
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57

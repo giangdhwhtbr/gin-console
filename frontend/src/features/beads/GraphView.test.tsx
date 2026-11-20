@@ -177,3 +177,14 @@ describe("GraphView", () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "", select: "" }));
   });
 });
+
+describe("GraphView merge gates", () => {
+  it("REQ-UI-116 Merge gate node: the Graph draws the gate as a gate node", () => {
+    const gate = bead("g1", { title: "external: p#2", waits_for: { plan: "p", number: 2, track_id: null, lane: null } });
+    const waiting = bead("w1", { blocked_by: ["g1"] });
+    view({ beads: [...all, gate, waiting], matched: [...noMilestones, gate, waiting] });
+    const found = node("g1");
+    expect(found).toHaveClass("border-dashed");
+    expect(found).toHaveTextContent("Waits for track 2 to merge");
+  });
+});

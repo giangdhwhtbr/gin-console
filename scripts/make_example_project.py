@@ -28,6 +28,7 @@ import shutil
 import subprocess
 import tempfile
 from collections import Counter
+from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -533,6 +534,7 @@ def build(today: date, seed: int = 7) -> list[Row]:
         assignee="chi",
         priority=1,
     )
+    lanes_block(p, epic, today, m2_start)
     long_text(p, today, m2_start, p_id("m2"), m3_end)
     return p.rows
 
@@ -566,6 +568,98 @@ LONG_DESCRIPTION = "\n".join(
         "See https://wiki.example.com/payments/migration/2026/checkout-v2/provider-switch-runbook",
     ]
 )
+
+
+def lanes_block(p: Project, epic: Callable[..., Row], today: date, m2_start: date) -> None:
+    """Epic e12: tracks in lanes, two claims and two merge gates (one open, one merged)."""
+    # A private random sequence, so the rows after this block keep their values.
+    saved, p.rng = p.rng, random.Random(12)
+    try:
+        plan = f".planning/plans/{(today - timedelta(days=3)).isoformat()}-team-checkout.md"
+        start = m2_start
+        e12 = epic(
+            "e12",
+            "Team checkout",
+            "m2",
+            m2_start - timedelta(days=2),
+            status="in_progress",
+            labels=["roadmap", "kind:capability"],
+            started_at=stamp(m2_start),
+        )
+
+        def claim(holder: str, expires: date, hour: int) -> dict[str, Any]:
+            return {
+                "claim": {
+                    "holder": holder,
+                    "expires_at": f"{expires.isoformat()}T{hour:02d}:00:00Z",
+                }
+            }
+
+        def track(
+            n: int, title: str, lane: str | None, status: str, who: str | None, **extra: Any
+        ) -> Row:
+            text = f"Plan: {plan}, Track {n}" + (f"\nLane: {lane}" if lane else "")
+            labels = [f"lane:{lane}"] if lane else []
+            return p.task(
+                e12["id"],
+                title,
+                status,
+                start=start,
+                end=today,
+                assignee=who,
+                labels=[*labels, f"track:{n}"],
+                description=text,
+                **extra,
+            )
+
+        def blocked_by(row: Row, blocker: Row) -> None:
+            row.setdefault("dependencies", []).append(
+                p.dep(row["id"], blocker["id"], "blocks", start)
+            )
+
+        t1 = track(1, "Order API", "be", "closed", "ann")
+        t2 = track(
+            2,
+            "Payment API",
+            "be",
+            "in_progress",
+            "ann",
+            metadata=claim("ann@example.com", today + timedelta(days=1), 16),
+        )
+        blocked_by(t2, t1)
+        track(3, "Checkout page", "fe", "closed", "bao")
+        t4 = track(4, "End-to-end checkout QA", "qa", "open", None)
+        t5 = track(5, "Deploy pipeline", "infra", "closed", "chi")
+        t6 = track(
+            6,
+            "Monitoring",
+            "infra",
+            "open",
+            "chi",
+            metadata=claim("chi@example.com", today - timedelta(days=1), 9),
+        )
+        blocked_by(t6, t5)
+        track(7, "Release notes", None, "open", "dung")
+        track(8, "Old checkout cleanup", None, "closed", "dung")
+        done = stamp(min(start + timedelta(days=2), today), 16)
+        gates = (
+            p.add(p.child_id(e12["id"]), f"external: {plan}#2", "task", start, parent=e12["id"]),
+            p.add(
+                f"{PREFIX}-g3",
+                f"external: {plan}#3",
+                "task",
+                start,
+                status="closed",
+                closed_at=done,
+                updated_at=done,
+                close_reason="Merged",
+                metadata={"merge_commit": "3f2c1ab"},
+            ),
+        )
+        for gate in gates:
+            blocked_by(t4, gate)
+    finally:
+        p.rng = saved
 
 
 def long_text(p: Project, today: date, start: date, milestone: str, after: date) -> None:
@@ -742,6 +836,20 @@ def check(out: Path, rows: list[Row]) -> list[str]:
         problems.append("no Capabilities: line")
     if not any(label.startswith("req:") for r in exported for label in (r.get("labels") or [])):
         problems.append("no req: label")
+    e12_kids = [
+        r
+        for r in exported
+        if r["id"].startswith(f"{PREFIX}-e12.") and not r["title"].startswith("external: ")
+    ]
+    if len(e12_kids) != 8:
+        problems.append(f"{PREFIX}-e12 has {len(e12_kids)} tracks, expected 8")
+    lanes = {
+        label for r in e12_kids for label in (r.get("labels") or []) if label.startswith("lane:")
+    }
+    if len(lanes) != 4:
+        problems.append(f"{PREFIX}-e12 has {len(lanes)} lanes, expected 4")
+    if sum(r["title"].startswith("external: ") for r in exported) != 2:
+        problems.append("expected 2 merge gates")
     if shutil.which("gin"):
         listed = subprocess.run(
             ["gin", "milestone", "list", "--all", "--json"],

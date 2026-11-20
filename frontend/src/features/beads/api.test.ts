@@ -31,6 +31,10 @@ const sampleSummary = {
   estimate_minutes: null,
   points: null,
   points_reason: null,
+  lane: null,
+  track: null,
+  claim: null,
+  waits_for: null,
 };
 
 const sampleDetail = {
@@ -397,5 +401,42 @@ describe("api", () => {
     );
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([missingAuthor]))));
     await expect(fetchComments("proj", "a-1")).rejects.toThrow("Could not load the comments (unexpected response)");
+  });
+});
+
+describe("api lane fields", () => {
+  it("REQ-BEADS-019 an older server without the lane fields parses and defaults them to null", async () => {
+    const old = Object.fromEntries(Object.entries(sampleSummary).filter(([k]) => !["lane", "track", "claim", "waits_for"].includes(k)));
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([old]))));
+    const [result] = await fetchBeads("proj", false);
+    expect(result).toMatchObject({ lane: null, track: null, claim: null, waits_for: null });
+  });
+
+  it("REQ-BEADS-019 reads lane, track, claim and waits_for", async () => {
+    const full = {
+      ...sampleSummary,
+      lane: "be",
+      track: { plan: "p.md", number: 2 },
+      claim: { holder: "ann", expires_at: "2026-11-20T10:00:00Z" },
+      waits_for: { plan: "p", number: 2, track_id: "t-2", lane: "be" },
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([full]))));
+    expect(await fetchBeads("proj", false)).toMatchObject([full]);
+  });
+
+  it.each([
+    ["lane", 3],
+    ["track", { plan: "p", number: "2" }],
+    ["claim", { holder: "ann" }],
+    ["waits_for", { plan: "p", number: "x" }],
+  ])("REQ-BEADS-019 rejects a wrong-shaped %s", async (key, value) => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleSummary, [key]: value }]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow(/unexpected response/);
+  });
+
+  it("REQ-BEADS-019 rejects a relation with a wrong-shaped waits_for", async () => {
+    const bad = { ...sampleDetail, dependencies: [{ id: "g", title: "t", status: "open", type: "blocks", waits_for: { plan: 1 } }] };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(bad))));
+    await expect(fetchBead("p", "a-1")).rejects.toThrow(/unexpected response/);
   });
 });

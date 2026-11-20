@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict
@@ -8,6 +8,29 @@ from gin_console.quota.source import clean
 
 # lone surrogates are valid JSON escapes but cannot be encoded in a response
 Text = Annotated[str, AfterValidator(clean)]
+
+
+class TrackRef(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    plan: Text | None
+    number: int
+
+
+class GateRef(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    plan: Text
+    number: int
+    track_id: Text | None = None
+    lane: Text | None = None
+
+
+class Claim(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    holder: Text
+    expires_at: datetime
 
 
 class BeadSummary(BaseModel):
@@ -39,6 +62,10 @@ class BeadSummary(BaseModel):
     points: int | None = None
     points_reason: Text | None = None
     estimate_minutes: int | None = None
+    lane: Text | None = None
+    track: TrackRef | None = None
+    claim: Claim | None = None
+    waits_for: GateRef | None = None
 
 
 class Relation(BaseModel):
@@ -50,6 +77,12 @@ class Relation(BaseModel):
     type: Literal["blocks", "parent-child", "discovered-from"]
 
 
+class GateRelation(Relation):
+    """A dependency or dependent: it says what a merge gate waits for (REQ-BEADS-019)."""
+
+    waits_for: GateRef | None = None
+
+
 class ChildRelation(BaseModel):
     model_config = ConfigDict(strict=True)
 
@@ -58,6 +91,7 @@ class ChildRelation(BaseModel):
     status: Text
     type: Literal["parent-child"]
     prep: bool = False
+    waits_for: GateRef | None = None
 
 
 class Comment(BaseModel):
@@ -76,8 +110,8 @@ class BeadDetail(BeadSummary):
     notes: Text | None = None
     acceptance_criteria: Text | None = None
     close_reason: Text | None = None
-    dependencies: list[Relation] = []
-    dependents: list[Relation] = []
+    dependencies: list[GateRelation] = []
+    dependents: list[GateRelation] = []
     children: list[ChildRelation] = []
     bugs: list[Relation] = []
 
