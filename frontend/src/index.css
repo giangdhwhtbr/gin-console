@@ -15,6 +15,14 @@
     --color-type-epic: var(--type-epic);
     --color-type-bug: var(--type-bug);
     --color-type-feature: var(--type-feature);
+    --color-lane-1: var(--lane-1);
+    --color-lane-2: var(--lane-2);
+    --color-lane-3: var(--lane-3);
+    --color-lane-4: var(--lane-4);
+    --color-lane-5: var(--lane-5);
+    --color-lane-6: var(--lane-6);
+    --color-lane-7: var(--lane-7);
+    --color-lane-8: var(--lane-8);
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
     --font-mono: 'Geist Mono Variable', ui-monospace, monospace;
@@ -107,6 +115,14 @@
     --type-epic: #7e22ce;
     --type-bug: #b91c1c;
     --type-feature: #be185d;
+    --lane-1: #2a78d6;
+    --lane-2: #eb6834;
+    --lane-3: #1baf7a;
+    --lane-4: #eda100;
+    --lane-5: #e87ba4;
+    --lane-6: #008300;
+    --lane-7: #6250d6;
+    --lane-8: #e34948;
 }
 
 .dark {
@@ -157,6 +173,14 @@
     --type-epic: #c084fc;
     --type-bug: #f87171;
     --type-feature: #f472b6;
+    --lane-1: #3987e5;
+    --lane-2: #d95926;
+    --lane-3: #199e70;
+    --lane-4: #c98500;
+    --lane-5: #d55181;
+    --lane-6: #008300;
+    --lane-7: #9085e9;
+    --lane-8: #e66767;
 }
 
 @layer base {

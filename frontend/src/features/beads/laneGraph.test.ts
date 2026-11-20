@@ -1,0 +1,400 @@
+import { describe, expect, it } from "vitest";
+import { factDate } from "@/lib/dates";
+import type { BeadSummary } from "./api";
+import { bead } from "./beadFixtures";
+import {
+  LANE_GRAPH,
+  laneGraph,
+  laneGraphChain,
+  laneGraphLines,
+  laneGraphStep,
+  laneSlots,
+  type LaneBoxLayout,
+  type LaneGraph,
+} from "./laneGraph";
+import { E12, epic, g2, g3, t1, t2, t3, t4, t7 } from "./laneFixtures";
+import { LANE } from "./lanes";
+
+const NOW = new Date("2026-11-20T10:00:00Z");
+const track = (n: number, lane: string | null, over: Partial<BeadSummary> = {}) =>
+  bead(`${E12}.${n}`, { parent: E12, lane, track: { plan: "p/team.md", number: n }, ...over });
+
+const t5 = track(5, "infra", { status: "closed", assignee: "chi" });
+const t6 = track(6, "infra", { assignee: "chi", blocked_by: [t5.id] });
+const t8 = track(8, null, { status: "closed", assignee: "dung" });
+const BEADS = [epic, t1, t2, t3, g2, g3, t4, t5, t6, t7, t8];
+const ALL = new Set(BEADS.map((b) => b.id));
+
+const graphOf = (beads: readonly BeadSummary[] = BEADS, matched: ReadonlySet<string> = ALL) => laneGraph(beads, E12, matched, NOW);
+const boxOf = (g: LaneGraph, lane: string | null): LaneBoxLayout => {
+  const box = g.boxes.find((b) => b.lane === lane);
+  if (box === undefined) throw new Error(`no box ${String(lane)}`);
+  return box;
+};
+const cardOf = (g: LaneGraph, id: string) => {
+  const card = g.cards.find((c) => c.bead.id === id);
+  if (card === undefined) throw new Error(`no card ${id}`);
+  return card;
+};
+const arrowOf = (g: LaneGraph, from: string, to: string) => g.arrows.find((a) => a.from === from && a.to === to);
+
+type Rect = { x: number; y: number; w: number; h: number };
+type Pt = { x: number; y: number };
+const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+const inside = (r: Rect, p: Pt) => p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h;
+
+/** The points of an SVG path of `M`, `L` and `C` commands; a cubic is sampled 40 times, a line 40 times too. */
+function sample(d: string): Pt[] {
+  const tokens = d.match(/[MLC]|-?\d+(?:\.\d+)?/g) ?? [];
+  const pts: Pt[] = [];
+  let cmd = "";
+  let at: Pt = { x: 0, y: 0 };
+  for (let i = 0; i < tokens.length; ) {
+    const t = tokens[i];
+    if (t === "M" || t === "L" || t === "C") {
+      cmd = t;
+      i += 1;
+      continue;
+    }
+    const n = cmd === "C" ? 6 : 2;
+    const v = tokens.slice(i, i + n).map(Number);
+    i += n;
+    const end = { x: v[n - 2], y: v[n - 1] };
+    if (cmd === "M") pts.push(end);
+    else {
+      for (let k = 1; k <= 40; k += 1) {
+        const s = k / 40;
+        if (cmd === "L") pts.push({ x: at.x + (end.x - at.x) * s, y: at.y + (end.y - at.y) * s });
+        else {
+          const u = 1 - s;
+          const f = (a: number, b: number, c: number, e: number) => u ** 3 * a + 3 * u * u * s * b + 3 * u * s * s * c + s ** 3 * e;
+          pts.push({ x: f(at.x, v[0], v[2], v[4]), y: f(at.y, v[1], v[3], v[5]) });
+        }
+      }
+    }
+    at = end;
+  }
+  return pts;
+}
+
+const cardRect = (c: { x: number; y: number }): Rect => ({ x: c.x, y: c.y, w: LANE.cardW, h: LANE.cardH });
+const headRect = (b: LaneBoxLayout): Rect => ({ x: b.x + LANE_GRAPH.pad, y: b.y, w: b.w - 2 * LANE_GRAPH.pad, h: LANE_GRAPH.head });
+
+function expectClear(g: LaneGraph) {
+  const rects = [...g.cards.map(cardRect), ...g.boxes.map(headRect)];
+  for (const a of g.arrows) {
+    for (const p of sample(a.d)) for (const r of rects) expect(inside(r, p), `${a.from}>${a.to} at ${p.x},${p.y}`).toBe(false);
+  }
+  for (const c of g.chips) {
+    const chip = { x: c.x, y: c.y, w: c.w, h: 20 };
+    for (const r of rects) expect(overlap(chip, r), `chip ${c.words}`).toBe(false);
+  }
+  for (const [i, a] of g.chips.entries()) {
+    for (const b of g.chips.slice(i + 1)) expect(overlap({ x: a.x, y: a.y, w: a.w, h: 20 }, { x: b.x, y: b.y, w: b.w, h: 20 }), `${a.words} / ${b.words}`).toBe(false);
+  }
+}
+
+describe("laneGraph", () => {
+  // REQ-UI-117 scenario "Boxes in tiers"
+  it("REQ-UI-117 Boxes in tiers: be, fe and infra first, then qa and No lane, and no gate node", () => {
+    const g = graphOf();
+    expect(g.boxes.map((b) => [b.lane, b.tier])).toEqual([["be", 0], ["fe", 0], ["infra", 0], ["qa", 1], [null, 1]]);
+    const be = boxOf(g, "be");
+    const qa = boxOf(g, "qa");
+    expect(boxOf(g, "fe").y).toBe(be.y);
+    expect(qa.y).toBe(be.y + be.h + LANE_GRAPH.tierGap);
+    expect(boxOf(g, null).x).toBe(qa.x + qa.w + LANE_GRAPH.boxGap);
+    expect(g.boxes.filter((b) => b.tier === 0).map((b) => b.x)).toEqual([16, 16 + be.w + 24, 16 + be.w + 24 + boxOf(g, "fe").w + 24]);
+    expect(g.cards.some((c) => c.bead.waits_for !== null)).toBe(false);
+    expect(g.cycle).toEqual([]);
+  });
+
+  it("REQ-UI-117 keeps boxes with no drawn card out and puts No lane in tier 0 when it is alone", () => {
+    const g = graphOf(BEADS, new Set([t7.id]));
+    expect(g.boxes.map((b) => [b.lane, b.tier])).toEqual([[null, 0]]);
+    expect(laneGraph(BEADS, E12, new Set(), NOW)).toMatchObject({ boxes: [], cards: [], arrows: [], chips: [] });
+  });
+
+  // REQ-UI-117 scenario "Tracks left to right"
+  it("REQ-UI-117 Tracks left to right: track 2 is right of track 1 in be with an arrow", () => {
+    const g = graphOf();
+    const c1 = cardOf(g, t1.id);
+    const c2 = cardOf(g, t2.id);
+    const be = boxOf(g, "be");
+    expect([c1.layer, c2.layer]).toEqual([0, 1]);
+    expect(c1.x).toBe(be.x + LANE_GRAPH.pad);
+    expect(c2.x).toBe(be.x + LANE_GRAPH.pad + LANE.cardW + LANE_GRAPH.cardGap);
+    expect(c1.y).toBe(be.y + LANE_GRAPH.head + LANE_GRAPH.pad);
+    expect(be.w).toBe(2 * LANE_GRAPH.pad + 2 * LANE.cardW + LANE_GRAPH.cardGap);
+    expect(be.h).toBe(LANE_GRAPH.head + 2 * LANE_GRAPH.pad + LANE.cardH);
+    const arrow = arrowOf(g, t1.id, t2.id);
+    expect(arrow).toMatchObject({ toBox: false, gate: null, dashed: false, chip: null });
+    expect(arrow?.d).toBe(`M ${c1.x + LANE.cardW} ${c1.y + 32} L ${c2.x} ${c2.y + 32}`);
+  });
+
+  it("REQ-UI-117 stacks the cards of one layer one under another and routes around the cards", () => {
+    const a = track(11, "x");
+    const b = track(12, "x");
+    const c = track(13, "x", { blocked_by: [a.id, b.id] });
+    const d = track(14, "x", { blocked_by: [a.id] });
+    const e = track(15, "x", { blocked_by: [c.id, d.id] });
+    const beads = [epic, a, b, c, d, e];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    const box = boxOf(g, "x");
+    expect([a, b].map((x) => [cardOf(g, x.id).layer, cardOf(g, x.id).stack])).toEqual([[0, 0], [0, 1]]);
+    expect([c, d].map((x) => [cardOf(g, x.id).layer, cardOf(g, x.id).stack])).toEqual([[1, 0], [1, 1]]);
+    expect(cardOf(g, b.id).y).toBe(cardOf(g, a.id).y + LANE.cardH + LANE_GRAPH.stackGap);
+    expect(box.h).toBe(LANE_GRAPH.head + 2 * LANE_GRAPH.pad + 2 * LANE.cardH + LANE_GRAPH.stackGap);
+    expect(box.w).toBe(2 * LANE_GRAPH.pad + 3 * LANE.cardW + 2 * LANE_GRAPH.cardGap);
+    expect(g.arrows).toHaveLength(5);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 an arrow that skips a layer runs through the gap under the cards", () => {
+    const a = track(11, "x");
+    const b = track(12, "x", { blocked_by: [a.id] });
+    const c = track(13, "x", { blocked_by: [b.id, a.id] });
+    const beads = [epic, a, b, c];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    const skip = arrowOf(g, a.id, c.id);
+    const box = boxOf(g, "x");
+    const ys = sample(skip?.d ?? "").map((p) => p.y);
+    expect(Math.max(...ys)).toBeGreaterThan(cardOf(g, a.id).y + LANE.cardH);
+    expect(Math.max(...ys)).toBeLessThan(box.y + box.h);
+    expectClear(g);
+  });
+
+  // REQ-UI-117 scenario "Gate chips"
+  it("REQ-UI-117 Gate chips: a dashed arrow with Waiting and a solid one with Merged to the qa box", () => {
+    const g = graphOf();
+    const waiting = arrowOf(g, t2.id, t4.id);
+    const merged = arrowOf(g, t3.id, t4.id);
+    expect(waiting).toMatchObject({ toBox: true, dashed: true });
+    expect(waiting?.gate?.id).toBe(g2.id);
+    expect(merged).toMatchObject({ toBox: true, dashed: false });
+    expect(merged?.gate?.id).toBe(g3.id);
+    expect(g.chips.map((c) => [c.kind, c.words, c.box]).sort()).toEqual([
+      ["merged", "Merged · fe #3", null],
+      ["waiting", "Waiting · be #2", null],
+    ]);
+    const chip = g.chips.find((c) => c.words === "Waiting · be #2");
+    expect(waiting?.chip).toEqual({ x: chip?.x, y: chip?.y });
+    expect(chip?.w).toBe(120);
+    // the arrow ends on the top edge of qa, over the centre of the card of track 4
+    const qa = boxOf(g, "qa");
+    const last = sample(waiting?.d ?? "").at(-1);
+    expect(last).toEqual({ x: cardOf(g, t4.id).x + LANE.cardW / 2, y: qa.y });
+    expectClear(g);
+  });
+
+  // REQ-UI-117 scenario "Track not drawn"
+  it("REQ-UI-117 Track not drawn: the chip sits on the top edge of the qa box and no arrow is drawn", () => {
+    const far = bead(`${E12}.20`, {
+      title: "external: .planning/plans/other.md#7",
+      parent: E12,
+      waits_for: { plan: ".planning/plans/other.md", number: 7, track_id: null, lane: null },
+    });
+    const closedFar = bead(`${E12}.21`, {
+      title: "external: .planning/plans/other.md#8",
+      parent: E12,
+      status: "closed",
+      waits_for: { plan: ".planning/plans/other.md", number: 8, track_id: null, lane: null },
+    });
+    const blocked = { ...t4, blocked_by: [g2.id, g3.id, far.id, closedFar.id] };
+    const beads = [epic, t1, t2, t3, g2, g3, blocked, far, closedFar, t7];
+    const g = graphOf(beads, new Set(beads.map((b) => b.id)));
+    const qa = boxOf(g, "qa");
+    const loose = g.chips.filter((c) => c.box === "qa");
+    expect(loose.map((c) => [c.kind, c.words, c.w]).sort()).toEqual([
+      ["merged", "Merged track 8", 152],
+      ["waiting", "Waiting for track 7", 152],
+    ]);
+    for (const c of loose) expect(c.y + 20).toBe(qa.y); // sits on the top edge, outside the header
+    expect(Math.min(...loose.map((c) => c.x))).toBe(qa.x + LANE_GRAPH.pad);
+    expect(g.arrows.filter((a) => a.gate?.id === far.id || a.gate?.id === closedFar.id)).toEqual([]);
+    expect(g.arrows).toHaveLength(3); // t1>t2, t2>qa, t3>qa
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 a chip on a box of the first tier keeps clear of the top of the canvas", () => {
+    const far = bead(`${E12}.20`, { parent: E12, waits_for: { plan: "p", number: 7, track_id: null, lane: null } });
+    const a = track(11, "x", { blocked_by: [far.id] });
+    const beads = [epic, a, far];
+    const g = graphOf(beads, new Set(beads.map((b) => b.id)));
+    expect(Math.min(...g.chips.map((c) => c.y))).toBeGreaterThanOrEqual(LANE_GRAPH.margin);
+    expect(boxOf(g, "x").y).toBe(LANE_GRAPH.margin + 20);
+  });
+
+  it("REQ-UI-117 an open gate whose track is in the same lane draws a chip on an arrow in the gap under the cards", () => {
+    const a = track(11, "x");
+    const g11 = bead(`${E12}.30`, { parent: E12, waits_for: { plan: "p/team.md", number: 11, track_id: a.id, lane: "x" } });
+    const b = track(12, "x", { blocked_by: [g11.id] });
+    const beads = [epic, a, b, g11];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    const arrow = arrowOf(g, a.id, b.id);
+    expect(arrow).toMatchObject({ toBox: false, dashed: true });
+    expect(g.chips.map((c) => c.words)).toEqual(["Waiting · x #11"]);
+    const box = boxOf(g, "x");
+    expect(g.chips[0].y + 20).toBeLessThan(box.y + box.h);
+    expectClear(g);
+  });
+
+  // REQ-UI-117 scenario "Keys between boxes"
+  it("REQ-UI-117 Keys between boxes: Arrow Down from track 2 reaches track 4, and Up goes back", () => {
+    const g = graphOf();
+    expect(laneGraphStep(g, t2.id, "ArrowDown")).toBe(t4.id);
+    expect(laneGraphStep(g, t4.id, "ArrowUp")).toBe(t2.id);
+    expect(laneGraphStep(g, t2.id, "ArrowUp")).toBeNull();
+    expect(laneGraphStep(g, t4.id, "ArrowDown")).toBeNull();
+    expect(laneGraphStep(g, t1.id, "ArrowRight")).toBe(t2.id);
+    expect(laneGraphStep(g, t2.id, "ArrowLeft")).toBe(t1.id);
+    expect(laneGraphStep(g, t1.id, "ArrowLeft")).toBeNull();
+    expect(laneGraphStep(g, t2.id, "ArrowRight")).toBeNull();
+    expect(laneGraphStep(g, "nope", "ArrowDown")).toBeNull();
+  });
+
+  it("REQ-UI-117 without an arrow, Up and Down go to the nearest card of the tier below or above", () => {
+    const g = graphOf();
+    // track 3 (fe) has an arrow to qa; infra's track 5 has none, so the nearest card of tier 1 by x is used
+    const fromInfra = laneGraphStep(g, t5.id, "ArrowDown");
+    const tier1 = g.cards.filter((c) => boxOf(g, c.lane).tier === 1);
+    const centre = (c: { x: number }) => c.x + LANE.cardW / 2;
+    const x5 = centre(cardOf(g, t5.id));
+    const nearest = [...tier1].sort((a, b) => Math.abs(centre(a) - x5) - Math.abs(centre(b) - x5))[0];
+    expect(fromInfra).toBe(nearest.bead.id);
+    expect(laneGraphStep(g, t7.id, "ArrowUp")).not.toBeNull();
+  });
+
+  it("REQ-UI-117 laneGraphChain follows the arrows up and down and names them from>to", () => {
+    const g = graphOf();
+    const chain = laneGraphChain(g, t2.id);
+    expect([...chain.nodes].sort()).toEqual([t1.id, t2.id, t4.id].sort());
+    expect([...chain.arrows].sort()).toEqual([`${t1.id}>${t2.id}`, `${t2.id}>${t4.id}`].sort());
+    expect([...laneGraphChain(g, t7.id).nodes]).toEqual([t7.id]);
+  });
+
+  it("REQ-UI-117 laneGraphLines has one line per lane then one per arrow, with stable keys", () => {
+    const lines = laneGraphLines(graphOf());
+    expect(lines.slice(0, 5).map((l) => l.key)).toEqual(["lane:be", "lane:fe", "lane:infra", "lane:qa", "lane:"]);
+    expect(lines.slice(5).map((l) => l.key).sort()).toEqual(
+      [`arrow:${t1.id}>${t2.id}`, `arrow:${t5.id}>${t6.id}`, `arrow:${t2.id}>${t4.id}`, `arrow:${t3.id}>${t4.id}`].sort(),
+    );
+    expect(new Set(lines.map((l) => l.key)).size).toBe(lines.length);
+    expect(lines[0].text).toMatch(/^be: Running, ann · lease until .* · 1\/2 closed$/);
+    expect(lines.find((l) => l.key === "lane:")?.text).toBe("No lane: 1/2 closed");
+    expect(lines.find((l) => l.key === `arrow:${t2.id}>${t4.id}`)?.text).toBe("qa #4 waits for be #2: merge pending");
+    expect(lines.find((l) => l.key === `arrow:${t3.id}>${t4.id}`)?.text).toBe("qa #4 waits for fe #3: merged");
+    expect(lines.find((l) => l.key === `arrow:${t1.id}>${t2.id}`)?.text).toBe("be #2 waits for be #1");
+  });
+
+  it("REQ-UI-117 no arrow crosses a card or a header and no two chips meet, in the ex-e12 shape", () => {
+    const g = graphOf();
+    expect(g.arrows.length).toBeGreaterThan(0);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 an arrow from a card that is not the lowest of its layer leaves through the gap beside it", () => {
+    const a = track(11, "x");
+    const b = track(12, "x");
+    const z = track(13, "z", { blocked_by: [a.id] });
+    const beads = [epic, a, b, z];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    expect(arrowOf(g, a.id, z.id)).toBeDefined();
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 an arrow that skips a tier runs in a channel right of all boxes", () => {
+    const a = track(11, "a");
+    const b = track(12, "b", { blocked_by: [a.id] });
+    const c = track(13, "c", { blocked_by: [b.id, a.id] });
+    const beads = [epic, a, b, c];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    expect(g.boxes.map((x) => [x.lane, x.tier])).toEqual([["a", 0], ["b", 1], ["c", 2]]);
+    const skip = arrowOf(g, a.id, c.id);
+    const right = Math.max(...g.boxes.map((x) => x.x + x.w));
+    expect(Math.max(...sample(skip?.d ?? "").map((p) => p.x))).toBeGreaterThan(right);
+    expect(g.width).toBeGreaterThan(right);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 many gated arrows into one box keep their chips apart", () => {
+    const sources = [11, 12, 13, 14].map((n) => track(n, "src", { status: "closed" }));
+    const gates = sources.map((s, i) => bead(`${E12}.${40 + i}`, { parent: E12, waits_for: { plan: "p/team.md", number: 11 + i, track_id: s.id, lane: "src" } }));
+    const sink = track(20, "sink", { blocked_by: gates.map((x) => x.id) });
+    const beads = [epic, ...sources, ...gates, sink];
+    const g = graphOf(beads, new Set(beads.map((b) => b.id)));
+    expect(g.chips).toHaveLength(4);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 lanes in a cycle share one tier, are listed in cycle and draw no back arrow", () => {
+    const a = track(11, "a");
+    const b = track(12, "b", { blocked_by: [a.id] });
+    const a2 = track(13, "a", { blocked_by: [b.id] });
+    const c = track(14, "c", { blocked_by: [a2.id] });
+    const beads = [epic, a, b, a2, c];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    expect(boxOf(g, "a").tier).toBe(boxOf(g, "b").tier);
+    expect(boxOf(g, "c").tier).toBe(boxOf(g, "a").tier + 1);
+    expect(g.cycle).toEqual(expect.arrayContaining(["a", "b"]));
+    expect(g.cycle).not.toContain("c");
+    expect(g.arrows.map((x) => `${x.from}>${x.to}`)).toEqual([`${a2.id}>${c.id}`]);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 cards of a dependency cycle inside a lane keep the order track number then id and are listed in cycle", () => {
+    const a = track(11, "x", { blocked_by: [`${E12}.12`] });
+    const b = track(12, "x", { blocked_by: [a.id] });
+    const beads = [epic, a, b];
+    const g = graphOf(beads, new Set(beads.map((x) => x.id)));
+    expect(g.cycle).toEqual(expect.arrayContaining([a.id, b.id]));
+    expect(g.cards).toHaveLength(2);
+    expectClear(g);
+  });
+
+  it("REQ-UI-117 width and height cover every box, chip and the margin", () => {
+    const g = graphOf();
+    expect(g.width).toBe(Math.max(...g.boxes.map((b) => b.x + b.w), ...g.chips.map((c) => c.x + c.w)) + LANE_GRAPH.margin);
+    expect(g.height).toBe(Math.max(...g.boxes.map((b) => b.y + b.h)) + LANE_GRAPH.margin);
+  });
+});
+
+describe("laneGraph header and colours", () => {
+  // REQ-UI-118 scenario "Header"
+  it("REQ-UI-118 Header: the be box carries Running and the holder, lease and closed count", () => {
+    const be = boxOf(graphOf(), "be");
+    expect(be.state).toEqual({ kind: "running", words: "Running" });
+    expect(be.meta).toBe(`ann · lease until ${factDate("2099-01-01T16:00:00Z")} · 1/2 closed`);
+  });
+
+  it("REQ-UI-118 a lane with no holder reads Unclaimed, and a closed lane shows only the count", () => {
+    const g = graphOf();
+    expect(boxOf(g, "qa").meta).toBe("Unclaimed · 0/1 closed");
+    const done = graphOf([epic, track(11, "x", { status: "closed" })], new Set([`${E12}.11`]));
+    expect(boxOf(done, "x").state?.kind).toBe("closed");
+    expect(boxOf(done, "x").meta).toBe("1/1 closed");
+  });
+
+  // REQ-UI-118 scenario "Colours follow the lane name"
+  it("REQ-UI-118 Colours follow the lane name: fe is colour 2 with and without the filter", () => {
+    const all = graphOf();
+    expect(["be", "fe", "infra", "qa"].map((l) => boxOf(all, l).slot)).toEqual([1, 2, 3, 4]);
+    const bao = graphOf(BEADS, new Set([t3.id]));
+    expect(bao.boxes.map((b) => [b.lane, b.slot])).toEqual([["fe", 2]]);
+    expect(laneSlots(BEADS, E12)).toEqual(new Map([["be", 1], ["fe", 2], ["infra", 3], ["qa", 4]]));
+  });
+
+  it("REQ-UI-118 colours count again from 1 after 8", () => {
+    const names = "abcdefghij".split("");
+    const beads = [epic, ...names.map((n, i) => track(i + 1, n))];
+    const slots = laneSlots(beads, E12);
+    expect(names.map((n) => slots.get(n))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 1, 2]);
+  });
+
+  // REQ-UI-118 scenario "No lane box"
+  it("REQ-UI-118 No lane box: slot 0, no state and the count over all its tracks", () => {
+    const none = boxOf(graphOf(), null);
+    expect(none).toMatchObject({ slot: 0, state: null, meta: "1/2 closed" });
+    expect(laneSlots(BEADS, E12).has("")).toBe(false);
+  });
+});
