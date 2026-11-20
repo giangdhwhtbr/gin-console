@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import type { BeadKind, BeadSummary } from "@/features/beads/api";
+import { withoutMergeGates } from "@/features/beads/mergeGates";
 import { useBeads } from "@/features/beads/useBeads";
 import type { MilestoneDetail } from "./api";
 import { CopyCommand } from "./CopyCommand";
@@ -34,7 +35,7 @@ export function GanttTab({
   onZoom: (zoom: Zoom) => void;
 }) {
   const { state: beads } = useBeads(project, true);
-  const childBeads = useMemo(() => (beads.status === "ok" ? childrenOf(beads.beads) : NO_CHILDREN), [beads]);
+  const childBeads = useMemo(() => (beads.status === "ok" ? childrenOf(withoutMergeGates(beads.beads)) : NO_CHILDREN), [beads]);
   const kinds = useMemo(() => {
     const map = new Map<string, BeadKind>();
     if (beads.status === "ok") for (const b of beads.beads) if (b.kind !== null) map.set(b.id, b.kind);

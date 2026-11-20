@@ -323,3 +323,12 @@ describe("GanttChart", () => {
     expect(epicRow("e-b")).not.toHaveTextContent("Technical");
   });
 });
+
+describe("GanttChart lanes", () => {
+  it("REQ-MILESTONE-UI-015 REQ-UI-115 merge gate and lane: the child row has the lane chip", async () => {
+    drawKids({ "e-a": [bead("e-a.1", { parent: "e-a", lane: "be", labels: ["track:1"], track: { plan: null, number: 1 } })] });
+    await userEvent.click(screen.getByRole("button", { name: /child bead of e-a/ }));
+    const row = document.querySelector<HTMLElement>("[data-child='e-a.1']") ?? document.body;
+    expect(within(row).getByTitle("Lane be")).toBeInTheDocument();
+  });
+});

@@ -22,3 +22,10 @@ describe("prep", () => {
     expect(prepLabel(childCounts([{ labels: [], status: "open" }]))).toBeNull();
   });
 });
+
+describe("childCounts merge gates", () => {
+  it("REQ-UI-116 Not counted as a child: an item with waits_for is skipped", () => {
+    const gate = { labels: [], status: "open", waits_for: { plan: "p", number: 1, track_id: null, lane: null } };
+    expect(childCounts([{ labels: [], status: "closed" }, gate])).toEqual({ tracks: 1, closedTracks: 1, prep: 0, closedPrep: 0 });
+  });
+});

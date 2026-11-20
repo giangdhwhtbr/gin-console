@@ -299,3 +299,21 @@ describe("BoardView", () => {
     expect(screen.queryByLabelText("Sprint")).toBeNull();
   });
 });
+
+describe("BoardView lanes", () => {
+  it("REQ-UI-115 REQ-UI-116 Lane chip on the card, merge gate not on the Board", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stubBeads(() =>
+      json([
+        bead("a-1", { title: "Laned", ready: true, lane: "be", track: { plan: null, number: 1 } }),
+        bead("a-2", { title: "Plain", ready: true }),
+        bead("a-3", { title: "external: p#2", waits_for: { plan: "p", number: 2, track_id: null, lane: null } }),
+      ]),
+    );
+    render(<BeadsPage />);
+    expect(await screen.findByText("Laned")).toBeInTheDocument();
+    expect(screen.getByTitle("Lane be")).toBeInTheDocument();
+    expect(screen.getAllByTitle(/^Lane /)).toHaveLength(1);
+    expect(screen.queryByText("external: p#2")).toBeNull();
+  });
+});

@@ -7,6 +7,7 @@ import type { BeadSummary } from "./api";
 import { CountBadge } from "./CountBadge";
 import { stateOf } from "./graph";
 import { KindBadge } from "./KindBadge";
+import { LaneChip } from "./LaneChip";
 import { StateMark, stateEdge } from "./StateMark";
 import { TypeBadge } from "./TypeBadge";
 
@@ -28,6 +29,7 @@ export function BeadCard({ project, bead }: { project: string; bead: BeadSummary
         <StateMark bead={bead} />
         <TypeBadge type={bead.issue_type} />
         <KindBadge kind={bead.kind} />
+        {bead.lane !== null && <LaneChip lane={bead.lane} />}
         <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />
         <CountBadge kind="comments" count={bead.comment_count} />
         <CountBadge kind="dependencies" count={bead.dependency_count} />

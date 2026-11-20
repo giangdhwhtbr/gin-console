@@ -1,6 +1,8 @@
-import { Layers } from "lucide-react";
+import { GitMerge, Layers } from "lucide-react";
 import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
+import { LaneChip } from "./LaneChip";
+import { gateState, gateWords } from "./mergeGates";
 import { PrepChip } from "./PrepChip";
 import { isPrep } from "./prep";
 import { NODE, stateOf, type GraphNode as Node, type Placed } from "./graph";
@@ -14,6 +16,7 @@ export function GraphNodeButton({
   tabStop,
   onSelect,
   onOpen,
+  showLane = true,
 }: {
   node: Node;
   at: Placed;
@@ -22,9 +25,12 @@ export function GraphNodeButton({
   tabStop: boolean;
   onSelect: (id: string) => void;
   onOpen: (id: string) => void;
+  showLane?: boolean;
 }) {
   const state = stateOf(node.bead);
   const short = shortId(node.bead.id);
+  const gate = node.bead.waits_for ?? null;
+  const words = gate === null ? node.bead.title : `Waits for ${gateWords(gate)} to merge`;
   return (
     <button
       type="button"
@@ -33,14 +39,15 @@ export function GraphNodeButton({
       data-dimmed={dimmed}
       aria-pressed={selected}
       tabIndex={tabStop ? 0 : -1}
-      title={node.bead.title}
+      title={words}
       onClick={() => onSelect(node.bead.id)}
       onDoubleClick={() => onOpen(node.bead.id)}
       style={{ left: at.x, top: at.y, width: NODE.w, height: NODE.h }}
       className={cn(
         "absolute flex flex-col justify-center overflow-hidden gap-0.5 rounded border bg-card px-2 text-left text-xs transition-opacity motion-reduce:transition-none",
         stateEdge(state),
-        node.external && "border-dashed opacity-60",
+        (node.external || gate !== null) && "border-dashed",
+        node.external && "opacity-60",
         dimmed && "opacity-30",
         selected && "ring-2 ring-ring",
       )}
@@ -52,12 +59,22 @@ export function GraphNodeButton({
         {short !== node.bead.id && <span className="sr-only">{node.bead.id}</span>}
         <span className="shrink-0">{`P${node.bead.priority}`}</span>
       </span>
-      <span className="truncate text-sm font-medium text-card-foreground">{node.bead.title}</span>
+      <span className="flex min-w-0 items-center gap-1 text-sm font-medium text-card-foreground">
+        {gate !== null && <GitMerge aria-hidden className="size-3.5 shrink-0" />}
+        <span className="truncate">{words}</span>
+      </span>
       <span className="flex min-w-0 items-center gap-2 whitespace-nowrap">
         <span className="flex min-w-0">
-          <StateMark bead={node.bead} className="text-xs" />
+          {gate === null ? (
+            <StateMark bead={node.bead} className="text-xs" />
+          ) : (
+            <span className="min-w-0 truncate text-xs font-medium" title={gateState(node.bead.status)}>
+              {gateState(node.bead.status)}
+            </span>
+          )}
         </span>
         {isPrep(node.bead.labels) && <PrepChip />}
+        {showLane && node.bead.lane !== null && <LaneChip lane={node.bead.lane} />}
         {node.hasKids && (
           <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-muted-foreground">
             <Layers aria-hidden className="size-3.5" />
