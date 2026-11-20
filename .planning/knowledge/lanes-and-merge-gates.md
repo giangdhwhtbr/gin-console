@@ -26,6 +26,13 @@ Epic gin-console-9ix (2026-11-20) shows gin-workflow's team-mode lanes (gin-work
 - **Canvas** (`LanesCanvas.tsx`):
   - It is a fixed-height scroll box like `GraphCanvas`, with a sticky header column that is 168px under 1024px and 240px from 1024px.
   - It needs `isolate`; see [readable-ui](readable-ui.md).
+- **Graph lane boxes** (epic gin-console-5qw, REQ-UI-117/118): when `hasLanes` holds for the Graph scope, `GraphView` draws `LaneGraphCanvas` from `laneGraph()` (`frontend/src/features/beads/laneGraph.ts`, pure) instead of the layers. "Only linked" is hidden.
+  - **Tiers:** each lane box sits in the tier after the boxes it waits for. "No lane" is tiered like a lane through a sentinel node and comes last in its tier. Lanes in a loop share a tier.
+  - **Arrows:** every cross-box dependency gets an arrow. An arrow to a box that is not in a later tier, or that skips a tier, runs through a channel right of all boxes, which widens the canvas.
+  - **Chips:** a merge gate becomes a chip on its arrow. Chips keep out of arrow ends. Each gated arrow inside a box gets its own chip row, which grows the box.
+  - **Colours:** colour slots come from the scope's sorted lane names (`laneSlots`), so filters never repaint a lane. Boxes use `--lane-1..8` through a `--box` style variable with static colour-mix classes.
+  - **Keys:** Arrow keys move focus only and Enter selects, as REQ-UI-052 says. Up and Down follow the focused card's arrows, nearest by x, before the nearest card of the adjacent tier.
+  - **Shared code:** zoom lives in `useZoom`/`ZoomBar`, shared with `GraphCanvas`. `GRAPH_STATE_OF` in `lanes.ts` maps lane states to state marks for both lane views.
 - **Example data:** `ex-e12` is added last in `build()` and swaps `p.rng` for its own `random.Random(12)`, because `long_text` draws from `p.rng` through `p.task` and would shift otherwise.
 
 **Consequences**
@@ -39,6 +46,10 @@ Epic gin-console-9ix (2026-11-20) shows gin-workflow's team-mode lanes (gin-work
   - Focus "Next up" needs `ready` and a priority of at most 1.
   - A Board card needs `ready` to appear in the default columns.
   - The Gantt expand button reads "Show 1 child bead of <id>" in the singular.
+- **Graph lane boxes, e2e and limits:**
+  - **Selectors:** boxes are `section[data-lane]` (`data-lane=""` is No lane), arrows are `path[data-arrow="from>to"]` (dashed for open gates), chips are `[data-chip]`. Cards, chips and the svg are siblings of the boxes, so check containment by geometry in page coordinates. `qa/e2e/support/lanes.ts` has `graphGeometry`/`graphCollisions`.
+  - **Phone widths:** at 390px the canvas fits to the 40% minimum, so text is very small and wide boxes need horizontal scrolling.
+  - **Spec wording:** write view scenarios against the existing view's interaction rules. The e2e specs caught two spec errors that the unit tests had followed.
 - **gin-qa:**
   - `gin-qa cases new` takes the lowest free id, so do not probe with it.
   - `gin-qa tests run --type api <capability>` records every api case of that capability; pass TC ids.
@@ -47,11 +58,11 @@ Epic gin-console-9ix (2026-11-20) shows gin-workflow's team-mode lanes (gin-work
 **References**
 - **Code:**
   - Backend: `backend/src/gin_console/beads/{lanes.py,models.py,source.py}`.
-  - Frontend: `frontend/src/features/beads/{lanes.ts,LanesView.tsx,LanesCanvas.tsx,scope.ts,ScopeTrail.tsx,mergeGates.ts,laneFacts.ts,LaneChip.tsx,BeadsView.tsx}`.
+  - Frontend: `frontend/src/features/beads/{lanes.ts,laneGraph.ts,LaneGraphCanvas.tsx,LaneBox.tsx,useZoom.ts,LanesView.tsx,LanesCanvas.tsx,scope.ts,ScopeTrail.tsx,mergeGates.ts,laneFacts.ts,LaneChip.tsx,BeadsView.tsx}`.
   - Tests and data: `qa/e2e/support/lanes.ts` and `scripts/make_example_project.py`.
 - **Specs:** REQ-BEADS-019 and REQ-UI-111 to REQ-UI-116. The change is in `docs/changes/archive/2026-11-20-gin-console-9ix-lanes-view/`.
 - **Upstream:** gin-workflow `plugins/gin-workflow/src/skills/team/references/lanes.md`.
-- **Beads:** gin-console-9ix (tracks .1–.8, bugs .9–.11) and gin-workflow-ifbt. Related records: [readable-ui](readable-ui.md), [e2e-parallel-runs-and-ellipsis](e2e-parallel-runs-and-ellipsis.md).
+- **Beads:** gin-console-9ix (tracks .1–.8, bugs .9–.11), gin-console-5qw (lane boxes in the Graph, tracks .1–.5) and gin-workflow-ifbt. Related records: [readable-ui](readable-ui.md), [e2e-parallel-runs-and-ellipsis](e2e-parallel-runs-and-ellipsis.md).
 
 **Scope**
 Any change to lanes, merge gates, team-mode data in Beads, or the Beads views' data wiring.
