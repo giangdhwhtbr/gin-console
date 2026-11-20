@@ -1,4 +1,4 @@
-// TC: TC-UI-179@9125ad97
+// TC: TC-UI-179@7c0c78a1
 import { test, expect } from '../evidence';
 import { E12, graphCollisions, graphGeometry, openGraph, showClosed, stubExample } from '../support/lanes';
 
@@ -20,15 +20,15 @@ test('TC-UI-179: Lane boxes in tiers', async ({ page, ev }) => {
     const { be, fe, infra, qa } = g.boxes;
     const none = g.boxes[''];
     expect(Object.keys(g.boxes).sort()).toEqual(['', 'be', 'fe', 'infra', 'qa']);
-    // the first tier: be, fe and infra share a top edge, left to right in lane order
-    expect(Math.abs(fe.y - be.y)).toBeLessThan(2);
-    expect(Math.abs(infra.y - be.y)).toBeLessThan(2);
-    expect(be.x).toBeLessThan(fe.x);
-    expect(fe.x).toBeLessThan(infra.x);
-    // the second tier: qa under them, followed by "No lane" in the same tier
-    expect(qa.y).toBeGreaterThan(be.y + Math.max(be.h, fe.h, infra.h) - 1);
-    expect(Math.abs(none.y - qa.y)).toBeLessThan(2);
-    expect(none.x).toBeGreaterThan(qa.x + qa.w);
+    // the first tier, on the left: be, fe and infra share a left edge, one under another in lane order
+    expect(Math.abs(fe.x - be.x)).toBeLessThan(2);
+    expect(Math.abs(infra.x - be.x)).toBeLessThan(2);
+    expect(fe.y).toBeGreaterThan(be.y + be.h - 1);
+    expect(infra.y).toBeGreaterThan(fe.y + fe.h - 1);
+    // the second tier: qa to their right, followed by "No lane" under it in the same tier
+    expect(qa.x).toBeGreaterThan(Math.max(be.x + be.w, fe.x + fe.w, infra.x + infra.w) - 1);
+    expect(Math.abs(none.x - qa.x)).toBeLessThan(2);
+    expect(none.y).toBeGreaterThan(qa.y + qa.h - 1);
     await expect(page.getByRole('region', { name: 'Lane No lane' })).toHaveClass(/border-dashed/);
     await expect(page.locator('[data-node]').filter({ hasText: 'Waits for' })).toHaveCount(0);
     expect(graphCollisions(g)).toEqual([]);

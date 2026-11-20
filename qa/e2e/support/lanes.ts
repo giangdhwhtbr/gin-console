@@ -234,11 +234,25 @@ export const graphCollisions = (g: GraphGeometry): string[] => {
   return found;
 };
 
-/** The first point of a sampled arrow is on the right of its card, the last is on the left of its card or on the top edge of a box. */
+/** The first point of a sampled arrow is on the right of its card, the last is on the left edge of a lane box (REQ-UI-117). */
 export const endsOf = (points: { x: number; y: number }[]) => ({ start: points[0], end: points[points.length - 1] });
-export const onTopEdge = (p: { x: number; y: number }, r: Box) => Math.abs(p.y - r.y) < 2 && p.x >= r.x - 1 && p.x <= r.x + r.w + 1;
+export const onLeftEdge = (p: { x: number; y: number }, r: Box) => Math.abs(p.x - r.x) < 2 && p.y >= r.y - 1 && p.y <= r.y + r.h + 1;
+/** Whether the point is level with the middle of the card (an arrow that runs straight into it). */
+export const levelWith = (p: { x: number; y: number }, card: Box, slack = 2) => Math.abs(p.y - (card.y + card.h / 2)) < slack;
 export const within = (p: { x: number; y: number }, r: Box, slack = 2) =>
   p.x >= r.x - slack && p.x <= r.x + r.w + slack && p.y >= r.y - slack && p.y <= r.y + r.h + slack;
+
+/** `e12()` with six more open tracks without a lane, so that the Graph and Lanes pages are taller than a 1920x1080 window (REQ-UI-122). */
+export const tall = (): BeadSummary[] => [...e12(), ...[9, 10, 11, 12, 13, 14].map((n) => track(n, null, { ready: true }))];
+
+/** The scale the zoom bar of the Graph canvas reads, as a fraction (`1` for 100%). */
+export async function scaleOf(page: Page): Promise<number> {
+  const text = (await page.getByRole('group', { name: 'Zoom' }).locator('span').first().textContent()) ?? '';
+  return Number.parseInt(text, 10) / 100;
+}
+/** The page scroll position and the vertical and horizontal scroll of the canvas `testid`. */
+export const scrolled = (page: Page, testid: string) =>
+  page.getByTestId(testid).evaluate((el) => ({ x: window.scrollX, y: window.scrollY, top: el.scrollTop, left: el.scrollLeft, over: getComputedStyle(el).overflowY }));
 
 /** A copy of `b` that is open again. */
 export const reopen = (b: BeadSummary): BeadSummary => ({ ...b, status: 'open', closed_at: null });
