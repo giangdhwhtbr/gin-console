@@ -15,4 +15,16 @@ describe("fitWidth", () => {
     expect(fitWidth(0, 500)).toBe(1);
     expect(fitWidth(500, 0)).toBe(1);
   });
+
+  it("REQ-UI-077 Fit: the scale is floored to a whole percent so the whole width fits", () => {
+    expect(fitWidth(857, 356)).toBe(0.41);
+    expect(857 * fitWidth(857, 356)).toBeLessThanOrEqual(356);
+  });
+
+  it("REQ-UI-077 Fit: an exact fit is not floored a percent lower", () => {
+    expect(fitWidth(1000, 500)).toBe(0.5);
+    expect(fitWidth(1000, 700)).toBe(0.7);
+    expect(fitWidth(1000, 570)).toBe(0.57);
+    expect(fitWidth(500, 500)).toBe(1);
+  });
 });
