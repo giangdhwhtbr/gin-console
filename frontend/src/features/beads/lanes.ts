@@ -4,7 +4,7 @@ import { leaseOf } from "./laneFacts";
 import { gateState, gateTarget, gateWords, isMergeGate } from "./mergeGates";
 
 /** REQ-UI-111..113: the sizes of the Lanes view in px; raise `rowH` when a lane header is taller than the row. */
-export const LANE = { cardW: 184, cardH: 64, rowH: 112, gapX: 48, gapY: 32, padX: 16, padY: 32 } as const;
+export const LANE = { cardW: 184, cardH: 64, rowH: 144, gapX: 48, gapY: 32, padX: 16, padY: 32 } as const;
 export const MARKER = { h: 20, wide: 84, long: 152, step: 8, clear: 4 } as const;
 
 export type LaneStateKind = "closed" | "running" | "waiting" | "blocked" | "not_started" | "idle";

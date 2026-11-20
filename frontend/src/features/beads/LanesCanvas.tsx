@@ -92,7 +92,7 @@ export function LanesCanvas({
                 className="absolute flex flex-col gap-1 overflow-hidden px-3 py-2"
                 style={{ top: row.top, height: LANE.rowH, width: headerW }}
               >
-                <h3 className="truncate text-sm font-semibold" title={row.lane ?? "No lane"}>
+                <h3 className="shrink-0 truncate text-sm font-semibold" title={row.lane ?? "No lane"}>
                   {row.lane ?? "No lane"}
                 </h3>
                 <FactList facts={factsOf(row)} layout="inline" />
