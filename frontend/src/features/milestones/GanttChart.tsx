@@ -471,7 +471,7 @@ function EpicRow({
       <div className={cn("relative flex-none", fade)} style={{ width: axis.width }}>
         <div
           aria-hidden
-          className={cn("absolute motion-safe:transition-transform motion-safe:duration-150", look.text)}
+          className={cn("absolute", look.text)}
           style={{ top: BAR_TOP, height: BEAD_HEIGHT, transform: `translateX(${x0}px)`, width: x1 - x0 }}
         >
           {days.length > 1 && <span className="absolute inset-x-2 top-1/2 h-px bg-current" />}

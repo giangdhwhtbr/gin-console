@@ -112,6 +112,13 @@ describe("GanttChart", () => {
     expect(el.scrollLeft).toBe(0);
   });
 
+  it("REQ-MILESTONE-UI-011 a bar moves with its days at once: no transition lags it behind the columns on resize or zoom", () => {
+    draw(MONTH, "2w");
+    const bar = epicRow("e-a").querySelector("[data-bead]")?.parentElement;
+    expect(bar).toBeInstanceOf(HTMLElement);
+    expect(bar?.className).not.toMatch(/transition|duration-/);
+  });
+
   it("REQ-MILESTONE-UI-013 title line, then id, period and estimate; the title after a short bar", () => {
     const title = "Process hygiene: consistent skills, rules that bind where it matters";
     draw(detail([epicPlan("gin-workflow-rm-process-hygiene", { title, planned_start: "2026-11-02", planned_end: "2026-11-02", estimate_days: 1 })]));
