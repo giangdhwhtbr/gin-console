@@ -6,7 +6,7 @@
 **Preconditions:**
 - Epic `ex-e12` has lanes be (tracks 1 and 2), fe (track 3), infra (tracks 5 and 6) and qa (track 4), and two tracks without a lane
 - Track 4 of lane qa is blocked by an open merge gate waiting for track 2 of lane be and by a closed merge gate waiting for track 3 of lane fe
-- Track 4 is the nearest card in the tier below track 2
+- An arrow leads from track 2 to track 4 through the open merge gate
 
 **Steps:**
 1. Open `/beads?project=example&milestone=all&view=graph&scope=ex-e12`
