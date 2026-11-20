@@ -9,7 +9,9 @@ Bugs gin-console-3kd and gin-console-iot (2026-11-18) were fixed in parallel wor
 - `truncate` draws an ellipsis only on the element whose own inline text overflows. A label inside an `inline-flex` mark (`StateMark`) is clipped silently when the wrapper truncates; the label needs its own `<span className="truncate">` and `min-w-0` on every flex ancestor. `StateMark` now carries its label as `title` for every caller.
 - In the List row, the short id (at most 24 characters, `shortId`) is never capped; the first column wraps (`flex-wrap`), so a long id pushes the title to its own line instead of clipping it below 8rem. Class assertions in jsdom cannot see this; `qa/e2e/ui/tc-ui-121.spec.ts` measures the visible title width.
 
-- A fresh track worktree has no `backend/.venv` or `frontend/node_modules`; run `uv --directory backend sync` and `pnpm -C frontend install --frozen-lockfile` before the first commit, since the pre-commit hook runs backend and frontend lint and typecheck (it can take more than 120 s, so run long commits in the background). Under a full parallel `pnpm test --run`, `ReturnFlow.test.tsx` (REQ-UI-073) can fail on timing and pass alone (epic gin-console-9ix).
+- A fresh track worktree has no `backend/.venv` or `frontend/node_modules`; run `uv --directory backend sync` and `pnpm -C frontend install --frozen-lockfile` before the first commit, even for a commit that only touches `qa/`, since the pre-commit hook runs backend and frontend lint and typecheck (it can take more than 120 s, so run long commits in the background). Under a full parallel `pnpm test --run`, `ReturnFlow.test.tsx` (REQ-UI-073) can fail on timing and pass alone (epic gin-console-9ix).
+- A temporary console for a browser check (its own port and `GIN_CONSOLE_CONFIG`) is stopped by the pid listening on its port. `pkill -f gin_console` would also hit the deployed service on 8700, and the permission classifier denies it.
+- **One-frame transitions under reduced motion:** the `prefers-reduced-motion` rule in `frontend/src/index.css` sets `transition-duration: 0.01ms` on `*`, and `transition-property` defaults to `all`, so every style change becomes a one-frame transition. Playwright runs with `reducedMotion: 'reduce'`, so right after a zoom or Fit to view a canvas has its new `style.height` while `offsetHeight` and `document.scrollHeight` are still the old values. A spec that measures geometry right after a change first polls until `getBoundingClientRect().height` matches `style.height` (`settled()` in `qa/e2e/support/lanes.ts`); TC-UI-195 failed about 1 run in 10 without it (epic gin-console-csp).
 
 **Consequences**
 - Long-id rows can be two lines tall.
@@ -17,7 +19,7 @@ Bugs gin-console-3kd and gin-console-iot (2026-11-18) were fixed in parallel wor
 
 **References**
 - `playwright.config.ts`, `qa/e2e/evidence.ts`, `frontend/src/features/beads/{StateMark.tsx,GraphNode.tsx,ListRow.tsx}`, `qa/e2e/ui/tc-ui-121.spec.ts`
-- Beads: gin-console-3kd, gin-console-iot, gin-console-y4j; related [beads-filters-and-epic-kind](beads-filters-and-epic-kind.md)
+- Beads: gin-console-3kd, gin-console-iot, gin-console-y4j, gin-console-csp (`frontend/src/index.css`, `qa/e2e/ui/tc-ui-195.spec.ts`); related [beads-filters-and-epic-kind](beads-filters-and-epic-kind.md)
 
 **Scope**
 Running e2e specs outside the main checkout, and any label or id that must be cut to fit a row, card or node.
