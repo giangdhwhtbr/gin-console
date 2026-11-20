@@ -1,6 +1,6 @@
 # TC-UI-184: Arrow keys move between lane boxes
 
-- **REQ:** REQ-UI-117@d860e924
+- **REQ:** REQ-UI-117@280e2ec2
 - **Priority:** medium
 
 **Preconditions:**
@@ -11,9 +11,9 @@
 **Steps:**
 1. Open `/beads?project=example&milestone=all&view=graph&scope=ex-e12`
 2. Focus the card of track 2 in the be box
-3. Press Arrow Down
+3. Press Arrow Right
 4. Press Enter
 
 **Expected:**
-- After step 3 the focus moves to the card of track 4 in the qa box
+- After step 3 the focus moves from the last card of the be box across the tiers to the card of track 4 in the qa box on the right
 - After step 4 track 4 is selected and the details panel shows it

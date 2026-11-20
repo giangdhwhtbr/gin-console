@@ -1,6 +1,6 @@
 # TC-UI-179: Lane boxes in tiers
 
-- **REQ:** REQ-UI-117@d860e924
+- **REQ:** REQ-UI-117@280e2ec2
 - **Priority:** high
 
 **Preconditions:**
@@ -14,6 +14,6 @@
 
 **Expected:**
 - The URL has `scope=ex-e12`
-- Boxes be, fe and infra are in the first tier
-- The box qa is in the second tier, followed by the dashed box "No lane" in the same tier
+- Boxes be, fe and infra are in the first tier on the left, one under another
+- The box qa is in the second tier to their right, followed by the dashed box "No lane" under it in the same tier
 - No node reads "Waits for"

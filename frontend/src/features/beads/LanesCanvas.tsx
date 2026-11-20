@@ -72,7 +72,8 @@ export function LanesCanvas({
       <div
         data-testid="lanes-canvas"
         onKeyDown={onKeyDown}
-        className="isolate h-[calc(100dvh-14rem)] min-h-80 overflow-auto overscroll-contain rounded border"
+        className="isolate min-h-40 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded border"
+        style={{ height: board.height + 20 }}
       >
         <div className="flex" style={{ width: headerW + board.width, height: board.height }}>
           <div className="sticky left-0 z-10 shrink-0 border-r bg-card" style={{ width: headerW, height: board.height }}>

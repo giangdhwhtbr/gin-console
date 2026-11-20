@@ -5,8 +5,10 @@ import { chainOf, edgeKey, edgePath, linkLabels, NODE, place, step, type Graph, 
 import { useZoom } from "./useZoom";
 import { ZoomBar } from "./ZoomBar";
 
-export { fitScale, ZOOM } from "./useZoom";
+export { fitWidth, ZOOM } from "./useZoom";
 
+// room for the horizontal scroll bar and the border under the content
+const SCROLL_BAR = 20;
 const KEYS: readonly StepKey[] = ["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"];
 
 export function GraphCanvas({
@@ -25,7 +27,7 @@ export function GraphCanvas({
   onEscape: () => void;
 }) {
   const { at, width, height } = place(graph);
-  const { box, scale, fit, zoomIn, zoomOut } = useZoom(width, height);
+  const { box, scale, fit, zoomIn, zoomOut } = useZoom(width);
 
   const labels = linkLabels(graph, at);
   const group = graph.nodes.filter((n) => n.group === "unlinked");
@@ -51,7 +53,8 @@ export function GraphCanvas({
         ref={box}
         data-testid="graph-canvas"
         onKeyDown={onKeyDown}
-        className="h-[calc(100dvh-14rem)] min-h-80 overflow-auto overscroll-contain rounded border"
+        className="isolate min-h-40 overflow-x-auto overflow-y-hidden overscroll-x-contain rounded border"
+        style={{ height: height * scale + SCROLL_BAR }}
       >
         <div style={{ width: width * scale, height: height * scale }}>
           <div className="relative origin-top-left" style={{ width, height, transform: `scale(${scale})` }}>

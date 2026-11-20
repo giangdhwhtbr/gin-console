@@ -1,6 +1,6 @@
 # TC-UI-181: Gate chips on the arrows to a lane box
 
-- **REQ:** REQ-UI-117@d860e924
+- **REQ:** REQ-UI-117@280e2ec2
 - **Priority:** high
 
 **Preconditions:**
@@ -12,6 +12,7 @@
 2. Turn "Show closed" on
 
 **Expected:**
-- A dashed arrow runs from the card of track 2 to the top edge of the qa box and carries "Waiting · be #2"
-- An arrow runs from the card of track 3 to the top edge of the qa box and carries "Merged · fe #3"
+- A dashed arrow runs from the card of track 2 to the left edge of the qa box, level with the card of track 4, and carries "Waiting · be #2"
+- An arrow runs from the card of track 3 to the left edge of the qa box and carries "Merged · fe #3"
+- Both chips are in the gap between the first and the second tier
 - No node is drawn for either gate
