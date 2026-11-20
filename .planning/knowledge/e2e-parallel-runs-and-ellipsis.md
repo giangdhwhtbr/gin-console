@@ -9,6 +9,8 @@ Bugs gin-console-3kd and gin-console-iot (2026-11-18) were fixed in parallel wor
 - `truncate` draws an ellipsis only on the element whose own inline text overflows. A label inside an `inline-flex` mark (`StateMark`) is clipped silently when the wrapper truncates; the label needs its own `<span className="truncate">` and `min-w-0` on every flex ancestor. `StateMark` now carries its label as `title` for every caller.
 - In the List row, the short id (at most 24 characters, `shortId`) is never capped; the first column wraps (`flex-wrap`), so a long id pushes the title to its own line instead of clipping it below 8rem. Class assertions in jsdom cannot see this; `qa/e2e/ui/tc-ui-121.spec.ts` measures the visible title width.
 
+- A fresh track worktree has no `backend/.venv` or `frontend/node_modules`; run `uv --directory backend sync` and `pnpm -C frontend install --frozen-lockfile` before the first commit, since the pre-commit hook runs backend and frontend lint and typecheck (it can take more than 120 s, so run long commits in the background). Under a full parallel `pnpm test --run`, `ReturnFlow.test.tsx` (REQ-UI-073) can fail on timing and pass alone (epic gin-console-9ix).
+
 **Consequences**
 - Long-id rows can be two lines tall.
 - "In progress" does not fit a 184px Graph node next to "n of m done" and shows as "In progr…".
