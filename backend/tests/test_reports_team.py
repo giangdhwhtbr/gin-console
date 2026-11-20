@@ -345,6 +345,22 @@ def test_reports_011_close_date_is_local() -> None:
 
 
 # REQ-REPORTS-009
+def test_reports_009_merge_gates_left_out() -> None:
+    gate = "external: .planning/plans/x.md#2"
+    rows = [
+        *standard(),
+        row("e-1", issue_type="epic", parent="m2"),
+        row("t-1", parent="e-1"),
+        row("g-1", parent="e-1", title=gate),
+        row("e-2", issue_type="epic", parent="m2"),
+        row("g-2", parent="e-2", title=gate),
+    ]
+    r = team(rows)
+    # e-2 has only a gate under it, so it has no track and is itself in scope
+    assert [b.id for b in r.beads] == ["e-2", "t-1"]
+
+
+# REQ-REPORTS-009
 def test_reports_009_prep_tasks_left_out() -> None:
     rows = [
         *standard(),

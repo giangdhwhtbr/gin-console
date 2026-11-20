@@ -18,6 +18,7 @@ from gin_console.beads.kinds import (
     points_of,
     req_capabilities,
 )
+from gin_console.beads.lanes import claim_of, gate_ref, is_merge_gate, lane_of, track_of
 from gin_console.beads.milestones import (
     MilestoneStatus,
     current_milestone,
@@ -30,6 +31,7 @@ from gin_console.beads.models import (
     BeadSummary,
     ChildRelation,
     Comment,
+    GateRelation,
     MilestoneOption,
     ProjectMilestones,
     Relation,
@@ -159,8 +161,15 @@ def _fields(snapshot: Snapshot, ident: str) -> dict[str, Any]:
         "points": points,
         "points_reason": points_reason,
         # a milestone is not work, even when nothing blocks it (REQ-MILESTONE-UI-007)
-        "ready": ident in snapshot.ready and raw.get("issue_type") != "milestone",
+        # nor is a merge gate (REQ-BEADS-007), which only holds a track back
+        "ready": ident in snapshot.ready
+        and raw.get("issue_type") != "milestone"
+        and not is_merge_gate(raw),
         "blocked": ident in snapshot.blocked or raw.get("status") == "blocked",
+        "lane": lane_of(_description(raw), _labels(raw)),
+        "track": track_of(_description(raw), _labels(raw)),
+        "claim": claim_of(raw.get("metadata")),
+        "waits_for": gate_ref(snapshot, ident),
     }
 
 
@@ -212,20 +221,31 @@ def list_milestones(snapshot: Snapshot, today: date) -> ProjectMilestones:
     return ProjectMilestones(milestones=options, current=found.id if found else None)
 
 
-def _relation(snapshot: Snapshot, ident: str, kind: str) -> Relation | None:
+def _relation(snapshot: Snapshot, ident: str, kind: str) -> GateRelation | None:
     raw = snapshot.rows.get(ident)
     if raw is None:  # an external or missing bead
         return None
     try:
-        return Relation.model_validate(
-            {"id": ident, "title": raw.get("title"), "status": raw.get("status"), "type": kind}
+        return GateRelation.model_validate(
+            {
+                "id": ident,
+                "title": raw.get("title"),
+                "status": raw.get("status"),
+                "type": kind,
+                "waits_for": gate_ref(snapshot, ident),
+            }
         )
     except ValidationError:  # a malformed row, or a kind this view does not show
         return None
 
 
-def _relations(snapshot: Snapshot, pairs: list[tuple[str, str]]) -> list[Relation]:
+def _relations(snapshot: Snapshot, pairs: list[tuple[str, str]]) -> list[GateRelation]:
     return [r for r in (_relation(snapshot, i, k) for i, k in pairs) if r is not None]
+
+
+def _bugs(snapshot: Snapshot, pairs: list[tuple[str, str]]) -> list[Relation]:
+    """Bugs are plain relations: a merge gate is never a bug."""
+    return [Relation(**r.model_dump(exclude={"waits_for"})) for r in _relations(snapshot, pairs)]
 
 
 def _children(snapshot: Snapshot, above: list[tuple[str, str]]) -> list[ChildRelation]:
@@ -273,7 +293,7 @@ def get_bead(snapshot: Snapshot, bead_id: str) -> BeadDetail:
                 "dependencies": _relations(snapshot, own),
                 "dependents": _relations(snapshot, [(i, k) for i, k in above if k == "blocks"]),
                 "children": _children(snapshot, above),
-                "bugs": _relations(snapshot, bugs),
+                "bugs": _bugs(snapshot, bugs),
             }
         )
     except ValidationError:
