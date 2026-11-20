@@ -114,7 +114,7 @@ def gate_ref(snapshot: Snapshot, ident: str) -> GateRef | None:
     parent = _gate_parent(snapshot, ident)
     tracks = [t for t in _tracks_under(snapshot, parent) if t[1].number == number] if parent else []
     exact = [t for t in tracks if t[1].plan == plan]
-    match = exact[0] if exact else tracks[0] if len(tracks) == 1 else None
+    match = exact[0] if len(exact) == 1 else tracks[0] if len(tracks) == 1 else None
     return GateRef(
         plan=plan,
         number=number,

@@ -204,3 +204,24 @@ def test_beads_019_gate_in_the_relations() -> None:
     assert get_bead(snap(*rows), "g-1").dependents[0].waits_for is None
     parent = get_bead(snap(*rows), "e-1")
     assert [c.id for c in parent.children] == ["e-1.2", "e-1.4"]
+
+
+# REQ-BEADS-019
+def test_beads_019_gate_child_in_the_relations() -> None:
+    rows = [*tracks(), gate("g-1", PLAN, 2, dependencies=[dep("g-1", "e-1", "parent-child")])]
+    children = {c.id: c for c in get_bead(snap(*rows), "e-1").children}
+    waits = children["g-1"].waits_for
+    assert waits is not None and (waits.track_id, waits.lane) == ("e-1.2", "be")
+    assert children["e-1.2"].waits_for is None
+
+
+# REQ-BEADS-019
+def test_beads_019_two_children_with_the_plan_and_number_find_no_track() -> None:
+    rows = [
+        bead("e-1", issue_type="epic"),
+        child("e-1.2", "e-1", description=f"Plan: {PLAN}, Track 2\nLane: be"),
+        child("e-1.3", "e-1", description=f"Plan: {PLAN}, Track 2\nLane: fe"),
+        gate("g-1", PLAN, 2, dependencies=[dep("g-1", "e-1", "parent-child")]),
+    ]
+    waits = listed(*rows)["g-1"].waits_for
+    assert waits is not None and (waits.track_id, waits.lane) == (None, None)
