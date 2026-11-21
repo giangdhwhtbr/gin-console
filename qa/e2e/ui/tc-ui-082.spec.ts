@@ -3,6 +3,7 @@ import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
 test('TC-UI-082: Restored from the URL', async ({ page, ev }) => {
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, { projects: ['a'], beads: [bead('a-1', { title: 'fix login' }), bead('a-2', { title: 'other work' })] });
   const views = page.getByRole('navigation', { name: 'View' });
 
@@ -11,6 +12,7 @@ test('TC-UI-082: Restored from the URL', async ({ page, ev }) => {
     await expect(page.getByRole('heading', { name: 'Beads', level: 1 })).toBeVisible();
     await expect(views.getByRole('button', { name: 'Focus' })).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('region', { name: 'In flight' })).toBeVisible();
-    await expect(page.getByRole('combobox', { name: 'Project' })).toHaveValue('a');
+    await expect(page.getByRole('button', { name: /^a\s*\d+ projects$/ })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Project' })).toHaveCount(0);
   });
 });

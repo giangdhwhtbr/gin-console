@@ -1,10 +1,11 @@
 # TC-UI-028: Headlines
 
-- **REQ:** REQ-UI-095@bf1627ff
+- **REQ:** REQ-UI-095@be92ba05
 - **Priority:** medium
 
 **Preconditions:**
 - A report with 41 closed beads, 12,400,000 tokens, cost 38.2, rework rate 0.09, 3 beads not collected, 1 unreadable bead and 1 unpriced model
+- The window is 900px wide, so the sidebar lists no report sections and the page shows its tab list
 
 **Test data:**
 - None

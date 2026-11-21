@@ -1,4 +1,4 @@
-// TC: TC-UI-090@7602a97f
+// TC: TC-UI-090@0912a2b0
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, milestoneOption, stubApi } from '../support/api';
 import type { Page } from '@playwright/test';
@@ -22,12 +22,13 @@ async function stubDetails(page: Page, details: Record<string, ReturnType<typeof
 
 test('TC-UI-090: From a milestone page', async ({ page, ev }) => {
   // Precondition: project a with milestone m2 and bead a-1 under it.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   const a1 = bead('a-1', { milestone: 'm2', ready: true });
   await stubApi(page, {
     projects: ['a'],
     beads: [a1],
     milestoneOptions: { milestones: [milestoneOption('m2', { status: 'active' })], current: 'm2' },
-    milestone: { m2: detail([epicPlan('a-1')], { id: 'm2', title: 'Second' }) },
+    milestone: { m2: detail([epicPlan('a-1')], { id: 'm2', title: 'Checkout v2' }) },
   });
   await stubDetails(page, { 'a-1': detailOf(a1) });
 
@@ -41,8 +42,8 @@ test('TC-UI-090: From a milestone page', async ({ page, ev }) => {
     await expect(page).toHaveURL(/\/beads\/a\/a-1$/);
     const crumb = page.getByRole('navigation', { name: 'Breadcrumb' });
     const first = crumb.getByRole('listitem').first();
-    await expect(first).toHaveText('m2 › Board · 1 filter');
+    await expect(first).toHaveText('Checkout v2 › Board · 1 filter');
     await expect(first.getByRole('link')).toHaveAttribute('href', '/milestones/a/m2?tab=beads&view=board&status=open');
-    await expect(crumb.getByRole('listitem').nth(1)).toContainText('a-1');
+    await expect(crumb.getByRole('listitem').nth(1)).toContainText('Title a-1');
   });
 });

@@ -1,10 +1,11 @@
 # TC-UI-031: Keyboard
 
-- **REQ:** REQ-UI-095@bf1627ff
+- **REQ:** REQ-UI-095@be92ba05
 - **Priority:** medium
 
 **Preconditions:**
 - The Delivery tab is selected and has focus
+- The window is 900px wide, so the sidebar lists no report sections and the page shows its tab list
 
 **Test data:**
 - None

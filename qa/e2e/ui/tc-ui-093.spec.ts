@@ -4,6 +4,7 @@ import { bead, stubApi } from '../support/api';
 
 test('TC-UI-093: Other project', async ({ page, ev }) => {
   // Precondition: projects a and b, each with a bead; the Beads page of project a was shown last.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, {
     projects: ['a', 'b'],
     beads: (url) => [bead(url.searchParams.get('project') === 'b' ? 'b-1' : 'a-1', { ready: true })],

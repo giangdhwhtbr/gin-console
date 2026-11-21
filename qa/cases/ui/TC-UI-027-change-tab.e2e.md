@@ -1,10 +1,11 @@
 # TC-UI-027: Change tab
 
-- **REQ:** REQ-UI-095@bf1627ff
+- **REQ:** REQ-UI-095@be92ba05
 - **Priority:** medium
 
 **Preconditions:**
 - The Reports page for `alpha`, 90 days and the Delivery tab
+- The window is 900px wide, so the sidebar lists no report sections and the page shows its tab list
 
 **Test data:**
 - None

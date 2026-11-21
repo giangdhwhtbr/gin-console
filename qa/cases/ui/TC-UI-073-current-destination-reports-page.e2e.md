@@ -1,6 +1,6 @@
 # TC-UI-073: Current destination: Reports page
 
-- **REQ:** REQ-UI-057@611e3da4
+- **REQ:** REQ-UI-057@92e2ae1c
 - **Priority:** medium
 
 **Preconditions:**

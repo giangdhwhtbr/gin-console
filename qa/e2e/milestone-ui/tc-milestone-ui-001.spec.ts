@@ -1,9 +1,11 @@
 // TC: TC-MILESTONE-UI-001@f79e2eec
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
+import { projectList, sidebarSwitcher } from '../support/shell';
 
 test('TC-MILESTONE-UI-001: List milestones with status, period, progress and warnings', async ({ page, ev }) => {
   // Precondition: P reports M1 (active) and M2 (planned); another project comes first so selecting P is a real change.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, {
     projects: ['other', 'P'],
     milestones: (url) =>
@@ -21,7 +23,8 @@ test('TC-MILESTONE-UI-001: List milestones with status, period, progress and war
   });
 
   await ev.step('2. Select project P', async () => {
-    await page.getByLabel('Project').selectOption('P');
+    await sidebarSwitcher(page, 'other').click();
+    await projectList(page).getByRole('button', { name: 'P', exact: true }).click();
     await expect(page).toHaveURL(/[?&]project=P(&|$)/);
     const rows = page.getByRole('list', { name: 'Milestones' }).getByRole('listitem');
     await expect(rows).toHaveCount(2);

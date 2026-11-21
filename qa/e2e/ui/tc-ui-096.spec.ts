@@ -4,6 +4,7 @@ import { bead, detail, milestoneOption, stubApi } from '../support/api';
 
 test('TC-UI-096: Milestone page last', async ({ page, ev }) => {
   // Precondition: project a with milestone m2 and bead a-1 under it, depending on a-2, so it is a node of the Graph view.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   const m2 = bead('m2', { issue_type: 'milestone', milestone: 'm2' });
   const a1 = bead('a-1', { parent: 'm2', milestone: 'm2', blocked_by: ['a-2'], dependency_count: 1, blocked: true });
   const a2 = bead('a-2', { parent: 'm2', milestone: 'm2', dependent_count: 1 });

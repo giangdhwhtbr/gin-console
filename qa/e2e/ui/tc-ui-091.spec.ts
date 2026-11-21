@@ -22,6 +22,7 @@ async function stubDetails(page: Page, details: Record<string, ReturnType<typeof
 
 test('TC-UI-091: Back to the Board with its filters', async ({ page, ev }) => {
   // Precondition: project a with open beads.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   const a1 = bead('a-1', { ready: true });
   const a2 = bead('a-2', { ready: true });
   await stubApi(page, { projects: ['a'], beads: [a1, a2] });
