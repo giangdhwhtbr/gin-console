@@ -1,6 +1,6 @@
 import hashlib
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from fastapi import APIRouter, Header, HTTPException
@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import TypeAdapter
 
 from gin_console.beads.models import BeadDetail, BeadSummary, Comment, ProjectMilestones
+from gin_console.beads.service import KeyedCache
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import (
     BeadNotFound,
@@ -19,8 +20,14 @@ from gin_console.beads.source import (
     valid_id,
 )
 from gin_console.config import Settings
+from gin_console.projects.models import BlockError, EpicWorkflow
 
 _LIST = TypeAdapter(list[BeadSummary])
+WORKFLOW_TTL = timedelta(seconds=60)
+
+
+class WorkflowError(Exception):
+    """The `gin` command for an epic failed; raised so KeyedCache keeps nothing."""
 
 
 def _tag(body: bytes) -> str:
@@ -37,9 +44,15 @@ def _matches(if_none_match: str | None, etag: str) -> bool:
 
 
 def build_router(
-    settings: Settings, snapshots: SnapshotStore, clock: Callable[[], datetime]
+    settings: Settings,
+    snapshots: SnapshotStore,
+    clock: Callable[[], datetime],
+    run_epic_workflow: Callable[[Path, str], EpicWorkflow | BlockError],
+    on_refresh: list[Callable[[], None]],
 ) -> APIRouter:
     router = APIRouter()
+    workflows = KeyedCache[tuple[str, str], EpicWorkflow](WORKFLOW_TTL, clock)
+    on_refresh.append(workflows.clear)
 
     def project_dir(name: str | None) -> Path:
         entry = next((p for p in settings.projects if p.name == name), None)
@@ -103,5 +116,28 @@ def build_router(
             raise HTTPException(status_code=404) from None
         except (BeadsError, RecursionError) as exc:
             return failure(exc)
+
+    @router.get("/beads/{project}/{bead_id}/workflow", response_model=EpicWorkflow)
+    def get_bead_workflow(project: str, bead_id: str) -> EpicWorkflow | JSONResponse:
+        cwd = project_dir(project)
+        if not valid_id(bead_id):
+            raise HTTPException(status_code=404)
+        try:
+            get_bead(snapshots.get(cwd), bead_id)
+        except BeadNotFound:
+            raise HTTPException(status_code=404) from None
+        except (BeadsError, RecursionError) as exc:
+            return failure(exc)
+
+        def fetch() -> EpicWorkflow:
+            result = run_epic_workflow(cwd, bead_id)
+            if isinstance(result, BlockError):
+                raise WorkflowError(result.error)
+            return result
+
+        try:
+            return workflows.get((project, bead_id), fetch)
+        except WorkflowError as exc:
+            return JSONResponse(status_code=502, content={"error": str(exc)})
 
     return router
