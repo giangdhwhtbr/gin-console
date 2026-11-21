@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useNow } from "@/lib/useNow";
 import { isQuotaError, type ClaudeQuota, type QuotaError } from "./api";
-import { formatAge, formatTimes } from "./format";
-import { ProgressBar } from "./ProgressBar";
+import { ProgressBar } from "@/components/ProgressBar";
+import { formatAge, formatTimes } from "@/lib/format";
 
 export function ClaudeCard({
   side,

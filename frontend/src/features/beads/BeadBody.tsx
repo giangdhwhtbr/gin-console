@@ -1,4 +1,4 @@
-import { ProgressBar } from "@/features/quota/ProgressBar";
+import { ProgressBar } from "@/components/ProgressBar";
 import type { BeadDetail } from "./api";
 import { MarkdownText } from "./MarkdownText";
 import { childCounts, prepLabel } from "./prep";

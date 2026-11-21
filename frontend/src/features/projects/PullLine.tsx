@@ -1,4 +1,4 @@
-import { formatAge, formatTimes } from "@/features/quota/format";
+import { formatAge, formatTimes } from "@/lib/format";
 import { useNow } from "@/lib/useNow";
 import { pullError, type PullResult } from "./api";
 

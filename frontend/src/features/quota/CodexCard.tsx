@@ -1,7 +1,8 @@
 import { useNow } from "@/lib/useNow";
 import { isQuotaError, type CodexQuota, type CodexWindow, type QuotaError } from "./api";
-import { formatAge, formatTimes, formatWindow } from "./format";
-import { ProgressBar } from "./ProgressBar";
+import { ProgressBar } from "@/components/ProgressBar";
+import { formatAge, formatTimes } from "@/lib/format";
+import { formatWindow } from "./format";
 
 export function CodexCard({ side }: { side: CodexQuota | QuotaError }) {
   const now = useNow(30_000);
