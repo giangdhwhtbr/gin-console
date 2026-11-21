@@ -124,12 +124,12 @@ The "Main" navigation SHALL contain a "Beads" link, and the frontend SHALL show 
 - THEN the list is shown with the same filters
 
 ### REQ-UI-023: Project choice
-The bead list SHALL offer the configured projects whose directory exists, from `GET /api/projects/beads`, in a select kept in the `?project=` query, SHALL default to the first of them, and WHEN no project exists SHALL say that no projects are configured.
+The bead list SHALL show the beads of the current project (REQ-UI-124), kept in the `?project=` query, SHALL NOT show a project select of its own (the switcher of REQ-UI-123 changes the project), and WHEN no project exists SHALL say that no projects are configured.
 
-#### Scenario: Default and choice
-- GIVEN two projects
+#### Scenario: Current project
+- GIVEN two projects and the current project is the second
 - WHEN the list opens without `?project=`
-- THEN the first project is selected and its beads are shown, and choosing the other changes the URL and the list
+- THEN the second project's beads are shown and the URL gets `?project=<second>`
 
 #### Scenario: No projects
 - GIVEN `/api/projects/beads` returns an empty list
@@ -798,12 +798,12 @@ The Graph view (REQ-UI-106) SHALL expose the graph to assistive technology with 
 - THEN the highlight changes without a transition
 
 ### REQ-UI-055: Main navigation
-The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads (`/beads`), Milestones (`/milestones`) and Reports (`/reports`), in that order.
+The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads, My Tasks (`/my-tasks`), Milestones and Reports, in that order, where Beads, Milestones and Reports go to `/beads`, `/milestones` and `/reports` with `?project=<current project>` (REQ-UI-124).
 
-#### Scenario: Four links
-- GIVEN any page is shown
+#### Scenario: Five links
+- GIVEN any page is shown and the current project is `a`
 - WHEN the page loads
-- THEN the "Main" navigation holds the links Projects, Beads, Milestones and Reports, one each, and no Sessions or Quota link
+- THEN the "Main" navigation holds the links Projects, Beads, My Tasks, Milestones and Reports, one each, going to `/`, `/beads?project=a`, `/my-tasks`, `/milestones?project=a` and `/reports?project=a`
 
 ### REQ-UI-056: Responsive navigation
 The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with an icon and a label per link while the window is narrower than 768px, an icon rail with a label under each icon from 768px up to 1023px, and from 1024px a sidebar with an icon and a label per link, or the icon rail while the sidebar is collapsed (REQ-UI-094), and SHALL be the same element in every case.
@@ -829,27 +829,32 @@ The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with 
 - THEN the navigation is a narrow column at the left with the label under each icon
 
 ### REQ-UI-057: Current destination
-The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight, treating `/beads`, `/beads/<project>/<id>` as Beads, `/milestones`, `/milestones/<project>/<id>` as Milestones and `/reports` as Reports, and SHALL mark no other link.
+The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight: Projects on `/`, Beads on `/beads`, My Tasks on `/my-tasks`, Milestones on `/milestones` and `/milestones/<project>/<id>`, Reports on `/reports`. On a bead page it SHALL mark the link of the page the user opened the bead from in this browser tab (REQ-UI-073: My Tasks, Milestones, Reports or Projects), and Beads when the bead was opened from the Beads page, another bead page, or by its address. It SHALL mark no link on the page of REQ-UI-125 and SHALL mark no other link.
 
-#### Scenario: Bead page
-- GIVEN the URL is `/beads/alpha/a-1`
+#### Scenario: Bead page by address
+- GIVEN the URL `/beads/alpha/a-1` opened in a new tab
 - WHEN the page loads
 - THEN only the Beads link has `aria-current="page"`
 
+#### Scenario: Bead page from My Tasks
+- GIVEN the user opened `a-1` from the My Tasks page
+- WHEN the bead page is shown
+- THEN only the My Tasks link has `aria-current="page"`
+
 #### Scenario: Milestone page
-- GIVEN the URL is `/milestones/alpha/m-1`
+- GIVEN the URL `/milestones/alpha/m-1`
 - WHEN the page loads
 - THEN only the Milestones link has `aria-current="page"`
 
 #### Scenario: Reports page
-- GIVEN the URL is `/reports?project=alpha`
+- GIVEN the URL `/reports?project=alpha`
 - WHEN the page loads
 - THEN only the Reports link has `aria-current="page"`
 
 #### Scenario: Address of a retired page
-- GIVEN the URL is `/sessions/alpha/s-1`
+- GIVEN the URL `/sessions/alpha/s-1`
 - WHEN the page loads
-- THEN no link has `aria-current="page"`
+- THEN the page of REQ-UI-125 is shown and no link has `aria-current="page"`
 
 #### Scenario: Change page
 - GIVEN the Projects page is shown
@@ -932,11 +937,21 @@ On screens narrower than 768px the links and buttons of the navigation and the t
 - THEN a focus indicator is visible
 
 ### REQ-UI-063: Page title
-The frontend SHALL set the document title to `gin-console`.
+The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Projects · gin-console`, `Beads · <project> · gin-console`, `My Tasks · gin-console` (with the project when one is selected), `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console` (without the project while "All projects" is selected), `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
 
-#### Scenario: Title
-- GIVEN any page is shown
+#### Scenario: Bead page
+- GIVEN the bead `a-1` titled "Team checkout" in project `example`
+- WHEN its page has loaded
+- THEN the document title is `Team checkout · example · gin-console`
+
+#### Scenario: Reports section
+- GIVEN `/reports?project=example&tab=quality`
 - WHEN the page loads
+- THEN the document title is `Reports · Quality · example · gin-console`
+
+#### Scenario: Loading
+- GIVEN a milestone page whose milestone is still loading
+- WHEN the page is shown
 - THEN the document title is `gin-console`
 
 ### REQ-UI-064: State mark
@@ -1069,22 +1084,22 @@ The discussion SHALL show each comment as a block of its own with a border, with
 - THEN the text wraps inside its block and the page does not scroll sideways
 
 ### REQ-UI-072: Breadcrumb
-WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of the link "Beads", or the milestone id when the remembered place is the Beads tab of a milestone page, followed by the name of the view of the remembered place (REQ-UI-073) and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, "· N filters" where N counts them, all as one link to the remembered place, then the parent of the bead as a link to its page when it has one, then the id of the bead marked `aria-current="page"`, and under 640px SHALL show only the first link.
+WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of: one link to the remembered place (REQ-UI-073) named for it, which is "Beads" followed by the name of its view and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, "· N filters" where N counts them, the title of the milestone with the same view and filter count for the Beads tab of a milestone page, the title of the milestone for its other tabs, or "My Tasks", "Reports" or "Projects"; then the title of the bead's parent as a link to its page when it has one; then the title of the bead marked `aria-current="page"`. Each title SHALL be cut short to one line with the full title and the id as its `title`. Under 640px the breadcrumb SHALL show only the first link.
 
 #### Scenario: Place and filters
 - GIVEN the Beads page was last at `?project=a&view=board&status=open&q=fix`
-- WHEN the bead page of `a-1` is shown
-- THEN the breadcrumb reads "Beads › Board · 2 filters" then `a-1`, and the first link goes to `/beads?project=a&view=board&status=open&q=fix`
+- WHEN the bead page of `a-1` titled "Fix login" is shown
+- THEN the breadcrumb reads "Beads › Board · 2 filters" then "Fix login", and the first link goes to `/beads?project=a&view=board&status=open&q=fix`
 
 #### Scenario: Parent
-- GIVEN the bead `a-2` has the parent `a-1`
+- GIVEN the bead `a-2` has the parent `a-1` titled "Checkout"
 - WHEN the bead page of `a-2` is shown
-- THEN the breadcrumb has a link `a-1` to `/beads/a/a-1` before `a-2`
+- THEN the breadcrumb has a link "Checkout" to `/beads/a/a-1` before the title of `a-2`
 
 #### Scenario: No remembered place
-- GIVEN the Beads page was not shown in this tab
+- GIVEN no page was remembered in this tab
 - WHEN the bead page of `a-1` is shown
-- THEN the breadcrumb reads "Beads" then `a-1` and "Beads" goes to `/beads?project=a`
+- THEN the breadcrumb reads "Beads" then the title of `a-1`, and "Beads" goes to `/beads?project=a`
 
 #### Scenario: Details panel
 - GIVEN a bead shown in the details panel of the List view
@@ -1092,12 +1107,17 @@ WHEN a bead is shown as a page, not as the details panel of another view, the be
 - THEN it has no breadcrumb and keeps its "Open page" link
 
 #### Scenario: From a milestone page
-- GIVEN the Beads tab of milestone `m2` of project `a` was last at `?tab=beads&view=board&status=open`
+- GIVEN the Beads tab of milestone `m2` titled "Checkout v2" of project `a` was last at `?tab=beads&view=board&status=open`
 - WHEN the bead page of `a-1` is shown
-- THEN the breadcrumb reads "m2 › Board · 1 filter" then `a-1`, and the first link goes to `/milestones/a/m2?tab=beads&view=board&status=open`
+- THEN the breadcrumb reads "Checkout v2 › Board · 1 filter" then the title of `a-1`, and the first link goes to `/milestones/a/m2?tab=beads&view=board&status=open`
+
+#### Scenario: From My Tasks
+- GIVEN the My Tasks page was last at `/my-tasks?project=a`
+- WHEN the user opens `a-1` from it
+- THEN the breadcrumb reads "My Tasks" then the title of `a-1`, and "My Tasks" goes to `/my-tasks?project=a`
 
 ### REQ-UI-073: Remembered place
-The Beads page and the Beads tab of a milestone page SHALL remember their path and URL query for the current browser tab, the one shown last replacing the other, SHALL use it for the first link of the breadcrumb when the remembered project is the project of the bead and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
+The Projects page, the Beads page, the My Tasks page, the Reports page and the milestone page (any tab) SHALL remember their path and URL query for the current browser tab, the one shown last replacing the others, SHALL use it for the first link of the breadcrumb (REQ-UI-072) and the marked navigation link (REQ-UI-057) when it is not tied to another project than the bead's (Projects, My Tasks and Reports with "All projects" fit any project) and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
 
 #### Scenario: Back to the Board with its filters
 - GIVEN the Board with the filter status "open" is shown
@@ -1110,7 +1130,7 @@ The Beads page and the Beads tab of a milestone page SHALL remember their path a
 - THEN the Board with the same filters is shown
 
 #### Scenario: Other project
-- GIVEN the remembered place belongs to project `a`
+- GIVEN the remembered place is the Beads page of project `a`
 - WHEN the bead page of a bead of project `b` is shown
 - THEN the first link goes to `/beads?project=b`
 
@@ -1128,6 +1148,11 @@ The Beads page and the Beads tab of a milestone page SHALL remember their path a
 - GIVEN the user opened the Beads page and then the Beads tab of milestone `m2` with the Graph view
 - WHEN the user opens a node's bead page and uses the first link of the breadcrumb
 - THEN the Graph view of the Beads tab of `m2` is shown
+
+#### Scenario: My Tasks with all projects
+- GIVEN My Tasks was last shown with "All projects"
+- WHEN the user opens a bead of project `b` from it
+- THEN the first link reads "My Tasks" and goes back to My Tasks with "All projects"
 
 ### REQ-UI-074: Remembered branches
 The List view SHALL remember for the current browser tab which branches of each project are open, SHALL open them again when the List is shown after another page, and SHALL ignore remembered ids that are not among the loaded beads.
@@ -1366,7 +1391,7 @@ The "Bugs found" heading of REQ-UI-086 SHALL be shown in the bug color (the `typ
 - THEN the "Bugs found" heading uses the `type-bug` color and the bug rows do not
 
 ### REQ-UI-088: Reports page
-The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page header SHALL hold the project choice: each configured project and "All projects", with the first project as the default. The panels of the Delivery, AI usage, Quality and Data coverage tabs (REQ-UI-095) SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to those four tabs. The Team tab has its own choices (REQ-REPORTS-012). The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-089 to REQ-UI-091, REQ-REPORTS-013). The page SHALL label every cost "estimated" and SHALL show "no price" where a cost is absent.
+The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page header SHALL hold the project choice: each configured project and "All projects", with the current project (REQ-UI-124) as the default; choosing a project there makes it the current project. The panels of the Delivery, AI usage, Quality and Data coverage tabs (REQ-UI-095) SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to those four tabs. The Team tab has its own choices (REQ-REPORTS-012). The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-089 to REQ-UI-091, REQ-REPORTS-013). The page SHALL label every cost "estimated" and SHALL show "no price" where a cost is absent.
 
 #### Scenario: shared link
 - GIVEN the URL `/reports?project=all&days=7&tab=delivery`
@@ -1543,7 +1568,7 @@ From 1024px the frontend SHALL show, at the top of the "Main" navigation's sideb
 - THEN no collapse control is shown and the theme control is under the brand mark, above the links
 
 ### REQ-UI-095: Report tabs
-The Reports page SHALL show the tabs Team, Delivery, Velocity, AI usage, Quality and Data coverage, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:
+WHILE the report sections are not listed in the sidebar (REQ-UI-129), the Reports page SHALL show the tabs Team, Delivery, Velocity, AI usage, Quality and Data coverage, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:
 - Team, from the team report of the selected milestone:
   - "Finished on time", or "Finished <n> d late" with a warning icon, for a closed milestone;
   - "Starts <start>" before its start;
@@ -2286,3 +2311,142 @@ Source: `assets/2026-11-21/epic-page/mockup/index.html`
 - GIVEN the Tracks table of `ex-e12`
 - WHEN the user activates the State header twice
 - THEN the rows are ordered by state ascending and then descending, and the header has `aria-sort` "descending"
+
+### REQ-UI-123: Project switcher
+The frontend SHALL show a project switcher labelled "Project" that names the current project (REQ-UI-124): at the top of the sidebar from 1024px while the sidebar is expanded, as a button holding the first letter of the project in the icon rail (from 768px up to 1023px, or while the sidebar is collapsed), and in the top bar below 768px. Opening it SHALL list every configured project whose directory exists, from `GET /api/projects/beads`, with the favorite first, each with a star button labelled "Make <name> the favorite" or, on the favorite, "Remove <name> as favorite", marked with `aria-pressed`. WHEN the user chooses a project, the frontend SHALL make it the current project and SHALL then:
+- on the Beads, Milestones or Reports page, stay on that page with `project` replaced, keeping `view`, `closed`, `tab`, `days` and `q`, and dropping `milestone`, `select`, `scope`, `member`, `status`, `sprint` and the other filters;
+- on a bead page, open the Beads page of the chosen project; on a milestone page, open the Milestones page of the chosen project;
+- on the Projects or My Tasks page, stay on the page unchanged.
+
+#### Scenario: Choose on the Beads page
+- GIVEN the Beads page at `/beads?project=a&view=board&milestone=m1&status=open`
+- WHEN the user chooses project `b` in the switcher
+- THEN the URL becomes `/beads?project=b&view=board` and the Board of `b` is shown
+
+#### Scenario: Choose on a bead page
+- GIVEN the bead page `/beads/a/a-1`
+- WHEN the user chooses project `b`
+- THEN the Beads page of `b` is shown
+
+#### Scenario: Favorite first
+- GIVEN projects `a`, `b` and `c`, and `c` is the favorite
+- WHEN the user opens the switcher
+- THEN `c` is listed first with its star pressed, then `a` and `b`
+
+#### Scenario: Icon rail
+- GIVEN a window 820px wide and the current project `qwikfone`
+- WHEN any page is shown
+- THEN the rail holds a button "Project: qwikfone" showing "q"
+
+#### Scenario: Phone
+- GIVEN a window 390px wide
+- WHEN any page is shown
+- THEN the switcher is in the top bar
+
+### REQ-UI-124: Current project
+The frontend SHALL take the current project, in this order: from the `project` query of the URL when it names a configured project whose directory exists; else the project last chosen in this browser tab; else the favorite project; else the first configured project. It SHALL remember as last chosen, for the browser tab, the project the Beads, Milestones, Reports, bead or milestone page shows and a single project chosen in the switcher or in the project select of the Reports or My Tasks page ("All projects" changes nothing), and SHALL remember the favorite across tabs and visits. The Main navigation links Beads, Milestones and Reports SHALL carry `?project=<current project>`, and the links Projects and My Tasks SHALL NOT. WHEN the Beads, Milestones or Reports page opens without `project`, it SHALL show the current project and write it into the URL without adding a history entry. A remembered or favorite project that is no longer configured SHALL be skipped. IF the browser refuses to store a choice, THEN the choice SHALL last for the visit without an error.
+
+#### Scenario: Links carry the project
+- GIVEN the current project is `b`
+- WHEN any page is shown
+- THEN the Beads link goes to `/beads?project=b`, Milestones to `/milestones?project=b`, Reports to `/reports?project=b`, and My Tasks to `/my-tasks`
+
+#### Scenario: Last chosen beats the favorite
+- GIVEN the favorite is `a` and the user chose `b` earlier in this tab
+- WHEN the user opens `/milestones`
+- THEN the Milestones page of `b` is shown and the URL becomes `/milestones?project=b`
+
+#### Scenario: Favorite in a new tab
+- GIVEN the favorite is `c`
+- WHEN the user opens `/beads` in a new browser tab
+- THEN the Beads page of `c` is shown
+
+#### Scenario: Removed project
+- GIVEN the favorite `old` is no longer configured and nothing was chosen in this tab
+- WHEN the user opens `/beads`
+- THEN the first configured project is shown
+
+#### Scenario: My Tasks keeps all projects
+- GIVEN the current project is `b`
+- WHEN the user opens My Tasks from the navigation
+- THEN My Tasks shows "All projects"
+
+#### Scenario: Storage refused
+- GIVEN the browser throws when a choice is stored
+- WHEN the user chooses project `b` and opens Milestones
+- THEN the Milestones page of `b` is shown and no error is shown
+
+### REQ-UI-125: Page not found
+WHEN the path matches no page of the console, including the retired `/sessions`, `/sessions/<project>/<id>` and `/quota`, the frontend SHALL show the heading "Page not found", the path, and links to Projects and to the Beads page of the current project, SHALL set the document title to `Page not found · gin-console`, and SHALL mark no link of the Main navigation.
+
+#### Scenario: Unknown path
+- GIVEN the current project is `a`
+- WHEN the user opens `/nope`
+- THEN the page shows "Page not found", `/nope`, a link to `/` and a link to `/beads?project=a`
+
+#### Scenario: Retired address
+- GIVEN any configured projects
+- WHEN the user opens `/sessions/alpha/s-1`
+- THEN the page shows "Page not found" and no navigation link has `aria-current="page"`
+
+### REQ-UI-126: Unknown project
+WHEN the URL names a project that is not configured, in the `project` query of the Beads, Milestones or Reports page or in the path of a bead or milestone page, the frontend SHALL show "No project <name> is configured" with one link per configured project to the same page for that project, instead of another project's data, and SHALL NOT remember the name as the current project. The Reports value `all` is not a project name.
+
+#### Scenario: Beads query
+- GIVEN projects `a` and `b`
+- WHEN the user opens `/beads?project=zzz`
+- THEN the page says "No project zzz is configured" with links to `/beads?project=a` and `/beads?project=b`, and shows no beads
+
+#### Scenario: Bead path
+- GIVEN projects `a` and `b`
+- WHEN the user opens `/beads/zzz/z-1`
+- THEN the page says "No project zzz is configured" and the current project is unchanged
+
+### REQ-UI-127: Back to your place
+WHEN the user comes back with the browser Back or Forward button to the Projects, Beads, My Tasks, Milestones, milestone or Reports page, the frontend SHALL scroll the page to where it was when the user left it, once the page shows its data, and WHEN the user left it by opening a bead, SHALL move the keyboard focus to that bead's row, card or node and mark it as last opened for 2 seconds, without motion WHILE the user asks for reduced motion. A page opened by a link or by its address SHALL start at the top. IF the browser refuses to store the position, THEN the page SHALL start at the top without an error.
+
+#### Scenario: Back to a long list
+- GIVEN the List view of the Beads page scrolled 1,200px down
+- WHEN the user opens a bead from it and then uses the browser Back button
+- THEN the List view shows at 1,200px down
+
+#### Scenario: Last opened card
+- GIVEN the Board of the Beads page
+- WHEN the user opens the card `a-7` and comes back with the browser Back button
+- THEN the card `a-7` has the keyboard focus and is marked as last opened
+
+#### Scenario: Link starts at the top
+- GIVEN the Beads page was left scrolled down
+- WHEN the user opens it again from the navigation
+- THEN it starts at the top
+
+#### Scenario: Storage refused
+- GIVEN the browser throws when the position is stored
+- WHEN the user comes back with the browser Back button
+- THEN the page starts at the top and no error is shown
+
+### REQ-UI-128: Skip link
+Every page SHALL start with a link "Skip to content" that is the first element to take the keyboard focus, is visible only while it has the focus, and moves the focus to the main content.
+
+#### Scenario: Skip the navigation
+- GIVEN any page has just loaded
+- WHEN the user presses Tab and then Enter
+- THEN the focus is on the main content and the navigation was skipped
+
+### REQ-UI-129: Report sections in the sidebar
+WHILE a Reports page is shown in a window 1024px wide or more with the sidebar expanded, the Main navigation SHALL list the report sections of REQ-UI-095 under the Reports link, each as a link with the section name and its headline, SHALL mark the selected section with `aria-current="page"`, and each link SHALL go to the same URL with `tab` set to its section. WHILE the window is narrower or the sidebar is collapsed, the sidebar SHALL list no sections and the page SHALL show the tab list of REQ-UI-095. The section links SHALL NOT show on other pages.
+
+#### Scenario: Sections in the sidebar
+- GIVEN a window 1440px wide, the sidebar expanded and `/reports?project=a&tab=delivery`
+- WHEN the page is shown
+- THEN the sidebar lists Team, Delivery, Velocity, AI usage, Quality and Data coverage under Reports with their headlines, Delivery is marked current, and the page shows no tab list
+
+#### Scenario: Change section
+- GIVEN the Reports page at `/reports?project=a&days=7&tab=delivery` with sections in the sidebar
+- WHEN the user clicks Quality in the sidebar
+- THEN the URL becomes `/reports?project=a&days=7&tab=quality` and the Quality panel is shown
+
+#### Scenario: Narrow window
+- GIVEN a window 900px wide
+- WHEN the Reports page is shown
+- THEN the sidebar lists no sections and the page shows its tab list
