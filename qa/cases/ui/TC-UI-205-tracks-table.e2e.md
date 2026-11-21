@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-121@dc1ca926
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-21T05-35-36
+- **Checked:** 77eedd15
 
 **Preconditions:**
 - Epic `ex-e12` has 8 tracks and a merge gate child

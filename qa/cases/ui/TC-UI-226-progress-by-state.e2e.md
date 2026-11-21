@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-120@39a3c2e0
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-21T05-35-36
+- **Checked:** f72d8fef
 
 **Preconditions:**
 - Project `example` has epic `ex-e12` with 8 tracks (4 closed, 1 in progress, 2 ready, 1 blocked) and a merge gate child

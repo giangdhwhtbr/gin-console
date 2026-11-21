@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-119@fcb75f6f
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-21T05-35-36
+- **Checked:** 87336207
 
 **Preconditions:**
 - Project `example` has task `ex-e3.2`, a child of epic `ex-e3`
