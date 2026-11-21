@@ -20,6 +20,7 @@ import { figures, headlines, teamHeadline, velocityHeadline, type Headline } fro
 import { QualitySection } from "./QualitySection";
 import { TeamSection } from "./team/TeamSection";
 import { fetchTeam, type TeamReport } from "./teamApi";
+import { clearSections, publishSections } from "./sectionStore";
 import { TabStrip } from "./TabStrip";
 import { UsageSection } from "./UsageSection";
 import { VelocityTab } from "./velocity/VelocityTab";
@@ -141,14 +142,27 @@ export function ReportsPage() {
     };
   }, [selected, days, sprint, key]);
 
-  const hintFor = (value: ReportTab) => {
-    if (value === "velocity") {
-      const h = selected === "all" || daysPerPoint === null || daysPerPoint.project !== selected ? null : velocityHeadline(daysPerPoint.value);
-      return h === null ? undefined : hintOf(h);
-    }
-    if (value === "team") return teamReport === null ? undefined : hintOf(teamHeadline(teamReport));
-    return loaded.status === "ok" ? hintOf(headlines(loaded.report)[value]) : undefined;
+  const headlineFor = (value: ReportTab): Headline | null => {
+    if (value === "velocity") return selected === "all" || daysPerPoint === null || daysPerPoint.project !== selected ? null : velocityHeadline(daysPerPoint.value);
+    if (value === "team") return teamReport === null ? null : teamHeadline(teamReport);
+    return loaded.status === "ok" ? headlines(loaded.report)[value] : null;
   };
+  const hintFor = (value: ReportTab) => {
+    const h = headlineFor(value);
+    return h === null ? undefined : hintOf(h);
+  };
+  // REQ-UI-129: the sidebar lists these sections while it is expanded; the store ignores a publish that changes nothing
+  useEffect(() => {
+    if (selected === "") return;
+    publishSections(
+      TABS.map((value) => {
+        const h = headlineFor(value);
+        return { tab: value, label: LABELS[value], headline: h?.text ?? "", warn: h?.warn ?? false, href: `/reports${reportSearch({ ...filters, project: selected, tab: value })}` };
+      }),
+      tab,
+    );
+  });
+  useEffect(() => clearSections, []);
   const change = (next: ReportFilters) => navigate(`/reports${reportSearch(next)}`, { replace: true });
 
   return (
@@ -209,6 +223,7 @@ export function ReportsPage() {
               </AlertDescription>
             </Alert>
           )}
+          <div className="lg:group-data-[sidebar=expanded]/shell:hidden">
           <TabStrip>
             <Tabs
               label="Report"
@@ -221,6 +236,7 @@ export function ReportsPage() {
               }))}
             />
           </TabStrip>
+          </div>
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-6">
             {tab === "team" ? (
               <>

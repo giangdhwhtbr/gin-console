@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EMAIL_KEY, getEmail, resetIdentity, setEmail } from "./identity";
 import { Layout, SIDEBAR_KEY } from "./Layout";
 import { clearOrigin, rememberOrigin } from "./origin";
+import { clearSections, publishSections, type SectionLink } from "@/features/reports/sectionStore";
 import { forgetConfiguredProjects, setFavorite } from "./project";
 
 const json = (body: unknown) =>
@@ -24,6 +25,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  clearSections();
   resetIdentity();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -237,5 +239,51 @@ describe("Layout", () => {
     await userEvent.keyboard("{Enter}");
     expect(screen.getByRole("main")).toHaveFocus();
     expect(screen.getByRole("main")).toHaveAttribute("id", "main");
+  });
+
+  describe("report sections in the sidebar", () => {
+    const TABS = ["team", "delivery", "velocity", "usage", "quality", "coverage"] as const;
+    const sections: SectionLink[] = TABS.map((tab) => ({
+      tab,
+      label: tab === "quality" ? "Quality" : tab[0].toUpperCase() + tab.slice(1),
+      headline: tab === "quality" ? "2 gaps" : `${tab} headline`,
+      warn: tab === "quality",
+      href: `/reports?project=a&tab=${tab}`,
+    }));
+    const list = () => screen.queryByRole("list", { name: "Report sections" });
+
+    it("REQ-UI-129 lists the six sections with headlines and marks the selected one on /reports when expanded", () => {
+      publishSections(sections, "delivery");
+      open("/reports?project=a&tab=delivery");
+      expect(document.querySelector('[data-sidebar="expanded"]')).not.toBeNull();
+      const links = within(list()!).getAllByRole("link");
+      expect(links).toHaveLength(6);
+      expect(links[1]).toHaveAccessibleName("Delivery delivery headline");
+      expect(links[1]).toHaveAttribute("aria-current", "page");
+      expect(links.filter((l) => l.getAttribute("aria-current") === "page")).toHaveLength(1);
+      expect(links[4]).toHaveAttribute("href", "/reports?project=a&tab=quality");
+      expect(list()).toHaveClass("hidden", "lg:flex");
+    });
+
+    it("REQ-UI-129 clicking a section navigates without a reload", async () => {
+      publishSections(sections, "delivery");
+      open("/reports?project=a&tab=delivery");
+      await userEvent.click(within(list()!).getByRole("link", { name: /^Quality/ }));
+      expect(window.location.search).toBe("?project=a&tab=quality");
+    });
+
+    it("REQ-UI-129 lists nothing on other pages", () => {
+      publishSections(sections, "delivery");
+      open("/beads");
+      expect(list()).toBeNull();
+    });
+
+    it("REQ-UI-129 lists nothing while the sidebar is collapsed", () => {
+      window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+      publishSections(sections, "delivery");
+      open("/reports?project=a&tab=delivery");
+      expect(document.querySelector('[data-sidebar="collapsed"]')).not.toBeNull();
+      expect(list()).toBeNull();
+    });
   });
 });

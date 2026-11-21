@@ -1,5 +1,6 @@
-import { ChartColumn, Flag, LayoutGrid, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, UserCheck } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ChartColumn, Flag, LayoutGrid, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
+import { Fragment, useState, type ReactNode } from "react";
+import { useSections } from "@/features/reports/sectionStore";
 import { cn } from "@/lib/utils";
 import { clearEmail, useEmail } from "./identity";
 import { Link } from "./Link";
@@ -84,9 +85,10 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
       // storage refused: the choice lasts for this visit only
     }
   };
+  const { sections, selected } = useSections();
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
+    <div data-sidebar={wide ? "expanded" : "collapsed"} className="group/shell flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <a
         href="#main"
         onClick={(event) => {
@@ -154,10 +156,34 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
           className="fixed inset-x-0 bottom-0 z-10 flex border-t bg-card pb-[env(safe-area-inset-bottom)] md:static md:flex-col md:gap-1 md:border-t-0 md:pb-0"
         >
           {NAV.map(({ to, label, icon: Icon, current }) => (
-            <Link key={label} to={to(project)} aria-current={current(place) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
-              <Icon aria-hidden className="size-5" />
-              {label}
-            </Link>
+            <Fragment key={label}>
+              <Link to={to(project)} aria-current={current(place) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
+                <Icon aria-hidden className="size-5" />
+                {label}
+              </Link>
+              {label === "Reports" && wide && pathname === "/reports" && sections.length > 0 && (
+                <ul aria-label="Report sections" className="ml-4 hidden flex-col gap-0.5 border-l pl-2 lg:flex">
+                  {sections.map((section) => (
+                    <li key={section.tab}>
+                      <Link
+                        to={section.href}
+                        aria-current={section.tab === selected ? "page" : undefined}
+                        className="flex flex-col rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted aria-[current=page]:bg-muted aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
+                      >
+                        {section.label}
+                        {section.headline !== "" && " "}
+                        {section.headline !== "" && (
+                          <span className={cn("inline-flex items-center gap-1 text-xs font-normal", section.warn && "text-state-blocked")}>
+                            {section.warn && <TriangleAlert aria-hidden className="size-3.5" />}
+                            {section.headline}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Fragment>
           ))}
         </nav>
         {email !== null && (

@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { rememberProject, resolveProject, setFavorite } from "@/app/project";
@@ -7,6 +7,7 @@ import { navigate } from "@/app/route";
 import type { Report } from "./api";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
 import { ReportsPage } from "./ReportsPage";
+import { useSections } from "./sectionStore";
 import { report } from "./reportFixtures";
 import { teamReport as teamFixture } from "./team/teamFixtures";
 import type { TeamReport } from "./teamApi";
@@ -492,5 +493,32 @@ describe("ReportsPage", () => {
     fireEvent.scroll(list);
     expect(fades().right).toBeNull();
     expect(fades().left).not.toBeNull();
+  });
+
+  it("REQ-UI-095 REQ-UI-129 the tab strip hides at lg while the sidebar is expanded, and the sections are published", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery&days=7");
+    stub();
+    render(<ReportsPage />);
+    const list = await screen.findByRole("tablist", { name: "Report" });
+    expect(list.closest(".lg\\:group-data-\\[sidebar\\=expanded\\]\\/shell\\:hidden")).not.toBeNull();
+    const { result } = renderHook(() => useSections());
+    await waitFor(() => expect(result.current.sections.find((s) => s.tab === "delivery")?.headline).not.toBe(""));
+    expect(result.current.selected).toBe("delivery");
+    expect(result.current.sections.map((s) => s.tab)).toEqual(["team", "delivery", "velocity", "usage", "quality", "coverage"]);
+    const quality = result.current.sections.find((s) => s.tab === "quality");
+    expect(new URLSearchParams(quality?.href.split("?")[1]).get("tab")).toBe("quality");
+    expect(quality?.href).toContain("project=alpha");
+    expect(quality?.href).toContain("days=7");
+  });
+
+  it("REQ-UI-129 clears the sections when the page unmounts", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha");
+    stub();
+    const view = render(<ReportsPage />);
+    await screen.findByRole("tablist", { name: "Report" });
+    const { result } = renderHook(() => useSections());
+    expect(result.current.sections).toHaveLength(6);
+    view.unmount();
+    expect(result.current.sections).toHaveLength(0);
   });
 });
