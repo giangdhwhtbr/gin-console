@@ -39,6 +39,7 @@ export function TracksTable({ project, epicId, beads, rows }: { project: string;
         <span className="text-xs text-muted-foreground">{`${rows.length} tracks · merge gates are shown in the lane rows, not here`}</span>
       </div>
       <div className="@container min-w-0 rounded-lg border bg-card">
+        {/* Id, Title and State come first; below the width the columns need, the whole table scrolls sideways inside its box */}
         <Table className="min-w-[44rem]">
           <TableHeader>
             <TableRow>

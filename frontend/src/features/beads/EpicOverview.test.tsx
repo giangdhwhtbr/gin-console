@@ -116,6 +116,13 @@ describe("EpicOverview cards", () => {
     expect(screen.getByRole("tooltip")).toHaveTextContent("ex-e12.2: hotfix (ann)");
   });
 
+  it("REQ-UI-120 Unknown workflow stage: the raw stage shows as text and no chip is marked", async () => {
+    stub({ ...WORKFLOW, stage: "done" });
+    show();
+    expect(await card("Workflow").findByText("Stage: done")).toBeInTheDocument();
+    expect(card("Workflow").getAllByRole("listitem").map((s) => s.getAttribute("aria-current"))).toEqual([null, null, null, null, null]);
+  });
+
   it("REQ-UI-120 No workflow: an answer without a stage says No workflow", async () => {
     stub({ stage: "", gates: {}, warnings: [], review_waivers: [] });
     show();
@@ -190,6 +197,8 @@ describe("EpicOverview lanes and tracks", () => {
     expect(rows[3]).toHaveTextContent("Unclaimed · waits for be #2 (merge pending), fe #3 (merged)");
     expect(rows[3]).toHaveTextContent("0/1 closed");
     expect(rows[3].querySelector("[data-swatch]")).not.toBeNull();
+    const colours = rows.map((r) => r.getAttribute("style"));
+    expect(new Set(colours).size).toBe(4);
     expect(lanes.getByRole("link", { name: /Open the Lanes tab/ })).toHaveAttribute("href", "/beads/example/ex-e12?tab=lanes");
   });
 
@@ -239,7 +248,22 @@ describe("EpicOverview lanes and tracks", () => {
     expect(within(screen.getByRole("columnheader", { name: "Blocked by" })).queryByRole("button")).toBeNull();
   });
 
-  it("REQ-UI-121 Narrow table: the table scrolls sideways inside its own box instead of dropping columns", () => {
+  it("REQ-UI-121 Sort by Points: ascending puts tracks without points last, descending keeps them last", async () => {
+    stub();
+    const user = userEvent.setup();
+    const noPoints = bead(`${E}.20`, { parent: E, title: "No points", lane: "be", track: { plan: "p/team.md", number: 20 } });
+    show(ok([...E12, noPoints]));
+    const points = () => screen.getAllByRole("row").slice(1).map((r) => within(r).getAllByRole("cell")[5].textContent);
+    const header = screen.getByRole("columnheader", { name: "Points" });
+    await user.click(within(header).getByRole("button"));
+    expect(header).toHaveAttribute("aria-sort", "ascending");
+    expect(points()).toEqual(["1", "2", "2", "2", "3", "3", "3", "5", "–"]);
+    await user.click(within(header).getByRole("button"));
+    expect(header).toHaveAttribute("aria-sort", "descending");
+    expect(points()).toEqual(["5", "3", "3", "3", "2", "2", "2", "1", "–"]);
+  });
+
+  it("REQ-UI-121 Narrow table: the table has a minimum width and scrolls sideways inside its own box, keeping all seven columns", () => {
     stub();
     show();
     const table = screen.getByRole("table");

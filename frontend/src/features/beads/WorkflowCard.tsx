@@ -45,6 +45,7 @@ function Stages({ workflow }: { workflow: EpicWorkflow }) {
   const gates = Object.values(workflow.gates);
   return (
     <>
+      {at < 0 && <p className="m-0 text-sm">{`Stage: ${workflow.stage}`}</p>}
       <ol aria-label="Stages" className="m-0 flex list-none flex-wrap gap-1.5 p-0 text-xs">
         {STAGES.map((stage, i) => (
           <li
