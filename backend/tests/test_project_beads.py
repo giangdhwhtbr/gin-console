@@ -14,7 +14,7 @@ from gin_console.config import ProjectEntry, Settings
 
 def client(tmp_path: Path, *projects: tuple[str, Path]) -> TestClient:
     settings = Settings(projects=[ProjectEntry(name=n, path=p) for n, p in projects])
-    return TestClient(create_app(settings, static_dir=tmp_path / "static", claude_home=tmp_path))
+    return TestClient(create_app(settings, static_dir=tmp_path / "static"))
 
 
 def project_dir(tmp_path: Path, name: str) -> Path:

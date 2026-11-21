@@ -1,6 +1,6 @@
 # TC-BEADS-055: Failed pull on the card
 
-- **REQ:** REQ-BEADS-018@edacce0f
+- **REQ:** REQ-BEADS-018@3ceab845
 - **Priority:** high
 
 **Preconditions:**

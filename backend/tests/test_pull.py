@@ -311,7 +311,6 @@ def app_client(
     app = create_app(
         settings,
         static_dir=tmp_path / "dist",
-        claude_home=tmp_path,
         read_beads=reads,
         run_bd=fake,
         schedule_pulls=schedule,

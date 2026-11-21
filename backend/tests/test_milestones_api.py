@@ -47,7 +47,6 @@ def make(tmp_path: Path, fake: Any, clock: Clock | None = None) -> TestClient:
     app = create_app(
         settings,
         static_dir=tmp_path / "dist",
-        claude_home=tmp_path,
         run_gw=fake,
         clock=clock or Clock(),
     )

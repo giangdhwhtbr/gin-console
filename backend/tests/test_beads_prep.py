@@ -48,7 +48,6 @@ def test_beads_002_prep_child(tmp_path: Path) -> None:
     app = create_app(
         Settings(projects=[ProjectEntry(name="proj", path=tmp_path / "proj")]),
         static_dir=tmp_path / "dist",
-        claude_home=tmp_path,
         read_beads=FakeExport(rows),
     )
     body = TestClient(app).get("/api/beads/proj/e-1").json()

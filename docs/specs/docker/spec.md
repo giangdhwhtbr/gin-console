@@ -5,12 +5,17 @@
 ## Requirements
 
 ### REQ-DOCKER-001: Image contains the required tools
-The Dockerfile SHALL build an image that provides `uv`, `git`, `bd`, `gin`, `claude`, and `codex` on the `PATH`, the backend installed from `uv.lock`, and the built frontend.
+The Dockerfile SHALL build an image that provides `uv`, `git`, `bd` and `gin` on the `PATH`, the backend installed from `uv.lock`, and the built frontend, and SHALL NOT install `claude` or `codex`.
 
 #### Scenario: Tools present
 - GIVEN the image was built with default build args
-- WHEN `uv --version`, `git --version`, `bd --version`, `gin --version`, `claude --version`, and `codex --version` run in the container
+- WHEN `uv --version`, `git --version`, `bd --version` and `gin --version` run in the container
 - THEN each exits 0
+
+#### Scenario: No agent CLIs
+- GIVEN the image was built with default build args
+- WHEN `command -v claude` and `command -v codex` run in the container
+- THEN each exits non-zero
 
 #### Scenario: Frontend bundled
 - GIVEN the image was built
@@ -31,7 +36,7 @@ WHEN `docker compose up -d` runs with a valid config, the console SHALL serve `G
 - THEN it exits with a non-zero status and `docker compose logs` shows the config error
 
 ### REQ-DOCKER-003: Host paths are preserved
-The container SHALL run as the host user with `HOME=/home/gin`, and the compose file SHALL mount the config file, each project directory, `~/.claude`, and `~/.codex` at the same absolute paths they have on the host.
+The container SHALL run as the host user with `HOME=/home/gin`, and the compose file SHALL mount the config file and each project directory at the same absolute paths they have on the host.
 
 #### Scenario: Shared config
 - GIVEN the config lists `/home/gin/qwikfone`
@@ -44,17 +49,17 @@ The container SHALL run as the host user with `HOME=/home/gin`, and the compose 
 - THEN both show the same project list
 
 ### REQ-DOCKER-004: Mount permissions
-The compose file SHALL mount project directories read-write and `~/.claude` and `~/.codex` read-only.
+The compose file SHALL mount project directories read-write and SHALL NOT mount `~/.claude` or `~/.codex`.
 
 #### Scenario: Beads works
 - GIVEN a project with a `.beads` directory is mounted
 - WHEN `bd list` runs in the container against that project
 - THEN it succeeds without a lock error
 
-#### Scenario: Login directories are read-only
-- GIVEN `~/.claude` is mounted
-- WHEN a process in the container tries to create a file under `~/.claude`
-- THEN the write fails with a read-only filesystem error
+#### Scenario: No login directories
+- GIVEN the container was started from the compose file
+- WHEN `test -e "$HOME/.claude"` and `test -e "$HOME/.codex"` run in the container
+- THEN each exits non-zero
 
 ### REQ-DOCKER-005: Loopback-only exposure
 The compose file SHALL publish the console port only on `127.0.0.1`, and the container SHALL bind `0.0.0.0` only together with `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1`.
@@ -70,7 +75,7 @@ The compose file SHALL publish the console port only on `127.0.0.1`, and the con
 - THEN it shows the Projects page
 
 ### REQ-DOCKER-006: Pinned and secret-safe build
-The Dockerfile SHALL set the versions of `bd`, `claude`, `codex`, and the `gin-workflow` git ref through build args with defaults, and SHALL accept git credentials only through BuildKit secrets.
+The Dockerfile SHALL set the versions of `bd` and the `gin-workflow` git ref through build args with defaults, and SHALL accept git credentials only through BuildKit secrets.
 
 #### Scenario: Pinned versions
 - GIVEN no build args are overridden

@@ -46,7 +46,6 @@ def make(tmp_path: Path, fake: Any = None, run_bd: BdRunner | None = None) -> Te
     app = create_app(
         settings,
         static_dir=tmp_path / "dist",
-        claude_home=tmp_path,
         read_beads=read_export if fake is None else fake,
         run_bd=run_bd or FakeBd(),
         clock=Clock(),
@@ -233,7 +232,7 @@ def test_beads_003_refresh_only_runs_bd_dolt_pull(
     settings = Settings(
         projects=[ProjectEntry(name=n, path=tmp_path / n) for n in ("one", "two")]
     )
-    api = TestClient(create_app(settings, static_dir=tmp_path / "dist", claude_home=tmp_path))
+    api = TestClient(create_app(settings, static_dir=tmp_path / "dist"))
     assert api.post("/api/refresh").status_code == 204  # the default bd runner
     pull = ["bd", "dolt", "pull"]
     assert sorted(started) == [(pull, tmp_path / "one"), (pull, tmp_path / "two")]

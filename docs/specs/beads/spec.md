@@ -438,12 +438,17 @@ WHERE the config sets `beads.pull_interval` (REQ-CONFIG-006), the server SHALL p
 - THEN the server log names A and the error, and A has `pull.status` `error`
 
 ### REQ-BEADS-018: Pull status display
-The Projects page SHALL show on each project card whose `pull` is not `null`: "pulled " and the age of `pull.at` written as the Quota page writes ages (REQ-UI-018, for example "pulled 2 minutes ago" or "pulled just now") when `pull.status` is `ok`, "no Dolt remote" when it is `no_remote`, and "pull failed: <error>" marked as an error when it is `error`, with the full `at` time as its `title`; and WHERE the `pull` of a project in `GET /api/projects/beads` has `status` `error`, the Beads page with that project selected and the My Tasks page SHALL show, above their list, the note "Pulling Beads of <project> failed: <error>. Run `bd dolt pull` in <path>." once per such project, and SHALL show no such note for a project whose `pull` is `null`, missing, or not `error`.
+The Projects page SHALL show on each project card whose `pull` is not `null`: "pulled " and the age of `pull.at` as a relative time ("just now" under 45 seconds, else the nearest whole number of minutes under an hour, of hours under a day, or of days, for example "pulled 2 minutes ago") when `pull.status` is `ok`, "no Dolt remote" when it is `no_remote`, and "pull failed: <error>" marked as an error when it is `error`, with the full `at` time as its `title`; and WHERE the `pull` of a project in `GET /api/projects/beads` has `status` `error`, the Beads page with that project selected and the My Tasks page SHALL show, above their list, the note "Pulling Beads of <project> failed: <error>. Run `bd dolt pull` in <path>." once per such project, and SHALL show no such note for a project whose `pull` is `null`, missing, or not `error`.
 
 #### Scenario: Pulled
 - GIVEN project A with `pull` `{"status": "ok", "at": <2 minutes ago>, "error": null}`
 - WHEN the Projects page loads
 - THEN A's card shows "pulled 2 minutes ago"
+
+#### Scenario: Pulled just now
+- GIVEN project A with `pull.status` `ok` and `pull.at` 10 seconds ago
+- WHEN the Projects page loads
+- THEN A's card shows "pulled just now"
 
 #### Scenario: No remote
 - GIVEN project B with `pull.status` `no_remote`

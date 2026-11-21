@@ -1,6 +1,6 @@
 # TC-BEADS-057: Older backend without pull
 
-- **REQ:** REQ-BEADS-018@edacce0f
+- **REQ:** REQ-BEADS-018@3ceab845
 - **Priority:** low
 
 **Preconditions:**

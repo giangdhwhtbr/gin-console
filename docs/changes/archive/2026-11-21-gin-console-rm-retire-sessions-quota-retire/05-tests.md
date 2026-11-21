@@ -1,0 +1,8 @@
+# Tests: Retire Sessions and Quota
+
+Automated tests carry the REQ-ID in the test name or a comment. List here only manual or QE cases.
+
+| TC | REQ | type | evidence |
+|---|---|---|---|
+| TC-1 | REQ-BEADS-018, REQ-UI-057 | Playwright on the Tailscale build | The Projects page shows "pulled … ago"; a bead page with children shows its progress bar; Beads, My Tasks, Milestones and Reports load; `/sessions`, `/sessions/alpha/s-1` and `/quota` show the Projects page with no nav link marked; no page error in the browser console. Result: pass, claude (Playwright on the Tailscale build of b389050, 10/10 checks, screenshots in qa/evidence/2026-11-21-retire-tc1; the pull lines of the other projects and "0 of 1 closed" were seen in the screenshots, and `/api/sessions` and `/api/quota` returned 404 with curl) |
+| TC-2 | REQ-DOCKER-001, REQ-DOCKER-003, REQ-DOCKER-004, REQ-DOCKER-006 | Docker smoke (`scripts/docker-smoke.sh`) on the compose stack | The image has `uv`, `git`, `bd` and `gin` and no `claude` or `codex`; compose mounts the config and the project directories at their host paths and no `~/.claude` or `~/.codex`; `bd list` works on a mounted project; the console answers only on loopback; the build pins the tool versions and holds no secret. Result: pass, claude (`docker compose build` and `up` of ae3756b with the systemd service stopped, then `scripts/docker-smoke.sh` printed `docker smoke: ok`; `bd 1.0.5` and `gin 3.0` from the pinned build args; `docker history` holds no credential; the compose build needed `GIN_WORKFLOW_REF=v3.0.0` because the compose default `v1.4.2` predates the `gin` executable) |

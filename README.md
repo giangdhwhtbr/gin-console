@@ -1,16 +1,14 @@
 # gin-console
 
-A web-based dashboard and observability console for [gin-workflow](https://github.com/giangdhwhtbr/gin-workflow) projects, [Beads](https://github.com/gastownhall/beads) issue tracking, active AI agent sessions, and AI CLI quotas.
+A web-based dashboard and observability console for [gin-workflow](https://github.com/giangdhwhtbr/gin-workflow) projects and [Beads](https://github.com/gastownhall/beads) issue tracking.
 
 ---
 
 ## Features
 
-- **Project Dashboard**: Real-time project overview, git branch status, active workflow stages, and running agent counts.
+- **Project Dashboard**: Real-time project overview, git branch status, and active workflow stages.
 - **Native Beads Explorer**: Interactive Kanban board, hierarchical list, and visual dependency graph with multi-select filtering across status, issue type, priority, assignee, sprint, and labels.
 - **Milestones**: Dated milestones per project with a Gantt of the working-day schedule, a dependency graph per milestone, and a read-only kick-start preview (needs a gin-workflow with the `milestone` command and Beads task tracking).
-- **AI CLI Quota Tracker**: Monitored usage windows, 5-hour rolling limits, and rate-limit headroom for Claude Code and OpenAI Codex, at `/quota` (not linked from the navigation).
-- **Session Inspector**: Process liveness detection, active prompt monitoring, and session metrics.
 - **Cross-Platform**: First-class support for Linux, macOS, and native Windows (no WSL required).
 
 ---
@@ -24,9 +22,6 @@ Before installing, ensure the following are installed on your machine:
 - **Node.js (v20+ or v22+)** and [**pnpm**](https://pnpm.io/)
 - **Git** (on Windows, **Git for Windows** is required)
 - [**bd** (Beads CLI)](https://github.com/gastownhall/beads) in your system `PATH`, to write each project's export file. The console runs only `bd dolt pull`; see [Beads export](#beads-export) and [Pulling Beads](#pulling-beads).
-- *(Optional)* AI CLIs:
-  - Claude Code: `npm install -g @anthropic-ai/claude-code`
-  - OpenAI Codex: `npm install -g @openai/codex`
 
 ---
 
@@ -115,7 +110,6 @@ Open your browser and navigate to:
 
 #### Windows Tips
 
-- **Process Management**: On Windows, quota process termination uses `taskkill` and session liveness checks use Windows `OpenProcess` API.
 - **Custom Config Location**: To use a custom configuration file path, set the `GIN_CONSOLE_CONFIG` environment variable:
   ```powershell
   $env:GIN_CONSOLE_CONFIG = "C:\path\to\config.yaml"
@@ -211,7 +205,7 @@ scripts/docker-smoke.sh
 
 gin-console listens on `127.0.0.1` by default and refuses any other address. It has no authentication, so it is meant to stay on loopback behind `tailscale serve`. To listen on every interface, set both `GIN_CONSOLE_HOST=0.0.0.0` and `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1`. `GIN_CONSOLE_HOST` overrides `server.host` in the config. You can set `server.host: 0.0.0.0` in the config instead, but `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1` is still required.
 
-> **Warning**: gin-console has no authentication. The email on the login screen only selects "My Tasks"; it is not a password. Anyone who can reach the port can read projects, Beads, and session logs. Allow the port only from trusted networks, for example behind a firewall or a VPN.
+> **Warning**: gin-console has no authentication. The email on the login screen only selects "My Tasks"; it is not a password. Anyone who can reach the port can read projects and Beads. Allow the port only from trusted networks, for example behind a firewall or a VPN.
 
 ### Linux and macOS
 

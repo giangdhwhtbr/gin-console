@@ -1,0 +1,13 @@
+# TC-UI-074: Current destination: Address of a retired page
+
+- **REQ:** REQ-UI-057@611e3da4
+- **Priority:** medium
+
+**Preconditions:**
+- Project `alpha` is stubbed
+
+**Steps:**
+1. Open `/sessions/alpha/s-1`
+
+**Expected:**
+- No link in the main navigation has `aria-current="page"`

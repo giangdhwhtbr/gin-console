@@ -35,7 +35,6 @@ def make(tmp_path: Path, fake: Any = None) -> TestClient:
     app = create_app(
         settings,
         static_dir=tmp_path / "dist",
-        claude_home=tmp_path,
         read_beads=read_export if fake is None else fake,
         clock=Clock(),
     )

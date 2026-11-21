@@ -1,6 +1,6 @@
 # TC-BEADS-054: No remote on the card
 
-- **REQ:** REQ-BEADS-018@edacce0f
+- **REQ:** REQ-BEADS-018@3ceab845
 - **Priority:** medium
 
 **Preconditions:**

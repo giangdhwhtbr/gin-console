@@ -1,6 +1,6 @@
 # Agent Instructions
 
-gin-console is a read-only web console (FastAPI + React) for gin-workflow projects, Beads, agent sessions, and AI CLI quota. User docs: `README.md`; decisions: `docs/adr/`; roadmap: `docs/roadmap.md`; specs: `docs/specs/`.
+gin-console is a read-only web console (FastAPI + React) for gin-workflow projects and Beads. User docs: `README.md`; decisions: `docs/adr/`; roadmap: `docs/roadmap.md`; specs: `docs/specs/`.
 
 ## Commands
 
@@ -24,10 +24,10 @@ Config: `~/.config/gin-console/config.yaml` (override with `GIN_CONSOLE_CONFIG`)
 See `docs/adr/0001-single-process-modular-contexts.md`.
 
 - One process: `create_app` in `backend/src/gin_console/app.py` serves `/api/*` and the built `frontend/dist` with SPA fallback. A UI change shows in the served app only after `pnpm -C frontend build` and a restart.
-- One bounded context per roadmap epic (`projects`, `sessions`, `quota`, `beads`): backend `gin_console/<context>/{models,source,router}.py` (plus `service.py` where needed), frontend `src/features/<context>/`. A new context adds a folder without editing the others.
-- Each external source (`gin` CLI from gin-workflow, `bd`, Claude `.jsonl`, Codex session files, CLI quota output) is wrapped in one `source.py` returning the console's pydantic models, tested with fixtures and fakes (`backend/tests/fake_bd.py`, `fakes.py`, `claude_home.py`). External commands are injected into `create_app`, so tests never run real CLIs.
-- Read-only: never mutate projects, Beads, or sessions; show a command or deep link instead. The one exception is `bd dolt pull` in a configured project on refresh and on schedule (`beads/pull.py`, see `docs/adr/0003-console-pulls-beads.md`).
-- Linux, macOS, and native Windows: `projects/collect.py` runs `gin` through its `gin.cmd` shim (or Git Bash) on Windows, quota uses `taskkill`, session liveness uses `OpenProcess`. Keep those paths working.
+- One bounded context per roadmap epic (`projects`, `beads`, `milestones`, `reports`): backend `gin_console/<context>/{models,source,router}.py` (plus `service.py` where needed), frontend `src/features/<context>/`. A new context adds a folder without editing the others.
+- Each external source (`gin` CLI from gin-workflow, `bd`, `.beads/issues.jsonl`) is wrapped in one `source.py` returning the console's pydantic models, tested with fixtures and fakes (`backend/tests/fake_bd.py`, `fakes.py`). External commands are injected into `create_app`, so tests never run real CLIs.
+- Read-only: never mutate projects or Beads; show a command or deep link instead. The one exception is `bd dolt pull` in a configured project on refresh and on schedule (`beads/pull.py`, see `docs/adr/0003-console-pulls-beads.md`).
+- Linux, macOS, and native Windows: `projects/collect.py` runs `gin` through its `gin.cmd` shim (or Git Bash) on Windows. Keep those paths working.
 - Frontend: React 19, Tailwind 4, shadcn/base-ui; `@/` is `frontend/src`.
 
 ## Task tracking

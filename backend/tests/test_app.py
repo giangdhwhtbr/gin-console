@@ -63,6 +63,13 @@ def fake(monkeypatch: pytest.MonkeyPatch) -> Fake:
     return fake
 
 
+# REQ-SESSIONS-001 REQ-QUOTA-001 (removed): the retired endpoints fall into the /api 404 route
+def test_retired_endpoints_answer_404(tmp_path: Path) -> None:
+    client = make_client(tmp_path, [])
+    for path in ("/api/sessions", "/api/sessions/alpha/s-1/messages", "/api/quota"):
+        assert client.get(path).status_code == 404
+
+
 # REQ-SERVER-002
 def test_server_002_health(tmp_path: Path) -> None:
     response = make_client(tmp_path, []).get("/api/health")
