@@ -54,15 +54,6 @@ afterEach(() => {
 });
 
 describe("ProjectsPage", () => {
-  // REQ-UI-016
-  it("REQ-UI-016 does not request the quota", async () => {
-    const fetchMock = vi.fn<(url: string) => Promise<Response>>(() => Promise.resolve(json([project()])));
-    vi.stubGlobal("fetch", fetchMock);
-    render(<ProjectsPage />);
-    await screen.findByRole("article", { name: "qwikfone" });
-    expect(fetchMock.mock.calls.map(([url]) => url).filter((url) => url.includes("/api/quota"))).toEqual([]);
-  });
-
   // REQ-UI-001
   it("REQ-UI-001 lists projects and marks missing ones", async () => {
     vi.stubGlobal(

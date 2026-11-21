@@ -1,20 +1,16 @@
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { quota } from "@/features/quota/quotaFixtures";
-import { resetQuotaStore } from "@/features/quota/quotaStore";
 import { bead } from "@/features/beads/beadFixtures";
 import { clearReturn } from "@/features/beads/returnState";
 import { App } from "./App";
 import { clearEmail, EMAIL_KEY, resetIdentity, setEmail } from "./identity";
-import { navigate } from "./route";
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
 
 beforeEach(() => {
   clearReturn();
-  resetQuotaStore();
   setEmail("tester@example.com");
 });
 
@@ -100,69 +96,17 @@ describe("App routing", () => {
     expect(screen.getByRole("link", { name: "Milestones" })).toHaveAttribute("aria-current", "page");
   });
 
-  // REQ-UI-008
-  it("REQ-UI-008 opens the session list by URL without a Sessions link and follows back", async () => {
-    window.history.replaceState(null, "", "/");
+  // REQ-UI-057
+  it("REQ-UI-057 shows the Projects page for the address of a retired page", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
-    render(<App />);
-    await screen.findByText(/no projects configured/i);
-    act(() => navigate("/sessions"));
-    expect(window.location.pathname).toBe("/sessions");
-    await screen.findByText(/no sessions found/i);
-    expect(screen.queryByRole("link", { name: "Sessions" })).toBeNull();
-    act(() => window.history.back());
-    await screen.findByText(/no projects configured/i);
-    expect(window.location.pathname).toBe("/");
-  });
-
-  // REQ-UI-008
-  it("REQ-UI-008 loads the session list directly by URL without a Sessions link", async () => {
-    window.history.replaceState(null, "", "/sessions");
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
-    render(<App />);
-    await screen.findByText(/no sessions found/i);
-    expect(screen.queryByRole("link", { name: "Sessions" })).toBeNull();
-  });
-
-  // REQ-UI-012
-  it("REQ-UI-012 renders the session log page on /sessions/:project/:id and falls back on malformed route", async () => {
-    window.history.replaceState(null, "", "/sessions/qwikfone/11111111-1111-4111-8111-111111111111");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((url: string) => {
-        if (url.includes("/messages")) {
-          return Promise.resolve(json({ items: [], next_offset: null }));
-        }
-        return Promise.resolve(json([]));
-      }),
-    );
-    render(<App />);
-    await screen.findByRole("link", { name: "Back to sessions" });
-    expect(screen.getByText("No messages.")).toBeInTheDocument();
-
-    cleanup();
-    window.history.replaceState(null, "", "/sessions/%E0%A4%A");
-    render(<App />);
-    await screen.findByText(/no projects configured/i);
-
-    cleanup();
-    window.history.replaceState(null, "", "/sessions/%E0%A4%A/11111111-1111-4111-8111-111111111111");
-    render(<App />);
-    await screen.findByText(/no projects configured/i);
-  });
-
-  // REQ-UI-015
-  it("REQ-UI-015 has no Quota link and still serves the quota page at /quota", async () => {
-    window.history.replaceState(null, "", "/quota");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((url: string) =>
-        Promise.resolve(url.includes("/api/quota") ? json(quota()) : json([])),
-      ),
-    );
-    render(<App />);
-    expect(await screen.findByRole("heading", { name: "Quota" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Quota" })).not.toBeInTheDocument();
+    for (const path of ["/sessions", "/sessions/alpha/s-1", "/quota"]) {
+      window.history.replaceState(null, "", path);
+      render(<App />);
+      await screen.findByRole("heading", { name: "Projects" });
+      const main = screen.getByRole("navigation", { name: "Main" });
+      expect(within(main).queryAllByRole("link").filter((link) => link.getAttribute("aria-current") === "page")).toEqual([]);
+      cleanup();
+    }
   });
 
   // REQ-UI-022
