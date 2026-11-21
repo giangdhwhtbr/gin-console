@@ -1,6 +1,6 @@
 # TC-UI-099: Off inside a bead
 
-- **REQ:** REQ-UI-081@abf925c9
+- **REQ:** REQ-UI-081@e4288672
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
@@ -9,7 +9,7 @@
 - Project `p` with an epic `e-1` that has an unlinked task
 
 **Steps:**
-1. Open `/beads/p/e-1/graph`
+1. Open `/beads?project=p&milestone=all&view=graph&scope=e-1`
 
 **Expected:**
 - The unlinked task is drawn

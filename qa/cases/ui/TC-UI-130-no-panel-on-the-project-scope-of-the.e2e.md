@@ -1,6 +1,6 @@
 # TC-UI-130: No panel on the project scope of the Graph view
 
-- **REQ:** REQ-UI-106@19fab77c
+- **REQ:** REQ-UI-106@aef48e9b
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57

@@ -1,6 +1,6 @@
-# TC-UI-127: No panel on the project page of the Dependencies page
+# TC-UI-127: No panel on the project scope of the Graph view at first
 
-- **REQ:** REQ-UI-051@704f443a
+- **REQ:** REQ-UI-051@7122e048
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
@@ -10,7 +10,7 @@
 
 **Steps:**
 1. Set the window width to 1280px
-2. Open `/beads/alpha/graph`
+2. Open `/beads?project=alpha&milestone=all&view=graph`
 
 **Expected:**
 - No node is selected

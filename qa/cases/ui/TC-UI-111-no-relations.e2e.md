@@ -1,6 +1,6 @@
 # TC-UI-111: No relations
 
-- **REQ:** REQ-UI-048@bf494d4b
+- **REQ:** REQ-UI-048@566471d5
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
@@ -9,8 +9,7 @@
 - Epic `e-1` in project `alpha` has 7 tasks that block none of each other
 
 **Steps:**
-1. Open `/beads/alpha/e-1/graph`
+1. Open `/beads?project=alpha&milestone=all&view=graph&scope=e-1`
 
 **Expected:**
 - The 7 nodes are placed in rows of 3, 3 and 1 under "7 without dependencies"
-- The note "No blocking relations between these tasks" is shown

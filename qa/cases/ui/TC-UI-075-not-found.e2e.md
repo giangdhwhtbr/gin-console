@@ -1,6 +1,6 @@
 # TC-UI-075: Not found
 
-- **REQ:** REQ-UI-075@59cf5290
+- **REQ:** REQ-UI-075@b0eb7f1a
 - **Priority:** low
 
 **Preconditions:**
@@ -11,3 +11,4 @@
 
 **Expected:**
 - The page says "Bead not found"
+- The page links to the Beads page

@@ -1,4 +1,4 @@
-# TC-MILESTONE-UI-020: Project Dependencies graph keeps epics under a milestone
+# TC-MILESTONE-UI-020: Project Graph view keeps epics under a milestone
 REQ: REQ-MILESTONE-UI-006@3025db15
 Priority: high
 Result: passed
@@ -8,7 +8,7 @@ Preconditions:
 - epics A and B of project P, B depending on A, both children of milestone M1
 
 Steps:
-1. Open /beads/P/graph
+1. Open /beads?project=P&milestone=all&view=graph
 
 Expected:
 - A and B are shown as nodes

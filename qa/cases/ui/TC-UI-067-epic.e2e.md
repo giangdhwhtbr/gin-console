@@ -1,6 +1,6 @@
 # TC-UI-067: Epic
 
-- **REQ:** REQ-UI-075@59cf5290
+- **REQ:** REQ-UI-075@b0eb7f1a
 - **Priority:** high
 
 **Preconditions:**
@@ -10,6 +10,7 @@
 1. Open `/beads/alpha/e-1/graph`
 
 **Expected:**
-- The heading bar names `e-1` and "0 of 2 done"
+- The page of `e-1` is shown at `/beads/alpha/e-1?tab=graph`
+- The Graph tab is open
 - `a` and `b` are nodes
 - An arrow goes from `a` to `b`

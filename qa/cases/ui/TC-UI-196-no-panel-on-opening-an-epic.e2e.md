@@ -1,6 +1,6 @@
 # TC-UI-196: No panel on opening an epic
 
-- **REQ:** REQ-UI-106@19fab77c
+- **REQ:** REQ-UI-106@aef48e9b
 - **Priority:** medium
 
 **Preconditions:**

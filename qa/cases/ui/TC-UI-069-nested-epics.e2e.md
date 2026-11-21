@@ -1,6 +1,6 @@
 # TC-UI-069: Nested epics
 
-- **REQ:** REQ-UI-075@59cf5290
+- **REQ:** REQ-UI-075@b0eb7f1a
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,4 +10,5 @@
 1. Open `/beads/alpha/r/graph`
 
 **Expected:**
+- The page of `r` is shown at `/beads/alpha/r?tab=graph`
 - `e-1` and `e-2` are nodes and their tasks are not
