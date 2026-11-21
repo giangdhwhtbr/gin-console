@@ -1,8 +1,9 @@
-// TC: TC-UI-112@a0e31060
+// TC: TC-UI-112@3ba5b4e6
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
+import { settled } from '../support/lanes';
 
-test('TC-UI-112: Linked and unlinked', async ({ page, ev }) => {
+test('TC-UI-112: Linked and unlinked (REQ-UI-048)', async ({ page, ev }) => {
   // Precondition: epic e-1 has b blocked by a, and c, d, e, f without blockers that block nothing.
   await stubApi(page, {
     projects: ['alpha'],
@@ -14,8 +15,10 @@ test('TC-UI-112: Linked and unlinked', async ({ page, ev }) => {
     ],
   });
 
-  await ev.step('1. Open /beads/alpha/e-1/graph', async () => {
-    await page.goto('/beads/alpha/e-1/graph');
+  await ev.step('1. Open /beads?project=alpha&milestone=all&view=graph&scope=e-1', async () => {
+    await page.goto('/beads?project=alpha&milestone=all&view=graph&scope=e-1');
+    await expect(page.getByTestId('graph-canvas')).toBeVisible();
+    await settled(page);
     await expect(page.getByText('4 without dependencies')).toBeVisible();
     const pos = async (id: string) => (await page.locator(`[data-node="${id}"]`).boundingBox())!;
     const [a, b, c, d, e, f] = await Promise.all(['a', 'b', 'c', 'd', 'e', 'f'].map(pos));

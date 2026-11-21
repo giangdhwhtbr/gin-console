@@ -1,10 +1,10 @@
-// TC: TC-UI-122@2b0a9b88
+// TC: TC-UI-122@1fca1978
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
 const TITLE = 'Move every checkout payment flow onto the new provider and retire the legacy gateway fully'.slice(0, 80);
 
-test('TC-UI-122: Long state line', async ({ page, ev }) => {
+test('TC-UI-122: Long state line (REQ-UI-049)', async ({ page, ev }) => {
   // Precondition: alpha has the in-progress epic e-1 (no parent, 80-character title) with 2 of its 5 tracks done.
   expect(TITLE).toHaveLength(80);
   await stubApi(page, {
@@ -21,8 +21,9 @@ test('TC-UI-122: Long state line', async ({ page, ev }) => {
     ],
   });
 
-  await ev.step('1. Open /beads/alpha/graph', async () => {
-    await page.goto('/beads/alpha/graph');
+  await ev.step('1. Open /beads?project=alpha&milestone=all&view=graph', async () => {
+    // `closed=1` is setup the case does not state: without it the page loads no closed bead and the node reads "0 of 3 done".
+    await page.goto('/beads?project=alpha&milestone=all&view=graph&closed=1');
     const node = page.locator('[data-node="e-1"]');
     await expect(node).toBeVisible();
     const n = (await node.boundingBox())!;

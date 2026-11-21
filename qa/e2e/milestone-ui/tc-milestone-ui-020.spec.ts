@@ -1,8 +1,8 @@
-// TC: TC-MILESTONE-UI-020@1ffc817b
+// TC: TC-MILESTONE-UI-020@cc8b0043
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
-test('TC-MILESTONE-UI-020: Project Dependencies graph keeps epics under a milestone', async ({ page, ev }) => {
+test('TC-MILESTONE-UI-020: Project Graph view keeps epics under a milestone (REQ-MILESTONE-UI-006)', async ({ page, ev }) => {
   // Precondition: epics A and B of project P, B depending on A, both children of milestone M1.
   await stubApi(page, {
     beads: [
@@ -12,8 +12,8 @@ test('TC-MILESTONE-UI-020: Project Dependencies graph keeps epics under a milest
     ],
   });
 
-  await ev.step('1. Open /beads/P/graph', async () => {
-    await page.goto('/beads/P/graph');
+  await ev.step('1. Open /beads?project=P&milestone=all&view=graph', async () => {
+    await page.goto('/beads?project=P&milestone=all&view=graph');
     const canvas = page.getByTestId('graph-canvas');
     const nodes = canvas.getByRole('button');
     await expect(nodes).toHaveCount(2);
