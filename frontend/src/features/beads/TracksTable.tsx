@@ -38,7 +38,7 @@ export function TracksTable({ project, epicId, beads, rows }: { project: string;
         </h2>
         <span className="text-xs text-muted-foreground">{`${rows.length} tracks · merge gates are shown in the lane rows, not here`}</span>
       </div>
-      <div className="min-w-0 rounded-lg border bg-card">
+      <div className="@container min-w-0 rounded-lg border bg-card">
         <Table className="min-w-[44rem]">
           <TableHeader>
             <TableRow>
@@ -65,7 +65,7 @@ export function TracksTable({ project, epicId, beads, rows }: { project: string;
                     <span title={row.id}>{shortId(row.id)}</span>
                   </Link>
                 </TableCell>
-                <TableCell className="max-w-36 min-w-28 truncate lg:max-w-[18rem]" title={row.title}>
+                <TableCell className="max-w-36 min-w-28 truncate @min-[56rem]:max-w-[18rem]" title={row.title}>
                   {row.title}
                 </TableCell>
                 <TableCell>
@@ -75,7 +75,7 @@ export function TracksTable({ project, epicId, beads, rows }: { project: string;
                   {row.lane === null ? (
                     <span className="text-muted-foreground">No lane</span>
                   ) : (
-                    <span className="inline-flex max-w-32 items-center gap-1.5" style={boxOf(slots, row.lane)}>
+                    <span className="inline-flex max-w-28 items-center gap-1.5" style={boxOf(slots, row.lane)}>
                       <span aria-hidden data-swatch className="size-2.5 shrink-0 rounded-[3px] bg-(--box)" />
                       <LaneChip lane={row.lane} />
                     </span>
@@ -83,7 +83,7 @@ export function TracksTable({ project, epicId, beads, rows }: { project: string;
                 </TableCell>
                 <TableCell className={row.assignee === null ? "text-muted-foreground" : undefined}>{row.assignee ?? "Unclaimed"}</TableCell>
                 <TableCell>{row.points ?? "–"}</TableCell>
-                <TableCell className="min-w-32 whitespace-normal text-state-blocked">{row.blockedBy.length === 0 ? <span className="text-muted-foreground">–</span> : row.blockedBy.join(", ")}</TableCell>
+                <TableCell className="max-w-40 min-w-28 whitespace-normal wrap-anywhere text-state-blocked">{row.blockedBy.length === 0 ? <span className="text-muted-foreground">–</span> : row.blockedBy.join(", ")}</TableCell>
               </TableRow>
             ))}
           </TableBody>

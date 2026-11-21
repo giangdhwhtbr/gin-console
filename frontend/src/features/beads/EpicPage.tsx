@@ -50,7 +50,7 @@ export function EpicPage({ project, bead }: { project: string; bead: BeadDetail 
         {tab === "overview" && (
           <>
             <EpicOverview project={project} bead={bead} beads={state} lanesHref={epicPath(project, bead.id, "lanes")} />
-            <BeadBody project={project} bead={bead} />
+            <BeadBody project={project} bead={bead} overview />
           </>
         )}
         {(tab === "graph" || tab === "lanes") && (
