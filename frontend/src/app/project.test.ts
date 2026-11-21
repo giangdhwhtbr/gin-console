@@ -1,3 +1,5 @@
+import { renderHook, waitFor, act } from "@testing-library/react";
+import type { ProjectBeads } from "@/features/projects/api";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 async function load() {
@@ -83,6 +85,61 @@ describe("refused storage", () => {
     expect(p.resolveProject("", ["a", "b", "c"])).toBe("c");
     expect(() => p.rememberProject("b")).not.toThrow();
     expect(p.resolveProject("", ["a", "b", "c"])).toBe("b");
+  });
+});
+
+describe("refused reads", () => {
+  it("REQ-UI-124 resolves without error when storage refuses reads", async () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("denied");
+    });
+    const p = await load();
+    expect(p.resolveProject("", ["a", "b"])).toBe("a");
+  });
+});
+
+vi.mock("@/features/projects/api", () => ({ fetchProjectBeads: vi.fn() }));
+
+describe("useConfiguredProjects", () => {
+  const row = (name: string, exists: boolean): ProjectBeads => ({ name, path: `/${name}`, exists, beads: null, pull: null });
+
+  async function setup() {
+    const p = await load();
+    const api = await import("@/features/projects/api");
+    const fetchMock = vi.mocked(api.fetchProjectBeads);
+    fetchMock.mockReset();
+    return { p, fetchMock };
+  }
+
+  it("REQ-UI-124 lists only projects whose directory exists, fetched once across mounts", async () => {
+    const { p, fetchMock } = await setup();
+    fetchMock.mockResolvedValue([row("a", true), row("gone", false), row("b", true)]);
+    const first = renderHook(() => p.useConfiguredProjects());
+    await waitFor(() => expect(first.result.current).toEqual({ status: "ok", names: ["a", "b"] }));
+    const second = renderHook(() => p.useConfiguredProjects());
+    await waitFor(() => expect(second.result.current.status).toBe("ok"));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("REQ-UI-124 reports an error and asks again on a remount", async () => {
+    const { p, fetchMock } = await setup();
+    fetchMock.mockRejectedValueOnce(new Error("boom")).mockResolvedValueOnce([row("a", true)]);
+    const first = renderHook(() => p.useConfiguredProjects());
+    await waitFor(() => expect(first.result.current).toEqual({ status: "error", message: "boom" }));
+    first.unmount();
+    const second = renderHook(() => p.useConfiguredProjects());
+    await waitFor(() => expect(second.result.current).toEqual({ status: "ok", names: ["a"] }));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("REQ-UI-124 refetches in a mounted hook after forgetConfiguredProjects", async () => {
+    const { p, fetchMock } = await setup();
+    fetchMock.mockResolvedValueOnce([row("a", true)]).mockResolvedValueOnce([row("a", true), row("b", true)]);
+    const view = renderHook(() => p.useConfiguredProjects());
+    await waitFor(() => expect(view.result.current).toEqual({ status: "ok", names: ["a"] }));
+    act(() => p.forgetConfiguredProjects());
+    await waitFor(() => expect(view.result.current).toEqual({ status: "ok", names: ["a", "b"] }));
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

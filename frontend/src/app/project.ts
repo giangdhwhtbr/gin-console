@@ -90,6 +90,7 @@ export function switchProject(pathname: string, search: string, name: string): s
 export type ConfiguredProjects = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; names: string[] };
 
 let loading: Promise<string[]> | null = null;
+let version = 0; // bumped by `forgetConfiguredProjects`, so that mounted hooks ask again
 
 function load(): Promise<string[]> {
   loading ??= fetchProjectBeads().then((projects) => projects.filter((project) => project.exists).map((project) => project.name));
@@ -99,10 +100,13 @@ function load(): Promise<string[]> {
 /** Drops the cached list, so that the next `useConfiguredProjects` asks again (Refresh). */
 export function forgetConfiguredProjects(): void {
   loading = null;
+  version += 1;
+  notify();
 }
 
 export function useConfiguredProjects(): ConfiguredProjects {
   const [state, setState] = useState<ConfiguredProjects>({ status: "loading" });
+  const asked = useSyncExternalStore(subscribe, () => version);
   useEffect(() => {
     let live = true;
     const request = load();
@@ -116,6 +120,6 @@ export function useConfiguredProjects(): ConfiguredProjects {
     return () => {
       live = false;
     };
-  }, []);
+  }, [asked]);
   return state;
 }
