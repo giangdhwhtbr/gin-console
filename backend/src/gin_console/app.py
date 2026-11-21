@@ -20,6 +20,8 @@ from gin_console.config import Settings
 from gin_console.milestones.router import build_router as build_milestones_router
 from gin_console.milestones.source import GwRunner
 from gin_console.milestones.source import run_gw as default_run_gw
+from gin_console.projects.collect import collect_epic_workflow
+from gin_console.projects.models import BlockError, EpicWorkflow
 from gin_console.projects.router import build_router as build_projects_router
 from gin_console.quota.router import build_router as build_quota_router
 from gin_console.quota.service import utc_now
@@ -44,6 +46,7 @@ def create_app(
     clock: Callable[[], datetime] = utc_now,
     run_bd: BdRunner = run_bd_pull,
     schedule_pulls: bool = True,
+    run_epic_workflow: Callable[[Path, str], EpicWorkflow | BlockError] = collect_epic_workflow,
 ) -> FastAPI:
     # one read of .beads/issues.jsonl per project, reused until the file changes or a refresh
     snapshots = SnapshotStore(read_beads)
@@ -89,7 +92,9 @@ def create_app(
     api.include_router(build_projects_router(settings, snapshots, pulls, on_refresh))
     api.include_router(build_sessions_router(settings, claude_home))
     api.include_router(build_quota_router(run_claude, run_codex, clock))
-    api.include_router(build_beads_router(settings, snapshots, clock))
+    api.include_router(
+        build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh)
+    )
     api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh))
     api.include_router(build_reports_router(settings, snapshots, clock, on_refresh))
 
