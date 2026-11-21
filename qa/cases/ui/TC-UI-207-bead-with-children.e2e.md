@@ -11,4 +11,3 @@
 
 **Expected:**
 - `/beads?project=p&view=graph&scope=t-1` is shown
-- The browser history has no entry for the old link

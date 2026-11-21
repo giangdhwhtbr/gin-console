@@ -4,10 +4,10 @@
 - **Priority:** medium
 
 **Preconditions:**
-- Project `p` has a task without blockers that blocks nothing and has no child
+- Project `p` has task `t-9` without blockers that blocks nothing and has no child
 
 **Steps:**
-1. Open the bead page of that task
+1. Open `/beads/p/t-9`
 
 **Expected:**
 - There is no button "View in graph"

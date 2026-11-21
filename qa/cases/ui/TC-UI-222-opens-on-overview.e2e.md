@@ -1,4 +1,4 @@
-# TC-UI-070: Opens on Overview
+# TC-UI-222: Opens on Overview
 
 - **REQ:** REQ-UI-119@fcb75f6f
 - **Priority:** medium
