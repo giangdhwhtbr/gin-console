@@ -1,6 +1,8 @@
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { rememberProject, resolveProject, setFavorite } from "@/app/project";
+import { navigate } from "@/app/route";
 import type { ProjectBeads } from "@/features/projects/api";
 import type { BeadSummary, ProjectMilestones } from "./api";
 import { BeadsPage } from "./BeadsPage";
@@ -81,6 +83,8 @@ const stub = (
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/beads");
+  setFavorite(null);
+  rememberProject("alpha");
 });
 
 afterEach(() => {
@@ -92,8 +96,8 @@ afterEach(() => {
 
 describe("BeadsPage", () => {
   // REQ-UI-023
-  it("REQ-UI-023 default and choice", async () => {
-    stub((url) => {
+  it("REQ-UI-023 shows the current project, writes it into the URL and has no select of its own", async () => {
+    const mock = stub((url) => {
       const p = url.searchParams.get("project");
       if (p === "alpha") return json([bead("a-1", { title: "Alpha Bead" })]);
       if (p === "omega") return json([bead("o-1", { title: "Omega Bead" })]);
@@ -101,12 +105,52 @@ describe("BeadsPage", () => {
     });
     render(<BeadsPage />);
     await screen.findByText("Alpha Bead");
-    const select = screen.getByLabelText("Project");
-    expect(select).toHaveValue("alpha");
-    expect(screen.queryByRole("option", { name: "ghost" })).not.toBeInTheDocument();
-    await userEvent.selectOptions(select, "omega");
+    expect(screen.queryByLabelText("Project")).not.toBeInTheDocument();
+    expect(window.location.search).toBe("?project=alpha");
+    act(() => navigate("/beads?project=omega"));
     expect(await screen.findByText("Omega Bead")).toBeInTheDocument();
+    expect(mock).toHaveBeenCalled();
+  });
+
+  it("REQ-UI-124 the last chosen project beats the favorite, and is written with replace", async () => {
+    setFavorite("alpha");
+    rememberProject("omega");
+    const replace = vi.spyOn(window.history, "replaceState");
+    stub((url) => json([bead("x-1", { title: `Bead of ${url.searchParams.get("project")}` })]));
+    render(<BeadsPage />);
+    expect(await screen.findByText("Bead of omega")).toBeInTheDocument();
     expect(window.location.search).toBe("?project=omega");
+    expect(replace.mock.calls.map((call) => call[2])).toContain("/beads?project=omega");
+  });
+
+  it("REQ-UI-124 a project of the URL becomes the current one", async () => {
+    window.history.replaceState(null, "", "/beads?project=omega");
+    stub(() => json([]));
+    render(<BeadsPage />);
+    await waitFor(() => expect(resolveProject("", ["alpha", "omega"])).toBe("omega"));
+  });
+
+  it("REQ-UI-124 the project holds for the visit when storage refuses writes", async () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("denied");
+    });
+    window.history.replaceState(null, "", "/beads?project=omega");
+    stub(() => json([bead("o-1", { title: "Omega Bead" })]));
+    render(<BeadsPage />);
+    expect(await screen.findByText("Omega Bead")).toBeInTheDocument();
+    expect(resolveProject("", ["alpha", "omega"])).toBe("omega");
+  });
+
+  it("REQ-UI-126 an unknown project gets a notice with the configured projects and no request for beads", async () => {
+    window.history.replaceState(null, "", "/beads?project=zzz");
+    const mock = stub(() => json([bead("a-1")]));
+    render(<BeadsPage />);
+    expect(await screen.findByText("No project zzz is configured")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "omega" })).toHaveAttribute("href", "/beads?project=omega");
+    expect(screen.queryByRole("link", { name: "ghost" })).not.toBeInTheDocument();
+    expect(window.location.search).toBe("?project=zzz");
+    expect(mock.mock.calls.some(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url).startsWith("/api/beads?"))).toBe(false);
+    expect(resolveProject("", ["alpha", "omega"])).toBe("alpha");
   });
 
   it("REQ-UI-103 note for the selected stale project", async () => {
@@ -117,9 +161,8 @@ describe("BeadsPage", () => {
       "Beads of alpha may be out of date. Run bd export -o .beads/issues.jsonl in alpha.",
     );
     expect(await screen.findByText("Title a-1")).toBeInTheDocument();
-    await userEvent.selectOptions(screen.getByLabelText("Project"), "omega");
-    await screen.findByLabelText("Project");
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    act(() => navigate("/beads?project=omega"));
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
   });
 
   it("REQ-UI-103 no note when not stale", async () => {
@@ -141,9 +184,8 @@ describe("BeadsPage", () => {
       "Pulling Beads of alpha failed: Merge conflict detected. Run bd dolt pull in /home/gin/alpha.",
     );
     expect(await screen.findByText("Title a-1")).toBeInTheDocument();
-    await userEvent.selectOptions(screen.getByLabelText("Project"), "omega");
-    await screen.findByLabelText("Project");
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    act(() => navigate("/beads?project=omega"));
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
   });
 
   it("REQ-BEADS-018 a failed pull without an error text reads unknown error", async () => {
@@ -864,7 +906,8 @@ describe("BeadsPage", () => {
           url.searchParams.get("project") === "alpha" ? alphaAnswer : Promise.resolve(json(answer("o-m"))),
       );
       render(<BeadsPage />);
-      await userEvent.selectOptions(await screen.findByLabelText("Project"), "omega");
+      await screen.findByLabelText("Milestone");
+      act(() => navigate("/beads?project=omega"));
       await screen.findByText("Omega in o-m");
       expect(screen.queryByText("Omega in a-m")).toBeNull();
       await act(async () => {

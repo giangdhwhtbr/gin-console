@@ -218,6 +218,22 @@
   }
 }
 
+/* REQ-UI-127: the bead the user came back from; with reduced motion the ring just shows, then goes */
+@keyframes last-opened {
+  from { outline-color: var(--ring); }
+  to { outline-color: transparent; }
+}
+[data-last-opened] {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+  animation: last-opened 2s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-last-opened] {
+    animation: none;
+  }
+}
+
 .markdown > :first-child { margin-top: 0; }
 .markdown > :last-child { margin-bottom: 0; }
 .markdown :is(h1, h2, h3, h4) { font-weight: 600; margin: 1rem 0 0.375rem; }

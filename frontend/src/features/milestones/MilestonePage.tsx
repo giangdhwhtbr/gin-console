@@ -1,11 +1,14 @@
 import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
-import { navigate, useLocation } from "@/app/route";
+import { projectHref } from "@/app/project";
+import { usePageTitle } from "@/app/usePageTitle";
+import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
+import { ProjectGuard } from "@/app/UnknownProject";
 import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
 import { filtersToSearch, parseFilters } from "@/features/beads/filters";
-import { rememberPlace } from "@/features/beads/returnState";
+import { rememberOrigin } from "@/app/origin";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
 import { awayLine, plural, shortDate } from "./format";
@@ -28,7 +31,15 @@ type Tab = (typeof TABS)[number]["value"];
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
-export function MilestonePage({ project, id }: { project: string; id: string }) {
+export function MilestonePage(props: { project: string; id: string }) {
+  return (
+    <ProjectGuard project={props.project} hrefOf={(name) => projectHref("/milestones", name)}>
+      <Milestone {...props} />
+    </ProjectGuard>
+  );
+}
+
+function Milestone({ project, id }: { project: string; id: string }) {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const asked = params.get("start");
@@ -41,16 +52,21 @@ export function MilestonePage({ project, id }: { project: string; id: string }) 
   useEffect(() => {
     if (tabAsked === "graph") navigate(milestonePath(project, id, "beads", start, zoom, "?view=graph"), { replace: true });
   }, [tabAsked, project, id, start, zoom]);
-  // REQ-UI-072: the place the breadcrumb of a bead page returns to
-  useEffect(() => {
-    if (tab === "beads" && tabAsked === "beads") rememberPlace(`/milestones/${encodeURIComponent(project)}/${encodeURIComponent(id)}`, search);
-  }, [tab, tabAsked, project, id, search]);
   const current = useCallback(() => fetchMilestone(project, id, null), [project, id]);
   const preview = useCallback(
     () => (start === null ? Promise.resolve(null) : fetchMilestone(project, id, start)),
     [project, id, start],
   );
   const base = useLoad(current, true);
+  // useLoad keeps the last answer while a new milestone loads: its title is not this one's
+  const title = base.state.status === "ok" && !base.state.stale && base.state.data.id === id ? base.state.data.title : null;
+  usePageTitle(title, project);
+  // REQ-UI-072: the place the breadcrumb of a bead page returns to
+  useEffect(() => {
+    if (tabAsked !== "graph") rememberOrigin("milestone", `/milestones/${encodeURIComponent(project)}/${encodeURIComponent(id)}`, search, project, title);
+  }, [tabAsked, project, id, search, title]);
+  // the Beads tab restores itself once its beads have loaded
+  useRestoreOnBack(base.state.status === "ok" && tab !== "beads");
   const shown = useLoad<MilestoneDetail | null>(preview, false);
   const comments = useMilestoneComments(project, id);
   // REQ-MILESTONE-UI-019: the tab counts the members with a retro; no number while loading or after an error

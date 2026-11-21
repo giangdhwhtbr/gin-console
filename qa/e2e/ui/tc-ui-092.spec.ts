@@ -22,6 +22,7 @@ async function stubDetails(page: Page, details: Record<string, ReturnType<typeof
 
 test('TC-UI-092: From bead to bead', async ({ page, ev }) => {
   // Precondition: project a with bead a-1 related to bead a-2.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   const a1 = bead('a-1', { ready: true });
   const a2 = bead('a-2', { ready: true });
   await stubApi(page, { projects: ['a'], beads: [a1, a2] });

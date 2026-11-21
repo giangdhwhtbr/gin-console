@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@/app/App";
 import { EMAIL_KEY, resetIdentity, setEmail } from "@/app/identity";
+import { resolveProject, rememberProject } from "@/app/project";
 import { bead, json, milestoneOption, project as projectEntry, projectMilestones, stubBeads } from "@/features/beads/beadFixtures";
 
 const EMAIL = "giangdhwhtbr@gmail.com";
@@ -223,6 +224,24 @@ describe("MyTasksPage", () => {
       expect(screen.getByText("B task")).toBeInTheDocument();
       expect(screen.getByLabelText("Project")).toHaveValue("");
       expect(screen.getByLabelText("Milestone")).toBeDisabled();
+    });
+
+    it("REQ-UI-124 My Tasks keeps all projects even when a project is current", async () => {
+      rememberProject("B");
+      stub();
+      open("/my-tasks");
+      expect(await screen.findByText("A in m2")).toBeInTheDocument();
+      expect(screen.getByText("B task")).toBeInTheDocument();
+      expect(screen.getByLabelText("Project")).toHaveValue("");
+      expect(window.location.search).toBe("");
+    });
+
+    it("REQ-UI-088 choosing one project in My Tasks makes it the current project", async () => {
+      rememberProject("B");
+      stub();
+      open("/my-tasks");
+      await userEvent.selectOptions(await screen.findByLabelText("Project"), "A");
+      expect(resolveProject("", ["A", "B"])).toBe("A");
     });
 
     it("REQ-UI-105 project with a current milestone", async () => {

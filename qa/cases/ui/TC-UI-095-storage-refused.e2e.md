@@ -1,6 +1,6 @@
 # TC-UI-095: Storage refused
 
-- **REQ:** REQ-UI-073@21bc1bf0
+- **REQ:** REQ-UI-073@99c2938a
 - **Priority:** low
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57

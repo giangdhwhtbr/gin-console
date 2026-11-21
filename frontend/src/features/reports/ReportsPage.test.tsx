@@ -1,10 +1,13 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { rememberProject, resolveProject, setFavorite } from "@/app/project";
+import { clearOrigin, getOrigin } from "@/app/origin";
 import { navigate } from "@/app/route";
 import type { Report } from "./api";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
 import { ReportsPage } from "./ReportsPage";
+import { useSections } from "./sectionStore";
 import { report } from "./reportFixtures";
 import { teamReport as teamFixture } from "./team/teamFixtures";
 import type { TeamReport } from "./teamApi";
@@ -46,7 +49,32 @@ afterEach(() => {
 const teamCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports/team"));
 const reportCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports?"));
 
+beforeEach(() => {
+  setFavorite(null);
+  rememberProject("alpha");
+});
+
 describe("ReportsPage", () => {
+  it("REQ-UI-073 remembers its place for the breadcrumb of a bead page", async () => {
+    clearOrigin();
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    expect(getOrigin()).toMatchObject({ kind: "reports", path: "/reports", project: "alpha" });
+    expect(getOrigin().search).toContain("project=alpha");
+  });
+
+  it("REQ-UI-073 Reports with all projects is remembered for any project", async () => {
+    clearOrigin();
+    window.history.replaceState(null, "", "/reports?project=all&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    expect(getOrigin()).toMatchObject({ kind: "reports", path: "/reports", project: null });
+    expect(getOrigin().search).toContain("project=all");
+  });
+
   it("REQ-UI-088 opens a shared link", async () => {
     window.history.replaceState(null, "", "/reports?project=all&days=7&tab=delivery");
     const mock = stub();
@@ -58,12 +86,44 @@ describe("ReportsPage", () => {
     expect(requested(mock)).toContain("/api/reports?project=all&days=7");
   });
 
-  it("REQ-UI-088 defaults to the first project and changes the period", async () => {
+  it("REQ-UI-088 the current project beats the first one when the URL has none", async () => {
+    rememberProject("beta");
+    window.history.replaceState(null, "", "/reports?tab=delivery");
+    const mock = stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    expect(requested(mock)).toContain("/api/reports?project=beta&days=30");
+  });
+
+  it("REQ-UI-088 choosing a single project makes it current, choosing All does not", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    await userEvent.selectOptions(screen.getByLabelText("Project"), "beta");
+    expect(resolveProject("", ["alpha", "beta"])).toBe("beta");
+    await userEvent.selectOptions(screen.getByLabelText("Project"), "all");
+    expect(resolveProject("", ["alpha", "beta"])).toBe("beta");
+  });
+
+  it("REQ-UI-126 an unknown project gets a notice and no report request", async () => {
+    window.history.replaceState(null, "", "/reports?project=zzz&tab=delivery");
+    const mock = stub();
+    render(<ReportsPage />);
+    expect(await screen.findByText("No project zzz is configured")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "beta" })).toHaveAttribute("href", "/reports?project=beta");
+    expect(reportCalls(mock)).toEqual([]);
+    expect(window.location.search).toBe("?project=zzz&tab=delivery");
+    expect(screen.queryByLabelText("Project")).not.toBeInTheDocument();
+  });
+
+  it("REQ-UI-088 defaults to the current project, writes it into the URL, and changes the period", async () => {
     window.history.replaceState(null, "", "/reports?tab=delivery");
     const mock = stub();
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
     expect(requested(mock)).toContain("/api/reports?project=alpha&days=30");
+    expect(window.location.search).toBe("?project=alpha&days=30&tab=delivery");
     await userEvent.click(screen.getByRole("button", { name: "90 days" }));
     expect(window.location.search).toBe("?project=alpha&days=90&tab=delivery");
     await screen.findByText("Beads closed");
@@ -433,5 +493,63 @@ describe("ReportsPage", () => {
     fireEvent.scroll(list);
     expect(fades().right).toBeNull();
     expect(fades().left).not.toBeNull();
+  });
+
+  it("REQ-UI-095 fades the right edge when the tabs widen after the first render", async () => {
+    const observed: { target: Element; fire: () => void }[] = [];
+    class FakeResizeObserver {
+      callback: () => void;
+      constructor(callback: () => void) {
+        this.callback = callback;
+      }
+      observe(target: Element) {
+        observed.push({ target, fire: this.callback });
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    const list = await screen.findByRole("tablist", { name: "Report" });
+    const define = (key: string, value: number) => Object.defineProperty(list, key, { configurable: true, writable: true, value });
+    define("clientWidth", 700);
+    define("scrollWidth", 700);
+    define("scrollLeft", 0);
+    expect(screen.queryByTestId("tabs-fade-right")).toBeNull();
+    // the headlines load: a tab widens, the list's own box does not change
+    define("scrollWidth", 900);
+    const tabs = observed.filter((o) => o.target.parentElement === list);
+    expect(tabs.length).toBeGreaterThan(0);
+    act(() => tabs[0].fire());
+    expect(screen.getByTestId("tabs-fade-right")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-095 REQ-UI-129 the tab strip hides at lg while the sidebar is expanded, and the sections are published", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery&days=7");
+    stub();
+    render(<ReportsPage />);
+    const list = await screen.findByRole("tablist", { name: "Report" });
+    expect(list.closest(".lg\\:group-data-\\[sidebar\\=expanded\\]\\/shell\\:hidden")).not.toBeNull();
+    const { result } = renderHook(() => useSections());
+    await waitFor(() => expect(result.current.sections.find((s) => s.tab === "delivery")?.headline).not.toBe(""));
+    expect(result.current.selected).toBe("delivery");
+    expect(result.current.sections.map((s) => s.tab)).toEqual(["team", "delivery", "velocity", "usage", "quality", "coverage"]);
+    const quality = result.current.sections.find((s) => s.tab === "quality");
+    expect(new URLSearchParams(quality?.href.split("?")[1]).get("tab")).toBe("quality");
+    expect(quality?.href).toContain("project=alpha");
+    expect(quality?.href).toContain("days=7");
+  });
+
+  it("REQ-UI-129 clears the sections when the page unmounts", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha");
+    stub();
+    const view = render(<ReportsPage />);
+    await screen.findByRole("tablist", { name: "Report" });
+    const { result } = renderHook(() => useSections());
+    expect(result.current.sections).toHaveLength(6);
+    view.unmount();
+    expect(result.current.sections).toHaveLength(0);
   });
 });

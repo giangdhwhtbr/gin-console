@@ -7,7 +7,7 @@ import { DetailsPanel } from "./DetailsPanel";
 import { filterBeads, type BeadFilters } from "./filters";
 import { COLUMNS, ListRow } from "./ListRow";
 import type { MilestoneInEffect } from "./milestoneChoice";
-import { getReturn, rememberOpen } from "./returnState";
+import { getOrigin, rememberOpen } from "@/app/origin";
 import { allBranches, ancestorsOf, keepSet, treeIndex, treeRows } from "./tree";
 import { treeKeyDown } from "./treeKeys";
 import { useWide } from "./useWide";
@@ -28,7 +28,7 @@ export function ListView({
   onChange: (next: BeadFilters) => void;
 }) {
   const wide = useWide();
-  const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(getReturn().open[project] ?? []));
+  const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(getOrigin().open[project] ?? []));
   const base = beads.filter(
     (b) => filters.closed || closedMilestone || (filters.sprint !== "" && filters.sprint !== "none") || b.status !== "closed",
   );

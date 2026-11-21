@@ -1,6 +1,6 @@
 # TC-UI-018: Shared link
 
-- **REQ:** REQ-UI-088@a924faa8
+- **REQ:** REQ-UI-088@4bbbd1af
 - **Priority:** medium
 
 **Preconditions:**

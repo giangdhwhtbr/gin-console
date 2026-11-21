@@ -11,7 +11,10 @@ export type MilestoneEntry = {
   kickoff: string | null; finish: string | null;
   epics: { total: number; closed: number }; warnings: number | null; error: string | null;
 };
-export type MilestoneList = { milestones: MilestoneEntry[]; unassigned_epics: number; today: string };
+export type MilestoneList = {
+  milestones: MilestoneEntry[]; unassigned_epics: number; today: string;
+  days_per_point?: { value: number; measured_epics: number; assumed: boolean } | null;
+};
 export type EpicPlan = {
   id: string; title: string; status: string; estimate_days: number | null;
   planned_start: string; planned_end: string; depends_on: string[];

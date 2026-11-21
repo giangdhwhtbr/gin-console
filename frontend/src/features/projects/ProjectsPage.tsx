@@ -1,6 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { rememberOrigin } from "@/app/origin";
+import { useRestoreOnBack } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { usePageTitle } from "@/app/usePageTitle";
 import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { fetchProjects, type Project } from "./api";
 import { ProjectCard } from "./ProjectCard";
@@ -15,6 +18,9 @@ const REFRESH_MS = 10_000;
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export function ProjectsPage() {
+  usePageTitle("Projects");
+  // REQ-UI-073: the place the breadcrumb of a bead page returns to
+  useEffect(() => rememberOrigin("projects", "/", "", null), []);
   // simplified: server state lives in component state; move to a query cache when a second
   // screen reads the same data.
   const [state, setState] = useState<State>({ status: "loading" });
@@ -32,6 +38,8 @@ export function ProjectsPage() {
   }, []);
 
   useVisibleInterval(load, REFRESH_MS);
+
+  useRestoreOnBack(state.status === "ok");
 
   const retry = () => {
     if (state.status === "error") setState({ status: "loading" });

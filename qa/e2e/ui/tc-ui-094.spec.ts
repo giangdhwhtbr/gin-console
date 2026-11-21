@@ -4,6 +4,7 @@ import { bead, stubApi } from '../support/api';
 
 test('TC-UI-094: Reload', async ({ page, ev }) => {
   // Precondition: project a with bead a-1.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, { projects: ['a'], beads: [bead('a-1', { status: 'in_progress', assignee: 'qa@example.com' })] });
   await page.route('**/api/beads/a/a-1', (route) =>
     route.fulfill({

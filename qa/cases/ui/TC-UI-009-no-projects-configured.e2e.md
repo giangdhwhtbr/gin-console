@@ -1,6 +1,6 @@
 # TC-UI-009: No projects configured
 
-- **REQ:** REQ-UI-023@3b9a5087
+- **REQ:** REQ-UI-023@3c2e03cc
 - **Priority:** medium
 
 **Preconditions:**

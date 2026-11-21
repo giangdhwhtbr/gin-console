@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "@/app/Link";
+import { projectHref } from "@/app/project";
+import { usePageTitle } from "@/app/usePageTitle";
+import { ProjectGuard } from "@/app/UnknownProject";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,15 +22,21 @@ type State =
   | { status: "notfound" }
   | { status: "ok"; bead: BeadDetail };
 
-export function BeadDetailPage({
-  project,
-  id,
-  embedded = false,
-}: {
-  project: string;
-  id: string;
-  embedded?: boolean;
-}) {
+type Props = { project: string; id: string; embedded?: boolean };
+
+export function BeadDetailPage(props: Props) {
+  const page = <BeadDetail {...props} />;
+  // the embedded panel belongs to a page whose project is already checked
+  return props.embedded ? page : <ProjectGuard project={props.project} hrefOf={(name) => projectHref("/beads", name)}>{page}</ProjectGuard>;
+}
+
+/** A details panel must not retitle the page it sits in, so only the page renders this. */
+function BeadTitle({ title, project }: { title: string | null; project: string }) {
+  usePageTitle(title, project);
+  return null;
+}
+
+function BeadDetail({ project, id, embedded = false }: Props) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [tab, setTab] = useState<DetailTab>("details");
@@ -50,17 +59,22 @@ export function BeadDetailPage({
     setAttempt((n) => n + 1);
   };
   const parent = state.status === "ok" ? state.bead.parent : null;
+  // the parent's title is in the relations of the loaded bead; the id stands in when it is not
+  const parentTitle =
+    state.status === "ok" ? (state.bead.dependencies.find((d) => d.type === "parent-child" && d.id === state.bead.parent)?.title ?? null) : null;
   const back = embedded ? (
     <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`} className="text-sm underline underline-offset-2">
       Open page
     </Link>
   ) : (
-    <Breadcrumb project={project} id={id} parent={parent} />
+    <Breadcrumb project={project} id={id} title={state.status === "ok" ? state.bead.title : null} parent={parent === null ? null : { id: parent, title: parentTitle }} />
   );
 
+  const title = embedded ? null : <BeadTitle title={state.status === "ok" ? state.bead.title : null} project={project} />;
   if (state.status === "notfound") {
     return (
       <section className="flex flex-col gap-4">
+        {title}
         {back}
         <p>Bead not found</p>
       </section>
@@ -71,6 +85,7 @@ export function BeadDetailPage({
   const epicPage = bead !== null && bead.issue_type === "epic" && !embedded;
   return (
     <section className="flex flex-col gap-4">
+      {title}
       {back}
       {state.status === "loading" && <p className="text-muted-foreground">Loading bead…</p>}
       {state.status === "error" && (

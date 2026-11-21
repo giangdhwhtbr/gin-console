@@ -1,9 +1,15 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { rememberProject, resolveProject, setFavorite } from "@/app/project";
 import { bead, json } from "@/features/beads/beadFixtures";
 import { entry, forecast, list, stubMilestones } from "./milestoneFixtures";
 import { MilestonesPage } from "./MilestonesPage";
+
+beforeEach(() => {
+  setFavorite(null);
+  rememberProject("alpha");
+});
 
 afterEach(() => {
   cleanup();
@@ -18,6 +24,25 @@ function open(body: Response, beads: Parameters<typeof stubMilestones>[1] = []) 
 const rowOf = async (title: string) => (await screen.findByRole("link", { name: title })).closest("li") ?? document.body;
 
 describe("MilestonesPage", () => {
+  it("REQ-UI-124 shows the current project in the URL, with no project select of its own", async () => {
+    window.history.replaceState(null, "", "/milestones");
+    stubMilestones(() => json(list([entry("m-1", { title: "Beta" })])));
+    render(<MilestonesPage />);
+    await rowOf("Beta");
+    expect(window.location.search).toBe("?project=alpha");
+    expect(screen.queryByLabelText("Project")).not.toBeInTheDocument();
+  });
+
+  it("REQ-UI-126 an unknown project gets a notice and no milestones request", async () => {
+    window.history.replaceState(null, "", "/milestones?project=zzz");
+    const mock = stubMilestones(() => json(list([])));
+    render(<MilestonesPage />);
+    expect(await screen.findByText("No project zzz is configured")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "alpha" })).toHaveAttribute("href", "/milestones?project=alpha");
+    expect(mock.mock.calls.some(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url).startsWith("/api/milestones"))).toBe(false);
+    expect(resolveProject("", ["alpha"])).toBe("alpha");
+  });
+
   it("REQ-UI-107 the seven-column grid starts only when the list container is wide, so the title column never collapses", async () => {
     open(json(list([entry("m-1", { title: "Beta" })])));
     const row = await rowOf("Beta");

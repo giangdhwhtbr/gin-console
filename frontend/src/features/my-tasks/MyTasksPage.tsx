@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useEmail } from "@/app/identity";
 import { Link } from "@/app/Link";
-import { navigate, useLocation } from "@/app/route";
+import { rememberOrigin } from "@/app/origin";
+import { rememberProject } from "@/app/project";
+import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
+import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { isClosedMilestone, matchesMilestone, milestoneInEffect } from "@/features/beads/milestoneChoice";
@@ -26,6 +29,9 @@ export function MyTasksPage() {
   const params = new URLSearchParams(search);
   const closed = params.get("closed") === "1";
   const project = params.get("project") ?? "";
+  usePageTitle("My Tasks", project);
+  // REQ-UI-073: the place the breadcrumb of a bead page returns to; "All projects" fits any project
+  useEffect(() => rememberOrigin("my-tasks", "/my-tasks", search, project === "" ? null : project), [search, project]);
   const milestones = useMilestones(project);
   const milestone = project === "" ? "all" : milestoneInEffect(params.get("milestone") ?? "", milestones);
   const fetchClosed = closed || isClosedMilestone(milestone, milestones);
@@ -48,6 +54,7 @@ export function MyTasksPage() {
     };
   }, [email, fetchClosed, project, request]);
 
+  useRestoreOnBack(state.status === "ok");
   const tasks = state.status === "ok" ? state.data.tasks.filter((task) => matchesMilestone(task.bead, milestone)) : [];
   const count = state.status === "ok" ? tasks.length : null;
   const projects = state.status === "ok" ? state.data.projects : project === "" ? [] : [project];
@@ -70,7 +77,10 @@ export function MyTasksPage() {
           <select
             aria-label="Project"
             value={project}
-            onChange={(event) => go({ project: event.target.value })}
+            onChange={(event) => {
+              if (event.target.value !== "") rememberProject(event.target.value);
+              go({ project: event.target.value });
+            }}
             className="min-w-0 max-w-full truncate rounded border bg-background px-2 py-1"
           >
             <option value="">All projects</option>
@@ -136,7 +146,7 @@ export function MyTasksPage() {
               </TableHeader>
               <TableBody>
                 {tasks.map(({ project, bead }) => (
-                  <TableRow key={`${project}/${bead.id}`}>
+                  <TableRow key={`${project}/${bead.id}`} data-id={bead.id} tabIndex={-1}>
                     <TableCell>{project}</TableCell>
                     <TableCell className="whitespace-normal">
                       <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>

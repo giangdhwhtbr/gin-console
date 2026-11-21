@@ -22,6 +22,7 @@ async function stubDetails(page: Page, details: Record<string, ReturnType<typeof
 
 test('TC-UI-089: Details panel', async ({ page, ev }) => {
   // Precondition: project a with bead a-1.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   const a1 = bead('a-1');
   await stubApi(page, { projects: ['a'], beads: [a1] });
   await stubDetails(page, { 'a-1': detailOf(a1) });

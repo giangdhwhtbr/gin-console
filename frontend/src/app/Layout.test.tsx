@@ -1,14 +1,34 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EMAIL_KEY, getEmail, resetIdentity, setEmail } from "./identity";
 import { Layout, SIDEBAR_KEY } from "./Layout";
+import { clearOrigin, rememberOrigin } from "./origin";
+import { clearSections, publishSections, type SectionLink } from "@/features/reports/sectionStore";
+import { forgetConfiguredProjects, setFavorite } from "./project";
 
-beforeEach(() => window.localStorage.clear());
+const json = (body: unknown) =>
+  new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+const row = (name: string) => ({ name, path: `/${name}`, exists: true, beads: null, pull: null });
+const fetched = vi.fn((url: string) =>
+  Promise.resolve(url === "/api/projects/beads" ? json([row("alpha"), row("beta")]) : json({})),
+);
+
+beforeEach(() => {
+  window.localStorage.clear();
+  window.sessionStorage.clear();
+  setFavorite(null);
+  fetched.mockClear();
+  vi.stubGlobal("fetch", fetched);
+  forgetConfiguredProjects();
+  clearOrigin();
+});
 afterEach(() => {
   cleanup();
+  clearSections();
   resetIdentity();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 const open = (path: string) => {
@@ -26,19 +46,59 @@ const marked = () =>
 describe("Layout", () => {
   it.each(["/", "/beads", "/sessions", "/reports"])(
     "REQ-UI-055 REQ-UI-099 has one Main navigation with the five links on %s",
-    (path) => {
+    async (path) => {
       open(path);
+      await screen.findByRole("button", { name: "Project: alpha" });
       expect(screen.getAllByRole("navigation")).toHaveLength(1);
       expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
       expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
         ["Projects", "/"],
-        ["Beads", "/beads"],
+        ["Beads", "/beads?project=alpha"],
         ["My Tasks", "/my-tasks"],
-        ["Milestones", "/milestones"],
-        ["Reports", "/reports"],
+        ["Milestones", "/milestones?project=alpha"],
+        ["Reports", "/reports?project=alpha"],
       ]);
     },
   );
+
+  it("REQ-UI-124 REQ-UI-055 the links carry the project of the URL", async () => {
+    open("/beads?project=beta");
+    await screen.findByRole("button", { name: "Project: beta" });
+    const hrefs = within(nav()).getAllByRole("link").map((link) => link.getAttribute("href"));
+    expect(hrefs).toEqual(["/", "/beads?project=beta", "/my-tasks", "/milestones?project=beta", "/reports?project=beta"]);
+  });
+
+  it("REQ-UI-124 the links follow the favorite when the URL names no project", async () => {
+    setFavorite("beta");
+    open("/");
+    await screen.findByRole("button", { name: "Project: beta" });
+    expect(within(nav()).getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=beta");
+  });
+
+  it("REQ-UI-123 puts the switcher in the top bar, and the sidebar variant above the navigation", async () => {
+    open("/");
+    await screen.findByRole("button", { name: "Project: alpha" });
+    const banner = screen.getByRole("banner");
+    expect(within(banner).getByRole("button", { name: "alpha" })).toBeInTheDocument();
+    const sidebar = screen.getByRole("button", { name: /alpha\s*2 projects/ });
+    expect(sidebar.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("REQ-UI-123 REQ-UI-094 the collapsed sidebar keeps only the rail switcher", async () => {
+    window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+    open("/");
+    await screen.findByRole("button", { name: "Project: alpha" });
+    expect(screen.queryByRole("button", { name: /alpha\s*2 projects/ })).toBeNull();
+  });
+
+  it("REQ-UI-124 Refresh asks for the configured projects again", async () => {
+    open("/");
+    await screen.findByRole("button", { name: "Project: alpha" });
+    const asked = () => fetched.mock.calls.filter(([url]) => url === "/api/projects/beads").length;
+    expect(asked()).toBe(1);
+    await userEvent.click(screen.getAllByRole("button", { name: "Refresh data" })[0]);
+    await waitFor(() => expect(asked()).toBe(2));
+  });
 
   it.each([
     ["/", ["Projects"]],
@@ -59,6 +119,27 @@ describe("Layout", () => {
   ])("REQ-UI-057 %s marks %j", (path, expected) => {
     open(path);
     expect(marked()).toEqual(expected);
+  });
+
+  it.each<[string, Parameters<typeof rememberOrigin> | null, string[]]>([
+    ["Bead page by address", null, ["Beads"]],
+    ["Bead page from My Tasks", ["my-tasks", "/my-tasks", "?project=alpha", "alpha"], ["My Tasks"]],
+    ["My Tasks with all projects", ["my-tasks", "/my-tasks", "", null], ["My Tasks"]],
+    ["a milestone page", ["milestone", "/milestones/alpha/m-1", "?tab=beads", "alpha"], ["Milestones"]],
+    ["Reports", ["reports", "/reports", "?project=alpha", "alpha"], ["Reports"]],
+    ["Projects", ["projects", "/", "", null], ["Projects"]],
+    ["the Beads page", ["beads", "/beads", "?project=alpha", "alpha"], ["Beads"]],
+    ["My Tasks of another project", ["my-tasks", "/my-tasks", "?project=beta", "beta"], ["Beads"]],
+  ])("REQ-UI-057 a bead page of alpha opened from %s marks %j", (_name, from, expected) => {
+    if (from !== null) rememberOrigin(...from);
+    open("/beads/alpha/a-1");
+    expect(marked()).toEqual(expected);
+  });
+
+  it("REQ-UI-057 a retired page marks nothing whatever was remembered", () => {
+    rememberOrigin("my-tasks", "/my-tasks", "", null);
+    open("/sessions/alpha/11111111-1111-4111-8111-111111111111");
+    expect(marked()).toEqual([]);
   });
 
   it("REQ-UI-057 follows a click", async () => {
@@ -146,6 +227,63 @@ describe("Layout", () => {
       open("/");
       await userEvent.click(screen.getAllByRole("button", { name: /^Log out/ })[0]);
       expect(getEmail()).toBeNull();
+    });
+  });
+
+  it("REQ-UI-128 Tab reaches Skip to content first and Enter moves focus to main", async () => {
+    open("/beads");
+    await userEvent.tab();
+    const skip = screen.getByRole("link", { name: "Skip to content" });
+    expect(skip).toHaveFocus();
+    expect(skip).toHaveAttribute("href", "#main");
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByRole("main")).toHaveFocus();
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main");
+  });
+
+  describe("report sections in the sidebar", () => {
+    const TABS = ["team", "delivery", "velocity", "usage", "quality", "coverage"] as const;
+    const sections: SectionLink[] = TABS.map((tab) => ({
+      tab,
+      label: tab === "quality" ? "Quality" : tab[0].toUpperCase() + tab.slice(1),
+      headline: tab === "quality" ? "2 gaps" : `${tab} headline`,
+      warn: tab === "quality",
+      href: `/reports?project=a&tab=${tab}`,
+    }));
+    const list = () => screen.queryByRole("list", { name: "Report sections" });
+
+    it("REQ-UI-129 lists the six sections with headlines and marks the selected one on /reports when expanded", () => {
+      publishSections(sections, "delivery");
+      open("/reports?project=a&tab=delivery");
+      expect(document.querySelector('[data-sidebar="expanded"]')).not.toBeNull();
+      const links = within(list()!).getAllByRole("link");
+      expect(links).toHaveLength(6);
+      expect(links[1]).toHaveAccessibleName("Delivery delivery headline");
+      expect(links[1]).toHaveAttribute("aria-current", "page");
+      expect(links.filter((l) => l.getAttribute("aria-current") === "page")).toHaveLength(1);
+      expect(links[4]).toHaveAttribute("href", "/reports?project=a&tab=quality");
+      expect(list()).toHaveClass("hidden", "lg:flex");
+    });
+
+    it("REQ-UI-129 clicking a section navigates without a reload", async () => {
+      publishSections(sections, "delivery");
+      open("/reports?project=a&tab=delivery");
+      await userEvent.click(within(list()!).getByRole("link", { name: /^Quality/ }));
+      expect(window.location.search).toBe("?project=a&tab=quality");
+    });
+
+    it("REQ-UI-129 lists nothing on other pages", () => {
+      publishSections(sections, "delivery");
+      open("/beads");
+      expect(list()).toBeNull();
+    });
+
+    it("REQ-UI-129 lists nothing while the sidebar is collapsed", () => {
+      window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+      publishSections(sections, "delivery");
+      open("/reports?project=a&tab=delivery");
+      expect(document.querySelector('[data-sidebar="collapsed"]')).not.toBeNull();
+      expect(list()).toBeNull();
     });
   });
 });

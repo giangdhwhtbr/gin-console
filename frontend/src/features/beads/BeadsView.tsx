@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useRestoreOnBack } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { BeadFilterBar } from "./BeadFilterBar";
@@ -50,6 +51,8 @@ export function BeadsView({
     filters.closed || fixed !== undefined || filters.view === "lanes" || (filters.sprint !== "" && filters.sprint !== "none") || closedMilestone,
     true,
   );
+
+  useRestoreOnBack(state.status === "ok");
 
   const errorMessage = state.status === "error" ? state.message : state.status === "ok" ? state.error : null;
   const loaded = state.status === "ok" ? state.beads : [];

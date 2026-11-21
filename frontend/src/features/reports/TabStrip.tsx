@@ -18,10 +18,24 @@ export function TabStrip({ children }: { children: ReactNode }) {
     update();
     list.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
-    observer?.observe(list);
+    const resize = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    const observeTabs = () => {
+      resize?.disconnect();
+      resize?.observe(list);
+      for (const tab of Array.from(list.children)) resize?.observe(tab);
+    };
+    observeTabs();
+    const mutation =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver(() => {
+            observeTabs();
+            update();
+          });
+    mutation?.observe(list, { childList: true });
     return () => {
-      observer?.disconnect();
+      resize?.disconnect();
+      mutation?.disconnect();
       list.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };

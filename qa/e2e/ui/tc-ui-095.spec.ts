@@ -4,6 +4,7 @@ import { bead, stubApi } from '../support/api';
 
 test('TC-UI-095: Storage refused', async ({ page, ev }) => {
   // Precondition: project a with bead a-1; session storage throws when the place is stored.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await page.addInitScript(() => {
     Storage.prototype.setItem = () => {
       throw new DOMException('refused', 'QuotaExceededError');

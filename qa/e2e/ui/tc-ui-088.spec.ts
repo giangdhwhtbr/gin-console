@@ -1,4 +1,4 @@
-// TC: TC-UI-088@dfb68797
+// TC: TC-UI-088@74de0da4
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 import type { Page } from '@playwright/test';
@@ -22,6 +22,7 @@ async function stubDetails(page: Page, details: Record<string, ReturnType<typeof
 
 test('TC-UI-088: No remembered place', async ({ page, ev }) => {
   // Precondition: project a with bead a-1; a fresh browser context has no remembered Beads place.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   const a1 = bead('a-1');
   await stubApi(page, { projects: ['a'], beads: [a1] });
   await stubDetails(page, { 'a-1': detailOf(a1) });
@@ -32,7 +33,7 @@ test('TC-UI-088: No remembered place', async ({ page, ev }) => {
     const items = crumb.getByRole('listitem');
     await expect(items).toHaveCount(2);
     await expect(items.nth(0)).toHaveText('Beads');
-    await expect(items.nth(1)).toContainText('a-1');
+    await expect(items.nth(1)).toContainText('Title a-1');
     await expect(crumb.getByRole('link', { name: 'Beads' })).toHaveAttribute('href', '/beads?project=a');
   });
 });

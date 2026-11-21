@@ -1,12 +1,19 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { forgetConfiguredProjects, rememberProject, resolveProject, setFavorite } from "@/app/project";
 import { bead, json } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import type { MilestoneDetail } from "./api";
-import { getReturn } from "@/features/beads/returnState";
+import { getOrigin } from "@/app/origin";
 import { detail, epicPlan, stubMilestones } from "./milestoneFixtures";
 import { MilestonePage } from "./MilestonePage";
+
+beforeEach(() => {
+  forgetConfiguredProjects();
+  setFavorite(null);
+  rememberProject("first");
+});
 
 afterEach(() => {
   cleanup();
@@ -39,6 +46,27 @@ const OVERFLOW = detail(
 );
 
 describe("MilestonePage", () => {
+  it("REQ-UI-063 titles the page with the milestone once it has loaded", async () => {
+    open(detail([epicPlan("e-a")], { title: "Autumn" }));
+    await waitFor(() => expect(document.title).toBe("Autumn · alpha · gin-console"));
+  });
+
+  it("REQ-UI-124 a known project of the path becomes current", async () => {
+    open(detail([epicPlan("e-a")]));
+    await row("e-a");
+    expect(resolveProject("", ["alpha", "first"])).toBe("alpha");
+  });
+
+  it("REQ-UI-126 an unknown project of the path gets a notice and leaves the current project alone", async () => {
+    window.history.replaceState(null, "", "/milestones/zzz/m-1");
+    const mock = stubMilestones(() => json({}));
+    render(<MilestonePage project="zzz" id="m-1" />);
+    expect(await screen.findByText("No project zzz is configured")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "alpha" })).toHaveAttribute("href", "/milestones?project=alpha");
+    expect(mock.mock.calls.some(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url).startsWith("/api/milestones"))).toBe(false);
+    expect(resolveProject("", ["alpha", "first"])).toBe("first");
+  });
+
   it("REQ-MILESTONE-UI-003 header states the outcome", async () => {
     open(OVERFLOW);
     expect(await screen.findByRole("heading", { name: "Beta readiness" })).toBeInTheDocument();
@@ -268,10 +296,37 @@ describe("MilestonePage", () => {
     expect(urls.some((u) => u.startsWith("/api/beads?") && u.includes("closed=1"))).toBe(true);
   });
 
-  it("REQ-UI-072 the Beads tab remembers its place for the breadcrumb of a bead page", async () => {
-    openBeads("?tab=beads&view=board");
+  it("REQ-UI-073 the Beads tab remembers its place and the milestone title for the breadcrumb of a bead page", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m2?tab=beads&view=board");
+    stubMilestones(() => json(detail([epicPlan("e1")], { id: "m2", title: "Checkout v2" })), []);
+    render(<MilestonePage project="alpha" id="m2" />);
     await screen.findByRole("button", { name: "Board" });
-    expect(getReturn()).toMatchObject({ path: "/milestones/alpha/m2", search: "?tab=beads&view=board" });
+    expect(getOrigin()).toMatchObject({
+      kind: "milestone",
+      path: "/milestones/alpha/m2",
+      search: "?tab=beads&view=board",
+      project: "alpha",
+      label: "Checkout v2",
+    });
+  });
+
+  it("REQ-UI-073 a milestone that is still loading is not remembered under the title of the previous one", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m1");
+    stubMilestones((url) =>
+      url.pathname.endsWith("/m2") ? new Promise<Response>(() => {}) : json(detail([epicPlan("e1")], { id: "m1", title: "First" })),
+    );
+    const { rerender } = render(<MilestonePage project="alpha" id="m1" />);
+    await waitFor(() => expect(getOrigin().label).toBe("First"));
+    window.history.replaceState(null, "", "/milestones/alpha/m2");
+    rerender(<MilestonePage project="alpha" id="m2" />);
+    await waitFor(() => expect(getOrigin()).toMatchObject({ path: "/milestones/alpha/m2", label: null }));
+  });
+
+  it("REQ-UI-073 every tab of the milestone page remembers its place", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m2");
+    stubMilestones(() => json(detail([epicPlan("e1")], { id: "m2", title: "Checkout v2" })), []);
+    render(<MilestonePage project="alpha" id="m2" />);
+    await waitFor(() => expect(getOrigin()).toMatchObject({ kind: "milestone", path: "/milestones/alpha/m2", search: "", project: "alpha", label: "Checkout v2" }));
   });
 
   const LONG = detail([epicPlan("e-a", { planned_start: "2026-11-02", planned_end: "2026-11-27", estimate_days: 20 })], {

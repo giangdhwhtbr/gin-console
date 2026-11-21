@@ -1,11 +1,12 @@
 # TC-UI-152: Hidden tabs are hinted
 
-- **REQ:** REQ-UI-095@bf1627ff
+- **REQ:** REQ-UI-095@be92ba05
 - **Priority:** medium
 
 **Preconditions:**
 - Project `alpha` exists
 - The Data coverage tab does not fit in a 768 px window
+- The sidebar shows the icon rail at this width, so the page shows its tab list
 
 **Steps:**
 1. Set the window width to 768 px

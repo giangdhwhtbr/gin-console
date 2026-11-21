@@ -1,11 +1,12 @@
 # TC-UI-142: Velocity tab
 
-- **REQ:** REQ-UI-095@bf1627ff
+- **REQ:** REQ-UI-095@be92ba05
 - **Priority:** medium
 
 **Preconditions:**
 - The Reports page for `alpha` on the Delivery tab
 - The milestones list of `alpha` has `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}`
+- The window is 900px wide, so the sidebar lists no report sections and the page shows its tab list
 
 **Test data:**
 - None

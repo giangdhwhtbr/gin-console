@@ -1,18 +1,35 @@
-import { ChartColumn, Flag, LayoutGrid, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, UserCheck } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ChartColumn, Flag, LayoutGrid, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
+import { Fragment, useState, type ReactNode } from "react";
+import { useSections } from "@/features/reports/sectionStore";
 import { cn } from "@/lib/utils";
 import { clearEmail, useEmail } from "./identity";
 import { Link } from "./Link";
+import { originFor, useOrigin, type Origin, type OriginKind } from "./origin";
+import { forgetConfiguredProjects, projectHref, resolveProject, useConfiguredProjects } from "./project";
+import { ProjectSwitcher } from "./ProjectSwitcher";
 import { useLocation } from "./route";
 import { RefreshButton } from "./RefreshButton";
 import { ICON_BUTTON, ThemeToggle } from "./ThemeToggle";
 
+/** The page a bead page was opened from (REQ-UI-073), when it is not the Beads page; null on other pages. */
+function beadOrigin(pathname: string, origin: Origin): OriginKind | null {
+  const match = /^\/beads\/([^/]+)\/([^/]+)$/.exec(pathname);
+  if (!match) return null;
+  try {
+    const kind = originFor(decodeURIComponent(match[1]), origin)?.kind ?? null;
+    return kind === "beads" ? null : kind;
+  } catch {
+    return null; // an address that does not decode
+  }
+}
+
+type Place = { path: string; from: OriginKind | null };
 const NAV = [
-  { to: "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
-  { to: "/beads", label: "Beads", icon: ListChecks, current: (path: string) => path === "/beads" || path.startsWith("/beads/") },
-  { to: "/my-tasks", label: "My Tasks", icon: UserCheck, current: (path: string) => path === "/my-tasks" },
-  { to: "/milestones", label: "Milestones", icon: Flag, current: (path: string) => path === "/milestones" || path.startsWith("/milestones/") },
-  { to: "/reports", label: "Reports", icon: ChartColumn, current: (path: string) => path === "/reports" },
+  { to: () => "/", label: "Projects", icon: LayoutGrid, current: ({ path, from }: Place) => path === "/" || from === "projects" },
+  { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: ({ path, from }: Place) => path === "/beads" || (path.startsWith("/beads/") && from === null) },
+  { to: () => "/my-tasks", label: "My Tasks", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
+  { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
+  { to: (project: string) => projectHref("/reports", project), label: "Reports", icon: ChartColumn, current: ({ path, from }: Place) => path === "/reports" || from === "reports" },
 ] as const;
 
 const LINK = cn(
@@ -49,7 +66,14 @@ function Brand({ wordClass }: { wordClass?: string }) {
 }
 
 export function Layout({ children, onRefreshed }: { children: ReactNode; onRefreshed: () => void }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const projects = useConfiguredProjects();
+  const place: Place = { path: pathname, from: beadOrigin(pathname, useOrigin()) };
+  const project = resolveProject(new URLSearchParams(search).get("project") ?? "", projects.status === "ok" ? projects.names : []);
+  const refreshed = () => {
+    forgetConfiguredProjects();
+    onRefreshed();
+  };
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const wide = !collapsed;
   const email = useEmail();
@@ -61,13 +85,25 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
       // storage refused: the choice lasts for this visit only
     }
   };
+  const { sections, selected } = useSections();
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
+    <div data-sidebar={wide ? "expanded" : "collapsed"} className="group/shell flex min-h-screen flex-col bg-background text-foreground md:flex-row">
+      <a
+        href="#main"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("main")?.focus();
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:border focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground"
+      >
+        Skip to content
+      </a>
       <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card pl-4 pr-1 md:hidden">
         <Brand />
+        <ProjectSwitcher variant="bar" />
         <div className="flex">
-          <RefreshButton onRefreshed={onRefreshed} />
+          <RefreshButton onRefreshed={refreshed} />
           <ThemeToggle />
           {email !== null && (
             <button
@@ -91,7 +127,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
         <div className={cn("hidden items-center gap-2 md:flex md:flex-col", wide && "lg:flex-row lg:justify-between lg:gap-1 lg:pl-2")}>
           <Brand wordClass={wide ? "max-lg:hidden" : "hidden"} />
           <div className={cn("flex flex-col", wide && "lg:flex-row")}>
-            <RefreshButton onRefreshed={onRefreshed} />
+            <RefreshButton onRefreshed={refreshed} />
             <ThemeToggle />
             <button
               type="button"
@@ -105,15 +141,49 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
             </button>
           </div>
         </div>
+        <div className={cn("hidden md:flex md:justify-center", wide && "lg:justify-stretch")}>
+          {wide && (
+            <div className="hidden w-full lg:block">
+              <ProjectSwitcher variant="sidebar" />
+            </div>
+          )}
+          <div className={cn(wide && "lg:hidden")}>
+            <ProjectSwitcher variant="rail" />
+          </div>
+        </div>
         <nav
           aria-label="Main"
           className="fixed inset-x-0 bottom-0 z-10 flex border-t bg-card pb-[env(safe-area-inset-bottom)] md:static md:flex-col md:gap-1 md:border-t-0 md:pb-0"
         >
           {NAV.map(({ to, label, icon: Icon, current }) => (
-            <Link key={to} to={to} aria-current={current(pathname) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
-              <Icon aria-hidden className="size-5" />
-              {label}
-            </Link>
+            <Fragment key={label}>
+              <Link to={to(project)} aria-current={current(place) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
+                <Icon aria-hidden className="size-5" />
+                {label}
+              </Link>
+              {label === "Reports" && wide && pathname === "/reports" && sections.length > 0 && (
+                <ul aria-label="Report sections" className="ml-4 hidden flex-col gap-0.5 border-l pl-2 lg:flex">
+                  {sections.map((section) => (
+                    <li key={section.tab}>
+                      <Link
+                        to={section.href}
+                        aria-current={section.tab === selected ? "page" : undefined}
+                        className="flex flex-col rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted aria-[current=page]:bg-muted aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
+                      >
+                        {section.label}
+                        {section.headline !== "" && " "}
+                        {section.headline !== "" && (
+                          <span className={cn("inline-flex items-center gap-1 text-xs font-normal", section.warn && "text-state-blocked")}>
+                            {section.warn && <TriangleAlert aria-hidden className="size-3.5" />}
+                            {section.headline}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Fragment>
           ))}
         </nav>
         {email !== null && (
@@ -146,7 +216,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
           </div>
         )}
       </div>
-      <main className="min-w-0 flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6">{children}</main>
+      <main id="main" tabIndex={-1} className="min-w-0 outline-none flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6">{children}</main>
     </div>
   );
 }

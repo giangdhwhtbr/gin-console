@@ -1,6 +1,7 @@
 import { Link } from "@/app/Link";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
-import { useReturn } from "./returnState";
+import { originFor, useOrigin, type Origin } from "@/app/origin";
+import { cn } from "@/lib/utils";
 
 const VIEW_NAME: Record<string, string> = { list: "List", board: "Board", focus: "Focus", graph: "Graph" };
 const enc = encodeURIComponent;
@@ -22,63 +23,84 @@ export function activeFilters(filters: BeadFilters): number {
   return set.filter(Boolean).length;
 }
 
-/** [project, milestone] of a remembered milestone path; null for another path or one that does not decode. */
-function milestonePlace(path: string): string[] | null {
-  if (!path.startsWith("/milestones/")) return null;
+/** The milestone id of a remembered milestone path (/milestones/<project>/<id>). */
+function milestoneId(path: string): string {
+  const raw = path.split("/")[3] ?? "";
   try {
-    return path.split("/").slice(2).map(decodeURIComponent);
+    return decodeURIComponent(raw);
   } catch {
-    return null; // damaged text in storage
+    return raw; // damaged text in storage
   }
 }
+
+const viewAndFilters = (filters: BeadFilters): string =>
+  `${VIEW_NAME[filters.view] ?? "List"}${activeFilters(filters) > 0 ? ` · ${activeFilters(filters)} filter${activeFilters(filters) === 1 ? "" : "s"}` : ""}`;
+
+/** The first link: where the bead was opened from when that fits its project, else the project's Beads page. */
+function firstLink(project: string, origin: Origin | null): { to: string; label: string } {
+  if (origin === null) return { to: `/beads?project=${enc(project)}`, label: "Beads" };
+  switch (origin.kind) {
+    case "beads": {
+      const filters = parseFilters(origin.search);
+      return { to: `/beads${filtersToSearch(filters)}`, label: `Beads › ${viewAndFilters(filters)}` };
+    }
+    case "milestone": {
+      const name = origin.label ?? milestoneId(origin.path);
+      const tab = new URLSearchParams(origin.search).get("tab");
+      return { to: origin.path + origin.search, label: tab === "beads" ? `${name} › ${viewAndFilters(parseFilters(origin.search))}` : name };
+    }
+    case "my-tasks":
+      return { to: origin.path + origin.search, label: "My Tasks" };
+    case "reports":
+      return { to: origin.path + origin.search, label: "Reports" };
+    case "projects":
+      return { to: origin.path + origin.search, label: "Projects" };
+  }
+}
+
+const later = "hidden items-center gap-2 sm:flex";
+const TITLE = "block max-w-[16rem] truncate";
 
 export function Breadcrumb({
   project,
   id,
+  title = null,
   parent,
 }: {
   project: string;
   id: string;
-  parent: string | null;
+  title?: string | null;
+  parent: { id: string; title: string | null } | null;
 }) {
-  const saved = useReturn();
-  // a milestone's Beads tab is remembered as /milestones/<project>/<milestone>
-  const place = milestonePlace(saved.path);
-  const remembered =
-    saved.search !== "" &&
-    (place !== null ? place[0] === project && place.length === 2 : new URLSearchParams(saved.search).get("project") === project);
-  const filters = parseFilters(remembered ? saved.search : "");
-  const count = remembered ? activeFilters(filters) : 0;
-  const to = !remembered
-    ? `/beads?project=${enc(project)}`
-    : place !== null
-      ? saved.path + saved.search
-      : `/beads${filtersToSearch(filters)}`;
-  const first = place !== null ? (place[1] ?? "") : "Beads";
-  const label = remembered
-    ? `${first} › ${VIEW_NAME[filters.view] ?? "List"}${count > 0 ? ` · ${count} filter${count === 1 ? "" : "s"}` : ""}`
-    : "Beads";
-  const later = "hidden items-center gap-2 sm:flex";
+  const origin = originFor(project, useOrigin());
+  const first = firstLink(project, origin);
+  const named = (name: string | null, beadId: string) => ({ shown: name ?? beadId, hint: name === null ? beadId : `${name} · ${beadId}` });
+  const own = named(title, id);
+  const above = parent === null ? null : named(parent.title, parent.id);
   return (
     <nav aria-label="Breadcrumb">
       <ol className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
         <li>
-          <Link to={to} className="underline underline-offset-2">
-            {label}
+          <Link to={first.to} className="underline underline-offset-2">
+            {first.label}
           </Link>
         </li>
-        {parent !== null && (
+        {parent !== null && above !== null && (
           <li className={later}>
             <span aria-hidden>›</span>
-            <Link to={`/beads/${enc(project)}/${enc(parent)}`} className="font-mono underline underline-offset-2">
-              {parent}
+            <Link
+              to={`/beads/${enc(project)}/${enc(parent.id)}`}
+              title={above.hint}
+              className={cn(TITLE, "underline underline-offset-2", parent.title === null && "font-mono")}
+            >
+              {above.shown}
             </Link>
           </li>
         )}
         <li className={later}>
           <span aria-hidden>›</span>
-          <span aria-current="page" className="font-mono text-foreground">
-            {id}
+          <span aria-current="page" title={own.hint} className={cn(TITLE, "text-foreground", title === null && "font-mono")}>
+            {own.shown}
           </span>
         </li>
       </ol>

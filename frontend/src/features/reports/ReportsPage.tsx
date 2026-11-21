@@ -1,6 +1,10 @@
 import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { navigate, useLocation } from "@/app/route";
+import { rememberOrigin } from "@/app/origin";
+import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
+import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
+import { UnknownProject } from "@/app/UnknownProject";
+import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
@@ -16,6 +20,7 @@ import { figures, headlines, teamHeadline, velocityHeadline, type Headline } fro
 import { QualitySection } from "./QualitySection";
 import { TeamSection } from "./team/TeamSection";
 import { fetchTeam, type TeamReport } from "./teamApi";
+import { clearSections, publishSections } from "./sectionStore";
 import { TabStrip } from "./TabStrip";
 import { UsageSection } from "./UsageSection";
 import { VelocityTab } from "./velocity/VelocityTab";
@@ -58,14 +63,28 @@ export function ReportsPage() {
   }, []);
 
   const names = projects.status === "ok" ? projects.names : [];
-  const selected = filters.project === "all" || names.includes(filters.project) ? filters.project : (names[0] ?? "");
+  // REQ-UI-088: `all` is a choice of its own, not the current project
+  const unknown = projects.status === "ok" && isUnknownProject(filters.project, names);
+  const selected = filters.project === "all" ? "all" : projects.status === "ok" && !unknown ? resolveProject(filters.project, names) : "";
   const { days, sprint, tab } = filters;
+  usePageTitle(`Reports · ${LABELS[tab]}`, selected === "all" ? null : selected);
+  // REQ-UI-073: the place the breadcrumb of a bead page returns to; "All projects" fits any project
+  useEffect(() => {
+    if (selected !== "") rememberOrigin("reports", "/reports", reportSearch({ ...parseReportSearch(search), project: selected }), selected === "all" ? null : selected);
+  }, [selected, search]);
+  // the URL says which project is shown, when it was left out
+  useEffect(() => {
+    if (selected !== "" && filters.project === "" && window.location.pathname === "/reports") {
+      navigate(`/reports${reportSearch({ ...parseReportSearch(window.location.search), project: selected })}`, { replace: true });
+    }
+  }, [selected, filters.project]);
   // the Velocity tab asks for the Milestones lists only once it is selected; its headline stays after that
   const onDaysPerPoint = useCallback((project: string, value: DaysPerPoint | null) => setDaysPerPoint({ project, value }), []);
 
   // an answer counts only for the request it was made for, so a change of filters shows "loading" without a reset
   const key = JSON.stringify([selected, days, sprint, attempt]);
   const loaded: Loaded = settled !== null && settled.key === key ? settled.value : { status: "loading" };
+  useRestoreOnBack(loaded.status === "ok");
 
   // an answer counts for the request it was made for; an answer to "server default" also counts for the milestone it chose,
   // so writing that milestone into the URL does not ask again
@@ -123,14 +142,27 @@ export function ReportsPage() {
     };
   }, [selected, days, sprint, key]);
 
-  const hintFor = (value: ReportTab) => {
-    if (value === "velocity") {
-      const h = selected === "all" || daysPerPoint === null || daysPerPoint.project !== selected ? null : velocityHeadline(daysPerPoint.value);
-      return h === null ? undefined : hintOf(h);
-    }
-    if (value === "team") return teamReport === null ? undefined : hintOf(teamHeadline(teamReport));
-    return loaded.status === "ok" ? hintOf(headlines(loaded.report)[value]) : undefined;
+  const headlineFor = (value: ReportTab): Headline | null => {
+    if (value === "velocity") return selected === "all" || daysPerPoint === null || daysPerPoint.project !== selected ? null : velocityHeadline(daysPerPoint.value);
+    if (value === "team") return teamReport === null ? null : teamHeadline(teamReport);
+    return loaded.status === "ok" ? headlines(loaded.report)[value] : null;
   };
+  const hintFor = (value: ReportTab) => {
+    const h = headlineFor(value);
+    return h === null ? undefined : hintOf(h);
+  };
+  // REQ-UI-129: the sidebar lists these sections while it is expanded; the store ignores a publish that changes nothing
+  useEffect(() => {
+    if (selected === "") return;
+    publishSections(
+      TABS.map((value) => {
+        const h = headlineFor(value);
+        return { tab: value, label: LABELS[value], headline: h?.text ?? "", warn: h?.warn ?? false, href: `/reports${reportSearch({ ...filters, project: selected, tab: value })}` };
+      }),
+      tab,
+    );
+  });
+  useEffect(() => clearSections, []);
   const change = (next: ReportFilters) => navigate(`/reports${reportSearch(next)}`, { replace: true });
 
   return (
@@ -150,7 +182,10 @@ export function ReportsPage() {
             <select
               aria-label="Project"
               value={selected}
-              onChange={(event) => change({ ...filters, project: event.target.value })}
+              onChange={(event) => {
+                if (event.target.value !== "all") rememberProject(event.target.value);
+                change({ ...filters, project: event.target.value });
+              }}
               className="min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm"
             >
               <option value="all">All projects</option>
@@ -171,6 +206,7 @@ export function ReportsPage() {
         </Alert>
       )}
       {projects.status === "ok" && names.length === 0 && <p className="text-muted-foreground">No projects configured.</p>}
+      {unknown && <UnknownProject name={filters.project} names={names} hrefOf={(name) => projectHref("/reports", name)} />}
       {selected !== "" && (
         <>
           {tab !== "team" && tab !== "velocity" && loaded.status === "ok" && loaded.report.errors.length > 0 && (
@@ -187,6 +223,7 @@ export function ReportsPage() {
               </AlertDescription>
             </Alert>
           )}
+          <div className="lg:group-data-[sidebar=expanded]/shell:hidden">
           <TabStrip>
             <Tabs
               label="Report"
@@ -199,6 +236,7 @@ export function ReportsPage() {
               }))}
             />
           </TabStrip>
+          </div>
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-6">
             {tab === "team" ? (
               <>

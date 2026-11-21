@@ -1,6 +1,6 @@
 # TC-UI-076: Current destination: Change page
 
-- **REQ:** REQ-UI-057@611e3da4
+- **REQ:** REQ-UI-057@92e2ae1c
 - **Priority:** medium
 
 **Preconditions:**
