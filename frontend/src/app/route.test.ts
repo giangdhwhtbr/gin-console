@@ -1,5 +1,7 @@
+import { cleanup, render, screen } from "@testing-library/react";
+import { createElement, useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { navigate } from "./route";
+import { navigate, useLocation } from "./route";
 
 describe("navigate", () => {
   beforeEach(() => {
@@ -39,5 +41,23 @@ describe("navigate", () => {
     expect(onPopState).toHaveBeenCalledTimes(1);
 
     window.removeEventListener("popstate", onPopState);
+  });
+});
+
+describe("useLocation", () => {
+  afterEach(cleanup);
+
+  it("REQ-UI-075 sees a navigation a child made in its mount effect, before the parent's listener existed", () => {
+    window.history.replaceState(null, "", "/old");
+    const Child = () => {
+      useEffect(() => navigate("/new?x=1", { replace: true }), []);
+      return null;
+    };
+    const Parent = () => {
+      const { pathname, search } = useLocation();
+      return createElement("div", null, `at ${pathname}${search}`, createElement(Child));
+    };
+    render(createElement(Parent));
+    expect(screen.getByText("at /new?x=1")).toBeInTheDocument();
   });
 });
