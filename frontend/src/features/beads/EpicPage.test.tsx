@@ -25,13 +25,13 @@ const detail = (b: BeadSummary, over: Partial<BeadDetail> = {}): BeadDetail => (
 const note = (id: string): Comment => ({ id, author: "alice", text: `Text of ${id}`, created_at: "2026-10-05T10:00:00Z", truncated: false });
 
 /** `/api/beads` answers `list`; the bead page answers the detail of `beads[id]`. */
-function stub(list: BeadSummary[], details: Record<string, BeadDetail>, comments: Comment[] = []) {
+function stub(list: BeadSummary[], details: Record<string, BeadDetail>, comments: Comment[] = [], beadsStatus = 200) {
   vi.stubGlobal(
     "fetch",
     vi.fn((input: RequestInfo | URL) => {
       const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const url = new URL(text, "http://localhost");
-      if (url.pathname === "/api/beads") return Promise.resolve(json(list));
+      if (url.pathname === "/api/beads") return Promise.resolve(beadsStatus === 200 ? json(list) : json({ detail: "beads broke" }, beadsStatus));
       if (url.pathname === "/api/beads/milestones") return Promise.resolve(json({ milestones: [], current: null }));
       const match = /^\/api\/beads\/[^/]+\/([^/]+)(\/comments)?$/.exec(url.pathname);
       if (match !== null && match[2] !== undefined) return Promise.resolve(json(comments));
@@ -81,6 +81,9 @@ describe("EpicPage", () => {
     // REQ-UI-119: no REQ-UI-068 column or REQ-UI-069 tabs; the comments are not loaded on Overview
     expect(screen.queryByRole("tab", { name: "Details" })).toBeNull();
     expect(screen.queryByText("Text of c-1")).toBeNull();
+    expect(document.getElementById("panel-discussion")).toBeNull();
+    expect(screen.queryByRole("button", { name: /discussion/i })).toBeNull();
+    expect(screen.queryByRole("region", { name: "Discussion" })).toBeNull();
   });
 
   it("REQ-UI-119 Tab in the URL: choosing Graph puts tab=graph in the URL and draws the Graph view of the epic with the filters", async () => {
@@ -110,6 +113,14 @@ describe("EpicPage", () => {
     open("ex-e3", "?tab=nope");
     await screen.findByRole("tab", { name: "Overview" });
     expect(selected()).toEqual(["Overview"]);
+  });
+
+  it("REQ-UI-119 a known tab in the URL opens that tab", async () => {
+    stubE3();
+    open("ex-e3", "?tab=discussion");
+    await screen.findByText("No comments");
+    expect(selected()).toEqual(["Discussion (0)"]);
+    expect(screen.queryByText("Why this epic")).toBeNull();
   });
 
   it("REQ-UI-119 Not an epic: a task has no Overview, Graph or Lanes tab and keeps the layout of REQ-UI-068", async () => {
@@ -232,6 +243,45 @@ describe("EpicPage", () => {
     const canvas = await screen.findByTestId("graph-canvas");
     for (const c of ["overflow-x-auto", "overflow-y-hidden"]) expect(canvas).toHaveClass(c);
     expect(canvas.style.height).not.toBe("");
+  });
+});
+
+describe("EpicPage loading and errors", () => {
+  it("REQ-UI-119 ?tab=lanes of an epic with lanes never shows Overview while the beads load", async () => {
+    stubE12();
+    open(E12, "?tab=lanes");
+    await screen.findByRole("tablist", { name: "Epic views" });
+    expect(selected()).toEqual(["Lanes"]);
+    expect(screen.queryByText("Why this epic")).toBeNull();
+    expect(await screen.findByTestId("lanes-canvas")).toBeInTheDocument();
+    expect(selected()).toEqual(["Lanes"]);
+  });
+
+  it("REQ-UI-119 ?tab=lanes with beads that fail shows the error with Retry, not Overview", async () => {
+    stub([], { [E12]: e12Detail }, [], 500);
+    open(E12, "?tab=lanes");
+    expect(await screen.findByText("Beads could not be loaded")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(selected()).toEqual(["Lanes"]);
+    expect(screen.queryByText("Why this epic")).toBeNull();
+  });
+
+  it("REQ-UI-119 ?tab=graph with beads that fail shows the error with Retry", async () => {
+    stub([], { [E12]: e12Detail }, [], 500);
+    open(E12, "?tab=graph");
+    expect(await screen.findByText("Beads could not be loaded")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(selected()).toEqual(["Graph"]);
+  });
+
+  it("REQ-UI-119 typing in Search on the Graph tab writes q and keeps tab=graph", async () => {
+    stubE3();
+    open("ex-e3", "?tab=graph");
+    await userEvent.type(await screen.findByRole("searchbox", { name: "Search" }), "x");
+    const params = new URLSearchParams(window.location.search);
+    expect(params.get("q")).toBe("x");
+    expect(params.get("tab")).toBe("graph");
+    expect(window.location.pathname).toBe("/beads/example/ex-e3");
   });
 });
 

@@ -25,8 +25,9 @@ export function epicPath(project: string, id: string, tab: EpicTab, filters?: Be
 export function EpicPage({ project, bead }: { project: string; bead: BeadDetail }) {
   const { search } = useLocation();
   const { state } = useBeads(project, true, true);
-  const lanes = state.status === "ok" && hasLanes(state.beads, bead.id);
   const asked = new URLSearchParams(search).get("tab");
+  // `?tab=lanes` stays on Lanes while the beads load or fail (the view shows "Loading beads…" or the error with Retry); only loaded beads without lanes fall back to Overview
+  const lanes = state.status === "ok" ? hasLanes(state.beads, bead.id) : asked === "lanes";
   const tab: EpicTab = TABS.find((t) => t === asked && (t !== "lanes" || lanes)) ?? "overview";
   const tabs: readonly TabItem<EpicTab>[] = [
     { value: "overview", label: "Overview" },

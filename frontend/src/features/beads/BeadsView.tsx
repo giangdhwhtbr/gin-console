@@ -93,7 +93,7 @@ export function BeadsView({
             hideMilestone={fixedMilestone !== undefined || fixed !== undefined}
             onChange={onChange}
           />
-          <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>
+          {fixed === undefined && <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>}
           {filters.view === "graph" && (
             <GraphView
               project={project}

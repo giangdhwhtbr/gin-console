@@ -24,6 +24,16 @@ describe("BeadsView fixed", () => {
     expect(screen.getByRole("searchbox", { name: "Search" })).toBeInTheDocument();
   });
 
+  it("REQ-UI-119 fixed: no project-wide count line, while the Beads page keeps it", async () => {
+    stubBeads(() => json([e9, kid, bead("other")]));
+    const { unmount } = render(<BeadsView project="alpha" filters={parseFilters("")} fixed={{ view: "graph", scope: "e-9" }} onChange={vi.fn()} />);
+    await screen.findByRole("button", { name: /^e-9\.1/ });
+    expect(screen.queryByText(/^\d+ of \d+$/)).toBeNull();
+    unmount();
+    render(<BeadsView project="alpha" filters={parseFilters("?view=graph")} onChange={vi.fn()} />);
+    expect(await screen.findByText(/^\d+ of \d+$/)).toBeInTheDocument();
+  });
+
   it("REQ-UI-119 fixed: closed beads are loaded so the lanes are found", async () => {
     const fetchMock = stubBeads(() => json(e12));
     render(<BeadsView project="alpha" filters={parseFilters("")} fixed={{ view: "lanes", scope: E12 }} onChange={vi.fn()} />);
