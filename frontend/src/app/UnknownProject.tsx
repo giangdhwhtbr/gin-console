@@ -29,7 +29,7 @@ export function ProjectGuard({ project, hrefOf, children }: { project: string; h
   useEffect(() => {
     if (known) rememberProject(project);
   }, [known, project]);
-  if (projects.status === "loading") return null;
+  if (projects.status === "loading") return <p className="text-muted-foreground">Loading projects…</p>;
   if (projects.status === "ok" && !known) return <UnknownProject name={project} names={projects.names} hrefOf={hrefOf} />;
   return <>{children}</>; // a list that could not be loaded does not hide the page
 }

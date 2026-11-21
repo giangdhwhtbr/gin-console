@@ -92,6 +92,7 @@ describe("ReportsPage", () => {
     expect(screen.getByRole("link", { name: "beta" })).toHaveAttribute("href", "/reports?project=beta");
     expect(reportCalls(mock)).toEqual([]);
     expect(window.location.search).toBe("?project=zzz&tab=delivery");
+    expect(screen.queryByLabelText("Project")).not.toBeInTheDocument();
   });
 
   it("REQ-UI-088 defaults to the current project, writes it into the URL, and changes the period", async () => {
