@@ -86,6 +86,25 @@ describe("EpicPage", () => {
     expect(screen.queryByRole("region", { name: "Discussion" })).toBeNull();
   });
 
+  it("REQ-UI-119 Overview without a Children list: no Children heading, children bar or merge gate row, the Description heading and text, and Depends on kept", async () => {
+    const gate = e12.find((b) => b.waits_for !== null);
+    const withGate = detail(e12[0], {
+      description: "Why this epic",
+      dependencies: [{ id: "ex-m2", title: "Checkout v2", status: "open", type: "blocks" }],
+      children: e12.filter((b) => b.parent === E12).map((b) => ({ id: b.id, title: b.title, status: b.status, type: "parent-child" as const, prep: false, waits_for: b.waits_for })),
+    });
+    stub(e12, { [E12]: withGate });
+    open(E12);
+    await screen.findByRole("heading", { name: "Tracks" });
+    expect(screen.getByRole("heading", { name: "Description" })).toBeInTheDocument();
+    expect(screen.getByText("Why this epic")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Depends on" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Children" })).toBeNull();
+    expect(screen.queryByRole("progressbar", { name: "Children closed" })).toBeNull();
+    expect(gate).toBeDefined();
+    expect(screen.queryByText(/Waits for/)).toBeNull();
+  });
+
   it("REQ-UI-119 Tab in the URL: choosing Graph puts tab=graph in the URL and draws the Graph view of the epic with the filters", async () => {
     stubE12();
     open(E12);

@@ -258,7 +258,7 @@ describe("BeadDetailPage", () => {
   // REQ-UI-028
   it("REQ-UI-028 epic with a prep task: progress over tracks, Prep 1/1, chip on p-1 only", async () => {
     const epic = beadDetail("e-1", {
-      issue_type: "epic",
+      issue_type: "feature",
       children: [
         { id: "t-1", title: "Track 1", status: "closed", type: "parent-child", prep: false },
         { id: "t-2", title: "Track 2", status: "open", type: "parent-child", prep: false },
@@ -280,7 +280,7 @@ describe("BeadDetailPage", () => {
 
   it("REQ-UI-028 an epic with only prep children shows Prep x/y and no track bar", async () => {
     const epic = beadDetail("e-1", {
-      issue_type: "epic",
+      issue_type: "feature",
       children: [{ id: "p-1", title: "Prep 1", status: "open", type: "parent-child", prep: true }],
     });
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(epic))));
@@ -291,7 +291,7 @@ describe("BeadDetailPage", () => {
 
   it("REQ-UI-028 shows epic progress and children, or omits them when absent", async () => {
     const epic = beadDetail("e-1", {
-      issue_type: "epic",
+      issue_type: "feature",
       children: [
         { id: "c-1", title: "Child 1", status: "closed", type: "parent-child", prep: false },
         { id: "c-2", title: "Child 2", status: "closed", type: "parent-child", prep: false },
@@ -668,7 +668,7 @@ describe("BeadDetailPage", () => {
   it("REQ-UI-028 a child with status in_progress shows the label In progress, not the raw value", async () => {
     stubFetch(
       beadDetail("e-1", {
-        issue_type: "epic",
+        issue_type: "feature",
         children: [{ id: "t-1", title: "Child", status: "in_progress", type: "parent-child", prep: false }],
       }),
     );
@@ -729,7 +729,7 @@ describe("BeadDetailPage", () => {
     const gate = { plan: "p.md", number: 2, track_id: null, lane: "be" };
     stubFetch(
       beadDetail("a-5", {
-        issue_type: "epic",
+        issue_type: "feature",
         children: [
           { id: "a-6", title: "T6", status: "closed", type: "parent-child", prep: false },
           { id: "a-7", title: "gate", status: "open", type: "parent-child", prep: false, waits_for: gate },

@@ -1,3 +1,4 @@
+import type { EpicWorkflow } from "@/features/projects/api";
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
 
 export type BeadKind = "capability" | "technical" | "parity";
@@ -223,5 +224,30 @@ export async function fetchComments(project: string, id: string): Promise<Commen
   if (!Array.isArray(body) || !body.every(isComment)) {
     throw new Error("Could not load the comments (unexpected response)");
   }
+  return body;
+}
+
+const isWaiver = (value: unknown) => isObject(value) && ["task_id", "reason", "actor"].every((k) => isString(field(value, k)));
+
+function isEpicWorkflow(value: unknown): value is EpicWorkflow {
+  if (!isObject(value)) return false;
+  const gates = field(value, "gates");
+  const waivers = field(value, "review_waivers");
+  return (
+    isString(field(value, "stage")) &&
+    isObject(gates) &&
+    Object.values(gates).every(isString) &&
+    isStringArray(field(value, "warnings")) &&
+    Array.isArray(waivers) &&
+    waivers.every(isWaiver)
+  );
+}
+
+/** REQ-BEADS-020: the stage, gates, warnings and review waivers of an epic; a 502 throws the server's `error`. */
+export async function fetchEpicWorkflow(project: string, id: string): Promise<EpicWorkflow> {
+  const response = await fetch(`/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/workflow`);
+  if (!response.ok) throw await failure(response, "Bead");
+  const body: unknown = await response.json();
+  if (!isEpicWorkflow(body)) throw new Error("Could not load the workflow (unexpected response)");
   return body;
 }
