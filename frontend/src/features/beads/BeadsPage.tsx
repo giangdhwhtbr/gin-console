@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, isStale, pullError, pullOf, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
-import { rememberPlace } from "@/app/origin";
+import { rememberOrigin } from "@/app/origin";
 import { PullNote, type PullFailure } from "./PullNote";
 import { StaleNote } from "./StaleNote";
 
@@ -54,7 +54,7 @@ export function BeadsPage() {
 
   // the place the breadcrumb of a bead page returns to; the project is always in it, even when it is the default one
   useEffect(() => {
-    if (selected !== "") rememberPlace("/beads", filtersToSearch({ ...parseFilters(search), project: selected }));
+    if (selected !== "") rememberOrigin("beads", "/beads", filtersToSearch({ ...parseFilters(search), project: selected }), selected);
   }, [search, selected]);
 
   return (

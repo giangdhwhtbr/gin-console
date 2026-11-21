@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { rememberOrigin } from "@/app/origin";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { usePageTitle } from "@/app/usePageTitle";
@@ -17,6 +18,8 @@ const messageOf = (error: unknown) => (error instanceof Error ? error.message : 
 
 export function ProjectsPage() {
   usePageTitle("Projects");
+  // REQ-UI-073: the place the breadcrumb of a bead page returns to
+  useEffect(() => rememberOrigin("projects", "/", "", null), []);
   // simplified: server state lives in component state; move to a query cache when a second
   // screen reads the same data.
   const [state, setState] = useState<State>({ status: "loading" });

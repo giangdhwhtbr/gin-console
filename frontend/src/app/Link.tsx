@@ -4,11 +4,13 @@ import { navigate } from "./route";
 export function Link({
   to,
   className,
+  title,
   children,
   "aria-current": ariaCurrent,
 }: {
   to: string;
   className?: string;
+  title?: string;
   children: ReactNode;
   "aria-current"?: "page";
 }) {
@@ -19,7 +21,7 @@ export function Link({
     navigate(to);
   };
   return (
-    <a href={to} onClick={onClick} className={className} aria-current={ariaCurrent}>
+    <a href={to} onClick={onClick} className={className} title={title} aria-current={ariaCurrent}>
       {children}
     </a>
   );

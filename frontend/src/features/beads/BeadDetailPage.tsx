@@ -36,6 +36,25 @@ function BeadTitle({ title, project }: { title: string | null; project: string }
   return null;
 }
 
+/** The title of the parent a bead page links to; null until it is loaded, or when it cannot be (the link then shows the id). */
+function useParentTitle(project: string, parent: string | null): string | null {
+  const [loaded, setLoaded] = useState<{ project: string; id: string; title: string } | null>(null);
+  useEffect(() => {
+    if (parent === null) return;
+    let live = true;
+    fetchBead(project, parent).then(
+      (bead) => {
+        if (live) setLoaded({ project, id: parent, title: bead.title });
+      },
+      () => {}, // the id stands in for the title
+    );
+    return () => {
+      live = false;
+    };
+  }, [project, parent]);
+  return loaded !== null && loaded.project === project && loaded.id === parent ? loaded.title : null;
+}
+
 function BeadDetail({ project, id, embedded = false }: Props) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -59,12 +78,13 @@ function BeadDetail({ project, id, embedded = false }: Props) {
     setAttempt((n) => n + 1);
   };
   const parent = state.status === "ok" ? state.bead.parent : null;
+  const parentTitle = useParentTitle(project, embedded ? null : parent);
   const back = embedded ? (
     <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`} className="text-sm underline underline-offset-2">
       Open page
     </Link>
   ) : (
-    <Breadcrumb project={project} id={id} parent={parent} />
+    <Breadcrumb project={project} id={id} title={state.status === "ok" ? state.bead.title : null} parent={parent === null ? null : { id: parent, title: parentTitle }} />
   );
 
   const title = embedded ? null : <BeadTitle title={state.status === "ok" ? state.bead.title : null} project={project} />;

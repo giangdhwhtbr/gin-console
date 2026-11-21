@@ -623,14 +623,14 @@ describe("BeadDetailPage", () => {
   it("REQ-UI-053 Epic: no View in graph, the Graph tab is offered instead", async () => {
     stubFetch(beadDetail("e-1", { issue_type: "epic", children: [kid] }));
     render(<BeadDetailPage project="p" id="e-1" />);
-    await screen.findByText("Title e-1");
+    await screen.findByRole("heading", { name: "Title e-1" });
     expect(screen.queryByRole("link", { name: "View in graph" })).toBeNull();
   });
 
   it("REQ-UI-053 Nothing to draw: no View in graph", async () => {
     stubFetch(beadDetail("t-5", { dependencies: [{ id: "x", title: "X", status: "open", type: "parent-child" }] }));
     render(<BeadDetailPage project="p" id="t-5" />);
-    await screen.findByText("Title t-5");
+    await screen.findByRole("heading", { name: "Title t-5" });
     expect(screen.queryByRole("link", { name: "View in graph" })).toBeNull();
   });
 
@@ -783,5 +783,35 @@ describe("BeadDetailPage", () => {
     );
     render(<BeadDetailPage project="alpha" id="a-5" />);
     expect(await screen.findByText("1 of 1 closed")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-072 the breadcrumb names the bead and its parent by title", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.endsWith("/comments")) return Promise.resolve(json([]));
+        return Promise.resolve(json(url.endsWith("/p-1") ? beadDetail("p-1", { title: "Checkout" }) : beadDetail("p-2", { parent: "p-1", title: "Pay" })));
+      }),
+    );
+    render(<BeadDetailPage project="p" id="p-2" />);
+    const crumb = within(await screen.findByRole("navigation", { name: "Breadcrumb" }));
+    expect(await crumb.findByRole("link", { name: "Checkout" })).toHaveAttribute("href", "/beads/p/p-1");
+    expect(crumb.getByText("Pay")).toHaveAttribute("aria-current", "page");
+  });
+
+  it("REQ-UI-072 the breadcrumb shows the id of a parent that cannot be loaded", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.endsWith("/comments")) return Promise.resolve(json([]));
+        if (url.endsWith("/p-1")) return Promise.resolve(json({ error: "gone" }, 404));
+        return Promise.resolve(json(beadDetail("p-2", { parent: "p-1" })));
+      }),
+    );
+    render(<BeadDetailPage project="p" id="p-2" />);
+    const crumb = within(await screen.findByRole("navigation", { name: "Breadcrumb" }));
+    expect(await crumb.findByRole("link", { name: "p-1" })).toHaveAttribute("href", "/beads/p/p-1");
   });
 });

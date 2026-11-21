@@ -3,10 +3,10 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bead, json, stubBeads } from "./beadFixtures";
 import { BeadsPage } from "./BeadsPage";
-import { clearReturn, rememberOpen } from "@/app/origin";
+import { clearOrigin, rememberOpen } from "@/app/origin";
 
 beforeEach(() => {
-  clearReturn();
+  clearOrigin();
   window.history.replaceState(null, "", "/beads");
 });
 

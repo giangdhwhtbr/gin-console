@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useEmail } from "@/app/identity";
 import { Link } from "@/app/Link";
+import { rememberOrigin } from "@/app/origin";
 import { rememberProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
 import { usePageTitle } from "@/app/usePageTitle";
@@ -29,6 +30,8 @@ export function MyTasksPage() {
   const closed = params.get("closed") === "1";
   const project = params.get("project") ?? "";
   usePageTitle("My Tasks", project);
+  // REQ-UI-073: the place the breadcrumb of a bead page returns to; "All projects" fits any project
+  useEffect(() => rememberOrigin("my-tasks", "/my-tasks", search, project === "" ? null : project), [search, project]);
   const milestones = useMilestones(project);
   const milestone = project === "" ? "all" : milestoneInEffect(params.get("milestone") ?? "", milestones);
   const fetchClosed = closed || isClosedMilestone(milestone, milestones);

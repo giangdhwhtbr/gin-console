@@ -1,5 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { rememberOrigin } from "@/app/origin";
 import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
@@ -66,6 +67,10 @@ export function ReportsPage() {
   const selected = filters.project === "all" ? "all" : projects.status === "ok" && !unknown ? resolveProject(filters.project, names) : "";
   const { days, sprint, tab } = filters;
   usePageTitle(`Reports · ${LABELS[tab]}`, selected === "all" ? null : selected);
+  // REQ-UI-073: the place the breadcrumb of a bead page returns to; "All projects" fits any project
+  useEffect(() => {
+    if (selected !== "") rememberOrigin("reports", "/reports", reportSearch({ ...parseReportSearch(search), project: selected }), selected === "all" ? null : selected);
+  }, [selected, search]);
   // the URL says which project is shown, when it was left out
   useEffect(() => {
     if (selected !== "" && filters.project === "" && window.location.pathname === "/reports") {

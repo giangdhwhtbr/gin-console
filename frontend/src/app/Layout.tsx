@@ -3,18 +3,32 @@ import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { clearEmail, useEmail } from "./identity";
 import { Link } from "./Link";
+import { originFor, useOrigin, type Origin, type OriginKind } from "./origin";
 import { forgetConfiguredProjects, projectHref, resolveProject, useConfiguredProjects } from "./project";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { useLocation } from "./route";
 import { RefreshButton } from "./RefreshButton";
 import { ICON_BUTTON, ThemeToggle } from "./ThemeToggle";
 
+/** The page a bead page was opened from (REQ-UI-073), when it is not the Beads page; null on other pages. */
+function beadOrigin(pathname: string, origin: Origin): OriginKind | null {
+  const match = /^\/beads\/([^/]+)\/([^/]+)$/.exec(pathname);
+  if (!match) return null;
+  try {
+    const kind = originFor(decodeURIComponent(match[1]), origin)?.kind ?? null;
+    return kind === "beads" ? null : kind;
+  } catch {
+    return null; // an address that does not decode
+  }
+}
+
+type Place = { path: string; from: OriginKind | null };
 const NAV = [
-  { to: () => "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
-  { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: (path: string) => path === "/beads" || path.startsWith("/beads/") },
-  { to: () => "/my-tasks", label: "My Tasks", icon: UserCheck, current: (path: string) => path === "/my-tasks" },
-  { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: (path: string) => path === "/milestones" || path.startsWith("/milestones/") },
-  { to: (project: string) => projectHref("/reports", project), label: "Reports", icon: ChartColumn, current: (path: string) => path === "/reports" },
+  { to: () => "/", label: "Projects", icon: LayoutGrid, current: ({ path, from }: Place) => path === "/" || from === "projects" },
+  { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: ({ path, from }: Place) => path === "/beads" || (path.startsWith("/beads/") && from === null) },
+  { to: () => "/my-tasks", label: "My Tasks", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
+  { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
+  { to: (project: string) => projectHref("/reports", project), label: "Reports", icon: ChartColumn, current: ({ path, from }: Place) => path === "/reports" || from === "reports" },
 ] as const;
 
 const LINK = cn(
@@ -53,6 +67,7 @@ function Brand({ wordClass }: { wordClass?: string }) {
 export function Layout({ children, onRefreshed }: { children: ReactNode; onRefreshed: () => void }) {
   const { pathname, search } = useLocation();
   const projects = useConfiguredProjects();
+  const place: Place = { path: pathname, from: beadOrigin(pathname, useOrigin()) };
   const project = resolveProject(new URLSearchParams(search).get("project") ?? "", projects.status === "ok" ? projects.names : []);
   const refreshed = () => {
     forgetConfiguredProjects();
@@ -139,7 +154,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
           className="fixed inset-x-0 bottom-0 z-10 flex border-t bg-card pb-[env(safe-area-inset-bottom)] md:static md:flex-col md:gap-1 md:border-t-0 md:pb-0"
         >
           {NAV.map(({ to, label, icon: Icon, current }) => (
-            <Link key={label} to={to(project)} aria-current={current(pathname) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
+            <Link key={label} to={to(project)} aria-current={current(place) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
               <Icon aria-hidden className="size-5" />
               {label}
             </Link>

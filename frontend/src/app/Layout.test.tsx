@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EMAIL_KEY, getEmail, resetIdentity, setEmail } from "./identity";
 import { Layout, SIDEBAR_KEY } from "./Layout";
+import { clearOrigin, rememberOrigin } from "./origin";
 import { forgetConfiguredProjects, setFavorite } from "./project";
 
 const json = (body: unknown) =>
@@ -19,6 +20,7 @@ beforeEach(() => {
   fetched.mockClear();
   vi.stubGlobal("fetch", fetched);
   forgetConfiguredProjects();
+  clearOrigin();
 });
 afterEach(() => {
   cleanup();
@@ -115,6 +117,27 @@ describe("Layout", () => {
   ])("REQ-UI-057 %s marks %j", (path, expected) => {
     open(path);
     expect(marked()).toEqual(expected);
+  });
+
+  it.each<[string, Parameters<typeof rememberOrigin> | null, string[]]>([
+    ["Bead page by address", null, ["Beads"]],
+    ["Bead page from My Tasks", ["my-tasks", "/my-tasks", "?project=alpha", "alpha"], ["My Tasks"]],
+    ["My Tasks with all projects", ["my-tasks", "/my-tasks", "", null], ["My Tasks"]],
+    ["a milestone page", ["milestone", "/milestones/alpha/m-1", "?tab=beads", "alpha"], ["Milestones"]],
+    ["Reports", ["reports", "/reports", "?project=alpha", "alpha"], ["Reports"]],
+    ["Projects", ["projects", "/", "", null], ["Projects"]],
+    ["the Beads page", ["beads", "/beads", "?project=alpha", "alpha"], ["Beads"]],
+    ["My Tasks of another project", ["my-tasks", "/my-tasks", "?project=beta", "beta"], ["Beads"]],
+  ])("REQ-UI-057 a bead page of alpha opened from %s marks %j", (_name, from, expected) => {
+    if (from !== null) rememberOrigin(...from);
+    open("/beads/alpha/a-1");
+    expect(marked()).toEqual(expected);
+  });
+
+  it("REQ-UI-057 a retired page marks nothing whatever was remembered", () => {
+    rememberOrigin("my-tasks", "/my-tasks", "", null);
+    open("/sessions/alpha/11111111-1111-4111-8111-111111111111");
+    expect(marked()).toEqual([]);
   });
 
   it("REQ-UI-057 follows a click", async () => {

@@ -8,7 +8,7 @@ import { ProjectGuard } from "@/app/UnknownProject";
 import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
 import { filtersToSearch, parseFilters } from "@/features/beads/filters";
-import { rememberPlace } from "@/app/origin";
+import { rememberOrigin } from "@/app/origin";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
 import { awayLine, plural, shortDate } from "./format";
@@ -52,17 +52,18 @@ function Milestone({ project, id }: { project: string; id: string }) {
   useEffect(() => {
     if (tabAsked === "graph") navigate(milestonePath(project, id, "beads", start, zoom, "?view=graph"), { replace: true });
   }, [tabAsked, project, id, start, zoom]);
-  // REQ-UI-072: the place the breadcrumb of a bead page returns to
-  useEffect(() => {
-    if (tab === "beads" && tabAsked === "beads") rememberPlace(`/milestones/${encodeURIComponent(project)}/${encodeURIComponent(id)}`, search);
-  }, [tab, tabAsked, project, id, search]);
   const current = useCallback(() => fetchMilestone(project, id, null), [project, id]);
   const preview = useCallback(
     () => (start === null ? Promise.resolve(null) : fetchMilestone(project, id, start)),
     [project, id, start],
   );
   const base = useLoad(current, true);
-  usePageTitle(base.state.status === "ok" ? base.state.data.title : null, project);
+  const title = base.state.status === "ok" ? base.state.data.title : null;
+  usePageTitle(title, project);
+  // REQ-UI-072: the place the breadcrumb of a bead page returns to
+  useEffect(() => {
+    if (tabAsked !== "graph") rememberOrigin("milestone", `/milestones/${encodeURIComponent(project)}/${encodeURIComponent(id)}`, search, project, title);
+  }, [tabAsked, project, id, search, title]);
   const shown = useLoad<MilestoneDetail | null>(preview, false);
   const comments = useMilestoneComments(project, id);
   // REQ-MILESTONE-UI-019: the tab counts the members with a retro; no number while loading or after an error

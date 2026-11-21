@@ -5,7 +5,7 @@ import { forgetConfiguredProjects, rememberProject, resolveProject, setFavorite 
 import { bead, json } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import type { MilestoneDetail } from "./api";
-import { getReturn } from "@/app/origin";
+import { getOrigin } from "@/app/origin";
 import { detail, epicPlan, stubMilestones } from "./milestoneFixtures";
 import { MilestonePage } from "./MilestonePage";
 
@@ -296,10 +296,25 @@ describe("MilestonePage", () => {
     expect(urls.some((u) => u.startsWith("/api/beads?") && u.includes("closed=1"))).toBe(true);
   });
 
-  it("REQ-UI-072 the Beads tab remembers its place for the breadcrumb of a bead page", async () => {
-    openBeads("?tab=beads&view=board");
+  it("REQ-UI-073 the Beads tab remembers its place and the milestone title for the breadcrumb of a bead page", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m2?tab=beads&view=board");
+    stubMilestones(() => json(detail([epicPlan("e1")], { id: "m2", title: "Checkout v2" })), []);
+    render(<MilestonePage project="alpha" id="m2" />);
     await screen.findByRole("button", { name: "Board" });
-    expect(getReturn()).toMatchObject({ path: "/milestones/alpha/m2", search: "?tab=beads&view=board" });
+    expect(getOrigin()).toMatchObject({
+      kind: "milestone",
+      path: "/milestones/alpha/m2",
+      search: "?tab=beads&view=board",
+      project: "alpha",
+      label: "Checkout v2",
+    });
+  });
+
+  it("REQ-UI-073 every tab of the milestone page remembers its place", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m2");
+    stubMilestones(() => json(detail([epicPlan("e1")], { id: "m2", title: "Checkout v2" })), []);
+    render(<MilestonePage project="alpha" id="m2" />);
+    await waitFor(() => expect(getOrigin()).toMatchObject({ kind: "milestone", path: "/milestones/alpha/m2", search: "", project: "alpha", label: "Checkout v2" }));
   });
 
   const LONG = detail([epicPlan("e-a", { planned_start: "2026-11-02", planned_end: "2026-11-27", estimate_days: 20 })], {
