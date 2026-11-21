@@ -5,6 +5,7 @@ import { BeadBody } from "./BeadBody";
 import { BeadHeader } from "./BeadHeader";
 import { BeadsView } from "./BeadsView";
 import { CommentList } from "./CommentList";
+import { EpicOverview } from "./EpicOverview";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
 import { hasLanes } from "./lanes";
 import { useBeads } from "./useBeads";
@@ -46,7 +47,12 @@ export function EpicPage({ project, bead }: { project: string; bead: BeadDetail 
       <BeadHeader project={project} bead={bead} />
       <Tabs tabs={tabs} tab={tab} onChange={(next) => navigate(epicPath(project, bead.id, next), { replace: true })} label="Epic views" />
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex min-w-0 flex-col gap-4">
-        {tab === "overview" && <BeadBody project={project} bead={bead} />}
+        {tab === "overview" && (
+          <>
+            <EpicOverview project={project} bead={bead} beads={state} lanesHref={epicPath(project, bead.id, "lanes")} />
+            <BeadBody project={project} bead={bead} />
+          </>
+        )}
         {(tab === "graph" || tab === "lanes") && (
           <BeadsView
             project={project}
