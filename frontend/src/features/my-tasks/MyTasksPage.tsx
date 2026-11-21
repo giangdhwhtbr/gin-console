@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useEmail } from "@/app/identity";
 import { Link } from "@/app/Link";
+import { rememberProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -70,7 +71,10 @@ export function MyTasksPage() {
           <select
             aria-label="Project"
             value={project}
-            onChange={(event) => go({ project: event.target.value })}
+            onChange={(event) => {
+              if (event.target.value !== "") rememberProject(event.target.value);
+              go({ project: event.target.value });
+            }}
             className="min-w-0 max-w-full truncate rounded border bg-background px-2 py-1"
           >
             <option value="">All projects</option>

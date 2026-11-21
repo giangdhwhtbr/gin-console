@@ -1,7 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
+import { projectHref } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
+import { ProjectGuard } from "@/app/UnknownProject";
 import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
 import { filtersToSearch, parseFilters } from "@/features/beads/filters";
@@ -28,7 +30,15 @@ type Tab = (typeof TABS)[number]["value"];
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 
-export function MilestonePage({ project, id }: { project: string; id: string }) {
+export function MilestonePage(props: { project: string; id: string }) {
+  return (
+    <ProjectGuard project={props.project} hrefOf={(name) => projectHref("/milestones", name)}>
+      <Milestone {...props} />
+    </ProjectGuard>
+  );
+}
+
+function Milestone({ project, id }: { project: string; id: string }) {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const asked = params.get("start");

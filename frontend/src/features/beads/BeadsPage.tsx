@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
+import { UnknownProject } from "@/app/UnknownProject";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, isStale, pullError, pullOf, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
@@ -38,8 +40,15 @@ export function BeadsPage() {
   const names = projects.status === "ok" ? projects.names : [];
   const stale = projects.status === "ok" ? projects.stale : [];
   const pullFailures = projects.status === "ok" ? projects.pullFailures : [];
-  // the default is not written back into the URL
-  const selected = names.includes(filters.project) ? filters.project : (names[0] ?? "");
+  const unknown = projects.status === "ok" && isUnknownProject(filters.project, names);
+  const selected = projects.status === "ok" && !unknown ? resolveProject(filters.project, names) : "";
+
+  // REQ-UI-124: the project shown is the current one, and the URL says which it is
+  useEffect(() => {
+    if (selected === "") return;
+    rememberProject(selected);
+    if (filters.project !== selected && window.location.pathname === "/beads") navigate(`/beads${filtersToSearch({ ...parseFilters(window.location.search), project: selected })}`, { replace: true });
+  }, [selected, filters.project]);
 
   // the place the breadcrumb of a bead page returns to; the project is always in it, even when it is the default one
   useEffect(() => {
@@ -59,24 +68,9 @@ export function BeadsPage() {
       {projects.status === "ok" && names.length === 0 && (
         <p className="text-muted-foreground">No projects configured.</p>
       )}
+      {unknown && <UnknownProject name={filters.project} names={names} hrefOf={(name) => projectHref("/beads", name)} />}
       {selected !== "" && (
         <>
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-sm">
-              Project
-              <select
-                value={selected}
-                onChange={(event) => change({ ...filters, project: event.target.value })}
-                className="rounded border bg-background px-2 py-1"
-              >
-                {names.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
           <StaleNote projects={stale.includes(selected) ? [selected] : []} />
           <PullNote failures={pullFailures.filter((failure) => failure.project === selected)} />
           <BeadsView key={selected} project={selected} filters={filters} onChange={change} />

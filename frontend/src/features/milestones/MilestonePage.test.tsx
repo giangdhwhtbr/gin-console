@@ -1,12 +1,19 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { forgetConfiguredProjects, rememberProject, resolveProject, setFavorite } from "@/app/project";
 import { bead, json } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import type { MilestoneDetail } from "./api";
 import { getReturn } from "@/features/beads/returnState";
 import { detail, epicPlan, stubMilestones } from "./milestoneFixtures";
 import { MilestonePage } from "./MilestonePage";
+
+beforeEach(() => {
+  forgetConfiguredProjects();
+  setFavorite(null);
+  rememberProject("first");
+});
 
 afterEach(() => {
   cleanup();
@@ -39,6 +46,22 @@ const OVERFLOW = detail(
 );
 
 describe("MilestonePage", () => {
+  it("REQ-UI-124 a known project of the path becomes current", async () => {
+    open(detail([epicPlan("e-a")]));
+    await row("e-a");
+    expect(resolveProject("", ["alpha", "first"])).toBe("alpha");
+  });
+
+  it("REQ-UI-126 an unknown project of the path gets a notice and leaves the current project alone", async () => {
+    window.history.replaceState(null, "", "/milestones/zzz/m-1");
+    const mock = stubMilestones(() => json({}));
+    render(<MilestonePage project="zzz" id="m-1" />);
+    expect(await screen.findByText("No project zzz is configured")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "alpha" })).toHaveAttribute("href", "/milestones?project=alpha");
+    expect(mock.mock.calls.some(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url).startsWith("/api/milestones"))).toBe(false);
+    expect(resolveProject("", ["alpha", "first"])).toBe("first");
+  });
+
   it("REQ-MILESTONE-UI-003 header states the outcome", async () => {
     open(OVERFLOW);
     expect(await screen.findByRole("heading", { name: "Beta readiness" })).toBeInTheDocument();

@@ -1,6 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { rememberProject, resolveProject, setFavorite } from "@/app/project";
 import { navigate } from "@/app/route";
 import type { Report } from "./api";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
@@ -46,6 +47,11 @@ afterEach(() => {
 const teamCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports/team"));
 const reportCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports?"));
 
+beforeEach(() => {
+  setFavorite(null);
+  rememberProject("alpha");
+});
+
 describe("ReportsPage", () => {
   it("REQ-UI-088 opens a shared link", async () => {
     window.history.replaceState(null, "", "/reports?project=all&days=7&tab=delivery");
@@ -58,12 +64,43 @@ describe("ReportsPage", () => {
     expect(requested(mock)).toContain("/api/reports?project=all&days=7");
   });
 
-  it("REQ-UI-088 defaults to the first project and changes the period", async () => {
+  it("REQ-UI-088 the current project beats the first one when the URL has none", async () => {
+    rememberProject("beta");
+    window.history.replaceState(null, "", "/reports?tab=delivery");
+    const mock = stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    expect(requested(mock)).toContain("/api/reports?project=beta&days=30");
+  });
+
+  it("REQ-UI-088 choosing a single project makes it current, choosing All does not", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    await userEvent.selectOptions(screen.getByLabelText("Project"), "beta");
+    expect(resolveProject("", ["alpha", "beta"])).toBe("beta");
+    await userEvent.selectOptions(screen.getByLabelText("Project"), "all");
+    expect(resolveProject("", ["alpha", "beta"])).toBe("beta");
+  });
+
+  it("REQ-UI-126 an unknown project gets a notice and no report request", async () => {
+    window.history.replaceState(null, "", "/reports?project=zzz&tab=delivery");
+    const mock = stub();
+    render(<ReportsPage />);
+    expect(await screen.findByText("No project zzz is configured")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "beta" })).toHaveAttribute("href", "/reports?project=beta");
+    expect(reportCalls(mock)).toEqual([]);
+    expect(window.location.search).toBe("?project=zzz&tab=delivery");
+  });
+
+  it("REQ-UI-088 defaults to the current project, writes it into the URL, and changes the period", async () => {
     window.history.replaceState(null, "", "/reports?tab=delivery");
     const mock = stub();
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
     expect(requested(mock)).toContain("/api/reports?project=alpha&days=30");
+    expect(window.location.search).toBe("?project=alpha&days=30&tab=delivery");
     await userEvent.click(screen.getByRole("button", { name: "90 days" }));
     expect(window.location.search).toBe("?project=alpha&days=90&tab=delivery");
     await screen.findByText("Beads closed");

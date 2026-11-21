@@ -1,7 +1,9 @@
 import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
+import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
+import { UnknownProject } from "@/app/UnknownProject";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { cn } from "@/lib/utils";
@@ -33,30 +35,19 @@ export function MilestonesPage() {
   }, []);
 
   const names = projects.status === "ok" ? projects.names : [];
-  // the default is not written back into the URL, as on the Beads page
-  const selected = names.includes(asked) ? asked : (names[0] ?? "");
+  const unknown = projects.status === "ok" && isUnknownProject(asked, names);
+  const selected = projects.status === "ok" && !unknown ? resolveProject(asked, names) : "";
+
+  // REQ-UI-124: the project shown is the current one, and the URL says which it is
+  useEffect(() => {
+    if (selected === "") return;
+    rememberProject(selected);
+    if (asked !== selected && window.location.pathname === "/milestones") navigate(milestonesPath(selected), { replace: true });
+  }, [selected, asked]);
 
   return (
     <section className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Milestones</h1>
-        {names.length > 0 && (
-          <label className="flex items-center gap-2 text-sm">
-            Project
-            <select
-              value={selected}
-              onChange={(event) => navigate(milestonesPath(event.target.value), { replace: true })}
-              className="rounded border bg-background px-2 py-1"
-            >
-              {names.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-      </div>
+      <h1 className="text-xl font-semibold">Milestones</h1>
       {projects.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}
       {projects.status === "error" && (
         <Alert variant="destructive">
@@ -65,6 +56,7 @@ export function MilestonesPage() {
         </Alert>
       )}
       {projects.status === "ok" && names.length === 0 && <p className="text-muted-foreground">No projects configured.</p>}
+      {unknown && <UnknownProject name={asked} names={names} hrefOf={(name) => projectHref("/milestones", name)} />}
       {selected !== "" && <MilestoneTable key={selected} project={selected} />}
     </section>
   );

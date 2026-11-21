@@ -1,6 +1,8 @@
 import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
+import { UnknownProject } from "@/app/UnknownProject";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
@@ -58,8 +60,16 @@ export function ReportsPage() {
   }, []);
 
   const names = projects.status === "ok" ? projects.names : [];
-  const selected = filters.project === "all" || names.includes(filters.project) ? filters.project : (names[0] ?? "");
+  // REQ-UI-088: `all` is a choice of its own, not the current project
+  const unknown = projects.status === "ok" && isUnknownProject(filters.project, names);
+  const selected = filters.project === "all" ? "all" : projects.status === "ok" && !unknown ? resolveProject(filters.project, names) : "";
   const { days, sprint, tab } = filters;
+  // the URL says which project is shown, when it was left out
+  useEffect(() => {
+    if (selected !== "" && filters.project === "" && window.location.pathname === "/reports") {
+      navigate(`/reports${reportSearch({ ...parseReportSearch(window.location.search), project: selected })}`, { replace: true });
+    }
+  }, [selected, filters.project]);
   // the Velocity tab asks for the Milestones lists only once it is selected; its headline stays after that
   const onDaysPerPoint = useCallback((project: string, value: DaysPerPoint | null) => setDaysPerPoint({ project, value }), []);
 
@@ -150,7 +160,10 @@ export function ReportsPage() {
             <select
               aria-label="Project"
               value={selected}
-              onChange={(event) => change({ ...filters, project: event.target.value })}
+              onChange={(event) => {
+                if (event.target.value !== "all") rememberProject(event.target.value);
+                change({ ...filters, project: event.target.value });
+              }}
               className="min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm"
             >
               <option value="all">All projects</option>
@@ -171,6 +184,7 @@ export function ReportsPage() {
         </Alert>
       )}
       {projects.status === "ok" && names.length === 0 && <p className="text-muted-foreground">No projects configured.</p>}
+      {unknown && <UnknownProject name={filters.project} names={names} hrefOf={(name) => projectHref("/reports", name)} />}
       {selected !== "" && (
         <>
           {tab !== "team" && tab !== "velocity" && loaded.status === "ok" && loaded.report.errors.length > 0 && (

@@ -4,12 +4,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bead } from "@/features/beads/beadFixtures";
 import { clearReturn } from "@/features/beads/returnState";
 import { App } from "./App";
+import { forgetConfiguredProjects } from "./project";
 import { clearEmail, EMAIL_KEY, resetIdentity, setEmail } from "./identity";
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
 
+const alpha = () => json([{ name: "alpha", path: "/home/gin/alpha", exists: true, beads: null }]);
+
 beforeEach(() => {
+  forgetConfiguredProjects();
   clearReturn();
   setEmail("tester@example.com");
 });
@@ -172,6 +176,7 @@ describe("App routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((url: string) => {
+        if (url.includes("/api/projects/beads")) return Promise.resolve(alpha());
         if (url.includes("/api/beads/alpha/a-5")) {
           return Promise.resolve(
             json({
@@ -296,6 +301,7 @@ describe("App routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((url: string) => {
+        if (url.includes("/api/projects/beads")) return Promise.resolve(alpha());
         if (url.includes("/api/beads/alpha/a-5")) return first;
         if (url.includes("/api/beads/alpha/a-6")) return Promise.resolve(detail("a-6"));
         return Promise.resolve(json([]));
@@ -357,6 +363,7 @@ describe("App routing", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
+        if (String(input instanceof Request ? input.url : input).includes("/api/projects/beads")) return Promise.resolve(alpha());
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
         if (url.includes("/api/beads/alpha/a-5/comments")) return a5Comments;
         if (url.includes("/api/beads/alpha/a-5")) return Promise.resolve(detail("a-5"));

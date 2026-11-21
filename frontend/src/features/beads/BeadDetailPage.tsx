@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@/app/Link";
+import { projectHref } from "@/app/project";
+import { ProjectGuard } from "@/app/UnknownProject";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -19,15 +21,15 @@ type State =
   | { status: "notfound" }
   | { status: "ok"; bead: BeadDetail };
 
-export function BeadDetailPage({
-  project,
-  id,
-  embedded = false,
-}: {
-  project: string;
-  id: string;
-  embedded?: boolean;
-}) {
+type Props = { project: string; id: string; embedded?: boolean };
+
+export function BeadDetailPage(props: Props) {
+  const page = <BeadDetail {...props} />;
+  // the embedded panel belongs to a page whose project is already checked
+  return props.embedded ? page : <ProjectGuard project={props.project} hrefOf={(name) => projectHref("/beads", name)}>{page}</ProjectGuard>;
+}
+
+function BeadDetail({ project, id, embedded = false }: Props) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [tab, setTab] = useState<DetailTab>("details");

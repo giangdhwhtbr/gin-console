@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadDetail, Comment } from "./api";
+import { forgetConfiguredProjects, rememberProject, resolveProject } from "@/app/project";
 import { factDate } from "@/lib/dates";
 import { BeadDetailPage } from "./BeadDetailPage";
 
@@ -74,6 +75,7 @@ const beadDetail = (id: string, overrides: Partial<BeadDetail> = {}): BeadDetail
 });
 
 beforeEach(() => {
+  forgetConfiguredProjects();
   window.history.replaceState(null, "", "/beads/alpha/a-5");
 });
 
@@ -85,6 +87,33 @@ afterEach(() => {
 });
 
 describe("BeadDetailPage", () => {
+  it("REQ-UI-124 a known project of the path becomes current", async () => {
+    rememberProject("first");
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes("/api/projects/beads")) return Promise.resolve(json([{ name: "alpha", path: "/x", exists: true, beads: null }, { name: "first", path: "/y", exists: true, beads: null }]));
+      return Promise.resolve(json(beadDetail("a-5")));
+    }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    await screen.findByRole("heading", { name: "Title a-5" });
+    expect(resolveProject("", ["alpha", "first"])).toBe("alpha");
+  });
+
+  it("REQ-UI-126 an unknown project of the path gets a notice and leaves the current project alone", async () => {
+    rememberProject("alpha");
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes("/api/projects/beads")) return Promise.resolve(json([{ name: "alpha", path: "/x", exists: true, beads: null }]));
+      return Promise.resolve(json(beadDetail("z-1")));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<BeadDetailPage project="zzz" id="z-1" />);
+    expect(await screen.findByText("No project zzz is configured")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "alpha" })).toHaveAttribute("href", "/beads?project=alpha");
+    expect(fetchMock.mock.calls.some(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url).includes("/api/beads/zzz"))).toBe(false);
+    expect(resolveProject("", ["alpha", "zzz"])).toBe("alpha");
+  });
+
   it("REQ-UI-107 Unbroken title on a phone and Wide table on a phone", async () => {
     stubFetch(beadDetail("a-5", { title: "T".repeat(90), description: "| a | b |\n|---|---|\n| 1 | 2 |\n\n```\ncode block\n```" }));
     render(<BeadDetailPage project="alpha" id="a-5" />);
@@ -331,10 +360,13 @@ describe("BeadDetailPage", () => {
 
   // REQ-UI-029
   it("REQ-UI-029 shows error on failure and retries, and handles unexpected shape", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(json({ error: "bd timed out" }, 502))
-      .mockResolvedValueOnce(json(beadDetail("a-5")));
+    let beadCalls = 0;
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.includes("/api/projects/beads")) return Promise.resolve(json([{ name: "alpha", path: "/x", exists: true, beads: null }]));
+      beadCalls += 1;
+      return Promise.resolve(beadCalls === 1 ? json({ error: "bd timed out" }, 502) : json(beadDetail("a-5")));
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     render(<BeadDetailPage project="alpha" id="a-5" />);
@@ -503,6 +535,7 @@ describe("BeadDetailPage", () => {
       "fetch",
       vi.fn((input: RequestInfo | URL) => {
         const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+        if (url.includes("/api/projects/beads")) return Promise.resolve(json([{ name: "alpha", path: "/x", exists: true, beads: null }]));
         if (url.endsWith("/comments")) {
           commentsCallCount++;
           if (commentsCallCount === 1) {
