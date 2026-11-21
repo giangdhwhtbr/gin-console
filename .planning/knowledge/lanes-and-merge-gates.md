@@ -53,13 +53,15 @@ Epic gin-console-9ix (2026-11-20) shows gin-workflow's team-mode lanes (gin-work
   - A Board card needs `ready` to appear in the default columns.
   - The Gantt expand button reads "Show 1 child bead of <id>" in the singular.
 - **Graph lane boxes, e2e and limits:**
-  - **Selectors:** boxes are `section[data-lane]` (`data-lane=""` is No lane), arrows are `path[data-arrow="from>to"]` (dashed for open gates), chips are `[data-chip]`. Cards, chips and the svg are siblings of the boxes, so check containment by geometry in page coordinates. `qa/e2e/support/lanes.ts` has `graphGeometry`/`graphCollisions`.
+  - **Selectors:** the layered `GraphCanvas` has no `data-arrow` (assert its arrows through the hidden list `aria-label="Dependencies"` and `data-dimmed`); in the lane canvas, boxes are `section[data-lane]` (`data-lane=""` is No lane), arrows are `path[data-arrow="from>to"]` (dashed for open gates), chips are `[data-chip]`. Cards, chips and the svg are siblings of the boxes, so check containment by geometry in page coordinates. `qa/e2e/support/lanes.ts` has `graphGeometry`/`graphCollisions`.
   - **Phone widths:** at 390px the Graph of `ex-e12` fits at 41%, near the 40% minimum, so text is very small; a wider graph stops at 40% and scrolls sideways.
   - **Spec wording:** write view scenarios against the existing view's interaction rules. The e2e specs caught two spec errors that the unit tests had followed.
 - **gin-qa:**
   - `gin-qa cases new` takes the lowest free id, so do not probe with it.
   - `gin-qa tests run --type api <capability>` records every api case of that capability; pass TC ids.
   - Case steps need explicit URLs and one action each.
+  - `gin-qa cases new` takes the lowest free id, so a case removed in the same change frees its id and a new case silently takes it over. Create the new cases first, or move them to ids from `gin-qa cases next-id`; never use `gin-qa cases renumber`, which shuffles the whole capability (gin-console-atl).
+  - A rewritten case keeps its old `passed` Result lines until `gin-qa e2e run` or `gin-qa tests run` runs it again; a plain `npx playwright test` writes no Result.
   - A MODIFIED REQ can have scenarios without any case: REQ-UI-077 had none before gin-console-csp. Check coverage of every scenario of a modified REQ, not only the changed ones.
   - The Graph of `ex-e12` fits a 1920×1080 window, so a scenario that needs the page to scroll uses 1440×900 or more tracks (`tall()` in `qa/e2e/support/lanes.ts`).
 
