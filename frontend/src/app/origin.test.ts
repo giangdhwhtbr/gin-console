@@ -91,6 +91,13 @@ describe("origin", () => {
     expect(getOrigin()).toEqual(EMPTY);
   });
 
+  it("REQ-UI-073 a stored path that is not a path of this app reads as empty", () => {
+    for (const path of ["https://evil.example/x", "//evil.example/x", "beads", "javascript:alert(1)"]) {
+      window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ kind: "my-tasks", path, search: "", project: null, open: {} }));
+      expect(getOrigin()).toEqual(EMPTY);
+    }
+  });
+
   describe("originFor", () => {
     const at = (kind: Origin["kind"], project: string | null): Origin => ({ ...EMPTY, kind, project });
 

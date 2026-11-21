@@ -58,7 +58,8 @@ function Milestone({ project, id }: { project: string; id: string }) {
     [project, id, start],
   );
   const base = useLoad(current, true);
-  const title = base.state.status === "ok" ? base.state.data.title : null;
+  // useLoad keeps the last answer while a new milestone loads: its title is not this one's
+  const title = base.state.status === "ok" && !base.state.stale && base.state.data.id === id ? base.state.data.title : null;
   usePageTitle(title, project);
   // REQ-UI-072: the place the breadcrumb of a bead page returns to
   useEffect(() => {

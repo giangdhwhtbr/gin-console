@@ -1,6 +1,7 @@
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { clearOrigin, getOrigin } from "@/app/origin";
 import type { Beads, Project, Workflow, WorkspaceRepo } from "./api";
 import { ProjectsPage } from "./ProjectsPage";
 
@@ -54,6 +55,14 @@ afterEach(() => {
 });
 
 describe("ProjectsPage", () => {
+  it("REQ-UI-073 remembers itself for the breadcrumb of a bead page", async () => {
+    clearOrigin();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project()])));
+    render(<ProjectsPage />);
+    await screen.findByRole("article", { name: "qwikfone" });
+    expect(getOrigin()).toMatchObject({ kind: "projects", path: "/", search: "", project: null });
+  });
+
   // REQ-UI-001
   it("REQ-UI-001 lists projects and marks missing ones", async () => {
     vi.stubGlobal(

@@ -310,6 +310,18 @@ describe("MilestonePage", () => {
     });
   });
 
+  it("REQ-UI-073 a milestone that is still loading is not remembered under the title of the previous one", async () => {
+    window.history.replaceState(null, "", "/milestones/alpha/m1");
+    stubMilestones((url) =>
+      url.pathname.endsWith("/m2") ? new Promise<Response>(() => {}) : json(detail([epicPlan("e1")], { id: "m1", title: "First" })),
+    );
+    const { rerender } = render(<MilestonePage project="alpha" id="m1" />);
+    await waitFor(() => expect(getOrigin().label).toBe("First"));
+    window.history.replaceState(null, "", "/milestones/alpha/m2");
+    rerender(<MilestonePage project="alpha" id="m2" />);
+    await waitFor(() => expect(getOrigin()).toMatchObject({ path: "/milestones/alpha/m2", label: null }));
+  });
+
   it("REQ-UI-073 every tab of the milestone page remembers its place", async () => {
     window.history.replaceState(null, "", "/milestones/alpha/m2");
     stubMilestones(() => json(detail([epicPlan("e1")], { id: "m2", title: "Checkout v2" })), []);

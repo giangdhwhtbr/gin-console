@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { rememberProject, resolveProject, setFavorite } from "@/app/project";
+import { clearOrigin, getOrigin } from "@/app/origin";
 import { navigate } from "@/app/route";
 import type { Report } from "./api";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
@@ -53,6 +54,26 @@ beforeEach(() => {
 });
 
 describe("ReportsPage", () => {
+  it("REQ-UI-073 remembers its place for the breadcrumb of a bead page", async () => {
+    clearOrigin();
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    expect(getOrigin()).toMatchObject({ kind: "reports", path: "/reports", project: "alpha" });
+    expect(getOrigin().search).toContain("project=alpha");
+  });
+
+  it("REQ-UI-073 Reports with all projects is remembered for any project", async () => {
+    clearOrigin();
+    window.history.replaceState(null, "", "/reports?project=all&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    expect(getOrigin()).toMatchObject({ kind: "reports", path: "/reports", project: null });
+    expect(getOrigin().search).toContain("project=all");
+  });
+
   it("REQ-UI-088 opens a shared link", async () => {
     window.history.replaceState(null, "", "/reports?project=all&days=7&tab=delivery");
     const mock = stub();

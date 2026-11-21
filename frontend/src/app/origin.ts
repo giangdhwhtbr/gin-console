@@ -42,6 +42,7 @@ function parse(text: string): Origin {
     const project: unknown = Reflect.get(value, "project");
     const label: unknown = Reflect.get(value, "label");
     if (typeof search !== "string" || !isLists(open)) return empty();
+    if (typeof path === "string" && (!path.startsWith("/") || path.startsWith("//"))) return empty(); // never a place outside this app
     const shown = typeof path === "string" ? path : "/beads";
     // a value stored before kinds existed is a Beads place, whose project is in its query
     const old = kind === null ? new URLSearchParams(search).get("project") : null;
