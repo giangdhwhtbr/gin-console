@@ -495,6 +495,37 @@ describe("ReportsPage", () => {
     expect(fades().left).not.toBeNull();
   });
 
+  it("REQ-UI-095 fades the right edge when the tabs widen after the first render", async () => {
+    const observed: { target: Element; fire: () => void }[] = [];
+    class FakeResizeObserver {
+      callback: () => void;
+      constructor(callback: () => void) {
+        this.callback = callback;
+      }
+      observe(target: Element) {
+        observed.push({ target, fire: this.callback });
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal("ResizeObserver", FakeResizeObserver);
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub();
+    render(<ReportsPage />);
+    const list = await screen.findByRole("tablist", { name: "Report" });
+    const define = (key: string, value: number) => Object.defineProperty(list, key, { configurable: true, writable: true, value });
+    define("clientWidth", 700);
+    define("scrollWidth", 700);
+    define("scrollLeft", 0);
+    expect(screen.queryByTestId("tabs-fade-right")).toBeNull();
+    // the headlines load: a tab widens, the list's own box does not change
+    define("scrollWidth", 900);
+    const tabs = observed.filter((o) => o.target.parentElement === list);
+    expect(tabs.length).toBeGreaterThan(0);
+    act(() => tabs[0].fire());
+    expect(screen.getByTestId("tabs-fade-right")).toBeInTheDocument();
+  });
+
   it("REQ-UI-095 REQ-UI-129 the tab strip hides at lg while the sidebar is expanded, and the sections are published", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery&days=7");
     stub();
