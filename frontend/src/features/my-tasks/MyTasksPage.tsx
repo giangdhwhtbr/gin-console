@@ -3,7 +3,7 @@ import { useEmail } from "@/app/identity";
 import { Link } from "@/app/Link";
 import { rememberOrigin } from "@/app/origin";
 import { rememberProject } from "@/app/project";
-import { navigate, useLocation } from "@/app/route";
+import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -54,6 +54,7 @@ export function MyTasksPage() {
     };
   }, [email, fetchClosed, project, request]);
 
+  useRestoreOnBack(state.status === "ok");
   const tasks = state.status === "ok" ? state.data.tasks.filter((task) => matchesMilestone(task.bead, milestone)) : [];
   const count = state.status === "ok" ? tasks.length : null;
   const projects = state.status === "ok" ? state.data.projects : project === "" ? [] : [project];
@@ -145,7 +146,7 @@ export function MyTasksPage() {
               </TableHeader>
               <TableBody>
                 {tasks.map(({ project, bead }) => (
-                  <TableRow key={`${project}/${bead.id}`}>
+                  <TableRow key={`${project}/${bead.id}`} data-id={bead.id} tabIndex={-1}>
                     <TableCell>{project}</TableCell>
                     <TableCell className="whitespace-normal">
                       <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>

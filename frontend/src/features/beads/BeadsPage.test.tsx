@@ -120,7 +120,7 @@ describe("BeadsPage", () => {
     render(<BeadsPage />);
     expect(await screen.findByText("Bead of omega")).toBeInTheDocument();
     expect(window.location.search).toBe("?project=omega");
-    expect(replace).toHaveBeenCalledWith(null, "", "/beads?project=omega");
+    expect(replace.mock.calls.map((call) => call[2])).toContain("/beads?project=omega");
   });
 
   it("REQ-UI-124 a project of the URL becomes the current one", async () => {

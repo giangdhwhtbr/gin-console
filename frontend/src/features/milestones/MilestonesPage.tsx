@@ -2,7 +2,7 @@ import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
-import { navigate, useLocation } from "@/app/route";
+import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -72,6 +72,7 @@ const byStart = (a: MilestoneEntry, b: MilestoneEntry) =>
 function MilestoneTable({ project }: { project: string }) {
   const fetcher = useCallback(() => fetchMilestones(project), [project]);
   const { state, retry } = useLoad(fetcher, true);
+  useRestoreOnBack(state.status === "ok");
   if (state.status === "loading") return <p className="text-muted-foreground">Loading milestones…</p>;
   if (state.status === "error") return <MilestoneError error={state.error} onRetry={retry} />;
   const { milestones, today, forecast, days_per_point } = state.data;

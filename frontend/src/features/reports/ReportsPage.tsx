@@ -2,7 +2,7 @@ import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { rememberOrigin } from "@/app/origin";
 import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
-import { navigate, useLocation } from "@/app/route";
+import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -83,6 +83,7 @@ export function ReportsPage() {
   // an answer counts only for the request it was made for, so a change of filters shows "loading" without a reset
   const key = JSON.stringify([selected, days, sprint, attempt]);
   const loaded: Loaded = settled !== null && settled.key === key ? settled.value : { status: "loading" };
+  useRestoreOnBack(loaded.status === "ok");
 
   // an answer counts for the request it was made for; an answer to "server default" also counts for the milestone it chose,
   // so writing that milestone into the URL does not ask again

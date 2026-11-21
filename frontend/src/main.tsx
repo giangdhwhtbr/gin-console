@@ -8,6 +8,8 @@ const root = document.getElementById("root");
 if (root === null) throw new Error("#root element missing");
 
 initTheme();
+// REQ-UI-127: the app puts the page back where it was, once its data has shown
+window.history.scrollRestoration = "manual";
 
 createRoot(root).render(
   <StrictMode>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { rememberOrigin } from "@/app/origin";
+import { useRestoreOnBack } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { usePageTitle } from "@/app/usePageTitle";
@@ -37,6 +38,8 @@ export function ProjectsPage() {
   }, []);
 
   useVisibleInterval(load, REFRESH_MS);
+
+  useRestoreOnBack(state.status === "ok");
 
   const retry = () => {
     if (state.status === "error") setState({ status: "loading" });

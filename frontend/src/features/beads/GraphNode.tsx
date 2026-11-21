@@ -35,6 +35,7 @@ export function GraphNodeButton({
     <button
       type="button"
       data-node={node.bead.id}
+      data-id={node.bead.id}
       data-external={node.external}
       data-dimmed={dimmed}
       aria-pressed={selected}

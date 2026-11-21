@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { projectHref } from "@/app/project";
 import { usePageTitle } from "@/app/usePageTitle";
-import { navigate, useLocation } from "@/app/route";
+import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { ProjectGuard } from "@/app/UnknownProject";
 import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
@@ -65,6 +65,8 @@ function Milestone({ project, id }: { project: string; id: string }) {
   useEffect(() => {
     if (tabAsked !== "graph") rememberOrigin("milestone", `/milestones/${encodeURIComponent(project)}/${encodeURIComponent(id)}`, search, project, title);
   }, [tabAsked, project, id, search, title]);
+  // the Beads tab restores itself once its beads have loaded
+  useRestoreOnBack(base.state.status === "ok" && tab !== "beads");
   const shown = useLoad<MilestoneDetail | null>(preview, false);
   const comments = useMilestoneComments(project, id);
   // REQ-MILESTONE-UI-019: the tab counts the members with a retro; no number while loading or after an error
