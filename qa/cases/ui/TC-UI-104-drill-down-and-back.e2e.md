@@ -1,6 +1,6 @@
 # TC-UI-104: Drill down and back
 
-- **REQ:** REQ-UI-106@19fab77c
+- **REQ:** REQ-UI-106@aef48e9b
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57

@@ -1,6 +1,6 @@
 # TC-UI-193: Wheel over the Graph view
 
-- **REQ:** REQ-UI-122@86de2845
+- **REQ:** REQ-UI-122@b50bc21c
 - **Priority:** medium
 
 **Preconditions:**
