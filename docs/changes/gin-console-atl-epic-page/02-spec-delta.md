@@ -24,7 +24,7 @@ WHEN a bead of type `epic` is shown as a page (not as the details panel of anoth
 - Lanes: the Lanes view of REQ-UI-111 to REQ-UI-114 with the epic as the scope;
 - Discussion: the comments of REQ-UI-039, or "No comments" when `comment_count` is 0.
 The epic page SHALL NOT show the discussion column of REQ-UI-068 or the tabs of REQ-UI-069, and the details panel of an epic SHALL keep its compact form with "Open page".
-Source: `assets/2026-11-20/epic-page/mockup/index.html`, `assets/2026-11-20/epic-page/shots/overview-light.png`
+Source: `assets/2026-11-21/epic-page/mockup/index.html`, `assets/2026-11-21/epic-page/shots/overview-light.png`
 
 #### Scenario: Opens on Overview
 - GIVEN epic `ex-e12` with lanes and two comments
@@ -51,7 +51,7 @@ The Overview tab of an epic page SHALL show three cards side by side from 1024px
 - Progress: "<closed> of <total> tracks closed · <percent>%" over the epic's children that are neither prep tasks (REQ-BEADS-002) nor merge gates (REQ-BEADS-019), a bar split by state (Done, In progress, Ready, Blocked, Deferred, each by REQ-UI-064) with a legend giving each state's word and count, then as label/value facts "Points" ("<done> of <total> pt done" over the tracks with `points`, or "No points"), "Bugs" (the open beads of the epic's `bugs`, "0 open" when none) and "Prep" ("<closed>/<total>" of its prep tasks, or "none");
 - Workflow: the stages discuss, plan, orchestrate, execute and ship with the epic's current stage marked and the earlier ones ticked, then "Gates" ("<satisfied> of <n> satisfied"), "Warnings" and "Waivers" (each a count with the items on hover and focus, or "none"), from `GET /api/beads/{project}/{id}/workflow` (REQ-BEADS-020); "No workflow" when the answer has no stage, and the error when it fails, the rest of the page unaffected;
 - Milestone: the epic's milestone id and title linking to the milestone page, its status, its window "<start> – <end>", the working days (Monday to Friday) from today to `end`, both counted, while it is active, and its forecast finish with a warning mark when the finish is after `end` (from `GET /api/milestones?project=`, REQ-MILESTONE-UI-008); "No milestone" when the epic's `milestone` is `null`.
-Source: `assets/2026-11-20/epic-page/mockup/index.html`
+Source: `assets/2026-11-21/epic-page/mockup/index.html`
 
 #### Scenario: Progress by state
 - GIVEN epic `ex-e12` with 8 tracks (4 closed, 1 in progress, 2 ready, 1 blocked) and a merge gate child
@@ -80,7 +80,7 @@ Source: `assets/2026-11-20/epic-page/mockup/index.html`
 
 ### REQ-UI-121: Epic lanes summary and tracks table
 Under the cards, the Overview tab SHALL show, while the epic has lanes (REQ-UI-111), a section "Lanes" with one row per lane in the row order of the Lanes view: the lane colour of REQ-UI-118 as a swatch and pale background, the lane name, its state (REQ-UI-112) as an icon and words, the holder and lease, what it waits for ("waits for <lane> #<N> (merge pending)" or "(merged)" for each merge gate of its first open track), and "<closed>/<total> closed", with a link "Open the Lanes tab". It SHALL then show a section "Tracks" with a table of the epic's children that are not merge gates, with the columns Id (linking to the bead page), Title (cut with an ellipsis and `title`), State (REQ-UI-064), Lane (the lane chip of REQ-UI-115 with its colour swatch, or "No lane"), Assignee ("Unclaimed" when none), Points ("–" when none) and Blocked by (the open blockers' ids, a merge gate written "<lane> #<N> · merge pending"), first ordered by Id; WHEN the user activates a column header other than Blocked by, the table SHALL sort by that column, ascending then descending, with `aria-sort` on that header. Below 1024px the table SHALL keep Id, Title and State and let the rest scroll sideways within the table.
-Source: `assets/2026-11-20/epic-page/mockup/index.html`
+Source: `assets/2026-11-21/epic-page/mockup/index.html`
 
 #### Scenario: Lanes summary
 - GIVEN epic `ex-e12` with lanes be, fe, infra and qa
@@ -201,7 +201,7 @@ WHERE a drawn node, or a bead under it, has a `blocked_by` relation with a bead 
 
 ### REQ-UI-051: Selection and path
 <!-- base: 704f443a0cfe40748399d0c741bb39270b3f36de9be48f879ce9f3f7b9220e72 -->
-WHEN the Graph view (REQ-UI-106) opens with a bead as its scope and no `select` in the URL, it SHALL select the scope bead, WHEN it opens with the project or a milestone as its scope, it SHALL select nothing, SHALL show the panel only while a bead is selected, the graph then taking the full width, SHALL offer in the panel a button "Close details" that selects nothing, kept in the URL as `select=none` so that a reload keeps the panel closed, and after closing SHALL move focus to the node that was selected, and WHEN the user clicks a node or presses Enter on it, it SHALL select that bead, keep its id in the URL as `select` without adding a history entry, highlight the node, all its direct and indirect blockers, all beads it blocks directly or indirectly and the arrows between them, dim every other node and arrow, and show the bead in a panel beside the graph (below it under 1024px) with the content of the bead page and an "Open page" link as REQ-UI-045 describes.
+WHEN the Graph view (REQ-UI-106) opens with no `select` in the URL, it SHALL select nothing, whatever its scope, SHALL show the panel only while a bead is selected, the graph then taking the full width, SHALL offer in the panel a button "Close details" that selects nothing, kept in the URL as `select=none` so that a reload keeps the panel closed, and after closing SHALL move focus to the node that was selected, and WHEN the user clicks a node or presses Enter on it, it SHALL select that bead, keep its id in the URL as `select` without adding a history entry, highlight the node, all its direct and indirect blockers, all beads it blocks directly or indirectly and the arrows between them, dim every other node and arrow, and show the bead in a panel beside the graph (below it under 1024px) with the content of the bead page and an "Open page" link as REQ-UI-045 describes.
 
 #### Scenario: Project scope
 - GIVEN the Graph view of the project in a window 1280px wide
@@ -216,7 +216,7 @@ WHEN the Graph view (REQ-UI-106) opens with a bead as its scope and no `select` 
 #### Scenario: Epic
 - GIVEN the Graph view with the scope `e-1` and no `select`
 - WHEN it is shown
-- THEN `e-1` is selected and the panel shows `e-1`
+- THEN no node is selected, there is no details panel and the graph takes the full width
 
 #### Scenario: Highlight chain
 - GIVEN `a`→`b`→`c` and an unrelated `z`
@@ -234,13 +234,13 @@ WHEN the Graph view (REQ-UI-106) opens with a bead as its scope and no `select` 
 - THEN `b` is selected and its chain is highlighted
 
 #### Scenario: Close the panel
-- GIVEN the Graph view with the scope `e-1` and `e-1` selected
+- GIVEN the Graph view with the scope `e-1` and its child `b` selected
 - WHEN the user chooses "Close details"
 - THEN the URL has `select=none`, the panel is gone, the graph takes the full width, and a reload keeps it so
 
 ### REQ-UI-052: Graph keyboard
 <!-- base: 07be03aa75df9dc01aa96bee56a6f09796ffe586e52d82e55c7987188e5ce053 -->
-WHILE a node has focus, the Graph view (REQ-UI-106) SHALL move focus along the arrows with ArrowDown to a blocked bead and ArrowUp to a blocker, and to the previous or next node of the same layer with ArrowLeft and ArrowRight, SHALL select the scope bead again on Escape while another node is selected, and select nothing (closing the panel as REQ-UI-051 describes) on Escape while the scope bead or, when the scope is not a bead, any node is selected, and SHALL keep a single node in the tab order.
+WHILE a node has focus, the Graph view (REQ-UI-106) SHALL move focus along the arrows with ArrowDown to a blocked bead and ArrowUp to a blocker, and to the previous or next node of the same layer with ArrowLeft and ArrowRight, SHALL select nothing (closing the panel as REQ-UI-051 describes) on Escape while a node is selected, and SHALL keep a single node in the tab order.
 
 #### Scenario: Follow an arrow
 - GIVEN `a`→`b` and focus on `a`
@@ -248,12 +248,7 @@ WHILE a node has focus, the Graph view (REQ-UI-106) SHALL move focus along the a
 - THEN focus moves to `b`
 
 #### Scenario: Escape
-- GIVEN the Graph view with the scope `e-1` and a node other than `e-1` is selected
-- WHEN the user presses Escape
-- THEN `e-1` is selected again
-
-#### Scenario: Second Escape
-- GIVEN the Graph view with the scope `e-1` and `e-1` selected
+- GIVEN the Graph view with the scope `e-1` and its child `b` selected
 - WHEN the user presses Escape
 - THEN nothing is selected, the URL has `select=none` and the panel is gone
 
@@ -384,8 +379,8 @@ WHEN the frontend opens an old Dependencies link, it SHALL replace it in the bro
 - THEN `/beads/p/e-1` is shown, not the old link
 
 ### REQ-UI-077: Zoom
-<!-- base: fa902e47e0623f004fe68edd6da35fd8af4583e94fc8cb3d08722a898ffa3f64 -->
-The Graph view (REQ-UI-106) SHALL offer the buttons "Zoom in" and "Zoom out" that change the scale by 10% between 40% and 200%, the button "Fit to view" that scales the graph to fit the canvas without going above 100%, and the current scale as a percentage, SHALL start fitted, SHALL zoom with the wheel while `Ctrl` or `⌘` is held, SHALL let the user pan with the scroll bars of the canvas and the usual scrolling gestures, and SHALL not remember the scale.
+<!-- base: 703ea43a75108e19e7c4042fe75a7e40496b7a04d07daf7eb5e8a27f23f16480 -->
+The Graph view (REQ-UI-106) SHALL offer the buttons "Zoom in" and "Zoom out" that change the scale by 10% between 40% and 200%, the button "Fit to view" that scales the graph to the width of the canvas without going above 100%, and the current scale as a percentage, SHALL start fitted, SHALL zoom with the wheel while `Ctrl` or `⌘` is held, SHALL let the user pan sideways with the scroll bar of the canvas and the usual sideways gestures and up and down by scrolling the page (REQ-UI-122), and SHALL not remember the scale.
 
 #### Scenario: Buttons
 - GIVEN the graph at 100%
@@ -400,7 +395,12 @@ The Graph view (REQ-UI-106) SHALL offer the buttons "Zoom in" and "Zoom out" tha
 #### Scenario: Fit
 - GIVEN a graph wider than the canvas
 - WHEN the Graph view opens or the user presses "Fit to view"
-- THEN the whole graph is visible and the percentage is below 100%
+- THEN the whole width of the graph is visible and the percentage is below 100%
+
+#### Scenario: Fit a tall graph
+- GIVEN a graph narrower than the canvas and taller than the window
+- WHEN the user presses "Fit to view"
+- THEN the percentage reads 100% and the page scrolls to show the rest of the graph
 
 #### Scenario: Wheel
 - GIVEN the pointer is over the canvas
@@ -475,8 +475,8 @@ The Beads page SHALL NOT offer a link "Dependencies" next to the project picker,
 - THEN the unlinked task is drawn and "Only linked" is off
 
 ### REQ-UI-106: Graph view
-<!-- base: 3747fc19b8c89d6b0c626fd1ccb2c80c38b10e93791306bcfdd73e9ae83086fa -->
-The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of REQ-UI-048 to REQ-UI-050 and REQ-UI-079, the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. The Graph view SHALL also serve the Graph tab of an epic page (REQ-UI-119), with the epic as its scope. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as the List view does, SHALL select the scope bead when `select` is absent and the scope is a bead, and SHALL show and close the panel as REQ-UI-051 and REQ-UI-052 describe. WHEN a node with children is opened, the view SHALL set `scope` to its id and show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it. WHEN a node without children is opened, the frontend SHALL open its bead page. WHILE nothing matches, the view SHALL say "No beads match these filters".
+<!-- base: 19fab77c27026c81c6a995790a605fd66762630e66499ab88e077c04933c2123 -->
+The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of REQ-UI-048 to REQ-UI-050 and REQ-UI-079, the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. The Graph view SHALL also serve the Graph tab of an epic page (REQ-UI-119), with the epic as its scope. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as the List view does, SHALL select nothing and show no details panel while `select` is absent, whatever the scope, so that the panel opens only when the user selects a node, and SHALL show and close the panel as REQ-UI-051 and REQ-UI-052 describe. WHEN a node with children is opened, the view SHALL set `scope` to its id and show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it. WHEN a node without children is opened, the frontend SHALL open its bead page. WHILE nothing matches, the view SHALL say "No beads match these filters".
 
 #### Scenario: Milestone scope
 - GIVEN milestone `m2` with epics `e1` and `e2`, `e2` blocked by `x` under milestone `m3`
@@ -516,7 +516,7 @@ The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, wit
 #### Scenario: Graph tab of an epic
 - GIVEN the page of epic `e-1` at `/beads/p/e-1?tab=graph`
 - WHEN it is shown
-- THEN the Graph view is drawn with `e-1` as its scope, the tasks of `e-1` are the nodes, and `e-1` is selected
+- THEN the Graph view is drawn with `e-1` as its scope, the tasks of `e-1` are the nodes, no node is selected and no details panel is shown
 
 #### Scenario: Nothing matches
 - GIVEN a search that matches no bead
@@ -527,6 +527,32 @@ The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, wit
 - GIVEN milestone "All" is selected and the URL has no `select`, in a window 1280px wide
 - WHEN the Graph view is shown
 - THEN there is no details panel and the graph takes the full width
+
+#### Scenario: No panel on opening an epic
+- GIVEN the URL `/beads?project=example&milestone=all&view=graph&scope=ex-e12` without `select`, in a window 1440px wide
+- WHEN the page loads
+- THEN no node is selected, no details panel is shown and the canvas spans the width of the page; WHEN the user clicks the card of `ex-e12.2`, THEN the URL has `select=ex-e12.2` and the details panel shows it
+
+### REQ-UI-122: Canvas scrolling
+<!-- base: 86de284527e59f0704d3d5597a80044959584ea03e5aa567be61bcdb32cfba2a -->
+Type: non-functional
+Category: usability
+The canvas of the Graph view (REQ-UI-106), with its nodes or lane boxes (REQ-UI-117), and the canvas of the Lanes view (REQ-UI-111), on the Beads page and on the Graph and Lanes tabs of an epic page (REQ-UI-119), SHALL each be as tall as its content at the current scale. They SHALL scroll only sideways, with no vertical scroll bar of their own, and SHALL leave the page as the one vertical scroller. A wheel turn or a vertical swipe over a canvas without `Ctrl` or `⌘` SHALL scroll the page. A sideways swipe SHALL move the canvas and SHALL NOT pass on to the browser's history at the canvas's edge. The details panel and the discussion column keep their own scroll (REQ-UI-078).
+
+#### Scenario: Wheel over the Lanes view
+- GIVEN the Lanes view of `ex-e12` at 1440×900, with the page scrolled to the top and the pointer over the cards
+- WHEN the user turns the wheel down
+- THEN the page scrolls down and the canvas has no vertical scroll bar
+
+#### Scenario: Wheel over the Graph view
+- GIVEN the Graph view of `ex-e12` with "Show closed" on at 1440×900, where the page is taller than the window, with the pointer over a lane box
+- WHEN the user turns the wheel down
+- THEN the page scrolls down
+
+#### Scenario: Sideways
+- GIVEN the Graph view of the project wider than the window
+- WHEN the user scrolls sideways over the canvas
+- THEN the canvas moves sideways and the page does not move
 
 ## REMOVED
 

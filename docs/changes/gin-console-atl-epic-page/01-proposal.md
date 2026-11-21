@@ -8,14 +8,22 @@ Date: 2026-11-20
 
 On 2026-11-20 the user looked for the Lanes view of an epic from the epic's page and could not find it. "View dependencies" opens the separate Dependencies page, which has no view tabs and therefore no Lanes view. The user found the epic page sparse (facts, description and a plain children list) and the Dependencies page clunky: it is a second graph next to the Graph view, without its filters.
 
-User decisions 2026-11-20 (mockup in `docs/specs/ui/assets/2026-11-20/epic-page/`):
+User decisions 2026-11-20 (mockup in `docs/specs/ui/assets/2026-11-21/epic-page/`):
 - **Page shape:** the epic page gets tabs: Overview · Graph · Lanes · Discussion.
 - **Overview:** shows Progress, Workflow and Milestone cards, a Lanes summary, a Tracks table and the description.
 - **Graph tab:** the Graph view of the Beads page with the epic as the scope, with the lane boxes of epic gin-console-5qw.
 - **Lanes tab:** the existing Lanes view.
 - **Discussion tab:** the existing discussion.
 - **Dependencies page:** retired. Its routes go to the Graph tab or to the Graph view.
-- **Order:** this work comes after epic gin-console-5qw.
+- **Order:** this work comes after epics gin-console-5qw and gin-console-csp.
+
+Update 2026-11-21, after gin-console-csp shipped (merge 99f06d6), confirmed by the user:
+- **No default panel:** the Graph and Lanes tabs open with nothing selected and no details panel; the panel opens on a click or Enter (REQ-UI-106 as shipped). REQ-UI-051 and REQ-UI-052 follow: no scope bead selected at first, and Escape selects nothing.
+- **Lane tiers:** the lane boxes of the Graph tab run in tiers from left to right (REQ-UI-117 as shipped). The Graph tab shots of the mockup show the older top-to-bottom tiers; the shipped layout wins.
+- **Scroll and zoom:** the page is the one vertical scroller and Fit to view fits the width (REQ-UI-122, REQ-UI-077 as shipped). REQ-UI-077 and REQ-UI-106 are rewritten on the shipped text, and REQ-UI-122 drops the canvas of the Dependencies page.
+- **Assets:** the epic-page mockup moved from the confirmed folder `assets/2026-11-20/` to `assets/2026-11-21/`.
+
+Comments considered: 3, latest 2026-11-20T15:57:50Z
 
 ## What Changes
 
@@ -73,10 +81,10 @@ Acceptance criteria:
 
 - `ui`:
   - ADDED: REQ-UI-119, REQ-UI-120, REQ-UI-121.
-  - MODIFIED: REQ-UI-048, REQ-UI-049, REQ-UI-050, REQ-UI-051, REQ-UI-052, REQ-UI-053, REQ-UI-054, REQ-UI-072, REQ-UI-075, REQ-UI-077, REQ-UI-078, REQ-UI-079, REQ-UI-081, REQ-UI-106.
+  - MODIFIED: REQ-UI-048, REQ-UI-049, REQ-UI-050, REQ-UI-051, REQ-UI-052, REQ-UI-053, REQ-UI-054, REQ-UI-072, REQ-UI-075, REQ-UI-077, REQ-UI-078, REQ-UI-079, REQ-UI-081, REQ-UI-106, REQ-UI-122.
   - REMOVED: REQ-UI-076, REQ-UI-080.
-  - Assets: `docs/specs/ui/assets/2026-11-20/epic-page/mockup/index.html`, `docs/specs/ui/assets/2026-11-20/epic-page/shots/overview-light.png`.
-  - Diagram: `docs/specs/ui/diagrams/epic-page-activity.md`.
+  - Assets: `docs/specs/ui/assets/2026-11-21/epic-page/mockup/index.html`, `docs/specs/ui/assets/2026-11-21/epic-page/shots/overview-light.png`.
+  - Diagrams: `docs/specs/ui/diagrams/epic-page-activity.md`; `docs/specs/ui/diagrams/details-panel-activity.md` (no default selection, no Dependencies page).
 - `beads`:
   - ADDED: REQ-BEADS-020.
   - Diagram: `docs/specs/beads/diagrams/epic-workflow-activity.md`.

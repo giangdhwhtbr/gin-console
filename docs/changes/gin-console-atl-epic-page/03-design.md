@@ -17,7 +17,7 @@ Epic: gin-console-atl
   - **Data:** the epic detail (`/api/beads/{p}/{id}`) and the project's beads (`useBeads(project, true)`) give tracks, lanes, gates and states.
     - `/api/beads/{p}/{id}/workflow` feeds the Workflow card.
     - `useMilestones(project)` / `GET /api/milestones?project=` feed the Milestone card.
-  - **Graph tab:** renders `GraphView` with filters forced to `scope=<epic>` and the shared filter bar. Selection uses `select` on the epic page URL. Lane boxes come from gin-console-5qw.
+  - **Graph tab:** renders `GraphView` with filters forced to `scope=<epic>` and the shared filter bar. Selection uses `select` on the epic page URL; nothing is selected at first (REQ-UI-106 as shipped by gin-console-csp). Lane boxes come from gin-console-5qw, in tiers from left to right since gin-console-csp.
   - **Lanes tab:** renders `LanesView` with `scope=<epic>`.
   - **Discussion tab:** the existing comments component.
   - **Pure helpers** (`epicOverview.ts`): `progressOf(tracks)` returning counts by `stateOf` and points done/total; `laneSummary(beads, epicId, now)` built on `lanes.ts`; `workingDaysLeft(today, end)`; `sortTracks(rows, column, direction)`.
