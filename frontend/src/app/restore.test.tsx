@@ -110,8 +110,48 @@ describe("useRestoreOnBack", () => {
     });
     leaveAndGoBack(1200);
     scrollTo.mockClear();
+    Object.defineProperty(window, "scrollY", { value: 900, configurable: true });
     render(<Page ready />);
     expect(() => browserPop()).not.toThrow();
+    settle();
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it("REQ-UI-127 an entry whose position was evicted starts at the top", () => {
+    leaveAndGoBack(1200);
+    window.sessionStorage.clear();
+    scrollTo.mockClear();
+    render(<Page ready />);
+    browserPop();
+    settle();
+    expect(scrollTo).toHaveBeenCalledTimes(1);
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it("REQ-UI-127 a second arrival within 2 seconds keeps its mark for its full 2 seconds", () => {
+    leaveAndGoBack(300);
+    const view = render(<Page ready />);
+    browserPop();
+    settle();
+    act(() => void vi.advanceTimersByTime(1500));
+    leaveAndGoBack(300);
+    browserPop();
+    settle();
+    const row = view.container.querySelector<HTMLElement>('[data-id="a-7"]');
+    act(() => void vi.advanceTimersByTime(1500));
+    expect(row).toHaveAttribute("data-last-opened");
+    act(() => void vi.advanceTimersByTime(600));
+    expect(row).not.toHaveAttribute("data-last-opened");
+  });
+
+  it("REQ-UI-127 a navigation before the page is ready drops the pending restore", () => {
+    leaveAndGoBack(1200);
+    scrollTo.mockClear();
+    const view = render(<Page ready={false} />);
+    browserPop();
+    act(() => navigate("/beads", { replace: true }));
+    view.rerender(<Page ready />);
     settle();
     expect(scrollTo).not.toHaveBeenCalled();
   });

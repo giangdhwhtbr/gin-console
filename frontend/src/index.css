@@ -220,16 +220,17 @@
 
 /* REQ-UI-127: the bead the user came back from; with reduced motion the ring just shows, then goes */
 @keyframes last-opened {
-  from { box-shadow: 0 0 0 3px var(--ring); }
-  to { box-shadow: 0 0 0 3px transparent; }
+  from { outline-color: var(--ring); }
+  to { outline-color: transparent; }
 }
 [data-last-opened] {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
   animation: last-opened 2s ease-out forwards;
 }
 @media (prefers-reduced-motion: reduce) {
   [data-last-opened] {
     animation: none;
-    box-shadow: 0 0 0 3px var(--ring);
   }
 }
 

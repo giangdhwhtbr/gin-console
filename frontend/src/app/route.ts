@@ -78,7 +78,8 @@ let synthetic = false;
 
 if (typeof window !== "undefined") {
   window.addEventListener("popstate", () => {
-    if (!synthetic) arrival = keyOf(window.history.state);
+    // a navigate() (push or replace) means the user moved on: an arrival not yet restored is dropped
+    arrival = synthetic ? null : keyOf(window.history.state);
   });
 }
 
@@ -100,6 +101,12 @@ export function navigate(to: string, options?: { replace?: boolean }): void {
   }
 }
 
+let markTimer: number | undefined;
+const clearMark = () => {
+  window.clearTimeout(markTimer);
+  for (const marked of document.querySelectorAll("[data-last-opened]")) marked.removeAttribute("data-last-opened");
+};
+
 /**
  * REQ-UI-127: after the browser's Back or Forward, once the page shows its data, scroll to where the
  * user left it and mark the bead they opened. A page reached by a link or an address does nothing.
@@ -118,14 +125,15 @@ export function useRestoreOnBack(ready: boolean): void {
       if (arrival !== key) return;
       arrival = null; // once per arrival
       const place = readPlaces()[key];
-      if (place === undefined) return;
-      window.scrollTo(0, place.y);
-      if (place.opened === null) return;
+      // manual scroll restoration keeps the previous page's scroll: without a saved place, start at the top
+      window.scrollTo(0, place?.y ?? 0);
+      if (place === undefined || place.opened === null) return;
       const target = document.querySelector<HTMLElement>(`[data-id="${CSS.escape(place.opened)}"]`);
       if (target === null) return;
+      clearMark();
       target.focus({ preventScroll: true });
       target.setAttribute("data-last-opened", "");
-      window.setTimeout(() => target.removeAttribute("data-last-opened"), MARK_MS);
+      markTimer = window.setTimeout(clearMark, MARK_MS);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [ready, arrived]);
