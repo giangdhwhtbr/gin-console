@@ -31,7 +31,7 @@ Source: Product brief from the UX review of 2026-11-21 (team lead, PM, member an
 
 | Milestone | Period | Outcome | Demo | Epics |
 |---|---|---|---|---|
-| Trust and wayfinding | 2026-11-23 to 2026-12-17 | The console keeps your project and place across pages, numbers mean the same everywhere, Sessions and Quota are gone, and the new look is in place. | Pick a project once and move through Beads, Milestones and Reports without losing it; open an epic from a milestone and return by its breadcrumb; the blocked count matches on Projects, Beads and Reports. | Retire Sessions and Quota; Navigation shell; One set of definitions; Strung visual system |
+| Trust and wayfinding | 2026-11-23 to 2026-12-17 | The console keeps your project and place across pages, numbers mean the same everywhere, Sessions and Quota are gone, and the new look is in place. | Pick a project once and move through Beads, Milestones and Reports without losing it; open an epic from a milestone and return by its breadcrumb; the blocked count matches on Projects, Beads and Reports. | Retire Sessions and Quota; Navigation shell; One set of definitions; Strung visual system; Beads views interaction |
 | PM reporting | 2026-12-18 to 2026-12-29 | A PM reports a milestone's status and hands over a WBS from the console. | Open the Checkout v2 status report, read its verdict and risks, copy the summary, download the WBS in Excel. | Reports status and one scope; WBS export and summary |
 | Lead and Dev daily work | 2026-12-30 to 2027-01-12 | A lead starts the day on one overview across projects; a developer sees what to do next and copies the command to start it. | The overview lists blocked work with its owner across projects; My work shows next up; a bead page copies its claim command; an epic shows its review findings and gate history. | Overview for leads; My work and the next step; Reviews and gate audit |
 | QA and BA | 2027-01-13 to 2027-01-28 | BA and QA see requirements, sign-off, test coverage, bugs and bug screenshots. | The requirements matrix of one capability; a milestone's release readiness checklist; a bug's screenshots in the lightbox. | Requirements and traceability; Test coverage and release readiness; Bugs view; Evidence images from local files |
@@ -66,6 +66,7 @@ Foundation first, then by role. Trust and wayfinding comes first because every l
 flowchart LR
   retire[Retire Sessions and Quota] --> shell[Navigation shell]
   shell --> strung[Strung visual system]
+  shell --> beadsviews[Beads views interaction]
   defs[One set of definitions] --> status[Reports status]
   strung --> status
   defs --> wbs[WBS export]
@@ -93,9 +94,9 @@ Demo: Pick a project once and move through Beads, Milestones and Reports without
 Result:
 Spec ready by: 2026-11-23
 Integration point: 2026-12-10
-- Integrates: gin-console-rm-retire-sessions-quota, gin-console-rm-nav-shell, gin-console-rm-definitions, gin-console-rm-strung
+- Integrates: gin-console-rm-retire-sessions-quota, gin-console-rm-nav-shell, gin-console-rm-definitions, gin-console-rm-strung, gin-console-rm-beads-views
 - Flags on: none (no feature flags)
-- E2E scope: project switching across pages, breadcrumbs and Back, filters as chips, blocked and done counts across pages, theme and tokens on every page
+- E2E scope: project switching across pages, breadcrumbs and Back, filters as chips, one click rule in the Beads views, blocked and done counts across pages, theme and tokens on every page
 - Exit criteria: checks green, the epics' TCs passed on the Tailscale build, no open bug bead on these epics
 
 ### Retire Sessions and Quota
@@ -123,9 +124,9 @@ Estimate: 4 (assumed)
 Kind: capability
 Complexity: medium (every page reads its own project parameter today)
 Goal: The console remembers where you are and how you got there.
-Scope: A project switcher at the top of the sidebar, remembered and carried in every link; breadcrumbs by name that follow the page you came from; the nav item of the origin stays highlighted; a page title per page; a real not-found page and an unknown-project notice; scroll and the last opened row restored on Back; a one-line filter bar with default filters as removable chips; one click rule across List, Board, Focus and Graph; a skip link and a visible search shortcut. Sub-navigation rule: a page whose sections answer different questions lists them as sidebar sub-items with their own address and headline value; below 1024px they become a scrollable tab strip; views of the same data stay a segmented control; an epic or milestone page keeps its own tabs.
+Scope: A project switcher at the top of the sidebar, remembered and carried in every link, with a favorite project pinned by a star; breadcrumbs by name that follow the page you came from; the nav item of the origin stays highlighted; a page title per page; a real not-found page and an unknown-project notice; scroll and the last opened row restored on Back; a skip link. The one-line filter bar, the click rule and the search shortcut moved to Beads views interaction (decision 2026-11-21). Sub-navigation rule: a page whose sections answer different questions lists them as sidebar sub-items with their own address and headline value; below 1024px they become a scrollable tab strip; views of the same data stay a segmented control; an epic or milestone page keeps its own tabs.
 Out of scope: New pages.
-Features: Project switcher; breadcrumbs by name; page titles; not-found page; return to your place; one-line filters; sidebar sub-navigation
+Features: Project switcher with a favorite; breadcrumbs by name; page titles; not-found page; return to your place; skip link; sidebar sub-navigation
 Capabilities: ui
 Legacy: none
 Depends on: gin-console-rm-retire-sessions-quota
@@ -165,6 +166,23 @@ Legacy: none
 Depends on: gin-console-rm-nav-shell
 Evidence: Product brief (direction preview of 2026-11-21; UX review: flat 12/14/20 type scale, no identity colour, teal means both ready and closed)
 Risks: Land tokens first, then components page by page; Recursive with all axes is about 300 KB, so subset it or keep Geist.
+
+### Beads views interaction
+Epic: gin-console-rm-beads-views
+Milestone: gin-console-6bd
+Points: 8 (11 filter controls into one line with chips, one click rule over 4 views, a details panel for Board and Focus, medium)
+Estimate: 3
+Kind: capability
+Complexity: medium (one selection shared by four views; the filter bar is duplicated in the mobile sheet)
+Goal: The Beads page is quick to scan and to act on: its filters fit one line and a click does the same thing in every view.
+Scope: A one-line filter bar (search, status, assignee, milestone and "More filters (n)" holding the rest) where default filters, such as the current milestone, show as removable chips, with "Clear filters" defined for the default milestone; one click rule in List, Board, Focus and Graph (a click on a row or card selects it and opens the details panel from 1024px, below that it opens the bead page; the title, Enter on a selected item or a double click opens the bead page); a details panel for Board and Focus; a visible "/" hint on the search box. It applies to the Beads page and the Beads tab of a milestone page.
+Out of scope: Visual tokens (Strung visual system); the shared navigation (Navigation shell).
+Features: One-line filters with chips; one click rule; details panel for Board and Focus; visible search shortcut
+Capabilities: ui
+Legacy: none
+Depends on: gin-console-rm-nav-shell
+Evidence: Product brief (UX review 2026-11-21: filters take about 300px, each view clicks differently); split from the discuss of gin-console-rm-nav-shell (decision 2026-11-21)
+Risks: Many tests pin the current filter layout and the default milestone rule of REQ-UI-104.
 
 ## Milestone: PM reporting
 
