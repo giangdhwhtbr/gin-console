@@ -48,7 +48,6 @@ def make(
     app = create_app(
         settings,
         static_dir=tmp_path / "dist",
-        claude_home=tmp_path,
         read_beads=FakeExport([bead("e-1", issue_type="epic")]),
         run_bd=FakeBd(),
         clock=clock or Clock(),

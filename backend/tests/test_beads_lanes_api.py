@@ -29,7 +29,6 @@ def make(tmp_path: Path, rows: list[dict[str, Any]]) -> TestClient:
     app = create_app(
         Settings(projects=[ProjectEntry(name="alpha", path=tmp_path / "alpha")]),
         static_dir=tmp_path / "dist",
-        claude_home=tmp_path,
         read_beads=FakeExport(rows) if rows else read_export,
         run_bd=FakeBd(),
         clock=lambda: NOW,

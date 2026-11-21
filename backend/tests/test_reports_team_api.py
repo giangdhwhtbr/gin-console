@@ -34,7 +34,6 @@ def make(tmp_path: Path, runners: dict[str, Any], clock: Clock | None = None) ->
     app = create_app(
         settings,
         static_dir=tmp_path / "dist",
-        claude_home=tmp_path,
         read_beads=lambda cwd: runners[cwd.name](cwd),
         run_bd=FakeBd(),
         clock=clock or Clock(),
