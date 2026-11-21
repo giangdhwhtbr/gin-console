@@ -9,6 +9,7 @@ import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { useEmail } from "./identity";
 import { Layout } from "./Layout";
 import { LoginPage } from "./LoginPage";
+import { NotFoundPage } from "./NotFoundPage";
 import { useLocation } from "./route";
 
 const ReportsPage = lazy(() => import("@/features/reports/ReportsPage").then((m) => ({ default: m.ReportsPage })));
@@ -71,8 +72,10 @@ export function App() {
         <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
           <ReportsPage />
         </Suspense>
-      ) : (
+      ) : pathname === "/" ? (
         <ProjectsPage />
+      ) : (
+        <NotFoundPage path={pathname} />
       )}
       </Fragment>
     </Layout>

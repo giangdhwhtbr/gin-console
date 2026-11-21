@@ -204,4 +204,15 @@ describe("Layout", () => {
       expect(getEmail()).toBeNull();
     });
   });
+
+  it("REQ-UI-128 Tab reaches Skip to content first and Enter moves focus to main", async () => {
+    open("/beads");
+    await userEvent.tab();
+    const skip = screen.getByRole("link", { name: "Skip to content" });
+    expect(skip).toHaveFocus();
+    expect(skip).toHaveAttribute("href", "#main");
+    await userEvent.keyboard("{Enter}");
+    expect(screen.getByRole("main")).toHaveFocus();
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main");
+  });
 });

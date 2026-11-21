@@ -87,6 +87,18 @@ afterEach(() => {
 });
 
 describe("BeadDetailPage", () => {
+  it("REQ-UI-063 titles the page with the bead and its project, and the panel does not", async () => {
+    stubFetch(beadDetail("a-5", { title: "Team checkout" }));
+    document.title = "gin-console";
+    const { unmount } = render(<BeadDetailPage project="alpha" id="a-5" embedded />);
+    await screen.findByRole("heading", { name: "Team checkout" });
+    expect(document.title).toBe("gin-console");
+    unmount();
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(document.title).toBe("gin-console");
+    await waitFor(() => expect(document.title).toBe("Team checkout · alpha · gin-console"));
+  });
+
   it("REQ-UI-124 a known project of the path becomes current", async () => {
     rememberProject("first");
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { projectHref } from "@/app/project";
+import { usePageTitle } from "@/app/usePageTitle";
 import { ProjectGuard } from "@/app/UnknownProject";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,12 @@ export function BeadDetailPage(props: Props) {
   const page = <BeadDetail {...props} />;
   // the embedded panel belongs to a page whose project is already checked
   return props.embedded ? page : <ProjectGuard project={props.project} hrefOf={(name) => projectHref("/beads", name)}>{page}</ProjectGuard>;
+}
+
+/** A details panel must not retitle the page it sits in, so only the page renders this. */
+function BeadTitle({ title, project }: { title: string | null; project: string }) {
+  usePageTitle(title, project);
+  return null;
 }
 
 function BeadDetail({ project, id, embedded = false }: Props) {
@@ -60,9 +67,11 @@ function BeadDetail({ project, id, embedded = false }: Props) {
     <Breadcrumb project={project} id={id} parent={parent} />
   );
 
+  const title = embedded ? null : <BeadTitle title={state.status === "ok" ? state.bead.title : null} project={project} />;
   if (state.status === "notfound") {
     return (
       <section className="flex flex-col gap-4">
+        {title}
         {back}
         <p>Bead not found</p>
       </section>
@@ -73,6 +82,7 @@ function BeadDetail({ project, id, embedded = false }: Props) {
   const epicPage = bead !== null && bead.issue_type === "epic" && !embedded;
   return (
     <section className="flex flex-col gap-4">
+      {title}
       {back}
       {state.status === "loading" && <p className="text-muted-foreground">Loading bead…</p>}
       {state.status === "error" && (

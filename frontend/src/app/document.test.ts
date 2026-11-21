@@ -6,7 +6,7 @@ import { THEME_KEY } from "./theme";
 const html = readFileSync(resolve(import.meta.dirname, "../../index.html"), "utf8");
 
 describe("index.html", () => {
-  it("REQ-UI-063 sets the document title", () => {
+  it("REQ-UI-063 starts with the loading title", () => {
     expect(html).toContain("<title>gin-console</title>");
   });
 });

@@ -46,6 +46,11 @@ const OVERFLOW = detail(
 );
 
 describe("MilestonePage", () => {
+  it("REQ-UI-063 titles the page with the milestone once it has loaded", async () => {
+    open(detail([epicPlan("e-a")], { title: "Autumn" }));
+    await waitFor(() => expect(document.title).toBe("Autumn · alpha · gin-console"));
+  });
+
   it("REQ-UI-124 a known project of the path becomes current", async () => {
     open(detail([epicPlan("e-a")]));
     await row("e-a");

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
+import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ export function ReportsPage() {
   const unknown = projects.status === "ok" && isUnknownProject(filters.project, names);
   const selected = filters.project === "all" ? "all" : projects.status === "ok" && !unknown ? resolveProject(filters.project, names) : "";
   const { days, sprint, tab } = filters;
+  usePageTitle(`Reports · ${LABELS[tab]}`, selected === "all" ? null : selected);
   // the URL says which project is shown, when it was left out
   useEffect(() => {
     if (selected !== "" && filters.project === "" && window.location.pathname === "/reports") {

@@ -72,6 +72,16 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
+      <a
+        href="#main"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("main")?.focus();
+        }}
+        className="sr-only focus:not-sr-only focus:fixed focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:border focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-foreground"
+      >
+        Skip to content
+      </a>
       <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card pl-4 pr-1 md:hidden">
         <Brand />
         <ProjectSwitcher variant="bar" />
@@ -165,7 +175,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
           </div>
         )}
       </div>
-      <main className="min-w-0 flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6">{children}</main>
+      <main id="main" tabIndex={-1} className="min-w-0 outline-none flex-1 p-4 pb-[calc(5rem+env(safe-area-inset-bottom))] md:p-6">{children}</main>
     </div>
   );
 }

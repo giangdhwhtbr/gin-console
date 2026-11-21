@@ -3,6 +3,7 @@ import { useEmail } from "@/app/identity";
 import { Link } from "@/app/Link";
 import { rememberProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
+import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { isClosedMilestone, matchesMilestone, milestoneInEffect } from "@/features/beads/milestoneChoice";
@@ -27,6 +28,7 @@ export function MyTasksPage() {
   const params = new URLSearchParams(search);
   const closed = params.get("closed") === "1";
   const project = params.get("project") ?? "";
+  usePageTitle("My Tasks", project);
   const milestones = useMilestones(project);
   const milestone = project === "" ? "all" : milestoneInEffect(params.get("milestone") ?? "", milestones);
   const fetchClosed = closed || isClosedMilestone(milestone, milestones);

@@ -100,17 +100,53 @@ describe("App routing", () => {
     expect(screen.getByRole("link", { name: "Milestones" })).toHaveAttribute("aria-current", "page");
   });
 
-  // REQ-UI-057
-  it("REQ-UI-057 shows the Projects page for the address of a retired page", async () => {
+  // REQ-UI-057, REQ-UI-125
+  it("REQ-UI-057 shows Page not found for the address of a retired page or an unknown one", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
-    for (const path of ["/sessions", "/sessions/alpha/s-1", "/quota"]) {
+    for (const path of ["/nope", "/sessions", "/sessions/alpha/s-1", "/quota"]) {
       window.history.replaceState(null, "", path);
       render(<App />);
-      await screen.findByRole("heading", { name: "Projects" });
+      await screen.findByRole("heading", { name: "Page not found" });
+      expect(screen.getByText(path)).toBeInTheDocument();
+      expect(document.title).toBe("Page not found · gin-console");
       const main = screen.getByRole("navigation", { name: "Main" });
       expect(within(main).queryAllByRole("link").filter((link) => link.getAttribute("aria-current") === "page")).toEqual([]);
       cleanup();
     }
+  });
+
+  it("REQ-UI-125 / still shows Projects", async () => {
+    window.history.replaceState(null, "", "/");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Projects" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Page not found" })).toBeNull();
+    expect(document.title).toBe("Projects · gin-console");
+  });
+
+  it("REQ-UI-063 titles the list pages with their project", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => alpha()));
+    const cases: [string, string][] = [
+      ["/beads?project=alpha", "Beads · alpha · gin-console"],
+      ["/milestones?project=alpha", "Milestones · alpha · gin-console"],
+      ["/reports?project=alpha&tab=quality", "Reports · Quality · alpha · gin-console"],
+      ["/reports?project=all&tab=usage", "Reports · AI usage · gin-console"],
+      ["/my-tasks", "My Tasks · gin-console"],
+      ["/my-tasks?project=alpha", "My Tasks · alpha · gin-console"],
+    ];
+    for (const [path, title] of cases) {
+      window.history.replaceState(null, "", path);
+      render(<App />);
+      await waitFor(() => expect(document.title).toBe(title));
+      cleanup();
+    }
+  });
+
+  it("REQ-UI-063 the login page keeps the loading title", () => {
+    clearEmail();
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    render(<App />);
+    expect(document.title).toBe("gin-console");
   });
 
   // REQ-UI-022
@@ -149,7 +185,7 @@ describe("App routing", () => {
   });
 
   // REQ-UI-022
-  it("REQ-UI-022 falls back to Projects page on undecodable route segment and marks the Beads link on /beads", async () => {
+  it("REQ-UI-022 shows Page not found on undecodable route segment and marks the Beads link on /beads", async () => {
     window.history.replaceState(null, "", "/beads/%E0%A4%A/x");
     vi.stubGlobal(
       "fetch",
@@ -161,7 +197,7 @@ describe("App routing", () => {
       }),
     );
     render(<App />);
-    await screen.findByText(/no projects configured/i);
+    await screen.findByRole("heading", { name: "Page not found" });
 
     cleanup();
     window.history.replaceState(null, "", "/beads");
@@ -254,11 +290,11 @@ describe("App routing", () => {
   });
 
   // REQ-UI-022
-  it("REQ-UI-022 falls back to Projects page on undecodable bead route segment", async () => {
+  it("REQ-UI-022 shows Page not found on undecodable bead route segment", async () => {
     window.history.replaceState(null, "", "/beads/%E0%A4%A/a-5");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     render(<App />);
-    await screen.findByText(/no projects configured/i);
+    await screen.findByRole("heading", { name: "Page not found" });
   });
   // REQ-UI-029
   it("REQ-UI-029 a late response for the previous bead never replaces the current one", async () => {

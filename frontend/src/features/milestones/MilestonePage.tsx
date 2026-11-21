@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { projectHref } from "@/app/project";
+import { usePageTitle } from "@/app/usePageTitle";
 import { navigate, useLocation } from "@/app/route";
 import { ProjectGuard } from "@/app/UnknownProject";
 import { Tabs } from "@/components/Tabs";
@@ -61,6 +62,7 @@ function Milestone({ project, id }: { project: string; id: string }) {
     [project, id, start],
   );
   const base = useLoad(current, true);
+  usePageTitle(base.state.status === "ok" ? base.state.data.title : null, project);
   const shown = useLoad<MilestoneDetail | null>(preview, false);
   const comments = useMilestoneComments(project, id);
   // REQ-MILESTONE-UI-019: the tab counts the members with a retro; no number while loading or after an error

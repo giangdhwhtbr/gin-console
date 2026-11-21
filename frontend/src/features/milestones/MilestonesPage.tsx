@@ -4,6 +4,7 @@ import { Link } from "@/app/Link";
 import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
 import { navigate, useLocation } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
+import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { cn } from "@/lib/utils";
@@ -37,6 +38,8 @@ export function MilestonesPage() {
   const names = projects.status === "ok" ? projects.names : [];
   const unknown = projects.status === "ok" && isUnknownProject(asked, names);
   const selected = projects.status === "ok" && !unknown ? resolveProject(asked, names) : "";
+
+  usePageTitle("Milestones", selected);
 
   // REQ-UI-124: the project shown is the current one, and the URL says which it is
   useEffect(() => {

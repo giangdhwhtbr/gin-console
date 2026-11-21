@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { usePageTitle } from "@/app/usePageTitle";
 import { useVisibleInterval } from "@/lib/useVisibleInterval";
 import { fetchProjects, type Project } from "./api";
 import { ProjectCard } from "./ProjectCard";
@@ -15,6 +16,7 @@ const REFRESH_MS = 10_000;
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export function ProjectsPage() {
+  usePageTitle("Projects");
   // simplified: server state lives in component state; move to a query cache when a second
   // screen reads the same data.
   const [state, setState] = useState<State>({ status: "loading" });
