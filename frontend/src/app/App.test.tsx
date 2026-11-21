@@ -1,8 +1,9 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { quota } from "@/features/quota/quotaFixtures";
 import { resetQuotaStore } from "@/features/quota/quotaStore";
+import { bead } from "@/features/beads/beadFixtures";
 import { clearReturn } from "@/features/beads/returnState";
 import { App } from "./App";
 import { clearEmail, EMAIL_KEY, resetIdentity, setEmail } from "./identity";
@@ -272,14 +273,23 @@ describe("App routing", () => {
     );
   });
 
-  it("REQ-UI-075 renders the Dependencies page on /beads/:project/graph and /beads/:project/:id/graph", async () => {
-    const fetchMock = vi.fn<(url: string) => Promise<Response>>(() => Promise.resolve(json([])));
+  it("REQ-UI-075 old Dependencies links are replaced by the Graph view, the epic page or the bead's place", async () => {
+    const beads = [bead("a-1", { issue_type: "epic" }), bead("a-5", { parent: "a-1" })];
+    const cases: [string, string][] = [
+      ["/beads/alpha/graph", "/beads?project=alpha&view=graph"],
+      ["/beads/alpha/a-1/graph?select=a-5", "/beads/alpha/a-1?tab=graph&select=a-5"],
+      ["/beads/alpha/a-5/graph", "/beads?project=alpha&view=graph&scope=a-1&select=a-5"],
+    ];
+    const fetchMock = vi.fn<(url: string) => Promise<Response>>((url) =>
+      Promise.resolve(json(String(url).startsWith("/api/beads?") ? beads : [])),
+    );
     vi.stubGlobal("fetch", fetchMock);
-    for (const path of ["/beads/alpha/graph", "/beads/alpha/a-5/graph"]) {
-      window.history.replaceState(null, "", path);
+    for (const [from, to] of cases) {
+      window.history.replaceState(null, "", from);
+      const before = window.history.length;
       render(<App />);
-      const crumb = within(await screen.findByRole("navigation", { name: "Breadcrumb" }));
-      expect(crumb.getByText("Dependencies")).toBeInTheDocument();
+      await waitFor(() => expect(window.location.pathname + window.location.search).toBe(to));
+      expect(window.history.length).toBe(before);
       cleanup();
     }
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/api/beads/alpha/graph"))).toBe(false);

@@ -1,6 +1,5 @@
 import { Link } from "@/app/Link";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
-import { graphPath } from "./graph";
 import { useReturn } from "./returnState";
 
 const VIEW_NAME: Record<string, string> = { list: "List", board: "Board", focus: "Focus", graph: "Graph" };
@@ -37,13 +36,10 @@ export function Breadcrumb({
   project,
   id,
   parent,
-  graph,
 }: {
   project: string;
   id: string;
   parent: string | null;
-  /** On the Dependencies page: the ancestors of the scope bead from the top; with it, id "" means the project page. */
-  graph?: readonly string[];
 }) {
   const saved = useReturn();
   // a milestone's Beads tab is remembered as /milestones/<project>/<milestone>
@@ -71,54 +67,20 @@ export function Breadcrumb({
             {label}
           </Link>
         </li>
-        {graph === undefined ? (
-          <>
-            {parent !== null && (
-              <li className={later}>
-                <span aria-hidden>›</span>
-                <Link to={`/beads/${enc(project)}/${enc(parent)}`} className="font-mono underline underline-offset-2">
-                  {parent}
-                </Link>
-              </li>
-            )}
-            <li className={later}>
-              <span aria-hidden>›</span>
-              <span aria-current="page" className="font-mono text-foreground">
-                {id}
-              </span>
-            </li>
-          </>
-        ) : (
-          <>
-            <li className={later}>
-              <span aria-hidden>›</span>
-              {id === "" ? (
-                <span aria-current="page" className="text-foreground">
-                  Dependencies
-                </span>
-              ) : (
-                <Link to={graphPath(project, null)} className="underline underline-offset-2">
-                  Dependencies
-                </Link>
-              )}
-            </li>
-            {id !== "" &&
-              [...graph, id].map((step, i, all) => (
-                <li key={step} className={later}>
-                  <span aria-hidden>›</span>
-                  {i === all.length - 1 ? (
-                    <span aria-current="page" className="font-mono text-foreground">
-                      {step}
-                    </span>
-                  ) : (
-                    <Link to={graphPath(project, step)} className="font-mono underline underline-offset-2">
-                      {step}
-                    </Link>
-                  )}
-                </li>
-              ))}
-          </>
+        {parent !== null && (
+          <li className={later}>
+            <span aria-hidden>›</span>
+            <Link to={`/beads/${enc(project)}/${enc(parent)}`} className="font-mono underline underline-offset-2">
+              {parent}
+            </Link>
+          </li>
         )}
+        <li className={later}>
+          <span aria-hidden>›</span>
+          <span aria-current="page" className="font-mono text-foreground">
+            {id}
+          </span>
+        </li>
       </ol>
     </nav>
   );

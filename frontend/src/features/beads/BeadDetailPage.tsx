@@ -13,7 +13,7 @@ import { BeadNotFoundError, fetchBead, type BeadDetail } from "./api";
 import { Breadcrumb } from "./Breadcrumb";
 import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
-import { graphPath } from "./graph";
+import { graphViewPath } from "./graph";
 import { KindBadge } from "./KindBadge";
 import { LaneChip } from "./LaneChip";
 import { leaseOf, trackText, visibleLabels } from "./laneFacts";
@@ -38,12 +38,10 @@ export function BeadDetailPage({
   project,
   id,
   embedded = false,
-  graphScope,
 }: {
   project: string;
   id: string;
   embedded?: boolean;
-  graphScope?: string | null;
 }) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -190,11 +188,14 @@ export function BeadDetailPage({
                     <p className="text-sm text-muted-foreground wrap-anywhere">{bead.points_reason}</p>
                   )}
                   <FactList facts={facts} />
-                  {bead.id !== graphScope &&
+                  {bead.issue_type !== "epic" &&
                     (bead.children.length > 0 ||
                       [...bead.dependencies, ...bead.dependents].some((r) => r.type === "blocks")) && (
-                    <Link to={graphPath(project, bead.id)} className={cn(buttonVariants({ size: "sm" }), "self-start")}>
-                      View dependencies
+                    <Link
+                      to={graphViewPath(project, { id: bead.id, parent: bead.milestone === bead.parent ? null : bead.parent }, bead.children.length > 0)}
+                      className={cn(buttonVariants({ size: "sm" }), "self-start")}
+                    >
+                      View in graph
                     </Link>
                   )}
                 </header>

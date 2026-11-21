@@ -10,7 +10,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const stub = (overrides: Partial<BeadSummary> = {}) =>
+const stub = (overrides: Partial<BeadSummary> = {}, extra: Record<string, unknown> = {}) =>
   vi.stubGlobal(
     "fetch",
     vi.fn((input: RequestInfo | URL) => {
@@ -28,6 +28,7 @@ const stub = (overrides: Partial<BeadSummary> = {}) =>
           dependents: [],
           children: [],
           bugs: [],
+          ...extra,
         }),
       );
     }),
@@ -62,5 +63,14 @@ describe("DetailsPanel", () => {
     stub({ waits_for: { plan: "p.md", number: 2, track_id: null, lane: "be" } });
     render(<DetailsPanel project="alpha" id="t-1" onClose={() => {}} />);
     expect(await screen.findByRole("heading", { name: "Waits for be #2 to merge" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-053 Details panel: a task with a blocker offers View in graph", async () => {
+    stub({ parent: "e-1" }, { dependencies: [{ id: "x", title: "X", status: "open", type: "blocks" }] });
+    render(<DetailsPanel project="alpha" id="t-1" onClose={vi.fn()} />);
+    expect(await screen.findByRole("link", { name: "View in graph" })).toHaveAttribute(
+      "href",
+      "/beads?project=alpha&view=graph&scope=e-1&select=t-1",
+    );
   });
 });

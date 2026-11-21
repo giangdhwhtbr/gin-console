@@ -5,7 +5,7 @@ import { bead } from "./beadFixtures";
 import { fitWidth, GraphCanvas } from "./GraphCanvas";
 import { NODE, place, scopeGraph } from "./graph";
 
-const OFF = { hideDone: false, onlyLinked: false };
+const OFF = { onlyLinked: false };
 const epic = (id: string, extra = {}) => bead(id, { issue_type: "epic", ...extra });
 const task = (id: string, parent: string | null, blockedBy: string[] = [], extra = {}) =>
   bead(id, { parent, blocked_by: blockedBy, ...extra });

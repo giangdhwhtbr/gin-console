@@ -89,7 +89,7 @@ function LanesBody({ project, beads, matched, milestone, filters, onChange, scop
           />
         )}
       </div>
-      {selected !== "" && <DetailsPanel project={project} id={selected} graphScope={scopeId} onClose={close} />}
+      {selected !== "" && <DetailsPanel project={project} id={selected} onClose={close} />}
     </div>
   );
 }
