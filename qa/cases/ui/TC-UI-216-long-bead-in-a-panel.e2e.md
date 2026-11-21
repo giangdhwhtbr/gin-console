@@ -4,7 +4,7 @@
 - **Priority:** medium
 
 **Preconditions:**
-- Project `p` has bead `p-1` whose content is taller than the window
+- Project `p` has bead `p-1` whose content is taller than the window, among 40 other beads so that the page scrolls
 - The window is 1440x900
 
 **Steps:**

@@ -7,7 +7,7 @@
 - **Checked:** 87336207
 
 **Preconditions:**
-- Project `example` has task `ex-e3.2`, a child of epic `ex-e3`
+- Project `example` has task `ex-e3.2`, a child of epic `ex-e3`, with 2 comments so that the page has its discussion column
 
 **Steps:**
 1. Open `/beads/example/ex-e3.2`

@@ -1,4 +1,4 @@
-// TC: TC-UI-122@e9e1fb5e
+// TC: TC-UI-122@9f6ffe9e
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
