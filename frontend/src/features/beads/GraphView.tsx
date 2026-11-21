@@ -39,7 +39,7 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
   const keep = useMemo(() => keepWithAncestors(beads, matched), [beads, matched]);
   // REQ-UI-117: a scope with lanes draws a box per lane instead of the layers
   const lanes = useMemo(() => (scopeId !== null && hasLanes(beads, scopeId) ? laneGraph(beads, scopeId, keep, new Date()) : null), [beads, scopeId, keep]);
-  const graph = lanes === null ? scopeGraph(graphBeads, scopeId, { hideDone: false, onlyLinked, keep }) : null;
+  const graph = lanes === null ? scopeGraph(graphBeads, scopeId, { onlyLinked, keep }) : null;
   const ids = graph !== null ? graph.nodes.map((n) => n.bead.id) : (lanes?.cards.map((c) => c.bead.id) ?? []);
   const known = new Set(ids);
   const asked = filters.select;

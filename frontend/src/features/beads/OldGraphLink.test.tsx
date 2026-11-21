@@ -46,6 +46,16 @@ describe("OldGraphLink", () => {
     await lands("/beads?project=p&view=graph&select=z");
   });
 
+  it("REQ-UI-075 Bead under a milestone: the scope is left out, as for a bead without a parent", async () => {
+    open("b", [bead("m-1", { issue_type: "milestone" }), bead("b", { parent: "m-1", milestone: "m-1" })]);
+    await lands("/beads?project=p&view=graph&select=b");
+  });
+
+  it("REQ-UI-075 Selection kept: a childless bead keeps the select of the old URL, not its own id", async () => {
+    open("b", [epic("e-1"), bead("b", { parent: "e-1" })], "other");
+    await lands("/beads?project=p&view=graph&scope=e-1&select=other");
+  });
+
   it("REQ-UI-075 Selection kept: the epic page keeps select, and so does the Graph view", async () => {
     open("e-1", [epic("e-1"), bead("b", { parent: "e-1" })], "b");
     await lands("/beads/p/e-1?tab=graph&select=b");

@@ -557,6 +557,12 @@ describe("BeadDetailPage", () => {
     expect(await viewLink()).toHaveAttribute("href", "/beads?project=p&view=graph&scope=e-1&select=t-2");
   });
 
+  it("REQ-UI-053 Task under a milestone: View in graph leaves the scope out and selects the task", async () => {
+    stubFetch(beadDetail("t-6", { parent: "m-1", milestone: "m-1", dependencies: [{ id: "x", title: "X", status: "open", type: "blocks" }] }));
+    render(<BeadDetailPage project="p" id="t-6" />);
+    expect(await viewLink()).toHaveAttribute("href", "/beads?project=p&view=graph&select=t-6");
+  });
+
   it("REQ-UI-053 Task with a blocked bead: the button is offered too", async () => {
     stubFetch(beadDetail("t-4", { parent: "e-1", dependents: [{ id: "x", title: "X", status: "open", type: "blocks" }] }));
     render(<BeadDetailPage project="p" id="t-4" />);

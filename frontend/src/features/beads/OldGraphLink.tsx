@@ -16,7 +16,10 @@ function targetOf(project: string, id: string | null, select: string, beads: rea
   if (found === undefined) return null;
   if (found.issue_type === "epic") return `/beads/${enc(project)}/${enc(id)}?tab=graph${select === "" ? "" : `&select=${enc(select)}`}`;
   if (hasChildren(beads, id)) return graphViewUrl(project, id, select);
-  return graphViewUrl(project, found.parent, select === "" ? id : select);
+  // scopeOf ignores a milestone scope, so a bead under a milestone is selected in the project's graph
+  const parent = beads.find((b) => b.id === found.parent)?.issue_type === "milestone" ? null : found.parent;
+  // an old `select` wins over the bead itself
+  return graphViewUrl(project, parent, select === "" ? id : select);
 }
 
 /** An old Dependencies link: it replaces itself with the Graph view, the epic page or the bead's place in its parent's graph. */

@@ -192,7 +192,7 @@ export function BeadDetailPage({
                     (bead.children.length > 0 ||
                       [...bead.dependencies, ...bead.dependents].some((r) => r.type === "blocks")) && (
                     <Link
-                      to={graphViewPath(project, bead, bead.children.length > 0)}
+                      to={graphViewPath(project, { id: bead.id, parent: bead.milestone === bead.parent ? null : bead.parent }, bead.children.length > 0)}
                       className={cn(buttonVariants({ size: "sm" }), "self-start")}
                     >
                       View in graph

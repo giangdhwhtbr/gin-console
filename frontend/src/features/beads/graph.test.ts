@@ -16,7 +16,7 @@ import {
   type Graph,
 } from "./graph";
 
-const OFF = { hideDone: false, onlyLinked: false };
+const OFF = { onlyLinked: false };
 const epic = (id: string, extra = {}) => bead(id, { issue_type: "epic", ...extra });
 const task = (id: string, parent: string | null, blockedBy: string[] = [], extra = {}) =>
   bead(id, { parent, blocked_by: blockedBy, ...extra });
@@ -96,17 +96,15 @@ describe("scope graph", () => {
     expect(ancestorsOf(beads, "a")).toEqual(["b"]);
   });
 
-  it("REQ-UI-076 closed beads are drawn; Hide done leaves them and their arrows out", () => {
+  it("REQ-UI-106 closed beads that reach the view are drawn with their arrows", () => {
     const beads = [epic("e"), task("a", "e", [], { status: "closed" }), task("b", "e", ["a"])];
+    expect(ids(scopeGraph(beads, "e", OFF))).toEqual(["a", "b"]);
     expect(arrows(scopeGraph(beads, "e", OFF))).toEqual(["a>b:1"]);
-    const hidden = scopeGraph(beads, "e", { hideDone: true, onlyLinked: false });
-    expect(ids(hidden)).toEqual(["b"]);
-    expect(hidden.edges).toEqual([]);
   });
 
   it("REQ-UI-081 Only linked leaves out the nodes without an arrow and counts them", () => {
     const beads = [epic("r-1"), epic("r-2", { blocked_by: ["r-1"] }), ...["u", "v", "w", "x", "y"].map((id) => task(id, null))];
-    const g = scopeGraph(beads, null, { hideDone: false, onlyLinked: true });
+    const g = scopeGraph(beads, null, { onlyLinked: true });
     expect(ids(g)).toEqual(["r-1", "r-2"]);
     expect(g.unlinked).toBe(5);
   });
@@ -191,20 +189,6 @@ describe("layout", () => {
     expect(graphViewPath("p q", { id: "a/b", parent: null }, false)).toBe("/beads?project=p+q&view=graph&select=a%2Fb");
   });
 
-  it("REQ-UI-076 Hide done drops a lifted arrow between two open nodes when an underlying relation has a closed end", () => {
-    const beads = [
-      epic("e-1"),
-      epic("e-2"),
-      task("a", "e-1", [], { status: "closed" }),
-      task("b", "e-2", ["a"]),
-    ];
-    const withDone = scopeGraph(beads, null, OFF);
-    expect(arrows(withDone)).toEqual(["e-1>e-2:1"]);
-    const hideDone = scopeGraph(beads, null, { hideDone: true, onlyLinked: false });
-    expect(arrows(hideDone)).toEqual([]);
-    expect(ids(hideDone)).toEqual(["e-1", "e-2"]);
-  });
-
   it("REQ-UI-048 10k-long blocked_by chain does not overflow the stack", () => {
     const count = 10000;
     const beads: ReturnType<typeof task>[] = [epic("e")];
@@ -224,10 +208,7 @@ describe("layout", () => {
       task("c1", "sub"),
       task("c2", "sub", ["c1"]),
     ];
-    const withDone = scopeGraph(beads, "e", OFF);
-    expect(ids(withDone)).toEqual(["sub"]);
-    const hideDone = scopeGraph(beads, "e", { hideDone: true, onlyLinked: false });
-    expect(ids(hideDone)).toEqual([]);
+    expect(ids(scopeGraph(beads, "e", OFF))).toEqual(["sub"]);
   });
 
   it("REQ-UI-079 scope blocking its own child is dropped", () => {
@@ -281,7 +262,7 @@ describe("REQ-UI-106 keep", () => {
 
   it("scopeGraph drops beads outside keep and the arrows from them", () => {
     const keep = new Set(["m2", "e1", "e1.1"]);
-    const g = scopeGraph(beads, "m2", { hideDone: false, onlyLinked: false, keep });
+    const g = scopeGraph(beads, "m2", { onlyLinked: false, keep });
     expect(ids(g)).toEqual(["e1"]);
     expect(g.edges).toEqual([]);
   });

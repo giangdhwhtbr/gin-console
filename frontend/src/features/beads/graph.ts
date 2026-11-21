@@ -42,7 +42,7 @@ export type GraphNode = {
 };
 export const UNLINKED_COLUMNS = 3;
 export type Graph = { nodes: GraphNode[]; edges: GraphEdge[]; cycle: string[]; unlinked: number };
-export type GraphOptions = { hideDone: boolean; onlyLinked: boolean; keep?: ReadonlySet<string> };
+export type GraphOptions = { onlyLinked: boolean; keep?: ReadonlySet<string> };
 export type StepKey = "ArrowRight" | "ArrowLeft" | "ArrowUp" | "ArrowDown";
 
 export const edgeKey = (edge: Link) => `${edge.from}>${edge.to}`;
@@ -55,7 +55,7 @@ export function graphViewUrl(project: string, scope: string | null, select: stri
   return `/beads?${p.toString()}`;
 }
 
-/** REQ-UI-053: the bead's own scope when it has children, else its parent's scope (or the project's) with the bead selected. */
+/** REQ-UI-053: the bead's own scope when it has children, else its parent's scope (or the project's, which the caller asks for with `parent: null` when the parent is a milestone, as `scopeOf` ignores a milestone scope) with the bead selected. */
 export const graphViewPath = (project: string, bead: Pick<BeadSummary, "id" | "parent">, hasKids: boolean): string =>
   hasKids ? graphViewUrl(project, bead.id, "") : graphViewUrl(project, bead.parent, bead.id);
 
@@ -276,7 +276,7 @@ export function scopeGraph(beads: readonly BeadSummary[], scope: string | null, 
   const holder = holders(byId, scope);
   const kept = (id: string) => {
     const b = byId.get(id);
-    return b !== undefined && !(options.hideDone && isDone(b)) && (options.keep === undefined || options.keep.has(id));
+    return b !== undefined && (options.keep === undefined || options.keep.has(id));
   };
   const merged = new Map<string, GraphEdge>();
   for (const b of beads) {
