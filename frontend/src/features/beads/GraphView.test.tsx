@@ -55,7 +55,7 @@ describe("GraphView", () => {
     expect(screen.getByText("Dashed nodes are outside this milestone.")).toBeInTheDocument();
   });
 
-  it("REQ-UI-106 project scope: top-level beads, Only linked on", () => {
+  it("REQ-UI-106 REQ-UI-081 project scope: top-level beads, Only linked on", () => {
     view();
     expect(screen.getByRole("switch", { name: "Only linked" })).toBeChecked();
     expect(node("m2")).toBeNull();
@@ -64,7 +64,7 @@ describe("GraphView", () => {
     expect(screen.getByText("1 without dependencies")).toBeInTheDocument();
   });
 
-  it("REQ-UI-106 filters apply to the nodes", () => {
+  it("REQ-UI-106 Filters apply to the nodes", () => {
     view({ milestone: "m2", matched: [t1] });
     expect(node("e1")).toBeInTheDocument();
     expect(node("e2")).toBeNull();
@@ -124,14 +124,14 @@ describe("GraphView", () => {
     expect(node("e1")).toBeNull();
   });
 
-  it("REQ-UI-106 Only linked is off on a milestone scope and on again at the project scope", () => {
+  it("REQ-UI-081 REQ-UI-106 Only linked is off on a milestone scope and on again at the project scope", () => {
     const { rerender, props } = rerenderable({ milestone: "m2" });
     expect(screen.getByRole("switch", { name: "Only linked" })).not.toBeChecked();
     rerender({ ...props, milestone: "all" });
     expect(screen.getByRole("switch", { name: "Only linked" })).toBeChecked();
   });
 
-  it("REQ-UI-106 No panel on opening an epic: neither the project nor a milestone scope opens the panel", () => {
+  it("REQ-UI-051 REQ-UI-106 No panel on opening an epic: neither the project nor a milestone scope opens the panel", () => {
     view();
     expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
     expect(screen.getByRole("switch", { name: "Only linked" }).closest(".grid")?.className).not.toContain("lg:grid-cols");
@@ -174,6 +174,118 @@ describe("GraphView", () => {
     const onChange = view({ milestone: "m2", filters: { scope: "e1", select: "none" } });
     await userEvent.click(within(screen.getByRole("navigation", { name: "Graph scope" })).getByRole("button", { name: "m2" }));
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "", select: "" }));
+  });
+});
+
+describe("GraphView of an epic scope", () => {
+  const e = bead("e-1", { issue_type: "epic" });
+  const a = bead("a", { parent: "e-1" });
+  const b = bead("b", { parent: "e-1", blocked_by: ["a"] });
+  const z = bead("z", { parent: "e-1" });
+  const set = [e, a, b, z];
+  const scoped = (select = "", beads: BeadSummary[] = set) =>
+    view({ beads, matched: beads, filters: { scope: "e-1", select } });
+
+  it("REQ-UI-051 REQ-UI-106 Epic: scope e-1 with no select selects nothing, shows no panel and takes the full width", () => {
+    scoped();
+    expect(node("a")).toBeInTheDocument();
+    expect(node("b")).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect(node("a")?.closest(".grid")?.className).not.toContain("lg:grid-cols");
+  });
+
+  it("REQ-UI-051 Selected at first and Restored: select=b selects b, shows its panel and highlights its chain", () => {
+    scoped("b");
+    expect(node("b")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("complementary", { name: "Bead details" })).toBeInTheDocument();
+    expect(node("a")).toHaveAttribute("data-dimmed", "false");
+    expect(node("z")).toHaveAttribute("data-dimmed", "true");
+  });
+
+  it("REQ-UI-051 Close the panel: Close details selects none, the panel goes and focus returns to b", async () => {
+    const props = { project: "p", beads: set, matched: set, milestone: "all", filters: parseFilters("?view=graph&scope=e-1&select=b"), onChange: vi.fn() };
+    stubBeads(() => json([]));
+    const { rerender } = render(<GraphView {...props} />);
+    await userEvent.click(screen.getByRole("button", { name: "Close details" }));
+    expect(props.onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "e-1", select: "none" }));
+    rerender(<GraphView {...props} filters={{ ...props.filters, select: "none" }} />);
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect(node("b")).toHaveFocus();
+    expect(node("a")?.closest(".grid")?.className).not.toContain("lg:grid-cols");
+  });
+
+  it("REQ-UI-051 Restored: select=none keeps the panel closed on a reload", () => {
+    scoped("none");
+    expect(node("b")).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+  });
+
+  it("REQ-UI-051 Highlight chain: selecting b through a click sets select=b", async () => {
+    const onChange = scoped();
+    await userEvent.click(node("b")!);
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "e-1", select: "b" }));
+  });
+
+  it("REQ-UI-052 Escape: with b selected nothing is selected and the URL has select=none", async () => {
+    const onChange = scoped("b");
+    node("b")!.focus();
+    await userEvent.keyboard("{Escape}");
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
+  });
+
+  it("REQ-UI-052 Follow an arrow: ArrowDown on a moves focus to b", async () => {
+    scoped();
+    node("a")!.focus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(node("b")).toHaveFocus();
+  });
+
+  it("REQ-UI-048 REQ-UI-081 Linked and unlinked: Only linked is off inside an epic and the unlinked task is drawn under its count", () => {
+    scoped();
+    expect(screen.getByRole("switch", { name: "Only linked" })).not.toBeChecked();
+    expect(node("z")).toBeInTheDocument();
+    expect(screen.getByText("1 without dependencies")).toBeInTheDocument();
+    const at = (id: string) => Number.parseFloat((node(id)?.closest("[data-node]") ?? node(id))?.getAttribute("style")?.match(/top:\s*([\d.]+)/)?.[1] ?? "NaN");
+    expect(at("b")).toBeGreaterThan(at("a"));
+    expect(at("z")).toBeGreaterThan(at("b"));
+  });
+
+  it("REQ-UI-048 No relations: tasks that block none of each other are drawn under their count", () => {
+    const tasks = ["t1", "t2", "t3", "t4", "t5", "t6", "t7"].map((id) => bead(id, { parent: "e-1" }));
+    scoped("", [e, ...tasks]);
+    expect(screen.getByText("7 without dependencies")).toBeInTheDocument();
+    for (const t of tasks) expect(node(t.id)).toBeInTheDocument();
+  });
+
+  it("REQ-UI-050 Outside blocker: a blocker outside the scope is a dashed node; Cycle: the warning names the beads", () => {
+    const out = bead("out", { issue_type: "epic" });
+    const c = bead("c", { parent: "e-1", blocked_by: ["out"] });
+    scoped("", [e, out, c]);
+    expect(node("out")?.className).toContain("border-dashed");
+    cleanup();
+    const x = bead("x", { parent: "e-1", blocked_by: ["y"] });
+    const y = bead("y", { parent: "e-1", blocked_by: ["x"] });
+    scoped("", [e, x, y]);
+    expect(screen.getByRole("status")).toHaveTextContent("Dependency cycle between x, y");
+    expect(node("x")).toBeInTheDocument();
+    expect(node("y")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-079 Through tasks: one arrow between two epics with the label 2 links", () => {
+    const e2 = bead("e-2", { issue_type: "epic" });
+    const x1 = bead("x", { parent: "e-1" });
+    const y = bead("y", { parent: "e-2", blocked_by: ["x"] });
+    const w = bead("w", { parent: "e-2", blocked_by: ["x"] });
+    view({ beads: [e, e2, x1, y, w], matched: [e, e2, x1, y, w] });
+    expect(within(screen.getByRole("list", { name: "Dependencies" })).getByText("e-2 is blocked by e-1")).toBeInTheDocument();
+    expect(screen.getByText("2 links")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-078 the Graph view's details panel stays in view, scrolls by itself and takes focus", () => {
+    scoped("b");
+    const panel = screen.getByRole("complementary", { name: "Bead details" });
+    expect(panel).toHaveClass("lg:sticky", "lg:max-h-[calc(100dvh-3rem)]", "lg:overflow-y-auto", "lg:overscroll-contain");
+    expect(panel).toHaveAttribute("tabindex", "0");
   });
 });
 

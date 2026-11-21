@@ -3,16 +3,13 @@ import { bead } from "./beadFixtures";
 import {
   ancestorsOf,
   chainOf,
-  graphFor,
-  graphPath,
+  graphViewPath,
   keepWithAncestors,
   LINK_LABEL,
   linkLabels,
   NODE,
-  neighbourhoodOf,
   place,
   progressOf,
-  relationsOf,
   scopeGraph,
   stateOf,
   step,
@@ -122,27 +119,6 @@ describe("scope graph", () => {
   });
 });
 
-describe("neighbourhood", () => {
-  it("REQ-UI-075 draws blockers above and blocked beads below, directly or not, and nothing else", () => {
-    const beads = [task("a", null), task("b", null, ["a"]), task("c", null, ["b"]), task("d", null, ["c"]), task("z", null)];
-    const g = neighbourhoodOf(beads, "c", { hideDone: false });
-    expect(layers(g)).toEqual({ a: 0, b: 1, c: 2, d: 3 });
-  });
-
-  it("REQ-UI-075 graphFor picks the scope graph for a bead with children and the neighbourhood otherwise", () => {
-    const beads = [epic("e"), task("a", "e"), task("b", "e", ["a"])];
-    expect(ids(graphFor(beads, "e", OFF))).toEqual(["a", "b"]);
-    expect(ids(graphFor(beads, "b", OFF))).toEqual(["a", "b"]);
-    expect(ids(graphFor([task("t", null)], "t", OFF))).toEqual(["t"]);
-  });
-
-  it("REQ-UI-075 relationsOf lists the blockers and the blocked beads of a bead", () => {
-    const beads = [epic("e-1"), epic("e-2", { blocked_by: ["e-1"] }), epic("e-3", { blocked_by: ["e-2"] })];
-    const { blockers, blocked } = relationsOf(beads, "e-2");
-    expect([blockers.map((b) => b.id), blocked.map((b) => b.id)]).toEqual([["e-1"], ["e-3"]]);
-  });
-});
-
 describe("layout", () => {
   it("REQ-UI-048 chain and diamond layers", () => {
     const chain = scopeGraph([epic("e"), task("a", "e"), task("b", "e", ["a"]), task("c", "e", ["b"])], "e", OFF);
@@ -208,9 +184,11 @@ describe("layout", () => {
     expect(stateOf(task("a", null, [], { status: "closed" }))).toBe("done");
   });
 
-  it("REQ-UI-075 graph paths", () => {
-    expect(graphPath("p q", null)).toBe("/beads/p%20q/graph");
-    expect(graphPath("p", "e/1")).toBe("/beads/p/e%2F1/graph");
+  it("REQ-UI-053 the Graph view path: scope with children, else the parent's scope with select, else select alone", () => {
+    expect(graphViewPath("p", { id: "t-1", parent: "e-1" }, true)).toBe("/beads?project=p&view=graph&scope=t-1");
+    expect(graphViewPath("p", { id: "t-2", parent: "e-1" }, false)).toBe("/beads?project=p&view=graph&scope=e-1&select=t-2");
+    expect(graphViewPath("p", { id: "t-3", parent: null }, false)).toBe("/beads?project=p&view=graph&select=t-3");
+    expect(graphViewPath("p q", { id: "a/b", parent: null }, false)).toBe("/beads?project=p+q&view=graph&select=a%2Fb");
   });
 
   it("REQ-UI-076 Hide done drops a lifted arrow between two open nodes when an underlying relation has a closed end", () => {
@@ -277,13 +255,6 @@ describe("layout", () => {
     const g = scopeGraph(beads, "e", OFF);
     expect(arrows(g)).toEqual(["a>b:1"]);
     expect(g.edges[0].links).toEqual([{ from: "a", to: "b" }]);
-  });
-
-  it("REQ-UI-050 cycle in neighbourhoodOf does not loop infinitely", () => {
-    const beads = [task("a", null, ["b"]), task("b", null, ["a"])];
-    const g = neighbourhoodOf(beads, "a", { hideDone: false });
-    expect(ids(g)).toEqual(["a", "b"]);
-    expect(g.cycle).toEqual(["a", "b"]);
   });
 
   it("REQ-UI-048 No relations places all nodes at layer 0", () => {

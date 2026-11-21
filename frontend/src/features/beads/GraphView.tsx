@@ -94,7 +94,7 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
           <GraphCanvas graph={graph} selected={selected} tabStop={tabStop} {...handlers} />
         ) : null}
       </div>
-      {selected !== "" && <DetailsPanel project={project} id={selected} graphScope={scopeId} onClose={close} />}
+      {selected !== "" && <DetailsPanel project={project} id={selected} onClose={close} />}
     </div>
   );
 }

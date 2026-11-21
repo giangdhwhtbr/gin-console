@@ -47,9 +47,17 @@ export type StepKey = "ArrowRight" | "ArrowLeft" | "ArrowUp" | "ArrowDown";
 
 export const edgeKey = (edge: Link) => `${edge.from}>${edge.to}`;
 
-const enc = encodeURIComponent;
-export const graphPath = (project: string, id: string | null) =>
-  id === null ? `/beads/${enc(project)}/graph` : `/beads/${enc(project)}/${enc(id)}/graph`;
+/** The Graph view of the Beads page (REQ-UI-106) for a scope bead (`null`: the project) and a selected bead (`""`: none). */
+export function graphViewUrl(project: string, scope: string | null, select: string): string {
+  const p = new URLSearchParams({ project, view: "graph" });
+  if (scope !== null) p.set("scope", scope);
+  if (select !== "") p.set("select", select);
+  return `/beads?${p.toString()}`;
+}
+
+/** REQ-UI-053: the bead's own scope when it has children, else its parent's scope (or the project's) with the bead selected. */
+export const graphViewPath = (project: string, bead: Pick<BeadSummary, "id" | "parent">, hasKids: boolean): string =>
+  hasKids ? graphViewUrl(project, bead.id, "") : graphViewUrl(project, bead.parent, bead.id);
 
 const byImportance = (a: BeadSummary, b: BeadSummary) => a.priority - b.priority || a.id.localeCompare(b.id);
 const isDone = (b: BeadSummary) => b.status === "closed";
@@ -88,13 +96,6 @@ export function ancestorsOf(beads: readonly BeadSummary[], id: string): string[]
     b = byId.get(parent);
   }
   return up.reverse();
-}
-
-export function relationsOf(beads: readonly BeadSummary[], id: string) {
-  const byId = indexOf(beads);
-  const blockers = [...new Set(byId.get(id)?.blocked_by ?? [])].flatMap((x) => byId.get(x) ?? []);
-  const blocked = beads.filter((b) => b.id !== id && b.blocked_by.includes(id));
-  return { blockers: blockers.sort(byImportance), blocked: blocked.sort(byImportance) };
 }
 
 /** For each bead, the direct child of the scope (`null`: the project) that holds it, or null when it is not under the scope. */
@@ -320,29 +321,6 @@ function reach(edges: readonly Link[], start: string, forward: boolean): Set<str
   }
   return found;
 }
-
-export function neighbourhoodOf(
-  beads: readonly BeadSummary[],
-  id: string,
-  options: Pick<GraphOptions, "hideDone">,
-): Graph {
-  const byId = indexOf(beads);
-  const kept = (x: string) => {
-    const b = byId.get(x);
-    return b !== undefined && (x === id || !(options.hideDone && isDone(b)));
-  };
-  const links = beads.flatMap((b) =>
-    [...new Set(b.blocked_by)].filter((x) => x !== b.id && kept(x) && kept(b.id)).map((x) => ({ from: x, to: b.id })),
-  );
-  const drawn = new Set([id, ...reach(links, id, false), ...reach(links, id, true)]);
-  const edges = links.filter((l) => drawn.has(l.from) && drawn.has(l.to)).map((l) => ({ ...l, links: [l] }));
-  const { nodes, cycle } = layout(byId, [...drawn], new Set(), edges, progressOf(beads), parentIds(beads));
-  return { nodes, edges, cycle, unlinked: 0 };
-}
-
-/** The graph of the project or of a bead with children, else the neighbourhood of the bead. */
-export const graphFor = (beads: readonly BeadSummary[], scope: string | null, options: GraphOptions): Graph =>
-  scope === null || hasChildren(beads, scope) ? scopeGraph(beads, scope, options) : neighbourhoodOf(beads, scope, options);
 
 /** The node, all its direct and indirect blockers and blocked beads, and the arrows inside either side. */
 export function chainOf(graph: Graph, id: string): { nodes: Set<string>; edges: Set<string> } {

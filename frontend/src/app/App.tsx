@@ -1,7 +1,7 @@
 import { Fragment, lazy, Suspense, useState } from "react";
 import { BeadDetailPage } from "@/features/beads/BeadDetailPage";
 import { BeadsPage } from "@/features/beads/BeadsPage";
-import { GraphPage } from "@/features/beads/GraphPage";
+import { OldGraphLink } from "@/features/beads/OldGraphLink";
 import { MilestonePage } from "@/features/milestones/MilestonePage";
 import { MilestonesPage } from "@/features/milestones/MilestonesPage";
 import { MyTasksPage } from "@/features/my-tasks/MyTasksPage";
@@ -57,10 +57,11 @@ function milestoneRoute(pathname: string): { project: string; id: string } | nul
 }
 
 export function App() {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const [epoch, setEpoch] = useState(0); // a new key remounts the page, which loads its data again
   const log = logRoute(pathname);
   const graph = graphRoute(pathname);
+  const select = new URLSearchParams(search).get("select") ?? "";
   const bead = beadRoute(pathname);
   const milestone = milestoneRoute(pathname);
   const email = useEmail();
@@ -71,7 +72,7 @@ export function App() {
       {log !== null ? (
         <SessionLogPage key={`${log.project}/${log.id}`} project={log.project} id={log.id} />
       ) : graph !== null ? (
-        <GraphPage key={`${graph.project}/${graph.id ?? ""}`} project={graph.project} id={graph.id} />
+        <OldGraphLink key={`${graph.project}/${graph.id ?? ""}`} project={graph.project} id={graph.id} select={select} />
       ) : milestone !== null ? (
         <MilestonePage key={`${milestone.project}/${milestone.id}`} project={milestone.project} id={milestone.id} />
       ) : bead !== null ? (

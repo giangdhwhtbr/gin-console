@@ -542,24 +542,45 @@ describe("BeadDetailPage", () => {
     expect(within(alert).getByRole("button", { name: /retry/i })).toBeInTheDocument();
   });
 
-  it("REQ-UI-053 View dependencies for a bead with children or a blocks relation only", async () => {
-    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [{ id: "t", title: "T", status: "open", type: "parent-child", prep: false }] }));
-    render(<BeadDetailPage project="p" id="e-1" />);
-    expect(await screen.findByRole("link", { name: "View dependencies" })).toHaveAttribute("href", "/beads/p/e-1/graph");
-    cleanup();
-    stubFetch(beadDetail("t-1", { dependencies: [{ id: "x", title: "X", status: "open", type: "blocks" }] }));
+  const kid = { id: "c", title: "C", status: "open", type: "parent-child", prep: false } as const;
+  const viewLink = () => screen.findByRole("link", { name: "View in graph" });
+
+  it("REQ-UI-053 Task with children: View in graph goes to its scope", async () => {
+    stubFetch(beadDetail("t-1", { parent: "e-1", children: [kid] }));
     render(<BeadDetailPage project="p" id="t-1" />);
-    expect(await screen.findByRole("link", { name: "View dependencies" })).toBeInTheDocument();
-    cleanup();
-    stubFetch(beadDetail("t-2"));
+    expect(await viewLink()).toHaveAttribute("href", "/beads?project=p&view=graph&scope=t-1");
+  });
+
+  it("REQ-UI-053 Task with a blocker: View in graph goes to the parent's scope with the task selected", async () => {
+    stubFetch(beadDetail("t-2", { parent: "e-1", dependencies: [{ id: "x", title: "X", status: "open", type: "blocks" }] }));
     render(<BeadDetailPage project="p" id="t-2" />);
-    await screen.findByText("Title t-2");
-    expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();
-    cleanup();
-    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [{ id: "t", title: "T", status: "open", type: "parent-child", prep: false }] }));
-    render(<BeadDetailPage project="p" id="e-1" graphScope="e-1" />);
+    expect(await viewLink()).toHaveAttribute("href", "/beads?project=p&view=graph&scope=e-1&select=t-2");
+  });
+
+  it("REQ-UI-053 Task with a blocked bead: the button is offered too", async () => {
+    stubFetch(beadDetail("t-4", { parent: "e-1", dependents: [{ id: "x", title: "X", status: "open", type: "blocks" }] }));
+    render(<BeadDetailPage project="p" id="t-4" />);
+    expect(await viewLink()).toHaveAttribute("href", "/beads?project=p&view=graph&scope=e-1&select=t-4");
+  });
+
+  it("REQ-UI-053 Task with a blocker and no parent: View in graph selects it in the project", async () => {
+    stubFetch(beadDetail("t-3", { dependencies: [{ id: "x", title: "X", status: "open", type: "blocks" }] }));
+    render(<BeadDetailPage project="p" id="t-3" />);
+    expect(await viewLink()).toHaveAttribute("href", "/beads?project=p&view=graph&select=t-3");
+  });
+
+  it("REQ-UI-053 Epic: no View in graph, the Graph tab is offered instead", async () => {
+    stubFetch(beadDetail("e-1", { issue_type: "epic", children: [kid] }));
+    render(<BeadDetailPage project="p" id="e-1" />);
     await screen.findByText("Title e-1");
-    expect(screen.queryByRole("link", { name: "View dependencies" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "View in graph" })).toBeNull();
+  });
+
+  it("REQ-UI-053 Nothing to draw: no View in graph", async () => {
+    stubFetch(beadDetail("t-5", { dependencies: [{ id: "x", title: "X", status: "open", type: "parent-child" }] }));
+    render(<BeadDetailPage project="p" id="t-5" />);
+    await screen.findByText("Title t-5");
+    expect(screen.queryByRole("link", { name: "View in graph" })).toBeNull();
   });
 
   it("REQ-UI-109 Technical epic: the page shows the badge, the capability chips and the estimate", async () => {
