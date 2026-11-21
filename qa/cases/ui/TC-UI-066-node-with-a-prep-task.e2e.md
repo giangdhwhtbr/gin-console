@@ -4,7 +4,7 @@
 - **Priority:** high
 
 **Preconditions:**
-- Epic `e-1` in project `alpha` has no parent, track `t-1` (closed), track `t-2` (open) and prep task `p-1` (open) labelled `prep` and `prep:mockup`
+- Epic `e-1` in project `alpha` has no parent, track `t-1` (closed), track `t-2` (open) and prep task `p-1` (open) labelled `prep` and `prep:mockup`, and epic `e-2` blocked by `e-1`, so Only linked draws `e-1`
 
 **Steps:**
 1. Open `/beads?project=alpha&milestone=all&view=graph&closed=1`

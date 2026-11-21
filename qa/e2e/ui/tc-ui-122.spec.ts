@@ -1,4 +1,4 @@
-// TC: TC-UI-122@1fca1978
+// TC: TC-UI-122@e9e1fb5e
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
@@ -21,8 +21,7 @@ test('TC-UI-122: Long state line (REQ-UI-049)', async ({ page, ev }) => {
     ],
   });
 
-  await ev.step('1. Open /beads?project=alpha&milestone=all&view=graph', async () => {
-    // `closed=1` is setup the case does not state: without it the page loads no closed bead and the node reads "0 of 3 done".
+  await ev.step('1. Open /beads?project=alpha&milestone=all&view=graph&closed=1', async () => {
     await page.goto('/beads?project=alpha&milestone=all&view=graph&closed=1');
     const node = page.locator('[data-node="e-1"]');
     await expect(node).toBeVisible();
