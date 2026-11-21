@@ -16,6 +16,7 @@ from gin_console.beads.pull import BdRunner, PullScheduler, PullService, run_bd_
 from gin_console.beads.router import build_router as build_beads_router
 from gin_console.beads.snapshot import Reader, SnapshotStore
 from gin_console.beads.source import read_export
+from gin_console.clock import utc_now
 from gin_console.config import Settings
 from gin_console.milestones.router import build_router as build_milestones_router
 from gin_console.milestones.source import GwRunner
@@ -24,7 +25,6 @@ from gin_console.projects.collect import collect_epic_workflow
 from gin_console.projects.models import BlockError, EpicWorkflow
 from gin_console.projects.router import build_router as build_projects_router
 from gin_console.quota.router import build_router as build_quota_router
-from gin_console.quota.service import utc_now
 from gin_console.quota.source import run_claude_usage, run_codex_rate_limits
 from gin_console.reports.router import build_router as build_reports_router
 from gin_console.sessions.router import build_router as build_sessions_router

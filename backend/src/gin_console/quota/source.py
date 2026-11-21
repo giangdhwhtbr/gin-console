@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, TypeGuard
 
 from gin_console.quota.models import ClaudeQuota, ClaudeWindow, CodexQuota, CodexWindow
+from gin_console.text import clean
 
 COMMAND_TIMEOUT = 30.0
 RAW_LIMIT = 4000
@@ -41,11 +42,6 @@ class SourceError(Exception):
     def __init__(self, message: str, raw: str | None = None) -> None:
         super().__init__(clean(message))
         self.raw = None if raw is None else clean(raw[:RAW_LIMIT])
-
-
-def clean(text: str) -> str:
-    """Replace lone surrogates: valid in JSON, but a response cannot encode them as UTF-8."""
-    return text.encode("utf-8", "replace").decode("utf-8")
 
 
 def _find(name: str) -> str:

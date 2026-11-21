@@ -14,7 +14,6 @@ import pytest
 from gin_console.quota.models import ClaudeQuota
 from gin_console.quota.source import (
     SourceError,
-    clean,
     get_claude,
     get_codex,
     run_claude_usage,
@@ -168,12 +167,6 @@ def test_quota_003_os_error(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> 
     fake_run(monkeypatch, tmp_path, PermissionError(13, "Permission denied"), "/usr/bin/claude")
     with pytest.raises(SourceError, match="Permission denied"):
         run_claude_usage()
-
-
-# REQ-QUOTA-007
-def test_quota_007_clean_replaces_lone_surrogates() -> None:
-    assert clean("a\ud800b") == "a?b"
-    assert clean("ok 😀") == "ok 😀"
 
 
 LIVE = {

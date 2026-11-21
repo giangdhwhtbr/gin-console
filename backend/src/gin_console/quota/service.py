@@ -1,16 +1,13 @@
 import threading
 from collections.abc import Callable
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from gin_console.quota.models import QuotaError
-from gin_console.quota.source import SourceError, clean
+from gin_console.quota.source import SourceError
+from gin_console.text import clean
 
 TTL = timedelta(minutes=5)
 MIN_REFRESH = timedelta(seconds=30)
-
-
-def utc_now() -> datetime:
-    return datetime.now(UTC)
 
 
 class CachedSide[T]:

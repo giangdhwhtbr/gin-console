@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 from pydantic import AfterValidator, BaseModel, ConfigDict
 
 from gin_console.beads.kinds import Complexity, Kind
-from gin_console.quota.source import clean
+from gin_console.text import clean
 
 # lone surrogates are valid JSON escapes but cannot be encoded in a response
 Text = Annotated[str, AfterValidator(clean)]
