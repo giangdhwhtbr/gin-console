@@ -1,14 +1,30 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EMAIL_KEY, getEmail, resetIdentity, setEmail } from "./identity";
 import { Layout, SIDEBAR_KEY } from "./Layout";
+import { forgetConfiguredProjects, setFavorite } from "./project";
 
-beforeEach(() => window.localStorage.clear());
+const json = (body: unknown) =>
+  new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+const row = (name: string) => ({ name, path: `/${name}`, exists: true, beads: null, pull: null });
+const fetched = vi.fn((url: string) =>
+  Promise.resolve(url === "/api/projects/beads" ? json([row("alpha"), row("beta")]) : json({})),
+);
+
+beforeEach(() => {
+  window.localStorage.clear();
+  window.sessionStorage.clear();
+  setFavorite(null);
+  fetched.mockClear();
+  vi.stubGlobal("fetch", fetched);
+  forgetConfiguredProjects();
+});
 afterEach(() => {
   cleanup();
   resetIdentity();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 const open = (path: string) => {
@@ -26,19 +42,59 @@ const marked = () =>
 describe("Layout", () => {
   it.each(["/", "/beads", "/sessions", "/reports"])(
     "REQ-UI-055 REQ-UI-099 has one Main navigation with the five links on %s",
-    (path) => {
+    async (path) => {
       open(path);
+      await screen.findByRole("button", { name: "Project: alpha" });
       expect(screen.getAllByRole("navigation")).toHaveLength(1);
       expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
       expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
         ["Projects", "/"],
-        ["Beads", "/beads"],
+        ["Beads", "/beads?project=alpha"],
         ["My Tasks", "/my-tasks"],
-        ["Milestones", "/milestones"],
-        ["Reports", "/reports"],
+        ["Milestones", "/milestones?project=alpha"],
+        ["Reports", "/reports?project=alpha"],
       ]);
     },
   );
+
+  it("REQ-UI-124 REQ-UI-055 the links carry the project of the URL", async () => {
+    open("/beads?project=beta");
+    await screen.findByRole("button", { name: "Project: beta" });
+    const hrefs = within(nav()).getAllByRole("link").map((link) => link.getAttribute("href"));
+    expect(hrefs).toEqual(["/", "/beads?project=beta", "/my-tasks", "/milestones?project=beta", "/reports?project=beta"]);
+  });
+
+  it("REQ-UI-124 the links follow the favorite when the URL names no project", async () => {
+    setFavorite("beta");
+    open("/");
+    await screen.findByRole("button", { name: "Project: beta" });
+    expect(within(nav()).getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=beta");
+  });
+
+  it("REQ-UI-123 puts the switcher in the top bar, and the sidebar variant above the navigation", async () => {
+    open("/");
+    await screen.findByRole("button", { name: "Project: alpha" });
+    const banner = screen.getByRole("banner");
+    expect(within(banner).getByRole("button", { name: "alpha" })).toBeInTheDocument();
+    const sidebar = screen.getByRole("button", { name: /alpha\s*2 projects/ });
+    expect(sidebar.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("REQ-UI-123 REQ-UI-094 the collapsed sidebar keeps only the rail switcher", async () => {
+    window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+    open("/");
+    await screen.findByRole("button", { name: "Project: alpha" });
+    expect(screen.queryByRole("button", { name: /alpha\s*2 projects/ })).toBeNull();
+  });
+
+  it("REQ-UI-124 Refresh asks for the configured projects again", async () => {
+    open("/");
+    await screen.findByRole("button", { name: "Project: alpha" });
+    const asked = () => fetched.mock.calls.filter(([url]) => url === "/api/projects/beads").length;
+    expect(asked()).toBe(1);
+    await userEvent.click(screen.getAllByRole("button", { name: "Refresh data" })[0]);
+    await waitFor(() => expect(asked()).toBe(2));
+  });
 
   it.each([
     ["/", ["Projects"]],

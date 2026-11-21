@@ -3,16 +3,18 @@ import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { clearEmail, useEmail } from "./identity";
 import { Link } from "./Link";
+import { forgetConfiguredProjects, projectHref, resolveProject, useConfiguredProjects } from "./project";
+import { ProjectSwitcher } from "./ProjectSwitcher";
 import { useLocation } from "./route";
 import { RefreshButton } from "./RefreshButton";
 import { ICON_BUTTON, ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
-  { to: "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
-  { to: "/beads", label: "Beads", icon: ListChecks, current: (path: string) => path === "/beads" || path.startsWith("/beads/") },
-  { to: "/my-tasks", label: "My Tasks", icon: UserCheck, current: (path: string) => path === "/my-tasks" },
-  { to: "/milestones", label: "Milestones", icon: Flag, current: (path: string) => path === "/milestones" || path.startsWith("/milestones/") },
-  { to: "/reports", label: "Reports", icon: ChartColumn, current: (path: string) => path === "/reports" },
+  { to: () => "/", label: "Projects", icon: LayoutGrid, current: (path: string) => path === "/" },
+  { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: (path: string) => path === "/beads" || path.startsWith("/beads/") },
+  { to: () => "/my-tasks", label: "My Tasks", icon: UserCheck, current: (path: string) => path === "/my-tasks" },
+  { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: (path: string) => path === "/milestones" || path.startsWith("/milestones/") },
+  { to: (project: string) => projectHref("/reports", project), label: "Reports", icon: ChartColumn, current: (path: string) => path === "/reports" },
 ] as const;
 
 const LINK = cn(
@@ -49,7 +51,13 @@ function Brand({ wordClass }: { wordClass?: string }) {
 }
 
 export function Layout({ children, onRefreshed }: { children: ReactNode; onRefreshed: () => void }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const projects = useConfiguredProjects();
+  const project = resolveProject(new URLSearchParams(search).get("project") ?? "", projects.status === "ok" ? projects.names : []);
+  const refreshed = () => {
+    forgetConfiguredProjects();
+    onRefreshed();
+  };
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const wide = !collapsed;
   const email = useEmail();
@@ -66,8 +74,9 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
     <div className="flex min-h-screen flex-col bg-background text-foreground md:flex-row">
       <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card pl-4 pr-1 md:hidden">
         <Brand />
+        <ProjectSwitcher variant="bar" />
         <div className="flex">
-          <RefreshButton onRefreshed={onRefreshed} />
+          <RefreshButton onRefreshed={refreshed} />
           <ThemeToggle />
           {email !== null && (
             <button
@@ -91,7 +100,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
         <div className={cn("hidden items-center gap-2 md:flex md:flex-col", wide && "lg:flex-row lg:justify-between lg:gap-1 lg:pl-2")}>
           <Brand wordClass={wide ? "max-lg:hidden" : "hidden"} />
           <div className={cn("flex flex-col", wide && "lg:flex-row")}>
-            <RefreshButton onRefreshed={onRefreshed} />
+            <RefreshButton onRefreshed={refreshed} />
             <ThemeToggle />
             <button
               type="button"
@@ -105,12 +114,22 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
             </button>
           </div>
         </div>
+        <div className={cn("hidden md:flex md:justify-center", wide && "lg:justify-stretch")}>
+          {wide && (
+            <div className="hidden w-full lg:block">
+              <ProjectSwitcher variant="sidebar" />
+            </div>
+          )}
+          <div className={cn(wide && "lg:hidden")}>
+            <ProjectSwitcher variant="rail" />
+          </div>
+        </div>
         <nav
           aria-label="Main"
           className="fixed inset-x-0 bottom-0 z-10 flex border-t bg-card pb-[env(safe-area-inset-bottom)] md:static md:flex-col md:gap-1 md:border-t-0 md:pb-0"
         >
           {NAV.map(({ to, label, icon: Icon, current }) => (
-            <Link key={to} to={to} aria-current={current(pathname) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
+            <Link key={label} to={to(project)} aria-current={current(pathname) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
               <Icon aria-hidden className="size-5" />
               {label}
             </Link>
