@@ -16,8 +16,13 @@ export function navigate(to: string, options?: { replace?: boolean }): void {
 export function useLocation(): Location {
   const [location, setLocation] = useState(current);
   useEffect(() => {
-    const update = () => setLocation(current());
+    const update = () =>
+      setLocation((prev) => {
+        const now = current();
+        return prev.pathname === now.pathname && prev.search === now.search ? prev : now;
+      });
     window.addEventListener("popstate", update);
+    update(); // a child may have navigated in its own mount effect, before this listener existed
     return () => window.removeEventListener("popstate", update);
   }, []);
   return location;

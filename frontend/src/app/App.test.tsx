@@ -295,6 +295,15 @@ describe("App routing", () => {
     expect(fetchMock.mock.calls.some(([u]) => String(u).includes("/api/beads/alpha/graph"))).toBe(false);
   });
 
+  it("REQ-UI-075 Project: opening /beads/alpha/graph directly renders the Graph view, not Loading", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    window.history.replaceState(null, "", "/beads/alpha/graph");
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/beads?project=alpha&view=graph"));
+    expect(await screen.findByRole("heading", { name: "Beads" })).toBeInTheDocument();
+    expect(screen.queryByText("Loading…")).toBeNull();
+  });
+
   // REQ-UI-022
   it("REQ-UI-022 falls back to Projects page on undecodable bead route segment", async () => {
     window.history.replaceState(null, "", "/beads/%E0%A4%A/a-5");
