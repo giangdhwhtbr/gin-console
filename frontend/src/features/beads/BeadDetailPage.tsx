@@ -1,32 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { FactList, type Fact } from "@/components/FactList";
-import { PriorityPill } from "@/components/PriorityPill";
-import { SizeBadge } from "@/components/SizeBadge";
-import { factDate } from "@/lib/dates";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ProgressBar } from "@/features/quota/ProgressBar";
 import { BeadNotFoundError, fetchBead, type BeadDetail } from "./api";
+import { BeadBody } from "./BeadBody";
+import { BeadHeader } from "./BeadHeader";
 import { Breadcrumb } from "./Breadcrumb";
 import { DetailTabs, type DetailTab } from "./DetailTabs";
 import { DiscussionPanel } from "./DiscussionPanel";
-import { graphViewPath } from "./graph";
-import { KindBadge } from "./KindBadge";
-import { LaneChip } from "./LaneChip";
-import { leaseOf, trackText, visibleLabels } from "./laneFacts";
-import { gateState, gateWords } from "./mergeGates";
-import { MarkdownText } from "./MarkdownText";
+import { EpicPage } from "./EpicPage";
 import { useDiscussionHidden } from "./discussion";
-import { RelationList } from "./RelationList";
 import { SIDE_PANEL } from "./side-panel";
-import { StateMark } from "./StateMark";
-import { TextSection } from "./TextSection";
-import { complexityOf } from "./complexity";
-import { childCounts, prepLabel } from "./prep";
-import { TypeBadge } from "./TypeBadge";
 
 type State =
   | { status: "loading" }
@@ -82,31 +67,8 @@ export function BeadDetailPage({
     );
   }
   const bead = state.status === "ok" ? state.bead : null;
-  const complexity = bead?.issue_type === "epic" ? complexityOf(bead.description) : null;
-  const gate = bead?.waits_for ?? null;
-  const lease = bead === null ? null : leaseOf([bead.claim], new Date());
-  const facts: Fact[] =
-    bead === null
-      ? []
-      : [
-          { label: "Lane", value: bead.lane },
-          { label: "Track", value: bead.track === null ? null : trackText(bead.track) },
-          { label: "Lease", value: lease?.text ?? null },
-          { label: "Placeholder", value: gate === null ? null : bead.title },
-          { label: "Waits for", value: gate === null ? null : `${gate.plan} #${gate.number}` },
-          { label: "Owner", value: bead.owner },
-          { label: "Assignee", value: bead.assignee },
-          { label: "Created by", value: bead.created_by },
-          { label: "Created", value: factDate(bead.created_at) },
-          { label: "Updated", value: factDate(bead.updated_at) },
-          { label: "Comments", value: bead.comment_count },
-        ].filter((fact) => fact.value !== null && fact.value !== "");
-  const children = bead?.children ?? [];
-  const counts = childCounts(children.map((c) => ({ labels: c.prep ? ["prep"] : [], status: c.status, waits_for: c.waits_for })));
-  const closed = counts.closedTracks;
-  const total = counts.tracks;
-  const prep = prepLabel(counts);
-
+  // REQ-UI-119: the page of an epic has tabs; its details panel keeps the compact form
+  const epicPage = bead !== null && bead.issue_type === "epic" && !embedded;
   return (
     <section className="flex flex-col gap-4">
       {back}
@@ -122,7 +84,8 @@ export function BeadDetailPage({
           </AlertDescription>
         </Alert>
       )}
-      {bead !== null && (
+      {epicPage && <EpicPage project={project} bead={bead} />}
+      {bead !== null && !epicPage && (
         <div
           className={cn(
             bead.comment_count > 0 &&
@@ -154,73 +117,8 @@ export function BeadDetailPage({
                   {`Show discussion (${bead.comment_count})`}
                 </Button>
               )}
-                <header className="flex flex-col gap-1">
-                  <h1 className="text-xl font-semibold wrap-anywhere">{gate === null ? bead.title : `Waits for ${gateWords(gate)} to merge`}</h1>
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-mono wrap-anywhere">{bead.id}</span>
-                    {gate === null ? <StateMark bead={bead} /> : <Badge variant="secondary">{gateState(bead.status)}</Badge>}
-                    {bead.lane !== null && <LaneChip lane={bead.lane} />}
-                    <PriorityPill priority={bead.priority} />
-                    <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />
-                    <TypeBadge type={bead.issue_type} />
-                    <KindBadge kind={bead.kind} />
-                    {complexity !== null && (
-                      <Badge variant="outline" className={cn(complexity === "high" ? "text-state-blocked" : "text-muted-foreground")}>
-                        {`Complexity: ${complexity}`}
-                      </Badge>
-                    )}
-                    {visibleLabels(bead).map((label) => (
-                      <Badge key={label} variant="outline">
-                        {label}
-                      </Badge>
-                    ))}
-                  </div>
-                  {bead.capabilities.length > 0 && (
-                    <ul aria-label="Capabilities" className="flex flex-wrap items-center gap-2 text-sm">
-                      {bead.capabilities.map((cap) => (
-                        <li key={cap}>
-                          <Badge variant="outline">{cap}</Badge>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {bead.points_reason !== null && bead.points_reason.trim() !== "" && (
-                    <p className="text-sm text-muted-foreground wrap-anywhere">{bead.points_reason}</p>
-                  )}
-                  <FactList facts={facts} />
-                  {bead.issue_type !== "epic" &&
-                    (bead.children.length > 0 ||
-                      [...bead.dependencies, ...bead.dependents].some((r) => r.type === "blocks")) && (
-                    <Link
-                      to={graphViewPath(project, { id: bead.id, parent: bead.milestone === bead.parent ? null : bead.parent }, bead.children.length > 0)}
-                      className={cn(buttonVariants({ size: "sm" }), "self-start")}
-                    >
-                      View in graph
-                    </Link>
-                  )}
-                </header>
-                {bead.description === null ? (
-                  <p className="text-muted-foreground">No description.</p>
-                ) : (
-                  <MarkdownText text={bead.description} />
-                )}
-                <TextSection title="Acceptance criteria" text={bead.acceptance_criteria} />
-                <TextSection title="Design" text={bead.design} />
-                <TextSection title="Notes" text={bead.notes} />
-                <TextSection title="Close reason" text={bead.close_reason} />
-                <RelationList title="Depends on" project={project} items={bead.dependencies} />
-                <RelationList title="Blocks" project={project} items={bead.dependents} />
-                <RelationList title="Bugs found" titleClassName="text-type-bug" project={project} items={bead.bugs} />
-                {(total > 0 || prep !== null) && (
-                  <div className="flex flex-col gap-2">
-                    {total > 0 && <ProgressBar label="Children closed" percent={(closed / total) * 100} />}
-                    <span className="flex items-center gap-3 text-sm">
-                      {total > 0 && <span>{`${closed} of ${total} closed`}</span>}
-                      {prep !== null && <span>{prep}</span>}
-                    </span>
-                  </div>
-                )}
-                <RelationList title="Children" project={project} items={bead.children} />
+              <BeadHeader project={project} bead={bead} />
+              <BeadBody project={project} bead={bead} />
             </div>
           </div>
           {bead.comment_count > 0 && (
