@@ -14,6 +14,8 @@ test('TC-BEADS-055: Failed pull on the card (REQ-BEADS-018)', async ({ page, ev 
     await page.goto('/');
     const card = page.getByRole('article', { name: 'A' });
     await expect(card.getByText('pull failed: Merge conflict detected')).toBeVisible();
+    // PullLine marks a failure with the destructive text colour; no role or attribute carries it.
+    await expect(card.getByText('pull failed: Merge conflict detected')).toHaveClass(/text-destructive/);
     await expect(card).toContainText('open 3');
     await expect(card).toContainText('ready 2');
   });

@@ -8,7 +8,7 @@
 - The systemd service uses the same file
 
 **Steps:**
-1. Run `docker compose exec -T gin-console test -d /home/gin/qwikfone` (the check in `scripts/docker-smoke.sh` finds a mounted project with a `.beads` directory under `$HOME`)
+1. Run `docker compose exec -T gin-console test -d /home/gin/qwikfone` (`scripts/docker-smoke.sh` has no check for this path; it only finds a mounted project with a `.beads` directory under `$HOME`)
 2. Open the Projects page of the container at `http://127.0.0.1:8700/`
 3. Open the Projects page of the systemd service
 

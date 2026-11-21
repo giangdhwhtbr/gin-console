@@ -12,6 +12,6 @@ test('TC-BEADS-053: Pulled (REQ-BEADS-018)', async ({ page, ev }) => {
     await page.goto('/');
     const card = page.getByRole('article', { name: 'A' });
     await expect(card.getByText('pulled 2 minutes ago')).toBeVisible();
-    await expect(card.getByText('pulled 2 minutes ago')).toHaveAttribute('title', /\S/);
+    await expect(card.getByText('pulled 2 minutes ago')).toHaveAttribute('title', new RegExp(`\\(${pull.at.slice(0, 16).replace('T', ' ')} UTC\\)`));
   });
 });
