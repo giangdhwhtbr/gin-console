@@ -33,13 +33,15 @@ OK = EpicWorkflow(
 )
 
 
-def make(tmp_path: Path, runner: Runner, clock: Clock | None = None) -> TestClient:
-    (tmp_path / "proj").mkdir(exist_ok=True)
+def make(
+    tmp_path: Path, runner: Runner, clock: Clock | None = None, name: str = "proj"
+) -> TestClient:
+    (tmp_path / name).mkdir(exist_ok=True)
     (tmp_path / "dist").mkdir(exist_ok=True)
-    write_export(tmp_path / "proj", [])
+    write_export(tmp_path / name, [])
     settings = Settings(
         projects=[
-            ProjectEntry(name="proj", path=tmp_path / "proj"),
+            ProjectEntry(name=name, path=tmp_path / name),
             ProjectEntry(name="gone", path=tmp_path / "gone"),
         ]
     )
@@ -115,3 +117,45 @@ def test_beads_020_refresh_drops_the_cache(tmp_path: Path) -> None:
     assert api.post("/api/refresh").status_code == 204
     api.get(URL)
     assert len(runner.calls) == 2
+
+
+# REQ-BEADS-020
+# TC: TC-BEADS-042@b9fdd15c
+def test_tc_beads_042_stage_of_an_epic(tmp_path: Path) -> None:
+    runner = Runner(
+        EpicWorkflow(
+            stage="execute",
+            gates={"plan_approved": "satisfied", "shipped": "unmet"},
+            warnings=["stale spec"],
+        )
+    )
+    r = make(tmp_path, runner, name="p").get("/api/beads/p/e-1/workflow")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["stage"] == "execute"
+    assert body["gates"] == {"plan_approved": "satisfied", "shipped": "unmet"}
+    assert body["warnings"] == ["stale spec"]
+    assert body["review_waivers"] == []
+
+
+# REQ-BEADS-020
+# TC: TC-BEADS-068@593c5cb0
+def test_tc_beads_068_command_fails(tmp_path: Path) -> None:
+    runner = Runner(BlockError(error="unknown workflow"))
+    api = make(tmp_path, runner, name="p")
+    first = api.get("/api/beads/p/e-1/workflow")
+    assert first.status_code == 502
+    assert "unknown workflow" in first.json()["error"]
+    assert len(runner.calls) == 1
+    second = api.get("/api/beads/p/e-1/workflow")
+    assert second.status_code == 502
+    assert len(runner.calls) == 2
+
+
+# REQ-BEADS-020
+# TC: TC-BEADS-069@80750a5e
+def test_tc_beads_069_unknown_bead(tmp_path: Path) -> None:
+    runner = Runner(OK)
+    r = make(tmp_path, runner, name="p").get("/api/beads/p/nope/workflow")
+    assert r.status_code == 404
+    assert runner.calls == []

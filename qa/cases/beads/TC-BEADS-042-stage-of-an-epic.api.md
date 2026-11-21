@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-020@fa401781
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-21T05-29-13-api
+- **Checked:** c5ae995a
 
 **Preconditions:**
 - Project `p` has epic `e-1`
