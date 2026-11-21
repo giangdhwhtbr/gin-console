@@ -2,7 +2,7 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bead } from "@/features/beads/beadFixtures";
-import { clearReturn } from "@/features/beads/returnState";
+import { clearReturn } from "@/app/origin";
 import { App } from "./App";
 import { forgetConfiguredProjects } from "./project";
 import { clearEmail, EMAIL_KEY, resetIdentity, setEmail } from "./identity";

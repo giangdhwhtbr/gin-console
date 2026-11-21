@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { clearReturn, getReturn, RETURN_KEY, rememberOpen, rememberPlace, rememberSearch } from "./returnState";
+import { clearReturn, getReturn, RETURN_KEY, rememberOpen, rememberPlace, rememberSearch } from "@/app/origin";
 
 beforeEach(() => {
   window.sessionStorage.clear();
@@ -7,7 +7,7 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-describe("returnState", () => {
+describe("origin", () => {
   it("REQ-UI-073 remembers the search", () => {
     rememberSearch("?project=a&view=board&status=open");
     expect(getReturn().search).toBe("?project=a&view=board&status=open");
@@ -23,7 +23,7 @@ describe("returnState", () => {
   it("REQ-UI-073 a fresh module reads what the tab stored", async () => {
     rememberSearch("?project=a&view=focus");
     vi.resetModules();
-    const fresh = await import("./returnState");
+    const fresh = await import("@/app/origin");
     expect(fresh.getReturn().search).toBe("?project=a&view=focus");
   });
 

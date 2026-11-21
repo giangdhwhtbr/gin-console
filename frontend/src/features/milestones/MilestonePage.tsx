@@ -8,7 +8,7 @@ import { ProjectGuard } from "@/app/UnknownProject";
 import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
 import { filtersToSearch, parseFilters } from "@/features/beads/filters";
-import { rememberPlace } from "@/features/beads/returnState";
+import { rememberPlace } from "@/app/origin";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
 import { awayLine, plural, shortDate } from "./format";

@@ -7,7 +7,7 @@ import { DetailsPanel } from "./DetailsPanel";
 import { filterBeads, type BeadFilters } from "./filters";
 import { COLUMNS, ListRow } from "./ListRow";
 import type { MilestoneInEffect } from "./milestoneChoice";
-import { getReturn, rememberOpen } from "./returnState";
+import { getReturn, rememberOpen } from "@/app/origin";
 import { allBranches, ancestorsOf, keepSet, treeIndex, treeRows } from "./tree";
 import { treeKeyDown } from "./treeKeys";
 import { useWide } from "./useWide";

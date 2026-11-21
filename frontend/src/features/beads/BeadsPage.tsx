@@ -7,7 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, isStale, pullError, pullOf, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
-import { rememberPlace } from "./returnState";
+import { rememberPlace } from "@/app/origin";
 import { PullNote, type PullFailure } from "./PullNote";
 import { StaleNote } from "./StaleNote";
 

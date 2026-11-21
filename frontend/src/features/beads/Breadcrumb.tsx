@@ -1,6 +1,6 @@
 import { Link } from "@/app/Link";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
-import { useReturn } from "./returnState";
+import { useReturn } from "@/app/origin";
 
 const VIEW_NAME: Record<string, string> = { list: "List", board: "Board", focus: "Focus", graph: "Graph" };
 const enc = encodeURIComponent;

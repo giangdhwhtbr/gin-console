@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@/app/App";
 import { EMAIL_KEY, resetIdentity, setEmail } from "@/app/identity";
 import { bead, json } from "./beadFixtures";
-import { clearReturn } from "./returnState";
+import { clearReturn } from "@/app/origin";
 
 beforeEach(() => {
   clearReturn();

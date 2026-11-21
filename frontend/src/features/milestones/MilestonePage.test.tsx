@@ -5,7 +5,7 @@ import { forgetConfiguredProjects, rememberProject, resolveProject, setFavorite 
 import { bead, json } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import type { MilestoneDetail } from "./api";
-import { getReturn } from "@/features/beads/returnState";
+import { getReturn } from "@/app/origin";
 import { detail, epicPlan, stubMilestones } from "./milestoneFixtures";
 import { MilestonePage } from "./MilestonePage";
 

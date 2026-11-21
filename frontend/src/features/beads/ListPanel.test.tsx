@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadDetail, BeadSummary, Comment } from "./api";
 import { bead, json, project } from "./beadFixtures";
 import { BeadsPage } from "./BeadsPage";
-import { clearReturn } from "./returnState";
+import { clearReturn } from "@/app/origin";
 
 const makeDetail = (summary: BeadSummary, overrides: Partial<BeadDetail> = {}): BeadDetail => ({
   ...summary,

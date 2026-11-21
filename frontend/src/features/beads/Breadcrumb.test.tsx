@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Breadcrumb } from "./Breadcrumb";
-import { RETURN_KEY, clearReturn, rememberPlace, rememberSearch } from "./returnState";
+import { RETURN_KEY, clearReturn, rememberPlace, rememberSearch } from "@/app/origin";
 
 beforeEach(() => clearReturn());
 afterEach(cleanup);
