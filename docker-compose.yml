@@ -17,6 +17,4 @@ services:
       GIN_CONSOLE_ALLOW_NON_LOOPBACK: "1"
     volumes:
       - ${HOME}/.config/gin-console/config.yaml:${HOME}/.config/gin-console/config.yaml:ro
-      - ${HOME}/.claude:${HOME}/.claude:ro
-      - ${HOME}/.codex:${HOME}/.codex:ro
       # project directories: see docker-compose.override.example.yml

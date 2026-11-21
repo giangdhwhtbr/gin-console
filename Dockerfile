@@ -20,8 +20,6 @@ RUN git clone --depth 1 --branch v${BD_VERSION} https://github.com/gastownhall/b
  && CGO_ENABLED=1 go build -tags gms_pure_go -ldflags="-s -w -X main.Version=${BD_VERSION}" -o /out/bd ./cmd/bd
 
 FROM node:22-bookworm-slim AS runtime
-ARG CLAUDE_VERSION=2.1.296
-ARG CODEX_VERSION=0.160.0
 ARG GIN_WORKFLOW_REF=v3.0.0
 ARG GIN_WORKFLOW_REPO=https://github.com/giangdhwhtbr/gin-workflow.git
 ARG APP_UID=1002
@@ -32,8 +30,6 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=uv /uv /usr/local/bin/uv
 COPY --from=bd /out/bd /usr/local/bin/bd
-
-RUN npm install -g @anthropic-ai/claude-code@${CLAUDE_VERSION} @openai/codex@${CODEX_VERSION}
 
 # gin (from the gin-workflow repo): pinned ref
 RUN git clone --depth 1 --branch "${GIN_WORKFLOW_REF}" "${GIN_WORKFLOW_REPO}" /tmp/gw \
