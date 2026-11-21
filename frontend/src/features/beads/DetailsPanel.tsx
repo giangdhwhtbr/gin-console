@@ -8,14 +8,12 @@ import { SIDE_PANEL } from "./side-panel";
 export function DetailsPanel({
   project,
   id,
-  graphScope,
   note,
   className,
   onClose,
 }: {
   project: string;
   id: string;
-  graphScope?: string | null;
   note?: string;
   className?: string;
   onClose: () => void;
@@ -29,7 +27,7 @@ export function DetailsPanel({
           </Button>
         </div>
         {note !== undefined && <p className="text-sm text-muted-foreground">{note}</p>}
-        <BeadDetailPage key={`${project}/${id}`} project={project} id={id} embedded graphScope={graphScope} />
+        <BeadDetailPage key={`${project}/${id}`} project={project} id={id} embedded />
       </div>
     </aside>
   );

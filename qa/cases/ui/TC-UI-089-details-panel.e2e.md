@@ -1,6 +1,6 @@
 # TC-UI-089: Details panel
 
-- **REQ:** REQ-UI-072@950311bf
+- **REQ:** REQ-UI-072@1fc49d22
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57

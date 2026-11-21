@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { BeadFilterBar } from "./BeadFilterBar";
@@ -8,6 +8,7 @@ import { FocusView } from "./FocusView";
 import { GraphView } from "./GraphView";
 import { LanesView } from "./LanesView";
 import { ListView } from "./ListView";
+import { hasChildren } from "./graph";
 import { hasLanes } from "./lanes";
 import { scopeOf } from "./scope";
 import { withoutMergeGates } from "./mergeGates";
@@ -19,16 +20,25 @@ import { ViewTabs } from "./ViewTabs";
 
 export function BeadsView({
   project,
-  filters,
+  filters: asked,
   fixedMilestone,
+  fixed,
   onChange,
 }: {
   project: string;
   filters: BeadFilters;
   /** A milestone page: this milestone is in effect and cannot be changed here. */
   fixedMilestone?: string;
+  /** An epic page's Graph or Lanes tab: the view and its scope are fixed, so there are no view tabs, milestone filter or scope trail (REQ-UI-119). */
+  fixed?: { view: "graph" | "lanes"; scope: string };
   onChange: (next: BeadFilters) => void;
 }) {
+  const fixedView = fixed?.view;
+  const fixedScope = fixed?.scope;
+  const filters = useMemo(
+    () => (fixedView === undefined || fixedScope === undefined ? asked : { ...asked, view: fixedView, scope: fixedScope, milestone: "all" }),
+    [asked, fixedView, fixedScope],
+  );
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
   useCardKeys(true, clearSearch, filters.view !== "list");
 
@@ -37,7 +47,7 @@ export function BeadsView({
   const closedMilestone = isClosedMilestone(milestone, milestones);
   const { state, retry } = useBeads(
     project,
-    filters.closed || filters.view === "lanes" || (filters.sprint !== "" && filters.sprint !== "none") || closedMilestone,
+    filters.closed || fixed !== undefined || filters.view === "lanes" || (filters.sprint !== "" && filters.sprint !== "none") || closedMilestone,
     true,
   );
 
@@ -69,18 +79,21 @@ export function BeadsView({
           </AlertDescription>
         </Alert>
       )}
-      {state.status === "ok" && (
+      {state.status === "ok" && fixed !== undefined && !hasChildren(loaded, fixed.scope) && <p className="text-muted-foreground">No tracks</p>}
+      {state.status === "ok" && (fixed === undefined || hasChildren(loaded, fixed.scope)) && (
         <>
-          <ViewTabs filters={filters} lanes={hasLanes(loaded, scopeOf(loaded, filters, milestone))} onChange={onChange} />
+          {fixed === undefined && (
+            <ViewTabs filters={filters} lanes={hasLanes(loaded, scopeOf(loaded, filters, milestone))} onChange={onChange} />
+          )}
           <BeadFilterBar
             filters={filters}
             options={optionsOf(beads)}
             milestones={milestones}
             milestone={milestone}
-            hideMilestone={fixedMilestone !== undefined}
+            hideMilestone={fixedMilestone !== undefined || fixed !== undefined}
             onChange={onChange}
           />
-          <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>
+          {fixed === undefined && <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>}
           {filters.view === "graph" && (
             <GraphView
               project={project}
@@ -88,6 +101,7 @@ export function BeadsView({
               matched={matched}
               milestone={milestone}
               filters={filters}
+              trail={fixed === undefined}
               onChange={onChange}
             />
           )}
@@ -98,6 +112,7 @@ export function BeadsView({
               matched={lanesMatched}
               milestone={milestone}
               filters={filters}
+              trail={fixed === undefined}
               onChange={onChange}
             />
           )}

@@ -1,6 +1,6 @@
 # TC-UI-194: Sideways scroll of the canvas
 
-- **REQ:** REQ-UI-122@86de2845
+- **REQ:** REQ-UI-122@b50bc21c
 - **Priority:** low
 
 **Preconditions:**

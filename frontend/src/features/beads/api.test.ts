@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BeadNotFoundError, fetchBead, fetchBeads, fetchComments, fetchMilestones } from "./api";
+import { BeadNotFoundError, fetchBead, fetchEpicWorkflow, fetchBeads, fetchComments, fetchMilestones } from "./api";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -438,5 +438,29 @@ describe("api lane fields", () => {
     const bad = { ...sampleDetail, dependencies: [{ id: "g", title: "t", status: "open", type: "blocks", waits_for: { plan: 1 } }] };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(bad))));
     await expect(fetchBead("p", "a-1")).rejects.toThrow(/unexpected response/);
+  });
+});
+
+describe("fetchEpicWorkflow", () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const good = { stage: "execute", gates: { a: "satisfied" }, warnings: [], review_waivers: [] };
+
+  it("REQ-BEADS-020 parses the stage, gates, warnings and waivers", async () => {
+    const fetchMock = vi.fn(() => Promise.resolve(json(good)));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await fetchEpicWorkflow("p", "a/b")).toEqual(good);
+    expect(fetchMock).toHaveBeenCalledWith("/api/beads/p/a%2Fb/workflow");
+  });
+
+  it("REQ-BEADS-020 rejects a body without gates or with a waiver without reason", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ stage: "execute", warnings: [], review_waivers: [] }))));
+    await expect(fetchEpicWorkflow("p", "e")).rejects.toThrow("unexpected response");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ ...good, review_waivers: [{ task_id: "t", actor: "ann" }] }))));
+    await expect(fetchEpicWorkflow("p", "e")).rejects.toThrow("unexpected response");
+  });
+
+  it("REQ-BEADS-020 throws the server's error on 502", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ error: "gin state failed" }, 502))));
+    await expect(fetchEpicWorkflow("p", "e")).rejects.toThrow("gin state failed");
   });
 });

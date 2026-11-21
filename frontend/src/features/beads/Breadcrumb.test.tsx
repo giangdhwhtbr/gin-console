@@ -105,8 +105,10 @@ describe("Breadcrumb", () => {
     expect(items[2]).toHaveClass("hidden", "sm:flex");
   });
 
-  it("REQ-UI-072 the project Dependencies page ends with Dependencies", () => {
-    render(<Breadcrumb project="a" id="" parent={null} graph={[]} />);
-    expect(crumb().getByText("Dependencies")).toHaveAttribute("aria-current", "page");
+  it("REQ-UI-072 no Dependencies crumb: the trail is Beads, the parent, the bead", () => {
+    render(<Breadcrumb project="a" id="a-2" parent="a-1" />);
+    expect(crumb().queryByText("Dependencies")).toBeNull();
+    expect(crumb().getAllByRole("listitem").map((li) => li.textContent?.replace("›", "").trim())).toEqual(["Beads", "a-1", "a-2"]);
+    expect(crumb().getByRole("link", { name: "a-1" })).toHaveAttribute("href", "/beads/a/a-1");
   });
 });

@@ -1,8 +1,9 @@
-// TC: TC-UI-108@5d5ae9e4
+// TC: TC-UI-108@546db7f2
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
+import { settled } from '../support/lanes';
 
-test('TC-UI-108: Chain', async ({ page, ev }) => {
+test('TC-UI-108: Chain (REQ-UI-048)', async ({ page, ev }) => {
   // Precondition: Epic e-1 in project alpha has tasks a, b, c, where b is blocked by a and c by b.
   const task = (id: string, blockedBy: string[] = []) =>
     bead(id, { parent: 'e-1', blocked_by: blockedBy, blocked: blockedBy.length > 0 });
@@ -17,8 +18,10 @@ test('TC-UI-108: Chain', async ({ page, ev }) => {
     return b;
   };
 
-  await ev.step('1. Open /beads/alpha/e-1/graph', async () => {
-    await page.goto('/beads/alpha/e-1/graph');
+  await ev.step('1. Open /beads?project=alpha&milestone=all&view=graph&scope=e-1', async () => {
+    await page.goto('/beads?project=alpha&milestone=all&view=graph&scope=e-1');
+    await expect(page.getByTestId('graph-canvas')).toBeVisible();
+    await settled(page);
     await expect(node('a')).toBeVisible();
     await expect(node('c')).toBeVisible();
     const [a, b, c] = [await box('a'), await box('b'), await box('c')];

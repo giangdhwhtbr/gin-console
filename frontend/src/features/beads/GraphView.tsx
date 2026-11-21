@@ -23,6 +23,8 @@ type Props = {
   matched: readonly BeadSummary[];
   milestone: MilestoneInEffect;
   filters: BeadFilters;
+  /** Show the trail of containers above the view; an epic page's tab hides it (REQ-UI-119). */
+  trail?: boolean;
   onChange: (next: BeadFilters) => void;
 };
 
@@ -33,13 +35,13 @@ export function GraphView(props: Props) {
   return <GraphBody key={scopeId ?? ""} {...props} scopeId={scopeId} />;
 }
 
-function GraphBody({ project, beads, matched, milestone, filters, onChange, scopeId }: Props & { scopeId: string | null }) {
+function GraphBody({ project, beads, matched, milestone, filters, trail = true, onChange, scopeId }: Props & { scopeId: string | null }) {
   const [onlyLinked, setOnlyLinked] = useState(scopeId === null);
   const graphBeads = scopeId === milestone ? beads : beads.filter((b) => b.issue_type !== "milestone");
   const keep = useMemo(() => keepWithAncestors(beads, matched), [beads, matched]);
   // REQ-UI-117: a scope with lanes draws a box per lane instead of the layers
   const lanes = useMemo(() => (scopeId !== null && hasLanes(beads, scopeId) ? laneGraph(beads, scopeId, keep, new Date()) : null), [beads, scopeId, keep]);
-  const graph = lanes === null ? scopeGraph(graphBeads, scopeId, { hideDone: false, onlyLinked, keep }) : null;
+  const graph = lanes === null ? scopeGraph(graphBeads, scopeId, { onlyLinked, keep }) : null;
   const ids = graph !== null ? graph.nodes.map((n) => n.bead.id) : (lanes?.cards.map((c) => c.bead.id) ?? []);
   const known = new Set(ids);
   const asked = filters.select;
@@ -74,7 +76,7 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
   return (
     <div className={cn("grid gap-4", selected !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
       <div className="flex min-w-0 flex-col gap-3">
-        <ScopeTrail label="Graph scope" top={top} rest={rest} onScope={to} />
+        {trail && <ScopeTrail label="Graph scope" top={top} rest={rest} onScope={to} />}
         <div className="flex flex-wrap items-center gap-4 text-sm">
           {lanes === null && (
             <label className="flex items-center gap-2">
@@ -94,7 +96,7 @@ function GraphBody({ project, beads, matched, milestone, filters, onChange, scop
           <GraphCanvas graph={graph} selected={selected} tabStop={tabStop} {...handlers} />
         ) : null}
       </div>
-      {selected !== "" && <DetailsPanel project={project} id={selected} graphScope={scopeId} onClose={close} />}
+      {selected !== "" && <DetailsPanel project={project} id={selected} onClose={close} />}
     </div>
   );
 }

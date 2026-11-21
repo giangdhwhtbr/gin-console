@@ -829,55 +829,55 @@ The List view SHALL expose the hierarchy with `role="tree"` and each row with `r
 - THEN the row is selected
 
 ### REQ-UI-048: Dependency layers
-The Dependencies page SHALL place each node one layer below its furthest blocker, so that nodes without blockers are in the first layer at the top, SHALL order the nodes of a layer by the average position of their blockers in the layers above to limit crossing arrows, SHALL draw an arrow from each blocker down to the node it blocks, and SHALL place the nodes without any arrow apart, below the layers, in rows of at most 3 nodes under the heading "n without dependencies".
+The Graph view (REQ-UI-106, which also serves the Graph tab of an epic page, REQ-UI-119) SHALL place each node one layer below its furthest blocker, so that nodes without blockers are in the first layer at the top, SHALL order the nodes of a layer by the average position of their blockers in the layers above to limit crossing arrows, SHALL draw an arrow from each blocker down to the node it blocks, and SHALL place the nodes without any arrow apart, below the layers, in rows of at most 3 nodes under the heading "n without dependencies".
 
 #### Scenario: Chain
 - GIVEN tasks `a`, `b`, `c` where `b` is blocked by `a` and `c` by `b`
-- WHEN the epic is drawn
+- WHEN the Graph view of the epic is drawn
 - THEN `a`, `b`, `c` are in layers 0, 1, 2 from the top, with arrows `a`→`b` and `b`→`c`
 
 #### Scenario: Diamond
 - GIVEN `d` blocked by `b` and `c`, both blocked by `a`
-- WHEN the epic is drawn
+- WHEN the Graph view of the epic is drawn
 - THEN `a` is in layer 0, `b` and `c` in layer 1 and `d` in layer 2
 
 #### Scenario: Order inside a layer
 - GIVEN `a` and `b` in layer 0, `x` blocked by `b` and `y` blocked by `a`, and `a` placed before `b`
-- WHEN the epic is drawn
+- WHEN the Graph view of the epic is drawn
 - THEN `y` is placed before `x` in layer 1, so that the arrows do not cross
 
 #### Scenario: No relations
-- GIVEN an epic with 7 tasks that block none of each other
-- WHEN the epic is drawn
-- THEN the 7 nodes are placed in rows of 3, 3 and 1 under "7 without dependencies", and the note "No blocking relations between these tasks" is shown
+- GIVEN an epic with 7 tasks that block none of each other, and "Only linked" off
+- WHEN the Graph view of the epic is drawn
+- THEN the 7 nodes are placed in rows of 3, 3 and 1 under "7 without dependencies"
 
 #### Scenario: Linked and unlinked
-- GIVEN `b` blocked by `a`, and `c`, `d`, `e`, `f` without blockers that block nothing
-- WHEN the epic is drawn
+- GIVEN `b` blocked by `a`, and `c`, `d`, `e`, `f` without blockers that block nothing, and "Only linked" off
+- WHEN the Graph view of the epic is drawn
 - THEN `a` and `b` are in layers 0 and 1, and `c`, `d`, `e` then `f` are placed below them in rows of 3 under "4 without dependencies"
 
 ### REQ-UI-049: Node content
-The Dependencies page SHALL show on each node the content of a card: the bead id in the monospace face shortened as REQ-UI-107 describes and `P<n>` on the first line, its title on one line with the full title as `title`, and its state as REQ-UI-064 describes on one line, the state label cut short before "n of m done" is, with the 4px left edge in the colour of the state, and on a node with children an icon that says it can be opened, with "n of m done" over its tracks (REQ-BEADS-002) when it has a track. The node of a prep task SHALL show a "Prep" chip.
+The Graph view (REQ-UI-106) SHALL show on each node the content of a card: the bead id in the monospace face shortened as REQ-UI-107 describes and `P<n>` on the first line, its title on one line with the full title as `title`, and its state as REQ-UI-064 describes on one line, the state label cut short before "n of m done" is, with the 4px left edge in the colour of the state, and on a node with children an icon that says it can be opened, with "n of m done" over its tracks (REQ-BEADS-002) when it has a track. The node of a prep task SHALL show a "Prep" chip.
 
 #### Scenario: Node with children
-- GIVEN epic `e-1` without a parent with 3 tasks, 1 of them closed
-- WHEN the project page is shown
+- GIVEN epic `e-1` without a parent with 3 tasks, 1 of them closed, and "Show closed" on
+- WHEN the Graph view of the project is shown
 - THEN the node `e-1` reads "1 of 3 done" with the open icon
 
 #### Scenario: State label
 - GIVEN a ready task and a blocked task
-- WHEN the epic is drawn
+- WHEN the Graph view of the epic is drawn
 - THEN the first node reads "Ready" with its icon and the second "Blocked" with its icon
 
 #### Scenario: Closed bead
-- GIVEN a closed task
-- WHEN the epic is drawn
-- THEN it is drawn as "Done", whatever "Show closed" says on the Beads page
+- GIVEN a closed task and "Show closed" on
+- WHEN the Graph view of the epic is drawn
+- THEN it is drawn as "Done"
 
 #### Scenario: Node with a prep task
-- GIVEN epic `e-1` without a parent with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`
-- WHEN the project page is shown, and then the page of `e-1`
-- THEN the node `e-1` reads "1 of 2 done" with the open icon, and on the page of `e-1` the node `p-1` shows a "Prep" chip while `t-1` and `t-2` do not
+- GIVEN epic `e-1` without a parent with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`, and "Show closed" on
+- WHEN the Graph view of the project is shown, and then the Graph view with the scope `e-1`
+- THEN the node `e-1` reads "1 of 2 done" with the open icon, and with the scope `e-1` the node `p-1` shows a "Prep" chip while `t-1` and `t-2` do not
 
 #### Scenario: Long state line
 - GIVEN an in-progress epic with 2 of 5 tracks done and a title of 80 characters
@@ -885,40 +885,40 @@ The Dependencies page SHALL show on each node the content of a card: the bead id
 - THEN its id, title and state each take one line inside the node, and "2 of 5 done" is shown in full
 
 ### REQ-UI-050: Outside beads and cycles
-WHERE a drawn node, or a bead under it, has a `blocked_by` relation with a bead outside the scope, the Dependencies page SHALL draw that outside bead as a dimmed node with a dashed border, above with an arrow to the node when it blocks, and below with an arrow from the node when it is blocked, and IF the arrows form a cycle, THEN the page SHALL still draw every node, SHALL put the nodes of the cycle in layers without looping forever, and SHALL show the warning "Dependency cycle between …" naming the beads.
+WHERE a drawn node, or a bead under it, has a `blocked_by` relation with a bead outside the scope, the Graph view (REQ-UI-106) SHALL draw that outside bead as a dimmed node with a dashed border, above with an arrow to the node when it blocks, and below with an arrow from the node when it is blocked, and IF the arrows form a cycle, THEN the view SHALL still draw every node, SHALL put the nodes of the cycle in layers without looping forever, and SHALL show the warning "Dependency cycle between …" naming the beads.
 
 #### Scenario: Outside blocker
 - GIVEN task `t-1` of `e-1` blocked by `x-9`, a task of another epic
-- WHEN `e-1` is drawn
+- WHEN the Graph view with the scope `e-1` is drawn
 - THEN `x-9` is drawn dimmed with a dashed border above, with an arrow to `t-1`
 
 #### Scenario: Outside blocked bead
 - GIVEN task `t-1` of `e-1` blocking `x-9`, a task of another epic
-- WHEN `e-1` is drawn
+- WHEN the Graph view with the scope `e-1` is drawn
 - THEN `x-9` is drawn dimmed with a dashed border below, with an arrow from `t-1`
 
 #### Scenario: Cycle
 - GIVEN `a` blocked by `b` and `b` blocked by `a`
-- WHEN the epic is drawn
+- WHEN the Graph view of the epic is drawn
 - THEN both nodes are drawn, the page responds, and the warning names `a` and `b`
 
 ### REQ-UI-051: Selection and path
-WHEN the Dependencies page of a bead opens, it SHALL select the bead being viewed (for a bead with children, through its heading bar), WHEN the project page opens, it SHALL select nothing, SHALL show the panel only while a bead is selected, the graph then taking the full width, SHALL offer in the panel a button "Close details" that selects nothing, kept in the URL as `select=none` so that a reload keeps the panel closed, and after closing SHALL move focus to the node that was selected, and WHEN the user clicks a node or presses Enter on it, it SHALL select that bead, keep its id in the URL as `select` without adding a history entry, highlight the node, all its direct and indirect blockers, all beads it blocks directly or indirectly and the arrows between them, dim every other node and arrow, and show the bead in a panel beside the graph (below it under 1024px) with the content of the bead page and an "Open page" link as REQ-UI-045 describes.
+WHEN the Graph view (REQ-UI-106) opens with no `select` in the URL, it SHALL select nothing, whatever its scope, SHALL show the panel only while a bead is selected, the graph then taking the full width, SHALL offer in the panel a button "Close details" that selects nothing, kept in the URL as `select=none` so that a reload keeps the panel closed, and after closing SHALL move focus to the node that was selected, and WHEN the user clicks a node or presses Enter on it, it SHALL select that bead, keep its id in the URL as `select` without adding a history entry, highlight the node, all its direct and indirect blockers, all beads it blocks directly or indirectly and the arrows between them, dim every other node and arrow, and show the bead in a panel beside the graph (below it under 1024px) with the content of the bead page and an "Open page" link as REQ-UI-045 describes.
 
-#### Scenario: Project page
-- GIVEN the project page in a window 1280px wide
+#### Scenario: Project scope
+- GIVEN the Graph view of the project in a window 1280px wide
 - WHEN it is shown
 - THEN no node is selected, there is no details panel and the graph takes the full width
 
 #### Scenario: Selected at first
-- GIVEN the page of task `b`
+- GIVEN the Graph view with the scope `e-1` and `b` a child of `e-1`, and the URL has `select=b`
 - WHEN it is shown
 - THEN `b` is selected, its chain is highlighted and the panel shows `b`
 
 #### Scenario: Epic
-- GIVEN the page of epic `e-1`
+- GIVEN the Graph view with the scope `e-1` and no `select`
 - WHEN it is shown
-- THEN the heading bar is selected and the panel shows `e-1`
+- THEN no node is selected, there is no details panel and the graph takes the full width
 
 #### Scenario: Highlight chain
 - GIVEN `a`→`b`→`c` and an unrelated `z`
@@ -936,12 +936,12 @@ WHEN the Dependencies page of a bead opens, it SHALL select the bead being viewe
 - THEN `b` is selected and its chain is highlighted
 
 #### Scenario: Close the panel
-- GIVEN the page of epic `e-1` with `e-1` selected
+- GIVEN the Graph view with the scope `e-1` and its child `b` selected
 - WHEN the user chooses "Close details"
 - THEN the URL has `select=none`, the panel is gone, the graph takes the full width, and a reload keeps it so
 
 ### REQ-UI-052: Graph keyboard
-WHILE a node has focus, the Dependencies page SHALL move focus along the arrows with ArrowDown to a blocked bead and ArrowUp to a blocker, and to the previous or next node of the same layer with ArrowLeft and ArrowRight, SHALL select the bead being viewed again on Escape, and select nothing (closing the panel as REQ-UI-051 describes) on Escape while the bead being viewed or, on the project page, any bead is selected, and SHALL keep a single node in the tab order; and under 1024px it SHALL offer the buttons "n blockers" and "n blocked" for the selected bead that move the selection along the arrows.
+WHILE a node has focus, the Graph view (REQ-UI-106) SHALL move focus along the arrows with ArrowDown to a blocked bead and ArrowUp to a blocker, and to the previous or next node of the same layer with ArrowLeft and ArrowRight, SHALL select nothing (closing the panel as REQ-UI-051 describes) on Escape while a node is selected, and SHALL keep a single node in the tab order.
 
 #### Scenario: Follow an arrow
 - GIVEN `a`→`b` and focus on `a`
@@ -949,54 +949,54 @@ WHILE a node has focus, the Dependencies page SHALL move focus along the arrows 
 - THEN focus moves to `b`
 
 #### Scenario: Escape
-- GIVEN a node other than the bead being viewed is selected
-- WHEN the user presses Escape
-- THEN the bead being viewed is selected again
-
-#### Scenario: Jump buttons
-- GIVEN a window 390px wide and a selected bead with 2 blockers and 1 blocked bead
-- WHEN the page is shown
-- THEN the buttons "2 blockers" and "1 blocked" are shown and each selects a bead of its side
-
-#### Scenario: Second Escape
-- GIVEN the page of epic `e-1` with `e-1` selected
+- GIVEN the Graph view with the scope `e-1` and its child `b` selected
 - WHEN the user presses Escape
 - THEN nothing is selected, the URL has `select=none` and the panel is gone
 
-### REQ-UI-053: Dependencies button
-WHEN a bead page or a details panel shows a bead with at least one child, or a bead that has a blocker or blocks another bead, it SHALL offer the primary button "View dependencies" that goes to `/beads/<project>/<id>/graph` inside the console, and SHALL not offer it otherwise.
+### REQ-UI-053: View in graph button
+WHEN a bead page or a details panel shows a bead that is not an epic and has at least one child, a blocker, or a bead it blocks, it SHALL offer the primary button "View in graph" that goes, inside the console, to the Graph view of the Beads page at `/beads?project=<project>&view=graph&scope=<id>` when the bead has children, else at `/beads?project=<project>&view=graph&scope=<parent>&select=<id>` (without `scope` when the bead has no parent), and SHALL not offer it otherwise; the page of an epic SHALL offer its Graph tab (REQ-UI-119) instead of the button.
 
-#### Scenario: Epic with tasks
-- GIVEN the bead page of epic `e-1` with children in project `p`
+#### Scenario: Task with children
+- GIVEN the bead page of task `t-1`, not an epic, with a child, in project `p`
 - WHEN the page loads
-- THEN "View dependencies" links to `/beads/p/e-1/graph`
+- THEN "View in graph" links to `/beads?project=p&view=graph&scope=t-1`
 
 #### Scenario: Task with a blocker
-- GIVEN a task with one blocker
+- GIVEN task `t-2` of epic `e-1` with one blocker, in project `p`
 - WHEN its page loads
-- THEN "View dependencies" is offered
+- THEN "View in graph" links to `/beads?project=p&view=graph&scope=e-1&select=t-2`
+
+#### Scenario: Task with a blocker and no parent
+- GIVEN task `t-3` without a parent and with one blocker, in project `p`
+- WHEN its page loads
+- THEN "View in graph" links to `/beads?project=p&view=graph&select=t-3`
+
+#### Scenario: Epic
+- GIVEN the bead page of epic `e-1` with children
+- WHEN the page loads
+- THEN there is no "View in graph" and the Graph tab is offered
 
 #### Scenario: Nothing to draw
-- GIVEN a task without blockers that blocks nothing, and an epic without children
-- WHEN their pages load
-- THEN there is no "View dependencies"
+- GIVEN a task without blockers that blocks nothing and has no child
+- WHEN its page loads
+- THEN there is no "View in graph"
 
 #### Scenario: Details panel
-- GIVEN an epic with children shown in the details panel of the List view
+- GIVEN a task with a blocker shown in the details panel of the List view
 - WHEN the panel is shown
-- THEN it offers "View dependencies"
+- THEN it offers "View in graph"
 
 ### REQ-UI-054: Graph accessibility
-The Dependencies page SHALL expose the graph to assistive technology with a visually hidden list stating, for every arrow, "<blocked id> is blocked by <blocker id>", followed for an arrow made of relations under the nodes by those relations in the same form, SHALL never convey a state by colour alone, SHALL give every colour a contrast of at least 4.5:1 against the node background in light and dark themes, and SHALL not animate when the user prefers reduced motion.
+The Graph view (REQ-UI-106) SHALL expose the graph to assistive technology with a visually hidden list stating, for every arrow, "<blocked id> is blocked by <blocker id>", followed for an arrow made of relations under the nodes by those relations in the same form, SHALL never convey a state by colour alone, SHALL give every colour a contrast of at least 4.5:1 against the node background in light and dark themes, and SHALL not animate when the user prefers reduced motion.
 
 #### Scenario: Text alternative
 - GIVEN `b` blocked by `a`
-- WHEN the epic is drawn
+- WHEN the Graph view of the epic is drawn
 - THEN the hidden list contains "b is blocked by a"
 
 #### Scenario: Arrow made of relations
 - GIVEN task `y` of `e-2` blocked by task `x` of `e-1`
-- WHEN the project page is drawn
+- WHEN the Graph view of the project is drawn
 - THEN the hidden list contains "e-2 is blocked by e-1" followed by "y is blocked by x"
 
 #### Scenario: Reduced motion
@@ -1276,7 +1276,7 @@ The discussion SHALL show each comment as a block of its own with a border, with
 - THEN the text wraps inside its block and the page does not scroll sideways
 
 ### REQ-UI-072: Breadcrumb
-WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of the link "Beads", or the milestone id when the remembered place is the Beads tab of a milestone page, followed by the name of the view of the remembered place (REQ-UI-073) and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, "· N filters" where N counts them, all as one link to the remembered place, then the parent of the bead as a link to its page when it has one, then the id of the bead marked `aria-current="page"`, or, on a Dependencies page, after the link to the remembered place, "Dependencies" as a link to the project page, then every ancestor of the scope bead from the top as a link to its Dependencies page, then the id of the scope bead, with the last item marked `aria-current="page"`, and under 640px SHALL show only the first link.
+WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of the link "Beads", or the milestone id when the remembered place is the Beads tab of a milestone page, followed by the name of the view of the remembered place (REQ-UI-073) and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, "· N filters" where N counts them, all as one link to the remembered place, then the parent of the bead as a link to its page when it has one, then the id of the bead marked `aria-current="page"`, and under 640px SHALL show only the first link.
 
 #### Scenario: Place and filters
 - GIVEN the Beads page was last at `?project=a&view=board&status=open&q=fix`
@@ -1354,84 +1354,51 @@ The List view SHALL remember for the current browser tab which branches of each 
 - WHEN the List of project `b` is shown
 - THEN only the root level of `b` is open
 
-### REQ-UI-075: Dependencies page
-The frontend SHALL show the Dependencies page of a scope, the project at `/beads/<project>/graph` or a bead at `/beads/<project>/<id>/graph`; WHERE the scope is the project or a bead with at least one child (found through `parent`), the page SHALL draw as nodes the beads of the project without a parent, or the direct children of the bead, with the arrows REQ-UI-079 describes, and a heading bar with the project's name or the bead's id as a link to its bead page and its title, "n of m done" over the nodes that are not prep tasks (REQ-BEADS-002), and for a bead the beads that block it and the beads it blocks as links to their Dependencies pages; WHERE the scope is a bead without children, the page SHALL draw the bead itself, every bead that blocks it directly or not above it and every bead it blocks directly or not below it; and the page SHALL draw beads outside the scope as REQ-UI-050 describes, SHALL say "No dependencies" with a link to the bead when there is nothing to draw, "No beads in this project" for an empty project, "Bead not found" when the bead does not exist, and the error with a Retry button when the beads cannot be loaded, and SHALL refresh as REQ-UI-027 does.
-
-#### Scenario: Epic
-- GIVEN epic `e-1` with tasks `a` and `b`, `b` blocked by `a`
-- WHEN `/beads/p/e-1/graph` is shown
-- THEN the heading bar names `e-1` and "0 of 2 done", `a` and `b` are nodes and an arrow goes from `a` to `b`
+### REQ-UI-075: Old Dependencies links
+WHEN the frontend opens an old Dependencies link, it SHALL replace it in the browser history, without adding an entry, and show: for `/beads/<project>/graph`, `/beads?project=<project>&view=graph`; for `/beads/<project>/<id>/graph` where the bead is an epic, the page of the epic with `tab=graph` (REQ-UI-119); where the bead is not an epic and has at least one child, `/beads?project=<project>&view=graph&scope=<id>`; and where the bead has no child, the Graph view (REQ-UI-106) of its parent, or of the project when it has none, with `select=<id>`; and it SHALL keep a `select` of the old URL; IF the bead is not among the project's beads, THEN it SHALL show "Bead not found" with a link to the Beads page.
 
 #### Scenario: Project
-- GIVEN epics `r-1` and `r-2` without a parent, `r-2` blocked by `r-1`, and tasks under each
-- WHEN `/beads/p/graph` is shown
-- THEN `r-1` and `r-2` are the nodes, their tasks are not, and an arrow goes from `r-1` to `r-2`
+- GIVEN the old link `/beads/p/graph`
+- WHEN it is opened
+- THEN `/beads?project=p&view=graph` is shown
 
-#### Scenario: Nested epics
-- GIVEN epic `r` with the child epics `e-1` and `e-2`, each with tasks
-- WHEN the page of `r` is shown
-- THEN `e-1` and `e-2` are the nodes and their tasks are not
+#### Scenario: Epic
+- GIVEN epic `e-1` in project `p` and the old link `/beads/p/e-1/graph`
+- WHEN it is opened
+- THEN the page of `e-1` is shown with `tab=graph`
 
-#### Scenario: Heading relations
-- GIVEN epic `e-2` blocked by epic `e-1`
-- WHEN the page of `e-2` is shown
-- THEN the heading bar shows `e-1` as a blocker linking to `/beads/p/e-1/graph`
+#### Scenario: Bead with children
+- GIVEN task `t-1`, not an epic, with a child, and the old link `/beads/p/t-1/graph`
+- WHEN it is opened
+- THEN `/beads?project=p&view=graph&scope=t-1` is shown
 
-#### Scenario: Task
-- GIVEN `a`→`b`→`c`, an unrelated `z`, and the page of `b`
-- WHEN it is shown
-- THEN `a`, `b` and `c` are drawn, `a` above `b` above `c`, and `z` is not
+#### Scenario: Bead without children
+- GIVEN task `b` of epic `e-1`, without children, and the old link `/beads/p/b/graph`
+- WHEN it is opened
+- THEN `/beads?project=p&view=graph&scope=e-1&select=b` is shown
 
-#### Scenario: Indirect
-- GIVEN `a`→`b`→`c`→`d` and the page of `c`
-- WHEN it is shown
-- THEN `a` and `b` are drawn above `c` and `d` below it
+#### Scenario: Bead without children or parent
+- GIVEN task `z` without a parent and without children, and the old link `/beads/p/z/graph`
+- WHEN it is opened
+- THEN `/beads?project=p&view=graph&select=z` is shown
 
-#### Scenario: Nothing to draw
-- GIVEN a task without blockers and blocking nothing
-- WHEN its Dependencies page is shown
-- THEN it says "No dependencies" and links to the bead
+#### Scenario: Selection kept
+- GIVEN the old link `/beads/p/e-1/graph?select=b`
+- WHEN it is opened
+- THEN the page of `e-1` is shown with `tab=graph` and `select=b`
 
-#### Scenario: Empty project
-- GIVEN a project without beads
-- WHEN `/beads/p/graph` is shown
-- THEN it says "No beads in this project"
+#### Scenario: Unknown bead
+- GIVEN no bead `nope` in project `p` and the old link `/beads/p/nope/graph`
+- WHEN it is opened
+- THEN "Bead not found" is shown with a link to the Beads page
 
-#### Scenario: Not found
-- GIVEN a bead id that does not exist
-- WHEN its Dependencies page is shown
-- THEN it says "Bead not found"
-
-#### Scenario: Load error
-- GIVEN the request for the beads fails
-- WHEN the page is shown
-- THEN the error and a Retry button are shown, and the last graph stays when a later refresh fails
-
-#### Scenario: Prep task in the scope
-- GIVEN epic `e-1` with tasks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`
-- WHEN `/beads/p/e-1/graph` is shown
-- THEN `t-1`, `t-2` and `p-1` are nodes and the heading bar reads "1 of 2 done"
-
-### REQ-UI-076: Closed beads and Hide done
-The Dependencies page SHALL draw closed beads whatever "Show closed" of the Beads page says, SHALL offer a switch "Hide done", off at first, that leaves out the closed beads and the arrows to them, and SHALL drop a lifted arrow between two open nodes when the underlying relation has a closed end.
-
-#### Scenario: Closed epic
-- GIVEN a closed epic whose tasks are all closed and "Show closed" off on the Beads page
-- WHEN its Dependencies page is shown
-- THEN all its tasks are drawn as Done
-
-#### Scenario: Hide done
-- GIVEN an epic with a closed task `a` and an open task `b` blocked by `a`
-- WHEN the user turns on "Hide done"
-- THEN `a` and the arrow from it are not drawn, and `b` is
-
-#### Scenario: Lifted arrow with closed end
-- GIVEN open epics `e-1` and `e-2`, where task `b` under `e-2` is blocked by closed task `a` under `e-1`
-- WHEN the user turns on "Hide done"
-- THEN `e-1` and `e-2` are drawn, but the lifted arrow between them is not drawn
+#### Scenario: No extra history entry
+- GIVEN the user came from the page `/beads/p/e-1` and opened the old link `/beads/p/graph`
+- WHEN the user presses the browser's back button
+- THEN `/beads/p/e-1` is shown, not the old link
 
 ### REQ-UI-077: Zoom
-The Dependencies page SHALL offer the buttons "Zoom in" and "Zoom out" that change the scale by 10% between 40% and 200%, the button "Fit to view" that scales the graph to the width of the canvas without going above 100%, and the current scale as a percentage, SHALL start fitted, SHALL zoom with the wheel while `Ctrl` or `⌘` is held, SHALL let the user pan sideways with the scroll bar of the canvas and the usual sideways gestures and up and down by scrolling the page (REQ-UI-122), and SHALL not remember the scale.
+The Graph view (REQ-UI-106) SHALL offer the buttons "Zoom in" and "Zoom out" that change the scale by 10% between 40% and 200%, the button "Fit to view" that scales the graph to the width of the canvas without going above 100%, and the current scale as a percentage, SHALL start fitted, SHALL zoom with the wheel while `Ctrl` or `⌘` is held, SHALL let the user pan sideways with the scroll bar of the canvas and the usual sideways gestures and up and down by scrolling the page (REQ-UI-122), and SHALL not remember the scale.
 
 #### Scenario: Buttons
 - GIVEN the graph at 100%
@@ -1445,7 +1412,7 @@ The Dependencies page SHALL offer the buttons "Zoom in" and "Zoom out" that chan
 
 #### Scenario: Fit
 - GIVEN a graph wider than the canvas
-- WHEN the page opens or the user presses "Fit to view"
+- WHEN the Graph view opens or the user presses "Fit to view"
 - THEN the whole width of the graph is visible and the percentage is below 100%
 
 #### Scenario: Fit a tall graph
@@ -1459,7 +1426,7 @@ The Dependencies page SHALL offer the buttons "Zoom in" and "Zoom out" that chan
 - THEN the scale changes, and without `Ctrl` the page scrolls as usual
 
 ### REQ-UI-078: Side panels scroll on their own
-WHILE the window is 1024px wide or more, the details panel of the List view, the details panel of the Dependencies page and the discussion column of a bead page SHALL stay in view while the page scrolls, SHALL be no taller than the window less 3rem, SHALL scroll inside themselves when their content is taller, SHALL not pass the scroll on to the page when they reach their end, and SHALL be reachable with the keyboard with a name that says what they hold.
+WHILE the window is 1024px wide or more, the details panel of the List view, the details panel of the Graph view and the discussion column of a bead page SHALL stay in view while the page scrolls, SHALL be no taller than the window less 3rem, SHALL scroll inside themselves when their content is taller, SHALL not pass the scroll on to the page when they reach their end, and SHALL be reachable with the keyboard with a name that says what they hold.
 
 #### Scenario: Long bead in a panel
 - GIVEN a bead whose content is taller than the window shown in the List view's panel
@@ -1477,67 +1444,49 @@ WHILE the window is 1024px wide or more, the details panel of the List view, the
 - THEN the panel can take focus and the arrow keys scroll it
 
 ### REQ-UI-079: Arrows between nodes with children
-WHERE the scope of the Dependencies page has children, for every `blocked_by` relation between two beads that lie under the scope (each one a node or a descendant of a node at any depth), the page SHALL draw an arrow from the node that holds the blocker to the node that holds the blocked bead, SHALL draw no arrow when both lie under the same node, SHALL draw a single arrow for a pair of nodes with the label "n links" when n relations above one make it, and SHALL leave out a relation that has the scope bead itself as one end, which the heading bar shows instead.
+WHERE the scope of the Graph view (REQ-UI-106) has children, for every `blocked_by` relation between two beads that lie under the scope (each one a node or a descendant of a node at any depth), the view SHALL draw an arrow from the node that holds the blocker to the node that holds the blocked bead, SHALL draw no arrow when both lie under the same node, SHALL draw a single arrow for a pair of nodes with the label "n links" when n relations above one make it, and SHALL leave out a relation that has the scope bead itself as one end.
 
 #### Scenario: Direct relation
 - GIVEN epics `r-1` and `r-2` without a parent and `r-2` blocked by `r-1`
-- WHEN the project page is shown
+- WHEN the Graph view of the project is shown
 - THEN an arrow goes from `r-1` to `r-2` without a label
 
 #### Scenario: Through tasks
 - GIVEN task `x` of epic `e-1` blocking tasks `y` and `z` of epic `e-2`, both epics without a parent
-- WHEN the project page is shown
+- WHEN the Graph view of the project is shown
 - THEN one arrow goes from `e-1` to `e-2` with the label "2 links"
 
 #### Scenario: Deeper
 - GIVEN a task under epic `e-1` under `r-1` blocking a task under `r-2`
-- WHEN the project page is shown
+- WHEN the Graph view of the project is shown
 - THEN an arrow goes from `r-1` to `r-2`
 
 #### Scenario: Inside one node
 - GIVEN tasks `a` and `b` of epic `e-1`, `b` blocked by `a`
-- WHEN the project page is shown
-- THEN there is no arrow for them, and the page of `e-1` draws `a`→`b`
+- WHEN the Graph view of the project is shown
+- THEN there is no arrow for them, and the Graph view with the scope `e-1` draws `a`→`b`
 
 #### Scenario: Cycle between nodes
 - GIVEN a task of `e-1` blocking a task of `e-2` and another task of `e-2` blocking a task of `e-1`
-- WHEN the project page is shown
+- WHEN the Graph view of the project is shown
 - THEN both nodes are drawn and the warning "Dependency cycle between e-1, e-2" is shown
 
-### REQ-UI-080: Going down and up
-WHEN the user double-clicks a node or presses "View dependencies" in the details panel of the Dependencies page, the page SHALL show the Dependencies page of that bead and add a history entry, so that the browser's back button returns to the previous scope with its selection.
-
-#### Scenario: Go down
-- GIVEN the project page with the node `e-1`, which has tasks
-- WHEN the user double-clicks `e-1`
-- THEN `/beads/p/e-1/graph` is shown with the tasks of `e-1` as nodes
-
-#### Scenario: Back
-- GIVEN the user went down from the project page with `select=e-1` to the page of `e-1`
-- WHEN the user presses the browser's back button
-- THEN the project page is shown with `e-1` selected
-
-#### Scenario: Bead without children
-- GIVEN the node of task `a`
-- WHEN the user double-clicks it
-- THEN the page of `a` draws its blockers and the beads it blocks
-
 ### REQ-UI-081: Only linked
-The Beads page SHALL NOT offer a link "Dependencies" next to the project picker, its Graph view (REQ-UI-106) taking its place, and the Dependencies page of a scope with children SHALL offer a switch "Only linked", on at first on the project page and off at first on the page of a bead and not remembered, that leaves out the nodes without an arrow and shows "n without dependencies", and SHALL say "No dependencies between these beads" when it leaves out every node.
+The Beads page SHALL NOT offer a link "Dependencies" next to the project picker, its Graph view (REQ-UI-106) taking its place, and the Graph view of a scope with children SHALL offer a switch "Only linked", on at first when the scope is the project and off at first when it is a bead or a milestone, not remembered, that leaves out the nodes without an arrow and shows "n without dependencies".
 
 #### Scenario: No separate entry
 - GIVEN the Beads page of project `p`
 - WHEN it is shown
 - THEN there is no link "Dependencies" next to the project picker and the views offer Graph
 
-#### Scenario: Only linked on the project page
+#### Scenario: Only linked on the project scope
 - GIVEN `r-1`→`r-2` and 5 other beads without a parent and without arrows
-- WHEN the project page is shown
+- WHEN the Graph view of the project is shown
 - THEN `r-1` and `r-2` are drawn and "5 without dependencies" is shown
 
 #### Scenario: Off inside a bead
 - GIVEN an epic with an unlinked task
-- WHEN its page is shown
+- WHEN the Graph view with the scope of the epic is shown
 - THEN the unlinked task is drawn and "Only linked" is off
 
 ### REQ-UI-082: Assignee filter
@@ -1887,6 +1836,7 @@ The frontend SHALL show on every page a "Refresh data" control, in the top bar b
 - [Lanes view](diagrams/lanes-view-activity.md)
 - [Lane state](diagrams/lane-state.md)
 - [Lane clusters](diagrams/lane-clusters-activity.md)
+- [Epic page](diagrams/epic-page-activity.md)
 
 ### REQ-UI-097: Email login
 WHILE the browser holds no email for the console, the frontend SHALL show, at every URL, a login screen with one email field and a "Continue" control instead of the navigation and the page; WHEN the user submits a value that, trimmed, has text before and after one `@` and no whitespace, the frontend SHALL keep it lower-cased in localStorage under `gin-console.email` and show the page of the current URL without a full reload; IF the value is not such an email, THEN the frontend SHALL keep the login screen and say the email is not valid; IF the browser refuses to store the email, THEN the frontend SHALL keep it for the current visit without an error. The email SHALL NOT be sent to the server.
@@ -2061,7 +2011,7 @@ The My Tasks page SHALL offer a "Project" select with "All projects" (the defaul
 - [Follow an epic's lanes](use-cases/follow-epic-lanes.md)
 
 ### REQ-UI-106: Graph view
-The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of the Dependencies page (REQ-UI-048 to REQ-UI-050, REQ-UI-079), the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as the List view does, SHALL select nothing and show no details panel while `select` is absent, whatever the scope, so that the panel opens only when the user selects a node, and SHALL show and close the panel as REQ-UI-051 and REQ-UI-052 describe. WHEN a node with children is opened, the view SHALL set `scope` to its id and show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it. WHEN a node without children is opened, the frontend SHALL open its bead page. WHILE nothing matches, the view SHALL say "No beads match these filters".
+The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of REQ-UI-048 to REQ-UI-050 and REQ-UI-079, the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. The Graph view SHALL also serve the Graph tab of an epic page (REQ-UI-119), with the epic as its scope. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as the List view does, SHALL select nothing and show no details panel while `select` is absent, whatever the scope, so that the panel opens only when the user selects a node, and SHALL show and close the panel as REQ-UI-051 and REQ-UI-052 describe. WHEN a node with children is opened, the view SHALL set `scope` to its id and show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it. WHEN a node without children is opened, the frontend SHALL open its bead page. WHILE nothing matches, the view SHALL say "No beads match these filters".
 
 #### Scenario: Milestone scope
 - GIVEN milestone `m2` with epics `e1` and `e2`, `e2` blocked by `x` under milestone `m3`
@@ -2097,6 +2047,11 @@ The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, wit
 - GIVEN the Graph view
 - WHEN the user selects `e1`
 - THEN the URL has `select=e1` and the details panel shows `e1`
+
+#### Scenario: Graph tab of an epic
+- GIVEN the page of epic `e-1` at `/beads/p/e-1?tab=graph`
+- WHEN it is shown
+- THEN the Graph view is drawn with `e-1` as its scope, the tasks of `e-1` are the nodes, no node is selected and no details panel is shown
 
 #### Scenario: Nothing matches
 - GIVEN a search that matches no bead
@@ -2437,7 +2392,7 @@ Source: `assets/2026-11-20/mockup/index.html`, `assets/2026-11-20/shots/b-dark.p
 ### REQ-UI-122: Canvas scrolling
 Type: non-functional
 Category: usability
-The canvas of the Graph view (REQ-UI-106), with its nodes or lane boxes (REQ-UI-117), the canvas of the Lanes view (REQ-UI-111) and the canvas of the Dependencies page (REQ-UI-075) SHALL each be as tall as its content at the current scale. They SHALL scroll only sideways, with no vertical scroll bar of their own, and SHALL leave the page as the one vertical scroller. A wheel turn or a vertical swipe over a canvas without `Ctrl` or `⌘` SHALL scroll the page. A sideways swipe SHALL move the canvas and SHALL NOT pass on to the browser's history at the canvas's edge. The details panel and the discussion column keep their own scroll (REQ-UI-078).
+The canvas of the Graph view (REQ-UI-106), with its nodes or lane boxes (REQ-UI-117), and the canvas of the Lanes view (REQ-UI-111), on the Beads page and on the Graph and Lanes tabs of an epic page (REQ-UI-119), SHALL each be as tall as its content at the current scale. They SHALL scroll only sideways, with no vertical scroll bar of their own, and SHALL leave the page as the one vertical scroller. A wheel turn or a vertical swipe over a canvas without `Ctrl` or `⌘` SHALL scroll the page. A sideways swipe SHALL move the canvas and SHALL NOT pass on to the browser's history at the canvas's edge. The details panel and the discussion column keep their own scroll (REQ-UI-078).
 
 #### Scenario: Wheel over the Lanes view
 - GIVEN the Lanes view of `ex-e12` at 1440×900, with the page scrolled to the top and the pointer over the cards
@@ -2453,3 +2408,88 @@ The canvas of the Graph view (REQ-UI-106), with its nodes or lane boxes (REQ-UI-
 - GIVEN the Graph view of the project wider than the window
 - WHEN the user scrolls sideways over the canvas
 - THEN the canvas moves sideways and the page does not move
+
+### REQ-UI-119: Epic page tabs
+WHEN a bead of type `epic` is shown as a page (not as the details panel of another view), the bead page SHALL keep its title, badges and facts (REQ-UI-028, REQ-UI-110) above a tab list "Overview", "Graph", "Lanes" and "Discussion (N)", SHALL show "Lanes" only while the epic has a loaded child that is not a merge gate and whose `lane` is not `null` (REQ-UI-111), SHALL keep the open tab in the URL as `tab` (`overview` when absent or unknown, or when it names "lanes" for an epic without lanes), SHALL change tab with the Left and Right arrow keys with `aria-selected` on the open tab, and SHALL show in each tab:
+- Overview: the cards and sections of REQ-UI-120 and REQ-UI-121, then the description and the text sections of REQ-UI-038;
+- Graph: the Graph view of REQ-UI-106 with the epic as the scope, with the search and filters of the Beads views and the lane boxes of REQ-UI-117;
+- Lanes: the Lanes view of REQ-UI-111 to REQ-UI-114 with the epic as the scope;
+- Discussion: the comments of REQ-UI-039, or "No comments" when `comment_count` is 0.
+The epic page SHALL NOT show the discussion column of REQ-UI-068 or the tabs of REQ-UI-069, and the details panel of an epic SHALL keep its compact form with "Open page".
+Source: `assets/2026-11-21/epic-page/mockup/index.html`, `assets/2026-11-21/epic-page/shots/overview-light.png`
+
+#### Scenario: Opens on Overview
+- GIVEN epic `ex-e12` with lanes and two comments
+- WHEN `/beads/example/ex-e12` is shown
+- THEN the tabs Overview, Graph, Lanes and "Discussion (2)" are offered and Overview is open
+
+#### Scenario: Tab in the URL
+- GIVEN the page of `ex-e12` on Overview
+- WHEN the user chooses Graph
+- THEN the URL has `tab=graph` and the Graph view with `ex-e12` as the scope is shown with the search and filters
+
+#### Scenario: No Lanes tab without lanes
+- GIVEN epic `ex-e3`, whose tracks have no lane, and the URL `/beads/example/ex-e3?tab=lanes`
+- WHEN the page loads
+- THEN the tabs are Overview, Graph and Discussion, and Overview is open
+
+#### Scenario: Not an epic
+- GIVEN task `ex-e3.2`
+- WHEN its page is shown
+- THEN it has no Overview, Graph or Lanes tab and keeps the layout of REQ-UI-028 and REQ-UI-068
+
+### REQ-UI-120: Epic overview cards
+The Overview tab of an epic page SHALL show three cards side by side from 1024px and one under another below:
+- Progress: "<closed> of <total> tracks closed · <percent>%" over the epic's children that are neither prep tasks (REQ-BEADS-002) nor merge gates (REQ-BEADS-019), a bar split by state (Done, In progress, Ready, Blocked, Deferred, each by REQ-UI-064) with a legend giving each state's word and count, then as label/value facts "Points" ("<done> of <total> pt done" over the tracks with `points`, or "No points"), "Bugs" (the open beads of the epic's `bugs`, "0 open" when none) and "Prep" ("<closed>/<total>" of its prep tasks, or "none");
+- Workflow: the stages discuss, plan, orchestrate, execute and ship with the epic's current stage marked and the earlier ones ticked, then "Gates" ("<satisfied> of <n> satisfied"), "Warnings" and "Waivers" (each a count with the items on hover and focus, or "none"), from `GET /api/beads/{project}/{id}/workflow` (REQ-BEADS-020); "No workflow" when the answer has no stage, and the error when it fails, the rest of the page unaffected;
+- Milestone: the epic's milestone id and title linking to the milestone page, its status, its window "<start> – <end>", the working days (Monday to Friday) from today to `end`, both counted, while it is active, and its forecast finish with a warning mark when the finish is after `end` (from `GET /api/milestones?project=`, REQ-MILESTONE-UI-008); "No milestone" when the epic's `milestone` is `null`.
+Source: `assets/2026-11-21/epic-page/mockup/index.html`
+
+#### Scenario: Progress by state
+- GIVEN epic `ex-e12` with 8 tracks (4 closed, 1 in progress, 2 ready, 1 blocked) and a merge gate child
+- WHEN its Overview is shown
+- THEN Progress reads "4 of 8 tracks closed · 50%" and its legend reads Done 4, In progress 1, Ready 2, Blocked 1
+
+#### Scenario: Points
+- GIVEN tracks with points 3 (closed), 5 (in progress) and 3 (closed), and tracks without points
+- WHEN the Overview is shown
+- THEN Points reads "6 of 11 pt done"
+
+#### Scenario: Workflow stage
+- GIVEN `gin state --workflow-id ex-e12` reports stage `execute`, 4 of 6 gates satisfied, no warnings and no waivers
+- WHEN the Overview is shown
+- THEN discuss, plan and orchestrate are ticked, execute is marked, ship is plain, and Gates reads "4 of 6 satisfied"
+
+#### Scenario: Workflow unavailable
+- GIVEN the workflow request answers 502 with an error
+- WHEN the Overview is shown
+- THEN the Workflow card shows the error and the Progress and Milestone cards are shown
+
+#### Scenario: Milestone forecast late
+- GIVEN milestone `ex-m2` active from 10 Nov to 1 Dec 2026 with a forecast finish of 16 Feb 2027
+- WHEN the Overview of `ex-e12` is shown on 20 Nov 2026
+- THEN the Milestone card shows "ex-m2 Checkout v2", "10 Nov – 1 Dec 2026", "8 working days" left and the finish 16 Feb 2027 with a warning mark
+
+### REQ-UI-121: Epic lanes summary and tracks table
+Under the cards, the Overview tab SHALL show, while the epic has lanes (REQ-UI-111), a section "Lanes" with one row per lane in the row order of the Lanes view: the lane colour of REQ-UI-118 as a swatch and pale background, the lane name, its state (REQ-UI-112) as an icon and words, the holder and lease, what it waits for ("waits for <lane> #<N> (merge pending)" or "(merged)" for each merge gate of its first open track), and "<closed>/<total> closed", with a link "Open the Lanes tab". It SHALL then show a section "Tracks" with a table of the epic's children that are not merge gates, with the columns Id (linking to the bead page), Title (cut with an ellipsis and `title`), State (REQ-UI-064), Lane (the lane chip of REQ-UI-115 with its colour swatch, or "No lane"), Assignee ("Unclaimed" when none), Points ("–" when none) and Blocked by (the open blockers' ids, a merge gate written "<lane> #<N> · merge pending"), first ordered by Id; WHEN the user activates a column header other than Blocked by, the table SHALL sort by that column, ascending then descending, with `aria-sort` on that header. Below 1024px the table SHALL keep Id, Title and State and let the rest scroll sideways within the table.
+Source: `assets/2026-11-21/epic-page/mockup/index.html`
+
+#### Scenario: Lanes summary
+- GIVEN epic `ex-e12` with lanes be, fe, infra and qa
+- WHEN its Overview is shown
+- THEN the Lanes section lists be, fe, infra and qa with their states, and qa reads "waits for be #2 (merge pending), fe #3 (merged)" and "0/1 closed"
+
+#### Scenario: No lanes section
+- GIVEN epic `ex-e3` without lanes
+- WHEN its Overview is shown
+- THEN there is no Lanes section and the Tracks table has no colour swatch
+
+#### Scenario: Tracks table
+- GIVEN epic `ex-e12` with 8 tracks and a merge gate child
+- WHEN its Overview is shown
+- THEN the Tracks table has 8 rows ordered by id, no row reads "Waits for", and the row of `ex-e12.4` reads Blocked, "qa", "Unclaimed" and "be #2 · merge pending"
+
+#### Scenario: Sort by a column
+- GIVEN the Tracks table of `ex-e12`
+- WHEN the user activates the State header twice
+- THEN the rows are ordered by state ascending and then descending, and the header has `aria-sort` "descending"

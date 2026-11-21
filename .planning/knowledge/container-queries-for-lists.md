@@ -14,7 +14,7 @@ Bug gin-console-bah (2026-11-19): the Milestones list switched to six fixed colu
 - jsdom has no container queries: unit tests can only assert the classes; measure real widths with Playwright.
 
 **References**
-- `frontend/src/features/milestones/MilestonesPage.tsx`, `frontend/src/features/beads/{ListView.tsx,ListRow.tsx}`
+- `frontend/src/features/milestones/MilestonesPage.tsx`, `frontend/src/features/beads/{ListView.tsx,ListRow.tsx}`, and the epic Tracks table `frontend/src/features/beads/TracksTable.tsx` (an `@container` box with `@min-[56rem]:` widths; it fits from a 1024px window, and below its breakpoint the whole table scrolls sideways; checked with Playwright `scrollWidth` against `clientWidth`, gin-console-atl)
 - Beads: gin-console-bah (discovered from gin-console-y4j, TC-UI-120); related [e2e-parallel-runs-and-ellipsis](e2e-parallel-runs-and-ellipsis.md), [beads-filters-and-epic-kind](beads-filters-and-epic-kind.md)
 
 **Scope**

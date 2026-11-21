@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // TC-1 of gin-console-3rr (REQ-UI-110): the readability check against a running console with real projects.
 //   node qa/e2e/readability-live.js --base http://127.0.0.1:8700 --project example --project qwikfone --out <dir>
-// Visits Projects, Beads (List, Board, Focus, Graph), an epic and a bead with points, the Lanes view and the Graph (with closed beads) of an epic with lanes and its track and merge gate pages, My Tasks, Milestones, the
+// Visits Projects, Beads (List, Board, Focus, Graph), an epic and a bead with points, the Lanes view and the Graph (with closed beads) of an epic with lanes, its epic page (Overview, Graph, Lanes) and its track and merge gate pages, My Tasks, Milestones, the
 // milestone with velocity (Gantt at every zoom, Beads, Retro) and Reports (every tab) at 390, 1024, 1440 and
 // 1920 px in light and dark, runs the in-page detector of qa/e2e/support/readability-inpage.js (the one
 // qa/e2e/ui/readability.spec.ts uses), saves a screenshot of every page with findings and findings.json, and
@@ -47,11 +47,14 @@ async function pagesOf(project) {
     add(`beads lanes ${laneTrack.parent}`, `/beads?project=${enc(project)}&milestone=all&view=lanes&scope=${enc(laneTrack.parent)}`);
     // REQ-UI-117: the Graph of that epic draws a box per lane, with closed tracks
     add(`beads graph lanes ${laneTrack.parent}`, `/beads?project=${enc(project)}&milestone=all&view=graph&scope=${enc(laneTrack.parent)}&closed=1`);
+    // REQ-UI-119..122: the epic page of that epic on Overview, Graph (with closed tracks) and Lanes
+    add(`epic overview ${laneTrack.parent}`, `/beads/${enc(project)}/${enc(laneTrack.parent)}`);
+    add(`epic graph ${laneTrack.parent}`, `/beads/${enc(project)}/${enc(laneTrack.parent)}?tab=graph&closed=1`);
+    add(`epic lanes ${laneTrack.parent}`, `/beads/${enc(project)}/${enc(laneTrack.parent)}?tab=lanes`);
     add(`bead lane track ${laneTrack.id}`, `/beads/${enc(project)}/${enc(laneTrack.id)}`);
     const gate = beads.find((b) => b.waits_for != null && b.parent === laneTrack.parent) ?? beads.find((b) => b.waits_for != null);
     if (gate) add(`bead merge gate ${gate.id}`, `/beads/${enc(project)}/${enc(gate.id)}`);
   }
-  add('bead graph', `/beads/${enc(project)}/graph`);
   add('milestones', `/milestones?project=${enc(project)}`);
   const list = await json(`/api/milestones?project=${enc(project)}`);
   const withVelocity = list.milestones.find((m) => m.velocity) ?? list.milestones[0];

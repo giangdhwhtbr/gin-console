@@ -1,14 +1,14 @@
 # TC-UI-065: Closed bead
 
-- **REQ:** REQ-UI-049@24a50bbd
+- **REQ:** REQ-UI-049@6d58db62
 - **Priority:** medium
 
 **Preconditions:**
 - Epic `e-1` in project `alpha` has a closed task `t-1`
-- "Show closed" is off on the Beads page
 
 **Steps:**
-1. Open `/beads/alpha/e-1/graph`
+1. Open `/beads?project=alpha&milestone=all&view=graph&scope=e-1&closed=1`
 
 **Expected:**
+- "Show closed" is on
 - The node `t-1` is drawn as "Done"

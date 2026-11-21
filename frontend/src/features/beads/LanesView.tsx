@@ -22,6 +22,8 @@ type Props = {
   matched: readonly BeadSummary[];
   milestone: MilestoneInEffect;
   filters: BeadFilters;
+  /** Show the trail of containers above the view; an epic page's tab hides it (REQ-UI-119). */
+  trail?: boolean;
   onChange: (next: BeadFilters) => void;
 };
 
@@ -42,7 +44,7 @@ export function LanesView(props: Props) {
   return <LanesBody key={scopeId} {...props} scopeId={scopeId} />;
 }
 
-function LanesBody({ project, beads, matched, milestone, filters, onChange, scopeId }: Props & { scopeId: string }) {
+function LanesBody({ project, beads, matched, milestone, filters, trail = true, onChange, scopeId }: Props & { scopeId: string }) {
   const board = lanesOf(beads, scopeId, new Set(matched.map((b) => b.id)), new Date());
   const cards = board.rows.flatMap((r) => r.cards.map((c) => c.bead.id));
   const asked = filters.select;
@@ -67,7 +69,7 @@ function LanesBody({ project, beads, matched, milestone, filters, onChange, scop
   return (
     <div className={cn("grid gap-4", selected !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
       <div className="flex min-w-0 flex-col gap-3">
-        <ScopeTrail label="Lanes scope" top={top} rest={rest} onScope={(scope) => onChange({ ...filters, scope, select: "" })} />
+        {trail && <ScopeTrail label="Lanes scope" top={top} rest={rest} onScope={(scope) => onChange({ ...filters, scope, select: "" })} />}
         {board.cycle.length > 0 && (
           <p role="status" className="text-sm text-state-blocked">{`Dependency cycle between ${board.cycle.join(", ")}`}</p>
         )}
@@ -89,7 +91,7 @@ function LanesBody({ project, beads, matched, milestone, filters, onChange, scop
           />
         )}
       </div>
-      {selected !== "" && <DetailsPanel project={project} id={selected} graphScope={scopeId} onClose={close} />}
+      {selected !== "" && <DetailsPanel project={project} id={selected} onClose={close} />}
     </div>
   );
 }

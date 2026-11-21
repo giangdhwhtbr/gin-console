@@ -1,16 +1,15 @@
 # TC-UI-071: Task
 
-- **REQ:** REQ-UI-075@59cf5290
+- **REQ:** REQ-UI-075@b0eb7f1a
 - **Priority:** medium
 
 **Preconditions:**
-- Project `alpha` has tasks `a`, `b`, `c` and `z` without children
-- `b` is blocked by `a` and `c` is blocked by `b`
-- `z` has no dependency
+- Project `alpha` has epic `e-1` with task `b` that has no children
+- `b` is blocked by task `a` of `e-1`
 
 **Steps:**
 1. Open `/beads/alpha/b/graph`
 
 **Expected:**
-- `a`, `b` and `c` are drawn, with `a` above `b` and `b` above `c`
-- `z` is not drawn
+- `/beads?project=alpha&view=graph&scope=e-1&select=b` is shown
+- The details panel shows `b`

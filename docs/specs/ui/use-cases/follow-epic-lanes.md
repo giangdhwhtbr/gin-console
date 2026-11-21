@@ -2,7 +2,7 @@
 
 Actor: Team lead
 Trigger: The team lead wants to know who runs which tracks of an epic, how far each lane is, and which lane waits for another lane's merge.
-Requirements: REQ-UI-111, REQ-UI-112, REQ-UI-113, REQ-UI-114, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-118, REQ-BEADS-019
+Requirements: REQ-UI-111, REQ-UI-112, REQ-UI-113, REQ-UI-114, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-118, REQ-UI-119, REQ-UI-121, REQ-BEADS-019
 
 ## Goal
 
@@ -14,7 +14,7 @@ See an epic's lanes, their holders, leases, progress and waits at a glance, and 
 - The console reads the project's Beads export.
 
 ## Main flow
-1. The team lead opens the Beads views with the epic as the scope.
+1. The team lead opens the Beads views with the epic as the scope, or the Lanes tab of the epic's page (REQ-UI-119).
 2. The system offers the Lanes tab beside Graph.
 3. The team lead chooses Lanes.
 4. The system shows one row per lane and a "No lane" row, each with its state, holder, lease and closed count, the tracks as cards in dependency order, and the arrows with Waiting or Merged markers between lanes.

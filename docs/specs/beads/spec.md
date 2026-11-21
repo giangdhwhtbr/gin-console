@@ -291,6 +291,7 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 - [Scheduled pull](diagrams/scheduled-pull-activity.md)
 - [Pull status](diagrams/pull-status-state.md)
 - [Lane fields](diagrams/lane-fields-activity.md)
+- [Workflow of an epic](diagrams/epic-workflow-activity.md)
 
 ## Use Cases
 - [Refresh pulls Beads](use-cases/refresh-pulls-beads.md)
@@ -506,3 +507,21 @@ A bead whose `waits_for` is not `null` is a merge gate: the placeholder that gin
 - GIVEN track `e-1.4` blocked by that first gate
 - WHEN a client requests the detail of `e-1.4`
 - THEN its dependency on the gate carries the gate's `waits_for`
+
+### REQ-BEADS-020: Workflow of an epic
+WHEN a client requests `GET /api/beads/{project}/{id}/workflow`, the server SHALL run `gin state --workflow-id <id> --format json` in the project's directory, as REQ-SERVER-006 does for an epic in progress, and SHALL answer the `stage`, `gates`, `warnings` and `review_waivers` it reports; IF the command fails or its output cannot be read, THEN the server SHALL answer 502 with `{"error": <message>}`; the server SHALL answer 404 when the project is not configured or the bead is not in its export, and SHALL serve the same answer for the same project and id for 60 seconds unless `POST /api/refresh` dropped it.
+
+#### Scenario: Stage of an epic
+- GIVEN epic `e-1` whose `gin state --workflow-id e-1` reports stage `execute`, gates `{"plan_approved": "satisfied", "shipped": "unmet"}`, one warning and no waiver
+- WHEN a client requests `GET /api/beads/p/e-1/workflow`
+- THEN the answer is 200 with that stage, those gates, the warning and an empty `review_waivers`
+
+#### Scenario: Command fails
+- GIVEN `gin state --workflow-id e-1` exits non-zero with "unknown workflow"
+- WHEN a client requests the workflow of `e-1`
+- THEN the answer is 502 with an `error` naming the failure, and it is not cached
+
+#### Scenario: Unknown bead
+- GIVEN no bead `nope` in project `p`
+- WHEN a client requests `GET /api/beads/p/nope/workflow`
+- THEN the answer is 404 and no command ran

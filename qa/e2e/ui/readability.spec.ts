@@ -151,6 +151,7 @@ async function stub(page: Page): Promise<string[]> {
       ok(['example', 'qwikfone'].map((name) => ({ name, path: `/home/gin/${name}`, exists: true, workflow: null, beads: beadsOf })));
     } else if (p === '/api/beads/milestones') ok({ milestones: options, current: 'ex-m2' });
     else if (p === '/api/milestones') ok(milestoneList);
+    else if (parts[1] === 'beads' && parts[4] === 'workflow') ok({ stage: 'execute', gates: { plan_approved: 'satisfied', reviewed: 'unmet' }, warnings: [LONG_TITLE], review_waivers: [{ task_id: 'ex-e12.2', reason: LONG_TITLE, actor: LONG_MEMBER }] });
     else if (parts[1] === 'milestones' && parts.length === 4) {
       const plan = plans[parts[3] as keyof typeof plans];
       if (plan) ok(plan);
@@ -198,7 +199,10 @@ const groups: Record<string, Visit[]> = {
     { name: 'bead epic', url: '/beads/example/ex-e3', ready: heading(/Billing exports/) },
     { name: 'bead long id', url: `/beads/example/${LONG_ID}`, ready: heading(/Payments provider migration/) },
     { name: 'bead task', url: '/beads/example/ex-e3.1', ready: heading(/Export CSV/) },
-    { name: 'bead graph', url: '/beads/example/graph', ready: text('Billing exports for finance') },
+    // REQ-UI-119..122: the epic page of ex-e12 on Overview, on Graph with closed tracks and on Lanes
+    { name: 'epic overview', url: '/beads/example/ex-e12', ready: async (page) => { await expect(page.getByRole('region', { name: 'Tracks' })).toBeVisible(); await expect(page.getByRole('region', { name: 'Lanes' })).toBeVisible(); await expect(page.getByText(/^Loading/)).toHaveCount(0); } },
+    { name: 'epic graph', url: '/beads/example/ex-e12?tab=graph&closed=1', ready: async (page) => { await expect(page.locator('section[data-lane]').first()).toBeVisible(); await expect(page.locator('[data-chip]').first()).toBeVisible(); } },
+    { name: 'epic lanes', url: '/beads/example/ex-e12?tab=lanes', ready: async (page) => { await expect(page.getByTestId('lanes-canvas')).toBeVisible(); await expect(page.locator('[data-marker]').first()).toBeVisible(); } },
   ],
   'my tasks': [{ name: 'my tasks', url: '/my-tasks', ready: text('Export CSV with every ledger column') }],
   milestones: [{ name: 'milestones', url: '/milestones?project=example', ready: text('General availability') }],
