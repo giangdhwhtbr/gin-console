@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, ConfigDict
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from gin_console.beads.kinds import Complexity, Kind
 from gin_console.text import clean
@@ -31,6 +31,15 @@ class Claim(BaseModel):
 
     holder: Text
     expires_at: datetime
+
+
+class ChildCounts(BaseModel):
+    model_config = ConfigDict(strict=True)
+
+    total: int = 0
+    closed: int = 0
+    prep_total: int = 0
+    prep_closed: int = 0
 
 
 class BeadSummary(BaseModel):
@@ -66,6 +75,7 @@ class BeadSummary(BaseModel):
     track: TrackRef | None = None
     claim: Claim | None = None
     waits_for: GateRef | None = None
+    child_counts: ChildCounts = Field(default_factory=ChildCounts)
 
 
 class Relation(BaseModel):
