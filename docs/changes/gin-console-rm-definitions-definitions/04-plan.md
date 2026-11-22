@@ -16,7 +16,7 @@ Blocked, done, progress, assignee, milestone status, late and dates mean one thi
 - **PM views:** they use plain words.
 
 Done when:
-- Every scenario of the 13 added and 19 modified REQs of `02-spec-delta.md` has a test that names its REQ.
+- Every scenario of the 12 added and 20 modified REQs of `02-spec-delta.md` has a test that names its REQ.
 - `gin-qa cases check --change gin-console-rm-definitions` prints `ok`.
 - TC-1 passes on the deployed console.
 
@@ -101,7 +101,7 @@ Unclear requirements never raise the model or effort.
 
 ## Scope
 - **In scope:**
-  - The 13 added and 19 modified REQs of `02-spec-delta.md`.
+  - The 12 added and 20 modified REQs of `02-spec-delta.md`.
   - Their gin-qa cases and e2e specs.
   - The example project data TC-1 needs.
   - TC-1.

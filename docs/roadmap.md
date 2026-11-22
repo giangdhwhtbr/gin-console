@@ -136,7 +136,7 @@ Risks: Many pages parse the project themselves; move them to one shared hook fir
 ### One set of definitions
 Epic: gin-console-rm-definitions
 Milestone: gin-console-6bd
-Points: 13 (8 stories, 13 new and 19 changed REQs across 5 pages and 2 APIs, shared rules module, tooltip and legend, medium)
+Points: 13 (8 stories, 12 new and 20 changed REQs across 5 pages and 2 APIs, shared rules module, tooltip and legend, medium)
 Estimate: 7 (assumed)
 Kind: capability
 Complexity: medium (definitions shared by backend and frontend)
