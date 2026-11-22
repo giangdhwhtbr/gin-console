@@ -17,6 +17,7 @@ export function useHintTarget(): HintShown | null {
     };
     const show = (target: Element) => {
       window.clearTimeout(timer);
+      if (!target.isConnected) return; // a refresh or a filter removed the mark within the delay
       const text = target.getAttribute("data-hint");
       if (text !== null) setShown({ text, target });
     };

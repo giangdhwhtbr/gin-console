@@ -8,7 +8,10 @@ export type HintRegistry = {
 
 export const HintContext = createContext<HintRegistry | null>(null);
 
-/** The id of the description of a text: the same text always gives the same id (FNV-1a). */
+/**
+ * The id of the description of a text: the same text always gives the same id (FNV-1a).
+ * Assumes 32-bit FNV-1a over a few dozen short texts; a collision would only share a description.
+ */
 export function hintId(text: string): string {
   let hash = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);

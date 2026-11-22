@@ -21,7 +21,7 @@ export function HintTooltip({ shown }: { shown: HintShown }) {
     <div
       ref={ref}
       role="tooltip"
-      className="pointer-events-none fixed z-50 max-w-72 rounded-md border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md"
+      className="pointer-events-none fixed z-[60] max-w-72 rounded-md border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md"
       style={{ top: 0, left: 0 }}
     >
       {shown.text}

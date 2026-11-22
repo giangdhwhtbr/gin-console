@@ -1,10 +1,13 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { HintProvider } from "../HintProvider";
 import { Hint } from "./tooltip";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 describe("Hint", () => {
   it("REQ-UI-132 focusing the trigger shows the text and Escape hides it", async () => {
@@ -92,5 +95,22 @@ describe("Hint", () => {
       </Hint>,
     );
     expect(screen.getByText("mark")).not.toHaveAttribute("aria-describedby");
+  });
+
+  it("REQ-UI-132 a mark removed within the delay never shows a tooltip", () => {
+    vi.useFakeTimers();
+    const { rerender } = render(
+      <HintProvider>
+        <Hint text="Gone soon.">
+          <span>mark</span>
+        </Hint>
+      </HintProvider>,
+    );
+    fireEvent.pointerOver(screen.getByText("mark"));
+    rerender(<HintProvider>{null}</HintProvider>);
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 });
