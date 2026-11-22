@@ -47,6 +47,7 @@ import {
   sortEpics,
   spanOf,
   stepDay,
+  strandCapOf,
   tailWidth,
   verdictOf,
   xOf,
@@ -75,7 +76,6 @@ const ZOOMS = [
   { value: "all", label: "Whole milestone" },
 ] as const;
 const DEFAULT_WIDTH = 960; // until the first measure, and in tests, which have no layout
-const STRAND_CAP = 96; // px of the strand drawing in an epic label; a longer thread becomes segments (REQ-UI-138)
 const TAIL_ROOM = 90;
 const MIN_TAIL = 24;
 const NO_KINDS: ReadonlyMap<string, BeadKind> = new Map();
@@ -456,8 +456,8 @@ function EpicRow({
             <KindBadge kind={kind} className="max-w-full" />
             <span title={period} className="min-w-0 max-w-full shrink truncate">{period}</span>
             {(counts.total > 0 || prep !== null) && (
-              <span data-strand-group className="flex shrink-0 items-center gap-x-1.5">
-                {counts.total > 0 && <Strand counts={counts.counts} noun="tracks" maxWidth={STRAND_CAP} />}
+              <span data-strand-group className="flex max-w-full shrink-0 flex-wrap items-center gap-x-1.5 lg:max-w-none lg:flex-nowrap">
+                {counts.total > 0 && <Strand counts={counts.counts} noun="tracks" maxWidth={strandCapOf(label)} />}
                 {prep !== null && (
                   <Hint text={DEFINITIONS.prep}>
                     <span>{prep}</span>

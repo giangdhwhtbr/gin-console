@@ -208,6 +208,9 @@ export function stepDay(axis: Axis, from: number, direction: 1 | -1, span: numbe
 /** REQ-MILESTONE-UI-013: the label column is 300px under 1280px windows, 380px from 1280px and 440px from 1600px; 168px on a phone (under 1024px), so that the chart keeps some room. */
 export const labelWidthOf = (windowWidth: number): number => (windowWidth >= 1600 ? 440 : windowWidth >= 1280 ? 380 : windowWidth >= 1024 ? 300 : 168);
 
+/** REQ-UI-138, REQ-MILESTONE-UI-013: px of the strand drawing in an epic label; 56 in the 168px phone column so that the thread and its count fit one line, 96 from lg. */
+export const strandCapOf = (label: number): number => (label >= 300 ? 96 : 56);
+
 /** REQ-MILESTONE-UI-013: room for a title after a bar ending at `barEnd`: up to the next stop (end or today line) at or after the bar, or `chartEnd`, with a gap on each side; never negative. */
 export function tailWidth(barEnd: number, stops: readonly number[], chartEnd: number, gap = 8): number {
   const next = Math.min(chartEnd, ...stops.filter((x) => x >= barEnd));

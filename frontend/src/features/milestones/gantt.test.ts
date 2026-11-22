@@ -14,6 +14,7 @@ import {
   isoOf,
   labelledDays,
   labelWidthOf,
+  strandCapOf,
   markerSides,
   middleOf,
   monthsOf,
@@ -291,6 +292,10 @@ describe("gantt", () => {
 
   it("REQ-MILESTONE-UI-013 label column width by window", () => {
     expect([390, 1023, 1024, 1279, 1280, 1599, 1600, 2560].map(labelWidthOf)).toEqual([168, 168, 300, 300, 380, 380, 440, 440]);
+  });
+
+  it("REQ-UI-138 REQ-MILESTONE-UI-013 the strand drawing is capped to fit its count in the label: 56px at 168, 96px from 300", () => {
+    expect([168, 300, 380, 440].map(strandCapOf)).toEqual([56, 96, 96, 96]);
   });
 
   it("REQ-MILESTONE-UI-013 tail title stops before the next end or today line, else the chart edge", () => {

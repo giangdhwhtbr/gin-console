@@ -83,7 +83,7 @@ describe("GanttChart", () => {
     drawKids({ "e-a": [track("e-a.1", "closed"), track("e-a.2")] }, { total: 2, closed: 1, prep_total: 2, prep_closed: 1 });
     const row = epicRow("e-a");
     const group = row.querySelector<HTMLElement>("[data-strand-group]");
-    expect(group).toHaveClass("shrink-0");
+    expect(group).toHaveClass("shrink-0", "max-w-full", "flex-wrap", "lg:flex-nowrap", "lg:max-w-none");
     expect(group).toContainElement(within(row).getByRole("img", { name: /of 2 tracks$/ }));
     expect(group).toHaveTextContent("1/2");
     expect(group).toHaveTextContent("Prep 1/2");
