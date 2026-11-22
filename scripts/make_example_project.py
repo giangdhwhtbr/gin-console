@@ -534,9 +534,61 @@ def build(today: date, seed: int = 7) -> list[Row]:
         assignee="chi",
         priority=1,
     )
+    definitions_block(p, epic, today, m2_start)
     lanes_block(p, epic, today, m2_start)
     long_text(p, today, m2_start, p_id("m2"), m3_end)
     return p.rows
+
+
+def definitions_block(p: Project, epic: Callable[..., Row], today: date, m2_start: date) -> None:
+    """Cases for the one set of definitions (blocked, assignee, owner, late milestone)."""
+    saved, p.rng = p.rng, random.Random(21)
+    try:
+        # Late forecast: more points than the days left to ex-m2's end allow.
+        epic(
+            "e13",
+            "Multi-currency pricing",
+            "m2",
+            m2_start - timedelta(days=1),
+            labels=["roadmap"],
+            assignee="dung",
+            metadata=points_meta(21, "New pricing engine and rounding rules", m2_start),
+        )
+        # A task marked blocked, with no blocker.
+        p.task(
+            f"{PREFIX}-e4", "Waiting on legal review", "blocked", start=m2_start, end=today,
+            assignee="chi",
+        )
+        # An in-progress task held by an open task.
+        holder = p.task(
+            f"{PREFIX}-e4", "Choose the address provider", "open", start=m2_start, end=today,
+            assignee="chi",
+        )
+        moving = p.task(
+            f"{PREFIX}-e4", "Integrate the address provider", "in_progress", start=m2_start,
+            end=today, assignee="chi",
+        )
+        moving["dependencies"].append(p.dep(moving["id"], holder["id"], "blocks", m2_start))
+        # An open epic blocked by an open bead, with one open child.
+        gate = epic("e14", "Refund flow", "m2", today - timedelta(days=2), labels=["roadmap"])
+        gate["dependencies"].append(p.dep(gate["id"], holder["id"], "blocks", today))
+        p.task(gate["id"], "Refund API", "open", start=today, end=today, assignee="bao")
+        # Assignee spelled as a handle and as an email.
+        p.task(
+            f"{PREFIX}-e4", "Assigned by handle", "open", start=today, end=today,
+            assignee="giangdhwhtbr",
+        )
+        p.task(
+            f"{PREFIX}-e4", "Assigned by email", "open", start=today, end=today,
+            assignee="giangdhwhtbr@gmail.com",
+        )
+        # An owner and no assignee.
+        p.task(
+            f"{PREFIX}-e4", "Owner only, nobody assigned", "open", start=today, end=today,
+            assignee=None,
+        )
+    finally:
+        p.rng = saved
 
 
 # Long titles, ids, names and labels, to catch layout problems in every view.
