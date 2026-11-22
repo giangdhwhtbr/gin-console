@@ -1,6 +1,6 @@
 # TC-UI-278: Legend on a phone
 
-- **REQ:** REQ-UI-133@61468990
+- **REQ:** REQ-UI-133@501caec3
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11

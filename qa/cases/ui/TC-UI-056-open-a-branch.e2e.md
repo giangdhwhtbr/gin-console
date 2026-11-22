@@ -1,6 +1,6 @@
 # TC-UI-056: Open a branch
 
-- **REQ:** REQ-UI-044@f10aa6dd
+- **REQ:** REQ-UI-044@5e9715e5
 - **Priority:** medium
 
 **Preconditions:**

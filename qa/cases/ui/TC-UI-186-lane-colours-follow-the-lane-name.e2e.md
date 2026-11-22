@@ -1,6 +1,6 @@
 # TC-UI-186: Lane colours follow the lane name
 
-- **REQ:** REQ-UI-118@e68b6fe0
+- **REQ:** REQ-UI-118@2b93f058
 - **Priority:** medium
 
 **Preconditions:**

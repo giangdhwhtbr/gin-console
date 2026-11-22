@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-094: Points on the Gantt second line
 
-- **REQ:** REQ-MILESTONE-UI-013@b3bb8e48
+- **REQ:** REQ-MILESTONE-UI-013@d306ea36
 - **Priority:** medium
 
 **Preconditions:**
@@ -14,5 +14,5 @@
 2. Open `/milestones/P/M1`
 
 **Expected:**
-- C's second line reads "5 pt · 7d"
-- D's second line reads "3 pt · 1d left"
+- C's second line reads "5 pt, 7d"
+- D's second line reads "3 pt, 1d left"

@@ -1,6 +1,6 @@
 # TC-UI-206: Sort by a column
 
-- **REQ:** REQ-UI-121@3ec4d754
+- **REQ:** REQ-UI-121@12205711
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-21T05-35-36

@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-107: Forecast after the end
 
-- **REQ:** REQ-MILESTONE-UI-023@58b09eb6
+- **REQ:** REQ-MILESTONE-UI-023@b9cc99e6
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -21,5 +21,5 @@
 
 **Expected:**
 - After step 2, the row of `m1` marks it late and its finish "Finishes 16 Feb 2027" is in the warning color
-- After step 3, the Team tab marks `m1` late
+- After step 3, the Team tab marks `m1` late and its status reads "Active, late"
 - After step 4, the milestone card of `e1` marks `m1` late

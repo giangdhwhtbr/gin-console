@@ -1,6 +1,6 @@
 # TC-UI-054: Epic with a prep task
 
-- **REQ:** REQ-UI-028@5a22703b
+- **REQ:** REQ-UI-028@a720e49e
 - **Priority:** high
 
 **Preconditions:**
@@ -10,7 +10,7 @@
 1. Open `/beads/alpha/e-1`
 
 **Expected:**
-- The progress bar reads 1 of 2
-- "Prep 1/1" is shown next to the progress bar
+- The strand reads "1/2"
+- "Prep 1/1" is shown next to the strand
 - The children list shows `t-1`, `t-2` and `p-1`
-- A "Prep" chip is shown on `p-1` only
+- The word "Prep" is shown on `p-1` only

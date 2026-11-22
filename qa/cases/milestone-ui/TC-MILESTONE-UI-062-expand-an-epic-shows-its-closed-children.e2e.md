@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-062: Expand an epic shows its closed children
-REQ: REQ-MILESTONE-UI-015@0df09dc6
+REQ: REQ-MILESTONE-UI-015@b1f5871c
 Priority: high
 Result: passed
 Run: qa/evidence/2026-11-22T04-57-11
@@ -13,6 +13,6 @@ Steps:
 2. Click "Show 4 child beads of gin-workflow-rm-cost-control"
 
 Expected:
-- Before expanding, no child rows are shown and the epic row shows "4 of 4 done"
+- Before expanding, no child rows are shown and the epic row shows the strand with "4/4"
 - Four rows `.1` to `.4` are shown under the epic, ordered by id, each with "closed 1 Nov"
 - The child rows shade the epic's period and draw no bars

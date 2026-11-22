@@ -1,6 +1,6 @@
 # TC-UI-179: Lane boxes in tiers
 
-- **REQ:** REQ-UI-117@280e2ec2
+- **REQ:** REQ-UI-117@8f9669e9
 - **Priority:** high
 
 **Preconditions:**

@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-104: Merge gate and lane
 
-- **REQ:** REQ-MILESTONE-UI-015@0df09dc6
+- **REQ:** REQ-MILESTONE-UI-015@b1f5871c
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -14,6 +14,6 @@
 2. Click the expand button of `e-1`
 
 **Expected:**
-- Before expanding, the row of `e-1` shows "0 of 1 done"
-- After expanding, the only child row is `t-1` with the lane chip "be"
+- Before expanding, the row of `e-1` shows the strand with "0/1"
+- After expanding, the only child row is `t-1` with the lane "be"
 - `g-1` has no row

@@ -1,6 +1,6 @@
 # TC-BEADS-074: Counts ignore the closed filter
 
-- **REQ:** REQ-BEADS-022@a14538e5
+- **REQ:** REQ-BEADS-022@5b74cbda
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-35-00-api
@@ -18,6 +18,6 @@
 
 **Expected:**
 - After step 1, the list does not hold `t-1`, `t-2` or `p-1`
-- After step 1, `e-1` has `child_counts` `{total: 3, closed: 2, prep_total: 1, prep_closed: 1}`
+- After step 1, `e-1` has `child_counts` `{total: 3, closed: 2, in_progress: 0, blocked: 0, ready: 1, deferred: 0, prep_total: 1, prep_closed: 1}`
 - After step 2, `e-1` has the same `child_counts`
 - Neither `t-3` nor `g-1` changes `prep_total`; `g-1` is not counted in `total`

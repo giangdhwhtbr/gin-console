@@ -1,6 +1,6 @@
 # TC-UI-059: Epic with a prep task
 
-- **REQ:** REQ-UI-044@f10aa6dd
+- **REQ:** REQ-UI-044@5e9715e5
 - **Priority:** high
 
 **Preconditions:**
@@ -12,6 +12,6 @@
 3. Click the open control of `e-1`
 
 **Expected:**
-- The row of `e-1` says "1/2 closed" with a progress bar and "Prep 0/1"
-- The row of `p-1` shows a "Prep" chip
-- The rows of `t-1` and `t-2` show no "Prep" chip
+- The row of `e-1` shows a strand of 2 beads followed by "1/2", and "Prep 0/1"
+- The row of `p-1` shows the word "Prep"
+- The rows of `t-1` and `t-2` do not show the word "Prep"

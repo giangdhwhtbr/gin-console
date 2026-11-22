@@ -1,6 +1,6 @@
 # TC-UI-287: Progress with closed beads hidden
 
-- **REQ:** REQ-UI-120@510ca667
+- **REQ:** REQ-UI-120@1a27452c
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -15,4 +15,4 @@
 2. Click the title of `ex-e12`
 
 **Expected:**
-- After step 2 Progress reads "4 of 8 tracks closed · 50%"
+- After step 2 Progress reads "4 done, 1 in progress, 1 blocked, 2 ready" with a strand of 8 tracks

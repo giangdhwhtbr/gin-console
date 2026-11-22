@@ -1,6 +1,6 @@
 # TC-UI-113: Full card
 
-- **REQ:** REQ-UI-065@e04e4564
+- **REQ:** REQ-UI-065@ca703482
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
@@ -12,4 +12,4 @@
 1. Open `/beads?project=alpha&milestone=all&view=board`
 
 **Expected:**
-- The card of `t-1` shows the id and `P1`, the title link, "Ready", the type "task", a comment indicator 2, a dependency indicator 1 and `alice`
+- The card of `t-1` shows no type for a task, no pill and no coloured left edge, and shows the id and `P1`, the title link, "Ready", a comment indicator 2, a dependency indicator 1 and `alice`

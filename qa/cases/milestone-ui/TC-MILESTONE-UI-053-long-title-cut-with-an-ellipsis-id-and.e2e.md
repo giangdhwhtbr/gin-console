@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-053: Long title cut with an ellipsis, id and period wrap on a phone
-REQ: REQ-MILESTONE-UI-013@b3bb8e48
+REQ: REQ-MILESTONE-UI-013@d306ea36
 Priority: medium
 Result: passed
 Run: qa/evidence/2026-11-22T04-57-11
@@ -16,5 +16,5 @@ Steps:
 Expected:
 - The title takes one line, cut short with an ellipsis
 - The full title is shown as the tooltip on hover
-- The id, the period and the tracks count ("1 of 2 done") wrap onto the following lines, none of them cut to less than its first word
+- The id, the period and the strand with its "<done>/<total>" wrap onto the following lines, none of them cut to less than its first word
 - The id links to its bead page

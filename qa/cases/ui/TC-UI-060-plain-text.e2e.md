@@ -1,6 +1,6 @@
 # TC-UI-060: Plain text
 
-- **REQ:** REQ-UI-044@f10aa6dd
+- **REQ:** REQ-UI-044@5e9715e5
 - **Priority:** high
 
 **Preconditions:**

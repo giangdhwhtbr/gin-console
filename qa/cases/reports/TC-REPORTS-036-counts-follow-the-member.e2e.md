@@ -1,6 +1,6 @@
 # TC-REPORTS-036: Counts follow the member
 
-- **REQ:** REQ-REPORTS-016@c46976eb
+- **REQ:** REQ-REPORTS-016@274a4232
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,4 +13,5 @@
 1. Select `ann` in the Member select
 
 **Expected:**
+- The beads heading reads "Beads of ann"
 - The tabs read Open 4, In progress 1, Closed 6 and All 11

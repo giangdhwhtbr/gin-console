@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-109: Closed on time and closed late
 
-- **REQ:** REQ-MILESTONE-UI-023@58b09eb6
+- **REQ:** REQ-MILESTONE-UI-023@b9cc99e6
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -18,5 +18,5 @@
 3. Open `/reports?project=P&tab=team&milestone=m4`
 
 **Expected:**
-- After step 2, the Team tab reads "Closed · on time"
-- After step 3, the Team tab reads "Closed · 2 d late"
+- After step 2, the Team tab reads "Closed, on time"
+- After step 3, the Team tab reads "Closed, 2 d late"

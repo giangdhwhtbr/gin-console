@@ -1,6 +1,6 @@
 # TC-REPORTS-026: Default milestone in the URL
 
-- **REQ:** REQ-REPORTS-012@ae27226f
+- **REQ:** REQ-REPORTS-012@023dc4c5
 - **Priority:** high
 
 **Preconditions:**

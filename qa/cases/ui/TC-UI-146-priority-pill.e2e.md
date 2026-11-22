@@ -1,6 +1,6 @@
-# TC-UI-146: Priority pill
+# TC-UI-146: Priority as bold text
 
-- **REQ:** REQ-UI-110@e3c2a1a9
+- **REQ:** REQ-UI-110@adc61666
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,6 +10,6 @@
 1. Open `/beads?project=alpha&view=list`
 
 **Expected:**
-- `P0` is a pill in the destructive color
-- `P1` is a pill in the warning color
-- `P2` is a pill in the neutral color
+- `P0` and `P1` are bold in the text color
+- `P2` is in the muted color
+- None of them is a pill

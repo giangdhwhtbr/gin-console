@@ -1,6 +1,6 @@
 # TC-UI-177: Dependencies of a track show merge gates
 
-- **REQ:** REQ-UI-116@85edbd50
+- **REQ:** REQ-UI-116@f93f8f82
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,5 +10,5 @@
 1. Open the bead page of track 4
 
 **Expected:**
-- The Dependencies read "Waits for be #2 · merge pending"
-- The Dependencies read "Waits for fe #3 · merged"
+- The Dependencies read "Waits for be #2, merge pending"
+- The Dependencies read "Waits for fe #3, merged"

@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-111: Parallel lanes and finish in the list
 
-- **REQ:** REQ-MILESTONE-UI-001@ec0ce005
+- **REQ:** REQ-MILESTONE-UI-001@6e63a57f
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11

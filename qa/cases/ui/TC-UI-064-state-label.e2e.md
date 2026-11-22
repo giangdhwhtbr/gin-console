@@ -1,6 +1,6 @@
 # TC-UI-064: State label
 
-- **REQ:** REQ-UI-049@6d58db62
+- **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,5 +10,5 @@
 1. Open `/beads?project=alpha&milestone=all&view=graph&scope=e-1`
 
 **Expected:**
-- The node `t-1` reads "Ready" with its icon
-- The node `t-2` reads "Blocked" with its icon
+- The node `t-1` reads "Ready" after its glyph, without a coloured left edge
+- The node `t-2` reads "Blocked" after its glyph, without a coloured left edge

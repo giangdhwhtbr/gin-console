@@ -1,6 +1,6 @@
 # TC-REPORTS-060: Late active milestone
 
-- **REQ:** REQ-REPORTS-012@ae27226f
+- **REQ:** REQ-REPORTS-012@023dc4c5
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -15,8 +15,8 @@
 
 **Steps:**
 1. Open `/reports?project=alpha&tab=team&milestone=m2`
-2. Look at the status chip in the milestone line
+2. Look at the status in the milestone line
 
 **Expected:**
-- The status chip reads "Active · late"
-- The chip shows a warning mark
+- The status reads "Active, late"
+- The status shows a warning mark

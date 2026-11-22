@@ -1,6 +1,6 @@
 # TC-UI-202: Milestone forecast late
 
-- **REQ:** REQ-UI-120@510ca667
+- **REQ:** REQ-UI-120@1a27452c
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11

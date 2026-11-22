@@ -1,6 +1,6 @@
 # TC-UI-286: Owner is not the assignee
 
-- **REQ:** REQ-UI-044@f10aa6dd
+- **REQ:** REQ-UI-044@5e9715e5
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11

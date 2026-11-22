@@ -1,6 +1,6 @@
 # TC-UI-063: Node with children
 
-- **REQ:** REQ-UI-049@6d58db62
+- **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,4 +10,4 @@
 1. Open `/beads?project=alpha&milestone=all&view=graph&closed=1`
 
 **Expected:**
-- The node `e-1` reads "1 of 3 done" with the open icon
+- The node `e-1` shows the strand of 3 beads followed by "1/3", and the open icon

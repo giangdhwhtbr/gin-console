@@ -1,6 +1,6 @@
 # TC-UI-254: From My Tasks
 
-- **REQ:** REQ-UI-072@08dfd985
+- **REQ:** REQ-UI-072@b8e02f9d
 - **Priority:** high
 
 **Preconditions:**

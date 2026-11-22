@@ -1,6 +1,6 @@
 # TC-REPORTS-030: Member figures
 
-- **REQ:** REQ-REPORTS-013@5ea0d567
+- **REQ:** REQ-REPORTS-013@5683bbdb
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,4 +13,6 @@
 1. Select `ann` in the Member select
 
 **Expected:**
-- The figures read "6 / 11", "55% of assigned", "1 blocked", and Throughput instead of Pace
+- The Done figure reads "6 of 11" and "55% of assigned"
+- The Open figure reads "1 blocked"
+- Throughput is shown instead of Pace

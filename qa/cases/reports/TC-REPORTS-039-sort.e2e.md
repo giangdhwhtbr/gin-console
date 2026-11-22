@@ -1,6 +1,6 @@
 # TC-REPORTS-039: Sort
 
-- **REQ:** REQ-REPORTS-016@c46976eb
+- **REQ:** REQ-REPORTS-016@274a4232
 - **Priority:** medium
 
 **Preconditions:**

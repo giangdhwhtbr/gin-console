@@ -1,6 +1,6 @@
 # TC-UI-066: Node with a prep task
 
-- **REQ:** REQ-UI-049@6d58db62
+- **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** high
 
 **Preconditions:**
@@ -11,6 +11,6 @@
 2. Open `/beads?project=alpha&milestone=all&view=graph&scope=e-1&closed=1`
 
 **Expected:**
-- After step 1 the node `e-1` reads "1 of 2 done" with the open icon
-- After step 2 the node `p-1` shows a "Prep" chip
-- After step 2 the nodes `t-1` and `t-2` show no "Prep" chip
+- After step 1 the node `e-1` shows the strand of 2 beads followed by "1/2", and the open icon
+- After step 2 the node `p-1` shows the word "Prep"
+- After step 2 the nodes `t-1` and `t-2` do not show the word "Prep"

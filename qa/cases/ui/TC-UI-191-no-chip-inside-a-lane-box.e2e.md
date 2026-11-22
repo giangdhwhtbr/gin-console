@@ -1,6 +1,6 @@
-# TC-UI-191: No chip inside a lane box
+# TC-UI-191: No lane inside a lane box
 
-- **REQ:** REQ-UI-115@ef4a2116
+- **REQ:** REQ-UI-115@ed5e8117
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -14,4 +14,4 @@
 
 **Expected:**
 - The card of track 2 sits in the box headed "be"
-- The card of track 2 has no chip with the tooltip "Lane be"
+- The card of track 2 shows no lane (no dot and no title "Lane be")

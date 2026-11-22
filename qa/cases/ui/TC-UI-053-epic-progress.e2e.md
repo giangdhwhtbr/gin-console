@@ -1,6 +1,6 @@
 # TC-UI-053: Epic progress
 
-- **REQ:** REQ-UI-028@5a22703b
+- **REQ:** REQ-UI-028@a720e49e
 - **Priority:** medium
 
 **Preconditions:**
@@ -11,4 +11,4 @@
 
 **Expected:**
 - The children list shows `t-1`, `t-2`, `t-3` and `t-4`
-- The progress bar reads 3 of 4
+- The strand shows 4 beads, with the text "3/4" after it,; the strand is an image named "3 done, … of 4 tracks"

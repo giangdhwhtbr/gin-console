@@ -1,6 +1,6 @@
 # TC-UI-148: Badges and facts
 
-- **REQ:** REQ-UI-028@5a22703b
+- **REQ:** REQ-UI-028@a720e49e
 - **Priority:** medium
 
 **Preconditions:**
@@ -11,8 +11,8 @@
 1. Open `/beads/alpha/e-3`
 
 **Expected:**
-- The badge row shows "In progress", "P1" and "5 pt"
-- The line under the badge row reads "new endpoint and UI"
+- The fact line shows "In progress", "P1" and "5 pt" as text, none of them in a pill
+- The line under the fact line reads "new endpoint and UI"
 - The facts read Assignee "bao", Created by "lead", Created "11 May, 16:00", Updated "11 May, 16:00" and Comments "0"
 - No Owner fact is shown
 - Each label is in the muted color and each value in the text color

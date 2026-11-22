@@ -1,6 +1,6 @@
 # TC-UI-077: Prep task in the scope
 
-- **REQ:** REQ-UI-049@6d58db62
+- **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** high
 
 **Preconditions:**
@@ -11,5 +11,5 @@
 
 **Expected:**
 - `t-1`, `t-2` and `p-1` are nodes
-- The node `p-1` shows a "Prep" chip
-- The nodes `t-1` and `t-2` show no "Prep" chip
+- The node `p-1` shows the word "Prep"
+- The nodes `t-1` and `t-2` do not show the word "Prep"

@@ -1,6 +1,6 @@
 # TC-UI-226: Progress by state
 
-- **REQ:** REQ-UI-120@510ca667
+- **REQ:** REQ-UI-120@1a27452c
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-21T05-35-36
@@ -13,6 +13,6 @@
 1. Open `/beads/example/ex-e12`
 
 **Expected:**
-- Progress reads "4 of 8 tracks closed · 50%"
-- The legend reads Done 4, In progress 1, Ready 2 and Blocked 1
+- Progress shows a large strand, an image named "4 done, 1 in progress, 1 blocked, 2 ready" of 8 tracks
+- Progress reads "4 done, 1 in progress, 1 blocked, 2 ready"
 - The merge gate is not counted

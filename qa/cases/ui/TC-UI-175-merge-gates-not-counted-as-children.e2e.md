@@ -1,6 +1,6 @@
 # TC-UI-175: Merge gates not counted as children
 
-- **REQ:** REQ-UI-116@85edbd50
+- **REQ:** REQ-UI-116@f93f8f82
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,4 +10,4 @@
 1. Open the Graph view without a scope
 
 **Expected:**
-- The node of `ex-e12` reads "n of 8 done"
+- The node of `ex-e12` shows the strand of 8 tracks and reads "n/8", never "n/9"

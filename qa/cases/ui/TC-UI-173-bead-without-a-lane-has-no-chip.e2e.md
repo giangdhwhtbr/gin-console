@@ -1,6 +1,6 @@
-# TC-UI-173: Bead without a lane has no chip
+# TC-UI-173: Bead without a lane shows no lane
 
-- **REQ:** REQ-UI-115@ef4a2116
+- **REQ:** REQ-UI-115@ed5e8117
 - **Priority:** low
 
 **Preconditions:**
@@ -10,4 +10,4 @@
 1. Open the List view
 
 **Expected:**
-- The List row of the bead has no lane chip
+- The List row of the bead shows no lane (no dot and no name)

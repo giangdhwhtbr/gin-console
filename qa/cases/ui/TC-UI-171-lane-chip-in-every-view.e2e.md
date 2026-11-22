@@ -1,6 +1,6 @@
-# TC-UI-171: Lane chip in every view
+# TC-UI-171: Lane in every view
 
-- **REQ:** REQ-UI-115@ef4a2116
+- **REQ:** REQ-UI-115@ed5e8117
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -18,5 +18,6 @@
 5. Open `/beads/example/ex-e12.2`
 
 **Expected:**
-- After steps 1, 2, 4 and 5, the List row, Board card, Gantt child row and bead page of `ex-e12.2` each show the chip "be" with the tooltip "Lane be"
-- No label chip reads `lane:be` or `track:2`
+- After steps 1, 2, 4 and 5, the List row, Board card, Gantt child row and bead page of `ex-e12.2` each show the lane as a dot and the name "be" with the title "Lane be"
+- The dot is in the muted colour, not in a lane colour
+- No label reads `lane:be` or `track:2`

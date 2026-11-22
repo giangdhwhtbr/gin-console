@@ -1,6 +1,6 @@
 # TC-UI-276: Dependency indicator tooltip
 
-- **REQ:** REQ-UI-132@19a2fe26
+- **REQ:** REQ-UI-132@75ded0c7
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11

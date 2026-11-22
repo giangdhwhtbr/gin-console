@@ -1,6 +1,6 @@
 # TC-REPORTS-037: Closed row
 
-- **REQ:** REQ-REPORTS-016@c46976eb
+- **REQ:** REQ-REPORTS-016@274a4232
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T08-56-47
@@ -16,4 +16,5 @@
 1. Select the Closed list
 
 **Expected:**
-- Its row shows "0.9 d", "2 d late" and "0", and its title opens `/beads/alpha/a-3`
+- Its row shows "0.9 d" under Cycle, the text "2 d late" in the warning colour under On time, and "0" under Rework
+- Its title opens `/beads/alpha/a-3`

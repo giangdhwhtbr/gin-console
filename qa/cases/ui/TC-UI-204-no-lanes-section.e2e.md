@@ -1,6 +1,6 @@
 # TC-UI-204: No lanes section
 
-- **REQ:** REQ-UI-121@3ec4d754
+- **REQ:** REQ-UI-121@12205711
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-21T05-35-36
@@ -14,4 +14,4 @@
 
 **Expected:**
 - There is no section "Lanes"
-- The Tracks table shows no colour swatch
+- The Tracks table shows no colour dot

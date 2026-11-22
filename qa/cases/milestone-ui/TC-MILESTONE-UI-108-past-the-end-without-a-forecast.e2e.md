@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-108: Past the end without a forecast
 
-- **REQ:** REQ-MILESTONE-UI-023@58b09eb6
+- **REQ:** REQ-MILESTONE-UI-023@b9cc99e6
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -18,4 +18,4 @@
 2. Open `/reports?project=P&tab=team`
 
 **Expected:**
-- The Team tab marks `m2` late
+- The Team tab marks `m2` late and its status reads "Active, late" with a warning mark

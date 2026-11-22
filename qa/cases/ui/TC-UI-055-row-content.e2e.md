@@ -1,6 +1,6 @@
 # TC-UI-055: Row content
 
-- **REQ:** REQ-UI-044@f10aa6dd
+- **REQ:** REQ-UI-044@5e9715e5
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,4 +10,4 @@
 1. Open `/beads?project=alpha&milestone=all`
 
 **Expected:**
-- The row of `g-1` shows its id, its title as a link, "Blocked", the pill "bug", `P1`, a comment indicator 2 and `alice`
+- The row of `g-1` shows its id, its title as a link, "Blocked", the word "bug" in the bug colour, `P1` in bold without a pill,, a comment indicator 2 and `alice`

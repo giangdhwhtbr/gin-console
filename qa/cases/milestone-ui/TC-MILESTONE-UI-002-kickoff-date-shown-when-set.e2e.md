@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-002: Kickoff date shown when set
-REQ: REQ-MILESTONE-UI-001@ec0ce005
+REQ: REQ-MILESTONE-UI-001@6e63a57f
 Priority: low
 Result: passed
 Run: qa/evidence/2026-11-22T04-57-11

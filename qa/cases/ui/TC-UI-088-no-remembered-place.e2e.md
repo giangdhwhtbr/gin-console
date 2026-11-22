@@ -1,6 +1,6 @@
 # TC-UI-088: No remembered place
 
-- **REQ:** REQ-UI-072@08dfd985
+- **REQ:** REQ-UI-072@b8e02f9d
 - **Priority:** medium
 
 **Preconditions:**

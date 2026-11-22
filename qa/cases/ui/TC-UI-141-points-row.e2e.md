@@ -1,6 +1,6 @@
 # TC-UI-141: Points row
 
-- **REQ:** REQ-UI-090@5077cd4a
+- **REQ:** REQ-UI-090@19f1e80e
 - **Priority:** medium
 
 **Preconditions:**
@@ -15,4 +15,4 @@
 
 **Expected:**
 - The row reads "5 pt", "7" and "1.4 d/pt"
-- The row has no chip
+- The row shows no estimate difference

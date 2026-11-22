@@ -1,6 +1,6 @@
 # TC-UI-134: Technical epic
 
-- **REQ:** REQ-UI-109@89f8d56b
+- **REQ:** REQ-UI-109@e17fecbe
 - **Priority:** medium
 
 **Preconditions:**
@@ -12,5 +12,5 @@
 3. Open the bead page `/beads/alpha/e-1`
 
 **Expected:**
-- The List row of `e-1` shows "Technical", "medium" and the size badge "3d"
-- The bead page shows "Technical", the chips `beads` and `ui`, and the size badge "3d"
+- The List row of `e-1` shows the word "Technical", "medium" and the size "3d" as text
+- The bead page shows "Technical", the capabilities "beads, ui" as text joined by a comma, and the size "3d"

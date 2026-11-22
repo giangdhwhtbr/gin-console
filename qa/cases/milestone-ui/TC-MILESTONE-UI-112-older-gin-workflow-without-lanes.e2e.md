@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-112: Older gin-workflow without lanes
 
-- **REQ:** REQ-MILESTONE-UI-001@ec0ce005
+- **REQ:** REQ-MILESTONE-UI-001@6e63a57f
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11

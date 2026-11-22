@@ -1,6 +1,6 @@
-# TC-UI-188: Merge gate chip in lane boxes
+# TC-UI-188: Merge gate label in lane boxes
 
-- **REQ:** REQ-UI-116@85edbd50
+- **REQ:** REQ-UI-116@f93f8f82
 - **Priority:** high
 
 **Preconditions:**
@@ -12,4 +12,4 @@
 
 **Expected:**
 - No node reads "Waits for be #2 to merge"
-- The arrow from track 2 to the qa box carries "Waiting · be #2"
+- The arrow from track 2 to the qa box carries the label "Waiting for be #2"

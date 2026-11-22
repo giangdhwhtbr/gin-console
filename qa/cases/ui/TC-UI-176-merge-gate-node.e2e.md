@@ -1,6 +1,6 @@
 # TC-UI-176: Merge gate node
 
-- **REQ:** REQ-UI-116@85edbd50
+- **REQ:** REQ-UI-116@f93f8f82
 - **Priority:** high
 
 **Preconditions:**

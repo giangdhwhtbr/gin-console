@@ -1,6 +1,6 @@
 # TC-UI-174: Merge gates not on the List, Board and Focus views
 
-- **REQ:** REQ-UI-116@85edbd50
+- **REQ:** REQ-UI-116@f93f8f82
 - **Priority:** high
 
 **Preconditions:**

@@ -1,6 +1,6 @@
 # TC-UI-187: No lane box
 
-- **REQ:** REQ-UI-118@e68b6fe0
+- **REQ:** REQ-UI-118@2b93f058
 - **Priority:** medium
 
 **Preconditions:**
@@ -12,5 +12,5 @@
 
 **Expected:**
 - The two tracks sit in a box "No lane" with a dashed border
-- The header shows "1/2 closed"
+- The header shows the strand followed by "1/2"
 - The header has no colour swatch and no state

@@ -1,6 +1,6 @@
-# TC-UI-182: Gate chip for a track that is not drawn
+# TC-UI-182: Gate label for a track that is not drawn
 
-- **REQ:** REQ-UI-117@280e2ec2
+- **REQ:** REQ-UI-117@8f9669e9
 - **Priority:** medium
 
 **Preconditions:**
@@ -12,6 +12,6 @@
 1. Open `/beads?project=example&milestone=all&view=graph&scope=ex-e12`
 
 **Expected:**
-- The chip "Waiting for track 7" is on the top edge of the qa box
+- The label "Waiting for track 7" is on the top edge of the qa box
 - No arrow is drawn for the gate
 - No node is drawn for the gate

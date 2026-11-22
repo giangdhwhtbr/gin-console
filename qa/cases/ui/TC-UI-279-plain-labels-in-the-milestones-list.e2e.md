@@ -1,6 +1,6 @@
 # TC-UI-279: Plain labels in the Milestones list
 
-- **REQ:** REQ-UI-134@16348b81
+- **REQ:** REQ-UI-134@69f0a1c6
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11

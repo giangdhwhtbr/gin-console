@@ -1,6 +1,6 @@
 # TC-UI-149: Card with points
 
-- **REQ:** REQ-UI-065@e04e4564
+- **REQ:** REQ-UI-065@ca703482
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,4 +10,4 @@
 1. Open `/beads?project=alpha&milestone=all&view=board`
 
 **Expected:**
-- The last line of the card of `e-3` shows the state, the type and the size badge "8 pt" and the assignee or "Unassigned"
+- The last line of the card of `e-3` shows the state, the size "8 pt" as text and the assignee or "Unassigned"

@@ -1,6 +1,6 @@
 # TC-UI-155: No overlapping text on milestone pages
 
-- **REQ:** REQ-UI-110@e3c2a1a9
+- **REQ:** REQ-UI-110@adc61666
 - **Priority:** medium
 
 **Preconditions:**

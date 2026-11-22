@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-102: Wide window
 
-- **REQ:** REQ-MILESTONE-UI-013@b3bb8e48
+- **REQ:** REQ-MILESTONE-UI-013@d306ea36
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,6 +13,6 @@
 
 **Expected:**
 - The label column is 440 px wide
-- The second line of `ex-e3` starts with the id and "8 pt · 11d left" and is cut with an ellipsis inside the column
+- The second line of `ex-e3` starts with the id and "8 pt, 11d left" and is cut with an ellipsis inside the column
 - The second line does not say "No confirmed spec"
 - No text of the label column overlaps a bar or a line

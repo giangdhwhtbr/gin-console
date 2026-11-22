@@ -1,6 +1,6 @@
 # TC-REPORTS-038: Show more
 
-- **REQ:** REQ-REPORTS-016@c46976eb
+- **REQ:** REQ-REPORTS-016@274a4232
 - **Priority:** medium
 
 **Preconditions:**

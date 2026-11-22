@@ -1,6 +1,6 @@
 # TC-UI-136: Partial day
 
-- **REQ:** REQ-UI-109@89f8d56b
+- **REQ:** REQ-UI-109@e17fecbe
 - **Priority:** medium
 
 **Preconditions:**
@@ -10,4 +10,4 @@
 1. Open the bead page `/beads/alpha/t-1`
 
 **Expected:**
-- The bead page shows the size badge "0.5d"
+- The bead page shows the size "0.5d" as text

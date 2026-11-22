@@ -1,6 +1,6 @@
 # TC-UI-023: Estimate chip
 
-- **REQ:** REQ-UI-090@5077cd4a
+- **REQ:** REQ-UI-090@19f1e80e
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,4 +13,4 @@
 1. Open the Delivery tab
 
 **Expected:**
-- Their chips read "+2 d" in the warning color, "−2 d" and "−0.5 d"
+- Their differences read, as text and not as a chip, "+2 d" in the warning color, "−2 d" and "−0.5 d"

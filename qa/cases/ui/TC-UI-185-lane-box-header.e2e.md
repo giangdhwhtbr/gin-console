@@ -1,6 +1,6 @@
 # TC-UI-185: Lane box header
 
-- **REQ:** REQ-UI-118@e68b6fe0
+- **REQ:** REQ-UI-118@2b93f058
 - **Priority:** high
 
 **Preconditions:**
@@ -14,4 +14,5 @@
 **Expected:**
 - The be box header shows a colour swatch
 - Its first line reads "be" and "Running"
-- Its second line reads "ann · lease until <tomorrow> 16:00 · 1/2 closed"
+- Its second line reads "ann, lease until <tomorrow> 16:00"
+- Its second line shows the strand (an image named "1 done, … of 2 tracks") followed by "1/2"

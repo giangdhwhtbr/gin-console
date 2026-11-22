@@ -1,6 +1,6 @@
 # TC-UI-162: Lane waiting for another lane
 
-- **REQ:** REQ-UI-112@e448e4ef
+- **REQ:** REQ-UI-112@5621fb16
 - **Priority:** high
 
 **Preconditions:**
@@ -10,4 +10,4 @@
 1. Open `/beads?project=example&view=lanes&scope=ex-e12`
 
 **Expected:**
-- The `qa` header shows State "Waiting for be", Held by "Unclaimed" and Tracks "0/1 closed"
+- The `qa` header shows State "Waiting for be", Held by "Unclaimed" and Tracks shows the strand with "0/1"

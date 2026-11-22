@@ -1,6 +1,6 @@
 # TC-UI-203: Lanes summary
 
-- **REQ:** REQ-UI-121@3ec4d754
+- **REQ:** REQ-UI-121@12205711
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-21T05-35-24
@@ -16,5 +16,5 @@
 **Expected:**
 - The section "Lanes" lists be, fe, infra and qa with their states
 - The qa row reads "waits for be #2 (merge pending), fe #3 (merged)"
-- The qa row reads "0/1 closed"
+- The qa row shows the strand followed by "0/1"
 - The section offers the link "Open the Lanes tab"

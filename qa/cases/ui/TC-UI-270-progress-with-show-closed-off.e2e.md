@@ -1,6 +1,6 @@
 # TC-UI-270: Progress with show closed off
 
-- **REQ:** REQ-UI-130@ba81e493
+- **REQ:** REQ-UI-130@14444aa5
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -15,5 +15,5 @@
 2. Open `/beads?project=alpha&milestone=all&view=graph`
 
 **Expected:**
-- After step 1 the row of `e-1` says "3/5 closed" with a progress bar
-- After step 2 the node of `e-1` reads "3 of 5 done"
+- After step 1 the row of `e-1` shows the strand followed by "3/5"
+- After step 2 the node of `e-1` shows the strand followed by "3/5"

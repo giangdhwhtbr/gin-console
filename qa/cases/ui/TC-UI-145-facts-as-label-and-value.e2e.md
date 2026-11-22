@@ -1,6 +1,6 @@
 # TC-UI-145: Facts as label and value
 
-- **REQ:** REQ-UI-110@e3c2a1a9
+- **REQ:** REQ-UI-110@adc61666
 - **Priority:** medium
 
 **Preconditions:**

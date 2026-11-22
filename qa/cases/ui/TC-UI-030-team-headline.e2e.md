@@ -1,6 +1,6 @@
 # TC-UI-030: Team headline
 
-- **REQ:** REQ-UI-095@2f17c833
+- **REQ:** REQ-UI-095@1912887f
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11
@@ -17,4 +17,4 @@
 1. Open the Delivery tab
 
 **Expected:**
-- The Team headline reads "27 of 64 done · on pace" without a warning icon
+- The Team headline reads "27 of 64 done, on pace" without a warning icon

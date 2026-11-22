@@ -1,6 +1,6 @@
 # TC-REPORTS-027: Change milestone
 
-- **REQ:** REQ-REPORTS-012@ae27226f
+- **REQ:** REQ-REPORTS-012@023dc4c5
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,4 +13,4 @@
 1. Pick `m1` in the Milestone select
 
 **Expected:**
-- The team report for `m1` is requested, All members is selected and the default list of REQ-REPORTS-016 is shown
+- The team report for `m1` is requested, the Member select shows "All members (<n>)" and the default list of REQ-REPORTS-016 is shown

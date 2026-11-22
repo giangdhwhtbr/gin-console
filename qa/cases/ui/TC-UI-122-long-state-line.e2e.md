@@ -1,6 +1,6 @@
 # TC-UI-122: Long state line
 
-- **REQ:** REQ-UI-049@6d58db62
+- **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57
@@ -13,4 +13,4 @@
 
 **Expected:**
 - The id, the title and the state of the node `e-1` each take one line inside the node
-- "2 of 5 done" is shown in full
+- The strand with "2/5" is shown in full

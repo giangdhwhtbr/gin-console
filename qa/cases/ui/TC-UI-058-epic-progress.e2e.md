@@ -1,6 +1,6 @@
 # TC-UI-058: Epic progress
 
-- **REQ:** REQ-UI-044@f10aa6dd
+- **REQ:** REQ-UI-044@5e9715e5
 - **Priority:** medium
 
 **Preconditions:**
@@ -11,4 +11,4 @@
 2. Turn on "Show closed"
 
 **Expected:**
-- The row of `e-1` says "3/5 closed" with a progress bar
+- The row of `e-1` shows a strand of 5 beads followed by "3/5"

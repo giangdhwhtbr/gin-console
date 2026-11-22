@@ -1,6 +1,6 @@
 # TC-UI-152: Hidden tabs are hinted
 
-- **REQ:** REQ-UI-095@2f17c833
+- **REQ:** REQ-UI-095@1912887f
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T08-56-47

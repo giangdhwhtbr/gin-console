@@ -1,6 +1,6 @@
 # TC-UI-150: Size at every width
 
-- **REQ:** REQ-UI-109@89f8d56b
+- **REQ:** REQ-UI-109@e17fecbe
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,5 +13,5 @@
 4. Open `/beads?project=alpha&milestone=all&view=list`
 
 **Expected:**
-- After step 2, the List row of `e-3` shows "medium" and the size badge "5 pt"
-- After step 4, the List row of `e-3` shows "medium" and the size badge "5 pt"
+- After step 2, the List row of `e-3` shows "medium" and the size "5 pt" as text
+- After step 4, the List row of `e-3` shows "medium" and the size "5 pt" as text
