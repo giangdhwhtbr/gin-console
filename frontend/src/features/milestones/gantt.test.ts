@@ -146,6 +146,11 @@ describe("gantt", () => {
     expect(verdict?.more).toBe(2);
   });
 
+  it("REQ-MILESTONE-UI-024 an external blocker without entries gives its place to the next line, text and mark", () => {
+    const epic = epicPlan("g", { warnings: [warn("external_blocker"), warn("open_bugs", { count: 2 })], external_depends_on: [] });
+    expect(verdictOf(epic, "2026-10-29", null)).toEqual({ text: "2 open bugs", knot: false, more: 0, lines: ["2 open bugs"] });
+  });
+
   it("REQ-MILESTONE-UI-024 No warnings: no verdict", () => {
     expect(verdictOf(epicPlan("d"), "2026-10-29", null)).toBeNull();
   });

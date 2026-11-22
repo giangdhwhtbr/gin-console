@@ -121,34 +121,39 @@ const rankOf = (code: string): number => {
 
 const bySeverity = (epic: EpicPlan) => [...epic.warnings].sort((a, b) => rankOf(a.code) - rankOf(b.code));
 
-/** REQ-MILESTONE-UI-003: one line per warning, one per `external_depends_on` entry for `external_blocker`, most severe first (REQ-MILESTONE-UI-024). */
+type Warning = EpicPlan["warnings"][number];
+
+/** REQ-MILESTONE-UI-003: the lines of one warning; `external_blocker` has one per `external_depends_on` entry. */
+function linesOf(epic: EpicPlan, w: Warning, today: string, integration: string | null): string[] {
+  switch (w.code) {
+    case "overflow":
+      return [`${w.days ?? 0} working ${w.days === 1 ? "day" : "days"} past the end`];
+    case "late":
+      return [`Late: should have finished ${formatDate(epic.planned_end, today)}`];
+    case "unestimated":
+      return ["No estimate"];
+    case "spec_not_ready":
+      return ["Spec not confirmed"];
+    case "spec_due":
+      return ["Spec due before kick-off"];
+    case "after_integration":
+      return [integration === null ? "Ends after integration" : `Ends after integration on ${formatDate(integration, today)}`];
+    case "open_bugs":
+      return [plural(w.count ?? 0, "open bug")];
+    case "oversized":
+      return [`${plural(w.days ?? 0, "working day")} longer than the milestone`];
+    case "external_blocker":
+      return epic.external_depends_on.map(
+        (d) => `Blocked by ${d.id} (${d.milestone === null ? "not in a milestone" : `in ${d.milestone}`})`,
+      );
+    default:
+      return [w.code];
+  }
+}
+
+/** REQ-MILESTONE-UI-003: every warning line, most severe first (REQ-MILESTONE-UI-024). */
 export function warningLines(epic: EpicPlan, today: string, integration: string | null): string[] {
-  return bySeverity(epic).flatMap((w) => {
-    switch (w.code) {
-      case "overflow":
-        return [`${w.days ?? 0} working ${w.days === 1 ? "day" : "days"} past the end`];
-      case "late":
-        return [`Late: should have finished ${formatDate(epic.planned_end, today)}`];
-      case "unestimated":
-        return ["No estimate"];
-      case "spec_not_ready":
-        return ["Spec not confirmed"];
-      case "spec_due":
-        return ["Spec due before kick-off"];
-      case "after_integration":
-        return [integration === null ? "Ends after integration" : `Ends after integration on ${formatDate(integration, today)}`];
-      case "open_bugs":
-        return [plural(w.count ?? 0, "open bug")];
-      case "oversized":
-        return [`${plural(w.days ?? 0, "working day")} longer than the milestone`];
-      case "external_blocker":
-        return epic.external_depends_on.map(
-          (d) => `Blocked by ${d.id} (${d.milestone === null ? "not in a milestone" : `in ${d.milestone}`})`,
-        );
-      default:
-        return [w.code];
-    }
-  });
+  return bySeverity(epic).flatMap((w) => linesOf(epic, w, today, integration));
 }
 
 /** REQ-MILESTONE-UI-024: the one line a row shows (`text`), the mark it takes (`knot` or a dashed ring), the lines left (`more`) and every line for the tooltip. */
@@ -156,9 +161,10 @@ export type Verdict = { text: string; knot: boolean; more: number; lines: string
 
 export function verdictOf(epic: EpicPlan, today: string, integration: string | null): Verdict | null {
   const lines = warningLines(epic, today, integration);
-  if (lines.length === 0) return null;
-  const first = bySeverity(epic)[0].code;
-  return { text: lines[0], knot: first === "late" || first === "external_blocker", more: lines.length - 1, lines };
+  // the first warning that has a line gives both the text and the mark
+  const first = bySeverity(epic).find((w) => linesOf(epic, w, today, integration).length > 0);
+  if (first === undefined) return null;
+  return { text: lines[0], knot: first.code === "late" || first.code === "external_blocker", more: lines.length - 1, lines };
 }
 
 export const periodOf = (from: string, to: string, today: string) =>

@@ -276,9 +276,6 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
           </li>
         ))}
         <li className="flex items-center gap-1.5">
-          <Strand counts={{ done: 2, inProgress: 1, blocked: 1, ready: 3, deferred: 0 }} noun="tracks" />
-        </li>
-        <li className="flex items-center gap-1.5">
           <span aria-hidden className="h-3 border-l border-dashed border-foreground" />
           Today
         </li>
@@ -489,13 +486,18 @@ function EpicRow({
         <div
           aria-hidden
           data-bar={epic.id}
-          className={cn("absolute rounded-full", look.fill)}
+          className={cn("absolute overflow-hidden rounded-full", look.fill)}
           style={{ top: BAR_TOP, height: BEAD_HEIGHT, transform: `translateX(${x0}px)`, width: x1 - x0 }}
         >
           {x1 > endX && (
             <span
               data-overflow
-              className="absolute inset-y-0 right-0 rounded-r-full bg-[repeating-linear-gradient(135deg,var(--state-blocked)_0_2px,transparent_2px_5px)]"
+              className={cn(
+                "absolute inset-y-0 right-0",
+                look === LOOK.blocked
+                  ? "bg-[repeating-linear-gradient(135deg,var(--card)_0_2px,transparent_2px_5px)]"
+                  : "bg-[repeating-linear-gradient(135deg,var(--state-blocked)_0_2px,transparent_2px_5px)]",
+              )}
               style={{ width: x1 - Math.max(endX, x0) }}
             />
           )}

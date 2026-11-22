@@ -192,6 +192,24 @@ describe("GanttChart", () => {
     expect(epicRow("e-a").querySelector("[data-verdict]")).toHaveTextContent("2 working days past the end");
   });
 
+  it("REQ-MILESTONE-UI-003 a bar that starts after the end line is hatched whole, inside the bar", () => {
+    draw(
+      detail([epicPlan("e-a", { planned_start: "2026-11-09", planned_end: "2026-11-10", estimate_days: 2, warnings: [{ code: "overflow", days: 2, count: null }] })], {
+        end: "2026-11-04",
+        finish: "2026-11-10",
+      }),
+    );
+    const bar = epicRow("e-a").querySelector<HTMLElement>("[data-bar]");
+    expect(bar).toHaveClass("overflow-hidden");
+    expect(bar?.querySelector<HTMLElement>("[data-overflow]")?.style.width).toBe(bar?.style.width);
+  });
+
+  it("REQ-MILESTONE-UI-003 the hatch on a blocked bar is drawn in the card colour so that it shows", () => {
+    draw(detail([epicPlan("e-a", { status: "blocked", planned_start: "2026-11-02", planned_end: "2026-11-06" })], { end: "2026-11-04", finish: "2026-11-06" }));
+    expect(epicRow("e-a").querySelector("[data-overflow]")?.className).toContain("var(--card)");
+    expect(epicRow("e-a").querySelector("[data-overflow]")?.className).not.toContain("var(--state-blocked)");
+  });
+
   it("REQ-MILESTONE-UI-003 a bar that ends before the end line has no hatch", () => {
     draw(detail([epicPlan("e-a")]));
     expect(epicRow("e-a").querySelector("[data-overflow]")).toBeNull();
