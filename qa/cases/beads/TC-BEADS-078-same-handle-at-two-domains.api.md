@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-023@7ee5b152
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-35-00-api
+- **Checked:** 8e26c146
 
 **Preconditions:**
 - Project `example` has milestone `m1` whose scope holds beads assigned to `ann@a.example` and `ann@b.example`

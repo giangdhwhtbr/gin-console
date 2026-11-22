@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-022@a14538e5
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-35-00-api
+- **Checked:** 0fc3410a
 
 **Preconditions:**
 - Project `alpha` has the task `t-9` without children

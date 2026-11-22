@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-021@6fc8f7d7
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-35-00-api
+- **Checked:** 8ad16529
 
 **Preconditions:**
 - Project `alpha` whose `bd export` holds: open bead `a`; open epic `e` blocked by `a` with the open child `e.1`; bead `b` with status `blocked` and no blocker; in-progress bead `c` blocked by `a`; in-progress bead `d` without blockers

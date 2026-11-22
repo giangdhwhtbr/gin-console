@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-022@a14538e5
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-35-00-api
+- **Checked:** 2071f18e
 
 **Preconditions:**
 - Project `alpha` whose `bd export` holds epic `e-1` with tracks `t-1` and `t-2` (closed) and `t-3` (open), the closed prep task `p-1` labelled `prep`, and the merge gate `g-1` titled `external: .planning/plans/p.md#1`

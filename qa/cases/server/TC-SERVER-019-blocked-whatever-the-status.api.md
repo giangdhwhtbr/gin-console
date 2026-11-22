@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-SERVER-006@ea632040
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-35-00-api
+- **Checked:** 6c8edcc1
 
 **Preconditions:**
 - Project `alpha` has a bead with status `blocked` and no blocker
