@@ -1,0 +1,7 @@
+# Tests: One set of definitions
+
+Automated tests carry the REQ-ID in the test name or a comment. List here only manual or QE cases.
+
+| TC | REQ | type | evidence |
+|---|---|---|---|
+| TC-1 | REQ-BEADS-021, REQ-BEADS-022, REQ-BEADS-023, REQ-BEADS-024, REQ-UI-130, REQ-UI-131, REQ-UI-132, REQ-UI-133, REQ-UI-134, REQ-UI-135, REQ-MILESTONE-UI-022, REQ-MILESTONE-UI-023, REQ-REPORTS-012, REQ-REPORTS-013 | Playwright on the Tailscale build | On project `example`, at 1440px and 390px: the Projects card, the Board's Blocked column and the Focus view's Blocked column show the same blocked number, and the Team figures carry a tooltip that names their rule; an epic's progress reads the same with "Show closed" on and off; a bead with an owner and no assignee reads "Unassigned"; a handle and its email are one entry in the Assignee filter; "Me" keeps `assignee=me` and shows the viewer's beads; the bead page of the active milestone reads "Active"; the late milestone is marked late on the Milestones list, its epic's milestone card and the Team tab; dates follow REQ-UI-131; the Legend opens and closes inside a 390px window; the PM labels read as REQ-UI-134 lists; no page error. |

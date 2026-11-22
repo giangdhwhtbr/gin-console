@@ -136,15 +136,15 @@ Risks: Many pages parse the project themselves; move them to one shared hook fir
 ### One set of definitions
 Epic: gin-console-rm-definitions
 Milestone: gin-console-6bd
-Points: 8 (5 definitions across 5 pages and 2 APIs, usage coverage, legend, wording pass, medium)
-Estimate: 4 (assumed)
+Points: 13 (8 stories, 13 new and 19 changed REQs across 5 pages and 2 APIs, shared rules module, tooltip and legend, medium)
+Estimate: 7 (assumed)
 Kind: capability
 Complexity: medium (definitions shared by backend and frontend)
 Goal: Blocked, done, progress and assignee mean one thing everywhere.
-Scope: Blocked is status blocked or open with an open blocker, on Projects, Beads, Reports and the Gantt; done is closed everywhere; epic progress counts all children whatever Show closed says; Assignee shows the real assignee or Unassigned, never the owner; one identity for an email and its handle, plus a Me filter; one milestone status for the milestone page and its bead; AI usage coverage: a track counts as collected when its epic's usage lists it among its children, and the rest splits into can still collect (closed within the log retention, about 30 days, with one copyable batch command), logs expired, and nothing to measure (closed without work), where only the first group counts as a gap; one date format; a legend and real tooltips for size, points, prep, lanes and link counts; plain labels in PM views.
-Out of scope: Visual tokens.
-Features: One meaning for blocked, done and progress; real assignee and a Me filter; honest AI usage coverage; legend and tooltips; plain labels; one date format
-Capabilities: beads, reports, milestone-ui, ui
+Scope: Blocked is status blocked or open with an open blocker, on Projects, Beads, Reports and the Gantt; done is closed everywhere; epic progress counts all children whatever Show closed says; Assignee shows the real assignee or Unassigned, never the owner; one identity for an email and its handle, plus a Me filter; one milestone status for the milestone page and its bead; one date format; a legend and real tooltips for size, points, prep, lanes and link counts; plain labels in PM views.
+Out of scope: Visual tokens; AI usage coverage (gin-workflow-wkwb retired `gin usage`; gin-console-5c4 removes Data coverage from Reports, decision 2026-11-21).
+Features: One meaning for blocked, done and progress; real assignee and a Me filter; legend and tooltips; plain labels; one date format
+Capabilities: beads, server, reports, milestone-ui, ui
 Legacy: none
 Depends on:
 Evidence: Product brief (UX review 2026-11-21: blocked 19, 17 and 0 for one scope; Assignee shows the owner; one person listed twice; Data coverage lists 80, 233 and 182 beads as not collected in gin-console, qwikfone and gin-workflow, 70 of gin-console's already counted in their epic, most of the others older than the 30-day log retention)
