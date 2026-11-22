@@ -1421,7 +1421,7 @@ The "Bugs found" heading of REQ-UI-086 SHALL be shown in the bug color (the `typ
 - THEN the "Bugs found" heading uses the `type-bug` color and the bug rows do not
 
 ### REQ-UI-088: Reports page
-The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page header SHALL hold the project choice: each configured project and "All projects", with the current project (REQ-UI-124) as the default; choosing a project there makes it the current project. The panels of the Delivery, AI usage, Quality and Data coverage tabs (REQ-UI-095) SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to those four tabs. The Team tab has its own choices (REQ-REPORTS-012). The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-089 to REQ-UI-091, REQ-REPORTS-013). The page SHALL label every cost "estimated" and SHALL show "no price" where a cost is absent.
+The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page header SHALL hold the project choice: each configured project and "All projects", with the current project (REQ-UI-124) as the default; choosing a project there makes it the current project. The panels of the Delivery and Quality tabs (REQ-UI-095) SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to those two tabs. The Team tab has its own choices (REQ-REPORTS-012). The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-090, REQ-UI-091, REQ-REPORTS-013, REQ-REPORTS-018). The page SHALL show no tokens, cost, budget or `gin usage` command.
 
 #### Scenario: shared link
 - GIVEN the URL `/reports?project=all&days=7&tab=delivery`
@@ -1437,33 +1437,6 @@ The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk.
 - GIVEN the Reports page for `alpha` with 7 days picked on the Delivery tab
 - WHEN the user picks the Team tab and then the Quality tab
 - THEN 7 days is selected in the Quality panel
-
-### REQ-UI-089: AI usage view
-The AI usage tab SHALL show, in this order:
-- A row of figures: tokens, estimated cost, tokens per closed bead, and cache reads (`totals.cache_ratio` as a percentage).
-- A horizontal bar chart of tokens per member, stacked by stage, with each member's total at the end of the bar. Each bar SHALL show, on hover and on focus, the member's closed beads, tokens, cost, tokens per bead and cache ratio.
-- A 100% bar of tokens per stage, with each stage's share written as text.
-- A table of the top epics. Each row SHALL link to the epic's bead page and show its tokens, its closed and total tracks (`closed_children` and `children`), "Prep x/y" from `closed_prep_children` and `prep_children` when `prep_children` is above 0, and one of three budget states:
-  - with a budget and a cost: a meter of `budget.cost` against `budget.budget_usd`, with the percentage, in the warning color above 100%;
-  - with a budget but no cost: "no price";
-  - without a budget: "No budget".
-- A table of the top beads.
-- A table of tokens and cost per model and role.
-
-#### Scenario: member bar
-- GIVEN a report with members `ann` and `Unassigned`
-- WHEN the page is shown and the user focuses `ann`'s bar
-- THEN the chart has one bar per member, stacked by stage, and `ann`'s beads, tokens, cost, tokens per bead and cache ratio are shown
-
-#### Scenario: budget meter
-- GIVEN top epics `a-1` with budget 10 and cost 11.7, and `a-2` without a budget
-- WHEN the AI usage tab is shown
-- THEN `a-1` shows a meter at 117% in the warning color and `a-2` shows "No budget"
-
-#### Scenario: epic with prep tasks
-- GIVEN top epics `e-1` with `closed_children` 1, `children` 2, `closed_prep_children` 1 and `prep_children` 1, and `e-2` with `prep_children` 0
-- WHEN the AI usage tab is shown
-- THEN the row of `e-1` shows "1/2" and "Prep 1/1", and the row of `e-2` shows no prep count
 
 ### REQ-UI-090: Delivery flow view
 The Delivery tab SHALL show, in this order:
@@ -1507,52 +1480,36 @@ Source: `assets/2026-11-12/mockup/index.html`
 
 ### REQ-UI-091: Quality view
 The Quality tab SHALL show, in this order:
-- A row of figures:
-  - the rework rate (`totals.rework_rate`);
+- A row of figures, each with a tooltip (REQ-UI-132) naming its source:
+  - the rework rate (`totals.rework_rate`), or "—" when it is `null`;
   - reopens, summed over the member rows of REQ-REPORTS-005;
-  - bugs found later, summed over the member rows;
-  - review cycles per bead: the sum of the member rows' review cycles divided by the sum of their beads, or "—" when there are no beads.
-- The points of REQ-REPORTS-005 as a scatter plot of tokens against rework. Points with rework above 0 SHALL be drawn in a second color, and a legend SHALL name both colors. Each point SHALL name its bead on hover and on focus, and SHALL open the bead's page on click.
-- A table of the member rows, with reopens, bugs, review cycles per bead, rejections and rework rate.
-- The review findings per severity (critical, important, minor, suggestion) and the waivers, summed over the member rows.
-
-#### Scenario: open a point
-- GIVEN a point for bead `a-3` of project `alpha`
-- WHEN the user clicks it
-- THEN the page `/beads/alpha/a-3` is shown
+  - bugs found later, summed over the member rows.
+- A table of the member rows, with closed beads, reopens, bugs and rework rate.
+- A table of the epic rows, with the epic (its title linking to its bead page), closed beads, reopens, bugs and rework rate.
+The tab SHALL show no tokens, review cycles, rejections, findings or waivers.
 
 #### Scenario: figures
-- GIVEN member rows `ann` (4 beads, 1 reopen, 5 review cycles) and `bao` (1 bead, 1 bug, 1 review cycle)
+- GIVEN member rows `ann` (4 closed, 1 reopen) and `bao` (1 closed, 1 bug) and `totals.rework_rate` 0.4
 - WHEN the Quality tab is shown
-- THEN the figures show 1 reopen, 1 bug found later and 1.2 review cycles per bead
+- THEN the figures read "40%", 1 reopen and 1 bug found later
 
-### REQ-UI-092: Data coverage view
-The Data coverage tab SHALL show the data coverage of REQ-REPORTS-006 as five blocks, in this order, each headed by its name and its count:
-1. Not collected: each bead, linking to its bead page, with a button that copies its `gin usage collect` command.
-2. Unreadable usage: each bead with its problem.
-3. Models without a price: each model.
-4. Incomplete logs: each bead with its sources that are not `ok` and its skipped lines.
-5. Projects that failed: each project with its error.
+#### Scenario: open an epic
+- GIVEN an epic row for `e-1` of project `alpha`
+- WHEN the user clicks its title
+- THEN the page `/beads/alpha/e-1` is shown
 
-A block whose count is 0 SHALL show one sentence saying that nothing is missing, instead of an empty list. After the blocks, the tab SHALL show the share of tokens under Unassigned when it is above 0, and the fixed note "Estimates from local Claude Code and Codex logs on the machine that collected them. Antigravity and OpenCode are not measured."
-
-#### Scenario: copy command
-- GIVEN coverage lists `a-9` as not collected
-- WHEN the user presses its copy button
-- THEN the clipboard holds `gin usage collect --bead a-9`
-
-#### Scenario: empty block
-- GIVEN a report where no project failed
-- WHEN the Data coverage tab is shown
-- THEN the "Projects that failed" block shows count 0 and a sentence, and no list
+#### Scenario: nothing closed
+- GIVEN a report with no selected closed bead
+- WHEN the Quality tab is shown
+- THEN the rework rate reads "—" and each table says "No data in this period"
 
 ### REQ-UI-093: Report states
-The Reports page SHALL show a loading state while the report loads, SHALL show "No data in this period" in a section that has no rows instead of an empty chart, IF the report request fails, THEN SHALL show the error with a Retry button, SHALL show a warning naming each project under `errors` while showing the rest, and SHALL NOT show a late answer for filters that are no longer selected.
+The Reports page SHALL show a loading state while the report loads, SHALL show "No data in this period" in a section that has no rows instead of an empty chart, IF the report request fails, THEN SHALL show the error with a Retry button, SHALL show, above the tabs and whatever tab is selected, a warning naming each project under `errors` with its error while showing the rest, and SHALL NOT show a late answer for filters that are no longer selected.
 
 #### Scenario: partial failure
 - GIVEN the answer for "All projects" has `errors` holding `beta`
 - WHEN the page is shown
-- THEN a warning names `beta` and its error and the sections show the other projects
+- THEN a warning above the tabs names `beta` and its error, it stays when the user picks another tab, and the sections show the other projects
 
 #### Scenario: late answer
 - GIVEN the report for 30 days is loading and the user picks 7 days
@@ -1598,7 +1555,7 @@ From 1024px the frontend SHALL show, at the top of the "Main" navigation's sideb
 - THEN no collapse control is shown and the theme control is under the brand mark, above the links
 
 ### REQ-UI-095: Report tabs
-WHILE the report sections are not listed in the sidebar (REQ-UI-129), the Reports page SHALL show the tabs Team, Delivery, Velocity, AI usage, Quality and Data coverage, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:
+WHILE the report sections are not listed in the sidebar (REQ-UI-129), the Reports page SHALL show the tabs Team, Delivery, Velocity and Quality, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:
 - Team, from the team report of the selected milestone:
   - "Finished on time", or "Finished <n> d late" with a warning icon, for a closed milestone;
   - "Starts <start>" before its start;
@@ -1608,11 +1565,9 @@ WHILE the report sections are not listed in the sidebar (REQ-UI-129), the Report
   - no headline while "All projects" is selected.
 - Delivery: "<closed> beads closed", where `<closed>` is `totals.closed`.
 - Velocity: "<x> days per point" from the selected project's `days_per_point` (REQ-REPORTS-018), with "assumed" when it is assumed, once the Milestones list has loaded; no headline while "All projects" is selected or when `days_per_point` is `null`.
-- AI usage: "<tokens> tokens, <cost>", with "no price" in place of `<cost>` when `totals.cost` is absent.
 - Quality: "<rate> rework", with "—" in place of `<rate>` when `totals.rework_rate` is absent.
-- Data coverage: "<n> gaps" ("1 gap" when `<n>` is 1), with a warning icon when `<n>` is above 0. `<n>` is the sum of five counts: beads not collected, beads with unreadable usage, models without a price, beads with incomplete logs (`coverage.sources`), and projects under `errors`.
 
-The page SHALL request the team report and the Milestones list (REQ-MILESTONE-UI-008, for the forecast `finish` of REQ-MILESTONE-UI-023 and for the Velocity tab) whenever a single project is selected, whatever the tab, and SHALL request the Milestones list at most once per project and refresh. WHILE the Milestones list is loading or after it failed, the Team headline SHALL apply REQ-MILESTONE-UI-023 without the forecast. It SHALL show no headline for a tab while its report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`team`, `delivery`, `velocity`, `usage`, `quality` or `coverage`), SHALL select Team when `tab` is missing or holds another value, and SHALL keep the project, period, sprint, milestone and member when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page and SHALL fade its edge on each side that has hidden tabs.
+The page SHALL request the team report and the Milestones list (REQ-MILESTONE-UI-008, for the forecast `finish` of REQ-MILESTONE-UI-023 and for the Velocity tab) whenever a single project is selected, whatever the tab, and SHALL request the Milestones list at most once per project and refresh. WHILE the Milestones list is loading or after it failed, the Team headline SHALL apply REQ-MILESTONE-UI-023 without the forecast. It SHALL show no headline for a tab while its report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`team`, `delivery`, `velocity` or `quality`), SHALL select Team when `tab` is missing or holds another value, including the retired `usage` and `coverage`, and SHALL keep the project, period, sprint, milestone and member when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page and SHALL fade its edge on each side that has hidden tabs.
 Source: `assets/2026-11-12/mockup/index.html`
 
 #### Scenario: shared link
@@ -1627,8 +1582,8 @@ Source: `assets/2026-11-12/mockup/index.html`
 
 #### Scenario: change tab
 - GIVEN the Reports page for `alpha`, 90 days and the Delivery tab
-- WHEN the user picks the AI usage tab
-- THEN the URL becomes `/reports?project=alpha&days=90&tab=usage` without a reload and no new report is requested
+- WHEN the user picks the Quality tab
+- THEN the URL becomes `/reports?project=alpha&days=90&tab=quality` without a reload and no new report is requested
 
 #### Scenario: velocity tab
 - GIVEN the Reports page for `alpha` on the Delivery tab, whose milestones list has `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}`
@@ -1636,14 +1591,14 @@ Source: `assets/2026-11-12/mockup/index.html`
 - THEN the URL has `tab=velocity`, `GET /api/milestones?project=alpha` has been requested once, and the Velocity headline reads "1.4 days per point"
 
 #### Scenario: headlines
-- GIVEN a report with 41 closed beads, 12,400,000 tokens, cost 38.2, rework rate 0.09, 3 beads not collected, 1 unreadable bead and 1 unpriced model
+- GIVEN a report with 41 closed beads and rework rate 0.09
 - WHEN the page is shown
-- THEN the headlines read "41 beads closed", "12.4M tokens, $38.20", "9% rework" and "5 gaps", and the Data coverage headline has a warning icon
+- THEN the headlines read "41 beads closed" and "9% rework", and no tab is named AI usage or Data coverage
 
-#### Scenario: no gaps
-- GIVEN a report with no coverage gaps and no failed project
-- WHEN the page is shown
-- THEN the Data coverage headline reads "0 gaps" without a warning icon
+#### Scenario: retired tab in a link
+- GIVEN the URL `/reports?project=alpha&tab=coverage`
+- WHEN the page loads
+- THEN the Team tab is selected
 
 #### Scenario: team headline
 - GIVEN the team report of an open milestone with 27 of 64 beads closed, `pace` 3.6 and `pace_needed` 3.4, whose forecast `finish` is before its `end`
@@ -1661,7 +1616,7 @@ Source: `assets/2026-11-12/mockup/index.html`
 - THEN the Velocity tab is selected and has focus
 
 #### Scenario: Hidden tabs are hinted
-- GIVEN the Reports page at a window 768px wide where Data coverage does not fit
+- GIVEN the Reports page at a window 360px wide where Quality does not fit
 - WHEN the page is shown
 - THEN the right edge of the tab list fades, and scrolling it to the end removes the right fade and shows a left one
 
@@ -2486,7 +2441,7 @@ WHILE a Reports page is shown in a window 1024px wide or more with the sidebar e
 #### Scenario: Sections in the sidebar
 - GIVEN a window 1440px wide, the sidebar expanded and `/reports?project=a&tab=delivery`
 - WHEN the page is shown
-- THEN the sidebar lists Team, Delivery, Velocity, AI usage, Quality and Data coverage under Reports with their headlines, Delivery is marked current, and the page shows no tab list
+- THEN the sidebar lists Team, Delivery, Velocity and Quality under Reports with their headlines, Delivery is marked current, and the page shows no tab list
 
 #### Scenario: Change section
 - GIVEN the Reports page at `/reports?project=a&days=7&tab=delivery` with sections in the sidebar
