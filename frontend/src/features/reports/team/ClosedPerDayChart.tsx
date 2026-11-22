@@ -1,8 +1,11 @@
-import { Fragment, type CSSProperties } from "react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { DayRow, TeamMilestone } from "../teamApi";
 import { formatDate } from "@/lib/dates";
+import { placeAxisLabels } from "./axisLabels";
 import { memberColor } from "./format";
+
+const DEFAULT_PLOT_WIDTH = 640; // until the first measure, and in tests, which have no layout
 
 const isMonday = (date: string): boolean => new Date(date).getUTCDay() === 1;
 
@@ -20,6 +23,18 @@ export function ClosedPerDayChart({
   today: string;
   milestone: TeamMilestone;
 }) {
+  const empty = days.length === 0;
+  const layer = useRef<HTMLDivElement>(null);
+  const [plotWidth, setPlotWidth] = useState(DEFAULT_PLOT_WIDTH);
+  useLayoutEffect(() => {
+    const el = layer.current;
+    if (el === null || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth > 0) setPlotWidth(el.clientWidth);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [empty]);
   if (days.length === 0 || days[0].date > today || milestone.start > today) return null;
   const totalOf = (day: DayRow): number => members.reduce((sum, m) => sum + (day.closed[m] ?? 0), 0);
   const max = Math.max(4, ...days.map(totalOf));
@@ -109,23 +124,21 @@ export function ClosedPerDayChart({
             );
           })}
         </ol>
-        <div aria-hidden className="pointer-events-none absolute inset-y-0 left-8 right-0">
+        <div ref={layer} aria-hidden className="pointer-events-none absolute inset-y-0 left-8 right-0">
           {markers.map(({ text, index }, k) => (
             <span key={text} className="absolute whitespace-nowrap text-xs" style={{ ...placeOf(index), top: rowOf(k) === 0 ? 0 : "-1rem" }}>
               {text}
             </span>
           ))}
-          {days.map((day, index) => {
-            return (
-              <Fragment key={day.date}>
-                {(isMonday(day.date) || index === 0) && (
-                  <span className="absolute bottom-0 whitespace-nowrap text-xs text-muted-foreground" style={placeOf(index)}>
-                    {formatDate(day.date, today)}
-                  </span>
-                )}
-              </Fragment>
-            );
-          })}
+          {placeAxisLabels(
+            days.flatMap((day, index) => (isMonday(day.date) || index === 0 ? [{ index, text: formatDate(day.date, today) }] : [])),
+            days.length,
+            plotWidth,
+          ).map(({ index, text, left }) => (
+            <span key={index} className="absolute bottom-0 whitespace-nowrap text-xs text-muted-foreground" style={{ left }}>
+              {text}
+            </span>
+          ))}
         </div>
       </div>
     </section>

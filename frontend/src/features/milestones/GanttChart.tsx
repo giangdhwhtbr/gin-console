@@ -75,6 +75,7 @@ const ZOOMS = [
   { value: "all", label: "Whole milestone" },
 ] as const;
 const DEFAULT_WIDTH = 960; // until the first measure, and in tests, which have no layout
+const STRAND_CAP = 96; // px of the strand drawing in an epic label; a longer thread becomes segments (REQ-UI-138)
 const TAIL_ROOM = 90;
 const MIN_TAIL = 24;
 const NO_KINDS: ReadonlyMap<string, BeadKind> = new Map();
@@ -448,19 +449,21 @@ function EpicRow({
               </Link>
             </span>
             {epic.points === null ? (
-              <span title={size} className="max-w-full shrink-0 truncate">{size}</span>
+              <span title={size} className="max-w-full shrink-0 truncate lg:min-w-0 lg:shrink">{size}</span>
             ) : (
               <SizeBadge points={epic.points} suffix={size} className="max-w-full shrink-0" />
             )}
             <KindBadge kind={kind} className="max-w-full" />
             <span title={period} className="min-w-0 max-w-full shrink truncate">{period}</span>
-            {counts.total > 0 && (
-              <Strand counts={counts.counts} noun="tracks" maxWidth={label - 100} className="max-w-full shrink-[4]" />
-            )}
-            {prep !== null && (
-              <Hint text={DEFINITIONS.prep}>
-                <span className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>
-              </Hint>
+            {(counts.total > 0 || prep !== null) && (
+              <span data-strand-group className="flex shrink-0 items-center gap-x-1.5">
+                {counts.total > 0 && <Strand counts={counts.counts} noun="tracks" maxWidth={STRAND_CAP} />}
+                {prep !== null && (
+                  <Hint text={DEFINITIONS.prep}>
+                    <span>{prep}</span>
+                  </Hint>
+                )}
+              </span>
             )}
             {showsSpec(epic) && epic.spec_confirmed === true && (
               <Hint text={DEFINITIONS.specApproved}>

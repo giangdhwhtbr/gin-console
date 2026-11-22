@@ -79,6 +79,22 @@ describe("GanttChart", () => {
     expect(rows.map((r) => r.textContent?.includes("Prep"))).toEqual([false, false, true, true]);
   });
 
+  it("REQ-UI-138 REQ-MILESTONE-UI-013 the strand, its count and Prep stay whole; the estimate and the period truncate first", () => {
+    drawKids({ "e-a": [track("e-a.1", "closed"), track("e-a.2")] }, { total: 2, closed: 1, prep_total: 2, prep_closed: 1 });
+    const row = epicRow("e-a");
+    const group = row.querySelector<HTMLElement>("[data-strand-group]");
+    expect(group).toHaveClass("shrink-0");
+    expect(group).toContainElement(within(row).getByRole("img", { name: /of 2 tracks$/ }));
+    expect(group).toHaveTextContent("1/2");
+    expect(group).toHaveTextContent("Prep 1/2");
+    const truncating = [...row.querySelectorAll<HTMLElement>("span[title].truncate")].filter((el) => el.title !== "e-a");
+    expect(truncating.length).toBeGreaterThan(0);
+    for (const el of truncating) {
+      expect(el.title).not.toBe("");
+      expect(el.className).toMatch(/(^| )(lg:)?min-w-0( |$)/);
+    }
+  });
+
   it("REQ-MILESTONE-UI-015 an epic with only prep tasks: expand button, Prep x/y, no closed count", () => {
     drawKids({ "e-a": [prep("e-a.1", "closed"), prep("e-a.2")] }, { total: 0, closed: 0, prep_total: 2, prep_closed: 1 });
     expect(screen.getByRole("button", { name: /child beads of e-a/ })).toBeInTheDocument();
