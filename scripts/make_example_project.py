@@ -3,7 +3,7 @@
 
 The project gets a real Beads database (`bd init` + `bd import`) and a minimal
 gin-workflow config, so every page works on it: Beads, My Tasks, Milestones (Gantt,
-forecast), Reports (Team, Delivery, AI usage, Quality) and Projects. Dates are relative
+forecast), Reports (Team, Delivery, Velocity, Quality) and Projects. Dates are relative
 to today, so the charts always show recent work. Running it again rebuilds the project.
 
     python3 scripts/make_example_project.py            # writes examples/example-project
@@ -115,37 +115,6 @@ class Project:
         self.counter[parent] += 1
         return f"{parent}.{self.counter[parent]}"
 
-    def usage(self, tokens: int, *, reopens: int = 0, bugs: int = 0, stage: str = "execute") -> Row:
-        """An `ai_usage` (version 1) as gin-workflow `usage collect` writes it."""
-        model = self.rng.choice(["sonnet", "opus", "haiku"])
-        price = {"sonnet": 3e-6, "opus": 1.5e-5, "haiku": 8e-7}[model]
-        cache = tokens // 2
-        entry = {
-            "input": tokens // 5,
-            "output": tokens // 5,
-            "cache_read": cache,
-            "cache_write": tokens - 2 * (tokens // 5) - cache,
-            "cost": round(tokens * price, 4),
-        }
-        return {
-            "version": 1,
-            "collected_at": stamp(self.today, 8),
-            "models": {model: entry},
-            "roles": {"developer": {model: entry}},
-            "stages": {stage: {"tokens": tokens, "cost": entry["cost"]}},
-            "quality": {
-                "reopens": reopens,
-                "bugs": bugs,
-                "review_cycles": 1 + reopens,
-                "rejections": reopens,
-                "waivers": 0,
-                "findings": {"critical": 0, "important": reopens, "minor": 1, "suggestion": 0},
-            },
-            "unpriced": [],
-            "sources": {"claude_code": "ok", "codex": "ok"},
-            "skipped_lines": 0,
-        }
-
     def task(
         self,
         parent: str,
@@ -157,7 +126,6 @@ class Project:
         assignee: str | None = "auto",
         issue_type: str = "task",
         labels: list[str] | None = None,
-        collected: bool = True,
         **extra: Any,
     ) -> Row:
         """A child bead with its times between `start` and `end`; a closed one closes there."""
@@ -183,14 +151,6 @@ class Project:
             fields["closed_at"] = stamp(done, 16)
             fields["updated_at"] = stamp(done, 16)
             fields["close_reason"] = "Done"
-            if collected:
-                fields["metadata"] = {
-                    "ai_usage": self.usage(
-                        self.rng.randint(40_000, 900_000),
-                        reopens=1 if self.rng.random() < 0.12 else 0,
-                        bugs=1 if self.rng.random() < 0.08 else 0,
-                    )
-                }
         elif status == "in_progress":
             fields["updated_at"] = stamp(min(self.today, start + timedelta(days=span)), 12)
         fields.update(extra)
@@ -479,7 +439,6 @@ def build(today: date, seed: int = 7) -> list[Row]:
         end=today,
         labels=["prep", "prep:spike"],
         assignee="bao",
-        collected=False,
     )
 
     # m3: planned milestone, work not started.
@@ -537,7 +496,52 @@ def build(today: date, seed: int = 7) -> list[Row]:
     definitions_block(p, epic, today, m2_start)
     lanes_block(p, epic, today, m2_start)
     long_text(p, today, m2_start, p_id("m2"), m3_end)
+    # Quality: two bugs found after a closed task shipped (`discovered-from`).
+    recent = sorted(
+        (r for r in p.rows if r["status"] == "closed" and r.get("issue_type") == "task"),
+        key=lambda r: r["closed_at"],
+    )[-4:]
+    for n, src in enumerate(recent[:2], 1):
+        p.add(
+            p_id(f"qb{n}"),
+            f"Bug: regression after {src['title'].lower()}",
+            "bug",
+            today - timedelta(days=n + 1),
+            assignee=src.get("assignee"),
+            deps=[(src["id"], "discovered-from")],
+        )
     return p.rows
+
+
+def reopen_lines(rows: list[Row], today: date) -> str:
+    """About five `reopened` field changes for closed tasks closed in the last 28 days."""
+    closed = [
+        r
+        for r in rows
+        if r["status"] == "closed"
+        and r.get("issue_type") == "task"
+        and r.get("assignee")
+        and date.fromisoformat(r["closed_at"][:10]) >= today - timedelta(days=28)
+    ]
+    out = ""
+    for n, r in enumerate(closed[:5], 1):
+        when = date.fromisoformat(r["closed_at"][:10]) + timedelta(days=1)
+        out += json.dumps(
+            {
+                "id": f"int-{n}",
+                "kind": "field_change",
+                "created_at": stamp(min(when, today), 14),
+                "actor": r["assignee"],
+                "issue_id": r["id"],
+                "extra": {
+                    "field": "status",
+                    "old_value": "closed",
+                    "new_value": "open",
+                    "reason": "reopened",
+                },
+            }
+        ) + "\n"
+    return out
 
 
 def definitions_block(p: Project, epic: Callable[..., Row], today: date, m2_start: date) -> None:
@@ -832,7 +836,7 @@ def guard(out: Path) -> None:
         )
 
 
-def write(out: Path, rows: list[Row]) -> None:
+def write(out: Path, rows: list[Row], today: date) -> None:
     guard(out)
     # Build outside any repository: `bd init` inside another Beads project picks up that
     # project's database and prefix (here, gin-console's own beads).
@@ -845,6 +849,7 @@ def write(out: Path, rows: list[Row]) -> None:
         source.write_text("".join(json.dumps(row) + "\n" for row in rows))
         run(["bd", "import", str(source)], work)
         run(["bd", "export", "-o", ".beads/issues.jsonl"], work)
+        (work / ".beads" / "interactions.jsonl").write_text(reopen_lines(rows, today))
         (work / ".agent-workflow").mkdir()
         (work / ".agent-workflow" / "config.yaml").write_text(WORKFLOW_CONFIG)
         (work / MARKER).write_text("built by gin-console scripts/make_example_project.py\n")
@@ -935,7 +940,7 @@ def main() -> None:
         raise SystemExit("bd (Beads) is not on PATH")
     out = args.out.resolve()
     rows = build(args.today, args.seed)
-    write(out, rows)
+    write(out, rows, args.today)
     problems = check(out, rows)
     if problems:
         raise SystemExit("example project written but not usable:\n- " + "\n- ".join(problems))
