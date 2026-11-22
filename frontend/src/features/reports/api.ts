@@ -35,19 +35,34 @@ const ARRAYS: Record<string, string[]> = {
   quality: ["members", "epics"],
 };
 
-// simplified: checks the shape down to the arrays, not every row; the backend's pydantic model owns the rows.
+const isRate = (value: unknown): boolean => value === null || typeof value === "number";
+const hasStrings = (row: object, keys: string[]): boolean => keys.every((key) => typeof field(row, key) === "string");
+const hasNumbers = (row: object, keys: string[]): boolean => keys.every((key) => typeof field(row, key) === "number");
+
+function isQualityRow(row: unknown, strings: string[]): boolean {
+  return isObject(row) && hasStrings(row, strings) && hasNumbers(row, ["closed", "reopens", "bugs"]) && isRate(field(row, "rework_rate"));
+}
+
+function qualityRows(quality: unknown, key: string, strings: string[]): boolean {
+  const rows = isObject(quality) ? field(quality, key) : undefined;
+  return Array.isArray(rows) && rows.every((row) => isQualityRow(row, strings));
+}
+
+// simplified: checks the shape down to the arrays, and the quality rows; the backend's pydantic model owns the other rows.
 function isReport(value: unknown): value is Report {
   if (!isObject(value) || typeof field(value, "generated_at") !== "string") return false;
   const totals = field(value, "totals");
   if (!isObject(totals) || typeof field(totals, "closed") !== "number") return false;
   const rate = field(totals, "rework_rate");
-  if (rate !== null && typeof rate !== "number") return false;
+  if (!isRate(rate)) return false;
   return (
     Array.isArray(field(value, "errors")) &&
     Object.entries(ARRAYS).every(([section, keys]) => {
       const body = field(value, section);
       return isObject(body) && keys.every((key) => Array.isArray(field(body, key)));
-    })
+    }) &&
+    qualityRows(field(value, "quality"), "members", ["member"]) &&
+    qualityRows(field(value, "quality"), "epics", ["project", "id", "title"])
   );
 }
 

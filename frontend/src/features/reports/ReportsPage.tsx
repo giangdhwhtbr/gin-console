@@ -248,18 +248,18 @@ export function ReportsPage() {
         <>
           {loaded.status === "ok" && <ReportErrors errors={loaded.report.errors} />}
           <div className="lg:group-data-[sidebar=expanded]/shell:hidden">
-          <TabStrip>
-            <Tabs
-              label="Report"
-              tab={tab}
-              onChange={(next) => change({ ...filters, project: selected, tab: next })}
-              tabs={TABS.map((value) => ({
-                value,
-                label: LABELS[value],
-                hint: hintFor(value),
-              }))}
-            />
-          </TabStrip>
+            <TabStrip>
+              <Tabs
+                label="Report"
+                tab={tab}
+                onChange={(next) => change({ ...filters, project: selected, tab: next })}
+                tabs={TABS.map((value) => ({
+                  value,
+                  label: LABELS[value],
+                  hint: hintFor(value),
+                }))}
+              />
+            </TabStrip>
           </div>
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-6">
             {tab === "team" ? (
@@ -285,56 +285,56 @@ export function ReportsPage() {
               )
             ) : (
               <>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex gap-1">
-                  {PERIODS.map((period) => (
-                    <Button
-                      key={period}
-                      type="button"
-                      size="sm"
-                      variant={period === days ? "default" : "outline"}
-                      aria-pressed={period === days}
-                      onClick={() => change({ ...filters, project: selected, days: period })}
-                    >
-                      {period} days
-                    </Button>
-                  ))}
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex gap-1">
+                    {PERIODS.map((period) => (
+                      <Button
+                        key={period}
+                        type="button"
+                        size="sm"
+                        variant={period === days ? "default" : "outline"}
+                        aria-pressed={period === days}
+                        onClick={() => change({ ...filters, project: selected, days: period })}
+                      >
+                        {period} days
+                      </Button>
+                    ))}
+                  </div>
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      const value = new FormData(event.currentTarget).get("sprint");
+                      change({ ...filters, project: selected, sprint: typeof value === "string" ? value.trim() : "" });
+                    }}
+                  >
+                    <input
+                      key={sprint}
+                      name="sprint"
+                      aria-label="Sprint"
+                      placeholder="Sprint"
+                      defaultValue={sprint}
+                      className="rounded border bg-background px-2 py-1 text-sm"
+                    />
+                  </form>
+                  <p className="text-sm text-muted-foreground">Beads closed in the last {days} days, or the epics of a sprint</p>
                 </div>
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    const value = new FormData(event.currentTarget).get("sprint");
-                    change({ ...filters, project: selected, sprint: typeof value === "string" ? value.trim() : "" });
-                  }}
-                >
-                  <input
-                    key={sprint}
-                    name="sprint"
-                    aria-label="Sprint"
-                    placeholder="Sprint"
-                    defaultValue={sprint}
-                    className="rounded border bg-background px-2 py-1 text-sm"
-                  />
-                </form>
-                <p className="text-sm text-muted-foreground">Beads closed in the last {days} days, or the epics of a sprint</p>
-              </div>
-              {loaded.status === "loading" && <p className="text-muted-foreground">Loading report…</p>}
-              {loaded.status === "error" && (
-                <Alert variant="destructive">
-                  <AlertTitle>The report could not be loaded</AlertTitle>
-                  <AlertDescription>{loaded.message}</AlertDescription>
-                  <Button type="button" size="sm" variant="outline" onClick={() => setAttempt((n) => n + 1)}>
-                    Retry
-                  </Button>
-                </Alert>
-              )}
-              {loaded.status === "ok" && (
-                <>
-                  <Figures items={figures(tab, loaded.report)} />
-                  {tab === "delivery" && <DeliverySection delivery={loaded.report.delivery} />}
-                  {tab === "quality" && <QualitySection report={loaded.report} />}
-                </>
-              )}
+                {loaded.status === "loading" && <p className="text-muted-foreground">Loading report…</p>}
+                {loaded.status === "error" && (
+                  <Alert variant="destructive">
+                    <AlertTitle>The report could not be loaded</AlertTitle>
+                    <AlertDescription>{loaded.message}</AlertDescription>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setAttempt((n) => n + 1)}>
+                      Retry
+                    </Button>
+                  </Alert>
+                )}
+                {loaded.status === "ok" && (
+                  <>
+                    <Figures items={figures(tab, loaded.report)} />
+                    {tab === "delivery" && <DeliverySection delivery={loaded.report.delivery} />}
+                    {tab === "quality" && <QualitySection report={loaded.report} />}
+                  </>
+                )}
               </>
             )}
           </div>

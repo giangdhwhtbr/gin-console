@@ -39,4 +39,14 @@ describe("fetchReport", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ ...report(), quality: { members: [] } }))));
     await expect(fetchReport(filters)).rejects.toThrow("Could not load the report (unexpected response)");
   });
+  it("REQ-UI-091 refuses a malformed member row", async () => {
+    const quality = { ...report().quality, members: [{ member: "ann", closed: "4", reopens: 1, bugs: 0, rework_rate: 0.25 }] };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ ...report(), quality }))));
+    await expect(fetchReport(filters)).rejects.toThrow("Could not load the report (unexpected response)");
+  });
+  it("REQ-UI-091 refuses a malformed epic row", async () => {
+    const quality = { ...report().quality, epics: [{ project: "alpha", id: "a-e1", closed: 2, reopens: 1, bugs: 0, rework_rate: null }] };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ ...report(), quality }))));
+    await expect(fetchReport(filters)).rejects.toThrow("Could not load the report (unexpected response)");
+  });
 });
