@@ -459,17 +459,17 @@ function EpicRow({
             <span title={period} className="min-w-0 max-w-full shrink truncate">{period}</span>
             {counts.total > 0 && (
               <Hint text={DEFINITIONS.progress}>
-                <span tabIndex={0} className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>
+                <span className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>
               </Hint>
             )}
             {prep !== null && (
               <Hint text={DEFINITIONS.prep}>
-                <span tabIndex={0} className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>
+                <span className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>
               </Hint>
             )}
             {showsSpec(epic) && epic.spec_confirmed === true && (
               <Hint text={DEFINITIONS.specApproved}>
-                <span tabIndex={0} className="flex min-w-0 max-w-full shrink-[8] items-center gap-1 truncate text-state-ready">
+                <span className="flex min-w-0 max-w-full shrink-[8] items-center gap-1 truncate text-state-ready">
                   <FileCheck aria-hidden className="size-3 flex-none" />
                   Spec approved
                 </span>
@@ -477,7 +477,7 @@ function EpicRow({
             )}
             {showsSpec(epic) && epic.spec_confirmed === false && (
               <Hint text={DEFINITIONS.specApproved}>
-                <span tabIndex={0} className="min-w-0 max-w-full shrink-[8] truncate text-muted-foreground">Spec not approved yet</span>
+                <span className="min-w-0 max-w-full shrink-[8] truncate text-muted-foreground">Spec not approved yet</span>
               </Hint>
             )}
           </span>

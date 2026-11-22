@@ -46,10 +46,19 @@ function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = fal
           return (
             <Fragment key={part}>
               {i > 0 && <span className="whitespace-pre"> · </span>}
-              <span>
-                {count !== "" && <b className="font-semibold">{count}</b>}
-                {rest}
-              </span>
+              {part.endsWith(" unassigned") ? (
+                <Hint text={DEFINITIONS.unassigned}>
+                  <span>
+                    {count !== "" && <b className="font-semibold">{count}</b>}
+                    {rest}
+                  </span>
+                </Hint>
+              ) : (
+                <span>
+                  {count !== "" && <b className="font-semibold">{count}</b>}
+                  {rest}
+                </span>
+              )}
             </Fragment>
           );
         })}

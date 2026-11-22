@@ -17,11 +17,12 @@ export function ForecastCard({ forecast: f, today, daysPerPoint = null }: { fore
     else compare = { text: `${plural(workdaysAfter(f.finish, f.deadline), "working day")} spare`, late: false };
   }
   const facts: Fact[] = [
-    { label: "Parallel lanes", title: DEFINITIONS.parallelLanes, value: plural(f.lanes, "lane") },
+    { label: "Parallel lanes", hint: DEFINITIONS.parallelLanes, value: plural(f.lanes, "lane") },
     { label: "Open epics", value: plural(f.open_epics, "open epic") },
     {
       label: "Not estimated",
-      title: `${f.unestimated} not estimated. ${DEFINITIONS.notEstimated}`,
+      hint: DEFINITIONS.notEstimated,
+      title: `${f.unestimated} not estimated`,
       value:
         f.unestimated > 0 ? (
           <span className="inline-flex items-center gap-1 text-state-blocked">
@@ -32,7 +33,7 @@ export function ForecastCard({ forecast: f, today, daysPerPoint = null }: { fore
           `${f.unestimated} not estimated`
         ),
     },
-    ...(daysPerPoint === null ? [] : [{ label: "Days per point", title: DEFINITIONS.daysPerPoint, value: `${oneDecimal(daysPerPoint.value)}${daysPerPoint.assumed ? " (assumed)" : ""}` }]),
+    ...(daysPerPoint === null ? [] : [{ label: "Days per point", hint: DEFINITIONS.daysPerPoint, value: `${oneDecimal(daysPerPoint.value)}${daysPerPoint.assumed ? " (assumed)" : ""}` }]),
   ];
   return (
     <section aria-label="Project forecast" className="grid gap-4 rounded border bg-card px-4 py-3 md:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] md:items-center">

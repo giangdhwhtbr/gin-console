@@ -3,6 +3,8 @@ import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "rec
 import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Hint } from "@/components/ui/tooltip";
+import { DEFINITIONS } from "@/lib/definitions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { DeliverySection as Delivery, Stat, TimeRow } from "./api";
@@ -101,7 +103,11 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
                       {diff !== null ? (
                         <Badge variant="outline" className={cn(diff.late && "text-state-blocked")}>{diff.text}</Badge>
                       ) : (
-                        e.days_per_point !== null && `${oneDecimal(e.days_per_point)} days per point`
+                        e.days_per_point !== null && (
+                          <Hint text={DEFINITIONS.daysPerPoint}>
+                            <span>{`${oneDecimal(e.days_per_point)} days per point`}</span>
+                          </Hint>
+                        )
                       )}
                     </TableCell>
                   </TableRow>
