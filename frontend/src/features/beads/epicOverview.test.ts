@@ -35,7 +35,7 @@ describe("epicOverview", () => {
   it("REQ-UI-121 Lanes summary: rows in the Lanes view order with their states and counts", () => {
     const rows = laneRows(E12, E, new Date("2026-11-20T10:00:00Z"));
     expect(rows.map((r) => r.lane)).toEqual(["be", "fe", "infra", "qa", null]);
-    expect(rows.find((r) => r.lane === "qa")?.tracks).toEqual({ closed: 0, total: 1 });
+    expect(rows.find((r) => r.lane === "qa")?.tracks).toMatchObject({ closed: 0, total: 1 });
   });
 
   it("REQ-UI-121 Tracks table: 8 rows by id, no merge gate, and ex-e12.4 is Blocked with 'be #2 · merge pending'", () => {

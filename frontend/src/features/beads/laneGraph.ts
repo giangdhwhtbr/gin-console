@@ -1,6 +1,6 @@
 import type { BeadSummary } from "./api";
 import { cycleNodes, type StepKey } from "./graph";
-import { depsOf, depthsOf, LANE, laneName, lanesOf, trackNumber, type Dep, type LaneState } from "./lanes";
+import { depsOf, depthsOf, LANE, laneName, lanesOf, trackNumber, type Dep, type LaneRow, type LaneState } from "./lanes";
 import { gateState, gateWords } from "./mergeGates";
 
 /** REQ-UI-117, REQ-UI-118: the sizes of the lane boxes in the Graph view in px. */
@@ -22,8 +22,10 @@ export type LaneBoxLayout = {
   h: number;
   /** REQ-UI-112; `null` for "No lane". */
   state: LaneState | null;
-  /** Line 2 of the header: "ann · lease until 21 Nov 16:00 · 1/2 closed", or "1/2 closed". */
+  /** Line 2 of the header, before the strand: "ann, lease until 21 Nov 16:00"; empty for a closed lane and for "No lane". */
   meta: string;
+  /** REQ-UI-112: all the lane's tracks, whatever the filters, for the strand. */
+  tracks: LaneRow["tracks"];
 };
 export type LaneGraphCard = { bead: BeadSummary; lane: string | null; x: number; y: number; layer: number; stack: number };
 export type LaneGraphArrow = {
@@ -337,8 +339,8 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
       const size = sizes.get(row.lane);
       if (size === undefined) continue;
       const open = row.state !== null && row.state.kind !== "closed";
-      const facts = [...(open ? [row.holders.length > 0 ? row.holders.join(", ") : "Unclaimed", ...(row.lease === null ? [] : [row.lease.text.replace(/^until/, "lease until").replace(/^expired/, "lease expired")])] : []), `${row.tracks.closed}/${row.tracks.total} closed`];
-      boxes.push({ lane: row.lane, slot: row.lane === null ? 0 : (slots.get(row.lane) ?? 0), tier: t, x, y, w: size.w, h: size.h, state: row.state, meta: facts.join(" · ") });
+      const facts = open ? [row.holders.length > 0 ? row.holders.join(", ") : "Unclaimed", ...(row.lease === null ? [] : [row.lease.text.replace(/^until/, "lease until").replace(/^expired/, "lease expired")])] : [];
+      boxes.push({ lane: row.lane, slot: row.lane === null ? 0 : (slots.get(row.lane) ?? 0), tier: t, x, y, w: size.w, h: size.h, state: row.state, meta: facts.join(", "), tracks: row.tracks });
       y += size.h;
       maxBottom = Math.max(maxBottom, y);
       y += boxGap;
@@ -543,7 +545,7 @@ export function laneGraphLines(graph: LaneGraph): LaneGraphLine[] {
   };
   const lanes = graph.boxes.map((b) => ({
     key: `lane:${b.lane ?? ""}`,
-    text: `${laneName(b.lane)}: ${[b.state?.words, b.meta].flatMap((x) => (x === undefined ? [] : [x])).join(", ")}`,
+    text: `${laneName(b.lane)}: ${[b.state?.words, b.meta === "" ? undefined : b.meta, `${b.tracks.closed}/${b.tracks.total} closed`].flatMap((x) => (x === undefined ? [] : [x])).join(", ")}`,
   }));
   const arrows = graph.arrows.map((a) => ({
     key: `arrow:${a.from}>${a.to}`,

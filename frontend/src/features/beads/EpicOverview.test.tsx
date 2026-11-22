@@ -53,20 +53,20 @@ afterEach(() => {
 });
 
 describe("EpicOverview cards", () => {
-  it("REQ-UI-120 Progress by state: 4 of 8 tracks closed, 50%, legend of the states, not merge gates", () => {
+  // REQ-UI-138 Scenario: Large strand on the epic page
+  it("REQ-UI-120 REQ-UI-138 Progress is a large strand of 8 beads and the words of the states, not merge gates", () => {
     stub();
     show();
-    const progress = card("Progress");
-    expect(progress.getByText(/of 8 tracks closed · 50%/)).toBeInTheDocument();
-    const legend = progress.getAllByRole("listitem").map((li) => li.textContent);
-    expect(legend).toEqual(["Done 4", "In progress 1", "Ready 2", "Blocked 1"]);
+    const strand = card("Progress").getByRole("img", { name: "4 done, 1 in progress, 1 blocked, 2 ready of 8 tracks" });
+    expect(strand).toHaveTextContent("4 done, 1 in progress, 1 blocked, 2 ready");
+    expect(strand.querySelectorAll("g[data-bead]")).toHaveLength(8);
+    expect(card("Progress").queryByRole("listitem")).toBeNull();
   });
 
-  it("REQ-UI-120 REQ-UI-130 Progress reads the child counts: 4 of 8 tracks closed with only the open children loaded", () => {
+  it("REQ-UI-120 REQ-UI-130 Progress reads the child counts: the same strand with only the open children loaded", () => {
     stub();
     show(ok([epic, ...E12.filter((b) => b.parent === E && b.status !== "closed" && b.waits_for === null)]));
-    expect(card("Progress").getByText(/of 8 tracks closed · 50%/)).toBeInTheDocument();
-    expect(card("Progress").getByText("4")).toBeInTheDocument();
+    expect(card("Progress").getByRole("img", { name: "4 done, 1 in progress, 1 blocked, 2 ready of 8 tracks" })).toBeInTheDocument();
   });
 
   it("REQ-UI-120 Points, Bugs and Prep: points of the tracks, open bugs and the prep tasks", () => {
@@ -141,7 +141,7 @@ describe("EpicOverview cards", () => {
     stub(502);
     show();
     expect(await card("Workflow").findByText("gin state failed: unknown workflow")).toBeInTheDocument();
-    expect(card("Progress").getByText(/of 8 tracks closed/)).toBeInTheDocument();
+    expect(card("Progress").getByRole("img", { name: /of 8 tracks/ })).toBeInTheDocument();
     expect(await card("Milestone").findByRole("link", { name: "ex-m2 Checkout v2" })).toBeInTheDocument();
   });
 
@@ -194,7 +194,7 @@ describe("EpicOverview cards", () => {
     stub(WORKFLOW, 500);
     show();
     expect(await card("Milestone").findByText("Milestones unavailable")).toBeInTheDocument();
-    expect(card("Progress").getByText(/of 8 tracks closed/)).toBeInTheDocument();
+    expect(card("Progress").getByRole("img", { name: /of 8 tracks/ })).toBeInTheDocument();
   });
 
   it("REQ-UI-120 Progress while the beads load: its own loading text, the other cards keep working", async () => {
@@ -207,7 +207,7 @@ describe("EpicOverview cards", () => {
 });
 
 describe("EpicOverview lanes and tracks", () => {
-  it("REQ-UI-121 Lanes summary: be, fe, infra, qa with states, and qa waits for be #2 (merge pending), fe #3 (merged), 0/1 closed", () => {
+  it("REQ-UI-121 Lanes summary: be, fe, infra, qa with states, and qa waits for be #2 (merge pending), fe #3 (merged), strand 0/1", () => {
     stub();
     show();
     const lanes = within(screen.getByRole("region", { name: "Lanes" }));
@@ -219,7 +219,7 @@ describe("EpicOverview lanes and tracks", () => {
     expect(rows[2]).toHaveTextContent("lease expired");
     expect(rows[3]).toHaveTextContent("Waiting for be");
     expect(rows[3]).toHaveTextContent("Unclaimed · waits for be #2 (merge pending), fe #3 (merged)");
-    expect(rows[3]).toHaveTextContent("0/1 closed");
+    expect(within(rows[3]).getByRole("img", { name: "1 blocked of 1 tracks" })).toHaveTextContent("0/1");
     expect(rows[3].querySelector("[data-swatch]")).not.toBeNull();
     const colours = rows.map((r) => r.getAttribute("style"));
     expect(new Set(colours).size).toBe(4);

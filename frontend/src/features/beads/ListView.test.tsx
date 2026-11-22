@@ -42,12 +42,13 @@ describe("ListView", () => {
     expect(shown.parentElement).toHaveClass("flex-nowrap", "@2xl:flex-wrap");
     expect(shown).toHaveClass("min-w-0", "shrink", "truncate");
     expect(within(row).getByText("Payments migration").parentElement).toHaveClass("min-w-32", "flex-1", "truncate");
-    // the bar and the closed count give way to the title when the title cell is narrow
-    expect(within(row).getByText(/\d+\/\d+ closed/)).toHaveClass("hidden", "@xl:flex");
+    // the strand gives way to the title when the title cell is narrow
+    const strand = within(row).getByRole("img", { name: /of 1 tracks/ });
+    expect(strand.parentElement).toHaveClass("hidden", "@xl:flex");
     expect(within(row).getByText(/^Prep /)).toHaveClass("hidden", "@xl:inline");
     expect(within(row).getByText("p-label").parentElement?.parentElement).toHaveClass("hidden", "@3xl:flex");
     // the extras clip before the title does
-    const group = within(row).getByText(/\d+\/\d+ closed/).parentElement!;
+    const group = strand.parentElement!.parentElement!;
     expect(group).toHaveClass("min-w-0", "shrink", "overflow-hidden");
     expect(group).toContainElement(within(row).getByText("p-label"));
     expect(within(row).getByText("Payments migration").parentElement).toHaveAttribute("title", "Payments migration");
@@ -218,7 +219,10 @@ describe("ListView", () => {
     const { container } = render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
 
-    expect(within(tree).getByText("3/5 closed")).toBeInTheDocument();
+    // REQ-UI-138 REQ-UI-044 epic progress: a strand of 5 beads and "3/5"
+    const strand = within(tree).getByRole("img", { name: /^3 done, 2 ready of 5 tracks$/ });
+    expect(strand).toHaveTextContent("3/5");
+    expect(strand.querySelectorAll("g[data-bead]")).toHaveLength(5);
     expect(within(tree).getByText("<script>window.hacked = 1</script>")).toBeInTheDocument();
     expect(container.querySelector("script")).toBeNull();
 
@@ -238,7 +242,7 @@ describe("ListView", () => {
     expect(within(tree).getByRole("treeitem", { name: /xss-1/ })).toBeInTheDocument();
   });
 
-  it("REQ-UI-130 a list row shows 3/5 closed from the child counts with Show closed off and the closed children not loaded", async () => {
+  it("REQ-UI-130 a list row shows the strand 3/5 from the child counts with Show closed off and the closed children not loaded", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
@@ -249,10 +253,10 @@ describe("ListView", () => {
     );
     render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
-    expect(within(tree).getByText("3/5 closed")).toBeInTheDocument();
+    expect(within(tree).getByRole("img", { name: /3 done.*of 5 tracks/ })).toHaveTextContent("3/5");
   });
 
-  it("REQ-UI-044 epic with a prep task: track bar, Prep 0/1 and a chip on p-1 only", async () => {
+  it("REQ-UI-044 epic with a prep task: strand 1/2, Prep 0/1 and a chip on p-1 only", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list&closed=1");
     stubBeads(() =>
       json([
@@ -264,7 +268,10 @@ describe("ListView", () => {
     );
     render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
-    expect(within(tree).getByText("1/2 closed")).toBeInTheDocument();
+    // REQ-UI-138 Prep apart: a strand of 2 beads, "1/2" and "Prep 0/1"
+    const strand = within(tree).getByRole("img", { name: /1 done, 1 ready of 2 tracks/ });
+    expect(strand).toHaveTextContent("1/2");
+    expect(strand.querySelectorAll("g[data-bead]")).toHaveLength(2);
     expect(within(tree).getByText("Prep 0/1")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Expand all" }));
     const chip = (id: string) => within(within(tree).getByRole("treeitem", { name: new RegExp(id) })).queryByText("Prep", { selector: "[data-slot=badge]" });
@@ -273,7 +280,7 @@ describe("ListView", () => {
     expect(chip("t-2")).toBeNull();
   });
 
-  it("REQ-UI-044 an epic with only prep tasks shows no track count", async () => {
+  it("REQ-UI-044 an epic with only prep tasks shows no strand", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([bead("e-1", { issue_type: "epic", child_counts: { total: 0, closed: 0, prep_total: 1, prep_closed: 0 } }), bead("p-1", { parent: "e-1", labels: ["prep"] })]),
@@ -281,7 +288,7 @@ describe("ListView", () => {
     render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
     expect(within(tree).getByText("Prep 0/1")).toBeInTheDocument();
-    expect(within(tree).queryByText(/closed$/)).toBeNull();
+    expect(within(tree).queryByRole("img")).toBeNull();
   });
 
   it("REQ-UI-045 selection: clicking updates URL and initial selection opens branch", async () => {
@@ -578,7 +585,7 @@ describe("ListView lanes", () => {
     const tree = await screen.findByRole("tree");
     const epic = within(tree).getByRole("treeitem", { name: /Checkout/ });
     // the gate is not counted as a child: one track and one task
-    expect(within(epic).getByText("0/2 closed")).toBeInTheDocument();
+    expect(within(epic).getByRole("img", { name: /2 ready of 2 tracks/ })).toHaveTextContent("0/2");
     await userEvent.click(within(epic).getByRole("button", { name: "Expand e-1" }));
     const row = within(tree).getByRole("treeitem", { name: /Track one/ });
     expect(within(row).getByText("be")).toBeInTheDocument();

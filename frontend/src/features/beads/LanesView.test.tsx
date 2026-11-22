@@ -51,7 +51,7 @@ describe("LanesView", () => {
     expect(within(be).getByText("Running")).toBeInTheDocument();
     expect(within(be).getByText("ann")).toBeInTheDocument();
     expect(within(be).getByText(/^until /)).toBeInTheDocument();
-    expect(within(be).getByText("1/2 closed")).toBeInTheDocument();
+    expect(within(be).getByRole("img", { name: "1 done, 1 in progress of 2 tracks" })).toHaveTextContent("1/2");
     const qa = screen.getByRole("region", { name: "Lane qa" });
     expect(within(qa).getByText("Waiting for be")).toBeInTheDocument();
     expect(within(qa).getByText("Unclaimed")).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("LanesView", () => {
     expect(within(fe).queryByText("Lease")).toBeNull();
     const none = screen.getByRole("region", { name: "Lane No lane" });
     expect(within(none).queryByText("State")).toBeNull();
-    expect(within(none).getByText("0/1 closed")).toBeInTheDocument();
+    expect(within(none).getByRole("img", { name: /of 1 tracks/ })).toHaveTextContent("0/1");
   });
 
   it("REQ-UI-113 Waiting and merged markers are drawn", () => {

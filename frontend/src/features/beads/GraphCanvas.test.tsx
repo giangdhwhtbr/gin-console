@@ -40,9 +40,10 @@ describe("GraphNode content", () => {
     const n = node(id);
     expect(n).toHaveAccessibleName(new RegExp(`^${id}`));
     expect(within(n).getByText("ex-payments-pr…tion-2026")).toHaveAttribute("title", id);
-    const done = within(n).getByText("2 of 5 done");
-    expect(done).toHaveClass("shrink-0");
-    expect(done.parentElement).toHaveClass("whitespace-nowrap", "min-w-0");
+    const strand = within(n).getByRole("img", { name: /^2 done, 3 ready of 5 tracks$/ });
+    expect(strand).toHaveTextContent("2/5");
+    expect(strand.parentElement).toHaveClass("shrink-0");
+    expect(strand.parentElement?.parentElement).toHaveClass("whitespace-nowrap", "min-w-0");
     const label = within(n).getByText("In progress");
     expect(label).toHaveClass("truncate");
     expect(label.closest("[data-state]")).not.toHaveAttribute("title");
@@ -145,24 +146,24 @@ describe("GraphCanvas", () => {
     expect(zoom().getByText("100%")).toBeInTheDocument();
   });
 
-  it("REQ-UI-049 a node with children reads n of m done; a click selects and a double click opens", async () => {
+  it("REQ-UI-049 a node with children shows the strand with n/m; a click selects and a double click opens", async () => {
     const g = scopeGraph([epic("e-1", { child_counts: { total: 3, closed: 1, prep_total: 0, prep_closed: 0 } }), task("a", "e-1", [], { status: "closed" }), task("b", "e-1"), task("c", "e-1")], null, OFF);
     const calls = show(g);
-    expect(node("e-1")).toHaveTextContent("1 of 3 done");
+    expect(within(node("e-1")).getByRole("img")).toHaveTextContent("1/3");
     await userEvent.click(node("e-1"));
     expect(calls.select).toHaveBeenCalledWith("e-1");
     await userEvent.dblClick(node("e-1"));
     expect(calls.open).toHaveBeenCalledWith("e-1");
   });
 
-  it("REQ-UI-049 node with a prep task: 1 of 2 done, open icon, chip on p-1 only", () => {
+  it("REQ-UI-049 node with a prep task: strand 1/2, open icon, chip on p-1 only", () => {
     const g = scopeGraph(
       [epic("e-1", { child_counts: { total: 2, closed: 1, prep_total: 1, prep_closed: 0 } }), task("t-1", "e-1", [], { status: "closed" }), task("t-2", "e-1"), task("p-1", "e-1", [], { labels: ["prep", "prep:mockup"] })],
       null,
       OFF,
     );
     show(g);
-    expect(node("e-1")).toHaveTextContent("1 of 2 done");
+    expect(within(node("e-1")).getByRole("img")).toHaveTextContent("1/2");
     expect(node("e-1").querySelector("svg")).not.toBeNull();
     cleanup();
     show(scopeGraph([epic("e-1"), task("t-1", "e-1"), task("t-2", "e-1"), task("p-1", "e-1", [], { labels: ["prep"] })], "e-1", OFF));
@@ -171,9 +172,9 @@ describe("GraphCanvas", () => {
     expect(node("t-2")).not.toHaveTextContent("Prep");
   });
 
-  it("REQ-UI-049 an epic with only prep children keeps the open icon and shows no n of m done", () => {
+  it("REQ-UI-049 an epic with only prep children keeps the open icon and shows no strand", () => {
     show(scopeGraph([epic("e-1"), task("p-1", "e-1", [], { labels: ["prep"] })], null, OFF));
-    expect(node("e-1")).not.toHaveTextContent("done");
+    expect(within(node("e-1")).queryByRole("img")).toBeNull();
     expect(node("e-1").querySelector("svg.lucide-layers")).not.toBeNull();
   });
 

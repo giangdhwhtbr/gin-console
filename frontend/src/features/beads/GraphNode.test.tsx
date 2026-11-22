@@ -8,7 +8,7 @@ afterEach(cleanup);
 
 describe("GraphNodeButton state label", () => {
   it("REQ-UI-107 the label text can end with an ellipsis", () => {
-    const node = { bead: bead("e-1", { status: "in_progress" }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: true, done: 2, total: 5 };
+    const node = { bead: bead("e-1", { status: "in_progress" }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: true, counts: { done: 2, inProgress: 0, blocked: 0, ready: 3, deferred: 0 } };
     render(
       <GraphNodeButton
         node={node}
@@ -26,12 +26,13 @@ describe("GraphNodeButton state label", () => {
     // every ancestor up to the node must be able to shrink, or the ellipsis never draws
     expect(label.closest("[data-state]")).toHaveClass("min-w-0");
     expect(label.closest("[data-state]")?.parentElement).toHaveClass("min-w-0", "flex");
-    expect(screen.getByText("2 of 5 done")).toBeInTheDocument();
+    // REQ-UI-049
+    expect(screen.getByRole("img", { name: "2 done, 3 ready of 5 tracks" })).toHaveTextContent("2/5");
   });
 });
 
 const place = (b: ReturnType<typeof bead>, showLane?: boolean) => {
-  const node = { bead: b, external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, done: 0, total: 0 };
+  const node = { bead: b, external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, counts: { done: 0, inProgress: 0, blocked: 0, ready: 0, deferred: 0 } };
   render(
     <GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} showLane={showLane} />,
   );
@@ -68,7 +69,7 @@ describe("GraphNodeButton lanes", () => {
 describe("GraphNodeButton milestone status", () => {
   // REQ-MILESTONE-UI-022 Graph node
   it("REQ-MILESTONE-UI-022 a milestone node reads its milestone status", () => {
-    const node = { bead: bead("ex-m2", { issue_type: "milestone", status: "open", ready: true }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, done: 0, total: 0 };
+    const node = { bead: bead("ex-m2", { issue_type: "milestone", status: "open", ready: true }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, counts: { done: 0, inProgress: 0, blocked: 0, ready: 0, deferred: 0 } };
     render(
       <MilestoneStatusProvider statuses={new Map([["ex-m2", "active" as const]])}>
         <GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} />

@@ -111,7 +111,7 @@ describe("scope graph", () => {
   it("REQ-UI-049 REQ-UI-130 a node says 3 of 5 done from the child counts, whatever children are loaded", () => {
     const beads = [epic("e-1", { child_counts: { total: 5, closed: 3, prep_total: 0, prep_closed: 0 } }), task("a", "e-1"), task("b", "e-1")];
     const node = scopeGraph(beads, null, OFF).nodes[0];
-    expect({ done: node.done, total: node.total }).toEqual({ done: 3, total: 5 });
+    expect(node.counts).toEqual({ done: 3, inProgress: 0, blocked: 0, ready: 2, deferred: 0 });
   });
 });
 
@@ -268,7 +268,7 @@ describe("REQ-UI-106 keep", () => {
 
 describe("link labels", () => {
   const n = (id: string, layer: number, order: number) => ({
-    bead: bead(id), external: false, layer, order, done: 0, total: 0, hasKids: false, group: "layer" as const,
+    bead: bead(id), external: false, layer, order, counts: { done: 0, inProgress: 0, blocked: 0, ready: 0, deferred: 0 }, hasKids: false, group: "layer" as const,
   });
   const link = (from: string, to: string, count: number) => ({
     from, to, links: Array.from({ length: count }, (_, i) => ({ from: `${from}.${i}`, to: `${to}.${i}` })),

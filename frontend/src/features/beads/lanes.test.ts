@@ -109,7 +109,7 @@ describe("lanesOf rows and columns", () => {
     const b = board(ALL, ids([t2, t7]));
     expect(b.rows.map((r) => r.lane)).toEqual(["be", null]);
     expect(row(b, "be").cards.map((c) => c.bead.id)).toEqual([t2.id]);
-    expect(row(b, "be").tracks).toEqual({ closed: 1, total: 2 }); // whatever the filters
+    expect(row(b, "be").tracks).toMatchObject({ closed: 1, total: 2 }); // whatever the filters
     expect(board(ALL, new Set()).rows).toEqual([]);
   });
 
@@ -125,7 +125,9 @@ describe("lane header facts and state", () => {
     expect(r.holders).toEqual(["ann"]);
     expect(r.lease?.text).toMatch(/^until 21 Nov, 16:00/);
     expect(r.lease?.expired).toBe(false);
-    expect(r.tracks).toEqual({ closed: 1, total: 2 });
+    expect(r.tracks).toMatchObject({ closed: 1, total: 2 });
+    // REQ-UI-138: the strand of the lane's tracks by state
+    expect(r.tracks.counts).toEqual({ done: 1, inProgress: 1, blocked: 0, ready: 0, deferred: 0 });
   });
 
   it("REQ-UI-112 Waiting for another lane: the closed gate is not named; Unclaimed", () => {
@@ -133,7 +135,7 @@ describe("lane header facts and state", () => {
     expect(r.state).toEqual({ kind: "waiting", words: "Waiting for be" });
     expect(r.holders).toEqual([]);
     expect(r.lease).toBeNull();
-    expect(r.tracks).toEqual({ closed: 0, total: 1 });
+    expect(r.tracks).toMatchObject({ closed: 0, total: 1 });
   });
 
   it("REQ-UI-112 Idle lane with an expired lease", () => {
@@ -149,7 +151,7 @@ describe("lane header facts and state", () => {
     expect(r.state).toEqual({ kind: "closed", words: "All tracks closed" });
     expect(r.holders).toEqual([]);
     expect(r.lease).toBeNull();
-    expect(r.tracks).toEqual({ closed: 1, total: 1 });
+    expect(r.tracks).toMatchObject({ closed: 1, total: 1 });
   });
 
   it("REQ-UI-112 the No lane row has no state, holder or lease", () => {
@@ -157,11 +159,11 @@ describe("lane header facts and state", () => {
     expect(r.state).toBeNull();
     expect(r.holders).toEqual([]);
     expect(r.lease).toBeNull();
-    expect(r.tracks).toEqual({ closed: 1, total: 2 });
+    expect(r.tracks).toMatchObject({ closed: 1, total: 2 });
   });
 
   it("REQ-UI-112 state counts every track whatever the filters", () => {
-    expect(row(board(ALL, ids([t2])), "be").tracks).toEqual({ closed: 1, total: 2 });
+    expect(row(board(ALL, ids([t2])), "be").tracks).toMatchObject({ closed: 1, total: 2 });
     expect(row(board(ALL, ids([t4])), "qa").state?.kind).toBe("waiting");
   });
 

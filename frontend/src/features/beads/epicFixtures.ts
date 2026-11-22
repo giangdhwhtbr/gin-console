@@ -32,7 +32,8 @@ export const t6 = track(6, "infra", {
 });
 export const t7 = track(7, null, { title: "Release notes", assignee: "dung", points: 1, ready: true });
 export const t8 = track(8, null, { title: "Old checkout cleanup", status: "closed", assignee: "dung", points: 2 });
-export const epic = bead(E, { issue_type: "epic", title: "Team checkout", milestone: "ex-m2", status: "in_progress", child_counts: { total: 8, closed: 4, prep_total: 0, prep_closed: 0 } });
+export const epic = bead(E, { issue_type: "epic", title: "Team checkout", milestone: "ex-m2", status: "in_progress", child_counts: { total: 8, closed: 4, in_progress: 1, blocked: 1, ready: 2, deferred: 0, prep_total: 0, prep_closed: 0 },
+});
 export const TRACKS = [t1, t2, t3, t4, t5, t6, t7, t8];
 export const E12 = [epic, ...TRACKS, g2, g3];
 export const CHILDREN = E12.filter((b) => b.parent === E);

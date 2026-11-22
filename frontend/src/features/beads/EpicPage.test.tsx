@@ -86,7 +86,7 @@ describe("EpicPage", () => {
     expect(screen.queryByRole("region", { name: "Discussion" })).toBeNull();
   });
 
-  it("REQ-UI-119 Overview without a Children list: no Children heading, children bar or merge gate row, the Description heading and text, and Depends on kept", async () => {
+  it("REQ-UI-119 Overview without a Children list: no Children heading, children strand or merge gate row, the Description heading and text, and Depends on kept", async () => {
     const gate = e12.find((b) => b.waits_for !== null);
     const withGate = detail(e12[0], {
       description: "Why this epic",
@@ -100,7 +100,8 @@ describe("EpicPage", () => {
     expect(screen.getByText("Why this epic")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Depends on" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Children" })).toBeNull();
-    expect(screen.queryByRole("progressbar", { name: "Children closed" })).toBeNull();
+    // REQ-UI-138: the small strand "4/8" of the bead page is not drawn; the Progress card has the large one
+    expect(screen.queryByText("4/8")).toBeNull();
     expect(gate).toBeDefined();
     expect(screen.queryByText(/Waits for/)).toBeNull();
   });

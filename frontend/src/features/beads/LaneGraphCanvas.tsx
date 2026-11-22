@@ -39,8 +39,7 @@ export function LaneGraphCanvas({
     external: false,
     layer,
     order: stack,
-    done: progressOf(bead).done,
-    total: progressOf(bead).total,
+    counts: progressOf(bead).counts,
     hasKids: parents.has(bead.id),
     group: "layer",
   });

@@ -4,6 +4,7 @@ import { Link } from "@/app/Link";
 import { Badge } from "@/components/ui/badge";
 import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
+import { Strand } from "@/components/Strand";
 import { cn } from "@/lib/utils";
 import { AssigneeName } from "./AssigneeName";
 import { CountBadge } from "./CountBadge";
@@ -93,14 +94,8 @@ export function ListRow({
         {bead.issue_type === "epic" && <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} className="shrink-0" />}
         <div className="hidden min-w-0 shrink items-center gap-2 overflow-hidden @xl:flex">
           {bead.issue_type === "epic" && progress.total > 0 && (
-            <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground @xl:flex">
-              <span className="h-1.5 w-12 overflow-hidden rounded bg-muted">
-                <span
-                  className="block h-full bg-foreground/60"
-                  style={{ width: `${(progress.done / progress.total) * 100}%` }}
-                />
-              </span>
-              {`${progress.done}/${progress.total} closed`}
+            <span className="hidden shrink-0 items-center @xl:flex">
+              <Strand counts={progress.counts} noun="tracks" />
             </span>
           )}
           {bead.issue_type === "epic" && progress.prepTotal > 0 && (

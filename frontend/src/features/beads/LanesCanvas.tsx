@@ -1,6 +1,7 @@
 import { Check, Clock } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { FactList, type Fact } from "@/components/FactList";
+import { Strand } from "@/components/Strand";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import type { GraphNode } from "./graph";
@@ -12,7 +13,7 @@ import { useLaneHeaderWidth } from "./useLaneHeaderWidth";
 
 const KEYS: readonly LaneKey[] = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
 function factsOf(row: LaneRow): Fact[] {
-  const tracks = { label: "Tracks", value: `${row.tracks.closed}/${row.tracks.total} closed` };
+  const tracks = { label: "Tracks", value: <Strand counts={row.tracks.counts} noun="tracks" /> };
   if (row.state === null) return [tracks];
   const facts: Fact[] = [{ label: "State", value: <StateWord state={GRAPH_STATE_OF[row.state.kind]} words={row.state.words} /> , title: row.state.words }];
   if (row.state.kind !== "closed") {
@@ -48,8 +49,7 @@ export function LanesCanvas({
     external: false,
     layer: row,
     order: column,
-    done: progressOf(bead).done,
-    total: progressOf(bead).total,
+    counts: progressOf(bead).counts,
     hasKids: parents.has(bead.id),
     group: "layer",
   });

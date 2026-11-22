@@ -1,7 +1,9 @@
+import type { StrandCounts } from "@/components/Strand";
 import type { BeadSummary } from "./api";
 import { cycleNodes, type GraphState, type Link } from "./graph";
 import { leaseOf } from "./laneFacts";
 import { gateState, gateTarget, gateWords, isMergeGate } from "./mergeGates";
+import { countsOf } from "./progress";
 
 /** REQ-UI-111..113: the sizes of the Lanes view in px; raise `rowH` when a lane header is taller than the row. */
 export const LANE = { cardW: 184, cardH: 64, rowH: 144, gapX: 48, gapY: 32, padX: 16, padY: 32 } as const;
@@ -25,7 +27,7 @@ export type LaneRow = {
   top: number;
   cards: LaneCard[];
   /** All the tracks of the lane, whatever the search and filters. */
-  tracks: { closed: number; total: number };
+  tracks: { closed: number; total: number; counts: StrandCounts };
   state: LaneState | null;
   /** Empty means "Unclaimed". */
   holders: string[];
@@ -233,7 +235,7 @@ export function lanesOf(beads: readonly BeadSummary[], scopeId: string, matched:
       lane,
       top: rowTop(row),
       cards: (groups.get(lane) ?? []).map((bead) => ({ bead, row, column: columnOf(bead.id), x: columnX(columnOf(bead.id)), y: cardTop(row) })),
-      tracks: { closed: all.length - open.length, total: all.length },
+      tracks: { closed: all.length - open.length, total: all.length, counts: countsOf(all) },
       state: named ? laneState(all, whole.rows.get(lane) ?? [], gatesOf, now) : null,
       holders: named ? [...new Set(open.flatMap((t) => (t.assignee?.trim() ? [t.assignee.trim()] : [])))].sort() : [],
       lease: named ? leaseOf(open.map((t) => t.claim), now) : null,

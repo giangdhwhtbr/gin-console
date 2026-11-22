@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Link } from "@/app/Link";
+import { Strand } from "@/components/Strand";
 import type { BeadSummary } from "./api";
 import { laneSlots } from "./laneGraph";
 import { GRAPH_STATE_OF, type LaneRow } from "./lanes";
@@ -54,7 +55,7 @@ export function LaneSummary({ beads, epicId, rows, lanesHref }: { beads: readonl
               <span className="min-w-0 flex-1 basis-48 text-xs wrap-anywhere text-muted-foreground">
                 {meta}
               </span>
-              <b className="ml-auto shrink-0">{`${row.tracks.closed}/${row.tracks.total} closed`}</b>
+              <Strand counts={row.tracks.counts} noun="tracks" className="ml-auto shrink-0" />
             </li>,
           ];
         })}

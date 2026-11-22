@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { Strand } from "@/components/Strand";
 import { cn } from "@/lib/utils";
 import { LANE_GRAPH, type LaneBoxLayout } from "./laneGraph";
 import { GRAPH_STATE_OF } from "./lanes";
@@ -30,9 +31,14 @@ export function LaneBox({ box }: { box: LaneBoxLayout }) {
           </h3>
           {box.state !== null && <StateWord state={GRAPH_STATE_OF[box.state.kind]} words={box.state.words} className="shrink-0 text-xs" />}
         </div>
-        <p className="m-0 max-w-full truncate text-xs text-muted-foreground" title={box.meta}>
-          {box.meta}
-        </p>
+        <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+          {box.meta !== "" && (
+            <p className="m-0 min-w-0 truncate" title={box.meta}>
+              {box.meta}
+            </p>
+          )}
+          <Strand counts={box.tracks.counts} noun="tracks" className="shrink-0" />
+        </div>
       </header>
     </section>
   );

@@ -1,4 +1,5 @@
 import { GitMerge, Layers } from "lucide-react";
+import { Strand } from "@/components/Strand";
 import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import { LaneChip } from "./LaneChip";
@@ -77,7 +78,7 @@ export function GraphNodeButton({
         {node.hasKids && (
           <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-muted-foreground">
             <Layers aria-hidden className="size-3.5" />
-            {node.total > 0 && `${node.done} of ${node.total} done`}
+            <Strand counts={node.counts} noun="tracks" />
           </span>
         )}
       </span>

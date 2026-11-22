@@ -345,7 +345,7 @@ describe("laneGraph", () => {
       [`arrow:${t1.id}>${t2.id}`, `arrow:${t5.id}>${t6.id}`, `arrow:${t2.id}>${t4.id}`, `arrow:${t3.id}>${t4.id}`].sort(),
     );
     expect(new Set(lines.map((l) => l.key)).size).toBe(lines.length);
-    expect(lines[0].text).toMatch(/^be: Running, ann · lease until .* · 1\/2 closed$/);
+    expect(lines[0].text).toMatch(/^be: Running, ann, lease until .*, 1\/2 closed$/);
     expect(lines.find((l) => l.key === "lane:")?.text).toBe("No lane: 1/2 closed");
     expect(lines.find((l) => l.key === `arrow:${t2.id}>${t4.id}`)?.text).toBe("qa #4 waits for be #2: merge pending");
     expect(lines.find((l) => l.key === `arrow:${t3.id}>${t4.id}`)?.text).toBe("qa #4 waits for fe #3: merged");
@@ -596,18 +596,20 @@ describe("laneGraph random graphs", () => {
 
 describe("laneGraph header and colours", () => {
   // REQ-UI-118 scenario "Header"
-  it("REQ-UI-118 Header: the be box carries Running and the holder, lease and closed count", () => {
+  it("REQ-UI-118 Header: the be box carries Running, the holder and lease joined by a comma, and its tracks", () => {
     const be = boxOf(graphOf(), "be");
     expect(be.state).toEqual({ kind: "running", words: "Running" });
-    expect(be.meta).toBe(`ann · lease until ${formatDateTime("2099-01-01T16:00:00Z")} · 1/2 closed`);
+    expect(be.meta).toBe(`ann, lease until ${formatDateTime("2099-01-01T16:00:00Z")}`);
+    expect(be.tracks).toMatchObject({ closed: 1, total: 2, counts: { done: 1, inProgress: 1 } });
   });
 
-  it("REQ-UI-118 a lane with no holder reads Unclaimed, and a closed lane shows only the count", () => {
+  it("REQ-UI-118 a lane with no holder reads Unclaimed, and a closed lane has no meta", () => {
     const g = graphOf();
-    expect(boxOf(g, "qa").meta).toBe("Unclaimed · 0/1 closed");
+    expect(boxOf(g, "qa").meta).toBe("Unclaimed");
     const done = graphOf([epic, track(11, "x", { status: "closed" })], new Set([`${E12}.11`]));
     expect(boxOf(done, "x").state?.kind).toBe("closed");
-    expect(boxOf(done, "x").meta).toBe("1/1 closed");
+    expect(boxOf(done, "x").meta).toBe("");
+    expect(boxOf(done, "x").tracks).toMatchObject({ closed: 1, total: 1 });
   });
 
   // REQ-UI-118 scenario "Colours follow the lane name"
@@ -627,9 +629,9 @@ describe("laneGraph header and colours", () => {
   });
 
   // REQ-UI-118 scenario "No lane box"
-  it("REQ-UI-118 No lane box: slot 0, no state and the count over all its tracks", () => {
+  it("REQ-UI-118 No lane box: slot 0, no state, no meta and its tracks over all of them", () => {
     const none = boxOf(graphOf(), null);
-    expect(none).toMatchObject({ slot: 0, state: null, meta: "1/2 closed" });
+    expect(none).toMatchObject({ slot: 0, state: null, meta: "", tracks: { closed: 1, total: 2 } });
     expect(laneSlots(BEADS, E12).has("")).toBe(false);
   });
 });

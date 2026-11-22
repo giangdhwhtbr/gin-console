@@ -312,9 +312,9 @@ describe("BeadDetailPage", () => {
     });
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(epic))));
     render(<BeadDetailPage project="alpha" id="e-1" />);
-    const bar = await screen.findByRole("progressbar", { name: "Children closed" });
-    expect(bar).toHaveAttribute("aria-valuenow", "50");
-    expect(screen.getByText("1 of 2 closed")).toBeInTheDocument();
+    // REQ-UI-138 Prep apart: the strand reads 1/2 and "Prep 1/1" is shown next to it
+    const strand = await screen.findByRole("img", { name: "1 done, 1 ready of 2 tracks" });
+    expect(strand).toHaveTextContent("1/2");
     expect(screen.getByText("Prep 1/1")).toBeInTheDocument();
     expect(screen.getAllByText("Prep", { selector: "[data-slot=badge]" })).toHaveLength(1);
     const row = (id: string) => screen.getByRole("link", { name: id }).closest("li") as HTMLElement;
@@ -323,7 +323,7 @@ describe("BeadDetailPage", () => {
     expect(within(row("t-2")).queryByText("Prep")).toBeNull();
   });
 
-  it("REQ-UI-028 an epic with only prep children shows Prep x/y and no track bar", async () => {
+  it("REQ-UI-028 an epic with only prep children shows Prep x/y and no strand", async () => {
     const epic = beadDetail("e-1", {
       issue_type: "feature",
       child_counts: { total: 0, closed: 0, prep_total: 1, prep_closed: 0 },
@@ -332,7 +332,7 @@ describe("BeadDetailPage", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(epic))));
     render(<BeadDetailPage project="alpha" id="e-1" />);
     expect(await screen.findByText("Prep 0/1")).toBeInTheDocument();
-    expect(screen.queryByRole("progressbar")).toBeNull();
+    expect(screen.queryByRole("img")).toBeNull();
   });
 
   it("REQ-UI-028 shows epic progress and children, or omits them when absent", async () => {
@@ -350,9 +350,9 @@ describe("BeadDetailPage", () => {
 
     render(<BeadDetailPage project="alpha" id="e-1" />);
 
-    const bar = await screen.findByRole("progressbar", { name: "Children closed" });
-    expect(bar).toHaveAttribute("aria-valuenow", "75");
-    expect(screen.getByText("3 of 4 closed")).toBeInTheDocument();
+    const strand = await screen.findByRole("img", { name: "3 done, 1 ready of 4 tracks" });
+    expect(strand).toHaveTextContent("3/4");
+    expect(strand.querySelectorAll("g[data-bead]")).toHaveLength(4);
     expect(screen.getByRole("heading", { name: "Children" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "c-1" })).toHaveAttribute("href", "/beads/alpha/c-1");
 
@@ -803,7 +803,7 @@ describe("BeadDetailPage", () => {
       }),
     );
     render(<BeadDetailPage project="alpha" id="a-5" />);
-    expect(await screen.findByText("1 of 1 closed")).toBeInTheDocument();
+    expect(await screen.findByRole("img", { name: "1 done of 1 tracks" })).toHaveTextContent("1/1");
   });
 
   it("REQ-UI-072 the breadcrumb names the bead and its parent by title", async () => {

@@ -1,6 +1,6 @@
+import { toStrandCounts, type StrandCounts } from "@/components/Strand";
 import type { BeadSummary } from "./api";
 import { boardColumn } from "./columns";
-import { progressOf } from "./progress";
 
 export type GraphState = "ready" | "in_progress" | "blocked" | "done" | "deferred";
 export const STATE_LABEL: Record<GraphState, string> = {
@@ -34,8 +34,8 @@ export type GraphNode = {
   external: boolean;
   layer: number;
   order: number;
-  done: number;
-  total: number;
+  /** REQ-UI-130: the states of the children, whatever the filters, for the strand. */
+  counts: StrandCounts;
   hasKids: boolean;
   group: "layer" | "unlinked";
 };
@@ -220,8 +220,7 @@ function layout(
     row.sort((a, b) => (bary.get(a.id) ?? -1) - (bary.get(b.id) ?? -1) || byImportance(a, b));
     row.forEach((b, i) => {
       order.set(b.id, i);
-      const { done, total } = progressOf(b);
-      nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total, hasKids: parents.has(b.id), group: "layer" });
+      nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, counts: toStrandCounts(b.child_counts), hasKids: parents.has(b.id), group: "layer" });
     });
   }
   const linkedLayers = rows.length;
@@ -229,15 +228,13 @@ function layout(
     .flatMap((id) => byId.get(id) ?? [])
     .sort(byImportance)
     .forEach((b, i) => {
-      const { done, total } = progressOf(b);
       const layer = linkedLayers + Math.floor(i / UNLINKED_COLUMNS);
       nodes.push({
         bead: b,
         external: external.has(b.id),
         layer,
         order: i % UNLINKED_COLUMNS,
-        done,
-        total,
+        counts: toStrandCounts(b.child_counts),
         hasKids: parents.has(b.id),
         group: "unlinked",
       });

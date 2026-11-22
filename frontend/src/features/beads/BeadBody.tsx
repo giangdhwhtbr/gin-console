@@ -1,4 +1,4 @@
-import { ProgressBar } from "@/components/ProgressBar";
+import { Strand } from "@/components/Strand";
 import type { BeadDetail } from "./api";
 import { MarkdownText } from "./MarkdownText";
 import { prepLabel, progressOf } from "./progress";
@@ -8,7 +8,6 @@ import { TextSection } from "./TextSection";
 /** The description, text sections, relations and children of a bead (REQ-UI-038), shared by the bead page and the Overview of an epic; `overview` leaves out the children (the Tracks table shows them) and heads the description. */
 export function BeadBody({ project, bead, overview = false }: { project: string; bead: BeadDetail; overview?: boolean }) {
   const progress = progressOf(bead);
-  const { done: closed, total } = progress;
   const prep = progress.prepTotal > 0 ? prepLabel(progress) : null;
 
   return (
@@ -26,13 +25,10 @@ export function BeadBody({ project, bead, overview = false }: { project: string;
       <RelationList title="Depends on" project={project} items={bead.dependencies} />
       <RelationList title="Blocks" project={project} items={bead.dependents} />
       <RelationList title="Bugs found" titleClassName="text-type-bug" project={project} items={bead.bugs} />
-      {!overview && (total > 0 || prep !== null) && (
-        <div className="flex flex-col gap-2">
-          {total > 0 && <ProgressBar label="Children closed" percent={(closed / total) * 100} />}
-          <span className="flex items-center gap-3 text-sm">
-            {total > 0 && <span>{`${closed} of ${total} closed`}</span>}
-            {prep !== null && <span>{prep}</span>}
-          </span>
+      {!overview && (progress.total > 0 || prep !== null) && (
+        <div className="flex items-center gap-3 text-sm">
+          <Strand counts={progress.counts} noun="tracks" />
+          {prep !== null && <span>{prep}</span>}
         </div>
       )}
       {!overview && <RelationList title="Children" project={project} items={bead.children} />}
