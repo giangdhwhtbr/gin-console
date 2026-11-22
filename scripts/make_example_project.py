@@ -495,6 +495,7 @@ def build(today: date, seed: int = 7) -> list[Row]:
     )
     definitions_block(p, epic, today, m2_start)
     lanes_block(p, epic, today, m2_start)
+    strung_block(p, epic, today, m2_start)
     long_text(p, today, m2_start, p_id("m2"), m3_end)
     # Quality: two bugs found after a closed task shipped (`discovered-from`).
     recent = sorted(
@@ -714,6 +715,56 @@ def lanes_block(p: Project, epic: Callable[..., Row], today: date, m2_start: dat
         )
         for gate in gates:
             blocked_by(t4, gate)
+    finally:
+        p.rng = saved
+
+
+def strung_block(p: Project, epic: Callable[..., Row], today: date, m2_start: date) -> None:
+    """Cases of the strand check: long and short strands, a lane of 13, a P1 bug, warnings."""
+    saved, p.rng = p.rng, random.Random(33)
+    try:
+        far = today - timedelta(days=20)
+
+        def strand(ident: str, title: str, statuses: list[str], lane: str | None = None) -> Row:
+            e = epic(
+                ident, title, None, far, status="in_progress", labels=["roadmap"], assignee="ann",
+                started_at=stamp(far),
+            )
+            for n, status in enumerate(statuses, 1):
+                p.task(
+                    e["id"], f"{title} track {n}", status, start=far, end=today,
+                    assignee=p.rng.choice(MEMBERS),
+                    labels=[f"track:{n}", *([f"lane:{lane}"] if lane else [])],
+                    description=f"Plan: .planning/plans/strung.md, Track {n}"
+                    + (f"\nLane: {lane}" if lane else ""),
+                )
+            return e
+
+        strand(
+            "e15", "Catalogue import",
+            ["closed"] * 11 + ["in_progress"] + ["open"] * 6 + ["deferred"],
+        )
+        strand(
+            "e16", "Search filters",
+            ["closed"] * 2 + ["in_progress", "blocked"] + ["open"] * 3,
+        )
+        strand("e18", "Backend lane", ["closed"] * 11 + ["in_progress", "open"], lane="be")
+        p.add(
+            f"{PREFIX}-t3", "Bug: filter chips overlap on narrow screens", "bug",
+            today - timedelta(days=2), assignee="bao", priority=1,
+            labels=["area:ui", "lane:fe"],
+        )
+        # Warnings for the Gantt: overflow, open_bugs and late (an active milestone has no spec_due)
+        e17 = epic(
+            "e17", "Inventory sync", "m2", m2_start - timedelta(days=1), status="in_progress",
+            labels=["roadmap"], assignee="chi", started_at=stamp(m2_start),
+            estimated_minutes=480 * 30,
+        )
+        p.task(e17["id"], "Sync worker", "open", start=today, end=today, assignee="chi")
+        p.add(
+            f"{PREFIX}-qb3", "Bug: stock count drifts", "bug", today - timedelta(days=1),
+            assignee="chi", deps=[(e17["id"], "discovered-from")],
+        )
     finally:
         p.rng = saved
 
