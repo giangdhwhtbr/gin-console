@@ -40,4 +40,28 @@ describe("Legend", () => {
       expect(within(panel).getByText(DEFINITIONS[key])).toBeInTheDocument();
     }
   });
+
+  it("REQ-UI-133 a click outside the panel closes it", async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <p>page text</p>
+        <Legend />
+      </>,
+    );
+    await user.click(screen.getByRole("button", { name: "Legend" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    await user.click(screen.getByText("page text"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("REQ-UI-133 activating the control again closes the panel", async () => {
+    const user = userEvent.setup();
+    render(<Legend />);
+    const trigger = screen.getByRole("button", { name: "Legend" });
+    await user.click(trigger);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    await user.click(trigger);
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
 });

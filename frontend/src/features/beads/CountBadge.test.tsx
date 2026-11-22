@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
+import { HintProvider } from "@/components/HintProvider";
 import { DEFINITIONS } from "@/lib/definitions";
 import { CountBadge } from "./CountBadge";
 
@@ -41,10 +42,10 @@ describe("CountBadge", () => {
 
   it("REQ-UI-132 the indicator has no title; resting the pointer on it shows what the dependencies are", async () => {
     const user = userEvent.setup();
-    render(<CountBadge kind="dependencies" count={2} />);
+    render(<HintProvider><CountBadge kind="dependencies" count={2} /></HintProvider>);
     const badge = screen.getByRole("img", { name: "2 dependencies" });
     expect(badge).not.toHaveAttribute("title");
     await user.hover(badge);
-    expect(await screen.findByRole("tooltip", {}, { timeout: 1500 })).toHaveTextContent(DEFINITIONS.dependencies);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(DEFINITIONS.dependencies);
   });
 });

@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { HintProvider } from "@/components/HintProvider";
 import { DEFINITIONS } from "@/lib/definitions";
 import { bead } from "./beadFixtures";
 import { StateMark, StateWord, stateEdge } from "./StateMark";
@@ -19,7 +20,7 @@ describe("StateMark", () => {
   });
 
   it("REQ-UI-132 the mark has no title; its hint says what the state means", () => {
-    render(<StateMark bead={bead("b", { status: "in_progress" })} />);
+    render(<HintProvider><StateMark bead={bead("b", { status: "in_progress" })} /></HintProvider>);
     const mark = screen.getByText("In progress").closest("[data-state]");
     expect(mark).not.toHaveAttribute("title");
     expect(document.getElementById(mark?.getAttribute("aria-describedby") ?? "")).toHaveTextContent(DEFINITIONS.inProgress);
@@ -38,7 +39,7 @@ describe("StateMark", () => {
   });
 
   it("REQ-UI-110 StateWord is capped to its container so the words end with an ellipsis and keep the title", () => {
-    render(<StateWord state="done" words="All tracks closed" />);
+    render(<HintProvider><StateWord state="done" words="All tracks closed" /></HintProvider>);
     const word = screen.getByText("All tracks closed");
     expect(word).toHaveClass("truncate");
     expect(word.parentElement).toHaveClass("max-w-full", "min-w-0");

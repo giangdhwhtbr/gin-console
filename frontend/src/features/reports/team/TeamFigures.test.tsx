@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import type { MemberFigures, TeamMilestone, TeamTotals } from "../teamApi";
+import { HintProvider } from "@/components/HintProvider";
 import { DEFINITIONS } from "@/lib/definitions";
 import { TeamFigures } from "./TeamFigures";
 import { teamReport, teamTotals } from "./teamFixtures";
@@ -14,7 +15,7 @@ const closed: TeamMilestone = report.milestones[0];
 const ann: MemberFigures = report.members[0];
 
 function show(team: Partial<TeamTotals>, milestone = active, member: MemberFigures | null = null) {
-  render(<TeamFigures team={{ ...teamTotals, ...team }} member={member} milestone={milestone} />);
+  render(<HintProvider><TeamFigures team={{ ...teamTotals, ...team }} member={member} milestone={milestone} /></HintProvider>);
 }
 const warn = (text: string) => expect(screen.getByText(text)).toHaveClass("text-state-blocked");
 // a figure's second line: the span that holds the whole joined text

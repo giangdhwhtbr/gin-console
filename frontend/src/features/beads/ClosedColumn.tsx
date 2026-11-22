@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { DefinitionKey } from "@/lib/definitions";
 import type { BeadSummary } from "./api";
 import { BoardColumn } from "./BoardColumn";
 
 export function ClosedColumn({
   title,
+  rule,
   project,
   beads,
   limit,
@@ -12,6 +14,7 @@ export function ClosedColumn({
   empty,
 }: {
   title: string;
+  rule?: DefinitionKey;
   project: string;
   beads: readonly BeadSummary[]; // newest closed first
   limit: number;
@@ -27,6 +30,6 @@ export function ClosedColumn({
       </Button>
     ) : null;
   return (
-    <BoardColumn title={title} project={project} beads={shown} total={beads.length} empty={empty} footer={toggle} />
+    <BoardColumn title={title} rule={rule} project={project} beads={shown} total={beads.length} empty={empty} footer={toggle} />
   );
 }

@@ -5,17 +5,9 @@ import type { BeadSummary } from "./api";
 import { BeadCard } from "./BeadCard";
 import { isPrep } from "./prep";
 
-// REQ-UI-132: the columns that count blocked, done or in-progress beads say by which rule
-const RULE: Readonly<Record<string, DefinitionKey>> = {
-  "In Progress": "inProgress",
-  "In flight": "inProgress",
-  Blocked: "blocked",
-  Done: "done",
-  "Recently finished": "done",
-};
-
 export function BoardColumn({
   title,
+  rule,
   project,
   beads,
   total,
@@ -23,6 +15,7 @@ export function BoardColumn({
   footer = null,
 }: {
   title: string;
+  rule?: DefinitionKey;
   project: string;
   beads: readonly BeadSummary[];
   total?: number;
@@ -32,7 +25,6 @@ export function BoardColumn({
   const prep = beads.filter((b) => isPrep(b.labels)).length;
   const own = beads.length - prep;
   const shown = prep === 0 ? String(own) : `${own} + ${prep} prep`;
-  const rule = RULE[title];
   const count = total === undefined || total === beads.length ? shown : `${beads.length} of ${total}`;
   return (
     <section aria-label={title} className="flex min-w-48 flex-1 flex-col gap-2 rounded border p-2">

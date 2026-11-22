@@ -1,21 +1,24 @@
+import type { DefinitionKey } from "@/lib/definitions";
 import type { BeadSummary } from "./api";
 
 export const DONE_LIMIT = 20;
 export const FINISHED_LIMIT = 7;
 
 export type BoardColumnKey = "backlog" | "ready" | "in_progress" | "blocked" | "done";
-export const BOARD_COLUMNS: readonly { key: BoardColumnKey; title: string }[] = [
+/** `rule` is the definition a column's count is made by, when REQ-UI-132 asks the count to carry one. */
+type ColumnRule = { rule?: DefinitionKey };
+export const BOARD_COLUMNS: readonly ({ key: BoardColumnKey; title: string } & ColumnRule)[] = [
   { key: "backlog", title: "Backlog" },
   { key: "ready", title: "Ready" },
-  { key: "in_progress", title: "In Progress" },
-  { key: "blocked", title: "Blocked" },
-  { key: "done", title: "Done" },
+  { key: "in_progress", title: "In Progress", rule: "inProgress" },
+  { key: "blocked", title: "Blocked", rule: "blocked" },
+  { key: "done", title: "Done", rule: "done" },
 ];
 
 export type FocusColumnKey = "in_flight" | "blocked" | "next_up";
-export const FOCUS_COLUMNS: readonly { key: FocusColumnKey; title: string }[] = [
-  { key: "in_flight", title: "In flight" },
-  { key: "blocked", title: "Blocked" },
+export const FOCUS_COLUMNS: readonly ({ key: FocusColumnKey; title: string } & ColumnRule)[] = [
+  { key: "in_flight", title: "In flight", rule: "inProgress" },
+  { key: "blocked", title: "Blocked", rule: "blocked" },
   { key: "next_up", title: "Next up" },
 ];
 

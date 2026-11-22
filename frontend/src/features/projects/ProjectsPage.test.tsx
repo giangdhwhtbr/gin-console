@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearOrigin, getOrigin } from "@/app/origin";
+import { HintProvider } from "@/components/HintProvider";
 import { formatDateTime } from "@/lib/dates";
 import type { Beads, Project, Workflow, WorkspaceRepo } from "./api";
 import { ProjectsPage } from "./ProjectsPage";
@@ -396,7 +397,11 @@ describe("ProjectsPage", () => {
   describe("pull line", () => {
     const load = async (projects: unknown[]) => {
       vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(projects))));
-      render(<ProjectsPage />);
+      render(
+        <HintProvider>
+          <ProjectsPage />
+        </HintProvider>,
+      );
       await screen.findByRole("article", { name: "A" });
     };
     const pullAt = (secondsAgo: number) => new Date(Date.now() - secondsAgo * 1000).toISOString();

@@ -8,11 +8,12 @@ export function BoardView({ project, beads, filters }: { project: string; beads:
   const columns = boardColumns(beads);
   return (
     <div className="flex flex-wrap items-start gap-3">
-      {BOARD_COLUMNS.map(({ key, title }) =>
+      {BOARD_COLUMNS.map(({ key, title, rule }) =>
         key === "done" ? (
           <ClosedColumn
             key={key}
             title={title}
+            rule={rule}
             project={project}
             beads={columns.done}
             limit={DONE_LIMIT}
@@ -24,7 +25,7 @@ export function BoardView({ project, beads, filters }: { project: string; beads:
             }
           />
         ) : (
-          <BoardColumn key={key} title={title} project={project} beads={columns[key]} />
+          <BoardColumn key={key} title={title} rule={rule} project={project} beads={columns[key]} />
         ),
       )}
     </div>

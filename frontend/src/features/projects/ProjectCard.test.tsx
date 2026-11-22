@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
+import { HintProvider } from "@/components/HintProvider";
 import { DEFINITIONS, countHint } from "@/lib/definitions";
 import { formatDateTime } from "@/lib/dates";
 import type { Beads, Project } from "./api";
@@ -21,7 +22,7 @@ const project = (extra: Partial<Project> = {}): Project => ({
 describe("ProjectCard hints", () => {
   it("REQ-UI-132 Blocked count: focus shows the blocked rule and Escape closes it", async () => {
     const user = userEvent.setup();
-    render(<ProjectCard project={project()} />);
+    render(<HintProvider><ProjectCard project={project()} /></HintProvider>);
     const blocked = within(screen.getByRole("article", { name: "example" })).getByText("blocked 4");
     expect(blocked).toHaveAttribute("tabindex", "0");
     expect(blocked).not.toHaveAttribute("title");
@@ -32,7 +33,7 @@ describe("ProjectCard hints", () => {
   });
 
   it("REQ-UI-132 every count is focusable and ties its rule with the scope", () => {
-    render(<ProjectCard project={project()} />);
+    render(<HintProvider><ProjectCard project={project()} /></HintProvider>);
     for (const [text, rule] of [
       ["open 3", "open"],
       ["in progress 1", "inProgress"],
@@ -49,7 +50,7 @@ describe("ProjectCard hints", () => {
 
   it("REQ-UI-132 the pull line shows the full date and time as a tooltip, not a title", () => {
     const at = new Date(Date.now() - 120_000).toISOString();
-    render(<ProjectCard project={project({ pull: { at, status: "ok", error: null } })} />);
+    render(<HintProvider><ProjectCard project={project({ pull: { at, status: "ok", error: null } })} /></HintProvider>);
     const line = screen.getByText("pulled 2 minutes ago");
     expect(line).not.toHaveAttribute("title");
     const id = line.getAttribute("aria-describedby") ?? "";

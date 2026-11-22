@@ -1,29 +1,58 @@
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { HintProvider } from "@/components/HintProvider";
 import { DEFINITIONS } from "@/lib/definitions";
+import { bead, json, stubBeads } from "./beadFixtures";
+import { BeadsPage } from "./BeadsPage";
 import { BoardColumn } from "./BoardColumn";
 
-afterEach(cleanup);
+beforeEach(() => {
+  window.history.replaceState(null, "", "/beads");
+});
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 const describedBy = (el: HTMLElement) => document.getElementById(el.getAttribute("aria-describedby") ?? "");
 
 describe("BoardColumn", () => {
-  it("REQ-UI-132 the count of a blocked, done or in-progress column carries its rule", () => {
+  it("REQ-UI-132 the count of a column with a rule carries it", () => {
     render(
-      <>
-        <BoardColumn title="Blocked" project="alpha" beads={[]} />
-        <BoardColumn title="Done" project="alpha" beads={[]} />
-        <BoardColumn title="In Progress" project="alpha" beads={[]} />
-      </>,
+      <HintProvider>
+        <BoardColumn title="Anything" rule="blocked" project="alpha" beads={[]} />
+      </HintProvider>,
     );
-    const [blocked, done, progress] = screen.getAllByText("0");
-    expect(describedBy(blocked)).toHaveTextContent(DEFINITIONS.blocked);
-    expect(describedBy(done)).toHaveTextContent(DEFINITIONS.done);
-    expect(describedBy(progress)).toHaveTextContent(DEFINITIONS.inProgress);
+    expect(describedBy(screen.getByText("0"))).toHaveTextContent(DEFINITIONS.blocked);
   });
 
-  it("REQ-UI-132 the count of another column has no hint", () => {
-    render(<BoardColumn title="Backlog" project="alpha" beads={[]} />);
+  it("REQ-UI-132 the count of a column without a rule has no hint", () => {
+    render(
+      <HintProvider>
+        <BoardColumn title="Backlog" project="alpha" beads={[]} />
+      </HintProvider>,
+    );
     expect(screen.getByText("0")).not.toHaveAttribute("aria-describedby");
+  });
+
+  it.each([
+    ["board", "In Progress", DEFINITIONS.inProgress],
+    ["board", "Blocked", DEFINITIONS.blocked],
+    ["board", "Done", DEFINITIONS.done],
+    ["focus", "In flight", DEFINITIONS.inProgress],
+    ["focus", "Blocked", DEFINITIONS.blocked],
+    ["focus", "Recently finished", DEFINITIONS.done],
+  ])("REQ-UI-132 the %s view's %s column count carries its rule", async (view, name, text) => {
+    window.history.replaceState(null, "", `/beads?project=alpha&view=${view}&closed=1&finished=1`);
+    stubBeads(() => json([bead("a-1", { status: "closed", closed_at: "2026-10-01T00:00:00Z" })]));
+    render(
+      <HintProvider>
+        <BeadsPage />
+      </HintProvider>,
+    );
+    const column = await screen.findByRole("region", { name });
+    expect(describedBy(within(column).getByText(/^\d+( of \d+)?$/))).toHaveTextContent(text);
   });
 });
