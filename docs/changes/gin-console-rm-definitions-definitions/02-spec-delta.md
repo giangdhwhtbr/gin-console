@@ -150,17 +150,12 @@ Wherever the frontend shows whom a bead is assigned to (the List row, REQ-UI-044
 - THEN it shows `ann` with the tooltip `ann@example.com`
 
 ### REQ-MILESTONE-UI-022: Status of a milestone bead
-Wherever the frontend shows the state of a bead of type `milestone` (the header of its bead page and its node in the Graph view), it SHALL show its milestone status (Planned, Scheduled, Active or Closed) from `GET /api/beads/milestones` (REQ-BEADS-015) instead of its bead status; the Milestones list, the milestone page, the milestone card of a bead page and the Team tab SHALL draw a milestone status with the same icon and word. IF that request fails, THEN the bead page SHALL show the bead status as REQ-UI-064 describes.
+Wherever the frontend shows the state of a bead of type `milestone` (the header of its bead page, and any view that draws a milestone bead with a state mark; the Beads views leave milestone beads out, REQ-MILESTONE-UI-009), it SHALL show its milestone status (Planned, Scheduled, Active or Closed) from `GET /api/beads/milestones` (REQ-BEADS-015) instead of its bead status; the Milestones list, the milestone page, the milestone card of a bead page and the Team tab SHALL draw a milestone status with the same icon and word. IF that request fails, THEN the bead page SHALL show the bead status as REQ-UI-064 describes.
 
 #### Scenario: Bead page of a milestone
 - GIVEN milestone `ex-m2` with status `open` whose kick-off was on 10 Nov 2026, shown on 21 Nov 2026
 - WHEN its bead page is shown
 - THEN its header shows "Active" with the active icon and not "Open" or "Ready"
-
-#### Scenario: Graph node
-- GIVEN the same milestone and the Graph view of the project with milestones shown
-- WHEN the node of `ex-m2` is drawn
-- THEN it reads "Active"
 
 #### Scenario: Milestones unavailable
 - GIVEN `GET /api/beads/milestones` answers 502

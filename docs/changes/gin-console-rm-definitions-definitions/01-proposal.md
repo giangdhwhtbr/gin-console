@@ -45,7 +45,7 @@ User decisions 2026-11-21 and 2026-11-22:
 - **One person per handle and email** in the Assignee filter, Group by assignee, My Tasks and the Team members.
 - **Me filter:** "Me" is the first option of the Assignee filter, kept as `assignee=me`.
 - **Milestone status and late:**
-  - One status mark for the milestone list, the milestone page, the bead page header, the Graph node, the bead's milestone card and the Team tab.
+  - One status mark for the milestone list, the milestone page, the bead page header, the bead's milestone card and the Team tab.
   - One late rule for the Milestones list, the milestone cards, the Team chip and the Team headline.
 - **One date format** from one helper.
 - **Tooltips** on hover and focus for state marks, size, points, prep, lanes, link counts and the blocked, done and progress numbers, each with its rule and scope.
@@ -97,7 +97,7 @@ As a PM, I want a milestone to show the same status and the same late mark on ev
 REQ: REQ-MILESTONE-UI-022, REQ-MILESTONE-UI-023, REQ-REPORTS-012, REQ-UI-095, REQ-MILESTONE-UI-001
 
 Acceptance criteria:
-- The bead page and the Graph node of an active milestone read "Active", as its milestone page does.
+- The bead page of an active milestone reads "Active", as its milestone page does.
 - A milestone whose forecast finish is after its end is marked late on the Milestones list, on the milestone card of its epics and on the Team tab.
 - The Team headline says "behind pace" only for pace, and "late" only by the late rule.
 

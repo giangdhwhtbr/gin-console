@@ -67,7 +67,7 @@ The backend owns the definitions, and the frontend only renders them.
   - `personOf` with the cases shared with the backend.
   - The Assignee filter with Me, Unassigned and old email links.
   - The owner never shown.
-  - `MilestoneStatus` on the bead header and the Graph node.
+  - `MilestoneStatus` on the bead header (and in `StateMark` wherever it draws a milestone bead).
   - `lateOf`.
   - The date helpers for the current year, other years, ranges and a non-UTC time zone (`TZ` set in the test).
   - Tooltip on focus and Escape.
