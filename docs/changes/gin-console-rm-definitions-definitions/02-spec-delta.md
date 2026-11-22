@@ -446,6 +446,40 @@ The bead filter bar SHALL offer an "Assignee" multi-select filter listing "Me" (
 - WHEN the Beads page loads
 - THEN both beads remain visible and `alice` is selected
 
+### REQ-UI-100: My Tasks list
+<!-- base: 651177c002911510b02664aab05f0efc77116ce206839f82742476eb41dc1a54 -->
+WHEN the My Tasks page opens, the frontend SHALL request `GET /api/projects/beads`, then `GET /api/beads?project=<name>` for each project whose directory exists, and SHALL list in one table the beads whose `assignee` is the same person (REQ-BEADS-023) as the signed-in email, leaving out beads matched only by `owner`. Each row SHALL show the project, the id, the title, the state, the type, `P<n>` and the updated time, and SHALL link to `/beads/<project>/<id>`. Rows SHALL be ordered by priority ascending, then by `updated_at` newest first, then by project and id. The page SHALL show how many beads it lists, and WHEN none matches, SHALL say "No tasks assigned to <email>". The Refresh control (REQ-UI-096) SHALL load the list again.
+
+#### Scenario: Match by email or name
+- GIVEN the signed-in email `giangdhwhtbr@gmail.com`, project A with open beads assigned to `giangdhwhtbr`, `GiangDHWHTBR@gmail.com` and `alice`, and one unassigned open bead owned by `giangdhwhtbr@gmail.com`
+- WHEN My Tasks opens
+- THEN only the beads assigned to `giangdhwhtbr` and `GiangDHWHTBR@gmail.com` are listed, and the count is 2
+
+#### Scenario: Same handle at another domain
+- GIVEN the signed-in email `giangdhwhtbr@gmail.com` and an open bead assigned to `giangdhwhtbr@other.example`
+- WHEN My Tasks opens
+- THEN that bead is listed
+
+#### Scenario: Across projects in order
+- GIVEN project A has a P2 bead assigned to me updated today and project B has a P1 bead assigned to me updated last week
+- WHEN My Tasks opens
+- THEN the B bead is first, each row shows its project, and clicking the A bead opens `/beads/A/<id>`
+
+#### Scenario: Nothing assigned
+- GIVEN no bead in any project is assigned to `giangdhwhtbr@gmail.com` or `giangdhwhtbr`
+- WHEN My Tasks opens
+- THEN the page says "No tasks assigned to giangdhwhtbr@gmail.com"
+
+#### Scenario: Missing project directory
+- GIVEN project C is configured but its directory does not exist
+- WHEN My Tasks opens
+- THEN no beads request is sent for C
+
+#### Scenario: Not the full projects list
+- GIVEN two projects
+- WHEN My Tasks opens
+- THEN no request goes to `/api/projects`
+
 ### REQ-UI-095: Report tabs
 <!-- base: be92ba05e90ccbffb8e0a060f4400f39efd95f08b8ac8928bfd27545221b2429 -->
 WHILE the report sections are not listed in the sidebar (REQ-UI-129), the Reports page SHALL show the tabs Team, Delivery, Velocity, AI usage, Quality and Data coverage, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:

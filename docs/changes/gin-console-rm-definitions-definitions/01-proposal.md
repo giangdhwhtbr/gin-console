@@ -77,7 +77,7 @@ Acceptance criteria:
 
 ### US-3: Who really holds the work
 As a team lead, I want to see each bead's real assignee, and one entry per person, so that I know who has the work and who has nothing assigned.
-REQ: REQ-UI-135, REQ-BEADS-023, REQ-UI-034, REQ-UI-065, REQ-UI-121, REQ-UI-082
+REQ: REQ-UI-135, REQ-BEADS-023, REQ-UI-034, REQ-UI-065, REQ-UI-121, REQ-UI-082, REQ-UI-100
 
 Acceptance criteria:
 - A bead with an owner and no assignee reads "Unassigned" in the List, on its card, on its page and in the Tracks table.
@@ -137,7 +137,7 @@ Acceptance criteria:
   - MODIFIED: REQ-SERVER-006.
 - `ui`:
   - ADDED: REQ-UI-130, REQ-UI-131, REQ-UI-132, REQ-UI-133, REQ-UI-134, REQ-UI-135.
-  - MODIFIED: REQ-UI-028, REQ-UI-031, REQ-UI-033, REQ-UI-034, REQ-UI-044, REQ-UI-065, REQ-UI-082, REQ-UI-095, REQ-UI-120, REQ-UI-121.
+  - MODIFIED: REQ-UI-028, REQ-UI-031, REQ-UI-033, REQ-UI-034, REQ-UI-044, REQ-UI-065, REQ-UI-082, REQ-UI-095, REQ-UI-100, REQ-UI-120, REQ-UI-121.
   - Diagrams: `docs/specs/ui/diagrams/legend-tooltip-activity.md`.
   - Use cases: `docs/specs/ui/use-cases/read-a-definition.md`.
 - `reports`:

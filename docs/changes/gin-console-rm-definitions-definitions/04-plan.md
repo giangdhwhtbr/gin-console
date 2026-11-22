@@ -439,7 +439,7 @@ Steps:
 
 ### Track 7: The assignee, one person per handle, and Me
 - **Dependencies**: Track 6
-- **Requirements**: REQ-UI-135, REQ-BEADS-023, REQ-BEADS-024, REQ-UI-034, REQ-UI-044, REQ-UI-065, REQ-UI-082, REQ-UI-121, REQ-UI-028
+- **Requirements**: REQ-UI-135, REQ-BEADS-023, REQ-BEADS-024, REQ-UI-034, REQ-UI-044, REQ-UI-065, REQ-UI-082, REQ-UI-121, REQ-UI-028, REQ-UI-100
 - **Files**:
   - Create `frontend/src/lib/people.ts`, `frontend/src/features/beads/AssigneeName.tsx`
   - Modify `frontend/src/features/beads/filters.ts:46-102, 116-187, 221-230` (person matching, `me`, options, `resolveMe`)
@@ -600,7 +600,7 @@ Steps:
 
 ### Track 10: QA cases and their tests
 - **Dependencies**: Track 9
-- **Requirements**: REQ-BEADS-021, REQ-BEADS-022, REQ-BEADS-023, REQ-BEADS-024, REQ-UI-130, REQ-UI-131, REQ-UI-132, REQ-UI-133, REQ-UI-134, REQ-UI-135, REQ-MILESTONE-UI-022, REQ-MILESTONE-UI-023, REQ-SERVER-006, REQ-UI-028, REQ-UI-031, REQ-UI-033, REQ-UI-034, REQ-UI-044, REQ-UI-065, REQ-UI-082, REQ-UI-095, REQ-UI-120, REQ-UI-121, REQ-REPORTS-009, REQ-REPORTS-010, REQ-REPORTS-012, REQ-REPORTS-013, REQ-REPORTS-018, REQ-MILESTONE-UI-001, REQ-MILESTONE-UI-016, REQ-MILESTONE-UI-021
+- **Requirements**: REQ-BEADS-021, REQ-BEADS-022, REQ-BEADS-023, REQ-BEADS-024, REQ-UI-130, REQ-UI-131, REQ-UI-132, REQ-UI-133, REQ-UI-134, REQ-UI-135, REQ-MILESTONE-UI-022, REQ-MILESTONE-UI-023, REQ-SERVER-006, REQ-UI-028, REQ-UI-031, REQ-UI-033, REQ-UI-034, REQ-UI-044, REQ-UI-065, REQ-UI-082, REQ-UI-095, REQ-UI-100, REQ-UI-120, REQ-UI-121, REQ-REPORTS-009, REQ-REPORTS-010, REQ-REPORTS-012, REQ-REPORTS-013, REQ-REPORTS-018, REQ-MILESTONE-UI-001, REQ-MILESTONE-UI-016, REQ-MILESTONE-UI-021
 - **Files**:
   - Create cases in `qa/cases/{beads,ui,reports,milestone-ui,server}/` for every scenario of the added REQs and the changed scenarios of the modified REQs (`e2e` for UI, `api` for server and reports API)
   - Modify, re-pin or remove the cases pinned to the modified REQs, as `gin-qa cases plan --change gin-console-rm-definitions` lists them
