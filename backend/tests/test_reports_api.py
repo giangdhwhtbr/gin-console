@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -169,3 +170,24 @@ def test_reports_001_refresh_drops_the_cached_report(tmp_path: Path) -> None:
     assert api.post("/api/refresh").status_code == 204
     body = api.get("/api/reports", params={"project": "alpha"}).json()
     assert len(fake.calls) == 2 and body["totals"]["closed"] == 2
+
+
+# REQ-REPORTS-019
+def test_reports_019_missing_or_broken_log_does_not_fail_the_report(tmp_path: Path) -> None:
+    # the report JSON does not expose reopens until Track 2; this checks the build succeeds
+    client = make(
+        tmp_path, {"alpha": FakeExport([closed("a-1", 3)]), "beta": FakeExport([closed("b-1", 3)])}
+    )
+    log = tmp_path / "beta" / ".beads" / "interactions.jsonl"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    reopen = {
+        "kind": "field_change",
+        "issue_id": "b-1",
+        "extra": {"field": "status", "old_value": "closed", "new_value": "open"},
+    }
+    log.write_text(
+        'not json\n{"kind": "field_change", "issue_id": "b-1"}\n' + json.dumps(reopen) + "\n"
+    )
+    response = client.get("/api/reports", params={"project": "all"})
+    assert response.status_code == 200
+    assert response.json()["totals"]["closed"] == 2

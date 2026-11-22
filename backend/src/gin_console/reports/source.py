@@ -50,9 +50,7 @@ def parse_usage(metadata: Any) -> tuple[AiUsage | None, str | None]:
         return None, "unreadable"
 
 
-def read_beads(
-    snapshot: Snapshot, project: str, reopens: Mapping[str, int]
-) -> list[ReportBead]:
+def read_beads(snapshot: Snapshot, project: str, reopens: Mapping[str, int]) -> list[ReportBead]:
     beads: list[ReportBead] = []
     bugs = bugs_found(snapshot)
     for ident, raw in snapshot.rows.items():
@@ -73,10 +71,14 @@ def read_beads(
         try:
             beads.append(
                 ReportBead.model_validate(
-                    {**fields, "project": project,
+                    {
+                        **fields,
+                        "project": project,
                         "reopens": reopens.get(ident, 0),
                         "bugs": bugs.get(ident, 0),
-                        "usage": usage, "usage_problem": problem}
+                        "usage": usage,
+                        "usage_problem": problem,
+                    }
                 )
             )
         except ValidationError:

@@ -81,3 +81,10 @@ def test_reports_019_read_again_only_on_change(tmp_path: Path) -> None:
     os.utime(path, ns=(t, t + 1))
     assert store.reopens(tmp_path) == {"a-1": 2}
     assert len(calls) == 2
+
+
+# REQ-REPORTS-019
+def test_reports_019_unreadable_log_counts_nothing(tmp_path: Path) -> None:
+    (tmp_path / LOG).mkdir(parents=True)  # a directory where the file should be
+    assert read_reopens(tmp_path / LOG) == {}
+    assert InteractionStore().reopens(tmp_path) == {}
