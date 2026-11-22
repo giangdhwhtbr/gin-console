@@ -56,7 +56,7 @@ export function BeadFilterBar({
         placeholder="Search id, title, label"
         value={filters.q}
         onChange={(event) => set({ q: event.target.value })}
-        className="rounded border bg-background px-2.5 py-1 text-sm h-8"
+        className="rounded border bg-background px-2.5 py-1 text-13 h-8"
       />
 
       {/* Mobile view: single Filters drawer button */}
@@ -133,7 +133,7 @@ export function BeadFilterBar({
         {!hideMilestone && (
           <MilestoneFilter state={milestones} value={milestone} onChange={(value) => set({ milestone: value })} />
         )}
-        <label className="flex items-center gap-1.5 text-sm cursor-pointer ml-1 select-none">
+        <label className="flex items-center gap-1.5 text-13 cursor-pointer ml-1 select-none">
           <input
             type="checkbox"
             checked={filters.closed}

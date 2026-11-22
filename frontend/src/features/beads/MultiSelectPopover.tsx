@@ -36,7 +36,7 @@ export function MultiSelectPopover({
     <Popover.Root>
       <Popover.Trigger
         aria-label={count > 0 ? `${label} ${count}` : label}
-        className="inline-flex items-center gap-1.5 rounded border bg-background px-2.5 py-1 text-sm font-medium hover:bg-muted/50 transition-colors focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
+        className="inline-flex items-center gap-1.5 rounded border bg-background px-2.5 py-1 text-13 font-medium hover:bg-muted/50 transition-colors focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer"
       >
         <span>{label}</span>
         {count > 0 && (
@@ -50,7 +50,7 @@ export function MultiSelectPopover({
         <Popover.Positioner sideOffset={4} className="z-50">
           <Popover.Popup className="min-w-48 max-w-72 rounded-md border bg-popover p-2 text-popover-foreground shadow-md outline-none">
             {header && <div className="mb-2 pb-2 border-b">{header}</div>}
-            <div className="flex items-center justify-between gap-2 border-b pb-1.5 mb-1.5 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between gap-2 border-b pb-1.5 mb-1.5 text-13 text-muted-foreground">
               <button
                 type="button"
                 onClick={selectAll}
@@ -68,14 +68,14 @@ export function MultiSelectPopover({
             </div>
             <div className="max-h-60 overflow-y-auto space-y-0.5">
               {options.length === 0 ? (
-                <div className="p-2 text-xs text-muted-foreground">No options available</div>
+                <div className="p-2 text-13 text-muted-foreground">No options available</div>
               ) : (
                 options.map((opt) => {
                   const checked = values.includes(opt.value);
                   return (
                     <label
                       key={opt.value}
-                      className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted cursor-pointer select-none"
+                      className="flex items-center gap-2 rounded px-2 py-1 text-13 hover:bg-muted cursor-pointer select-none"
                     >
                       <input
                         type="checkbox"

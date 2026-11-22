@@ -16,7 +16,7 @@ export function BeadCard({ project, bead }: { project: string; bead: BeadSummary
   const short = shortId(bead.id);
   return (
     <li data-card data-id={bead.id} tabIndex={-1} className={cn("flex flex-col gap-1.5 rounded border bg-card p-2.5 text-sm", stateEdge(stateOf(bead)))}>
-      <div className="flex items-center justify-between font-mono text-xs text-muted-foreground">
+      <div className="flex items-center justify-between font-mono text-13 text-muted-foreground">
         <span title={bead.id} aria-hidden={short !== bead.id || undefined}>
           {short}
         </span>

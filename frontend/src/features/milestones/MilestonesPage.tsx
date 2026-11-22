@@ -54,7 +54,7 @@ export function MilestonesPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Milestones</h1>
+      <h1 className="text-2xl font-semibold">Milestones</h1>
       {projects.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}
       {projects.status === "error" && (
         <Alert variant="destructive">
@@ -139,7 +139,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
             {m.title}
           </Link>
         </span>
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">{m.id}</span>
+        <span className="shrink-0 font-mono text-13 text-muted-foreground">{m.id}</span>
       </span>
       <span className="flex flex-col text-sm">
         {m.kickoff !== null && <span>{`Kicks off ${date(m.kickoff)}`}</span>}

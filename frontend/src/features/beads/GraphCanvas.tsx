@@ -79,7 +79,7 @@ export function GraphCanvas({
                         x={label.x}
                         y={label.y}
                         textAnchor="middle"
-                        className="fill-current text-[10px]"
+                        className="fill-current text-xs"
                       >
                         {`${edge.links.length} links`}
                       </text>

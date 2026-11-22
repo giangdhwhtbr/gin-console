@@ -61,7 +61,7 @@ export function BeadsPage() {
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl font-semibold">Beads</h1>
+        <h1 className="text-2xl font-semibold">Beads</h1>
         <Legend />
       </div>
       {projects.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}

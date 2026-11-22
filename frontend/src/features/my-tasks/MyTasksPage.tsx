@@ -70,7 +70,7 @@ export function MyTasksPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">My Tasks</h1>
+      <h1 className="text-2xl font-semibold">My Tasks</h1>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {count !== null && <span className="text-sm text-muted-foreground">{count} {count === 1 ? "task" : "tasks"}</span>}
         <label className="flex min-w-0 max-w-full items-center gap-1 text-sm">
@@ -151,7 +151,7 @@ export function MyTasksPage() {
                     <TableCell>{project}</TableCell>
                     <TableCell className="whitespace-normal">
                       <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>
-                        <span className="font-mono text-xs text-muted-foreground">{bead.id}</span> {bead.title}
+                        <span className="font-mono text-13 text-muted-foreground">{bead.id}</span> {bead.title}
                       </Link>
                     </TableCell>
                     <TableCell>

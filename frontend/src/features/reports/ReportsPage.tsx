@@ -204,7 +204,7 @@ export function ReportsPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl font-semibold">Reports</h1>
+            <h1 className="text-2xl font-semibold">Reports</h1>
             <Legend />
           </div>
           {loaded.status === "ok" && (

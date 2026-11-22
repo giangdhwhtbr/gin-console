@@ -25,8 +25,21 @@ function ratio(a: string, b: string): number {
 }
 
 const SURFACES = ["background", "card", "muted"] as const;
+
+const EXACT = {
+  light: {
+    background: "#F4F5F8", card: "#FFFFFF", muted: "#ECEEF3", border: "#DDE0E7", foreground: "#1B1D26",
+    "muted-foreground": "#596072", primary: "#6A3DB8", identity: "#6A3DB8", "identity-wash": "#EFE9FA", input: "#7D8695",
+    "state-ready": "#0E7A5C", "state-progress": "#2557D6", "state-blocked": "#AE500A", "state-deferred": "#646A78", destructive: "#B42318",
+  },
+  dark: {
+    background: "#12131A", card: "#1B1C25", muted: "#242632", border: "#2E303D", foreground: "#E8E9F0",
+    "muted-foreground": "#A0A5B5", primary: "#B89EF6", identity: "#B89EF6", "identity-wash": "#2A2342", input: "#757B8C",
+    "state-ready": "#45CF9F", "state-progress": "#93B1FF", "state-blocked": "#F2A54C", "state-deferred": "#9298A6", destructive: "#FF8A7A",
+  },
+} as const;
 const STATUS = ["state-ready", "state-progress", "state-blocked", "state-done", "state-deferred"] as const;
-const TYPES = ["type-epic", "type-bug", "type-feature"] as const;
+const TYPES = ["type-bug"] as const;
 
 function blend(fg: string, bg: string, alpha: number): string {
   const channel = (i: number) =>
@@ -53,6 +66,8 @@ describe.each([
       "ring",
       "primary",
       "primary-foreground",
+      "identity",
+      "identity-wash",
       "destructive",
       ...STATUS,
       ...TYPES,
@@ -61,9 +76,19 @@ describe.each([
     }
   });
 
+  it(`REQ-UI-059 ${name} values: the Strung palette, exactly`, () => {
+    for (const [key, hex] of Object.entries(EXACT[name === "light" ? "light" : "dark"])) {
+      expect(t[key]?.toUpperCase(), key).toBe(hex);
+    }
+  });
+
+  it(`REQ-UI-059 ${name}: Done is jade`, () => {
+    expect(t["state-done"]).toBe(t["state-ready"]);
+  });
+
   it(`REQ-UI-059 ${name}: text and status colours reach 4.5:1 on every surface`, () => {
     for (const surface of SURFACES) {
-      for (const text of ["foreground", "muted-foreground", "destructive", ...STATUS, ...TYPES]) {
+      for (const text of ["foreground", "muted-foreground", "destructive", "identity", ...STATUS, ...TYPES]) {
         expect(ratio(get(text), get(surface)), `${text} on ${surface}`).toBeGreaterThanOrEqual(4.5);
       }
     }
@@ -80,7 +105,7 @@ describe.each([
   });
 
   it(`REQ-UI-059 ${name}: control outlines and the focus ring reach 3:1`, () => {
-    for (const surface of ["background", "card"]) {
+    for (const surface of SURFACES) {
       expect(ratio(get("input"), get(surface)), `input on ${surface}`).toBeGreaterThanOrEqual(3);
       expect(ratio(get("ring"), get(surface)), `ring on ${surface}`).toBeGreaterThanOrEqual(3);
     }

@@ -30,7 +30,7 @@ export function MilestoneFilter({
 }) {
   const milestones = state.status === "ok" ? state.data.milestones : [];
   return (
-    <label className="flex min-w-0 max-w-full items-center gap-1 text-sm">
+    <label className="flex min-w-0 max-w-full items-center gap-1 text-13">
       Milestone
       <select
         aria-label="Milestone"

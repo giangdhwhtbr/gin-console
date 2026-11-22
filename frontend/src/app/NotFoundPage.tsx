@@ -9,7 +9,7 @@ export function NotFoundPage({ path }: { path: string }) {
   const beads = projectHref("/beads", resolveProject("", projects.status === "ok" ? projects.names : []));
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Page not found</h1>
+      <h1 className="text-2xl font-semibold">Page not found</h1>
       <p>
         <code className="break-all">{path}</code> is not a page of gin-console.
       </p>

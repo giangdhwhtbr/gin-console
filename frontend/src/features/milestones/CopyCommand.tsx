@@ -19,7 +19,7 @@ export function CopyCommand({ command }: { command: string }) {
   };
   return (
     <span className="flex min-w-0 flex-wrap items-center gap-2">
-      <code className="min-w-0 break-all rounded bg-muted px-2 py-1 font-mono text-xs">{command}</code>
+      <code className="min-w-0 break-all rounded bg-muted px-2 py-1 font-mono text-13">{command}</code>
       <Button variant="outline" size="sm" onClick={() => void copy()}>
         {copied ? "Copied" : "Copy"}
       </Button>

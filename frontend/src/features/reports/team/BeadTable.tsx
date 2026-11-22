@@ -57,7 +57,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
             <Link to={beadPath(project, bead.id)} className="underline">
               {bead.title}
             </Link>
-            <span className="font-mono text-xs text-muted-foreground">{bead.id}</span>
+            <span className="font-mono text-13 text-muted-foreground">{bead.id}</span>
           </div>
         </TableCell>
       );

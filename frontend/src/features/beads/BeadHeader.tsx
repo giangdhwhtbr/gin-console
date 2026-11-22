@@ -38,7 +38,7 @@ export function BeadHeader({ project, bead }: { project: string; bead: BeadDetai
 
   return (
     <header className="flex flex-col gap-1">
-      <h1 className="text-xl font-semibold wrap-anywhere">{gate === null ? bead.title : `Waits for ${gateWords(gate)} to merge`}</h1>
+      <h1 className="text-2xl font-semibold wrap-anywhere">{gate === null ? bead.title : `Waits for ${gateWords(gate)} to merge`}</h1>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="font-mono wrap-anywhere">{bead.id}</span>
         {gate === null ? <StateMark bead={bead} /> : <Badge variant="secondary">{gateState(bead.status)}</Badge>}

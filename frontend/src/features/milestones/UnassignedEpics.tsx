@@ -65,7 +65,7 @@ export function UnassignedEpics({ project }: { project: string }) {
                   )}
                 >
                   <StateMark bead={epic} />
-                  <span className="font-mono text-xs text-muted-foreground">{epic.id}</span>
+                  <span className="font-mono text-13 text-muted-foreground">{epic.id}</span>
                   <Link to={`/beads/${enc(project)}/${enc(epic.id)}`} className="min-w-0 truncate font-medium underline-offset-2 hover:underline">
                     {epic.title}
                   </Link>

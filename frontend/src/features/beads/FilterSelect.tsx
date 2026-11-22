@@ -13,7 +13,7 @@ export function FilterSelect({
   const shown =
     value !== "" && !options.some((o) => o.value === value) ? [...options, { value, label: value }] : options;
   return (
-    <label className="flex items-center gap-1 text-sm">
+    <label className="flex items-center gap-1 text-13">
       {label}
       <select
         value={value}

@@ -29,7 +29,7 @@ function Details({ project, id }: { project: string; id: string }) {
   const { today } = state.data;
   const entry = state.data.milestones.find((m) => m.id === id);
   const link = (
-    <Link to={milestonePath(project, id)} className="min-w-0 text-lg font-bold wrap-anywhere underline-offset-2 hover:underline">
+    <Link to={milestonePath(project, id)} className="min-w-0 text-xl font-bold wrap-anywhere underline-offset-2 hover:underline">
       {entry === undefined ? id : `${id} ${entry.title}`}
     </Link>
   );

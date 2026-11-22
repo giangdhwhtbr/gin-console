@@ -39,7 +39,7 @@ export function ForecastCard({ forecast: f, today, daysPerPoint = null }: { fore
     <section aria-label="Project forecast" className="grid gap-4 rounded border bg-card px-4 py-3 md:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] md:items-center">
       <div className="flex flex-col gap-0.5">
         <span className="text-xs text-muted-foreground">Project forecast · open roadmap epics</span>
-        <span className={cn("font-bold tabular-nums", f.finish === null ? "text-lg" : "text-2xl")}>
+        <span className={cn("font-bold tabular-nums", f.finish === null ? "text-base" : "text-2xl")}>
           {f.finish === null ? "No estimate: no open epic is estimated" : `Finishes ${date(f.finish)}`}
         </span>
         {compare !== null && <span className={cn("text-sm", compare.late ? "text-state-blocked" : "text-state-ready")}>{compare.text}</span>}
@@ -47,7 +47,7 @@ export function ForecastCard({ forecast: f, today, daysPerPoint = null }: { fore
           <span className="text-sm text-muted-foreground">{`Deadline ${date(f.deadline)}`}</span>
         ) : (
           <span className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">No deadline</span> add <code className="rounded bg-muted px-1.5 font-mono text-xs">- Deadline: YYYY-MM-DD</code> to the roadmap
+            <span className="font-medium text-foreground">No deadline</span> add <code className="rounded bg-muted px-1.5 font-mono text-13">- Deadline: YYYY-MM-DD</code> to the roadmap
           </span>
         )}
       </div>

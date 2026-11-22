@@ -13,7 +13,7 @@ export function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
       <div className="flex w-full max-w-sm flex-col gap-4 rounded-lg border bg-card p-6">
-        <h1 className="text-lg font-semibold">gin-console</h1>
+        <h1 className="text-2xl font-semibold">gin-console</h1>
         <form noValidate onSubmit={submit} className="flex flex-col gap-3">
           <label htmlFor="login-email" className="text-sm font-medium">
             Email

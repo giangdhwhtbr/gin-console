@@ -307,7 +307,7 @@ function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: 
   const chip = (side: "left" | "right") => (side === "right" ? "ml-1" : "right-full mr-1");
   const labelled = labelledDays(axis);
   return (
-    <div aria-hidden className="relative flex border-b text-[11px] text-muted-foreground">
+    <div aria-hidden className="relative flex border-b text-xs text-muted-foreground">
       <div className="sticky left-0 z-10 flex-none bg-card" style={{ width: label }} />
       <div className="relative flex-none" style={{ width: axis.width, height: HEADER_HEIGHT }}>
         {monthsOf(axis, today).map((m) => (
@@ -324,11 +324,11 @@ function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: 
           ))}
         {todayX !== null && (
           <span data-chip="today" className="absolute top-[22px]" style={{ left: todayX - sides.todayShift }}>
-            <span className={cn("absolute whitespace-nowrap rounded bg-foreground px-1 text-[11px] text-background", chip(sides.today))}>Today</span>
+            <span className={cn("absolute whitespace-nowrap rounded bg-foreground px-1 text-xs text-background", chip(sides.today))}>Today</span>
           </span>
         )}
         <span data-chip="end" className="absolute top-[22px]" style={{ left: endX }}>
-          <span className={cn("absolute whitespace-nowrap text-[11px] font-medium text-foreground", chip(sides.end))}>{`End ${formatDate(end, today)}`}</span>
+          <span className={cn("absolute whitespace-nowrap text-xs font-medium text-foreground", chip(sides.end))}>{`End ${formatDate(end, today)}`}</span>
         </span>
       </div>
     </div>
