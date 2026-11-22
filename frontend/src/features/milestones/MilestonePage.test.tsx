@@ -31,7 +31,12 @@ function open(current: MilestoneDetail, preview: (start: string) => Response | P
   return fetchMock;
 }
 const row = async (id: string) => (await screen.findByRole("link", { name: id })).closest("li") ?? document.body;
-const beads = (li: HTMLElement) => [...li.querySelectorAll("[data-bead]")].map((b) => b.getAttribute("data-bead"));
+const bars = (li: HTMLElement) => [...li.querySelectorAll<HTMLElement>("[data-bar]")];
+/** The left edge and the width of the one bar of a row, in px. */
+const placed = (li: HTMLElement) => {
+  const [bar] = bars(li);
+  return { x: parseFloat(bar.style.transform.replace("translateX(", "")), width: parseFloat(bar.style.width) };
+};
 const line = (name: string) => document.querySelector<HTMLElement>(`[data-line="${name}"]`);
 
 const OVERFLOW = detail(
@@ -74,10 +79,13 @@ describe("MilestonePage", () => {
     expect(screen.getByText("Finishes 6 Nov, 2 working days past the end")).toBeInTheDocument();
   });
 
-  it("REQ-MILESTONE-UI-003 overflow shown: the bar runs past the end line with its warning", async () => {
+  it("REQ-MILESTONE-UI-003 REQ-MILESTONE-UI-024 overflow shown: one bar runs past the end line, hatched there, with its verdict", async () => {
     open(OVERFLOW);
     const a = await row("e-a");
-    expect(beads(a)).toEqual(["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06"]);
+    const [bar, ...others] = bars(a);
+    expect(others).toHaveLength(0);
+    expect([bar.style.width, bar.style.transform]).toEqual(["660px", "translateX(0px)"]); // 5 working days of 132px
+    expect(bar.querySelector<HTMLElement>("[data-overflow]")?.style.width).toBe("264px"); // from the end line (3 days) to the bar's end
     expect(a).toHaveTextContent("2 working days past the end");
     expect(line("end")?.style.left).toBe(`${300 + 3 * 132}px`); // label 300, 660 px over 5 working days
   });
@@ -107,7 +115,10 @@ describe("MilestonePage", () => {
 
   it("REQ-MILESTONE-UI-003 weekend skipped", async () => {
     open(detail([epicPlan("e-a", { planned_start: "2026-11-05", planned_end: "2026-11-09" })], { finish: "2026-11-09" }));
-    expect(beads(await row("e-a"))).toEqual(["2026-11-05", "2026-11-06", "2026-11-09"]);
+    const a = await row("e-a");
+    expect(bars(a)).toHaveLength(1);
+    // Thu, Fri, the weekend (2 x 8px) and Mon: 3 working days of 64.4px (the plot shares the 10 working days of the axis)
+    expect(placed(a).width).toBeCloseTo(3 * 64.4 + 16);
   });
 
   it("REQ-MILESTONE-UI-004 preview: picker defaults to kickoff, redraws from the picked date with the command", async () => {
@@ -117,7 +128,7 @@ describe("MilestonePage", () => {
     const picker = await screen.findByLabelText("Kick-start date");
     expect(picker).toHaveValue("2026-11-09");
     fireEvent.change(picker, { target: { value: "2026-11-16" } });
-    await waitFor(() => expect(beads(document.querySelector("[data-epic='e-a']") ?? document.body)[0]).toBe("2026-11-16"));
+    await waitFor(() => expect(placed(document.querySelector<HTMLElement>("[data-epic='e-a']") ?? document.body).x).toBeGreaterThan(0));
     expect(screen.getByText(/Preview from Mon 16 Nov\. Nothing changes until you run:/)).toBeInTheDocument();
     expect(screen.getByText("gin milestone kickstart m-1 --date 2026-11-16")).toBeInTheDocument();
     expect(window.location.search).toBe("?start=2026-11-16");
@@ -135,7 +146,7 @@ describe("MilestonePage", () => {
     open(detail([epicPlan("e-a")]), () => new Promise<Response>(() => undefined), "?start=2026-11-16");
     expect(await screen.findByText(/Preview from Mon 16 Nov\./)).toBeInTheDocument();
     expect(screen.getByText("Loading preview…")).toBeInTheDocument();
-    expect(document.querySelectorAll("[data-bead]")).toHaveLength(0);
+    expect(document.querySelectorAll("[data-bar]")).toHaveLength(0);
   });
 
   const later = (start: string) =>
@@ -143,10 +154,10 @@ describe("MilestonePage", () => {
 
   it("REQ-MILESTONE-UI-004 picking a second date never draws the first preview under it", async () => {
     open(detail([epicPlan("e-a")]), (start) => (start === "2026-11-16" ? later(start) : new Promise<Response>(() => undefined)), "?start=2026-11-16");
-    await waitFor(() => expect(document.querySelectorAll("[data-bead]").length).toBeGreaterThan(0));
+    await waitFor(() => expect(document.querySelectorAll("[data-bar]").length).toBeGreaterThan(0));
     fireEvent.change(screen.getByLabelText("Kick-start date"), { target: { value: "2026-11-23" } });
     expect(await screen.findByText(/Preview from Mon 23 Nov\./)).toBeInTheDocument();
-    expect(document.querySelectorAll("[data-bead]")).toHaveLength(0);
+    expect(document.querySelectorAll("[data-bar]")).toHaveLength(0);
   });
 
   it("REQ-MILESTONE-UI-004 a second date that fails shows the error and no bars", async () => {
@@ -155,15 +166,15 @@ describe("MilestonePage", () => {
       (start) => (start === "2026-11-16" ? later(start) : json({ error: "dependency cycle: A -> B -> A", cause: null }, 502)),
       "?start=2026-11-16",
     );
-    await waitFor(() => expect(document.querySelectorAll("[data-bead]").length).toBeGreaterThan(0));
+    await waitFor(() => expect(document.querySelectorAll("[data-bar]").length).toBeGreaterThan(0));
     fireEvent.change(screen.getByLabelText("Kick-start date"), { target: { value: "2026-11-23" } });
     expect(await screen.findByText("dependency cycle: A -> B -> A")).toBeInTheDocument();
-    expect(document.querySelectorAll("[data-bead]")).toHaveLength(0);
+    expect(document.querySelectorAll("[data-bar]")).toHaveLength(0);
   });
 
   it.each(["2026-02-31", "2026-13-45", "2026-00-10"])("REQ-MILESTONE-UI-004 an impossible ?start=%s is ignored: no banner, the current plan", async (date) => {
     open(detail([epicPlan("e-a")]), undefined, `?start=${date}`);
-    expect(beads(await row("e-a"))).toEqual(["2026-11-02", "2026-11-03", "2026-11-04"]);
+    expect(bars(await row("e-a"))).toHaveLength(1);
     expect(screen.queryByText(/Preview from/)).toBeNull();
   });
 
@@ -177,7 +188,7 @@ describe("MilestonePage", () => {
     open(detail([epicPlan("e-a")]), () => json({ error: "dependency cycle: A -> B -> A", cause: null }, 502));
     fireEvent.change(await screen.findByLabelText("Kick-start date"), { target: { value: "2026-11-16" } });
     expect(await screen.findByText("dependency cycle: A -> B -> A")).toBeInTheDocument();
-    expect(document.querySelectorAll("[data-bead]")).toHaveLength(0);
+    expect(document.querySelectorAll("[data-bar]")).toHaveLength(0);
     expect(screen.getByRole("button", { name: "Reset" })).toBeInTheDocument();
   });
 
@@ -386,7 +397,7 @@ describe("MilestonePage", () => {
     );
     fireEvent.change(await screen.findByLabelText("Kick-start date"), { target: { value: "2026-11-16" } });
     expect(window.location.search).toBe("?start=2026-11-16&zoom=1w");
-    await waitFor(() => expect(beads(document.querySelector("[data-epic='e-a']") ?? document.body)[0]).toBe("2026-11-16"));
+    await waitFor(() => expect(placed(document.querySelector<HTMLElement>("[data-epic='e-a']") ?? document.body).x).toBeGreaterThan(0));
     expect(pressed()).toHaveTextContent("1 week");
     await userEvent.click(screen.getByRole("tab", { name: "Beads" }));
     expect(window.location.search).toBe("?tab=beads&start=2026-11-16&zoom=1w");
@@ -428,7 +439,7 @@ describe("MilestonePage", () => {
   it("REQ-MILESTONE-UI-015 beads unavailable: no expand buttons, the plan still drawn", async () => {
     openWithBeads(() => json({ error: "bd failed" }, 502));
     const a = await row("e-a");
-    expect(beads(a)).toHaveLength(3);
+    expect(bars(a)).toHaveLength(1);
     await waitFor(() => expect(within(a).queryByRole("button")).toBeNull());
     expect(a).not.toHaveTextContent("closed");
   });
@@ -506,8 +517,9 @@ describe("MilestonePage", () => {
         { start: "2026-11-09", end: "2026-11-13", schedule_start: "2026-11-09", finish: "2026-11-12", lanes: 1 },
       ),
     );
-    expect(beads(await row("e-a"))).toEqual(["2026-11-09", "2026-11-10"]);
-    expect(beads(await row("e-b"))).toEqual(["2026-11-11", "2026-11-12"]);
+    const a = placed(await row("e-a"));
+    const b = placed(await row("e-b"));
+    expect(b.x).toBe(a.x + a.width);
   });
 });
 

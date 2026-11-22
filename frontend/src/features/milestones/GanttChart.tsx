@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, FileCheck, TriangleAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileCheck } from "lucide-react";
 import { useId, useLayoutEffect, useRef, useState, type RefObject, type UIEvent } from "react";
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ import {
   spanOf,
   stepDay,
   tailWidth,
-  warningLines,
+  verdictOf,
   xOf,
   type Axis,
   type Row,
@@ -57,18 +57,14 @@ import {
 } from "./gantt";
 import { useLabelWidth } from "./useLabelWidth";
 import { usePan } from "./usePan";
+import { Verdict } from "./Verdict";
 
 const LOOK = {
-  open: { glyph: "ready", label: "Open", text: "text-muted-foreground", fill: "border border-muted-foreground bg-card" },
+  open: { glyph: "ready", label: "Open", text: "text-muted-foreground", fill: "border-[1.5px] border-state-ready bg-card" },
   in_progress: { glyph: "in_progress", label: "In progress", text: "text-state-progress", fill: "bg-state-progress" },
   blocked: { glyph: "blocked", label: "Blocked", text: "text-state-blocked", fill: "bg-state-blocked" },
-  closed: { glyph: "done", label: "Closed", text: "text-state-done", fill: "bg-state-done opacity-60" },
-  deferred: {
-    glyph: "deferred",
-    label: "Deferred",
-    text: "text-state-deferred",
-    fill: "border border-state-deferred bg-[repeating-linear-gradient(135deg,var(--state-deferred)_0_2px,transparent_2px_5px)]",
-  },
+  closed: { glyph: "done", label: "Closed", text: "text-state-done", fill: "bg-state-done" },
+  deferred: { glyph: "deferred", label: "Deferred", text: "text-state-deferred", fill: "border-[1.5px] border-dashed border-state-deferred bg-card" },
 } as const satisfies Record<string, { glyph: GlyphState; label: string; text: string; fill: string }>;
 const isLook = (status: string): status is keyof typeof LOOK => Object.hasOwn(LOOK, status);
 const lookOf = (status: string) => (isLook(status) ? LOOK[status] : LOOK.open);
@@ -190,7 +186,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
     });
 
   const epics = sortEpics(plan.epics);
-  const rows = rowsOf(epics, plan.today, expanded, childBeads, wide, epicBeads);
+  const rows = rowsOf(epics, expanded, childBeads, wide, epicBeads);
   const height = rows.reduce((sum, r) => sum + r.height, 0);
   const chain = hot === null ? null : chainOf(epics, hot);
   const faded = (id: string) => chain !== null && !chain.has(id);
@@ -249,6 +245,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
                     label={label}
                     today={plan.today}
                     stops={stops}
+                    endX={endX}
                     integration={plan.integration}
                     kids={childBeads.get(row.epic.id) ?? []}
                     kind={kinds.get(row.epic.id) ?? null}
@@ -278,6 +275,9 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
             {look.label}
           </li>
         ))}
+        <li className="flex items-center gap-1.5">
+          <Strand counts={{ done: 2, inProgress: 1, blocked: 1, ready: 3, deferred: 0 }} noun="tracks" />
+        </li>
         <li className="flex items-center gap-1.5">
           <span aria-hidden className="h-3 border-l border-dashed border-foreground" />
           Today
@@ -380,6 +380,7 @@ function EpicRow({
   label,
   today,
   stops,
+  endX,
   integration,
   kids,
   kind,
@@ -395,6 +396,7 @@ function EpicRow({
   label: number;
   today: string;
   stops: readonly number[];
+  endX: number;
   integration: string | null;
   kids: readonly BeadSummary[];
   kind: BeadKind | null;
@@ -410,6 +412,7 @@ function EpicRow({
   const x0 = xOf(axis, days[0]);
   const x1 = endOf(axis, days[days.length - 1]);
   const unestimated = epic.estimate_days === null;
+  const verdict = verdictOf(epic, today, integration);
   const counts = epicProgressOf(epicBead);
   const prep = counts.prepTotal > 0 ? prepLabel(counts) : null;
   const left = epic.status === "in_progress" && epic.estimate_days !== null && epic.remaining_days !== null && epic.remaining_days < epic.estimate_days;
@@ -479,29 +482,23 @@ function EpicRow({
               </Hint>
             )}
           </span>
-          {warningLines(epic, today, integration).map((text) => (
-            <span key={text} title={text} className="flex min-w-0 items-center gap-1 pl-[26px] text-xs text-state-blocked">
-              <TriangleAlert aria-hidden className="size-3 flex-none" />
-              <span title={text} className="min-w-0 truncate">{text}</span>
-            </span>
-          ))}
+          {verdict !== null && <Verdict verdict={verdict} />}
         </div>
       </div>
       <div className={cn("relative flex-none", fade)} style={{ width: axis.width }}>
         <div
           aria-hidden
-          className={cn("absolute", look.text)}
+          data-bar={epic.id}
+          className={cn("absolute rounded-full", look.fill)}
           style={{ top: BAR_TOP, height: BEAD_HEIGHT, transform: `translateX(${x0}px)`, width: x1 - x0 }}
         >
-          {days.length > 1 && <span className="absolute inset-x-2 top-1/2 h-px bg-current" />}
-          {days.map((day) => (
+          {x1 > endX && (
             <span
-              key={day}
-              data-bead={isoOf(day)}
-              className={cn("absolute inset-y-0 rounded-full", unestimated ? "border border-dashed border-muted-foreground bg-card" : look.fill)}
-              style={{ left: xOf(axis, day) - x0 + 2, width: endOf(axis, day) - xOf(axis, day) - 4 }}
+              data-overflow
+              className="absolute inset-y-0 right-0 rounded-r-full bg-[repeating-linear-gradient(135deg,var(--state-blocked)_0_2px,transparent_2px_5px)]"
+              style={{ width: x1 - Math.max(endX, x0) }}
             />
-          ))}
+          )}
         </div>
         {axis.width - x1 >= TAIL_ROOM && tail >= MIN_TAIL && (
           <span

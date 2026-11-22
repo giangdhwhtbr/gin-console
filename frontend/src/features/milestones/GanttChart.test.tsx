@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MilestoneDetail } from "./api";
 import { GanttChart } from "./GanttChart";
 import type { Zoom } from "./gantt";
+import { HintProvider } from "@/components/HintProvider";
 import { bead } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import { detail, epicPlan } from "./milestoneFixtures";
@@ -151,9 +152,106 @@ describe("GanttChart", () => {
 
   it("REQ-MILESTONE-UI-011 a bar moves with its days at once: no transition lags it behind the columns on resize or zoom", () => {
     draw(MONTH, "2w");
-    const bar = epicRow("e-a").querySelector("[data-bead]")?.parentElement;
+    const bar = epicRow("e-a").querySelector("[data-bar]");
     expect(bar).toBeInstanceOf(HTMLElement);
     expect(bar?.className).not.toMatch(/transition|duration-/);
+    expect(bar?.querySelector("[data-overflow]")).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-003 One bar per epic: Thursday to Wednesday is one element across the weekend, in the state's fill", () => {
+    draw(detail([epicPlan("e-a", { status: "in_progress", planned_start: "2026-11-05", planned_end: "2026-11-11", estimate_days: 5 })]));
+    const bars = epicRow("e-a").querySelectorAll<HTMLElement>("[data-bar]");
+    expect(bars).toHaveLength(1);
+    expect(bars[0]).toHaveClass("bg-state-progress", "rounded-full");
+  });
+
+  it.each([
+    ["open", "border-state-ready"],
+    ["in_progress", "bg-state-progress"],
+    ["blocked", "bg-state-blocked"],
+    ["closed", "bg-state-done"],
+    ["deferred", "border-state-deferred"],
+  ])("REQ-MILESTONE-UI-003 a %s epic's bar takes the look of its state glyph", (status, cls) => {
+    draw(detail([epicPlan("e-a", { status })]));
+    expect(epicRow("e-a").querySelector("[data-bar]")).toHaveClass(cls);
+  });
+
+  it("REQ-MILESTONE-UI-003 overflow shown: the part of the bar past the end line is hatched, and the verdict reads the overflow", () => {
+    draw(
+      detail([epicPlan("e-a", { planned_start: "2026-11-02", planned_end: "2026-11-06", estimate_days: 5, warnings: [{ code: "overflow", days: 2, count: null }] })], {
+        end: "2026-11-04",
+        finish: "2026-11-06",
+      }),
+    );
+    const bar = epicRow("e-a").querySelector<HTMLElement>("[data-bar]");
+    const hatch = bar?.querySelector<HTMLElement>("[data-overflow]");
+    const endLine = document.querySelector<HTMLElement>("[data-line=end]");
+    expect(hatch).not.toBeNull();
+    // the bar starts on the first column (x 0) and the label column is 300px: the hatch covers what the bar has past the end line
+    expect(parseFloat(hatch?.style.width ?? "")).toBe(parseFloat(bar?.style.width ?? "") - (parseFloat(endLine?.style.left ?? "") - 300));
+    expect(epicRow("e-a").querySelector("[data-verdict]")).toHaveTextContent("2 working days past the end");
+  });
+
+  it("REQ-MILESTONE-UI-003 a bar that ends before the end line has no hatch", () => {
+    draw(detail([epicPlan("e-a")]));
+    expect(epicRow("e-a").querySelector("[data-overflow]")).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-024 Several warnings: one verdict with the dashed ring and +2, the tooltip lists every line in order", () => {
+    render(
+      <HintProvider>
+        <GanttChart
+          project="alpha"
+          plan={detail([
+            epicPlan("e-a", {
+              warnings: [
+                { code: "spec_due", days: null, count: null },
+                { code: "open_bugs", days: null, count: 2 },
+                { code: "overflow", days: 2, count: null },
+              ],
+            }),
+          ])}
+          preview={false}
+          zoom="all"
+          onZoom={vi.fn()}
+          childBeads={new Map()}
+        />
+      </HintProvider>,
+    );
+    const verdicts = epicRow("e-a").querySelectorAll<HTMLElement>("[data-verdict]");
+    expect(verdicts).toHaveLength(1);
+    expect(verdicts[0]).toHaveTextContent("2 working days past the end+2");
+    expect(verdicts[0]).toHaveAttribute("tabindex", "0");
+    expect(verdicts[0].querySelector("[data-glyph=deferred]")).not.toBeNull();
+    const tip = document.getElementById(verdicts[0].getAttribute("aria-describedby") ?? "");
+    expect(tip?.textContent).toBe("2 working days past the end\n2 open bugs\nSpec due before kick-off");
+  });
+
+  it("REQ-MILESTONE-UI-024 Late comes first: the Blocked glyph and +1", () => {
+    draw(
+      detail(
+        [
+          epicPlan("e-b", {
+            planned_end: "2026-11-12",
+            warnings: [
+              { code: "unestimated", days: null, count: null },
+              { code: "late", days: null, count: null },
+            ],
+          }),
+        ],
+        { today: "2026-11-20" },
+      ),
+    );
+    const verdict = epicRow("e-b").querySelector("[data-verdict]");
+    expect(verdict).toHaveTextContent("Late: should have finished 12 Nov+1");
+    expect(verdict?.querySelector("[data-glyph=blocked]")).not.toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-024 No warnings: no verdict, and the row is as tall as a row with warnings", () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    draw(detail([epicPlan("e-c"), epicPlan("e-d", { warnings: [{ code: "late", days: null, count: null }, { code: "open_bugs", days: null, count: 1 }, { code: "unestimated", days: null, count: null }] })]));
+    expect(epicRow("e-c").querySelector("[data-verdict]")).toBeNull();
+    expect(epicRow("e-c").style.height).toBe(epicRow("e-d").style.height);
   });
 
   it("REQ-MILESTONE-UI-013 title line, then id, period and estimate; the title after a short bar", () => {
@@ -183,7 +281,7 @@ describe("GanttChart", () => {
     expect(screen.getByRole("link", { name: id })).toHaveAttribute("href", `/beads/alpha/${id}`);
   });
 
-  it("REQ-MILESTONE-UI-013 below lg the rows grow so that wrapped labels do not overlap the next row; warning text has a tooltip", () => {
+  it("REQ-MILESTONE-UI-013 below lg the rows grow so that wrapped labels do not overlap the next row, the same for rows with and without a verdict", () => {
     vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     draw(
       detail([
@@ -194,9 +292,8 @@ describe("GanttChart", () => {
     );
     const rows = ["e-a", "e-b", "e-c"].map((id) => epicRow(id));
     // rows stack in flow: their heights are their tops (jsdom has no layout)
-    expect(rows.map((row) => row.style.height)).toEqual(["106px", "88px", "72px"]);
-    const warning = within(rows[0]).getByText(/^Late: should have finished/);
-    expect(warning).toHaveAttribute("title", warning.textContent);
+    expect(rows.map((row) => row.style.height)).toEqual(["104px", "104px", "88px"]);
+    expect(within(rows[0]).getByText(/^Late: should have finished/)).toBeInTheDocument();
   });
 
   const labelOf = (id: string) => epicRow(id).firstElementChild as HTMLElement;

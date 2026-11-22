@@ -135,7 +135,7 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
         <h1 className="text-2xl font-semibold">{plan.title}</h1>
         <span className="flex items-center gap-3">
           <span className="font-mono text-sm text-muted-foreground">{plan.id}</span>
-          <Legend />
+          <Legend verdicts />
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">

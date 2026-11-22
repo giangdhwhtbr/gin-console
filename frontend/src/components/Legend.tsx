@@ -6,6 +6,8 @@ import { STATE_LABEL, type GraphState } from "@/features/beads/graph";
 import { StateWord } from "@/features/beads/StateMark";
 import { buttonVariants } from "@/components/ui/button";
 import { SizeBadge } from "@/components/SizeBadge";
+import { StateGlyph } from "@/components/StateGlyph";
+import { Strand } from "@/components/Strand";
 import { DEFINITIONS } from "@/lib/definitions";
 import type { ReactNode } from "react";
 
@@ -26,8 +28,17 @@ function Entry({ mark, text }: { mark: ReactNode; text: string }) {
   );
 }
 
+function VerdictMark({ knot = false, children }: { knot?: boolean; children: ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-state-blocked">
+      <StateGlyph state={knot ? "blocked" : "deferred"} color="var(--state-blocked)" size={10} />
+      {children}
+    </span>
+  );
+}
+
 /** REQ-UI-133: every mark of the page with its sentence, for a phone or for a mark that takes no focus. */
-export function Legend() {
+export function Legend({ verdicts = false }: { verdicts?: boolean }) {
   return (
     <Popover.Root>
       <Popover.Trigger className={buttonVariants({ variant: "outline", size: "sm" })}>Legend</Popover.Trigger>
@@ -47,7 +58,24 @@ export function Legend() {
               <Entry mark={<LaneChip lane="lane" />} text={DEFINITIONS.lane} />
               <Entry mark={<CountBadge kind="comments" count={2} />} text={DEFINITIONS.comments} />
               <Entry mark={<CountBadge kind="dependencies" count={2} />} text={DEFINITIONS.dependencies} />
-              <Entry mark={<span className="font-medium">Progress</span>} text={DEFINITIONS.progress} />
+              <Entry
+                mark={
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">Progress</span>
+                    <Strand counts={{ done: 2, inProgress: 1, blocked: 1, ready: 3, deferred: 0 }} noun="tracks" />
+                  </span>
+                }
+                text={DEFINITIONS.progress}
+              />
+              {verdicts && (
+                <>
+                  <Entry
+                    mark={<VerdictMark knot>Late or blocked</VerdictMark>}
+                    text="The first warning of an epic row is late or a blocker outside the milestone."
+                  />
+                  <Entry mark={<VerdictMark>At risk</VerdictMark>} text="The first warning of an epic row is any other warning; the tooltip lists them all." />
+                </>
+              )}
             </dl>
           </Popover.Popup>
         </Popover.Positioner>

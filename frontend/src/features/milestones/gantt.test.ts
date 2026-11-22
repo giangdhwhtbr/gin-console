@@ -23,6 +23,8 @@ import {
   stepDay,
   tailWidth,
   showsSpec,
+  VERDICT_ORDER,
+  verdictOf,
   warningLines,
   xOf,
   zoomOf,
@@ -109,6 +111,52 @@ describe("gantt", () => {
     expect(lines("brand_new")).toEqual(["brand_new"]);
   });
 
+  const warn = (code: string, extra: { days?: number; count?: number } = {}) => ({ code, days: extra.days ?? null, count: extra.count ?? null });
+
+  it("REQ-MILESTONE-UI-024 Several warnings: the most severe line leads, the others count in more", () => {
+    const epic = epicPlan("a", { warnings: [warn("spec_due"), warn("open_bugs", { count: 2 }), warn("overflow", { days: 2 })] });
+    const verdict = verdictOf(epic, "2026-10-29", null);
+    expect(verdict).toEqual({
+      text: "2 working days past the end",
+      knot: false,
+      more: 2,
+      lines: ["2 working days past the end", "2 open bugs", "Spec due before kick-off"],
+    });
+  });
+
+  it("REQ-MILESTONE-UI-024 Late comes first and takes the knot", () => {
+    const epic = epicPlan("b", { planned_end: "2026-11-12", warnings: [warn("unestimated"), warn("late")] });
+    const verdict = verdictOf(epic, "2026-11-20", null);
+    expect(verdict?.text).toBe("Late: should have finished 12 Nov");
+    expect(verdict?.knot).toBe(true);
+    expect(verdict?.more).toBe(1);
+  });
+
+  it("REQ-MILESTONE-UI-024 an external blocker is a knot and counts one line per entry", () => {
+    const epic = epicPlan("c", {
+      warnings: [warn("open_bugs", { count: 1 }), warn("external_blocker")],
+      external_depends_on: [
+        { id: "E9", milestone: "M2" },
+        { id: "X1", milestone: null },
+      ],
+    });
+    const verdict = verdictOf(epic, "2026-10-29", null);
+    expect(verdict?.text).toBe("Blocked by E9 (in M2)");
+    expect(verdict?.knot).toBe(true);
+    expect(verdict?.more).toBe(2);
+  });
+
+  it("REQ-MILESTONE-UI-024 No warnings: no verdict", () => {
+    expect(verdictOf(epicPlan("d"), "2026-10-29", null)).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-024 an unknown code comes last, in its order", () => {
+    const epic = epicPlan("e", { warnings: [warn("brand_new"), warn("another"), warn("unestimated")] });
+    expect(warningLines(epic, "2026-10-29", null)).toEqual(["No estimate", "brand_new", "another"]);
+    expect(VERDICT_ORDER.at(0)).toBe("late");
+    expect(verdictOf(epicPlan("f", { warnings: [warn("brand_new")] }), "2026-10-29", null)).toMatchObject({ text: "brand_new", knot: false, more: 0 });
+  });
+
   it("REQ-MILESTONE-UI-003 months and row order", () => {
     const plan = detail([epicPlan("b", { planned_start: "2026-11-03" }), epicPlan("a")], {
       schedule_start: "2026-10-29",
@@ -180,11 +228,11 @@ describe("gantt", () => {
       epicPlan("d", { planned_start: "2026-11-09", planned_end: "2026-11-09", depends_on: ["c"] }),
     ];
     const axis = axisOf(detail(epics), 28);
-    const arrows = dependencyArrows(rowsOf(epics, "2026-10-29", new Set(), new Map()), axis);
+    const arrows = dependencyArrows(rowsOf(epics, new Set(), new Map()), axis);
     expect(arrows).toEqual([
-      { from: "a", to: "b", path: "M25 28 H28 V56 H20 V84 H31", late: false },
-      { from: "a", to: "c", path: "M25 28 H28 V140 H159", late: false },
-      { from: "c", to: "d", path: "M181 140 H184 V168 H148 V196 H159", late: true },
+      { from: "a", to: "b", path: "M25 28 H28 V72 H20 V100 H31", late: false },
+      { from: "a", to: "c", path: "M25 28 H28 V172 H159", late: false },
+      { from: "c", to: "d", path: "M181 172 H184 V216 H148 V244 H159", late: true },
     ]);
   });
 
@@ -194,25 +242,27 @@ describe("gantt", () => {
       epicPlan("b", { planned_start: "2026-11-09", planned_end: "2026-11-09", depends_on: ["a"] }),
     ];
     const children = new Map([["a", [bead("a.1"), bead("a.2")]]]);
-    const rows = rowsOf(epics, "2026-10-29", new Set(["a"]), children);
+    const rows = rowsOf(epics, new Set(["a"]), children);
     expect(rows.map((r) => [r.kind, r.top, r.height])).toEqual([
-      ["epic", 0, 74],
-      ["child", 74, 36],
-      ["child", 110, 36],
-      ["epic", 146, 56],
+      ["epic", 0, 72],
+      ["child", 72, 36],
+      ["child", 108, 36],
+      ["epic", 144, 72],
     ]);
-    expect(dependencyArrows(rows, axisOf(detail(epics), 28))[0].path).toBe("M25 28 H28 V174 H159");
+    expect(dependencyArrows(rows, axisOf(detail(epics), 28))[0].path).toBe("M25 28 H28 V172 H159");
   });
 
-  it("REQ-MILESTONE-UI-013 below lg a row holds a line per label and warning; from lg it keeps 56", () => {
+  it("REQ-MILESTONE-UI-024 Same height: rows with 0, 1 and 5 warnings are equally tall, below lg too", () => {
+    const warn = (...codes: string[]) => codes.map((code) => ({ code, days: null, count: null }));
     const epics = [
-      epicPlan("a", { spec_confirmed: false, warnings: [{ code: "unestimated", days: null, count: null }, { code: "spec_not_ready", days: null, count: null }] }),
-      epicPlan("b"),
+      epicPlan("a", { warnings: warn("late", "overflow", "open_bugs", "spec_due", "unestimated") }),
+      epicPlan("b", { warnings: warn("late") }),
+      epicPlan("c"),
     ];
-    const heights = (wide: boolean) => rowsOf(epics, "2026-10-29", new Set(), new Map(), wide).map((r) => [r.top, r.height]);
-    // 24 + title, id and period lines of 16 = 72 (no spec line: the warnings say it), plus 2 warnings of 18
-    expect(heights(false)).toEqual([[0, 108], [108, 72]]);
-    expect(heights(true)).toEqual([[0, 92], [92, 56]]);
+    const heights = (wide: boolean) => rowsOf(epics, new Set(), new Map(), wide).map((r) => r.height);
+    expect(heights(true)).toEqual([72, 72, 72]);
+    // below lg: 24 + title, id and period lines of 16 = 72, plus the verdict line of 16 (no warning shortens it)
+    expect(new Set(heights(false))).toEqual(new Set([88]));
   });
 
   it("REQ-MILESTONE-UI-014 the chain runs upstream and downstream, not to siblings", () => {

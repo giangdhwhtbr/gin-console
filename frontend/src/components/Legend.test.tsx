@@ -21,6 +21,9 @@ describe("Legend", () => {
     expect(within(panel).getByText(DEFINITIONS.blocked)).toBeInTheDocument();
     expect(within(panel).getByText(DEFINITIONS.done)).toBeInTheDocument();
     expect(within(panel).getByText(DEFINITIONS.progress)).toBeInTheDocument();
+    // REQ-UI-138 the strand
+    expect(panel.querySelector("[data-strand]")).not.toBeNull();
+    expect(within(panel).queryByText("Late or blocked")).toBeNull();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(trigger).toHaveFocus();
@@ -41,6 +44,17 @@ describe("Legend", () => {
     for (const key of ["size", "prep", "lane", "comments", "dependencies"] as const) {
       expect(within(panel).getByText(DEFINITIONS[key])).toBeInTheDocument();
     }
+  });
+
+  it("REQ-UI-133 REQ-MILESTONE-UI-024 on the milestone page it also lists the two verdict marks", async () => {
+    const user = userEvent.setup();
+    render(<Legend verdicts />);
+    await user.click(screen.getByRole("button", { name: "Legend" }));
+    const panel = await screen.findByRole("dialog");
+    const late = within(panel).getByText("Late or blocked").closest("div");
+    const risk = within(panel).getByText("At risk").closest("div");
+    expect(late?.querySelector("[data-glyph=blocked]")).not.toBeNull();
+    expect(risk?.querySelector("[data-glyph=deferred]")).not.toBeNull();
   });
 
   it("REQ-UI-133 a click outside the panel closes it", async () => {

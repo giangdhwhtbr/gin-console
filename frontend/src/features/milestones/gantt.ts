@@ -112,8 +112,18 @@ export function monthsOf(axis: Axis, today: string): Month[] {
   return months;
 }
 
+/** REQ-MILESTONE-UI-024: the warning codes from the most severe; any other code comes after them, in its order. */
+export const VERDICT_ORDER = ["late", "overflow", "external_blocker", "after_integration", "oversized", "open_bugs", "spec_due", "spec_not_ready", "unestimated"] as const;
+const rankOf = (code: string): number => {
+  const rank = (VERDICT_ORDER as readonly string[]).indexOf(code);
+  return rank === -1 ? VERDICT_ORDER.length : rank;
+};
+
+const bySeverity = (epic: EpicPlan) => [...epic.warnings].sort((a, b) => rankOf(a.code) - rankOf(b.code));
+
+/** REQ-MILESTONE-UI-003: one line per warning, one per `external_depends_on` entry for `external_blocker`, most severe first (REQ-MILESTONE-UI-024). */
 export function warningLines(epic: EpicPlan, today: string, integration: string | null): string[] {
-  return epic.warnings.flatMap((w) => {
+  return bySeverity(epic).flatMap((w) => {
     switch (w.code) {
       case "overflow":
         return [`${w.days ?? 0} working ${w.days === 1 ? "day" : "days"} past the end`];
@@ -139,6 +149,16 @@ export function warningLines(epic: EpicPlan, today: string, integration: string 
         return [w.code];
     }
   });
+}
+
+/** REQ-MILESTONE-UI-024: the one line a row shows (`text`), the mark it takes (`knot` or a dashed ring), the lines left (`more`) and every line for the tooltip. */
+export type Verdict = { text: string; knot: boolean; more: number; lines: string[] };
+
+export function verdictOf(epic: EpicPlan, today: string, integration: string | null): Verdict | null {
+  const lines = warningLines(epic, today, integration);
+  if (lines.length === 0) return null;
+  const first = bySeverity(epic)[0].code;
+  return { text: lines[0], knot: first === "late" || first === "external_blocker", more: lines.length - 1, lines };
 }
 
 export const periodOf = (from: string, to: string, today: string) =>
@@ -212,7 +232,8 @@ export function markerSides(todayX: number | null, endX: number, width: number):
 }
 
 export const ROW_HEIGHT = 56;
-export const WARNING_HEIGHT = 18;
+/** The verdict line every epic row keeps, whether it has a verdict or not (REQ-MILESTONE-UI-024). */
+export const VERDICT_LINE = 16;
 export const LABEL_LINE = 16;
 const LABEL_PADDING = 24;
 export const CHILD_HEIGHT = 36;
@@ -237,10 +258,9 @@ function narrowHeight(epic: EpicPlan, epicBead: BeadSummary | undefined): number
   return Math.max(ROW_HEIGHT, LABEL_PADDING + LABEL_LINE * (1 + items));
 }
 
-/** Epic rows in `epics` order, each followed by its children when expanded; tops in px from the first row. `wide`: from lg up, rows keep ROW_HEIGHT. */
+/** Epic rows in `epics` order, each followed by its children when expanded; tops in px from the first row. `wide`: from lg up, rows keep ROW_HEIGHT; the verdict line is always added. */
 export function rowsOf(
   epics: readonly EpicPlan[],
-  today: string,
   expanded: ReadonlySet<string>,
   children: ReadonlyMap<string, readonly BeadSummary[]>,
   wide = true,
@@ -250,7 +270,7 @@ export function rowsOf(
   let top = 0;
   for (const epic of epics) {
     const base = wide ? ROW_HEIGHT : narrowHeight(epic, epicBeads.get(epic.id));
-    const height = base + WARNING_HEIGHT * warningLines(epic, today, null).length;
+    const height = base + VERDICT_LINE;
     rows.push({ kind: "epic", epic, top, height });
     top += height;
     if (!expanded.has(epic.id)) continue;
