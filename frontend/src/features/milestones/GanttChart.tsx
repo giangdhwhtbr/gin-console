@@ -1,4 +1,4 @@
-import { Ban, Check, ChevronLeft, ChevronRight, Circle, CircleDot, Clock, FileCheck, TriangleAlert } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileCheck, TriangleAlert } from "lucide-react";
 import { useId, useLayoutEffect, useRef, useState, type RefObject, type UIEvent } from "react";
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import type { BeadKind, BeadSummary } from "@/features/beads/api";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS } from "@/lib/definitions";
 import { Badge } from "@/components/ui/badge";
+import { StateGlyph, type GlyphState } from "@/components/StateGlyph";
 import { SizeBadge } from "@/components/SizeBadge";
 import { KindBadge } from "@/features/beads/KindBadge";
 import { LaneChip } from "@/features/beads/LaneChip";
@@ -57,17 +58,17 @@ import { useLabelWidth } from "./useLabelWidth";
 import { usePan } from "./usePan";
 
 const LOOK = {
-  open: { icon: Circle, label: "Open", text: "text-muted-foreground", fill: "border border-muted-foreground bg-card" },
-  in_progress: { icon: CircleDot, label: "In progress", text: "text-state-progress", fill: "bg-state-progress" },
-  blocked: { icon: Ban, label: "Blocked", text: "text-state-blocked", fill: "bg-state-blocked" },
-  closed: { icon: Check, label: "Closed", text: "text-state-done", fill: "bg-state-done opacity-60" },
+  open: { glyph: "ready", label: "Open", text: "text-muted-foreground", fill: "border border-muted-foreground bg-card" },
+  in_progress: { glyph: "in_progress", label: "In progress", text: "text-state-progress", fill: "bg-state-progress" },
+  blocked: { glyph: "blocked", label: "Blocked", text: "text-state-blocked", fill: "bg-state-blocked" },
+  closed: { glyph: "done", label: "Closed", text: "text-state-done", fill: "bg-state-done opacity-60" },
   deferred: {
-    icon: Clock,
+    glyph: "deferred",
     label: "Deferred",
     text: "text-state-deferred",
     fill: "border border-state-deferred bg-[repeating-linear-gradient(135deg,var(--state-deferred)_0_2px,transparent_2px_5px)]",
   },
-} as const;
+} as const satisfies Record<string, { glyph: GlyphState; label: string; text: string; fill: string }>;
 const isLook = (status: string): status is keyof typeof LOOK => Object.hasOwn(LOOK, status);
 const lookOf = (status: string) => (isLook(status) ? LOOK[status] : LOOK.open);
 const enc = encodeURIComponent;
@@ -404,7 +405,6 @@ function EpicRow({
 }) {
   const { epic } = row;
   const look = epicBead?.blocked && epic.status !== "closed" ? LOOK.blocked : lookOf(epic.status);
-  const Icon = look.icon;
   const days = beadsOf(epic);
   const x0 = xOf(axis, days[0]);
   const x1 = endOf(axis, days[days.length - 1]);
@@ -435,7 +435,7 @@ function EpicRow({
             ) : (
               <span aria-hidden className="size-5 flex-none" />
             )}
-            <Icon role="img" aria-label={look.label} className={cn("size-3.5 flex-none", look.text)} />
+            <span role="img" aria-label={look.label} className="flex-none"><StateGlyph state={look.glyph} /></span>
             <span title={epic.title} className="min-w-0 truncate font-medium">
               {epic.title}
             </span>
@@ -524,7 +524,6 @@ function EpicRow({
 function ChildRow({ project, row, axis, label, today, faded }: { project: string; row: Row & { kind: "child" }; axis: Axis; label: number; today: string; faded: boolean }) {
   const { epic, bead } = row;
   const look = lookOf(bead.status);
-  const Icon = look.icon;
   const days = beadsOf(epic);
   const x0 = xOf(axis, days[0]);
   const x1 = endOf(axis, days[days.length - 1]);
@@ -535,7 +534,7 @@ function ChildRow({ project, row, axis, label, today, faded }: { project: string
     <li data-child={bead.id} data-faded={faded || undefined} className="flex border-b" style={{ height: row.height }}>
       <div className="sticky left-0 z-10 flex flex-none items-center bg-card pr-3 pl-3" style={{ width: label }}>
         <span className={cn("flex min-w-0 flex-1 items-center gap-1.5 pl-[26px] text-xs", fade)}>
-          <Icon role="img" aria-label={look.label} className={cn("size-3 flex-none", look.text)} />
+          <span role="img" aria-label={look.label} className="flex-none"><StateGlyph state={look.glyph} size={10} /></span>
           <span title={bead.id} className="flex-none">
             <Link to={`/beads/${enc(project)}/${enc(bead.id)}`} className="font-mono text-muted-foreground underline-offset-2 hover:underline">
               {shortId}

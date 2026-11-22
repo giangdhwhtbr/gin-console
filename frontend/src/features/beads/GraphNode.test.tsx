@@ -54,6 +54,8 @@ describe("GraphNodeButton lanes", () => {
     const node = screen.getByRole("button");
     expect(node).toHaveAttribute("title", "Waits for be #2 to merge");
     expect(node).toHaveClass("border-dashed");
+    // REQ-UI-064 no coloured edge
+    expect(node).not.toHaveClass("border-l-4");
     expect(screen.getByText("Waits for be #2 to merge")).toHaveClass("truncate");
     expect(screen.getByText("Waiting")).toBeInTheDocument();
     cleanup();

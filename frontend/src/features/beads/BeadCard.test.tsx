@@ -46,8 +46,10 @@ describe("BeadCard", () => {
     expect(li).not.toHaveTextContent(/0 comments|0 deps/);
   });
 
-  it("REQ-UI-064 the left edge has the colour of the state", () => {
-    expect(card(bead("a-3", { blocked: true }))).toHaveClass("border-l-4", "border-l-state-blocked");
+  it("REQ-UI-064 a blocked card has no coloured edge; its state is the glyph and word", () => {
+    const li = card(bead("a-3", { blocked: true }));
+    expect(Array.from(li.classList).some((c) => c.startsWith("border-l-"))).toBe(false);
+    expect(li.querySelector('svg[data-glyph="blocked"]')).not.toBeNull();
   });
 
   it("REQ-UI-065 REQ-UI-135 shows Unassigned when only an owner is set", () => {

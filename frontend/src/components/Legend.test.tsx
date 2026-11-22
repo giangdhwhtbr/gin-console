@@ -16,6 +16,8 @@ describe("Legend", () => {
     for (const word of ["Ready", "In progress", "Blocked", "Done", "Deferred"]) {
       expect(within(panel).getByText(word)).toBeInTheDocument();
     }
+    // REQ-UI-064 five distinct glyphs
+    expect(new Set(Array.from(panel.querySelectorAll("svg[data-glyph]"), (g) => g.getAttribute("data-glyph"))).size).toBe(5);
     expect(within(panel).getByText(DEFINITIONS.blocked)).toBeInTheDocument();
     expect(within(panel).getByText(DEFINITIONS.done)).toBeInTheDocument();
     expect(within(panel).getByText(DEFINITIONS.progress)).toBeInTheDocument();

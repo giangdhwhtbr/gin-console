@@ -2,20 +2,18 @@ import { shortId } from "@/lib/shortId";
 import { Link } from "@/app/Link";
 import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
-import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { AssigneeName } from "./AssigneeName";
 import { CountBadge } from "./CountBadge";
-import { stateOf } from "./graph";
 import { KindBadge } from "./KindBadge";
 import { LaneChip } from "./LaneChip";
-import { StateMark, stateEdge } from "./StateMark";
+import { StateMark } from "./StateMark";
 import { TypeBadge } from "./TypeBadge";
 
 export function BeadCard({ project, bead }: { project: string; bead: BeadSummary }) {
   const short = shortId(bead.id);
   return (
-    <li data-card data-id={bead.id} tabIndex={-1} className={cn("flex flex-col gap-1.5 rounded border bg-card p-2.5 text-sm", stateEdge(stateOf(bead)))}>
+    <li data-card data-id={bead.id} tabIndex={-1} className="flex flex-col gap-1.5 rounded border bg-card p-2.5 text-sm">
       <div className="flex items-center justify-between font-mono text-13 text-muted-foreground">
         <span title={bead.id} aria-hidden={short !== bead.id || undefined}>
           {short}
