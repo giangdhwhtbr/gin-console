@@ -23,6 +23,7 @@
     --font-heading: var(--font-sans);
     --font-sans: 'Recursive Variable', system-ui, sans-serif;
     --font-mono: 'Recursive Variable', ui-monospace, monospace;
+    --default-mono-font-variation-settings: "MONO" 1;
     --text-lg: initial;
     --text-3xl: initial;
     --text-5xl: initial;
@@ -194,7 +195,7 @@
     font-variant-numeric: tabular-nums;
     font-variation-settings: "MONO" 0;
     }
-  .font-mono {
+  .font-mono, code, kbd, samp, pre {
     font-variation-settings: "MONO" 1;
     }
   html {

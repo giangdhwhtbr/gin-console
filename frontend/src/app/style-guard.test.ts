@@ -13,16 +13,31 @@ function sources(dir: string): string[] {
   });
 }
 
-const OFF_SCALE = [/\btext-(lg|3xl|[5-9]xl)\b/, /\btext-\[\d/, /fontSize:\s*(?=\S)(?!["']?(?:12|13|14|16|20|28|40)(?:px)?\b)/];
+const SIZES = "(?:12|13|14|16|20|28|40)";
+const OFF_SCALE = [
+  /\btext-(lg|3xl|[5-9]xl)\b/,
+  /\btext-\[(?!var\(|color:)/,
+  new RegExp(`fontSize\\s*[:=]\\s*(?=\\S)(?!\\{?["']?${SIZES}(?:px)?["']?\\}?\\s*[,;}/>)\\s]|\\{?["']?${SIZES}(?:px)?["']?\\}?$)`),
+];
+const offScale = (line: string): boolean => OFF_SCALE.some((re) => re.test(line));
 
 describe("type scale", () => {
   it("REQ-UI-137: no class or style sets a font size outside 12, 13, 14, 16, 20, 28 and 40px", () => {
     const hits = sources(src).flatMap((file) =>
       readFileSync(file, "utf8")
         .split("\n")
-        .flatMap((line, i) => (OFF_SCALE.some((re) => re.test(line)) ? [`${file.slice(src.length + 1)}:${i + 1}`] : [])),
+        .flatMap((line, i) => (offScale(line) ? [`${file.slice(src.length + 1)}:${i + 1}`] : [])),
     );
     expect(hits).toEqual([]);
+  });
+
+  it("REQ-UI-137: the matcher catches fractional, bare-bracket and JSX sizes and lets the scale through", () => {
+    for (const bad of ["fontSize: 12.5,", "text-[.8rem]", "text-[11px]", "fontSize={11}", 'fontSize="11"', "fontSize: 11"]) {
+      expect(offScale(bad), bad).toBe(true);
+    }
+    for (const ok of ["fontSize: 12,", "fontSize: 12 };", "fontSize={13}", 'fontSize="16px"', "text-[var(--x)]", "text-[color:red]", "text-13"]) {
+      expect(offScale(ok), ok).toBe(false);
+    }
   });
 
   it("REQ-UI-137: the body is 14px and draws tabular figures", () => {
@@ -36,7 +51,9 @@ describe("typeface", () => {
   it("REQ-UI-136: Recursive is imported, Geist is gone and .font-mono draws the Mono voice", () => {
     expect(css).toContain("@fontsource-variable/recursive/mono.css");
     expect(css.toLowerCase()).not.toContain("geist");
-    const rule = css.slice(css.indexOf(".font-mono {"), css.indexOf("}", css.indexOf(".font-mono {")));
+    const rule = css.slice(css.indexOf(".font-mono"), css.indexOf("}", css.indexOf(".font-mono")));
     expect(rule).toContain('"MONO" 1');
+    for (const el of ["code", "kbd", "samp", "pre"]) expect(css.slice(css.indexOf(".font-mono"), css.indexOf("{", css.indexOf(".font-mono"))).split(/[\s,]+/)).toContain(el);
+    expect(css).toContain('--default-mono-font-variation-settings: "MONO" 1');
   });
 });
