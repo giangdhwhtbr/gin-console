@@ -54,9 +54,9 @@ export function ListRow({
       tabIndex={tabStop ? 0 : -1}
       onClick={() => onSelect(bead.id)}
       className={cn(
-        "grid cursor-pointer items-center gap-x-3 gap-y-1 rounded-md border px-2 py-1.5 text-sm",
+        "grid cursor-pointer items-center gap-x-3 gap-y-1 rounded-md px-2 py-1.5 text-sm",
         COLUMNS,
-        selected ? "border-foreground bg-muted" : "border-transparent hover:bg-muted/60",
+        selected ? "bg-identity-wash shadow-[inset_3px_0_0_var(--identity)]" : "hover:bg-muted/60",
       )}
     >
       <div className="flex min-w-0 flex-nowrap items-center gap-x-2 gap-y-0.5 overflow-hidden @2xl:flex-wrap" style={{ paddingLeft: `${row.level * 1.25}rem` }}>

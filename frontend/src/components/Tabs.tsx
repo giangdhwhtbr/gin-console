@@ -40,7 +40,7 @@ export function Tabs<T extends string>({
           onKeyDown={move}
           className={cn(
             "min-h-11 shrink-0 whitespace-nowrap text-left border-b-2 px-3 text-sm font-medium md:min-h-9",
-            tab === value ? "border-foreground text-foreground" : "border-transparent text-muted-foreground",
+            tab === value ? "border-identity text-foreground" : "border-transparent text-muted-foreground",
           )}
         >
           {hint === undefined ? (

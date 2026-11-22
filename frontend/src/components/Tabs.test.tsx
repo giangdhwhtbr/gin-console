@@ -30,4 +30,10 @@ describe("Tabs", () => {
     expect(screen.getByRole("tab", { name: "C" })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("tablist", { name: "Views" })).toBeInTheDocument();
   });
+
+  it("REQ-UI-141 the selected tab is underlined in the identity colour", () => {
+    render(<Harness />);
+    expect(screen.getByRole("tab", { name: "A" })).toHaveClass("border-identity");
+    expect(screen.getByRole("tab", { name: "B" })).not.toHaveClass("border-identity");
+  });
 });

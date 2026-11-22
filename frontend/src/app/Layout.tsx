@@ -34,8 +34,8 @@ const NAV = [
 
 const LINK = cn(
   "flex min-h-16 flex-1 flex-col items-center justify-center gap-1 text-xs font-medium text-muted-foreground",
-  "aria-[current=page]:font-semibold aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_2px_0_0_var(--foreground)]",
-  "md:min-h-14 md:flex-none md:rounded-lg md:hover:bg-muted md:aria-[current=page]:bg-muted md:aria-[current=page]:shadow-none",
+  "aria-[current=page]:font-semibold aria-[current=page]:text-foreground aria-[current=page]:shadow-[inset_0_2px_0_0_var(--identity)] aria-[current=page]:[&_svg]:text-identity",
+  "md:min-h-14 md:flex-none md:rounded-lg md:hover:bg-muted md:aria-[current=page]:bg-muted md:aria-[current=page]:shadow-[inset_3px_0_0_var(--identity)]",
 );
 /** The sidebar look of a link from 1024px, left out while the sidebar is collapsed. */
 const LINK_WIDE = "lg:min-h-10 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm";
@@ -55,10 +55,10 @@ function Brand({ wordClass }: { wordClass?: string }) {
   return (
     <span className="flex items-center gap-2.5">
       <svg width="30" height="12" viewBox="0 0 30 12" aria-hidden="true">
-        <path d="M5 6h20" className="stroke-border" strokeWidth="2" />
-        <circle cx="5" cy="6" r="4.5" className="fill-state-ready" />
+        <path d="M5 6h20" className="stroke-identity" strokeWidth="2" />
+        <circle cx="5" cy="6" r="4.5" className="fill-state-done" />
         <circle cx="15" cy="6" r="4.5" className="fill-state-progress" />
-        <circle cx="25" cy="6" r="4.5" className="fill-state-blocked" />
+        <circle cx="25" cy="6" r="3.5" className="fill-card stroke-state-ready" strokeWidth="2" />
       </svg>
       <span className={cn("whitespace-nowrap text-sm font-semibold", wordClass)}>gin-console</span>
     </span>

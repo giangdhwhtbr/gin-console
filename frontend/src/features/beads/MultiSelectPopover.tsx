@@ -40,7 +40,7 @@ export function MultiSelectPopover({
       >
         <span>{label}</span>
         {count > 0 && (
-          <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
+          <span className="rounded bg-identity-wash px-1.5 py-0.5 text-xs font-semibold text-identity">
             {count}
           </span>
         )}

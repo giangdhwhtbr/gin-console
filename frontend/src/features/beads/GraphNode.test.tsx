@@ -93,3 +93,11 @@ describe("GraphNodeButton milestone status", () => {
     expect(screen.queryByText("Ready")).toBeNull();
   });
 });
+
+describe("GraphNodeButton selection", () => {
+  it("REQ-UI-141 a selected node has the identity wash and ring", () => {
+    const node = { bead: bead("e-1", { status: "open" }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, counts: { done: 0, inProgress: 0, blocked: 0, ready: 0, deferred: 0 } };
+    render(<GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} />);
+    expect(screen.getByRole("button", { pressed: true })).toHaveClass("bg-identity-wash", "ring-identity");
+  });
+});

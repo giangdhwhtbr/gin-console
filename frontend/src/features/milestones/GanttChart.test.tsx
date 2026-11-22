@@ -345,6 +345,13 @@ describe("GanttChart", () => {
     expect(widths).toEqual(["300px", "300px", "380px", "380px", "440px", "440px"]);
   });
 
+  it("REQ-UI-141 the today line and chip are the identity colour", () => {
+    stubWindow(2000);
+    render(<GanttChart project="alpha" plan={detail([E3], { today: "2026-11-12" })} preview={false} zoom="all" onZoom={vi.fn()} childBeads={TRACKS} epicBeads={EPIC_BEADS} />);
+    expect(document.querySelector("[data-line=today]")).toHaveClass("border-identity");
+    expect(document.querySelector("[data-chip=today] span")).toHaveClass("bg-identity");
+  });
+
   it("REQ-MILESTONE-UI-013 Wide window: id, then '8 pt, 11d left', cut inside the column, no spec item", () => {
     stubWindow(2000);
     render(<GanttChart project="alpha" plan={detail([E3], { today: "2026-11-12" })} preview={false} zoom="all" onZoom={vi.fn()} childBeads={TRACKS} epicBeads={EPIC_BEADS} />);

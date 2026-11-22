@@ -262,7 +262,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
           </div>
           {/* the lines start under the header, so that they never cross a day label; the row labels (z-10) cover them when scrolled */}
           {todayX !== null && (
-            <div data-line="today" aria-hidden className="absolute bottom-0 z-[5] border-l border-dashed border-foreground" style={{ left: label + todayX, top: HEADER_HEIGHT + 1 }} />
+            <div data-line="today" aria-hidden className="absolute bottom-0 z-[5] border-l border-identity" style={{ left: label + todayX, top: HEADER_HEIGHT + 1 }} />
           )}
           <div data-line="end" aria-hidden className="absolute bottom-0 z-[5] border-l-2 border-foreground" style={{ left: label + endX, top: HEADER_HEIGHT + 1 }} />
         </div>
@@ -275,7 +275,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
           </li>
         ))}
         <li className="flex items-center gap-1.5">
-          <span aria-hidden className="h-3 border-l border-dashed border-foreground" />
+          <span aria-hidden className="h-3 border-l border-identity" />
           Today
         </li>
         <li className="flex items-center gap-1.5">
@@ -322,7 +322,7 @@ function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: 
           ))}
         {todayX !== null && (
           <span data-chip="today" className="absolute top-[22px]" style={{ left: todayX - sides.todayShift }}>
-            <span className={cn("absolute whitespace-nowrap rounded bg-foreground px-1 text-xs text-background", chip(sides.today))}>Today</span>
+            <span className={cn("absolute whitespace-nowrap rounded bg-identity px-1 text-xs text-primary-foreground", chip(sides.today))}>Today</span>
           </span>
         )}
         <span data-chip="end" className="absolute top-[22px]" style={{ left: endX }}>

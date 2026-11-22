@@ -45,11 +45,11 @@ export function GraphNodeButton({
       onDoubleClick={() => onOpen(node.bead.id)}
       style={{ left: at.x, top: at.y, width: NODE.w, height: NODE.h }}
       className={cn(
-        "absolute flex flex-col justify-center overflow-hidden gap-0.5 rounded border bg-card px-2 text-left text-xs transition-opacity motion-reduce:transition-none",
+        "absolute flex flex-col justify-center overflow-hidden gap-0.5 rounded border px-2 text-left text-xs transition-opacity motion-reduce:transition-none",
         (node.external || gate !== null) && "border-dashed",
         node.external && "opacity-60",
         dimmed && "opacity-30",
-        selected && "ring-2 ring-ring",
+        selected ? "bg-identity-wash ring-2 ring-identity" : "bg-card",
       )}
     >
       <span className="flex items-center justify-between gap-1 font-mono text-muted-foreground">

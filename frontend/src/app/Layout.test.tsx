@@ -286,4 +286,15 @@ describe("Layout", () => {
       expect(list()).toBeNull();
     });
   });
+
+  it("REQ-UI-141 the current item has an identity bar and icon; the brand is three beads on an identity thread", () => {
+    open("/beads?project=a");
+    const current = screen.getAllByRole("link").find((l) => l.getAttribute("aria-current") === "page");
+    expect(current?.className).toContain("md:aria-[current=page]:shadow-[inset_3px_0_0_var(--identity)]");
+    expect(current?.className).toContain("aria-[current=page]:[&_svg]:text-identity");
+    const brand = document.querySelector("svg path.stroke-identity");
+    expect(brand).not.toBeNull();
+    const beads = Array.from(brand?.parentElement?.querySelectorAll("circle") ?? []).map((c) => c.getAttribute("class"));
+    expect(beads).toEqual(["fill-state-done", "fill-state-progress", "fill-card stroke-state-ready"]);
+  });
 });

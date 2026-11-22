@@ -312,6 +312,8 @@ describe("ListView", () => {
 
     expect(t1).toHaveAttribute("aria-selected", "true");
     expect(window.location.search).toContain("select=t-1");
+    // REQ-UI-141 the selected row: identity wash and a bar inside its left edge
+    expect(t1).toHaveClass("bg-identity-wash", "shadow-[inset_3px_0_0_var(--identity)]");
     expect(window.history.length).toBe(historyLenBefore);
 
     cleanup();

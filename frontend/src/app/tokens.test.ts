@@ -110,4 +110,9 @@ describe.each([
       expect(ratio(get("ring"), get(surface)), `ring on ${surface}`).toBeGreaterThanOrEqual(3);
     }
   });
+
+  it(`REQ-UI-141 ${name}: the focus ring and the primary button are the identity colour`, () => {
+    expect(get("ring")).toBe(get("identity"));
+    expect(get("primary")).toBe(get("identity"));
+  });
 });
