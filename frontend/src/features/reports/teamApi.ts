@@ -20,7 +20,7 @@ export type TeamBead = {
   cycle_days: number | null;
   age_days: number | null;
   late_days: number | null;
-  rework: number | null;
+  rework: number;
 };
 export type TeamFigures = {
   scope: number;

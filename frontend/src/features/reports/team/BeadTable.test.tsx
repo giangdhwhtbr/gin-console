@@ -35,11 +35,11 @@ describe("BeadTable", () => {
   });
 
   it("REQ-REPORTS-016 closed row", () => {
-    show([make(closed, 3, { cycle_days: 0.9, late_days: 2, rework: null, epic: { id: "a-e9", title: "Epic nine" } })], "closed");
+    show([make(closed, 3, { cycle_days: 0.9, late_days: 2, rework: 0, epic: { id: "a-e9", title: "Epic nine" } })], "closed");
     const row = screen.getAllByRole("row")[1];
     expect(within(row).getByText("0.9 d")).toBeInTheDocument();
     expect(within(row).getByText("2 d late")).toBeInTheDocument();
-    expect(within(row).getByText("—")).toBeInTheDocument();
+    expect(within(row).getByText("0", { selector: "td" })).toBeInTheDocument();
     expect(within(row).getByRole("link", { name: "Bead 3" })).toHaveAttribute("href", "/beads/alpha/a-3");
     expect(within(row).getByRole("link", { name: "Epic nine" })).toHaveAttribute("href", "/beads/alpha/a-e9");
     expect(within(row).getByText("10 Nov")).toBeInTheDocument();

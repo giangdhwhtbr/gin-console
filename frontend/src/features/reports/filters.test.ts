@@ -13,6 +13,10 @@ describe("report filters", () => {
     expect(parseReportSearch("?project=a").tab).toBe("team");
     expect(parseReportSearch("?tab=nope").tab).toBe("team");
   });
+  it("REQ-UI-095 a retired tab link selects Team", () => {
+    expect(parseReportSearch("?project=a&tab=usage").tab).toBe("team");
+    expect(parseReportSearch("?project=a&tab=coverage").tab).toBe("team");
+  });
   it("REQ-REPORTS-012 parses milestone, member and status", () => {
     expect(parseReportSearch("?milestone=m1&member=ann&status=closed")).toMatchObject({ milestone: "m1", member: "ann", status: "closed" });
     expect(parseReportSearch("?status=bogus").status).toBe("");
@@ -28,7 +32,7 @@ describe("report filters", () => {
   });
   it("REQ-UI-088 writes and encodes the search", () => {
     expect(reportSearch({ project: "alpha", days: 90, sprint: "", tab: "delivery", milestone: "", member: "", status: "" })).toBe("?project=alpha&days=90&tab=delivery");
-    expect(reportSearch({ project: "alpha", days: 90, sprint: "s7", tab: "usage", milestone: "", member: "", status: "" })).toBe("?project=alpha&days=90&sprint=s7&tab=usage");
-    expect(reportSearch({ project: "a b", days: 7, sprint: "x&y", tab: "coverage", milestone: "", member: "", status: "" })).toBe("?project=a+b&days=7&sprint=x%26y&tab=coverage");
+    expect(reportSearch({ project: "alpha", days: 90, sprint: "s7", tab: "quality", milestone: "", member: "", status: "" })).toBe("?project=alpha&days=90&sprint=s7&tab=quality");
+    expect(reportSearch({ project: "a b", days: 7, sprint: "x&y", tab: "velocity", milestone: "", member: "", status: "" })).toBe("?project=a+b&days=7&sprint=x%26y&tab=velocity");
   });
 });

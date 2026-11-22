@@ -15,16 +15,15 @@ import { formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchReport, type Report } from "./api";
 import { PERIODS, TABS, parseReportSearch, reportSearch, type ReportFilters, type ReportTab } from "./filters";
-import { CoverageSection } from "./CoverageSection";
 import { DeliverySection } from "./DeliverySection";
 import { Figures } from "./Figures";
 import { figures, headlines, teamHeadline, velocityHeadline, type Headline } from "./headlines";
 import { QualitySection } from "./QualitySection";
+import { ReportErrors } from "./ReportErrors";
 import { TeamSection } from "./team/TeamSection";
 import { fetchTeam, selectedMilestone, type TeamReport } from "./teamApi";
 import { clearSections, publishSections } from "./sectionStore";
 import { TabStrip } from "./TabStrip";
-import { UsageSection } from "./UsageSection";
 import { VelocityTab } from "./velocity/VelocityTab";
 
 type Projects =
@@ -37,7 +36,7 @@ type Loaded = { status: "loading" } | Settled;
 type SettledTeam = { status: "error"; message: string } | { status: "ok"; report: TeamReport };
 type LoadedTeam = { status: "loading" } | SettledTeam;
 
-const LABELS: Record<ReportTab, string> = { team: "Team", delivery: "Delivery", velocity: "Velocity", usage: "AI usage", quality: "Quality", coverage: "Data coverage" };
+const LABELS: Record<ReportTab, string> = { team: "Team", delivery: "Delivery", velocity: "Velocity", quality: "Quality" };
 const hintOf = (h: Headline) => (
   <span className={cn("inline-flex items-center gap-1", h.warn && "text-state-blocked")}>
     {h.warn && <TriangleAlert aria-hidden className="size-3.5" />}
@@ -247,20 +246,7 @@ export function ReportsPage() {
       {unknown && <UnknownProject name={filters.project} names={names} hrefOf={(name) => projectHref("/reports", name)} />}
       {selected !== "" && (
         <>
-          {tab !== "team" && tab !== "velocity" && loaded.status === "ok" && loaded.report.errors.length > 0 && (
-            <Alert>
-              <AlertTitle>Some projects could not be read</AlertTitle>
-              <AlertDescription>
-                <ul>
-                  {loaded.report.errors.map((e) => (
-                    <li key={e.project}>
-                      {e.project}: {e.error}
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
+          {loaded.status === "ok" && <ReportErrors errors={loaded.report.errors} />}
           <div className="lg:group-data-[sidebar=expanded]/shell:hidden">
           <TabStrip>
             <Tabs
@@ -346,9 +332,7 @@ export function ReportsPage() {
                 <>
                   <Figures items={figures(tab, loaded.report)} />
                   {tab === "delivery" && <DeliverySection delivery={loaded.report.delivery} />}
-                  {tab === "usage" && <UsageSection usage={loaded.report.usage} project={loaded.report.project} />}
-                  {tab === "quality" && <QualitySection quality={loaded.report.quality} />}
-                  {tab === "coverage" && <CoverageSection coverage={loaded.report.coverage} errors={loaded.report.errors} />}
+                  {tab === "quality" && <QualitySection report={loaded.report} />}
                 </>
               )}
               </>

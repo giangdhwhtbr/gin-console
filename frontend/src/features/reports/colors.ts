@@ -1,4 +1,3 @@
-export const STAGES = ["discuss", "plan", "orchestrate", "execute", "review", "verify", "ship", "quick"] as const;
 export const TYPES = ["task", "feature", "bug", "epic", "chore", "decision"] as const;
 
 const MUTED = "var(--color-muted-foreground)";
@@ -9,7 +8,6 @@ const colorIn = (order: readonly string[], name: string): string => {
   return index === -1 ? MUTED : `var(--series-${index + 1})`;
 };
 
-export const stageColor = (stage: string): string => colorIn(STAGES, stage);
 export const typeColor = (type: string): string => colorIn(TYPES, type);
 
 /** Names present in the data: the fixed order first, then any others in the order seen. */

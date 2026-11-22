@@ -15,7 +15,6 @@ const RULE = {
   throughput: "Throughput: beads closed per 5 working days; for a closed milestone, over the milestone.",
   cycle: "Median cycle: the median days from start to close of the closed beads.",
   onTime: "On time: the share of closed beads closed by the end of the milestone.",
-  rework: "Rework: the share of closed beads with readable AI usage that were reworked.",
 } as const;
 
 function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = false }: {
@@ -168,7 +167,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
           warnValue={onTime !== null && onTime < 1}
           warnSub={lateOpen > 0}
         />
-        <Cell label="Rework" rule={RULE.rework} value={formatPercent(figures.rework_rate)} sub={`${figures.reopens} reopens · ${figures.bugs} bugs later`} />
+        <Cell label="Rework" rule={DEFINITIONS.rework} value={formatPercent(figures.rework_rate)} sub={`${figures.reopens} reopens · ${figures.bugs} bugs later`} />
       </div>
       <ScopeBar figures={figures} member={member === null ? null : member.member} />
     </div>

@@ -35,6 +35,13 @@ describe("TeamFigures", () => {
     expect(await screen.findByRole("tooltip")).toHaveTextContent(DEFINITIONS.blocked);
   });
 
+  it("REQ-REPORTS-013 REQ-UI-132 the Rework figure names the Beads interaction log and discovered-from", () => {
+    show({});
+    const text = "Rework: closed beads that were reopened (Beads interaction log) or had a bug found later (discovered-from).";
+    expect(DEFINITIONS.rework).toBe(text);
+    expect(screen.getByText("Rework").parentElement?.querySelector("[data-hint]")).toHaveAttribute("data-hint", text);
+  });
+
   it("REQ-REPORTS-013 behind pace", () => {
     show({ pace: 2, pace_needed: 3.4 });
     warn("2.0 done per day");

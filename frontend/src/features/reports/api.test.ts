@@ -25,4 +25,18 @@ describe("fetchReport", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ generated_at: "x" }))));
     await expect(fetchReport(filters)).rejects.toThrow("Could not load the report (unexpected response)");
   });
+  it("REQ-UI-093 accepts the shape without usage or coverage", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(report()))));
+    const loaded = await fetchReport(filters);
+    expect(loaded.totals).toEqual({ closed: 4, rework_rate: 0.25 });
+    expect(Object.keys(loaded)).not.toContain("usage");
+  });
+  it("REQ-UI-091 refuses a shape without quality", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ ...report(), quality: undefined }))));
+    await expect(fetchReport(filters)).rejects.toThrow("Could not load the report (unexpected response)");
+  });
+  it("REQ-UI-091 refuses a quality section whose rows are not lists", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ ...report(), quality: { members: [] } }))));
+    await expect(fetchReport(filters)).rejects.toThrow("Could not load the report (unexpected response)");
+  });
 });

@@ -19,6 +19,9 @@ export const DEFINITIONS = {
   specApproved: "Spec approved: the spec of the epic is confirmed, so its tracks can start.",
   unassigned: "Unassigned: beads with no assignee.",
   dependencies: "Dependencies: how many beads this bead depends on.",
+  rework: "Rework: closed beads that were reopened (Beads interaction log) or had a bug found later (discovered-from).",
+  reopens: "Reopens: how many times closed beads were reopened, from the Beads interaction log.",
+  bugsFound: "Bugs found later: bugs linked discovered-from to a closed bead, from Beads dependencies.",
 } as const;
 
 export type DefinitionKey = keyof typeof DEFINITIONS;

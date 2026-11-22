@@ -242,26 +242,26 @@ describe("Layout", () => {
   });
 
   describe("report sections in the sidebar", () => {
-    const TABS = ["team", "delivery", "velocity", "usage", "quality", "coverage"] as const;
+    const TABS = ["team", "delivery", "velocity", "quality"] as const;
     const sections: SectionLink[] = TABS.map((tab) => ({
       tab,
       label: tab === "quality" ? "Quality" : tab[0].toUpperCase() + tab.slice(1),
-      headline: tab === "quality" ? "2 gaps" : `${tab} headline`,
+      headline: tab === "quality" ? "25% rework" : `${tab} headline`,
       warn: tab === "quality",
       href: `/reports?project=a&tab=${tab}`,
     }));
     const list = () => screen.queryByRole("list", { name: "Report sections" });
 
-    it("REQ-UI-129 lists the six sections with headlines and marks the selected one on /reports when expanded", () => {
+    it("REQ-UI-129 lists the four sections with headlines and marks the selected one on /reports when expanded", () => {
       publishSections(sections, "delivery");
       open("/reports?project=a&tab=delivery");
       expect(document.querySelector('[data-sidebar="expanded"]')).not.toBeNull();
       const links = within(list()!).getAllByRole("link");
-      expect(links).toHaveLength(6);
+      expect(links).toHaveLength(4);
       expect(links[1]).toHaveAccessibleName("Delivery delivery headline");
       expect(links[1]).toHaveAttribute("aria-current", "page");
       expect(links.filter((l) => l.getAttribute("aria-current") === "page")).toHaveLength(1);
-      expect(links[4]).toHaveAttribute("href", "/reports?project=a&tab=quality");
+      expect(links[3]).toHaveAttribute("href", "/reports?project=a&tab=quality");
       expect(list()).toHaveClass("hidden", "lg:flex");
     });
 

@@ -130,7 +130,7 @@ describe("App routing", () => {
       ["/beads?project=alpha", "Beads · alpha · gin-console"],
       ["/milestones?project=alpha", "Milestones · alpha · gin-console"],
       ["/reports?project=alpha&tab=quality", "Reports · Quality · alpha · gin-console"],
-      ["/reports?project=all&tab=usage", "Reports · AI usage · gin-console"],
+      ["/reports?project=all&tab=usage", "Reports · Team · gin-console"],
       ["/my-tasks", "My Tasks · gin-console"],
       ["/my-tasks?project=alpha", "My Tasks · alpha · gin-console"],
     ];
