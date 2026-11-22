@@ -16,7 +16,7 @@ gin-console gets one identity colour, a real type scale and one way to draw stat
 - **Quiet text:** no pills for data, no capitals by style, no " · " in page text, no underlined navigation.
 
 Done when:
-- Every scenario of the 8 added and 32 modified REQs of `02-spec-delta.md` has a test that names its REQ.
+- Every scenario of the 8 added and 33 modified REQs of `02-spec-delta.md` has a test that names its REQ.
 - `gin-qa cases check --change gin-console-rm-strung` prints `ok`.
 - TC-1 passes on the deployed console.
 
@@ -129,7 +129,7 @@ Unclear requirements never raise the model or effort.
 
 ## Scope
 - **In scope:**
-  - The 8 added and 32 modified REQs of `02-spec-delta.md`.
+  - The 8 added and 33 modified REQs of `02-spec-delta.md`.
   - Their gin-qa cases and e2e specs.
   - The example data TC-1 needs.
   - TC-1.
@@ -607,7 +607,7 @@ Steps:
 
 ### Track 7: Data as text
 - **Dependencies**: Track 6
-- **Requirements**: REQ-UI-140, REQ-UI-065, REQ-UI-067, REQ-UI-110, REQ-UI-109, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-028, REQ-UI-044, REQ-UI-049, REQ-UI-121, REQ-MILESTONE-UI-013, REQ-MILESTONE-UI-015, REQ-REPORTS-016
+- **Requirements**: REQ-UI-140, REQ-UI-090, REQ-UI-065, REQ-UI-067, REQ-UI-110, REQ-UI-109, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-028, REQ-UI-044, REQ-UI-049, REQ-UI-121, REQ-MILESTONE-UI-013, REQ-MILESTONE-UI-015, REQ-REPORTS-016
 - **Files**:
   - Modify `frontend/src/components/PriorityPill.tsx:5-12`
   - Modify `frontend/src/components/SizeBadge.tsx:8-29` (plain text; suffix joined by `", "`)
@@ -792,7 +792,7 @@ Steps:
 
 ### Track 10: QA cases and their tests
 - **Dependencies**: Track 9
-- **Requirements**: REQ-UI-136, REQ-UI-137, REQ-UI-138, REQ-UI-139, REQ-UI-140, REQ-UI-141, REQ-MILESTONE-UI-024, REQ-MILESTONE-UI-025, REQ-BEADS-022, REQ-UI-003, REQ-UI-028, REQ-UI-044, REQ-UI-049, REQ-UI-059, REQ-UI-064, REQ-UI-065, REQ-UI-067, REQ-UI-072, REQ-UI-095, REQ-UI-109, REQ-UI-110, REQ-UI-112, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-118, REQ-UI-120, REQ-UI-121, REQ-UI-130, REQ-UI-132, REQ-UI-133, REQ-UI-134, REQ-MILESTONE-UI-001, REQ-MILESTONE-UI-003, REQ-MILESTONE-UI-013, REQ-MILESTONE-UI-015, REQ-MILESTONE-UI-023, REQ-REPORTS-012, REQ-REPORTS-013, REQ-REPORTS-016
+- **Requirements**: REQ-UI-136, REQ-UI-137, REQ-UI-138, REQ-UI-139, REQ-UI-140, REQ-UI-141, REQ-MILESTONE-UI-024, REQ-MILESTONE-UI-025, REQ-BEADS-022, REQ-UI-003, REQ-UI-028, REQ-UI-044, REQ-UI-049, REQ-UI-059, REQ-UI-064, REQ-UI-065, REQ-UI-067, REQ-UI-072, REQ-UI-090, REQ-UI-095, REQ-UI-109, REQ-UI-110, REQ-UI-112, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-118, REQ-UI-120, REQ-UI-121, REQ-UI-130, REQ-UI-132, REQ-UI-133, REQ-UI-134, REQ-MILESTONE-UI-001, REQ-MILESTONE-UI-003, REQ-MILESTONE-UI-013, REQ-MILESTONE-UI-015, REQ-MILESTONE-UI-023, REQ-REPORTS-012, REQ-REPORTS-013, REQ-REPORTS-016
 - **Files**:
   - Create cases in `qa/cases/{ui,milestone-ui,beads,reports}/` for every scenario of the added REQs and the changed scenarios of the modified REQs (`e2e` for UI, `api` for REQ-BEADS-022 and REQ-MILESTONE-UI-025)
   - Modify, re-pin or remove the cases pinned to the modified REQs, as `gin-qa cases plan --change gin-console-rm-strung` lists them, including TC-BEADS-074, 075 and 076 (`child_counts` dicts)

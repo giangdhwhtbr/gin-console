@@ -671,6 +671,47 @@ The view SHALL leave out a box with no drawn card, SHALL NOT offer the switch "O
 - WHEN the user presses Arrow Right, then Enter
 - THEN the focus moves to track 4 in the qa box, and Enter selects it and the details panel shows it
 
+### REQ-UI-090: Delivery flow view
+<!-- base: 5077cd4af333c4b31b513ead721463aca73a19617ff9fbf65f5ef980094748e5 -->
+The Delivery tab SHALL show, in this order:
+- A row of figures: beads closed (`totals.closed`), and the median cycle time and median lead time from `delivery.overall` ("—" when absent).
+- Beads closed per ISO week, as a column chart stacked by type with a legend.
+- Cycle time and lead time as two range charts side by side, each with a dot at the median and a tick at the 85th percentile. A switch SHALL choose between By type (the default) and By member. Each range SHALL show, on hover and on focus, its type or member, the number of beads, the median and the 85th percentile.
+- The estimate table of REQ-REPORTS-004, when it has rows. Each row SHALL show its estimate as "<n>d", or "<p> pt" when it has `points`, and its actual working days. A row with an estimate in days SHALL show as text (REQ-UI-140), not as a chip, the actual minus the estimated working days, rounded to one decimal:
+  - "+<n> d" in the warning color when the difference is above 0;
+  - "on estimate" when it is 0;
+  - "−<n> d" when it is below 0.
+
+  A row with points and no estimate in days SHALL show "<x> d/pt" from its `days_per_point` in place of that difference.
+
+The Delivery tab SHALL NOT show beads in progress; the Team tab shows them (REQ-REPORTS-013 to REQ-REPORTS-016).
+Source: `assets/2026-11-12/mockup/index.html`
+
+#### Scenario: no estimates
+- GIVEN a report without estimated epics
+- WHEN the page is shown
+- THEN no estimate table is shown
+
+#### Scenario: by member
+- GIVEN a report whose `by_member` holds `ann` with median cycle time 1.5 days
+- WHEN the user picks By member
+- THEN both range charts show one range per member and `ann`'s cycle range has its dot at 1.5 days
+
+#### Scenario: estimate difference
+- GIVEN epics estimated at 5 working days that took 7, 3 and 4.5
+- WHEN the Delivery tab is shown
+- THEN their differences read, as text, "+2 d" in the warning color, "−2 d" and "−0.5 d"
+
+#### Scenario: points row
+- GIVEN an estimate row with `estimate_days: null`, `points: 5`, `actual_days: 7` and `days_per_point: 1.4`
+- WHEN the Delivery tab is shown
+- THEN the row reads "5 pt", "7" and "1.4 d/pt", with no difference
+
+#### Scenario: no work in progress
+- GIVEN the Delivery tab is shown
+- WHEN the figures and sections are read
+- THEN there is no "In progress now" figure, no "Oldest in progress" table and no "In progress by member" chart
+
 ### REQ-UI-109: Kind, capabilities and estimate in the Beads views
 <!-- base: 89f8d56b4eaa13203113b9e235e356c826423ecfe44c597631274be7edf153b8 -->
 The frontend SHALL show the word "Technical" or "Parity" (REQ-UI-140) for an epic of that kind, and no kind for a capability epic, on its List row, its Board and Focus card, its bead page and its Gantt label; SHALL show the bead's capabilities as text, joined by commas, on its bead page; SHALL show on the bead page the size of REQ-UI-110 (REQ-UI-028), "<n>d" counting 480 minutes of `estimate_minutes` as one working day and rounding to one decimal, or "<p> pt" with its `points_reason` on the line under it; and SHALL show on an epic's List row, at every width, its complexity (REQ-UI-028) as text and its size as REQ-UI-110 describes ("<p> pt" when it has `points`, else "<n>d"), among the items that give way before the title (REQ-UI-044).

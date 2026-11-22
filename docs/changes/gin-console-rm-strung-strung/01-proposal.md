@@ -2,7 +2,7 @@
 
 Epic: gin-console-rm-strung
 Kind: capability
-Points: 13 (5 stories, 8 new and 32 changed REQs across every page, palette, type scale, 2 shared components, counts by state in 2 APIs, high: touches all screens)
+Points: 13 (5 stories, 8 new and 33 changed REQs across every page, palette, type scale, 2 shared components, counts by state in 2 APIs, high: touches all screens)
 Date: 2026-11-22
 
 ## Why
@@ -76,7 +76,7 @@ Acceptance criteria:
 
 ### US-4: Read pages without noise
 As a newcomer, I want a clear type scale, one typeface and plain text instead of pills, capitals and dots, so that titles stand out and rows are easy to read.
-REQ: REQ-UI-136, REQ-UI-137, REQ-UI-139, REQ-UI-140, REQ-UI-065, REQ-UI-110, REQ-UI-109, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-003, REQ-UI-072, REQ-UI-095, REQ-MILESTONE-UI-023, REQ-REPORTS-012, REQ-REPORTS-016
+REQ: REQ-UI-136, REQ-UI-137, REQ-UI-139, REQ-UI-140, REQ-UI-090, REQ-UI-065, REQ-UI-110, REQ-UI-109, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-003, REQ-UI-072, REQ-UI-095, REQ-MILESTONE-UI-023, REQ-REPORTS-012, REQ-REPORTS-016
 
 Acceptance criteria:
 - Page titles are 28px, row titles 14px and dates 12px, in Recursive; ids use its Mono voice.
@@ -98,7 +98,7 @@ Acceptance criteria:
 
 - `ui`:
   - ADDED: REQ-UI-136, REQ-UI-137, REQ-UI-138, REQ-UI-139, REQ-UI-140, REQ-UI-141.
-  - MODIFIED: REQ-UI-003, REQ-UI-028, REQ-UI-044, REQ-UI-049, REQ-UI-059, REQ-UI-064, REQ-UI-065, REQ-UI-067, REQ-UI-072, REQ-UI-095, REQ-UI-109, REQ-UI-110, REQ-UI-112, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-118, REQ-UI-120, REQ-UI-121, REQ-UI-130, REQ-UI-132, REQ-UI-133, REQ-UI-134.
+  - MODIFIED: REQ-UI-003, REQ-UI-028, REQ-UI-044, REQ-UI-049, REQ-UI-059, REQ-UI-064, REQ-UI-065, REQ-UI-067, REQ-UI-072, REQ-UI-090, REQ-UI-095, REQ-UI-109, REQ-UI-110, REQ-UI-112, REQ-UI-115, REQ-UI-116, REQ-UI-117, REQ-UI-118, REQ-UI-120, REQ-UI-121, REQ-UI-130, REQ-UI-132, REQ-UI-133, REQ-UI-134.
   - Diagrams: `docs/specs/ui/diagrams/strand-activity.md`.
   - Assets: `docs/specs/ui/assets/2026-11-22/` (the Strung direction preview: `index.html`, `tokens-light.png`, `tokens-dark.png`, `beads-light.png`, `epic-light.png`, `timeline-light.png`, `reports-light.png`).
 - `milestone-ui`:
