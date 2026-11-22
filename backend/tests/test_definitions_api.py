@@ -20,6 +20,10 @@ def client(tmp_path: Path, name: str, rows: list[Any]) -> TestClient:
     )
 
 
+NO_STATES = {"in_progress": 0, "blocked": 0, "ready": 0, "deferred": 0}
+READY_ONE = {**NO_STATES, "ready": 1}
+
+
 def blocked_by(ident: str, target: str, **fields: Any) -> dict[str, Any]:
     return bead(ident, dependencies=[dep(ident, target, "blocks")], **fields)
 
@@ -63,7 +67,7 @@ def test_tc_beads_071_blocked_whatever_the_status(tmp_path: Path) -> None:
 # TC: TC-BEADS-074@ec7c8dc1
 def test_tc_beads_074_counts_ignore_the_closed_filter(tmp_path: Path) -> None:
     api = client(tmp_path, "alpha", epic_with_tracks())
-    want = {"total": 3, "closed": 2, "prep_total": 1, "prep_closed": 1}
+    want = {**READY_ONE, "total": 3, "closed": 2, "prep_total": 1, "prep_closed": 1}
     first = api.get("/api/beads", params={"project": "alpha"}).json()
     ids = {b["id"] for b in first}
     assert not ids & {"t-1", "t-2", "p-1"}
@@ -79,14 +83,21 @@ def test_tc_beads_074_counts_ignore_the_closed_filter(tmp_path: Path) -> None:
 def test_tc_beads_075_bead_without_children(tmp_path: Path) -> None:
     api = client(tmp_path, "alpha", [bead("t-9")])
     body = api.get("/api/beads/alpha/t-9").json()
-    assert body["child_counts"] == {"total": 0, "closed": 0, "prep_total": 0, "prep_closed": 0}
+    zero = {"total": 0, "closed": 0, "prep_total": 0, "prep_closed": 0}
+    assert body["child_counts"] == {**NO_STATES, **zero}
 
 
 # TC: TC-BEADS-076@18360c09
 def test_tc_beads_076_child_counts_in_the_bead_detail(tmp_path: Path) -> None:
     api = client(tmp_path, "alpha", epic_with_tracks())
     body = api.get("/api/beads/alpha/e-1").json()
-    assert body["child_counts"] == {"total": 3, "closed": 2, "prep_total": 1, "prep_closed": 1}
+    assert body["child_counts"] == {
+        **READY_ONE,
+        "total": 3,
+        "closed": 2,
+        "prep_total": 1,
+        "prep_closed": 1,
+    }
     assert body["status"] == "open"  # not done although 2 of 3 tracks are closed
 
 
@@ -138,3 +149,33 @@ def test_tc_server_019_blocked_whatever_the_status(tmp_path: Path) -> None:
     counts = project_beads(client(tmp_path, "alpha", rows), "alpha")
     assert counts["blocked"] == 2
     assert counts["in_progress"] == 1
+
+
+# REQ-BEADS-022
+def test_beads_022_counts_by_state_in_the_list(tmp_path: Path) -> None:
+    rows = [
+        bead("x"),
+        bead("e-2", issue_type="epic"),
+        child("t-1", "e-2", status="closed"),
+        child("t-2", "e-2", status="in_progress"),
+        bead(
+            "t-3",
+            status="in_progress",
+            dependencies=[dep("t-3", "e-2", "parent-child"), dep("t-3", "x", "blocks")],
+        ),
+        child("t-4", "e-2"),
+        child("t-5", "e-2", status="deferred"),
+        child("t-6", "e-2", status="hooked"),
+    ]
+    body = client(tmp_path, "alpha", rows).get("/api/beads", params={"project": "alpha"}).json()
+    counts = next(b for b in body if b["id"] == "e-2")["child_counts"]
+    assert counts == {
+        "total": 6,
+        "closed": 1,
+        "prep_total": 0,
+        "prep_closed": 0,
+        "in_progress": 2,
+        "blocked": 1,
+        "ready": 1,
+        "deferred": 1,
+    }

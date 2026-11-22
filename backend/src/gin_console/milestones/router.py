@@ -5,7 +5,9 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 
+from gin_console.beads.errors import BeadsError
 from gin_console.beads.service import KeyedCache
+from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import valid_id
 from gin_console.config import Settings
 from gin_console.milestones.models import MilestoneDetail, MilestoneList
@@ -14,6 +16,7 @@ from gin_console.milestones.source import (
     MilestonesError,
     list_milestones,
     show_milestone,
+    with_epic_states,
 )
 
 TTL = timedelta(seconds=5)
@@ -24,6 +27,7 @@ def build_router(
     run: GwRunner,
     clock: Callable[[], datetime],
     on_refresh: list[Callable[[], None]],
+    snapshots: SnapshotStore,
 ) -> APIRouter:
     router = APIRouter()
     lists = KeyedCache[str, MilestoneList](TTL, clock)
@@ -43,9 +47,14 @@ def build_router(
     def get_milestones(project: str | None = None) -> MilestoneList | JSONResponse:
         cwd = project_dir(project)
         try:
-            return lists.get(str(project), lambda: list_milestones(run, cwd))
+            listing = lists.get(str(project), lambda: list_milestones(run, cwd))
         except MilestonesError as exc:
             return failure(exc)
+        try:
+            snapshot = snapshots.get(cwd)
+        except BeadsError:
+            snapshot = None  # REQ-MILESTONE-UI-025: no readable export, so the fallback counts
+        return with_epic_states(listing, snapshot)
 
     @router.get("/milestones/{project}/{milestone_id}", response_model=MilestoneDetail)
     def get_milestone(

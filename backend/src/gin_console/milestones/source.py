@@ -6,6 +6,8 @@ from typing import Any, Literal, Protocol
 
 from pydantic import ValidationError
 
+from gin_console.beads.definitions import Counts, child_counts
+from gin_console.beads.snapshot import Snapshot
 from gin_console.milestones.models import MilestoneDetail, MilestoneList
 from gin_console.projects.collect import CollectError, run_json
 
@@ -61,6 +63,31 @@ def list_milestones(run: GwRunner, cwd: Path) -> MilestoneList:
         return MilestoneList.model_validate(data)
     except ValidationError:
         raise MilestonesError("gin milestone list output was not understood") from None
+
+
+def with_epic_states(listing: MilestoneList, snapshot: Snapshot | None) -> MilestoneList:
+    """Epic counts by state from the export; without the milestone bead, open epics are ready."""
+    found = {} if snapshot is None else child_counts(snapshot)
+    entries = []
+    for entry in listing.milestones:
+        epics = entry.epics
+        if snapshot is not None and entry.id in snapshot.rows:
+            now = found.get(entry.id, Counts())
+            update = {
+                "in_progress": now.in_progress,
+                "blocked": now.blocked,
+                "ready": now.ready,
+                "deferred": now.deferred,
+            }
+        else:
+            update = {
+                "in_progress": 0,
+                "blocked": 0,
+                "ready": max(epics.total - epics.closed, 0),
+                "deferred": 0,
+            }
+        entries.append(entry.model_copy(update={"epics": epics.model_copy(update=update)}))
+    return listing.model_copy(update={"milestones": entries})
 
 
 def show_milestone(

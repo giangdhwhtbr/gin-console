@@ -5,13 +5,16 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fake_export import bead, dep
 from fake_gw import LIST, SHOW, FakeGw
 
+from gin_console.beads.snapshot import build_snapshot
 from gin_console.milestones.source import (
     MilestonesError,
     list_milestones,
     run_gw,
     show_milestone,
+    with_epic_states,
 )
 
 CWD = Path("/p")
@@ -157,3 +160,55 @@ def test_milestone_ui_008_older_gin_output_has_no_points_keys() -> None:
         "actual_days_per_point",
     ):
         assert epic[key] is None
+
+
+def _listing(total: int, closed: int) -> Any:
+    entry = {**LIST["milestones"][0], "epics": {"total": total, "closed": closed}}
+    return list_milestones(FakeGw({"list": {**LIST, "milestones": [entry]}}), CWD)
+
+
+def _epic(ident: str, **extra: Any) -> dict[str, Any]:
+    return bead(
+        ident,
+        issue_type="epic",
+        dependencies=[dep(ident, "gw-ab1", "parent-child"), *extra.pop("deps", [])],
+        **extra,
+    )
+
+
+# REQ-MILESTONE-UI-025
+def test_milestone_ui_025_counts_by_state() -> None:
+    snapshot = build_snapshot(
+        [
+            bead("x"),
+            bead("gw-ab1", issue_type="milestone"),
+            _epic("e-1", status="closed"),
+            _epic("e-2", status="in_progress"),
+            _epic("e-3", deps=[dep("e-3", "x", "blocks")]),
+            _epic("e-4"),
+        ]
+    )
+    result = with_epic_states(_listing(4, 1), snapshot)
+    assert result.milestones[0].epics.model_dump() == {
+        "total": 4,
+        "closed": 1,
+        "in_progress": 1,
+        "blocked": 1,
+        "ready": 1,
+        "deferred": 0,
+    }
+
+
+# REQ-MILESTONE-UI-025
+def test_milestone_ui_025_bead_missing() -> None:
+    result = with_epic_states(_listing(3, 1), None)
+    assert result.milestones[0].epics.model_dump() == {
+        "total": 3,
+        "closed": 1,
+        "in_progress": 0,
+        "blocked": 0,
+        "ready": 2,
+        "deferred": 0,
+    }
+    absent = with_epic_states(_listing(3, 1), build_snapshot([bead("x")]))
+    assert absent.milestones[0].epics.ready == 2

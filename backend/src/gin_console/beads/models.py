@@ -40,6 +40,10 @@ class ChildCounts(BaseModel):
     closed: int = 0
     prep_total: int = 0
     prep_closed: int = 0
+    in_progress: int = 0
+    blocked: int = 0
+    ready: int = 0
+    deferred: int = 0
 
 
 class BeadSummary(BaseModel):

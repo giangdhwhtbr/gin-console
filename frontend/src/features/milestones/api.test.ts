@@ -36,6 +36,17 @@ describe("milestones api", () => {
     await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");
   });
 
+  it("REQ-MILESTONE-UI-025 accepts epics with and without the state counts, and rejects a string", async () => {
+    const plain = { total: 4, closed: 1 };
+    const states = { ...plain, in_progress: 1, blocked: 1, ready: 1, deferred: 0 };
+    for (const epics of [plain, states]) {
+      stubMilestones(() => json(list([entry("m-1", { epics })])));
+      expect((await fetchMilestones("alpha")).milestones[0].epics).toEqual(epics);
+    }
+    stubMilestones(() => json({ ...list([]), milestones: [{ ...entry("m-1"), epics: { ...plain, ready: "1" } }] }));
+    await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");
+  });
+
   it("REQ-MILESTONE-UI-008 reads forecast and lanes", async () => {
     stubMilestones(() => json(list([entry("m-1", { lanes: 2 })], { forecast: forecast() })));
     const body = await fetchMilestones("alpha");

@@ -87,7 +87,7 @@ def create_app(
     api.include_router(
         build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh)
     )
-    api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh))
+    api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh, snapshots))
     api.include_router(build_reports_router(settings, snapshots, interactions, clock, on_refresh))
 
     @api.api_route("/{rest:path}", methods=_METHODS)

@@ -17,6 +17,10 @@ IsoDate = Annotated[str, StringConstraints(pattern=r"^\d{4}-\d{2}-\d{2}$")]
 class EpicCount(BaseModel):
     total: int
     closed: int
+    in_progress: int = 0
+    blocked: int = 0
+    ready: int = 0
+    deferred: int = 0
 
 
 class DaysPerPoint(BaseModel):

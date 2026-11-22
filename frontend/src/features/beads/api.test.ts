@@ -177,6 +177,18 @@ describe("api", () => {
     }
   });
 
+  // REQ-BEADS-022
+  it("REQ-BEADS-022 accepts child_counts with and without the state counts, and rejects a string", async () => {
+    const states = { in_progress: 1, blocked: 0, ready: 2, deferred: 0 };
+    for (const counts of [sampleSummary.child_counts, { ...sampleSummary.child_counts, ...states }]) {
+      vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([{ ...sampleSummary, child_counts: counts }]))));
+      expect(await fetchBeads("proj", false)).toHaveLength(1);
+    }
+    const bad = { ...sampleSummary, child_counts: { ...sampleSummary.child_counts, ready: "2" } };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([bad]))));
+    await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
+  });
+
   // REQ-BEADS-010
   it("REQ-BEADS-010 rejects when a bead is missing blocked_by", async () => {
     const missingBlockedBy = Object.fromEntries(

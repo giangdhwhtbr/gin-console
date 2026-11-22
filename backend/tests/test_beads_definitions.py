@@ -8,6 +8,7 @@ from gin_console.beads.definitions import (
     child_counts,
     is_blocked,
     person_key,
+    track_state,
 )
 from gin_console.beads.snapshot import build_snapshot
 
@@ -64,7 +65,7 @@ def test_beads_022_child_counts_skip_gates_and_split_prep() -> None:
             child("g-1", "e-1", title="external: .planning/plans/p.md#1"),
         ]
     )
-    assert child_counts(snapshot) == {"e-1": Counts(3, 2, 1, 1)}
+    assert child_counts(snapshot) == {"e-1": Counts(3, 2, 1, 1, ready=1)}
 
 
 # REQ-BEADS-022
@@ -104,3 +105,57 @@ def test_reports_019_bugs_found_counts_open_and_closed_bugs_not_tasks() -> None:
 def test_reports_019_bugs_found_ignores_other_dependency_kinds_and_none() -> None:
     rows = [bead("a-1"), blocks("a-2", "a-1", issue_type="bug"), bead("a-3", issue_type="bug")]
     assert _found(rows) == {}
+
+
+def _state_snapshot() -> Any:
+    return build_snapshot(
+        [
+            bead("x"),
+            bead("e-2", issue_type="epic"),
+            child("t-1", "e-2", status="closed"),
+            child("t-2", "e-2", status="in_progress"),
+            bead(
+                "t-3",
+                status="in_progress",
+                dependencies=[
+                    dep("t-3", "e-2", "parent-child"),
+                    dep("t-3", "x", "blocks"),
+                ],
+            ),
+            child("t-4", "e-2"),
+            child("t-5", "e-2", status="deferred"),
+            child("t-6", "e-2", status="hooked"),
+        ]
+    )
+
+
+# REQ-BEADS-022
+def test_beads_022_counts_by_state() -> None:
+    assert child_counts(_state_snapshot())["e-2"] == Counts(
+        total=6, closed=1, in_progress=2, blocked=1, ready=1, deferred=1
+    )
+
+
+# REQ-BEADS-022
+def test_beads_022_track_state_table() -> None:
+    snapshot = build_snapshot(
+        [
+            bead("x"),
+            bead("a", status="blocked"),
+            blocks("e", "x", issue_type="epic"),
+            child("t", "e"),
+            bead("d", status="deferred"),
+            bead("r"),
+            bead("h", status="hooked"),
+            bead("c", status="closed"),
+        ]
+    )
+    got = {i: track_state(i, snapshot.rows[i], snapshot) for i in "a t d r h c".split()}
+    assert got == {
+        "a": "blocked",
+        "t": "blocked",
+        "d": "deferred",
+        "r": "ready",
+        "h": "in_progress",
+        "c": "done",
+    }

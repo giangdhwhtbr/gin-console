@@ -6,7 +6,16 @@ export type BeadComplexity = "low" | "medium" | "high";
 export type TrackRef = { plan: string | null; number: number };
 export type GateRef = { plan: string; number: number; track_id: string | null; lane: string | null };
 export type Claim = { holder: string; expires_at: string };
-export type ChildCounts = { total: number; closed: number; prep_total: number; prep_closed: number };
+export type ChildCounts = {
+  total: number;
+  closed: number;
+  prep_total: number;
+  prep_closed: number;
+  in_progress?: number;
+  blocked?: number;
+  ready?: number;
+  deferred?: number;
+};
 export type BeadSummary = {
   id: string;
   title: string;
@@ -90,7 +99,12 @@ const KINDS: readonly BeadKind[] = ["capability", "technical", "parity"];
 const COMPLEXITIES: readonly BeadComplexity[] = ["low", "medium", "high"];
 
 const isChildCounts = (value: unknown): value is ChildCounts =>
-  isObject(value) && ["total", "closed", "prep_total", "prep_closed"].every((k) => isFiniteNumber(field(value, k)));
+  isObject(value) &&
+  ["total", "closed", "prep_total", "prep_closed"].every((k) => isFiniteNumber(field(value, k))) &&
+  ["in_progress", "blocked", "ready", "deferred"].every((k) => {
+    const n = field(value, k);
+    return n === undefined || isFiniteNumber(n);
+  });
 
 function isSummary(value: unknown): value is BeadSummary {
   return (

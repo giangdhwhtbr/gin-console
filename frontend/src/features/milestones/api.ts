@@ -21,7 +21,14 @@ export type MilestoneEntry = {
   end: string | null;
   kickoff: string | null;
   finish: string | null;
-  epics: { total: number; closed: number };
+  epics: {
+    total: number;
+    closed: number;
+    in_progress?: number;
+    blocked?: number;
+    ready?: number;
+    deferred?: number;
+  };
   warnings: number | null;
   error: string | null;
   lanes: number | null;
@@ -153,6 +160,10 @@ function isEntry(value: unknown): value is MilestoneEntry {
     isObject(epics) &&
     isFiniteNumber(field(epics, "total")) &&
     isFiniteNumber(field(epics, "closed")) &&
+    ["in_progress", "blocked", "ready", "deferred"].every((k) => {
+      const n = field(epics, k);
+      return n === undefined || isFiniteNumber(n);
+    }) &&
     isLanes(field(value, "lanes"))
   );
 }

@@ -476,7 +476,16 @@ def _epic_snapshot() -> Snapshot:
 
 # REQ-BEADS-022
 def test_beads_022_child_counts_do_not_depend_on_the_closed_flag() -> None:
-    expected = {"total": 3, "closed": 2, "prep_total": 1, "prep_closed": 1}
+    expected = {
+        "total": 3,
+        "closed": 2,
+        "prep_total": 1,
+        "prep_closed": 1,
+        "in_progress": 0,
+        "blocked": 0,
+        "ready": 1,
+        "deferred": 0,
+    }
     for closed in (False, True):
         epic = next(b for b in list_beads(_epic_snapshot(), closed=closed) if b.id == "e-1")
         assert epic.child_counts.model_dump() == expected
@@ -488,7 +497,17 @@ def test_beads_022_child_counts_do_not_depend_on_the_closed_flag() -> None:
 def test_beads_022_a_task_has_zero_child_counts() -> None:
     detail = get_bead(_epic_snapshot(), "t-3")
     assert detail.child_counts.model_dump() == dict.fromkeys(
-        ("total", "closed", "prep_total", "prep_closed"), 0
+        (
+            "total",
+            "closed",
+            "prep_total",
+            "prep_closed",
+            "in_progress",
+            "blocked",
+            "ready",
+            "deferred",
+        ),
+        0,
     )
     assert get_bead(_epic_snapshot(), "e-1").child_counts.total == 3
 

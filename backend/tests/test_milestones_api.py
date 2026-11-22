@@ -9,6 +9,7 @@ from fake_gw import LIST, SHOW, FakeGw
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
+from gin_console.beads.errors import BeadsError
 from gin_console.config import ProjectEntry, Settings
 from gin_console.milestones.source import MilestonesError, run_gw
 
@@ -57,7 +58,15 @@ def make(tmp_path: Path, fake: Any, clock: Clock | None = None) -> TestClient:
 def test_milestone_ui_008_list(tmp_path: Path) -> None:
     body = make(tmp_path, FakeGw()).get("/api/milestones", params={"project": "proj"}).json()
     assert body["unassigned_epics"] == 3 and body["today"] == "2026-10-29"
-    assert body["milestones"][0]["epics"] == {"total": 6, "closed": 0}
+    # REQ-MILESTONE-UI-025: no export in the project, so the fallback counts
+    assert body["milestones"][0]["epics"] == {
+        "total": 6,
+        "closed": 0,
+        "in_progress": 0,
+        "blocked": 0,
+        "ready": 6,
+        "deferred": 0,
+    }
     assert "schema" not in body
 
 
@@ -367,3 +376,21 @@ def test_milestone_ui_008_story_points_through_the_api(tmp_path: Path) -> None:
     old = make(tmp_path, FakeGw())
     assert old.get("/api/milestones", params={"project": "proj"}).json()["days_per_point"] is None
     assert old.get("/api/milestones/proj/gw-ab1").json()["epics"][0]["points"] is None
+
+
+# REQ-MILESTONE-UI-025
+def test_milestone_ui_025_snapshot_unreadable(tmp_path: Path) -> None:
+    (tmp_path / "proj").mkdir()
+    (tmp_path / "dist").mkdir()
+    settings = Settings(projects=[ProjectEntry(name="proj", path=tmp_path / "proj")])
+
+    def unreadable(cwd: Path) -> Any:
+        raise BeadsError("no export")
+
+    app = create_app(
+        settings, static_dir=tmp_path / "dist", run_gw=FakeGw(), read_beads=unreadable
+    )
+    response = TestClient(app).get("/api/milestones", params={"project": "proj"})
+    assert response.status_code == 200
+    epics = response.json()["milestones"][0]["epics"]
+    assert epics["ready"] == epics["total"] - epics["closed"]

@@ -1,8 +1,8 @@
 """The one place that decides what blocked, done and a child count mean."""
 
 from collections.abc import Mapping
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, replace
+from typing import Any, Literal
 
 from gin_console.beads.lanes import is_merge_gate
 from gin_console.beads.prep import row_is_prep
@@ -29,6 +29,28 @@ class Counts:
     closed: int = 0
     prep_total: int = 0
     prep_closed: int = 0
+    in_progress: int = 0
+    blocked: int = 0
+    ready: int = 0
+    deferred: int = 0
+
+
+TrackState = Literal["done", "blocked", "deferred", "ready", "in_progress"]
+
+
+def track_state(ident: str, row: Mapping[str, Any], snapshot: Snapshot) -> TrackState:
+    """The one state a track counts in (REQ-BEADS-022), as the Board gives it (REQ-UI-031)."""
+    if is_done(row):
+        return "done"
+    if is_blocked(ident, row, snapshot):
+        return "blocked"
+    if row.get("status") == "deferred":
+        return "deferred"
+    if ident in snapshot.ready:
+        return "ready"
+    if row.get("status") in ("in_progress", "hooked"):
+        return "in_progress"
+    return "deferred"
 
 
 def child_counts(snapshot: Snapshot) -> dict[str, Counts]:
@@ -41,13 +63,17 @@ def child_counts(snapshot: Snapshot) -> dict[str, Counts]:
         now = found.get(parent, Counts())
         done = 1 if is_done(row) else 0
         if row_is_prep(row):
-            found[parent] = Counts(
-                now.total, now.closed, now.prep_total + 1, now.prep_closed + done
+            found[parent] = replace(
+                now, prep_total=now.prep_total + 1, prep_closed=now.prep_closed + done
             )
-        else:
-            found[parent] = Counts(
-                now.total + 1, now.closed + done, now.prep_total, now.prep_closed
-            )
+            continue
+        state = track_state(child, row, snapshot)
+        found[parent] = replace(
+            now,
+            total=now.total + 1,
+            closed=now.closed + done,
+            **({} if state == "done" else {state: getattr(now, state) + 1}),
+        )
     return found
 
 
