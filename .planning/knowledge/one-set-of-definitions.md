@@ -14,8 +14,8 @@ The UX review of 2026-11-21 found the same scope showing 19, 17 and 0 blocked be
   - The Team buckets put a blocked in-progress bead in `open`, so `scope = closed + in_progress + open` holds.
   - The Board and Focus place closed, then blocked, then deferred, ready and working beads.
   - Column headers count prep apart ("2 + 1 prep").
-- **Progress:** every bead carries `child_counts {total, closed, prep_total, prep_closed}`, whatever `closed` the request has. The detail's `children` list keeps its name.
-  - The frontend reads it through `features/beads/progress.ts`: `progressOf`, `prepLabel` ("Prep x/y") and `prepWords` ("Prep x of y done", for PM views).
+- **Progress:** every bead carries `child_counts {total, closed, prep_total, prep_closed}`, whatever `closed` the request has; since gin-console-rm-strung it also has `in_progress`, `blocked`, `ready` and `deferred` (see `strung-visual-system.md`). The detail's `children` list keeps its name.
+  - The frontend reads it through `features/beads/progress.ts`: `progressOf` (with `counts` for the strand) and `prepLabel` ("Prep x/y"); `prepWords` was removed when the strand replaced the "x of y done" texts.
 - **People:** `frontend/src/lib/people.ts` (`personOf`, `samePerson`) mirrors `person_key`, and both test the same cases.
   - `AssigneeName` shows the person, or a muted "Unassigned", and never the owner.
   - The Assignee filter offers `me` first; `resolveMe` runs where `filterBeads` runs, never in a prop passed down, because List and Focus write `...filters` back to the URL.

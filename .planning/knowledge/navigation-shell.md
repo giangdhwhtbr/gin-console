@@ -16,7 +16,7 @@ The UX review of 2026-11-21 found that every page picked its own project, breadc
   - `originFor` decides whether the breadcrumb's first link and the marked nav link use the origin.
   - The parent title in the breadcrumb comes from the loaded bead's `parent-child` dependency, with no extra request.
 - **Titles and Not found:**
-  - `usePageTitle(name, project)` joins the parts with ` · ` and resets to `gin-console`.
+  - `usePageTitle(name, project)` joins the parts with ` · ` and resets to `gin-console`. Document titles are the one place that keeps ` · ` (REQ-UI-139, style guard).
   - `NotFoundPage` is the router fallback; `/` matches Projects explicitly.
   - The details panel (an embedded `BeadDetailPage`) never retitles the page.
 - **Back:** `route.ts` gives every history entry a `{key}` in `history.state`.
