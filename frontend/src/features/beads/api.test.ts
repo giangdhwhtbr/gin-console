@@ -167,6 +167,16 @@ describe("api", () => {
     await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
   });
 
+  // REQ-BEADS-022
+  it("REQ-BEADS-022 rejects when child_counts is missing or malformed", async () => {
+    const missing = Object.fromEntries(Object.entries(sampleSummary).filter(([key]) => key !== "child_counts"));
+    const malformed = { ...sampleSummary, child_counts: { total: "x", closed: 0, prep_total: 0, prep_closed: 0 } };
+    for (const body of [missing, malformed]) {
+      vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([body]))));
+      await expect(fetchBeads("proj", false)).rejects.toThrow("Could not load beads (unexpected response)");
+    }
+  });
+
   // REQ-BEADS-010
   it("REQ-BEADS-010 rejects when a bead is missing blocked_by", async () => {
     const missingBlockedBy = Object.fromEntries(

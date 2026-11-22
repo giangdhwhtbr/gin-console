@@ -60,6 +60,20 @@ describe("FocusView", () => {
     expect(screen.queryByRole("link", { name: "Ready P3 bead" })).not.toBeInTheDocument();
   });
 
+  it("REQ-UI-033 the Blocked column counts prep tasks apart", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=focus");
+    stubBeads(() =>
+      json([
+        bead("t-1", { blocked: true, labels: ["track:1"], title: "Blocked track one" }),
+        bead("t-2", { blocked: true, labels: ["track:2"], title: "Blocked track two" }),
+        bead("p-1", { blocked: true, labels: ["prep"], title: "Blocked prep" }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const blocked = await screen.findByRole("region", { name: "Blocked" });
+    expect(within(blocked).getByText("2 + 1 prep")).toBeInTheDocument();
+  });
+
   it("REQ-UI-034 group by assignee rows", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=focus");
     stubBeads(() =>

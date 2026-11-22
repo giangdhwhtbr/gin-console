@@ -45,7 +45,7 @@ describe("BeadTable", () => {
     expect(within(row).getByText("10 Nov")).toBeInTheDocument();
   });
 
-  it("REQ-UI-033 a bead in progress and blocked reads Blocked", () => {
+  it("REQ-REPORTS-009 a bead in progress and blocked reads Blocked", () => {
     show([make(progress, 4, { status: "in_progress", blocked: true })], "all");
     expect(within(screen.getAllByRole("row")[1]).getByText("Blocked")).toBeInTheDocument();
   });
