@@ -237,13 +237,13 @@ The scope of a milestone SHALL be every bead that is not a milestone, whose chai
 
 Each scope bead SHALL fall in one bucket:
 - `closed` for status `closed`;
-- `in_progress` for status `in_progress`;
-- `open` for any other status.
+- `in_progress` for status `in_progress` when the bead is not blocked (REQ-BEADS-007, REQ-BEADS-021);
+- `open` for any other bead.
 
-Its member SHALL be its `assignee`, or `Unassigned` when it has none.
+Its member SHALL be the person (REQ-BEADS-023) of its `assignee`, or `Unassigned` when it has none.
 
 The response SHALL hold `beads`, one row per scope bead, with:
-- `id`, `title`, `issue_type`, `status`, `bucket`, `assignee`, `priority` and `created_at`;
+- `id`, `title`, `issue_type`, `status`, `bucket`, `blocked`, `assignee`, `priority` and `created_at`;
 - `epic`: the `id` and `title` of the nearest epic among the bead and its chain of parents;
 - `started_at` and `closed_at`;
 - `cycle_days`, as the cycle time of REQ-REPORTS-004, or `null`;
@@ -267,9 +267,9 @@ The response SHALL hold `beads`, one row per scope bead, with:
 - THEN `beads` holds `e1.1` with itself as its epic, and not `e1`
 
 #### Scenario: buckets and members
-- GIVEN scope beads with status `blocked` and no assignee, `deferred` assigned to `ann`, and `in_progress` assigned to `bao`
+- GIVEN scope beads with status `blocked` and no assignee, `deferred` assigned to `ann`, `in_progress` assigned to `bao`, and `in_progress` assigned to `bao@example.com` with an open blocker
 - WHEN the team report is built
-- THEN their buckets are `open`, `open` and `in_progress`, and their members are `Unassigned`, `ann` and `bao`
+- THEN their buckets are `open`, `open`, `in_progress` and `open`, their members are `Unassigned`, `ann`, `bao` and `bao`, and the first and the last have `blocked` true
 
 #### Scenario: late close
 - GIVEN milestone `m2` ending on Friday 2026-11-27 and a scope bead closed on Tuesday 2026-12-01
@@ -288,8 +288,8 @@ The response SHALL hold `beads`, one row per scope bead, with:
 
 ### REQ-REPORTS-010: Team and member KPIs
 The response SHALL hold `team`, over the whole scope, and `members`, with one row per member of REQ-REPORTS-009 sorted by scope count (largest first) and then by name, with `Unassigned` last. Each holds:
-- `scope`, `closed`, `in_progress` and `open` counts;
-- `blocked`: open beads with status `blocked`;
+- `scope`, `closed`, `in_progress` and `open` counts, one per bucket of REQ-REPORTS-009;
+- `blocked`: scope beads that are not closed and blocked (REQ-BEADS-021), whatever their status;
 - `unclaimed`: open beads without an assignee;
 - `done`: closed ÷ scope, or `null` when the scope is empty;
 - `throughput`: the beads closed in the last 5 working days up to `today`. For a closed milestone it is instead the closed beads ÷ the working days from `start` to `closed_on` × 5, rounded to one decimal;
@@ -327,6 +327,11 @@ The response SHALL hold `team`, over the whole scope, and `members`, with one ro
 - WHEN the team report is built
 - THEN `members` is `bao`, `ann`, `Unassigned`
 
+#### Scenario: blocked whatever the status
+- GIVEN scope beads with status `blocked`, an open bead with an open blocker, an in-progress bead with an open blocker and an in-progress bead without blockers
+- WHEN the team report is built
+- THEN `team.blocked` is 3, `team.in_progress` is 1 and `team.open` is 3
+
 #### Scenario: past end
 - GIVEN an open milestone that ended yesterday with 4 beads still open or in progress
 - WHEN the team report is built
@@ -353,8 +358,8 @@ WHILE a single project is selected, the Team tab of the Reports page SHALL reque
 - A link "Open Gantt" to the milestone page.
 - The milestone line:
   - the title;
-  - a status chip: Active, Scheduled, Planned, "Closed · on time", or "Closed · <n> d late", where `<n>` is the working days from `end` to `closed_on`;
-  - "<start> – <end>";
+  - a status chip with the milestone status of REQ-MILESTONE-UI-022: Active, Scheduled or Planned, followed by " · late" with a warning mark when the milestone is late (REQ-MILESTONE-UI-023, its forecast `finish` taken from the Milestones list of REQ-UI-095), or "Closed · on time" or "Closed · <n> d late", where `<n>` is the working days from `end` to `closed_on`;
+  - "<start> – <end>" (REQ-UI-131);
   - "working day <elapsed> of <working_days> · <days_left> left" while the period holds `today`, "starts in <n> working days" before `start`, or "finished <closed_on>" once closed.
 - WHEN `undated` is above 0, the note "<undated> milestones without start and end dates are not listed".
 
@@ -376,6 +381,11 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.pn
 - WHEN the user picks `m1`
 - THEN the team report for `m1` is requested, All members is selected and the default list of REQ-REPORTS-016 is shown
 
+#### Scenario: late active milestone
+- GIVEN active milestone `m2` whose forecast `finish` in the Milestones list is after its `end`
+- WHEN the Team tab is shown
+- THEN its status chip reads "Active · late" with a warning mark
+
 #### Scenario: no period choice
 - GIVEN the Team tab is selected
 - WHEN the panel is shown
@@ -390,21 +400,21 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.pn
 The Team tab SHALL show a row of figures, in this order, from `team`, or from the selected member's row:
 - Done: "<closed> / <scope>" and "<done> of scope" ("of assigned" for a member).
 - In progress: the count and "oldest <n> d", in the warning color above 3 days, or "nothing started".
-- Open: the count, and "<blocked> blocked · <unclaimed> unclaimed" ("<blocked> blocked" for a member). This line is in the warning color when `blocked` is above 0.
+- Open: the count, and "<blocked> blocked · <unclaimed> unassigned" ("<blocked> blocked" for a member). This line is in the warning color when `blocked` is above 0.
 - Pace or Throughput:
-  - For the team, while `pace_needed` is not `null`: Pace, "<pace> / day" and "needs <pace_needed> / day to end on <end>". Both are in the warning color when `pace_needed` is above `pace`.
-  - Otherwise: Throughput, "<throughput> / week".
+  - For the team, while `pace_needed` is not `null`: Pace, "<pace> done per day" and "needs <pace_needed> done per day to finish by <end>". Both are in the warning color when `pace_needed` is above `pace`.
+  - Otherwise: Throughput, "<throughput> done per week".
 - Median cycle: "<n> d" or "—".
-- On time: the percentage, in the warning color below 100%. Under it: "<late_open> still open after end" in the warning color when `late_open` is above 0, else "closed by <end>".
+- On time: the percentage, in the warning color below 100%. Under it: "<late_open> open after the end date" in the warning color when `late_open` is above 0, else "closed by <end>".
 - Rework: the percentage or "—", and "<reopens> reopens · <bugs> bugs later".
 
-Under the figures, a "Scope by status" bar SHALL show segments for Closed, In progress, Open (without blocked) and Blocked, sized by count, with a legend giving each count.
+Each figure SHALL carry a tooltip (REQ-UI-132) with the rule it counts by. Under the figures, a "Scope by status" bar SHALL show segments for Closed, In progress, Open (without blocked) and Blocked, sized by count, with a legend giving each count.
 Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.png`
 
 #### Scenario: behind pace
 - GIVEN `team.pace` 2.0 and `pace_needed` 3.4
 - WHEN the Team tab is shown
-- THEN the Pace figure reads "2.0 / day" and "needs 3.4 / day to end on 27 Nov", in the warning color
+- THEN the Pace figure reads "2.0 done per day" and "needs 3.4 done per day to finish by 27 Nov", in the warning color
 
 #### Scenario: member figures
 - GIVEN member `ann` with scope 11, closed 6 and 1 blocked bead
@@ -414,7 +424,12 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.pn
 #### Scenario: closed milestone
 - GIVEN a closed milestone with `throughput` 13.2 and `on_time` 0.88
 - WHEN the Team tab is shown
-- THEN the figures show Throughput "13.2 / week" and On time "88%" in the warning color
+- THEN the figures show Throughput "13.2 done per week" and On time "88%" in the warning color
+
+#### Scenario: open after the end date
+- GIVEN an open milestone that ended yesterday with `late_open` 4
+- WHEN the Team tab is shown
+- THEN On time reads "4 open after the end date" in the warning color
 
 ### REQ-REPORTS-014: Closed per working day chart
 WHILE the milestone has begun (its first entry of `days` is on or before `today`), the Team tab SHALL show `days` as a column chart:
@@ -533,26 +548,25 @@ Source: `assets/2026-11-12/mockup/index.html`
 - [Review velocity](use-cases/review-velocity.md)
 
 ### REQ-REPORTS-018: Velocity tab
-WHEN the Velocity tab is selected, the frontend SHALL request `GET /api/milestones?project=<p>` (REQ-MILESTONE-UI-008) for the selected project, or for every configured project when "All projects" is selected, and SHALL show for each project (under the project's name when all are selected):
-- a row of figures: the project's `days_per_point.value` to one decimal as "<x> d/pt", with "assumed" when `days_per_point.assumed` is true and "—" when `days_per_point` is `null` or missing; and the say/do (whole percent) and accuracy (two decimals) of the milestone with the latest `start` among those whose `velocity.say_do` is not `null`, or "—";
+WHEN the Velocity tab is selected, the frontend SHALL request `GET /api/milestones?project=<p>` (REQ-MILESTONE-UI-008) for the selected project, unless REQ-UI-095 has already loaded it, or for every configured project when "All projects" is selected, and SHALL show for each project (under the project's name when all are selected):
+- a row of figures: the project's `days_per_point.value` to one decimal as "<x> days per point", with "assumed" when `days_per_point.assumed` is true and "—" when `days_per_point` is `null` or missing; and the commitment met (say/do, whole percent) and accuracy (two decimals) of the milestone with the latest `start` among those whose `velocity.say_do` is not `null`, or "—";
 - for the milestones whose `velocity` has a `committed_points` that is not `null` or a `completed_points` above 0, oldest `start` first:
   - a column chart of `committed_points` and `completed_points` per milestone;
   - a line chart of `days_per_point` and `planned_days_per_point` per milestone, leaving out `null` points;
-  - a table with committed, completed and added points, say/do, days per point, planned days per point and accuracy, "—" for `null`;
+  - a table with committed, completed and added points, commitment met, days per point, planned days per point and accuracy, "—" for `null`;
 - "No kicked-off milestones with points yet" when no milestone qualifies;
 - the error and cause of a project whose request failed (REQ-MILESTONE-UI-005), with the other projects still shown.
-
 The tab SHALL hold no period or sprint choice, SHALL show nothing per member, and the Reports backend SHALL NOT run `gin` for it.
 
 #### Scenario: Milestones with velocity
 - GIVEN project `alpha` whose milestones list has `days_per_point` `{value: 1.4, measured_epics: 6, assumed: false}`, closed `m1` (start 1 Oct) with `velocity` `{committed_points: 10, completed_points: 8, added_points: 0, say_do: 0.8, days_per_point: 1.5, planned_days_per_point: 1.2, accuracy: 0.8}`, active `m2` (start 3 Nov) with `{committed_points: 13, completed_points: 5, added_points: 2, say_do: 0.38, days_per_point: 1.3, planned_days_per_point: 1.4, accuracy: 1.08}`, and planned `m3` with `{committed_points: null, completed_points: 0, …}`
 - WHEN the user opens `/reports?project=alpha&tab=velocity`
-- THEN the figures read "1.4 d/pt", "38%" and "1.08", the charts and the table hold `m1` then `m2`, and `m3` is not shown
+- THEN the figures read "1.4 days per point", "38%" and "1.08", the charts and the table hold `m1` then `m2`, and `m3` is not shown
 
 #### Scenario: Assumed days per point
 - GIVEN project `alpha` whose `days_per_point` is `{value: 1.0, measured_epics: 0, assumed: true}`
 - WHEN the Velocity tab is shown
-- THEN the figure reads "1.0 d/pt" with "assumed"
+- THEN the figure reads "1.0 days per point" with "assumed"
 
 #### Scenario: Nothing kicked off yet
 - GIVEN project `alpha` whose milestones all have `committed_points: null` and `completed_points: 0`, or no `velocity` key
