@@ -26,12 +26,12 @@ IF the request to `/api/projects` fails, THEN the Projects page SHALL show an er
 - THEN the error disappears and the project list is shown
 
 ### REQ-UI-003: Workflow state display
-The Projects page SHALL show, for each project with `workflow` data, "workspace · <n> repos" with a "Show repos" control that lists each repo's path, branch and shape and marks a repo that is frozen or not present, "team · <host>" while team mode is on, an alert listing the `decision` when it is `hold` together with the `warnings` and `remedies`, and "<n> review waiver(s)" with each waiver's task, reason and actor, showing none of them when it is absent or empty; it SHALL NOT show the default workflow's stage and gates.
+The Projects page SHALL show, for each project with `workflow` data, "Workspace of <n> repos" with a "Show repos" control that lists each repo's path, branch and shape and marks a repo that is frozen or not present, "Team mode on <host>" while team mode is on, an alert listing the `decision` when it is `hold` together with the `warnings` and `remedies`, and "<n> review waiver(s)" with each waiver's task, reason and actor, showing none of them when it is absent or empty; it SHALL NOT show the default workflow's stage and gates.
 
 #### Scenario: Workspace and team
 - GIVEN a project with a workspace of 8 repos, one of them frozen, and team mode on with host `github`
 - WHEN the Projects page loads and the user chooses "Show repos"
-- THEN the card shows "workspace · 8 repos" and "team · github", then the 8 repos with the frozen one marked
+- THEN the card shows "Workspace of 8 repos" and "Team mode on github", then the 8 repos with the frozen one marked
 
 #### Scenario: Health alert
 - GIVEN a project with `decision` `hold`, the warning "event log unreadable" and one review waiver for `t-1`
@@ -204,7 +204,7 @@ WHILE the page is visible, the bead list SHALL reload every 10 seconds without r
 - THEN the old list stays visible with an error message and a retry button
 
 ### REQ-UI-028: Bead detail
-The bead page SHALL show the bead's id, title and type, a row of badges with its state as REQ-UI-064 describes (for example "In progress", never the raw `in_progress`; for a milestone, its milestone status as REQ-MILESTONE-UI-022 describes), its priority as a `P<n>` pill (REQ-UI-110) and its size as REQ-UI-110 describes, the reason of its points (`points_reason`) on its own line under that row, its labels, and its assignee (REQ-UI-135), creator (the person of `created_by`, else of `owner`, REQ-BEADS-023), creation and update times and comment count as label/value pairs (REQ-UI-110), each time written as REQ-UI-131 describes, its description rendered as GitHub-flavored Markdown (headings, emphasis, lists, task lists, inline code, code blocks, tables, block quotes and links), its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with a progress bar of closed tracks over all tracks, from its `child_counts` (REQ-UI-130), when it has a track. WHEN an epic has prep tasks (REQ-BEADS-002), the bead page SHALL show "Prep x/y" next to the progress bar, where x is its closed prep tasks and y all its prep tasks, and SHALL mark each prep task in the children list with a "Prep" chip. Raw HTML in the description SHALL be shown as text and SHALL NOT create elements, a link SHALL open in a new tab with `rel="noreferrer"`, and a link whose URL is not `http`, `https` or `mailto` SHALL be shown as text.
+The bead page SHALL show the bead's id, title and type, a line of facts with its state as REQ-UI-064 describes (for example "In progress", never the raw `in_progress`; for a milestone, its milestone status as REQ-MILESTONE-UI-022 describes), its priority as `P<n>` (REQ-UI-110) and its size as REQ-UI-110 describes, the reason of its points (`points_reason`) on its own line under that line, its labels, and its assignee (REQ-UI-135), creator (the person of `created_by`, else of `owner`, REQ-BEADS-023), creation and update times and comment count as label/value pairs (REQ-UI-110), each time written as REQ-UI-131 describes, its description rendered as GitHub-flavored Markdown (headings, emphasis, lists, task lists, inline code, code blocks, tables, block quotes and links), its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with the strand of its tracks (REQ-UI-138), from its `child_counts` (REQ-UI-130), when it has a track. WHEN an epic has prep tasks (REQ-BEADS-002), the bead page SHALL show "Prep x/y" next to the strand, where x is its closed prep tasks and y all its prep tasks, and SHALL mark each prep task in the children list with the word "Prep" (REQ-UI-140). Raw HTML in the description SHALL be shown as text and SHALL NOT create elements, a link SHALL open in a new tab with `rel="noreferrer"`, and a link whose URL is not `http`, `https` or `mailto` SHALL be shown as text.
 Source: `assets/2026-11-08/mockup/index.html#bead-detail`
 
 #### Scenario: Markdown description
@@ -230,17 +230,17 @@ Source: `assets/2026-11-08/mockup/index.html#bead-detail`
 #### Scenario: Epic progress
 - GIVEN an epic with 4 children of which 3 are closed
 - WHEN the page loads
-- THEN the children are listed and a progress bar reads 3 of 4
+- THEN the children are listed and the strand shows 4 beads and "3/4"
 
 #### Scenario: Epic with a prep task
 - GIVEN epic `e-1` with tracks `t-1` (closed) and `t-2` (open), and the closed prep task `p-1` labelled `prep` and `prep:mockup`
 - WHEN the page of `e-1` loads
-- THEN the progress bar reads 1 of 2, "Prep 1/1" is shown next to it, and the children list shows `t-1`, `t-2` and `p-1`, with a "Prep" chip on `p-1` only
+- THEN the strand reads "1/2", "Prep 1/1" is shown next to it, and the children list shows `t-1`, `t-2` and `p-1`, with the word "Prep" on `p-1` only
 
-#### Scenario: Badges and facts
+#### Scenario: Fact line and facts
 - GIVEN in-progress P1 epic `e-3` with `points: 5`, `points_reason: "new endpoint and UI"`, owner `lead@example.com`, assignee `bao`, created by `lead`, created and updated at 2026-05-11 16:00:00 and 0 comments, shown in 2026
 - WHEN its page loads
-- THEN the badge row shows "In progress", "P1" and "5 pt", the line under it reads "new endpoint and UI", and the facts read Assignee "bao", Created by "lead", Created "11 May, 16:00", Updated "11 May, 16:00" and Comments "0", with no Owner fact, each label in the muted color and each value in the text color
+- THEN the fact line shows "In progress", "P1" and "5 pt" as text, none of them in a pill, the line under it reads "new endpoint and UI", and the facts read Assignee "bao", Created by "lead", Created "11 May, 16:00", Updated "11 May, 16:00" and Comments "0", with no Owner fact, each label in the muted color and each value in the text color
 
 #### Scenario: No assignee
 - GIVEN a task with owner `lead@example.com` and no assignee
@@ -518,12 +518,12 @@ WHEN a search or a filter is active, the List view SHALL show only the beads tha
 - THEN the epic under `m2` and its child task are shown, the other epic is not, and no milestone bead is shown (REQ-MILESTONE-UI-009)
 
 ### REQ-UI-044: List rows
-The List view SHALL show for each row an open/close control when it has children, its id in the monospace face shortened as REQ-UI-107 describes, its title as a link to `/beads/<project>/<id>` cut short with the full title as `title` and never narrower than 8rem while the row is at least 360px wide, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee as REQ-UI-135 describes, up to three labels from 768px, and its last update as REQ-UI-131 describes, SHALL show for an epic with a track how many of its tracks are closed with a progress bar (REQ-UI-130), SHALL show for an epic with prep tasks (REQ-BEADS-002) "Prep x/y", where x is its closed prep tasks and y all its prep tasks, SHALL show a "Prep" chip on the row of a prep task, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
+The List view SHALL show for each row an open/close control when it has children, its id in the monospace face shortened as REQ-UI-107 describes, its title as a link to `/beads/<project>/<id>` cut short with the full title as `title` and never narrower than 8rem while the row is at least 360px wide, its state as REQ-UI-064 describes, its type as REQ-UI-067 describes, `P<n>`, the indicators of REQ-UI-066, its assignee as REQ-UI-135 describes, up to three labels from 768px, and its last update as REQ-UI-131 describes, SHALL show for an epic with a track the strand of its tracks (REQ-UI-138, REQ-UI-130), SHALL show for an epic with prep tasks (REQ-BEADS-002) "Prep x/y", where x is its closed prep tasks and y all its prep tasks, SHALL show the word "Prep" (REQ-UI-140) on the row of a prep task, SHALL open only the root level at first unless branches were remembered (REQ-UI-074), SHALL open and close a branch when its control is used, SHALL offer "Expand all" and "Collapse all", SHALL show at most 2000 rows and say how many more are not shown, and SHALL draw a row on two lines under 768px.
 
 #### Scenario: Row content
 - GIVEN a blocked P1 bug assigned to alice with 2 comments
 - WHEN the List view is shown
-- THEN its row shows the id, the title link, "Blocked", the pill "bug", `P1`, a comment indicator 2 and alice
+- THEN its row shows the id, the title link, "Blocked", the word "bug" in the bug colour, `P1`, a comment indicator 2 and alice
 
 #### Scenario: Open a branch
 - GIVEN the List view with a collapsed epic
@@ -538,12 +538,12 @@ The List view SHALL show for each row an open/close control when it has children
 #### Scenario: Epic progress
 - GIVEN an epic with 5 children of which 3 are closed
 - WHEN the List view is shown with "Show closed" on
-- THEN the epic says "3/5 closed" with a progress bar
+- THEN the epic shows a strand of 5 beads and "3/5"
 
 #### Scenario: Epic with a prep task
 - GIVEN epic `e-1` with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`
 - WHEN the List view is shown with "Show closed" on and `e-1` open
-- THEN `e-1` says "1/2 closed" with a progress bar and "Prep 0/1", and the row of `p-1` shows a "Prep" chip while the rows of `t-1` and `t-2` do not
+- THEN `e-1` shows a strand of 2 beads, "1/2" and "Prep 0/1", and the row of `p-1` shows the word "Prep" while the rows of `t-1` and `t-2` do not
 
 #### Scenario: Plain text
 - GIVEN a title containing `<script>x</script>`
@@ -675,12 +675,12 @@ The Graph view (REQ-UI-106, which also serves the Graph tab of an epic page, REQ
 - THEN `a` and `b` are in layers 0 and 1, and `c`, `d`, `e` then `f` are placed below them in rows of 3 under "4 without dependencies"
 
 ### REQ-UI-049: Node content
-The Graph view (REQ-UI-106) SHALL show on each node the content of a card: the bead id in the monospace face shortened as REQ-UI-107 describes and `P<n>` on the first line, its title on one line with the full title as `title`, and its state as REQ-UI-064 describes on one line, the state label cut short before "n of m done" is, with the 4px left edge in the colour of the state, and on a node with children an icon that says it can be opened, with "n of m done" over its tracks (REQ-BEADS-002) when it has a track. The node of a prep task SHALL show a "Prep" chip.
+The Graph view (REQ-UI-106) SHALL show on each node the content of a card: the bead id in the monospace face shortened as REQ-UI-107 describes and `P<n>` on the first line, its title on one line with the full title as `title`, and its state as REQ-UI-064 describes on one line, the state label cut short before the strand is, and on a node with children an icon that says it can be opened, with the strand of REQ-UI-138 over its tracks (REQ-BEADS-002) when it has a track. The node of a prep task SHALL show the word "Prep" (REQ-UI-140).
 
 #### Scenario: Node with children
 - GIVEN epic `e-1` without a parent with 3 tasks, 1 of them closed, and "Show closed" on
 - WHEN the Graph view of the project is shown
-- THEN the node `e-1` reads "1 of 3 done" with the open icon
+- THEN the node `e-1` shows the strand with "1/3" and the open icon
 
 #### Scenario: State label
 - GIVEN a ready task and a blocked task
@@ -695,12 +695,12 @@ The Graph view (REQ-UI-106) SHALL show on each node the content of a card: the b
 #### Scenario: Node with a prep task
 - GIVEN epic `e-1` without a parent with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep` and `prep:mockup`, and "Show closed" on
 - WHEN the Graph view of the project is shown, and then the Graph view with the scope `e-1`
-- THEN the node `e-1` reads "1 of 2 done" with the open icon, and with the scope `e-1` the node `p-1` shows a "Prep" chip while `t-1` and `t-2` do not
+- THEN the node `e-1` shows the strand with "1/2" and the open icon, and with the scope `e-1` the node `p-1` shows the word "Prep" while `t-1` and `t-2` do not
 
 #### Scenario: Long state line
 - GIVEN an in-progress epic with 2 of 5 tracks done and a title of 80 characters
 - WHEN its node is drawn
-- THEN its id, title and state each take one line inside the node, and "2 of 5 done" is shown in full
+- THEN its id, title and state each take one line inside the node, and the strand with "2/5" is shown in full
 
 ### REQ-UI-050: Outside beads and cycles
 WHERE a drawn node, or a bead under it, has a `blocked_by` relation with a bead outside the scope, the Graph view (REQ-UI-106) SHALL draw that outside bead as a dimmed node with a dashed border, above with an arrow to the node when it blocks, and below with an arrow from the node when it is blocked, and IF the arrows form a cycle, THEN the view SHALL still draw every node, SHALL put the nodes of the cycle in layers without looping forever, and SHALL show the warning "Dependency cycle between …" naming the beads.
@@ -905,22 +905,28 @@ The frontend SHALL start in the theme the system prefers, SHALL offer a control 
 - THEN the theme changes and no error is shown
 
 ### REQ-UI-059: Colour tokens
-The frontend SHALL use a neutral cool palette whose only hues are the five status colours Ready, In progress, Blocked, Done and Deferred and the three type colours of REQ-UI-067 (epic, bug, feature), defined for light and dark, SHALL show text, status colours and type colours with a contrast of at least 4.5:1 against every surface (background, card and muted) they are drawn on, SHALL draw the outline of inputs, selects and other controls with at least 3:1 against their surface (separators and card borders are decoration and are not held to this), and SHALL show priority with weight and the danger colour for P0 only, never with a further hue.
+The frontend SHALL use the Strung palette, defined for light and dark: cool neutrals for the page (porcelain), surfaces (paper), wells and hover (sunk), borders (rule), text (graphite) and secondary text (slate); one identity colour, amethyst, used as REQ-UI-141 describes; the state colours jade for Ready and Done, lapis for In progress, amber for Blocked and for warnings (late, at risk), and hematite for Deferred, used only to say a state or a warning and never to decorate; carnelian for bugs and errors only; and the categorical lane colours of REQ-UI-118 and chart series colours, which name a lane, a person or a series and never a state. A chart, bar or strand that shows states SHALL use the state colours, Done always in jade. The frontend SHALL show text, the state colours, the identity colour and carnelian with a contrast of at least 4.5:1 against every surface (page, paper and sunk) they are drawn on, SHALL draw the strokes of the state glyphs (REQ-UI-064) and the outline of inputs, selects and other controls with at least 3:1 against their surface (separators and card borders are decoration and are not held to this), and SHALL show priority with weight, never with a hue (REQ-UI-140).
+Source: `assets/2026-11-22/index.html#tokens`, `assets/2026-11-22/tokens-light.png`, `assets/2026-11-22/tokens-dark.png`
 
-#### Scenario: Status colours exist in both themes
-- GIVEN the light theme and then the dark theme
-- WHEN a page uses a status colour
-- THEN the colour is the one defined for that theme
+#### Scenario: Light values
+- GIVEN the light theme
+- WHEN the palette is read
+- THEN page is #F4F5F8, paper #FFFFFF, sunk #ECEEF3, rule #DDE0E7, graphite #1B1D26, slate #596072, amethyst #6A3DB8, jade #0E7A5C, lapis #2557D6, amber #AE500A, hematite #646A78 and carnelian #B42318
 
-#### Scenario: Type colours exist in both themes
-- GIVEN the light theme and then the dark theme
-- WHEN a page shows the badge of an epic, a bug or a feature
-- THEN the colour is the one defined for that theme
+#### Scenario: Dark values
+- GIVEN the dark theme
+- WHEN the palette is read
+- THEN page is #12131A, paper #1B1C25, sunk #242632, rule #2E303D, graphite #E8E9F0, slate #A0A5B5, amethyst #B89EF6, jade #45CF9F, lapis #93B1FF, amber #F2A54C, hematite #9298A6 and carnelian #FF8A7A
+
+#### Scenario: Done is jade everywhere
+- GIVEN a closed bead in the List, a closed epic on the Gantt and the closed part of the Team scope
+- WHEN each is shown in the light theme and then the dark theme
+- THEN each is drawn in the jade of that theme
 
 #### Scenario: Contrast
 - GIVEN the palette of a theme
-- WHEN text, status colours, type colours and control outlines are measured against the surfaces they sit on
-- THEN text, status colours and type colours are at least 4.5:1 and control outlines at least 3:1
+- WHEN text, the state colours, the identity colour, carnelian, glyph strokes and control outlines are measured against the surfaces they sit on
+- THEN text and the colours are at least 4.5:1, and glyph strokes and control outlines at least 3:1
 
 ### REQ-UI-060: Typography
 The frontend SHALL set the interface in Geist and ids, paths and code in Geist Mono, SHALL use a text size of at least 16px in text inputs on screens narrower than 768px, and SHALL load both faces from the application itself, not from another site.
@@ -980,40 +986,46 @@ The frontend SHALL set the document title to the name of what the page shows, th
 - THEN the document title is `gin-console`
 
 ### REQ-UI-064: State mark
-Every bead card of the Board and Focus views SHALL show the state of the bead as an icon with its name (Ready, In progress, Blocked, Done or Deferred, by the rules of REQ-UI-049) and SHALL draw a 4px edge on the left of the card in the colour of that state, the bead list and the Tree view SHALL show the same icon and name for the state, and the graph node SHALL use the same icon, name and colour.
+The frontend SHALL draw the state of a bead (Ready, In progress, Blocked, Done or Deferred, by the rules of REQ-UI-049) as a glyph whose fill says how far the bead has come, followed by the state's name wherever the state is named: Ready as a hollow ring in the Ready colour, In progress as a ring in the In progress colour with its right half filled, Done as a full bead in the Done colour, Blocked as a full bead in the Blocked colour crossed by a short bar in the surface colour (a knot), and Deferred as a dashed ring in the Deferred colour. The Board and Focus cards, the List and Tree rows, the Graph nodes, the bead page, My Tasks and the Gantt SHALL use the same glyph and name, and no card, row or node SHALL carry a coloured edge for its state. A milestone status (REQ-MILESTONE-UI-022) SHALL use the glyph of Deferred for Planned, of Ready for Scheduled, of In progress for Active and of Done for Closed.
+Source: `assets/2026-11-22/index.html#tokens`, `assets/2026-11-22/tokens-light.png`
 
 #### Scenario: Blocked card
 - GIVEN a blocked bead
 - WHEN the Board is shown
-- THEN its card shows "Blocked" with its icon and the left edge in the Blocked colour
+- THEN its card shows "Blocked" after the knot glyph, and the card has no coloured left edge
 
 #### Scenario: Same state, same mark
 - GIVEN an in-progress bead shown on the Board, in the list, in the Tree and in the graph
 - WHEN each view is shown
-- THEN each shows "In progress" with the same icon and the same colour
+- THEN each shows "In progress" after the half-filled glyph in the same colour
 
-#### Scenario: Edge only on cards
-- GIVEN the list is shown
-- WHEN a row is drawn
-- THEN the row shows the state icon and name and has no coloured left edge
+#### Scenario: Shapes without colour
+- GIVEN a ready, an in-progress, a done, a blocked and a deferred bead
+- WHEN their List rows are shown in grayscale
+- THEN their glyphs differ by shape: hollow, half, full, knot and dashed
+
+#### Scenario: Milestone status
+- GIVEN an active milestone and a planned milestone
+- WHEN the Milestones list is shown
+- THEN the first reads "Active" after the half-filled glyph and the second "Planned" after the dashed ring
 
 ### REQ-UI-065: Card anatomy
-A bead card of the Board and Focus views SHALL show on its first line the id in the monospace face shortened as REQ-UI-107 describes and `P<n>`, below it the title as a link to `/beads/<project>/<id>`, and on its last line the state mark of REQ-UI-064, the type badge of REQ-UI-067, the size badge of REQ-UI-110 when the bead has `points` or `estimate_minutes`, the indicators of REQ-UI-066 and the assignee as REQ-UI-135 describes, the title and the assignee wrapping inside the card (REQ-UI-107).
+A bead card of the Board and Focus views SHALL show on its first line the id in the monospace face shortened as REQ-UI-107 describes and `P<n>`, below it the title as a link to `/beads/<project>/<id>`, and on its last line the state mark of REQ-UI-064, the type of REQ-UI-067 for a bug, the size of REQ-UI-110 when the bead has `points` or `estimate_minutes`, the indicators of REQ-UI-066 and the assignee as REQ-UI-135 describes, each as text (REQ-UI-140), the title and the assignee wrapping inside the card (REQ-UI-107).
 
 #### Scenario: Full card
 - GIVEN a ready P1 task assigned to alice with 2 comments and 1 dependency
 - WHEN its card is shown
-- THEN it shows the id and `P1`, the title link, "Ready", the type "task", a comment indicator 2, a dependency indicator 1 and alice
+- THEN it shows the id and `P1`, the title link, "Ready", a comment indicator 2, a dependency indicator 1 and alice
 
 #### Scenario: Bare card
 - GIVEN a bead with an owner, no assignee, no comments and no dependencies
 - WHEN its card is shown
-- THEN the last line shows only the state, the type and "Unassigned" in the muted color
+- THEN the last line shows only the state and "Unassigned" in the muted color
 
 #### Scenario: Card with points
 - GIVEN an in-progress epic with `points: 8`
 - WHEN its Board card is shown
-- THEN its last line shows the state, the type, the size badge "8 pt" and the assignee or "Unassigned"
+- THEN its last line shows the state, the size "8 pt" as text and the assignee or "Unassigned"
 
 ### REQ-UI-066: Count indicators
 WHERE a bead has comments or dependencies, a bead card, a list row and a Tree row SHALL show a comment indicator, an icon with the count of comments, and a dependency indicator, an icon with the count of dependencies, each with an accessible label such as "3 comments" or "2 dependencies", SHALL show the comment indicator in a stronger style than the dependency one using no colour outside the palette, and SHALL show neither indicator, nor the text "0 comments" or "0 deps", when the count is 0.
@@ -1028,18 +1040,18 @@ WHERE a bead has comments or dependencies, a bead card, a list row and a Tree ro
 - WHEN its card, list row and Tree row are shown
 - THEN no indicator and no "0 comments" or "0 deps" text appears
 
-### REQ-UI-067: Type badge
-The frontend SHALL show the type of a bead as a pill that always contains the type's name, in purple for `epic`, red for `bug` and pink for `feature` with a tint of the same colour behind the text and neutral for every other type, on the Board and Focus cards, the list rows, the Tree rows and the header of the bead page.
+### REQ-UI-067: Type
+The frontend SHALL show the type of a bead as its name in plain text, never as a pill: on the List and Tree rows, the Board and Focus cards and the Graph nodes only for a bug, as the word "bug" in the bug colour (carnelian) without a border or a tint, and on the bead page for every type, among its facts (REQ-UI-028).
 
-#### Scenario: Colours by type
+#### Scenario: Only bugs on rows
 - GIVEN an epic, a bug, a feature and a task
-- WHEN their cards are shown
-- THEN the pills read "epic", "bug", "feature" and "task" and the first three are coloured and the task one is neutral
+- WHEN their List rows are shown
+- THEN only the row of the bug shows a type, the word "bug" in the bug colour, and no row shows a pill
 
-#### Scenario: Never colour alone
-- GIVEN any bead
-- WHEN its type badge is shown
-- THEN the type's name is in the badge as text
+#### Scenario: Every type on the bead page
+- GIVEN a feature
+- WHEN its bead page loads
+- THEN its facts read Type "feature" as text
 
 ### REQ-UI-068: Discussion column
 WHILE the window is 1024px wide or more and the bead page is shown as a page, not as the details panel of another view, and the bead has comments, the bead page SHALL show the details on the left and the discussion in a column on the right with the heading "Discussion (N)", SHALL keep that column in view while the page scrolls, and SHALL let the column scroll on its own when it is taller than the window.
@@ -1109,12 +1121,12 @@ The discussion SHALL show each comment as a block of its own with a border, with
 - THEN the text wraps inside its block and the page does not scroll sideways
 
 ### REQ-UI-072: Breadcrumb
-WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of: one link to the remembered place (REQ-UI-073) named for it, which is "Beads" followed by the name of its view and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, "· N filters" where N counts them, the title of the milestone with the same view and filter count for the Beads tab of a milestone page, the title of the milestone for its other tabs, or "My Tasks", "Reports" or "Projects"; then the title of the bead's parent as a link to its page when it has one; then the title of the bead marked `aria-current="page"`. Each title SHALL be cut short to one line with the full title and the id as its `title`. Under 640px the breadcrumb SHALL show only the first link.
+WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of: one link to the remembered place (REQ-UI-073) named for it, which is "Beads" followed by the name of its view and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, ", N filters" where N counts them, the title of the milestone with the same view and filter count for the Beads tab of a milestone page, the title of the milestone for its other tabs, or "My Tasks", "Reports" or "Projects"; then the title of the bead's parent as a link to its page when it has one; then the title of the bead marked `aria-current="page"`. Each title SHALL be cut short to one line with the full title and the id as its `title`. Under 640px the breadcrumb SHALL show only the first link.
 
 #### Scenario: Place and filters
 - GIVEN the Beads page was last at `?project=a&view=board&status=open&q=fix`
 - WHEN the bead page of `a-1` titled "Fix login" is shown
-- THEN the breadcrumb reads "Beads › Board · 2 filters" then "Fix login", and the first link goes to `/beads?project=a&view=board&status=open&q=fix`
+- THEN the breadcrumb reads "Beads › Board, 2 filters" then "Fix login", and the first link goes to `/beads?project=a&view=board&status=open&q=fix`
 
 #### Scenario: Parent
 - GIVEN the bead `a-2` has the parent `a-1` titled "Checkout"
@@ -1134,7 +1146,7 @@ WHEN a bead is shown as a page, not as the details panel of another view, the be
 #### Scenario: From a milestone page
 - GIVEN the Beads tab of milestone `m2` titled "Checkout v2" of project `a` was last at `?tab=beads&view=board&status=open`
 - WHEN the bead page of `a-1` is shown
-- THEN the breadcrumb reads "Checkout v2 › Board · 1 filter" then the title of `a-1`, and the first link goes to `/milestones/a/m2?tab=beads&view=board&status=open`
+- THEN the breadcrumb reads "Checkout v2 › Board, 1 filter" then the title of `a-1`, and the first link goes to `/milestones/a/m2?tab=beads&view=board&status=open`
 
 #### Scenario: From My Tasks
 - GIVEN the My Tasks page was last at `/my-tasks?project=a`
@@ -1443,12 +1455,12 @@ The Delivery tab SHALL show, in this order:
 - A row of figures: beads closed (`totals.closed`), and the median cycle time and median lead time from `delivery.overall` ("—" when absent).
 - Beads closed per ISO week, as a column chart stacked by type with a legend.
 - Cycle time and lead time as two range charts side by side, each with a dot at the median and a tick at the 85th percentile. A switch SHALL choose between By type (the default) and By member. Each range SHALL show, on hover and on focus, its type or member, the number of beads, the median and the 85th percentile.
-- The estimate table of REQ-REPORTS-004, when it has rows. Each row SHALL show its estimate as "<n>d", or "<p> pt" when it has `points`, and its actual working days. A row with an estimate in days SHALL hold a chip with the actual minus the estimated working days, rounded to one decimal:
+- The estimate table of REQ-REPORTS-004, when it has rows. Each row SHALL show its estimate as "<n>d", or "<p> pt" when it has `points`, and its actual working days. A row with an estimate in days SHALL show as text (REQ-UI-140), not as a chip, the actual minus the estimated working days, rounded to one decimal:
   - "+<n> d" in the warning color when the difference is above 0;
   - "on estimate" when it is 0;
   - "−<n> d" when it is below 0.
 
-  A row with points and no estimate in days SHALL show "<x> d/pt" from its `days_per_point` in place of the chip.
+  A row with points and no estimate in days SHALL show "<x> d/pt" from its `days_per_point` in place of that difference.
 
 The Delivery tab SHALL NOT show beads in progress; the Team tab shows them (REQ-REPORTS-013 to REQ-REPORTS-016).
 Source: `assets/2026-11-12/mockup/index.html`
@@ -1463,15 +1475,15 @@ Source: `assets/2026-11-12/mockup/index.html`
 - WHEN the user picks By member
 - THEN both range charts show one range per member and `ann`'s cycle range has its dot at 1.5 days
 
-#### Scenario: estimate chip
+#### Scenario: estimate difference
 - GIVEN epics estimated at 5 working days that took 7, 3 and 4.5
 - WHEN the Delivery tab is shown
-- THEN their chips read "+2 d" in the warning color, "−2 d" and "−0.5 d"
+- THEN their differences read, as text, "+2 d" in the warning color, "−2 d" and "−0.5 d"
 
 #### Scenario: points row
 - GIVEN an estimate row with `estimate_days: null`, `points: 5`, `actual_days: 7` and `days_per_point: 1.4`
 - WHEN the Delivery tab is shown
-- THEN the row reads "5 pt", "7" and "1.4 d/pt", with no chip
+- THEN the row reads "5 pt", "7" and "1.4 d/pt", with no difference
 
 #### Scenario: no work in progress
 - GIVEN the Delivery tab is shown
@@ -1559,8 +1571,8 @@ WHILE the report sections are not listed in the sidebar (REQ-UI-129), the Report
 - Team, from the team report of the selected milestone:
   - "Finished on time", or "Finished <n> d late" with a warning icon, for a closed milestone;
   - "Starts <start>" before its start;
-  - "<closed> of <scope> done · late" with a warning icon when the milestone is late (REQ-MILESTONE-UI-023);
-  - otherwise "<closed> of <scope> done · on pace", or "· behind pace" with a warning icon when `pace_needed` is above `pace`;
+  - "<closed> of <scope> done, late" with a warning icon when the milestone is late (REQ-MILESTONE-UI-023);
+  - otherwise "<closed> of <scope> done, on pace", or ", behind pace" with a warning icon when `pace_needed` is above `pace`;
   - "No milestones" when the project has none;
   - no headline while "All projects" is selected.
 - Delivery: "<closed> beads closed", where `<closed>` is `totals.closed`.
@@ -1603,12 +1615,12 @@ Source: `assets/2026-11-12/mockup/index.html`
 #### Scenario: team headline
 - GIVEN the team report of an open milestone with 27 of 64 beads closed, `pace` 3.6 and `pace_needed` 3.4, whose forecast `finish` is before its `end`
 - WHEN the page is shown on the Delivery tab
-- THEN the Team headline reads "27 of 64 done · on pace" without a warning icon
+- THEN the Team headline reads "27 of 64 done, on pace" without a warning icon
 
 #### Scenario: late milestone headline
 - GIVEN the team report of an open milestone with 27 of 64 beads closed whose forecast `finish` is after its `end`
 - WHEN the page is shown
-- THEN the Team headline reads "27 of 64 done · late" with a warning icon
+- THEN the Team headline reads "27 of 64 done, late" with a warning icon
 
 #### Scenario: keyboard
 - GIVEN the Delivery tab is selected and has focus
@@ -1936,35 +1948,35 @@ The bead filter bar and its mobile sheet SHALL offer a "Kind" select (All, Capab
 - THEN there is no "Capability" filter
 
 ### REQ-UI-109: Kind, capabilities and estimate in the Beads views
-The frontend SHALL show a "Technical" or "Parity" badge for an epic of that kind, and no kind badge for a capability epic, on its List row, its Board and Focus card, its bead page and its Gantt label; SHALL show the bead's capabilities as chips on its bead page; SHALL show on the bead page the size badge of REQ-UI-110 (REQ-UI-028), "<n>d" counting 480 minutes of `estimate_minutes` as one working day and rounding to one decimal, or "<p> pt" with its `points_reason` on the line under it; and SHALL show on an epic's List row, at every width, its complexity (REQ-UI-028) as text and its size as the badge of REQ-UI-110 ("<p> pt" when it has `points`, else "<n>d"), among the items that give way before the title (REQ-UI-044).
+The frontend SHALL show the word "Technical" or "Parity" (REQ-UI-140) for an epic of that kind, and no kind for a capability epic, on its List row, its Board and Focus card, its bead page and its Gantt label; SHALL show the bead's capabilities as text, joined by commas, on its bead page; SHALL show on the bead page the size of REQ-UI-110 (REQ-UI-028), "<n>d" counting 480 minutes of `estimate_minutes` as one working day and rounding to one decimal, or "<p> pt" with its `points_reason` on the line under it; and SHALL show on an epic's List row, at every width, its complexity (REQ-UI-028) as text and its size as REQ-UI-110 describes ("<p> pt" when it has `points`, else "<n>d"), among the items that give way before the title (REQ-UI-044).
 
 #### Scenario: Technical epic
 - GIVEN technical epic `e-1` with capabilities `beads` and `ui`, complexity `medium` and `estimate_minutes: 1440`
 - WHEN its List row and its bead page are shown
-- THEN the row shows "Technical", "medium" and the size badge "3d", and the bead page shows "Technical", the chips `beads` and `ui`, and the size badge "3d"
+- THEN the row shows "Technical", "medium" and the size "3d", and the bead page shows "Technical", the capabilities "beads, ui", and the size "3d"
 
 #### Scenario: Capability epic
 - GIVEN capability epic `e-2` without an estimate
 - WHEN its List row is shown
-- THEN it shows no kind badge and no estimate
+- THEN it shows no kind and no estimate
 
 #### Scenario: Partial day
 - GIVEN a task with `estimate_minutes: 240`
 - WHEN its bead page is shown
-- THEN it shows the size badge "0.5d"
+- THEN it shows the size "0.5d"
 
 #### Scenario: Pointed epic
 - GIVEN epic `e-3` with complexity `medium`, `points: 5` and `points_reason: "new endpoint and UI"`, and epic `e-4` with `points: 3` and no complexity
 - WHEN their List rows and the bead page of `e-3` are shown
-- THEN `e-3`'s row shows "medium" and the size badge "5 pt", `e-4`'s shows the size badge "3 pt", and the bead page of `e-3` shows the size badge "5 pt" and "new endpoint and UI"
+- THEN `e-3`'s row shows "medium" and the size "5 pt", `e-4`'s shows the size "3 pt", and the bead page of `e-3` shows the size "5 pt" and "new endpoint and UI"
 
 #### Scenario: Size at every width
 - GIVEN epic `e-3` with complexity `medium` and `points: 5`
 - WHEN its List row is shown at 390px and at 1440px
-- THEN both rows show "medium" and the size badge "5 pt"
+- THEN both rows show "medium" and the size "5 pt"
 
 ### REQ-UI-110: Readable text and facts
-On every page, at every window width from 360px and in the light and the dark theme, the frontend SHALL NOT draw the text of one element over the text of another, or over a chart bar, line or arrow that the text does not belong to; SHALL end every text it cuts short with an ellipsis and give the full text as `title` (REQ-UI-107); SHALL give text a contrast with its background of at least 4.5:1, or 3:1 for text of at least 18.66px bold or 24px; SHALL show a set of facts about one thing (such as owner, assignee, dates and counts) as label/value pairs, each label in the muted color and each value in the text color and a heavier weight, never as one run of text of one style; SHALL show a priority as a `P<n>` pill, in the destructive color for P0 and the warning color for P1; and SHALL show a size as a badge that reads "<p> pt" for a bead with `points`, else "<n>d" from `estimate_minutes`.
+On every page, at every window width from 360px and in the light and the dark theme, the frontend SHALL NOT draw the text of one element over the text of another, or over a chart bar, line or arrow that the text does not belong to; SHALL end every text it cuts short with an ellipsis and give the full text as `title` (REQ-UI-107); SHALL give text a contrast with its background of at least 4.5:1, or 3:1 for text of at least 18.66px bold or 24px; SHALL show a set of facts about one thing (such as owner, assignee, dates and counts) as label/value pairs, each label in the muted color and each value in the text color and a heavier weight, never as one run of text of one style; SHALL show a priority as the text `P<n>`, bold in the text color for P0 and P1 and in the muted color otherwise (REQ-UI-140); and SHALL show a size as text that reads "<p> pt" for a bead with `points`, else "<n>d" from `estimate_minutes`.
 
 #### Scenario: No overlapping text
 - GIVEN the example project
@@ -1976,10 +1988,10 @@ On every page, at every window width from 360px and in the light and the dark th
 - WHEN they are shown
 - THEN each fact shows its label in the muted color and its value in the text color with a heavier weight
 
-#### Scenario: Priority pill
+#### Scenario: Priority
 - GIVEN beads at P0, P1 and P2
 - WHEN their List rows are shown
-- THEN `P0` is a pill in the destructive color, `P1` in the warning color, and `P2` in the neutral color
+- THEN `P0` and `P1` are bold in the text color, `P2` is in the muted color, and none of them is a pill
 
 #### Scenario: Contrast
 - GIVEN the Reports Team and Velocity tabs in the light and the dark theme
@@ -2019,7 +2031,7 @@ Each lane row's header SHALL show the lane name in a heavier weight, then as lab
 - State: the lane's state as an icon and its words;
 - Held by: the distinct assignees of the lane's tracks that are not closed, or "Unclaimed" when none has one; left out when every track is closed;
 - Lease: "until <date>" from the latest `claim.expires_at` among the lane's tracks that are not closed when it is later than now, "expired <date>" when it is not, left out when none of them has a `claim`;
-- Tracks: "<closed>/<total> closed" over all the lane's tracks whatever the search and filters.
+- Tracks: the strand of REQ-UI-138 over all the lane's tracks whatever the search and filters.
 The state SHALL be the first of these that holds:
 1. "All tracks closed": every track is closed;
 2. "Running": a track is `in_progress`, or a track that is not closed has a `claim` whose `expires_at` is later than now;
@@ -2032,12 +2044,12 @@ The header of the row "No lane" SHALL show its name and Tracks only.
 #### Scenario: Running lane with a lease
 - GIVEN lane `be` with track 1 closed and track 2 `in_progress`, both assigned to `ann`, track 2 with a `claim` expiring tomorrow at 16:00
 - WHEN the Lanes view is shown
-- THEN the `be` header shows State "Running", Held by `ann`, Lease "until <tomorrow> 16:00" and Tracks "1/2 closed"
+- THEN the `be` header shows State "Running", Held by `ann`, Lease "until <tomorrow> 16:00" and Tracks "1/2"
 
 #### Scenario: Waiting for another lane
 - GIVEN lane `qa` whose only track, open and unassigned, is blocked by an open merge gate waiting for track 2 of lane `be` and a closed merge gate waiting for track 3 of lane `fe`
 - WHEN the Lanes view is shown
-- THEN the `qa` header shows State "Waiting for be", Held by "Unclaimed" and Tracks "0/1 closed"
+- THEN the `qa` header shows State "Waiting for be", Held by "Unclaimed" and Tracks "0/1"
 
 #### Scenario: Idle lane with an expired lease
 - GIVEN lane `infra` with track 5 closed and track 6 open, assigned to `chi` with a `claim` that expired yesterday
@@ -2047,7 +2059,7 @@ The header of the row "No lane" SHALL show its name and Tracks only.
 #### Scenario: All tracks closed
 - GIVEN lane `fe` whose only track is closed
 - WHEN the Lanes view is shown
-- THEN the `fe` header shows State "All tracks closed" and Tracks "1/1 closed", and no Held by or Lease
+- THEN the `fe` header shows State "All tracks closed" and Tracks "1/1", and no Held by or Lease
 
 #### Scenario: Not started and blocked
 - GIVEN lane `x` with two open unassigned tracks without blockers, and lane `y` whose first open track is blocked by an open bead that is not a merge gate
@@ -2085,18 +2097,18 @@ In the Lanes view, WHEN a card has focus, the keys Arrow Left and Arrow Right SH
 - WHEN a screen reader reads the view
 - THEN it reads "be: Running, held by ann, lease until …, 1/2 closed" and "qa #4 waits for be #2: merge pending"
 
-### REQ-UI-115: Lane chip
-WHERE a bead's `lane` is not `null` (REQ-BEADS-019), its List row, its Board and Focus cards, its Graph node, its Gantt child row (REQ-MILESTONE-UI-015), its bead page and its details panel SHALL show a lane chip: an icon and the lane name, cut with an ellipsis and with the title "Lane <name>"; the cards of the Lanes view and the cards inside the lane boxes of the Graph view (REQ-UI-117), whose row or box names the lane, SHALL NOT. The label chips of a bead SHALL NOT show its `lane:<name>` label when it has a `lane`, nor its `track:<N>` label when it has a `track`. The facts of a bead page (REQ-UI-110) SHALL add Lane (the name), Track ("#<N>", followed by the plan's file name when `track.plan` is known) and Lease ("until <date>" or "expired <date>" as in REQ-UI-112) when the bead has them.
+### REQ-UI-115: Lane on a bead
+WHERE a bead's `lane` is not `null` (REQ-BEADS-019), its List row, its Board and Focus cards, its Graph node, its Gantt child row (REQ-MILESTONE-UI-015), its bead page and its details panel SHALL show its lane as text (REQ-UI-140): a dot and the lane name, the dot in the lane colour of REQ-UI-118 where the lanes of its scope are drawn (the Tracks table of REQ-UI-121) and in the muted colour elsewhere, cut with an ellipsis and with the title "Lane <name>"; the cards of the Lanes view and the cards inside the lane boxes of the Graph view (REQ-UI-117), whose row or box names the lane, SHALL NOT. The labels of a bead SHALL NOT show its `lane:<name>` label when it has a `lane`, nor its `track:<N>` label when it has a `track`. The facts of a bead page (REQ-UI-110) SHALL add Lane (the name), Track ("#<N>", followed by the plan's file name when `track.plan` is known) and Lease ("until <date>" or "expired <date>" as in REQ-UI-112) when the bead has them.
 
 #### Scenario: Chip in every view
 - GIVEN track 2 of `ex-e12` in lane `be`, labelled `lane:be` and `track:2`
 - WHEN its List row, Board card, Gantt child row and bead page are shown
-- THEN each shows the chip "be" with the title "Lane be", and no label chip reads `lane:be` or `track:2`
+- THEN each shows the lane "be" with the title "Lane be", and no label reads `lane:be` or `track:2`
 
-#### Scenario: No chip inside a lane box
+#### Scenario: No lane inside a lane box
 - GIVEN the Graph view with `scope=ex-e12`, whose tracks have lanes
 - WHEN it is shown
-- THEN the card of track 2 sits in the box headed "be" and has no lane chip
+- THEN the card of track 2 sits in the box headed "be" and shows no lane
 
 #### Scenario: Facts
 - GIVEN track 2 with `track` `{"plan": ".planning/plans/2026-11-20-shop.md", "number": 2}` and a `claim` expiring tomorrow at 16:00
@@ -2106,10 +2118,10 @@ WHERE a bead's `lane` is not `null` (REQ-BEADS-019), its List row, its Board and
 #### Scenario: Bead without a lane
 - GIVEN a bead whose `lane` is `null`
 - WHEN its List row is shown
-- THEN it has no lane chip
+- THEN it shows no lane
 
 ### REQ-UI-116: Merge gates in the views
-The List, Board, Focus and My Tasks views SHALL NOT show merge gates (REQ-BEADS-019), and no count of children or tracks that the frontend shows ("n of m done" of a Graph node, the child counts of a List row and of a bead page) SHALL count them. WHILE the Graph view draws no lane boxes (REQ-UI-117), it SHALL draw a merge gate as a node with a dashed border and a merge icon that reads, in place of its title, "Waits for <lane> #<N> to merge" (`<lane>` its `waits_for.lane`, else "track" without the `#`) and, in place of its state, "Waiting" while it is not closed or "Merged" when it is closed; WHILE it draws lane boxes, a merge gate SHALL be a chip on an arrow as in REQ-UI-117. The bead page of a merge gate SHALL show the same words as its title and state, keep its own title as a fact "Placeholder", and add the fact "Waits for" with the plan path and the track number. In the Dependencies of a bead page (REQ-UI-028), a merge gate SHALL read "Waits for <lane> #<N> · merge pending" or "Waits for <lane> #<N> · merged", with `<lane> #<N>` written as on its Graph node.
+The List, Board, Focus and My Tasks views SHALL NOT show merge gates (REQ-BEADS-019), and no count of children or tracks that the frontend shows ("n of m done" of a Graph node, the child counts of a List row and of a bead page) SHALL count them. WHILE the Graph view draws no lane boxes (REQ-UI-117), it SHALL draw a merge gate as a node with a dashed border and a merge icon that reads, in place of its title, "Waits for <lane> #<N> to merge" (`<lane>` its `waits_for.lane`, else "track" without the `#`) and, in place of its state, "Waiting" while it is not closed or "Merged" when it is closed; WHILE it draws lane boxes, a merge gate SHALL be a label on an arrow as in REQ-UI-117. The bead page of a merge gate SHALL show the same words as its title and state, keep its own title as a fact "Placeholder", and add the fact "Waits for" with the plan path and the track number. In the Dependencies of a bead page (REQ-UI-028), a merge gate SHALL read "Waits for <lane> #<N>, merge pending" or "Waits for <lane> #<N>, merged", with `<lane> #<N>` written as on its Graph node.
 
 #### Scenario: Not on the Board
 - GIVEN an open merge gate without blockers and an open task without blockers
@@ -2126,15 +2138,15 @@ The List, Board, Focus and My Tasks views SHALL NOT show merge gates (REQ-BEADS-
 - WHEN the Graph view of the project is shown
 - THEN the gate is a dashed node with a merge icon reading "Waits for fe #3 to merge" and "Merged"
 
-#### Scenario: Merge gate chip in lane boxes
+#### Scenario: Merge gate label in lane boxes
 - GIVEN an open merge gate waiting for track 2 of lane `be`, in the Graph view of `ex-e12`
 - WHEN the view is shown
-- THEN no node reads "Waits for be #2 to merge" and the arrow from track 2 to the qa box carries "Waiting · be #2"
+- THEN no node reads "Waits for be #2 to merge" and the arrow from track 2 to the qa box carries "Waiting for be #2"
 
 #### Scenario: Dependencies of a track
 - GIVEN track 4 blocked by an open merge gate waiting for track 2 of lane `be` and a closed one waiting for track 3 of lane `fe`
 - WHEN the bead page of track 4 is shown
-- THEN its Dependencies read "Waits for be #2 · merge pending" and "Waits for fe #3 · merged"
+- THEN its Dependencies read "Waits for be #2, merge pending" and "Waits for fe #3, merged"
 
 ### REQ-UI-117: Lane clusters in the Graph view
 WHILE the scope of the Graph view (REQ-UI-106) has a loaded child that is not a merge gate and whose `lane` is not `null` (REQ-BEADS-019, the condition of the Lanes tab in REQ-UI-111), the Graph view SHALL draw, instead of the layers of REQ-UI-048:
@@ -2142,9 +2154,9 @@ WHILE the scope of the Graph view (REQ-UI-106) has a loaded child that is not a 
 - the boxes in tiers from left to right: a box, the "No lane" box included, is in the tier to the right of every box whose tracks its tracks wait for, directly or through a merge gate (REQ-UI-111); the boxes of one tier stand one under another in the row order of the Lanes view; the "No lane" box comes last in its tier, and in the last tier when none of its tracks depends on or blocks a track of a lane; lanes that wait for each other in a loop share one tier;
 - the cards inside a box from left to right by their dependency layer within the lane, the cards of one layer one under another;
 - an arrow between two cards of one box for each dependency between them, and an arrow from the right edge of a card to the left edge of the box of another lane, level with the waiting card, for each dependency of that lane's tracks on it, directly or through a merge gate, so that no dependency between drawn cards goes without an arrow; an arrow to a box that is not in a later tier (lanes in a loop) runs in a channel below every box;
-- no node for a merge gate, but a chip on its arrow in the gap between two tiers: "Waiting · <lane> #<N>" on a dashed arrow while the gate is not closed, "Merged · <lane> #<N>" when it is closed (`<lane>` and `<N>` from its `waits_for`); and, for a gate whose track is not drawn, the chip "Waiting for track <N>" or "Merged track <N>" on the top edge of the waiting box.
+- no node for a merge gate, but a label on its arrow in the gap between two tiers, on the surface colour and without a border: "Waiting for <lane> #<N>" on a dashed arrow while the gate is not closed, "Merged <lane> #<N>" when it is closed (`<lane>` and `<N>` from its `waits_for`); and, for a gate whose track is not drawn, the label "Waiting for track <N>" or "Merged track <N>" on the top edge of the waiting box.
 
-The view SHALL leave out a box with no drawn card, SHALL NOT offer the switch "Only linked" (REQ-UI-081) and SHALL keep the selection, details panel, Escape, opening and screen-reader list of REQ-UI-051, REQ-UI-052, REQ-UI-054 and REQ-UI-106. WHEN a card has focus, Arrow Left and Arrow Right SHALL move to the previous or next card of its box and, from the first or last card of a box, to the card that an arrow of the focused card comes from in the tier on the left or leads to in the tier on the right, the nearest by y when there are several, else to the card of that tier nearest by y; Arrow Up and Arrow Down SHALL move to the card nearest by x in the box above or below in the same tier. No arrow, chip or box SHALL be drawn over a card or over the text of a header.
+The view SHALL leave out a box with no drawn card, SHALL NOT offer the switch "Only linked" (REQ-UI-081) and SHALL keep the selection, details panel, Escape, opening and screen-reader list of REQ-UI-051, REQ-UI-052, REQ-UI-054 and REQ-UI-106. WHEN a card has focus, Arrow Left and Arrow Right SHALL move to the previous or next card of its box and, from the first or last card of a box, to the card that an arrow of the focused card comes from in the tier on the left or leads to in the tier on the right, the nearest by y when there are several, else to the card of that tier nearest by y; Arrow Up and Arrow Down SHALL move to the card nearest by x in the box above or below in the same tier. No arrow, label or box SHALL be drawn over a card or over the text of a header.
 
 #### Scenario: Boxes in tiers
 - GIVEN epic `ex-e12` with lanes be (tracks 1 and 2), fe (track 3), infra (tracks 5 and 6), qa (track 4, waiting for tracks 2 and 3 through merge gates) and two tracks without a lane, with "Show closed" on
@@ -2156,15 +2168,15 @@ The view SHALL leave out a box with no drawn card, SHALL NOT offer the switch "O
 - WHEN the Graph of `ex-e12` is shown
 - THEN the card of track 2 is right of the card of track 1 inside the be box, with an arrow from track 1 to track 2
 
-#### Scenario: Gate chips
+#### Scenario: Gate labels
 - GIVEN track 4 of lane qa blocked by an open merge gate waiting for track 2 of lane be and a closed one waiting for track 3 of lane fe
 - WHEN the Graph of `ex-e12` is shown
-- THEN a dashed arrow from the right edge of track 2 to the left edge of the qa box carries "Waiting · be #2", and an arrow from track 3 to the qa box carries "Merged · fe #3", both chips in the gap between the two tiers
+- THEN a dashed arrow from the right edge of track 2 to the left edge of the qa box carries "Waiting for be #2", and an arrow from track 3 to the qa box carries "Merged fe #3", both labels in the gap between the two tiers
 
 #### Scenario: Track not drawn
 - GIVEN a merge gate titled `external: .planning/plans/other.md#7` that blocks track 4 and whose track is not a child of `ex-e12`
 - WHEN the Graph of `ex-e12` is shown
-- THEN the chip "Waiting for track 7" is on the top edge of the qa box and no arrow is drawn for it
+- THEN the label "Waiting for track 7" is on the top edge of the qa box and no arrow is drawn for it
 
 #### Scenario: No lane box with dependencies
 - GIVEN a track without a lane that is blocked by track 2 of lane be, and a track of lane fe blocked by another track without a lane
@@ -2187,13 +2199,13 @@ The view SHALL leave out a box with no drawn card, SHALL NOT offer the switch "O
 - THEN the focus moves to track 4 in the qa box, and Enter selects it and the details panel shows it
 
 ### REQ-UI-118: Lane box header and colours
-Each lane box of REQ-UI-117 SHALL show a header with a colour swatch, the lane name in a heavier weight and the lane's state as an icon and words (REQ-UI-112) on its first line, and the holder, the lease and "<closed>/<total> closed" (REQ-UI-112) in the muted colour on its second line, cut with an ellipsis and with the full text as `title`. The box SHALL have a background tint and a border in the lane's colour: lane colour `k` of eight categorical colours with a light and a dark step each, `k` being the position of the lane name among the names of the scope's lanes sorted, counted again from 1 after 8, so that a filter never changes a lane's colour. Text in a box SHALL keep the text colours, never the lane colour, at a contrast of at least 4.5:1 (REQ-UI-110). The "No lane" box SHALL have a dashed neutral border, no swatch and no state.
+Each lane box of REQ-UI-117 SHALL show a header with a colour swatch, the lane name in a heavier weight and the lane's state as an icon and words (REQ-UI-112) on its first line, and the holder and the lease, joined by a comma, and the strand of the lane's tracks (REQ-UI-112, REQ-UI-138) in the muted colour on its second line, cut with an ellipsis and with the full text as `title`. The box SHALL have a background tint and a border in the lane's colour: lane colour `k` of eight categorical colours with a light and a dark step each, `k` being the position of the lane name among the names of the scope's lanes sorted, counted again from 1 after 8, so that a filter never changes a lane's colour. Text in a box SHALL keep the text colours, never the lane colour, at a contrast of at least 4.5:1 (REQ-UI-110). The "No lane" box SHALL have a dashed neutral border, no swatch and no state.
 Source: `assets/2026-11-20/mockup/index.html`, `assets/2026-11-20/shots/b-dark.png`
 
 #### Scenario: Header
 - GIVEN lane be with track 1 closed and track 2 in progress held by ann with a lease until tomorrow 16:00
 - WHEN the Graph of `ex-e12` is shown
-- THEN the be box header reads "be" and "Running" on its first line and "ann · lease until <tomorrow> 16:00 · 1/2 closed" on its second line
+- THEN the be box header reads "be" and "Running" on its first line and "ann, lease until <tomorrow> 16:00" and the strand with "1/2" on its second line
 
 #### Scenario: Colours follow the lane name
 - GIVEN lanes be, fe, infra and qa, and the assignee filter showing only bao (lane fe)
@@ -2203,7 +2215,7 @@ Source: `assets/2026-11-20/mockup/index.html`, `assets/2026-11-20/shots/b-dark.p
 #### Scenario: No lane box
 - GIVEN two tracks of `ex-e12` without a lane
 - WHEN the Graph is shown
-- THEN they sit in a dashed box "No lane" with "1/2 closed" and no swatch or state
+- THEN they sit in a dashed box "No lane" with the strand "1/2" and no swatch or state
 
 ### REQ-UI-122: Canvas scrolling
 Type: non-functional
@@ -2256,7 +2268,7 @@ Source: `assets/2026-11-21/epic-page/mockup/index.html`, `assets/2026-11-21/epic
 
 ### REQ-UI-120: Epic overview cards
 The Overview tab of an epic page SHALL show three cards side by side from 1024px and one under another below:
-- Progress: "<closed> of <total> tracks closed · <percent>%" from the epic's `child_counts` (REQ-UI-130), over its children that are neither prep tasks (REQ-BEADS-002) nor merge gates (REQ-BEADS-019) whatever "Show closed" says, a bar split by state (Done, In progress, Ready, Blocked, Deferred, each by REQ-UI-064) with a legend giving each state's word and count, then as label/value facts "Points" ("<done> of <total> pt done" over the tracks with `points`, or "No points"), "Bugs" (the open beads of the epic's `bugs`, "0 open" when none) and "Prep" ("<closed>/<total>" of its prep tasks, or "none");
+- Progress: the large strand of REQ-UI-138 and its sentence, from the epic's `child_counts` (REQ-UI-130), over its children that are neither prep tasks (REQ-BEADS-002) nor merge gates (REQ-BEADS-019) whatever "Show closed" says, then as label/value facts "Points" ("<done> of <total> pt done" over the tracks with `points`, or "No points"), "Bugs" (the open beads of the epic's `bugs`, "0 open" when none) and "Prep" ("<closed>/<total>" of its prep tasks, or "none");
 - Workflow: the stages discuss, plan, orchestrate, execute and ship with the epic's current stage marked and the earlier ones ticked, then "Gates" ("<satisfied> of <n> satisfied"), "Warnings" and "Waivers" (each a count with the items on hover and focus, or "none"), from `GET /api/beads/{project}/{id}/workflow` (REQ-BEADS-020); "No workflow" when the answer has no stage, and the error when it fails, the rest of the page unaffected;
 - Milestone: the epic's milestone id and title linking to the milestone page, its status (REQ-MILESTONE-UI-022), its window "<start> – <end>" (REQ-UI-131), the working days (Monday to Friday) from today to `end`, both counted, while it is active, and its forecast finish with a warning mark when the milestone is late (REQ-MILESTONE-UI-023) (from `GET /api/milestones?project=`, REQ-MILESTONE-UI-008); "No milestone" when the epic's `milestone` is `null`.
 Source: `assets/2026-11-21/epic-page/mockup/index.html`
@@ -2264,12 +2276,12 @@ Source: `assets/2026-11-21/epic-page/mockup/index.html`
 #### Scenario: Progress by state
 - GIVEN epic `ex-e12` with 8 tracks (4 closed, 1 in progress, 2 ready, 1 blocked) and a merge gate child
 - WHEN its Overview is shown
-- THEN Progress reads "4 of 8 tracks closed · 50%" and its legend reads Done 4, In progress 1, Ready 2, Blocked 1
+- THEN Progress shows a strand of 8 beads and reads "4 done, 1 in progress, 1 blocked, 2 ready"
 
 #### Scenario: Progress with closed beads hidden
 - GIVEN the same epic and "Show closed" off on the Beads page it was opened from
 - WHEN its Overview is shown
-- THEN Progress still reads "4 of 8 tracks closed · 50%"
+- THEN Progress still reads "4 done, 1 in progress, 1 blocked, 2 ready"
 
 #### Scenario: Points
 - GIVEN tracks with points 3 (closed), 5 (in progress) and 3 (closed), and tracks without points
@@ -2292,23 +2304,23 @@ Source: `assets/2026-11-21/epic-page/mockup/index.html`
 - THEN the Milestone card shows "ex-m2 Checkout v2", "10 Nov – 1 Dec", "8 working days" left and the finish "16 Feb 2027" with a warning mark
 
 ### REQ-UI-121: Epic lanes summary and tracks table
-Under the cards, the Overview tab SHALL show, while the epic has lanes (REQ-UI-111), a section "Lanes" with one row per lane in the row order of the Lanes view: the lane colour of REQ-UI-118 as a swatch and pale background, the lane name, its state (REQ-UI-112) as an icon and words, the holder and lease, what it waits for ("waits for <lane> #<N> (merge pending)" or "(merged)" for each merge gate of its first open track), and "<closed>/<total> closed", with a link "Open the Lanes tab". It SHALL then show a section "Tracks" with a table of the epic's children that are not merge gates, with the columns Id (linking to the bead page), Title (cut with an ellipsis and `title`), State (REQ-UI-064), Lane (the lane chip of REQ-UI-115 with its colour swatch, or "No lane"), Assignee (REQ-UI-135, "Unassigned" when none), Points ("–" when none) and Blocked by (the open blockers' ids, a merge gate written "<lane> #<N> · merge pending"), first ordered by Id; WHEN the user activates a column header other than Blocked by, the table SHALL sort by that column, ascending then descending, with `aria-sort` on that header. Below 1024px the table SHALL keep Id, Title and State and let the rest scroll sideways within the table.
+Under the cards, the Overview tab SHALL show, while the epic has lanes (REQ-UI-111), a section "Lanes" with one row per lane in the row order of the Lanes view: the lane colour of REQ-UI-118 as a swatch and pale background, the lane name, its state (REQ-UI-112) as an icon and words, the holder and lease, what it waits for ("waits for <lane> #<N> (merge pending)" or "(merged)" for each merge gate of its first open track), and the strand of REQ-UI-138, with a link "Open the Lanes tab". It SHALL then show a section "Tracks" with a table of the epic's children that are not merge gates, with the columns Id (linking to the bead page), Title (cut with an ellipsis and `title`), State (REQ-UI-064), Lane (the lane of REQ-UI-115 with its colour dot, or "No lane"), Assignee (REQ-UI-135, "Unassigned" when none), Points ("–" when none) and Blocked by (the open blockers' ids, a merge gate written "<lane> #<N>, merge pending"), first ordered by Id; WHEN the user activates a column header other than Blocked by, the table SHALL sort by that column, ascending then descending, with `aria-sort` on that header. Below 1024px the table SHALL keep Id, Title and State and let the rest scroll sideways within the table.
 Source: `assets/2026-11-21/epic-page/mockup/index.html`
 
 #### Scenario: Lanes summary
 - GIVEN epic `ex-e12` with lanes be, fe, infra and qa
 - WHEN its Overview is shown
-- THEN the Lanes section lists be, fe, infra and qa with their states, and qa reads "waits for be #2 (merge pending), fe #3 (merged)" and "0/1 closed"
+- THEN the Lanes section lists be, fe, infra and qa with their states, and qa reads "waits for be #2 (merge pending), fe #3 (merged)" and the strand "0/1"
 
 #### Scenario: No lanes section
 - GIVEN epic `ex-e3` without lanes
 - WHEN its Overview is shown
-- THEN there is no Lanes section and the Tracks table has no colour swatch
+- THEN there is no Lanes section and the Tracks table has no colour dot
 
 #### Scenario: Tracks table
 - GIVEN epic `ex-e12` with 8 tracks and a merge gate child
 - WHEN its Overview is shown
-- THEN the Tracks table has 8 rows ordered by id, no row reads "Waits for", and the row of `ex-e12.4` reads Blocked, "qa", "Unassigned" and "be #2 · merge pending"
+- THEN the Tracks table has 8 rows ordered by id, no row reads "Waits for", and the row of `ex-e12.4` reads Blocked, "qa", "Unassigned" and "be #2, merge pending"
 
 #### Scenario: Sort by a column
 - GIVEN the Tracks table of `ex-e12`
@@ -2460,12 +2472,12 @@ Wherever the frontend shows how many of a bead's children are done (the List row
 #### Scenario: Show closed off
 - GIVEN epic `e-1` with 5 tracks, 3 of them closed, and "Show closed" off
 - WHEN the List view and then the Graph view of the project are shown
-- THEN the row of `e-1` says "3/5 closed" and its node reads "3 of 5 done"
+- THEN the row of `e-1` and its node each show the strand with "3/5"
 
 #### Scenario: Gantt row
 - GIVEN the same epic in a milestone
 - WHEN its Gantt row is shown
-- THEN its second line reads "3 of 5 done"
+- THEN its second line shows the strand with "3/5"
 
 ### REQ-UI-131: One date format
 Type: non-functional
@@ -2488,7 +2500,7 @@ The frontend SHALL write every date as "<d> <Mon>" when it falls in the current 
 - THEN its end reads "1 Dec"
 
 ### REQ-UI-132: Tooltips for marks and counts
-WHEN the pointer rests on a state mark (REQ-UI-064), a size badge or points value, a Prep chip or count, a lane chip or lane count, a comment or dependency indicator (REQ-UI-066), or a count of blocked, done or in-progress beads, and WHEN keyboard focus reaches one of them that takes focus, the frontend SHALL show within 500 ms a tooltip with one sentence that says what it means, and for a count the rule it counts by and the scope it counts in, SHALL tie the tooltip to the element with `aria-describedby`, and SHALL close it on Escape, on blur and when the pointer leaves; the native `title` SHALL remain only for text cut short (REQ-UI-107).
+WHEN the pointer rests on a state mark (REQ-UI-064), a size or points value, the word Prep or a Prep count, a lane or lane count, a strand (REQ-UI-138), a Gantt verdict (REQ-MILESTONE-UI-024), a comment or dependency indicator (REQ-UI-066), or a count of blocked, done or in-progress beads, and WHEN keyboard focus reaches one of them that takes focus, the frontend SHALL show within 500 ms a tooltip with one sentence that says what it means, and for a count the rule it counts by and the scope it counts in, SHALL tie the tooltip to the element with `aria-describedby`, and SHALL close it on Escape, on blur and when the pointer leaves; the native `title` SHALL remain only for text cut short (REQ-UI-107).
 
 #### Scenario: Blocked count
 - GIVEN the Projects card of `example` with "blocked 4"
@@ -2501,12 +2513,12 @@ WHEN the pointer rests on a state mark (REQ-UI-064), a size badge or points valu
 - THEN a tooltip says what the 2 dependencies are, and the indicator has no `title`
 
 ### REQ-UI-133: Legend
-The Beads page, the milestone page and the Reports page SHALL offer a "Legend" control in their header that, on a click, a tap, Enter or Space, opens a panel listing, each with its look and one sentence, the state marks, the size badge and points, Prep, lanes, the comment and dependency indicators, and what blocked, done and progress mean; the panel SHALL close on Escape, on a click outside it and on the control, SHALL return focus to the control, and SHALL fit inside a window 360px wide.
+The Beads page, the milestone page and the Reports page SHALL offer a "Legend" control in their header that, on a click, a tap, Enter or Space, opens a panel listing, each with its look and one sentence, the state glyphs (REQ-UI-064), the strand (REQ-UI-138), the size and points, Prep, lanes, the comment and dependency indicators, on the milestone page the two verdict marks of the Gantt (REQ-MILESTONE-UI-024), and what blocked, done and progress mean; the panel SHALL close on Escape, on a click outside it and on the control, SHALL return focus to the control, and SHALL fit inside a window 360px wide.
 
 #### Scenario: Open and close
 - GIVEN the Beads page
 - WHEN the user activates "Legend" and then presses Escape
-- THEN the panel lists the five state marks and the meaning of blocked, done and progress, and then closes with the focus back on "Legend"
+- THEN the panel lists the five state glyphs, the strand and the meaning of blocked, done and progress, and then closes with the focus back on "Legend"
 
 #### Scenario: Phone
 - GIVEN a window 390px wide
@@ -2516,7 +2528,7 @@ The Beads page, the milestone page and the Reports page SHALL offer a "Legend" c
 ### REQ-UI-134: Plain labels in PM views
 Type: non-functional
 Category: usability
-The Milestones list, the milestone page and the Reports page SHALL use these words: "Commitment met" for say/do, "Parallel lanes" for the number of lanes, "Not estimated" for unestimated, "days per point" for d/pt, "<n> of <m> done" for the closed tracks of an epic, "Prep <n> of <m> done" for its prep tasks, "Spec approved" and "Spec not approved yet" for the spec of an epic, "unassigned" for beads without an assignee, and "late" only as REQ-MILESTONE-UI-023 defines it; each of these SHALL carry a tooltip (REQ-UI-132) that says what it counts.
+The Milestones list, the milestone page and the Reports page SHALL use these words: "Commitment met" for say/do, "Parallel lanes" for the number of lanes, "Not estimated" for unestimated, "days per point" for d/pt, the strand of REQ-UI-138 for the tracks of an epic, "Prep <n>/<m>" for its prep tasks, "Spec approved" and "Spec not approved yet" for the spec of an epic, "unassigned" for beads without an assignee, and "late" only as REQ-MILESTONE-UI-023 defines it; each of these SHALL carry a tooltip (REQ-UI-132) that says what it counts.
 
 #### Scenario: Milestones list
 - GIVEN milestone M1 with `velocity.say_do: 0.62` and `lanes: 2`
@@ -2526,7 +2538,7 @@ The Milestones list, the milestone page and the Reports page SHALL use these wor
 #### Scenario: Gantt row
 - GIVEN epic `ex-e3` with 5 of 11 tracks closed, 1 of 3 prep tasks closed and a confirmed spec
 - WHEN its Gantt row is shown
-- THEN its second line reads "5 of 11 done", "Prep 1 of 3 done" and "Spec approved"
+- THEN its second line shows the strand with "5/11", "Prep 1/3" and "Spec approved"
 
 ### REQ-UI-135: The assignee, never the owner
 Type: business-rule
@@ -2541,3 +2553,141 @@ Wherever the frontend shows whom a bead is assigned to (the List row, REQ-UI-044
 - GIVEN a bead assigned to `ann@example.com`
 - WHEN its List row is shown
 - THEN it shows `ann` with the tooltip `ann@example.com`
+
+### REQ-UI-136: Typeface
+Type: non-functional
+Category: usability
+The frontend SHALL set all its text in Recursive, served by the console itself from the font file with the weight and Mono axes only, SHALL draw ids, commands and code in the Mono voice of Recursive (`MONO` 1) and every other text in its Sans voice (`MONO` 0), and SHALL NOT load Geist or Geist Mono.
+Source: `assets/2026-11-22/index.html#tokens`, `assets/2026-11-22/tokens-light.png`
+
+#### Scenario: One family, two voices
+- GIVEN the built console
+- WHEN the Beads page of the `example` project loads
+- THEN the body text is set in Recursive with `MONO` 0, every bead id in Recursive with `MONO` 1, and no Geist font file is requested
+
+#### Scenario: Served by the console
+- GIVEN a browser with no access to any host but the console
+- WHEN a page loads
+- THEN its text is drawn in Recursive
+
+### REQ-UI-137: Type scale
+Type: non-functional
+Category: usability
+The frontend SHALL draw text only at 12, 13, 14, 16, 20, 28 and 40px, using 12px for dates, meta lines and secondary facts, 13px for controls, filter labels and ids, 14px for body text and the titles of rows and cards (the base size), 16px for a page's lead sentence and for inputs on a phone, 20px for section and card headings, 28px for page titles and 40px for a headline number, and SHALL draw every number in tabular figures.
+Source: `assets/2026-11-22/index.html#tokens`, `assets/2026-11-22/tokens-light.png`
+
+#### Scenario: Sizes on a page
+- GIVEN the Beads page of the `example` project
+- WHEN it is shown at 1440px
+- THEN its page title is 28px, a row title 14px, a row's date 12px and the filter labels 13px
+
+#### Scenario: Numbers line up
+- GIVEN the Milestones list with the forecasts "Finishes 1 Dec" and "Finishes 11 Nov"
+- WHEN it is shown
+- THEN every number on the page uses tabular figures (`font-variant-numeric: tabular-nums`)
+
+#### Scenario: No size outside the scale
+- GIVEN the frontend sources
+- WHEN the guard test reads them
+- THEN no class or style sets a font size outside 12, 13, 14, 16, 20, 28 and 40px
+
+### REQ-UI-138: Progress strand
+Wherever the frontend shows how many of a bead's tracks or of a milestone's epics are done (the List row, REQ-UI-044; the Graph node, REQ-UI-049; the bead page, REQ-UI-028; the epic Progress card, REQ-UI-120; the lane header, REQ-UI-112 and REQ-UI-118; the Lanes section, REQ-UI-121; the Milestones list, REQ-MILESTONE-UI-001; the Gantt row, REQ-MILESTONE-UI-013 and REQ-MILESTONE-UI-015; the Team scope, REQ-REPORTS-013), it SHALL draw a strand: a thin thread in the border colour carrying one bead per item, ordered Done, In progress, Blocked, Ready, Deferred, each drawn as the glyph of its state (REQ-UI-064) without the word, and, WHEN there are more than 16 items, one segment per state in place of the beads, its length in proportion to its count and drawn in the look of that state's glyph; and, where the room is narrower than the beads need (the Graph node, the lane box, the lane header and the large strand), it SHALL draw the segmented thread in the room it has; it SHALL follow the strand with "<done>/<total>" in tabular figures, SHALL give it `role="img"` and the accessible name "<done> done, <n> in progress, <n> blocked, <n> ready, <n> deferred of <total> <tracks, epics or beads>" without the states counted 0, SHALL show the same sentence in its tooltip (REQ-UI-132) with what progress means, SHALL take the counts from the bead's `child_counts` (REQ-BEADS-022) or the milestone's `epics` (REQ-MILESTONE-UI-025), SHALL draw nothing WHEN the total is 0, and SHALL show the prep tasks of an epic apart, after the strand, as the text "Prep <closed>/<total>". The strand of the epic Progress card SHALL use beads twice the size and SHALL be followed by "<done> done, <n> in progress, <n> blocked, <n> ready, <n> deferred" without the states counted 0, in place of "<done>/<total>".
+Source: `assets/2026-11-22/index.html#tokens`, `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/epic-light.png`
+
+#### Scenario: Epic with seven tracks
+- GIVEN epic `e-1` with 7 tracks: 2 closed, 1 in progress, 1 blocked and 3 ready
+- WHEN its List row is shown
+- THEN the row shows a strand of 7 beads, in order 2 full, 1 half, 1 knot and 3 hollow, followed by "2/7", named "2 done, 1 in progress, 1 blocked, 3 ready of 7 tracks"
+
+#### Scenario: More than 16 tracks
+- GIVEN epic `e-2` with 19 tracks: 11 closed, 1 in progress, 6 ready and 1 deferred
+- WHEN its List row is shown
+- THEN the strand is 4 segments whose lengths are in the ratio 11, 1, 6 and 1, followed by "11/19"
+
+#### Scenario: No track
+- GIVEN epic `e-3` without children
+- WHEN its List row is shown
+- THEN the row shows no strand and no count
+
+#### Scenario: Prep apart
+- GIVEN epic `e-4` with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep`
+- WHEN its List row is shown
+- THEN the row shows a strand of 2 beads, "1/2" and "Prep 0/1"
+
+#### Scenario: Large strand on the epic page
+- GIVEN epic `ex-e12` with 8 tracks: 4 closed, 1 in progress, 1 blocked and 2 ready
+- WHEN its Overview is shown
+- THEN the Progress card shows a strand of 8 large beads followed by "4 done, 1 in progress, 1 blocked, 2 ready"
+
+#### Scenario: Narrow node
+- GIVEN epic `e-5` with 12 tracks, 3 closed
+- WHEN its Graph node is drawn
+- THEN the node shows the segmented thread and "3/12" in full
+
+### REQ-UI-139: Plain text style
+The frontend SHALL NOT set a label, heading or value in capitals by style (`text-transform: uppercase`), an initial in an avatar being written in capitals by the code; SHALL NOT join facts in the text of a page with a middle dot " · ", but SHALL use a comma, separate elements with space between them, or words, the document title of REQ-UI-063 being the only exception; SHALL NOT underline a link that names a place or a thing (a sidebar item, a breadcrumb item, a tab, the title or id of a row, card, node or table cell), at rest or on hover, and SHALL mark it on hover with the identity colour (REQ-UI-141); and SHALL underline a link inside a sentence (Markdown text, a notice, an empty state) with a thin line in the identity colour at half strength.
+Source: `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/index.html#beads`
+
+#### Scenario: No capitals by style
+- GIVEN the filter sheet of the Beads page at 390px
+- WHEN it is opened
+- THEN its section labels read "Status", "Priority" and "Labels", each in sentence case
+
+#### Scenario: No middle dots
+- GIVEN the Projects, Beads, bead, My Tasks, Milestones, milestone and Reports pages of the `example` project
+- WHEN they are shown
+- THEN no text on them contains " · ", and the browser tab of the Beads page still reads "Beads · example · gin-console"
+
+#### Scenario: Navigation links
+- GIVEN the bead page of `ex-e12` opened from the Beads List
+- WHEN the pointer rests on the breadcrumb link "Beads"
+- THEN the link is not underlined and its text takes the identity colour
+
+#### Scenario: Link in a sentence
+- GIVEN a bead whose description contains `[docs](https://example.com)`
+- WHEN its page loads
+- THEN "docs" is underlined with a thin line in the identity colour
+
+### REQ-UI-140: Data as text
+Pills and chips SHALL be used only for controls (a filter chip, a toggle, a segmented control); on a List or Tree row, a Board or Focus card, a Graph node, a Gantt row, a table row, the line of facts of the bead page and a Projects card, the frontend SHALL show data as text without a border or a tint: the priority as `P<n>`, bold in the text colour for P0 and P1 and in the muted colour otherwise; the type as REQ-UI-067 describes; the kind, size, labels, capabilities and Prep, and a status or an "On time" figure, as plain words in the muted colour, or in the warning colour where a requirement gives them that colour; the comment and dependency indicators as an icon and a number; and a lane as a dot followed by its name (REQ-UI-115).
+Source: `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/index.html#beads`
+
+#### Scenario: List row without chips
+- GIVEN a blocked P1 bug `b-1` assigned to alice with the labels `area:backend` and `ui`, the lane `be` and 2 comments
+- WHEN the List view is shown at 1440px
+- THEN the row shows "bug" in the bug colour, "P1" bold, "area:backend", "ui", a muted dot and "be", and a comment icon with 2, and none of them has a border or a background
+
+#### Scenario: Board card without chips
+- GIVEN an in-progress P2 epic with `points: 8` and the kind `technical`
+- WHEN its Board card is shown
+- THEN it shows "P2" in the muted colour, "Technical" and "8 pt" as text, and no pill
+
+#### Scenario: Projects card
+- GIVEN a configured project whose directory is missing
+- WHEN the Projects page is shown
+- THEN its card says "missing" in the danger colour as text, without a badge
+
+#### Scenario: Controls keep their pills
+- GIVEN the Beads page with the status filter "Open"
+- WHEN it is shown
+- THEN the Status filter control shows its count "1" in a tinted pill
+
+### REQ-UI-141: Identity colour in the shell
+The frontend SHALL use the identity colour (REQ-UI-059) for where the user is and what the user can do, and for nothing else: the current sidebar item (a 3px bar on its left edge and its icon), the underline of the selected tab, the selected row, card or node (a pale identity wash with a 3px bar inside its left edge), an active filter chip, the primary button, the focus ring and the today line of a chart; and SHALL show before the name "gin-console" in the sidebar a mark of three beads (Done, In progress and Ready) on a thread in the identity colour.
+Source: `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/index.html#beads`
+
+#### Scenario: Current place
+- GIVEN the Beads page of the `example` project with bead `ex-e3` selected in the List
+- WHEN it is shown at 1440px
+- THEN the Beads sidebar item has a bar on its left edge and its icon in the identity colour, and the row of `ex-e3` has the identity wash and a bar inside its left edge
+
+#### Scenario: Focus
+- GIVEN any page
+- WHEN the keyboard focus reaches a link
+- THEN its focus ring is drawn in the identity colour
+
+#### Scenario: Brand mark
+- GIVEN any page at 1440px with the sidebar expanded
+- WHEN it is shown
+- THEN the sidebar header shows three beads on a thread before "gin-console"

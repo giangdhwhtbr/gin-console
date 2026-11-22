@@ -303,14 +303,14 @@ The response SHALL hold `days`: one entry per working day from the milestone's `
 ### REQ-REPORTS-012: Team tab
 WHILE a single project is selected, the Team tab of the Reports page SHALL request REQ-REPORTS-008 with the URL's `milestone`, and SHALL show:
 - A Milestone select with the groups Active (`active`), Planned (`scheduled` and `planned`, by `start`) and Closed (latest `end` first), set to the answer's `milestone`.
-- A Member select with "All members (<n>)" and each row of `members` as "<member> · <scope>".
+- A Member select with "All members (<n>)" and each row of `members` as "<member> (<scope>)".
 - A "Clear member" control while a member is selected.
 - A link "Open Gantt" to the milestone page.
 - The milestone line:
   - the title;
-  - a status chip with the milestone status of REQ-MILESTONE-UI-022: Active, Scheduled or Planned, followed by " · late" with a warning mark when the milestone is late (REQ-MILESTONE-UI-023, its forecast `finish` taken from the Milestones list of REQ-UI-095), or "Closed · on time" or "Closed · <n> d late", where `<n>` is the working days from `end` to `closed_on`;
+  - the milestone status of REQ-MILESTONE-UI-022 as its glyph and word (REQ-UI-064): Active, Scheduled or Planned, followed by ", late" with a warning mark when the milestone is late (REQ-MILESTONE-UI-023, its forecast `finish` taken from the Milestones list of REQ-UI-095), or "Closed, on time" or "Closed, <n> d late", where `<n>` is the working days from `end` to `closed_on`;
   - "<start> – <end>" (REQ-UI-131);
-  - "working day <elapsed> of <working_days> · <days_left> left" while the period holds `today`, "starts in <n> working days" before `start`, or "finished <closed_on>" once closed.
+  - "working day <elapsed> of <working_days>, <days_left> left" while the period holds `today`, "starts in <n> working days" before `start`, or "finished <closed_on>" once closed.
 - WHEN `undated` is above 0, the note "<undated> milestones without start and end dates are not listed".
 
 Its selects SHALL be no wider than the panel, a long option cut short. It SHALL keep the milestone, member and bead status in the URL query (`milestone`, `member`, `status`). It SHALL put the answer's `milestone` in the URL when it differs. It SHALL select All members when `member` is not one of `members`. A change of milestone SHALL clear the member and status. The tab SHALL NOT show the period or sprint choice, and SHALL keep `days` and `sprint` in the URL for the other tabs.
@@ -334,7 +334,7 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.pn
 #### Scenario: late active milestone
 - GIVEN active milestone `m2` whose forecast `finish` in the Milestones list is after its `end`
 - WHEN the Team tab is shown
-- THEN its status chip reads "Active · late" with a warning mark
+- THEN its status reads "Active, late" with a warning mark
 
 #### Scenario: no period choice
 - GIVEN the Team tab is selected
@@ -348,17 +348,17 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.pn
 
 ### REQ-REPORTS-013: Team figures
 The Team tab SHALL show a row of figures, in this order, from `team`, or from the selected member's row:
-- Done: "<closed> / <scope>" and "<done> of scope" ("of assigned" for a member).
+- Done: "<closed> of <scope>" and "<done> of scope" ("of assigned" for a member).
 - In progress: the count and "oldest <n> d", in the warning color above 3 days, or "nothing started".
-- Open: the count, and "<blocked> blocked · <unclaimed> unassigned" ("<blocked> blocked" for a member). This line is in the warning color when `blocked` is above 0.
+- Open: the count, and "<blocked> blocked, <unclaimed> unassigned" ("<blocked> blocked" for a member). This line is in the warning color when `blocked` is above 0.
 - Pace or Throughput:
   - For the team, while `pace_needed` is not `null`: Pace, "<pace> done per day" and "needs <pace_needed> done per day to finish by <end>". Both are in the warning color when `pace_needed` is above `pace`.
   - Otherwise: Throughput, "<throughput> done per week".
 - Median cycle: "<n> d" or "—".
 - On time: the percentage, in the warning color below 100%. Under it: "<late_open> open after the end date" in the warning color when `late_open` is above 0, else "closed by <end>".
-- Rework: the percentage or "—", and "<reopens> reopens · <bugs> bugs later".
+- Rework: the percentage or "—", and "<reopens> reopens, <bugs> bugs later".
 
-Each figure SHALL carry a tooltip (REQ-UI-132) with the rule it counts by. Under the figures, a "Scope by status" bar SHALL show segments for Closed, In progress, Open (without blocked) and Blocked, sized by count, with a legend giving each count.
+Each figure SHALL carry a tooltip (REQ-UI-132) with the rule it counts by. Under the figures, "Scope by status" SHALL draw the scope as the strand of REQ-UI-138, its Ready being Open without blocked, with a legend giving each state's glyph, word and count.
 Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-active.png`
 
 #### Scenario: behind pace
@@ -426,11 +426,11 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-member.pn
 - THEN All members is selected
 
 ### REQ-REPORTS-016: Team bead list
-The Team tab SHALL show the scope beads of the selected member, or of every member, under the heading "Beads" (with " · <member>" when one is selected). A tab list holds Open, In progress, Closed and All, each with its count. The default is Open, or Closed for a closed milestone. The columns are:
-- Open: Bead, Epic, Type, Assignee, Priority (`P<priority>`), a status chip (Open, Blocked, or the status), and Age (days since `created_at`). Sorted by priority, then oldest first.
+The Team tab SHALL show the scope beads of the selected member, or of every member, under the heading "Beads" ("Beads of <member>" when one is selected). A tab list holds Open, In progress, Closed and All, each with its count. The default is Open, or Closed for a closed milestone. The columns are:
+- Open: Bead, Epic, Type, Assignee, Priority (`P<priority>`), a status as its glyph and word (REQ-UI-064), and Age (days since `created_at`). Sorted by priority, then oldest first.
 - In progress: Bead, Epic, Type, Assignee, and "In progress for" (`age_days`, in the warning color above 3 days). Sorted longest first.
-- Closed: Bead, Epic, Type, Assignee, Closed (the date), Cycle, an On time chip ("On time" or "<late_days> d late"), and Rework (the bead's `rework`, REQ-REPORTS-019). Sorted newest first.
-- All: Bead, Epic, Type, Assignee, and a status chip.
+- Closed: Bead, Epic, Type, Assignee, Closed (the date), Cycle, On time as text ("On time", or "<late_days> d late" in the warning color), and Rework (the bead's `rework`, REQ-REPORTS-019). Sorted newest first.
+- All: Bead, Epic, Type, Assignee, and a status as its glyph and word.
 
 In every list:
 - Bead shows the title linking to the bead page, with the id under it.

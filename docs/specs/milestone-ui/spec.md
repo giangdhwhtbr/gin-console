@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-MILESTONE-UI-001: Milestones list
-gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status (REQ-MILESTONE-UI-022), start and end (and kickoff when set), parallel lanes, forecast finish, epic progress, commitment met, and warning count, from `gin milestone list --all --json`, under the column headers Status, Milestone, Period, Parallel lanes, Commitment met, Epics and Warnings. Parallel lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" (REQ-UI-131) when the entry's `finish` is set, in the warning color when the milestone is late (REQ-MILESTONE-UI-023). Commitment met SHALL read "Commitment met <n>%" with the entry's `velocity.say_do` as a whole percent, or "–" when the entry has no `velocity` or its `say_do` is `null`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, SHALL show "No dates" in place of the period of an entry whose `start` or `end` is `null`, SHALL cut a long title short with the full title as `title`, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
+gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status (REQ-MILESTONE-UI-022), start and end (and kickoff when set), parallel lanes, forecast finish, epic progress as the strand of REQ-UI-138 over the counts of REQ-MILESTONE-UI-025, commitment met, and warning count as "<n> warnings" after a dashed ring in the warning color, from `gin milestone list --all --json`, under the column headers Status, Milestone, Period, Parallel lanes, Commitment met, Epics and Warnings. Parallel lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" (REQ-UI-131) when the entry's `finish` is set, in the warning color when the milestone is late (REQ-MILESTONE-UI-023). Commitment met SHALL read "Commitment met <n>%" with the entry's `velocity.say_do` as a whole percent, or "–" when the entry has no `velocity` or its `say_do` is `null`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, SHALL show "No dates" in place of the period of an entry whose `start` or `end` is `null`, SHALL cut a long title short with the full title as `title`, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
 Source: `assets/2026-11-08/mockup/index.html#milestones`
 
 #### Scenario: list
@@ -57,12 +57,12 @@ gin-console SHALL show, on a milestone's page, in the Graph view of the Beads ta
 - THEN X is shown as an external node with an edge to A
 
 ### REQ-MILESTONE-UI-003: Milestone Gantt tab
-gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per epic from `planned_start` to `planned_end` of `gin milestone show --json`, as gin-workflow scheduled them on the milestone's lanes and without rescheduling them, colored by bead status, with a line at the JSON `today` date, a line at the milestone `end`, and each epic's warnings, reading `spec_due` as "Spec due before kick-off", `after_integration` as "Ends after integration on <integration date>", `open_bugs` as "<count> open bug(s)" and `oversized` as "<days> working day(s) longer than the milestone", and any other code as the code itself.
+gin-console SHALL show, on a milestone's page, a Gantt tab drawing one continuous bar per epic, weekends included, from `planned_start` to `planned_end` of `gin milestone show --json`, as gin-workflow scheduled them on the milestone's lanes and without rescheduling them, in the look of the epic's state glyph (REQ-UI-064): filled in the In progress colour while it is in progress, in the Done colour when it is closed and in the Blocked colour when it is blocked (REQ-BEADS-021), an outline in the Ready colour when it is open, and a dashed outline in the Deferred colour when it is deferred, the part of a bar after the milestone `end` hatched in the warning colour, with a line at the JSON `today` date, a line at the milestone `end`, and each epic's warnings as the verdict of REQ-MILESTONE-UI-024, reading `spec_due` as "Spec due before kick-off", `after_integration` as "Ends after integration on <integration date>", `open_bugs` as "<count> open bug(s)" and `oversized` as "<days> working day(s) longer than the milestone", and any other code as the code itself.
 
 #### Scenario: overflow shown
 - GIVEN milestone M1 whose `show` output gives epic A warning `overflow` of 2 days
 - WHEN the user opens the Gantt tab of M1
-- THEN A's bar extends past the end line and A shows an overflow warning of 2 days
+- THEN A's bar extends past the end line, the part past it hatched in the warning colour, and A's verdict reads "2 working days past the end"
 
 #### Scenario: lane-bound dates
 - GIVEN milestone M1 with `lanes: 1` whose `show` output places independent epics A on 2026-11-09 to 2026-11-10 and B on 2026-11-11 to 2026-11-12
@@ -82,7 +82,12 @@ gin-console SHALL show, on a milestone's page, a Gantt tab drawing one bar per e
 #### Scenario: newer warnings
 - GIVEN epics in M1 with warnings `spec_due`, `after_integration` (integration 2026-11-24), `open_bugs` with `count: 2` and `oversized` with `days: 3`
 - WHEN the user opens the Gantt tab of M1
-- THEN they read "Spec due before kick-off", "Ends after integration on 24 Nov", "2 open bugs" and "3 working days longer than the milestone"
+- THEN their verdicts read "Spec due before kick-off", "Ends after integration on 24 Nov", "2 open bugs" and "3 working days longer than the milestone"
+
+#### Scenario: One bar per epic
+- GIVEN in-progress epic A planned from Thursday 2026-11-05 to Wednesday 2026-11-11
+- WHEN the user opens the Gantt tab
+- THEN A is one continuous bar filled in the In progress colour from 5 Nov to 11 Nov, across the weekend, and not one pill per working day
 
 ### REQ-MILESTONE-UI-004: Kick-start preview
 WHILE a milestone is `planned` or `scheduled`, gin-console SHALL show on its Gantt tab a Kick-start date picker defaulting to `kickoff`, else `start`, and WHEN the user picks a date SHALL redraw the Gantt from `gin milestone show <id> --start <date> --json`, labelled as a read-only preview with the command `gin milestone kickstart <id> --date <date>`; it SHALL NOT show the picker for `active` or `closed` milestones, and IF the preview fails, THEN it SHALL show the error in the Gantt tab instead of any plan.
@@ -282,12 +287,12 @@ WHILE the Gantt is zoomed to `1 week` or `2 weeks`, gin-console SHALL draw the w
 - THEN ‹, › and the label of days in view are not shown and dragging does not move the chart
 
 ### REQ-MILESTONE-UI-013: Readable Gantt rows
-Each epic row of the Gantt SHALL show, in a label column 168px wide under 1024px windows, 300px from 1024px, 380px from 1280px and 440px from 1600px that stays visible while the chart scrolls and that no chart line, arrow, bar or title crosses, the status icon and title on one line and the epic id (linking to its bead page), the estimate as a size badge, the period, the closed tracks, prep and spec on the next, the estimate reading "<n>d", or "<n>d left" when the epic is in progress and its `remaining_days` is below its estimate, or "assumed <n>d" when it has no estimate and `assumed_days` is set, preceded by "<p> pt · " when the epic has `points`, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, estimate, period, closed tracks, prep, spec) wrap onto further lines rather than being cut, followed by the epic's warnings, the spec item being left out when the warnings already say the spec is not confirmed; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar, cut short with an ellipsis before the next end or today line or the edge of the chart.
+Each epic row of the Gantt SHALL show, in a label column 168px wide under 1024px windows, 300px from 1024px, 380px from 1280px and 440px from 1600px that stays visible while the chart scrolls and that no chart line, arrow, bar or title crosses, the state glyph (REQ-UI-064) and title on one line and the epic id (linking to its bead page), the estimate as text (REQ-UI-140), the period, the strand of its tracks (REQ-UI-138), prep and spec on the next, the estimate reading "<n>d", or "<n>d left" when the epic is in progress and its `remaining_days` is below its estimate, or "assumed <n>d" when it has no estimate and `assumed_days` is set, preceded by "<p> pt, " when the epic has `points`, each line cut short with an ellipsis instead of wrapping and the full title available on hover, except that under 1024px the items of the second line (id, estimate, period, strand, prep, spec) wrap onto further lines rather than being cut, followed by the verdict of REQ-MILESTONE-UI-024, the spec item being left out when a warning of the epic already says the spec is not confirmed; WHEN at least 90 px of chart are left after an epic's bar, the row SHALL also show the epic's title after the bar, cut short with an ellipsis before the next end or today line or the edge of the chart.
 
 #### Scenario: long id
 - GIVEN epic `gin-workflow-rm-process-hygiene` titled "Process hygiene: consistent skills, rules that bind where it matters"
 - WHEN the Gantt is shown on a phone
-- THEN the title takes one line cut short with an ellipsis, and the id, period and closed tracks wrap onto the following lines, none of them cut to less than its first word
+- THEN the title takes one line cut short with an ellipsis, and the id, period and strand wrap onto the following lines, none of them cut to less than its first word
 
 #### Scenario: title after the bar
 - GIVEN epic A whose bar ends on the first day of a 10-day plan shown as `Whole milestone`
@@ -302,12 +307,12 @@ Each epic row of the Gantt SHALL show, in a label column 168px wide under 1024px
 #### Scenario: points
 - GIVEN an open epic C with `points: 5` and `estimate_days: 7`, and an in-progress epic D with `points: 3`, `estimate_days: 4` and `remaining_days: 1`
 - WHEN the Gantt is shown
-- THEN C's second line reads "5 pt · 7d" and D's reads "3 pt · 1d left"
+- THEN C's second line reads "5 pt, 7d" and D's reads "3 pt, 1d left"
 
 #### Scenario: Wide window
 - GIVEN in-progress epic `ex-e3` with `points: 8`, `estimate_days: 20`, `remaining_days: 11`, 5 of 11 tracks closed and no confirmed spec, in an active milestone that warns "Spec not confirmed"
 - WHEN the Gantt is shown at 2000px
-- THEN the label column is 440px wide, the second line starts with the id and "8 pt · 11d left" and is cut with an ellipsis inside the column, it does not say "No confirmed spec", and no text of the label column overlaps a bar or a line
+- THEN the label column is 440px wide, the second line starts with the id and "8 pt, 11d left" and is cut with an ellipsis inside the column, it does not say "No confirmed spec", and no text of the label column overlaps a bar or a line
 
 #### Scenario: Tail title stops at the end line
 - GIVEN an epic whose bar ends 60px before the milestone's end line and whose title is longer than that
@@ -338,12 +343,12 @@ For each epic B of the milestone and each id A in B's `depends_on` that is an ep
 - THEN the arrow from A to B is drawn in the blocked color
 
 ### REQ-MILESTONE-UI-015: Child beads on the Gantt
-The Gantt SHALL load the project's beads, open and closed, and for each epic with beads whose `parent` is that epic and that are not merge gates (REQ-BEADS-019) SHALL show an expand button in its row, with "N/M closed" (closed tracks over all tracks) when it has a track and "Prep x/y" (closed prep tasks over all prep tasks, REQ-BEADS-002) when it has a prep task, a track being a child that is neither a prep task nor a merge gate; WHEN the user expands an epic, the Gantt SHALL show under it one row per child that is not a merge gate, prep tasks included, ordered by id, with the child's status icon, its id (linking to its bead page), its title, a "Prep" chip for a prep task, its lane chip (REQ-UI-115), and "closed <date>" from `closed_at` for a closed child or its status otherwise, and SHALL shade the parent epic's period in those rows without drawing bars for them. Epics SHALL start collapsed, and expanding or collapsing one SHALL leave the others as they are. IF the beads cannot be loaded, THEN the Gantt SHALL be drawn without expand buttons or counts.
+The Gantt SHALL load the project's beads, open and closed, and for each epic with beads whose `parent` is that epic and that are not merge gates (REQ-BEADS-019) SHALL show an expand button in its row, with the strand of REQ-UI-138 over its tracks when it has a track and "Prep x/y" (closed prep tasks over all prep tasks, REQ-BEADS-002) when it has a prep task, a track being a child that is neither a prep task nor a merge gate; WHEN the user expands an epic, the Gantt SHALL show under it one row per child that is not a merge gate, prep tasks included, ordered by id, with the child's state glyph (REQ-UI-064), its id (linking to its bead page), its title, the word "Prep" for a prep task (REQ-UI-140), its lane (REQ-UI-115), and "closed <date>" from `closed_at` for a closed child or its status otherwise, and SHALL shade the parent epic's period in those rows without drawing bars for them. Epics SHALL start collapsed, and expanding or collapsing one SHALL leave the others as they are. IF the beads cannot be loaded, THEN the Gantt SHALL be drawn without expand buttons or counts.
 
 #### Scenario: expand
 - GIVEN epic `gin-workflow-rm-cost-control` with four closed children, closed on 2026-11-01
 - WHEN the user expands it
-- THEN four rows `.1` to `.4` are shown under it, each with "closed 1 Nov", and the epic row shows "4/4 closed"
+- THEN four rows `.1` to `.4` are shown under it, each with "closed 1 Nov", and the epic row shows the strand with "4/4"
 
 #### Scenario: no children
 - GIVEN epic A with no bead whose `parent` is A
@@ -363,12 +368,12 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 #### Scenario: prep task
 - GIVEN epic `e-1` with tracks `t-1` (closed) and `t-2` (open), and the closed prep task `p-1` labelled `prep` and `prep:mockup`, and epic `e-2` whose only child is the open prep task `p-2` labelled `prep`
 - WHEN the user expands `e-1` and `e-2`
-- THEN `e-1` shows "1/2 closed" and "Prep 1/1" with rows `p-1`, `t-1` and `t-2`, `e-2` shows "Prep 0/1" and no closed count with the row `p-2`, and only `p-1` and `p-2` have a "Prep" chip
+- THEN `e-1` shows the strand with "1/2" and "Prep 1/1" with rows `p-1`, `t-1` and `t-2`, `e-2` shows "Prep 0/1" and no strand with the row `p-2`, and only `p-1` and `p-2` show the word "Prep"
 
 #### Scenario: merge gate and lane
 - GIVEN epic `e-1` with track `t-1` in lane `be` (open) and merge gate `g-1` (open) whose parent is `e-1`
 - WHEN the user expands `e-1`
-- THEN `e-1` shows "0/1 closed", the only row is `t-1` with the lane chip "be", and `g-1` has no row
+- THEN `e-1` shows the strand with "0/1", the only row is `t-1` with the lane "be", and `g-1` has no row
 
 ## Diagrams
 - [Milestones forecast](diagrams/milestones-forecast-activity.md)
@@ -563,9 +568,46 @@ A milestone SHALL be late WHEN it is not closed and today is after its `end`, WH
 #### Scenario: Closed on time and closed late
 - GIVEN milestone `m3` ending on Friday 27 Nov 2026 and closed that day, and milestone `m4` with the same end closed on Tuesday 1 Dec 2026
 - WHEN the Team tab is shown for each
-- THEN `m3` reads "Closed · on time" and `m4` reads "Closed · 2 d late"
+- THEN `m3` reads "Closed, on time" and `m4` reads "Closed, 2 d late"
 
 #### Scenario: Behind pace is not late
 - GIVEN active milestone `m5` ending on 11 Dec 2026 with a forecast `finish` of 10 Dec 2026, `pace` 2.0 and `pace_needed` 3.4, shown on 21 Nov 2026
 - WHEN the Team tab is shown
 - THEN its headline says "behind pace" and nothing calls `m5` late
+
+### REQ-MILESTONE-UI-024: One verdict per Gantt row
+Each epic row of the Gantt SHALL show at most one verdict, on one line under its label: the first of the epic's warning lines (REQ-MILESTONE-UI-003, one line per warning and one per entry of `external_depends_on` for `external_blocker`) in the order `late`, `overflow`, `external_blocker`, `after_integration`, `oversized`, `open_bugs`, `spec_due`, `spec_not_ready`, `unestimated`, then any other code, written as REQ-MILESTONE-UI-003 writes it, in the warning colour after the Blocked glyph (REQ-UI-064) drawn in the warning colour for `late` and `external_blocker` and a dashed ring in the warning colour for any other code, followed by "+<n>" WHEN the epic has n further warning lines; the verdict SHALL carry a tooltip (REQ-UI-132) listing every warning line of the epic in that order; an epic without warnings SHALL show no verdict, and the height of a row SHALL NOT depend on the number of its warnings.
+Source: `../ui/assets/2026-11-22/index.html#reports`, `../ui/assets/2026-11-22/reports-light.png`
+
+#### Scenario: Several warnings
+- GIVEN epic A of milestone M1 with the warnings `spec_due`, `open_bugs` with `count: 2` and `overflow` with `days: 2`
+- WHEN the Gantt of M1 is shown
+- THEN A's verdict reads "2 working days past the end" after a dashed ring, followed by "+2", and its tooltip lists "2 working days past the end", "2 open bugs" and "Spec due before kick-off" in that order
+
+#### Scenario: Late comes first
+- GIVEN epic B with the warnings `unestimated` and `late`, planned to end on 12 Nov
+- WHEN the Gantt is shown
+- THEN B's verdict reads "Late: should have finished 12 Nov" after the Blocked glyph, followed by "+1"
+
+#### Scenario: No warnings
+- GIVEN epic C without warnings
+- WHEN the Gantt is shown
+- THEN C's row shows no verdict
+
+#### Scenario: Same height
+- GIVEN epic D with 5 warnings and epic E with 1 warning
+- WHEN the Gantt is shown
+- THEN the rows of D and E have the same height
+
+### REQ-MILESTONE-UI-025: Epic counts by state in the Milestones list
+WHEN a client requests `GET /api/milestones?project=<name>`, the server SHALL add to the `epics` of each list entry the counts `in_progress`, `blocked`, `ready` and `deferred` of the milestone's epics that are not closed, each epic counted in the state the Board gives it (REQ-UI-031, REQ-BEADS-021), taken from the project's Beads export (REQ-BEADS-012) by the children of the milestone bead, keeping `total` and `closed` from `gin milestone list`; WHEN the milestone bead is not in the export, these counts SHALL be 0 and `ready` SHALL be `total` minus `closed`.
+
+#### Scenario: Counts by state
+- GIVEN milestone `m1` whose list entry has `epics` `{total: 4, closed: 1}`, and whose bead has the epics `e-1` (closed), `e-2` (in progress), `e-3` (open, blocked by an open bead) and `e-4` (open and ready)
+- WHEN a client requests `GET /api/milestones?project=<name>`
+- THEN `m1` has `epics` `{total: 4, closed: 1, in_progress: 1, blocked: 1, ready: 1, deferred: 0}`
+
+#### Scenario: Milestone bead missing
+- GIVEN milestone `m2` whose list entry has `epics` `{total: 3, closed: 1}` and no bead in the export
+- WHEN a client requests the list
+- THEN `m2` has `epics` `{total: 3, closed: 1, in_progress: 0, blocked: 0, ready: 2, deferred: 0}`

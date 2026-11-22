@@ -555,17 +555,22 @@ Every count of blocked beads in the console (the Projects page, REQ-SERVER-006; 
 - THEN the row of `e` shows the state Blocked
 
 ### REQ-BEADS-022: Child counts
-WHEN a client requests the bead list or a bead detail, the server SHALL add to each bead `child_counts`, an object with `total` and `closed`, the number of its direct children that are tracks (neither prep tasks, REQ-BEADS-002, nor merge gates, REQ-BEADS-019) and the number of those whose status is `closed`, and `prep_total` and `prep_closed`, the number of its direct children that are prep tasks and of those that are closed, counted over every bead of the export whatever `closed` the request has. A bead SHALL count as done when, and only when, its status is `closed`.
+WHEN a client requests the bead list or a bead detail, the server SHALL add to each bead `child_counts`, an object with `total` and `closed`, the number of its direct children that are tracks (neither prep tasks, REQ-BEADS-002, nor merge gates, REQ-BEADS-019) and the number of those whose status is `closed`, `in_progress`, `blocked`, `ready` and `deferred`, the number of those tracks that are not closed in each state the Board gives them (REQ-UI-031, REQ-BEADS-021), and `prep_total` and `prep_closed`, the number of its direct children that are prep tasks and of those that are closed, counted over every bead of the export whatever `closed` the request has. A bead SHALL count as done when, and only when, its status is `closed`.
 
 #### Scenario: Counts ignore the closed filter
 - GIVEN epic `e-1` with tracks `t-1` and `t-2` (closed) and `t-3` (open), the closed prep task `p-1` labelled `prep`, and the merge gate `g-1` titled `external: .planning/plans/p.md#1`
 - WHEN a client requests `GET /api/beads?project=<name>` without `closed=1`
-- THEN `e-1` has `child_counts` `{total: 3, closed: 2, prep_total: 1, prep_closed: 1}` although `t-1`, `t-2` and `p-1` are not in the list
+- THEN `e-1` has `child_counts` `{total: 3, closed: 2, in_progress: 0, blocked: 0, ready: 1, deferred: 0, prep_total: 1, prep_closed: 1}` although `t-1`, `t-2` and `p-1` are not in the list
 
 #### Scenario: Bead without children
 - GIVEN a task without children
 - WHEN a client requests its detail
-- THEN its `child_counts` is `{total: 0, closed: 0, prep_total: 0, prep_closed: 0}`
+- THEN its `child_counts` is `{total: 0, closed: 0, in_progress: 0, blocked: 0, ready: 0, deferred: 0, prep_total: 0, prep_closed: 0}`
+
+#### Scenario: Counts by state
+- GIVEN epic `e-2` with the tracks `t-1` (closed), `t-2` (in progress), `t-3` (in progress and blocked by the open bead `x`), `t-4` (open and ready) and `t-5` (deferred)
+- WHEN a client requests `GET /api/beads?project=<name>`
+- THEN `e-2` has `child_counts` `{total: 5, closed: 1, in_progress: 1, blocked: 1, ready: 1, deferred: 1, prep_total: 0, prep_closed: 0}`
 
 ### REQ-BEADS-023: One person for an email and its handle
 Type: business-rule
