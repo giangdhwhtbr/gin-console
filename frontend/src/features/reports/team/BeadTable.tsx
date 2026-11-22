@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "@/app/Link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs } from "@/components/Tabs";
@@ -8,6 +7,8 @@ import { cn } from "@/lib/utils";
 import type { BeadStatus } from "../filters";
 import { beadPath, formatDays } from "../format";
 import { AssigneeName } from "../../beads/AssigneeName";
+import type { GraphState } from "../../beads/graph";
+import { StateWord } from "../../beads/StateMark";
 import type { TeamBead } from "../teamApi";
 import { ageOf, COLUMNS, DEFAULT_SORT, sortBeads, type Column, type Dir } from "./beadSort";
 import { formatDate } from "@/lib/dates";
@@ -32,20 +33,18 @@ const HEAD: Record<Column, string> = {
 const RIGHT: Column[] = ["age", "progress", "closed", "cycle", "rework"];
 const STATUS_NAME: Record<BeadStatus, string> = { open: "open", in_progress: "in progress", closed: "closed", all: "" };
 
-const statusChip = (status: string, blocked: boolean): { text: string; warn: boolean } => {
-  if (blocked) return { text: "Blocked", warn: true };
-  if (status === "open") return { text: "Open", warn: false };
-  if (status === "in_progress") return { text: "In progress", warn: false };
-  if (status === "closed") return { text: "Closed", warn: false };
-  return { text: status, warn: false };
+const statusWord = (status: string, blocked: boolean): { text: string; state: GraphState | null } => {
+  if (blocked) return { text: "Blocked", state: "blocked" };
+  if (status === "open") return { text: "Open", state: "ready" };
+  if (status === "in_progress") return { text: "In progress", state: "in_progress" };
+  if (status === "closed") return { text: "Closed", state: "done" };
+  return { text: status, state: null };
 };
 
-function Chip({ text, warn }: { text: string; warn: boolean }) {
-  return (
-    <Badge variant="outline" className={cn(warn && WARN)}>
-      {text}
-    </Badge>
-  );
+/** REQ-REPORTS-016, REQ-UI-140: the status as its glyph and word, never a pill. */
+function Status({ status, blocked }: { status: string; blocked: boolean }) {
+  const { text, state } = statusWord(status, blocked);
+  return state === null ? <span className="text-sm text-muted-foreground">{text}</span> : <StateWord state={state} words={text} className="text-sm" />;
 }
 
 function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead; project: string; today: string }) {
@@ -80,7 +79,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
     case "status":
       return (
         <TableCell>
-          <Chip {...statusChip(bead.status, bead.blocked)} />
+          <Status status={bead.status} blocked={bead.blocked} />
         </TableCell>
       );
     case "age":
@@ -97,7 +96,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
       const late = bead.late_days !== null && bead.late_days > 0;
       return (
         <TableCell>
-          <Chip text={late ? `${bead.late_days} d late` : "On time"} warn={late} />
+          <span className={cn("text-sm", late ? WARN : "text-muted-foreground")}>{late ? `${bead.late_days} d late` : "On time"}</span>
         </TableCell>
       );
     }

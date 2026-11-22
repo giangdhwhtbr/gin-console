@@ -27,8 +27,13 @@ describe("LaneGraphCanvas", () => {
 
   it("REQ-UI-117 Gate chips: Waiting on the open gate, Merged on the closed one", () => {
     show();
-    expect(document.querySelector(`[data-chip="${g2.id}"]`)).toHaveTextContent("Waiting · be #2");
-    expect(document.querySelector('[data-chip="ex-e12.10"]')).toHaveTextContent("Merged · fe #3");
+    expect(document.querySelector(`[data-chip="${g2.id}"]`)).toHaveTextContent("Waiting for be #2");
+    expect(document.querySelector('[data-chip="ex-e12.10"]')).toHaveTextContent("Merged fe #3");
+    // REQ-UI-117 a label on the surface colour, without a border or an icon
+    const label = document.querySelector('[data-chip="ex-e12.10"]');
+    expect(label).toHaveClass("bg-card");
+    expect(label?.className).not.toMatch(/border|rounded/);
+    expect(label?.querySelector("svg")).toBeNull();
     expect(document.querySelectorAll("path[stroke-dasharray]")).toHaveLength(1);
   });
 

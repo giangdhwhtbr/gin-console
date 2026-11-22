@@ -5,7 +5,7 @@ import { PriorityPill } from "./PriorityPill";
 afterEach(cleanup);
 
 describe("PriorityPill", () => {
-  it("REQ-UI-110 Priority pill: P0 destructive, P1 warning, P2 neutral", () => {
+  it("REQ-UI-110 REQ-UI-140 Priority: P0 and P1 bold in the text colour, the rest muted, no tint or border", () => {
     render(
       <>
         <PriorityPill priority={0} />
@@ -14,11 +14,14 @@ describe("PriorityPill", () => {
         <PriorityPill priority={9} />
       </>,
     );
-    expect(screen.getByText("P0")).toHaveClass("text-destructive");
-    expect(screen.getByText("P1")).toHaveClass("text-state-blocked");
+    for (const text of ["P0", "P1"]) expect(screen.getByText(text)).toHaveClass("font-semibold", "text-foreground");
     for (const text of ["P2", "P9"]) {
-      expect(screen.getByText(text)).toHaveClass("bg-secondary");
-      expect(screen.getByText(text)).not.toHaveClass("text-destructive", "text-state-blocked");
+      expect(screen.getByText(text)).toHaveClass("text-muted-foreground");
+      expect(screen.getByText(text)).not.toHaveClass("font-semibold");
+    }
+    for (const text of ["P0", "P1", "P2", "P9"]) {
+      expect(screen.getByText(text).className).not.toMatch(/\bbg-|border|rounded/);
+      expect(screen.getByText(text)).not.toHaveAttribute("data-slot", "badge");
     }
   });
 });

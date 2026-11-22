@@ -1,12 +1,11 @@
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-/** REQ-UI-110: `P<n>`; P0 in the destructive colour, P1 in the warning colour (the amber of `state-blocked`), the rest neutral. */
+/** REQ-UI-110, REQ-UI-140: `P<n>` as text, bold in the text colour for P0 and P1, muted otherwise. */
 export function PriorityPill({ priority, className }: { priority: number; className?: string }) {
   return (
-    <Badge
-      variant={priority === 0 ? "destructive" : "secondary"}
-      className={cn(priority === 1 && "bg-state-blocked/10 text-state-blocked", className)}
-    >{`P${priority}`}</Badge>
+    <span
+      data-priority={priority}
+      className={cn("text-xs", priority <= 1 ? "font-semibold text-foreground" : "text-muted-foreground", className)}
+    >{`P${priority}`}</span>
   );
 }

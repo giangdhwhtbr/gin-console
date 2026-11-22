@@ -1,7 +1,6 @@
 import { shortId } from "@/lib/shortId";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Link } from "@/app/Link";
-import { Badge } from "@/components/ui/badge";
 import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
 import { Strand } from "@/components/Strand";
@@ -103,9 +102,9 @@ export function ListRow({
           )}
           <span className="hidden min-w-0 shrink items-center gap-1 @3xl:flex">
             {visibleLabels(bead).slice(0, 3).map((label) => (
-              <Badge key={label} variant="outline" title={label} className="min-w-0 shrink">
-                <span className="truncate">{label}</span>
-              </Badge>
+              <span key={label} title={label} className="min-w-0 shrink truncate text-xs text-muted-foreground">
+                {label}
+              </span>
             ))}
           </span>
         </div>

@@ -29,15 +29,18 @@ describe("CountBadge", () => {
     expect(screen.getByRole("img", { name: "2 dependencies" })).toBeInTheDocument();
   });
 
-  it("REQ-UI-066 makes the comment indicator the stronger one", () => {
+  it("REQ-UI-140 both indicators are an icon and a number, without a background", () => {
     render(
       <>
         <CountBadge kind="comments" count={2} />
         <CountBadge kind="dependencies" count={2} />
       </>,
     );
-    expect(screen.getByRole("img", { name: "2 comments" })).toHaveClass("font-semibold");
-    expect(screen.getByRole("img", { name: "2 dependencies" })).not.toHaveClass("font-semibold");
+    for (const name of ["2 comments", "2 dependencies"]) {
+      const indicator = screen.getByRole("img", { name });
+      expect(indicator).toHaveClass("text-muted-foreground");
+      expect(indicator.className).not.toMatch(/\bbg-|rounded/);
+    }
   });
 
   it("REQ-UI-132 the indicator has no title; resting the pointer on it shows what the dependencies are", async () => {

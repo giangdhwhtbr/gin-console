@@ -5,16 +5,16 @@ import { TypeBadge } from "./TypeBadge";
 afterEach(cleanup);
 
 describe("TypeBadge", () => {
-  it.each([
-    ["epic", "text-type-epic"],
-    ["bug", "text-type-bug"],
-    ["feature", "text-type-feature"],
-    ["task", "text-muted-foreground"],
-    ["chore", "text-muted-foreground"],
-  ])("REQ-UI-067 %s is coloured with %s and always names the type", (type, tone) => {
-    render(<TypeBadge type={type} />);
-    const pill = screen.getByText(type);
-    expect(pill).toHaveClass(tone);
-    expect(pill).toHaveAttribute("data-type", type);
+  it("REQ-UI-067 a bug is the word in the bug colour, without border or tint", () => {
+    render(<TypeBadge type="bug" />);
+    const word = screen.getByText("bug");
+    expect(word).toHaveClass("text-type-bug");
+    expect(word).toHaveAttribute("data-type", "bug");
+    expect(word.className).not.toMatch(/\bbg-|border|rounded/);
+  });
+
+  it.each(["epic", "feature", "task", "chore"])("REQ-UI-067 %s shows nothing on a row", (type) => {
+    const { container } = render(<TypeBadge type={type} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

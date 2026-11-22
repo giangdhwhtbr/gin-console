@@ -1,11 +1,11 @@
-import type { BeadSummary } from "./api";
+import type { BeadSummary, GateRef } from "./api";
 import { cycleNodes, type StepKey } from "./graph";
 import { depsOf, depthsOf, LANE, laneName, lanesOf, trackNumber, type Dep, type LaneRow, type LaneState } from "./lanes";
-import { gateState, gateWords } from "./mergeGates";
+import { gateWords } from "./mergeGates";
 
 /** REQ-UI-117, REQ-UI-118: the sizes of the lane boxes in the Graph view in px. */
 export const LANE_GRAPH = { margin: 16, pad: 14, head: 52, cardGap: 32, stackGap: 16, boxGap: 32, tierGap: 140 } as const;
-/** The chips on the arrows: `wide` fits "Waiting · be #2", `long` fits "Waiting for track 7". */
+/** The chips on the arrows: `wide` fits "Waiting for be #2", `long` fits "Waiting for track 7". */
 export const LANE_CHIP = { h: 20, wide: 120, long: 152, step: 8, clear: 4 } as const;
 /** The number of lane colours (`--lane-1..8`). */
 const SLOTS = 8;
@@ -196,11 +196,14 @@ function path(points: readonly Pt[]): string {
   return kept.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
 }
 
+/** REQ-UI-117: "Waiting for <lane> #<N>" while the gate is open, "Merged <lane> #<N>" once it is closed. */
+const gateLabel = (gate: { status: string; waits_for: GateRef }): string =>
+  `${gate.status === "closed" ? "Merged" : "Waiting for"} ${gateWords(gate.waits_for)}`;
 const chipWidth = (words: string, loose: boolean) => {
   if (loose) return LANE_CHIP.long;
   const length = [...words].length;
-  if (length <= 15) return LANE_CHIP.wide;
-  return LANE_CHIP.long + Math.max(0, length - 19) * LANE_CHIP.step;
+  if (length <= 17) return LANE_CHIP.wide;
+  return LANE_CHIP.long + Math.max(0, length - 21) * LANE_CHIP.step;
 };
 const chipRect = (c: { x: number; y: number; w: number }): Rect => ({ x: c.x, y: c.y, w: c.w, h: LANE_CHIP.h });
 const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -288,7 +291,7 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
     const tb = tierOf(laneOf.get(dep.to) ?? null);
     if (laneOf.get(dep.from) === laneOf.get(dep.to)) continue;
     const gate = dep.gate;
-    const words = gate !== null && gate.waits_for !== null ? `${gateState(gate.status)} · ${gateWords(gate.waits_for)}` : null;
+    const words = gate !== null && gate.waits_for !== null ? gateLabel({ status: gate.status, waits_for: gate.waits_for }) : null;
     const channel = tb !== ta + 1;
     const w = words === null ? 0 : chipWidth(words, false);
     plans.set(dep, {
@@ -408,7 +411,7 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
     let chipAt: Pt | null = null;
     let slide: Wanted["slide"];
     const plan = plans.get(dep);
-    const chipW = plan?.w ?? (gate !== null && gate.waits_for !== null ? chipWidth(`${gateState(gate.status)} · ${gateWords(gate.waits_for)}`, false) : 0);
+    const chipW = plan?.w ?? (gate !== null && gate.waits_for !== null ? chipWidth(gateLabel({ status: gate.status, waits_for: gate.waits_for }), false) : 0);
     if (plan === undefined) {
       const end = { x: b.x, y: b.y + mid };
       const gap = start.x + cardGap / 2;
@@ -456,7 +459,7 @@ export function laneGraph(beads: readonly BeadSummary[], scopeId: string, matche
     }
     arrows.push(arrow);
     if (gate !== null && chipAt !== null && gate.waits_for !== null) {
-      const words = plan?.words ?? `${gateState(gate.status)} · ${gateWords(gate.waits_for)}`;
+      const words = plan?.words ?? gateLabel({ status: gate.status, waits_for: gate.waits_for });
       const kind = gate.status === "closed" ? "merged" : "waiting";
       const chip = { gate, kind, words, x: Math.round(chipAt.x - chipW / 2), y: Math.round(chipAt.y - LANE_CHIP.h / 2), w: chipW, box: null } as const;
       wanted.push({ chip, arrow, slide });

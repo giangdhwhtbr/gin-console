@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "@/app/Link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { BeadSummary } from "@/features/beads/api";
 import { StateMark } from "@/features/beads/StateMark";
@@ -71,9 +70,9 @@ export function UnassignedEpics({ project }: { project: string }) {
                   </Link>
                   <span className="text-xs text-muted-foreground">{`P${epic.priority}`}</span>
                   {epic.labels.map((label) => (
-                    <Badge key={label} variant="outline">
+                    <span key={label} className="text-xs text-muted-foreground">
                       {label}
-                    </Badge>
+                    </span>
                   ))}
                 </li>
               ))}

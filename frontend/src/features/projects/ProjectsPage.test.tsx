@@ -82,6 +82,16 @@ describe("ProjectsPage", () => {
     expect(within(cardOf("old")).getByText("missing")).toBeInTheDocument();
   });
 
+  it("REQ-UI-140 Projects card: missing is a destructive word, not a badge", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ name: "old", path: "/home/gin/old", exists: false })])));
+    render(<ProjectsPage />);
+    await screen.findByRole("article", { name: "old" });
+    const word = within(cardOf("old")).getByText("missing");
+    expect(word).toHaveClass("text-destructive");
+    expect(word.className).not.toMatch(/\bbg-|border|rounded/);
+    expect(cardOf("old").querySelector('[data-slot="badge"]')).toBeNull();
+  });
+
   // REQ-UI-001
   it("REQ-UI-001 shows an empty state naming the config file", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([])));

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import type { BeadKind, BeadSummary } from "@/features/beads/api";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS } from "@/lib/definitions";
-import { Badge } from "@/components/ui/badge";
 import { Strand } from "@/components/Strand";
 import { StateGlyph, type GlyphState } from "@/components/StateGlyph";
 import { SizeBadge } from "@/components/SizeBadge";
@@ -449,9 +448,7 @@ function EpicRow({
               </Link>
             </span>
             {epic.points === null ? (
-              <Badge variant="outline" title={size} className="max-w-full shrink-0">
-                <span className="truncate">{size}</span>
-              </Badge>
+              <span title={size} className="max-w-full shrink-0 truncate">{size}</span>
             ) : (
               <SizeBadge points={epic.points} suffix={size} className="max-w-full shrink-0" />
             )}

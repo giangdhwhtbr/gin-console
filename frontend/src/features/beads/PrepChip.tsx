@@ -1,11 +1,11 @@
-import { Badge } from "@/components/ui/badge";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS } from "@/lib/definitions";
 
+/** REQ-UI-140: the word "Prep" in muted text. */
 export function PrepChip() {
   return (
     <Hint text={DEFINITIONS.prep}>
-      <Badge variant="outline">Prep</Badge>
+      <span className="text-xs text-muted-foreground">Prep</span>
     </Hint>
   );
 }

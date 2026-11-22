@@ -38,7 +38,7 @@ describe("BeadTable", () => {
     show([make(closed, 3, { cycle_days: 0.9, late_days: 2, rework: 0, epic: { id: "a-e9", title: "Epic nine" } })], "closed");
     const row = screen.getAllByRole("row")[1];
     expect(within(row).getByText("0.9 d")).toBeInTheDocument();
-    expect(within(row).getByText("2 d late")).toBeInTheDocument();
+    expect(within(row).getByText("2 d late")).toHaveClass("text-state-blocked"); // REQ-REPORTS-016 REQ-UI-140 text in the warning colour, not a chip
     expect(within(row).getByText("0", { selector: "td" })).toBeInTheDocument();
     expect(within(row).getByRole("link", { name: "Bead 3" })).toHaveAttribute("href", "/beads/alpha/a-3");
     expect(within(row).getByRole("link", { name: "Epic nine" })).toHaveAttribute("href", "/beads/alpha/a-e9");
@@ -87,9 +87,14 @@ describe("BeadTable", () => {
     }
   });
 
-  it("REQ-REPORTS-016 chips and warnings", () => {
+  it("REQ-REPORTS-016 REQ-UI-140 status as glyph and word and warnings, no pill", () => {
     show([make(open, 1, { blocked: true }), make(open, 2, { status: "open" }), make(open, 3, { status: "deferred" })]);
-    for (const text of ["Blocked", "Open", "deferred"]) expect(screen.getByText(text, { selector: "[data-slot=badge]" })).toBeInTheDocument();
+    for (const [text, state] of [["Blocked", "blocked"], ["Open", "ready"]]) {
+      expect(screen.getByText(text).closest("[data-state]")).toHaveAttribute("data-state", state);
+      expect(screen.getByText(text).closest("[data-state]")?.querySelector("svg")).not.toBeNull();
+    }
+    expect(screen.getByText("deferred")).toBeInTheDocument();
+    expect(document.querySelector("[data-slot=badge]")).toBeNull();
     cleanup();
     show([make(progress, 4, { age_days: 4 }), make(progress, 5, { age_days: 2 })], "in_progress");
     expect(screen.getByText("4.0 d")).toHaveClass("text-state-blocked");

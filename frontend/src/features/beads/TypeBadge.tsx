@@ -1,22 +1,11 @@
 import { cn } from "@/lib/utils";
 
-const TONE: Record<string, string> = {
-  epic: "bg-type-epic/8 text-type-epic",
-  bug: "bg-type-bug/8 text-type-bug",
-  feature: "bg-type-feature/8 text-type-feature",
-};
-
+/** REQ-UI-067: on rows, cards and nodes only a bug shows its type, as a carnelian word; the bead page lists the type among its facts. */
 export function TypeBadge({ type, className }: { type: string; className?: string }) {
+  if (type !== "bug") return null;
   return (
-    <span
-      data-type={type}
-      className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-        TONE[type] ?? "bg-muted text-muted-foreground",
-        className,
-      )}
-    >
-      {type}
+    <span data-type="bug" className={cn("text-xs font-medium text-type-bug", className)}>
+      bug
     </span>
   );
 }

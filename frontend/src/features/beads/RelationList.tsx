@@ -1,5 +1,4 @@
 import { Link } from "@/app/Link";
-import { Badge } from "@/components/ui/badge";
 import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import type { Relation } from "./api";
@@ -44,7 +43,7 @@ export function RelationList({
               <>
                 <span className="min-w-0 wrap-anywhere">{item.title}</span>
                 {item.prep === true && <PrepChip />}
-                <Badge variant="secondary">{statusLabel(item.status)}</Badge>
+                <span className="text-xs text-muted-foreground">{statusLabel(item.status)}</span>
               </>
             )}
           </li>

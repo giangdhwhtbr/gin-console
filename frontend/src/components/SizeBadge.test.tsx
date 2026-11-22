@@ -19,12 +19,11 @@ describe("SizeBadge", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("appends the suffix and gives way before the title", () => {
+  it("REQ-UI-140 appends the suffix and gives way before the title", () => {
     render(<SizeBadge points={null} estimateMinutes={5280} suffix="11d left" />);
-    const text = screen.getByText("11d · 11d left");
-    expect(text).toHaveClass("truncate");
-    const badge = text.parentElement;
-    expect(badge).toHaveClass("min-w-0", "shrink");
-    expect(badge).not.toHaveClass("shrink-0");
+    const text = screen.getByText("11d, 11d left");
+    expect(text).toHaveClass("truncate", "min-w-0", "shrink", "text-muted-foreground");
+    expect(text).not.toHaveClass("shrink-0");
+    expect(text).not.toHaveAttribute("data-slot", "badge");
   });
 });

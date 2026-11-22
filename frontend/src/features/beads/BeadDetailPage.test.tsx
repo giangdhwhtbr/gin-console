@@ -282,7 +282,7 @@ describe("BeadDetailPage", () => {
     expect(depLinkEncoded).toHaveAttribute("href", "/beads/my%20proj/a-4");
   });
 
-  it("REQ-UI-028 epic with a Complexity line shows a badge; others do not", async () => {
+  it("REQ-UI-028 epic with a Complexity line shows it as text; others do not", async () => {
     const show = async (bead: ReturnType<typeof beadDetail>) => {
       cleanup();
       vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(bead))));
@@ -290,13 +290,13 @@ describe("BeadDetailPage", () => {
       await screen.findByRole("heading", { name: `Title ${bead.id}` });
     };
     await show(beadDetail("e-1", { issue_type: "epic", description: "Why\nComplexity: high (cross-repo)" }));
-    expect(screen.getByText("Complexity: high", { selector: "[data-slot=badge]" })).toHaveClass("text-state-blocked");
+    expect(screen.getByText("Complexity: high")).toHaveClass("text-state-blocked");
     await show(beadDetail("e-2", { issue_type: "epic", description: "Complexity: low (small)" }));
-    expect(screen.getByText("Complexity: low", { selector: "[data-slot=badge]" })).toHaveClass("text-muted-foreground");
+    expect(screen.getByText("Complexity: low")).toHaveClass("text-muted-foreground");
     await show(beadDetail("e-3", { issue_type: "epic", description: "No label" }));
-    expect(screen.queryByText(/^Complexity:/, { selector: "[data-slot=badge]" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Complexity:/)).not.toBeInTheDocument();
     await show(beadDetail("t-1", { issue_type: "task", description: "Complexity: high" }));
-    expect(screen.queryByText("Complexity: high", { selector: "[data-slot=badge]" })).not.toBeInTheDocument();
+    expect(within(document.querySelector("header") as HTMLElement).queryByText("Complexity: high")).toBeNull();
   });
 
   // REQ-UI-028
@@ -316,7 +316,7 @@ describe("BeadDetailPage", () => {
     const strand = await screen.findByRole("img", { name: "1 done, 1 ready of 2 tracks" });
     expect(strand).toHaveTextContent("1/2");
     expect(screen.getByText("Prep 1/1")).toBeInTheDocument();
-    expect(screen.getAllByText("Prep", { selector: "[data-slot=badge]" })).toHaveLength(1);
+    expect(screen.getAllByText("Prep", )).toHaveLength(1);
     const row = (id: string) => screen.getByRole("link", { name: id }).closest("li") as HTMLElement;
     expect(within(row("p-1")).getByText("Prep")).toBeInTheDocument();
     expect(within(row("t-1")).queryByText("Prep")).toBeNull();
@@ -657,8 +657,7 @@ describe("BeadDetailPage", () => {
     stubFetch(beadDetail("e-1", { issue_type: "epic", kind: "technical", capabilities: ["beads", "ui"], estimate_minutes: 1440 }));
     render(<BeadDetailPage project="alpha" id="e-1" />);
     expect(await screen.findByText("Technical")).toBeInTheDocument();
-    const caps = screen.getByRole("list", { name: "Capabilities" });
-    expect(within(caps).getAllByRole("listitem").map((li) => li.textContent)).toEqual(["beads", "ui"]);
+    expect(screen.getByLabelText("Capabilities")).toHaveTextContent(/^beads, ui$/); // REQ-UI-140 joined by commas
     expect(screen.getByText("3d")).toBeInTheDocument();
   });
 
@@ -683,7 +682,7 @@ describe("BeadDetailPage", () => {
     expect(await screen.findByText("0.5d")).toBeInTheDocument();
   });
 
-  it("REQ-UI-028 Badges and facts: badge row, reason line and label/value facts", async () => {
+  it("REQ-UI-028 Fact line and facts: text, reason line and label/value facts", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
     const at = new Date(2026, 4, 11, 16, 0).toISOString();
@@ -706,11 +705,13 @@ describe("BeadDetailPage", () => {
     expect(await screen.findByText("In progress")).toBeInTheDocument();
     expect(screen.getByText("P1")).toBeInTheDocument();
     expect(screen.getByText("5 pt")).toBeInTheDocument();
+    for (const text of ["In progress", "P1", "5 pt"]) expect(screen.getByText(text).closest("[data-slot=badge]")).toBeNull();
     expect(screen.getByText("new endpoint and UI")).toBeInTheDocument();
     const facts = screen.getByText("Assignee").closest("dl");
     if (facts === null) throw new Error("the facts are missing");
     const pairs = Array.from(facts.querySelectorAll("dt")).map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]);
     expect(pairs).toEqual([
+      ["Type", "epic"],
       ["Assignee", "bao"],
       ["Created by", "lead"],
       ["Created", "11 May, 16:00"],
@@ -726,7 +727,7 @@ describe("BeadDetailPage", () => {
     stubFetch(beadDetail("a-5"));
     render(<BeadDetailPage project="alpha" id="a-5" />);
     await screen.findByText("A description");
-    expect(screen.queryByRole("list", { name: "Capabilities" })).toBeNull();
+    expect(screen.queryByLabelText("Capabilities")).toBeNull();
     expect(screen.queryByText(/Estimate|Technical|Parity|\d+d$| pt$/)).toBeNull();
   });
 
@@ -754,7 +755,7 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-5" />);
     const h1 = await screen.findByRole("heading", { name: "Title a-5" });
     const header = h1.parentElement!;
-    expect(within(header).getAllByText("be").filter((el) => el.closest("[data-slot='badge']") !== null)).toHaveLength(1);
+    expect(within(header).getAllByText("be").filter((el) => el.previousElementSibling?.matches(".size-2.rounded-full") === true)).toHaveLength(1);
     expect(within(header).getByText("urgent")).toBeInTheDocument();
     expect(within(header).queryByText("lane:be")).toBeNull();
     expect(within(header).queryByText("track:2")).toBeNull();

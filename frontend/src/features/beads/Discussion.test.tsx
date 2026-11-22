@@ -190,9 +190,12 @@ describe("Discussion", () => {
     expect(text.closest("li")).toHaveClass("border");
   });
 
-  it("REQ-UI-067 the header shows the type pill", async () => {
+  it("REQ-UI-067 the bead page shows the type among its facts, as plain text", async () => {
     stubFetch(beadDetail("a-5", { issue_type: "epic" }));
     render(<BeadDetailPage project="alpha" id="a-5" />);
-    expect(await screen.findByText("epic")).toHaveAttribute("data-type", "epic");
+    const value = (await screen.findByText("epic")).closest("dd");
+    expect(value).not.toBeNull();
+    expect(value?.previousElementSibling).toHaveTextContent("Type");
+    expect(screen.getByText("epic")).not.toHaveAttribute("data-slot", "badge");
   });
 });

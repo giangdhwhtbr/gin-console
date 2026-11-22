@@ -46,7 +46,7 @@ describe("ListView", () => {
     const strand = within(row).getByRole("img", { name: /of 1 tracks/ });
     expect(strand.parentElement).toHaveClass("hidden", "@xl:flex");
     expect(within(row).getByText(/^Prep /)).toHaveClass("hidden", "@xl:inline");
-    expect(within(row).getByText("p-label").parentElement?.parentElement).toHaveClass("hidden", "@3xl:flex");
+    expect(within(row).getByText("p-label").parentElement).toHaveClass("hidden", "@3xl:flex");
     // the extras clip before the title does
     const group = strand.parentElement!.parentElement!;
     expect(group).toHaveClass("min-w-0", "shrink", "overflow-hidden");
@@ -234,7 +234,7 @@ describe("ListView", () => {
     expect(within(k1).getByText("Task 1")).toBeInTheDocument();
     expect(within(k1).getByText("Done")).toBeInTheDocument();
     expect(within(k1).getByText("P1")).toBeInTheDocument();
-    expect(within(k1).getByText("task")).toBeInTheDocument();
+    expect(within(k1).queryByText("task")).toBeNull(); // REQ-UI-067 only a bug shows its type
 
     await userEvent.click(screen.getByRole("button", { name: "Collapse all" }));
     expect(within(tree).queryByRole("treeitem", { name: /k-1/ })).not.toBeInTheDocument();
@@ -274,8 +274,9 @@ describe("ListView", () => {
     expect(strand.querySelectorAll("g[data-bead]")).toHaveLength(2);
     expect(within(tree).getByText("Prep 0/1")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Expand all" }));
-    const chip = (id: string) => within(within(tree).getByRole("treeitem", { name: new RegExp(id) })).queryByText("Prep", { selector: "[data-slot=badge]" });
-    expect(chip("p-1")).not.toBeNull();
+    const chip = (id: string) => within(within(tree).getByRole("treeitem", { name: new RegExp(id) })).queryByText("Prep");
+    expect(chip("p-1")).toHaveClass("text-muted-foreground"); // REQ-UI-140 the word, no pill
+    expect(chip("p-1")).not.toHaveAttribute("data-slot", "badge");
     expect(chip("t-1")).toBeNull();
     expect(chip("t-2")).toBeNull();
   });
@@ -443,12 +444,13 @@ describe("ListView", () => {
     expect(within(row).getByRole("link", { name: "Fix it" })).toHaveAttribute("href", "/beads/alpha/t-1");
     expect(within(row).getByText("Blocked")).toBeInTheDocument();
     expect(within(row).getByText("bug")).toHaveAttribute("data-type", "bug");
-    expect(within(row).getByText("P1")).toHaveClass("text-state-blocked");
+    expect(within(row).getByText("bug")).toHaveClass("text-type-bug");
+    expect(within(row).getByText("P1")).toHaveClass("font-semibold", "text-foreground");
     expect(within(row).getByRole("img", { name: "2 comments" })).toBeInTheDocument();
     expect(within(row).getByText("alice")).toBeInTheDocument();
     expect(within(row).getAllByText(/^(ui|qa|a)$/)).toHaveLength(3);
     expect(within(row).getByText("ui")).toHaveClass("truncate");
-    expect(within(row).getByText("ui").parentElement).toHaveAttribute("title", "ui");
+    expect(within(row).getByText("ui")).toHaveAttribute("title", "ui");
     expect(within(row).queryByText("b")).toBeNull();
   });
 
@@ -518,12 +520,12 @@ describe("ListView", () => {
     render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
     const row = within(tree).getByRole("treeitem", { name: /Tech epic/ });
-    const badge = within(row).getByText("Technical").parentElement;
+    const badge = within(row).getByText("Technical");
     expect(badge).toHaveClass("min-w-0", "shrink");
     expect(badge).not.toHaveClass("shrink-0");
     expect(badge).toHaveAttribute("title", "Technical");
     expect(within(row).getByText("medium")).toHaveClass("min-w-0", "shrink", "truncate");
-    const chip = within(row).getByText("3d").parentElement;
+    const chip = within(row).getByText("3d");
     // the size badge stays whole: the id and the complexity give way before it (REQ-UI-044)
     expect(chip).toHaveClass("shrink-0");
     expect(chip).not.toHaveClass("hidden");
@@ -557,16 +559,25 @@ describe("ListView", () => {
     expect(row).not.toHaveTextContent("·");
   });
 
-  it("REQ-UI-110 Priority pill: P0 destructive, P1 warning, P2 neutral on the rows", async () => {
+  it("REQ-UI-110 REQ-UI-140 Priority: P0 and P1 bold in the text colour, P2 muted on the rows", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([bead("p-0", { priority: 0, title: "Zero" }), bead("p-1", { priority: 1, title: "One" }), bead("p-2", { priority: 2, title: "Two" })]),
     );
     render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
-    expect(within(within(tree).getByRole("treeitem", { name: /Zero/ })).getByText("P0")).toHaveClass("text-destructive");
-    expect(within(within(tree).getByRole("treeitem", { name: /One/ })).getByText("P1")).toHaveClass("text-state-blocked");
-    expect(within(within(tree).getByRole("treeitem", { name: /Two/ })).getByText("P2")).toHaveClass("bg-secondary");
+    expect(within(within(tree).getByRole("treeitem", { name: /Zero/ })).getByText("P0")).toHaveClass("font-semibold", "text-foreground");
+    expect(within(within(tree).getByRole("treeitem", { name: /One/ })).getByText("P1")).toHaveClass("font-semibold", "text-foreground");
+    expect(within(within(tree).getByRole("treeitem", { name: /Two/ })).getByText("P2")).toHaveClass("text-muted-foreground");
+  });
+
+  it("REQ-UI-140 List row without chips: priority, type, kind, size, labels and Prep carry no badge", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() => json([bead("e-9", { issue_type: "epic", title: "Chipless", kind: "technical", estimate_minutes: 1440, labels: ["ui"], priority: 0 })]));
+    render(<BeadsPage />);
+    const row = within(await screen.findByRole("tree")).getByRole("treeitem", { name: /Chipless/ });
+    expect(row.querySelector('[data-slot="badge"]')).toBeNull();
+    for (const text of ["P0", "Technical", "3d", "ui"]) expect(within(row).getByText(text).className).not.toMatch(/\bbg-|border/);
   });
 });
 

@@ -314,7 +314,7 @@ describe("BeadsPage", () => {
       await waitFor(() => expect(document.querySelector('[data-node="ex-e12.2"]')).not.toBeNull());
       expect(document.querySelector('[data-node="ex-e12.9"]')).toBeNull();
       expect(screen.queryByRole("button", { name: /Waits for be #2 to merge/ })).toBeNull();
-      expect(document.querySelector('[data-chip="ex-e12.9"]')).toHaveTextContent("Waiting · be #2");
+      expect(document.querySelector('[data-chip="ex-e12.9"]')).toHaveTextContent("Waiting for be #2");
       expect(screen.getByRole("region", { name: "Lane qa" })).toBeInTheDocument();
     });
 
@@ -470,7 +470,7 @@ describe("BeadsPage", () => {
     expect(row2.getByText("alpha-p2")).toBeInTheDocument();
     const link2 = row2.getByRole("link", { name: "P2 bead title" });
     expect(link2).toHaveAttribute("href", "/beads/alpha/alpha-p2");
-    expect(row2.getByText("feature")).toBeInTheDocument();
+    expect(row2.queryByText("feature")).toBeNull(); // REQ-UI-067
     expect(row2.getByText("In progress")).toBeInTheDocument();
     expect(row2.getByText("P2")).toBeInTheDocument();
     expect(row2.getByText("ui")).toBeInTheDocument();

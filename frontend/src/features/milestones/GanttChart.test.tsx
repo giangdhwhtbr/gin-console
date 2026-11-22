@@ -345,14 +345,14 @@ describe("GanttChart", () => {
     expect(widths).toEqual(["300px", "300px", "380px", "380px", "440px", "440px"]);
   });
 
-  it("REQ-MILESTONE-UI-013 Wide window: id, then '8 pt · 11d left', cut inside the column, no spec item", () => {
+  it("REQ-MILESTONE-UI-013 Wide window: id, then '8 pt, 11d left', cut inside the column, no spec item", () => {
     stubWindow(2000);
     render(<GanttChart project="alpha" plan={detail([E3], { today: "2026-11-12" })} preview={false} zoom="all" onZoom={vi.fn()} childBeads={TRACKS} epicBeads={EPIC_BEADS} />);
     expect(labelOf("ex-e3").style.width).toBe("440px");
     const meta = labelOf("ex-e3").querySelector<HTMLElement>(":scope > div > span:nth-child(2)");
     expect(meta).toHaveClass("min-w-0", "overflow-hidden", "lg:flex-nowrap");
     const parts = [...(meta?.children ?? [])].map((part) => part.textContent);
-    expect(parts).toEqual(["ex-e3", "8 pt · 11d left", "9 Nov – 23 Nov", "1/2"]);
+    expect(parts).toEqual(["ex-e3", "8 pt, 11d left", "9 Nov – 23 Nov", "1/2"]);
     expect(meta?.children[1]).toHaveClass("shrink-0");
     expect(epicRow("ex-e3")).not.toHaveTextContent("Spec not approved yet");
     expect(epicRow("ex-e3")).toHaveTextContent("Spec not confirmed");
@@ -360,10 +360,10 @@ describe("GanttChart", () => {
     expect(labelOf("ex-e3")).toHaveClass("sticky", "z-10", "bg-card");
   });
 
-  it("REQ-MILESTONE-UI-013 the size badge without points reads '<n>d', '<n>d left' or 'assumed <n>d', in a badge", () => {
+  it("REQ-MILESTONE-UI-013 the size badge without points reads '<n>d', '<n>d left' or 'assumed <n>d', as plain text", () => {
     draw(detail([epicPlan("e-a", { estimate_days: 4 }), epicPlan("e-b", { estimate_days: null, assumed_days: 3 })]));
-    expect(within(epicRow("e-a")).getByText("4d").closest("[data-slot='badge']")).not.toBeNull();
-    expect(within(epicRow("e-b")).getByText("assumed 3d").closest("[data-slot='badge']")).not.toBeNull();
+    expect(within(epicRow("e-a")).getByText("4d").closest("[data-slot='badge']")).toBeNull();
+    expect(within(epicRow("e-b")).getByText("assumed 3d").closest("[data-slot='badge']")).toBeNull();
   });
 
   it("REQ-MILESTONE-UI-013 Tail title stops at the end line: it is cut short before the line", () => {
@@ -395,8 +395,8 @@ describe("GanttChart", () => {
         epicPlan("e-e", { estimate_days: 2 }),
       ]),
     );
-    expect(epicRow("e-c")).toHaveTextContent("5 pt · 7d");
-    expect(epicRow("e-d")).toHaveTextContent("3 pt · 1d left");
+    expect(epicRow("e-c")).toHaveTextContent("5 pt, 7d");
+    expect(epicRow("e-d")).toHaveTextContent("3 pt, 1d left");
     expect(epicRow("e-e")).not.toHaveTextContent("pt");
   });
 

@@ -15,4 +15,12 @@ describe("LaneChip", () => {
     expect(chip).not.toHaveAttribute("title");
     expect(document.getElementById(chip?.getAttribute("aria-describedby") ?? "")).toHaveTextContent(`Lane backend. ${DEFINITIONS.lane}`);
   });
+
+  it("REQ-UI-115 REQ-UI-140 the dot has the lane colour for a slot and the muted colour without one; no pill", () => {
+    const { container, rerender } = render(<HintProvider><LaneChip lane="backend" slot={2} /></HintProvider>);
+    expect(container.querySelector(".size-2.rounded-full")).toHaveClass("bg-[var(--lane-2)]");
+    rerender(<HintProvider><LaneChip lane="backend" /></HintProvider>);
+    expect(container.querySelector(".size-2.rounded-full")).toHaveClass("bg-muted-foreground");
+    expect(container.querySelector('[data-slot="badge"]')).toBeNull();
+  });
 });

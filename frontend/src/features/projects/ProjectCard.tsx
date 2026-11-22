@@ -1,6 +1,5 @@
 import { Link } from "@/app/Link";
 import { TriangleAlert } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Hint } from "@/components/ui/tooltip";
 import { countHint, type DefinitionKey } from "@/lib/definitions";
 import { useId, useState } from "react";
@@ -45,8 +44,8 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
                 <li key={repo.path} className="flex flex-wrap items-center gap-1">
                   <span className="break-all font-mono">{repo.path}</span>
                   <span>{`${repo.branch ?? "-"} · ${repo.shape ?? "-"}`}</span>
-                  {repo.frozen && <Badge variant="secondary">frozen</Badge>}
-                  {!repo.present && <Badge variant="destructive">missing</Badge>}
+                  {repo.frozen && <span className="text-muted-foreground">frozen</span>}
+                  {!repo.present && <span className="text-destructive">missing</span>}
                 </li>
               ))}
             </ul>
@@ -90,14 +89,14 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
 function EpicStage({ epic }: { epic: Epic }) {
   const { workflow } = epic;
   if (epic.status !== "in_progress") {
-    return epic.status === undefined ? null : <Badge variant="outline">ready</Badge>;
+    return epic.status === undefined ? null : <span className="text-muted-foreground">ready</span>;
   }
   if (!workflow) return null;
   if (isBlockError(workflow)) {
     return (
-      <Badge variant="outline" title={workflow.error}>
+      <span title={workflow.error} className="text-destructive">
         stage unknown
-      </Badge>
+      </span>
     );
   }
   const details = [
@@ -106,7 +105,7 @@ function EpicStage({ epic }: { epic: Epic }) {
   ];
   return (
     <>
-      <Badge variant="secondary">{workflow.stage}</Badge>
+      <span className="text-muted-foreground">{workflow.stage}</span>
       {details.length > 0 && (
         <span title={details.join("\n")}>
           <span aria-hidden="true">{`⚠ ${details.length}`}</span>
@@ -173,7 +172,7 @@ export function ProjectCard({ project }: { project: Project }) {
             {project.name}
           </Link>
         </h2>
-        {!project.exists && <Badge variant="destructive">missing</Badge>}
+        {!project.exists && <span className="text-sm text-destructive">missing</span>}
         <span className="w-full break-all font-mono text-sm text-muted-foreground">
           {project.path}
         </span>

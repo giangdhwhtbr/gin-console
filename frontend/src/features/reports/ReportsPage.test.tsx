@@ -287,7 +287,7 @@ describe("ReportsPage", () => {
     );
     render(<ReportsPage />);
     await screen.findByText("working day 9 of 20 · 11 left");
-    await vi.waitFor(() => expect(document.querySelector("[data-slot=badge]")).toHaveTextContent("Active · late"));
+    await vi.waitFor(() => expect(document.querySelector("[data-milestone-status]")).toHaveTextContent("Active · late"));
   });
 
   it("REQ-UI-095 Velocity says Loading velocity… while the page's Milestones request is open", async () => {
@@ -448,7 +448,7 @@ describe("ReportsPage", () => {
     const tab = await screen.findByRole("tab", { name: /Team\s*27 of 64 done · behind pace/ });
     expect(tab.querySelector("svg")).not.toBeNull();
     await screen.findByText("working day 9 of 20 · 11 left");
-    const chip = document.querySelector("[data-slot=badge]");
+    const chip = document.querySelector("[data-milestone-status]");
     expect(chip).toHaveTextContent(/^Active$/);
     expect(chip).not.toHaveTextContent(/late/);
   });

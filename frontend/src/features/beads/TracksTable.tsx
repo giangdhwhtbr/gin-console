@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { Link } from "@/app/Link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { shortId } from "@/lib/shortId";
@@ -11,7 +11,6 @@ import { STATE_LABEL } from "./graph";
 import { StateWord } from "./StateMark";
 import type { BeadSummary } from "./api";
 
-type BoxStyle = CSSProperties & Record<"--box", string>;
 type Column = Exclude<keyof TrackRow, "blockedBy">;
 const COLUMNS: readonly { key: Column; label: string }[] = [
   { key: "id", label: "Id" },
@@ -21,8 +20,6 @@ const COLUMNS: readonly { key: Column; label: string }[] = [
   { key: "assignee", label: "Assignee" },
   { key: "points", label: "Points" },
 ];
-
-const boxOf = (slots: ReadonlyMap<string, number>, lane: string): BoxStyle => ({ "--box": `var(--lane-${slots.get(lane) ?? 1})` });
 
 /** REQ-UI-121: the tracks of the epic, sortable by every column but Blocked by; Id, Title and State stay in view, the rest scrolls sideways. */
 export function TracksTable({ project, epicId, beads, rows }: { project: string; epicId: string; beads: readonly BeadSummary[]; rows: readonly TrackRow[] }) {
@@ -77,9 +74,8 @@ export function TracksTable({ project, epicId, beads, rows }: { project: string;
                   {row.lane === null ? (
                     <span className="text-muted-foreground">No lane</span>
                   ) : (
-                    <span className="inline-flex max-w-28 items-center gap-1.5" style={boxOf(slots, row.lane)}>
-                      <span aria-hidden data-swatch className="size-2.5 shrink-0 rounded-[3px] bg-(--box)" />
-                      <LaneChip lane={row.lane} />
+                    <span className="inline-flex max-w-28">
+                      <LaneChip lane={row.lane} slot={slots.get(row.lane)} />
                     </span>
                   )}
                 </TableCell>

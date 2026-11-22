@@ -1,5 +1,4 @@
 import { TriangleAlert } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { workdaysAfter } from "@/features/milestones/format";
 import { lateOf } from "@/features/milestones/late";
 import { MilestoneStatus } from "@/features/milestones/MilestoneStatus";
@@ -8,19 +7,19 @@ import { cn } from "@/lib/utils";
 import type { TeamMilestone, TeamReport } from "../teamApi";
 import { lateDays } from "./format";
 
-/** The chip of the milestone line: how a closed milestone ended, else the milestone status and " · late" by REQ-MILESTONE-UI-023. */
+/** The status text of the milestone line (REQ-UI-140): how a closed milestone ended, else the milestone status and " · late" by REQ-MILESTONE-UI-023. */
 function Chip({ milestone, finish, today }: { milestone: TeamMilestone; finish: string | null; today: string }) {
   if (milestone.status === "closed") {
     const late = lateOf({ status: milestone.status, end: milestone.end, closedOn: milestone.closed_on }, today);
     return (
-      <Badge variant="outline" className={cn(late && "text-state-blocked")}>
+      <span data-milestone-status className={cn("text-sm", late ? "text-state-blocked" : "text-muted-foreground")}>
         {late ? `Closed · ${lateDays(milestone)} d late` : "Closed · on time"}
-      </Badge>
+      </span>
     );
   }
   const late = lateOf({ status: milestone.status, end: milestone.end, finish, closedOn: milestone.closed_on }, today);
   return (
-    <Badge variant="outline" className={cn(late && "text-state-blocked")}>
+    <span data-milestone-status className={cn("inline-flex items-center gap-1 text-sm", late && "text-state-blocked")}>
       <MilestoneStatus status={milestone.status} />
       {late && (
         <>
@@ -28,7 +27,7 @@ function Chip({ milestone, finish, today }: { milestone: TeamMilestone; finish: 
           {" · late"}
         </>
       )}
-    </Badge>
+    </span>
   );
 }
 

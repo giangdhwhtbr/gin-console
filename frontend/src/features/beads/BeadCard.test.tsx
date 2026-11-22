@@ -33,15 +33,22 @@ describe("BeadCard", () => {
     expect(li).toHaveTextContent("P1");
     expect(screen.getByRole("link", { name: "Fix it" })).toHaveAttribute("href", "/beads/alpha/a-1");
     expect(screen.getByText("Ready")).toBeInTheDocument();
-    expect(screen.getByText("task")).toBeInTheDocument();
+    expect(screen.queryByText("task")).toBeNull(); // REQ-UI-067 only a bug shows its type
     expect(screen.getByRole("img", { name: "2 comments" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "1 dependency" })).toBeInTheDocument();
     expect(screen.getByText("alice")).toBeInTheDocument();
   });
 
-  it("REQ-UI-065 a bare card has only the state and the type on its last line", () => {
+  it("REQ-UI-140 Board card without chips: a bug is a carnelian word and nothing carries a badge", () => {
+    const li = card(bead("a-9", { issue_type: "bug", priority: 0, labels: ["x"] }));
+    expect(screen.getByText("bug")).toHaveClass("text-type-bug");
+    expect(li.querySelector('[data-slot="badge"]')).toBeNull();
+    expect(Array.from(li.querySelectorAll("*")).filter((e) => /\brounded-full\b/.test(e.getAttribute("class") ?? "") && /\bbg-/.test(e.getAttribute("class") ?? "") && e.textContent !== "")).toEqual([]);
+  });
+
+  it("REQ-UI-065 a bare card has only the state on its last line", () => {
     const li = card(bead("a-2"));
-    expect(screen.getByText("task")).toBeInTheDocument();
+    expect(screen.queryByText("task")).toBeNull();
     expect(screen.queryByRole("img")).toBeNull();
     expect(li).not.toHaveTextContent(/0 comments|0 deps/);
   });

@@ -330,7 +330,7 @@ describe("BoardView lanes", () => {
     render(<BeadsPage />);
     expect(await screen.findByText("Laned")).toBeInTheDocument();
     expect(screen.getByText("be")).toBeInTheDocument();
-    expect(screen.getAllByText(/^be$/).filter((el) => el.closest("[data-slot='badge']") !== null)).toHaveLength(1);
+    expect(screen.getAllByText(/^be$/).filter((el) => el.previousElementSibling?.matches(".size-2.rounded-full") === true)).toHaveLength(1);
     expect(screen.queryByText("external: p#2")).toBeNull();
   });
 });

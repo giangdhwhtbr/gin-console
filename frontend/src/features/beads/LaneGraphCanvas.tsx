@@ -1,4 +1,3 @@
-import { Check, Clock } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
@@ -107,25 +106,18 @@ export function LaneGraphCanvas({
                 onOpen={onOpen}
               />
             ))}
-            {graph.chips.map((chip) => {
-              const Icon = chip.kind === "merged" ? Check : Clock;
-              return (
-                <span
-                  key={`${chip.gate.id}>${chip.box ?? ""}>${chip.x}`}
-                  data-chip={chip.gate.id}
-                  data-kind={chip.kind}
-                  title={chip.words}
-                  className={cn(
-                    "absolute flex items-center gap-1 rounded-full border bg-card px-2 text-xs text-foreground",
-                    chip.kind === "merged" ? "border-state-ready" : "border-state-blocked",
-                  )}
-                  style={{ left: chip.x, top: chip.y, width: chip.w, height: LANE_CHIP.h }}
-                >
-                  <Icon aria-hidden className={cn("size-3 shrink-0", chip.kind === "merged" ? "text-state-ready" : "text-state-blocked")} />
-                  <span className="min-w-0 truncate">{chip.words}</span>
-                </span>
-              );
-            })}
+            {graph.chips.map((chip) => (
+              <span
+                key={`${chip.gate.id}>${chip.box ?? ""}>${chip.x}`}
+                data-chip={chip.gate.id}
+                data-kind={chip.kind}
+                title={chip.words}
+                className="absolute flex items-center bg-card px-1 text-xs text-muted-foreground"
+                style={{ left: chip.x, top: chip.y, width: chip.w, height: LANE_CHIP.h }}
+              >
+                <span className="min-w-0 truncate">{chip.words}</span>
+              </span>
+            ))}
           </div>
         </div>
       </div>

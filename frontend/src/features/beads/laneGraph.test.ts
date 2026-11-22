@@ -229,10 +229,10 @@ describe("laneGraph", () => {
     expect(merged).toMatchObject({ toBox: true, dashed: false });
     expect(merged?.gate?.id).toBe(g3.id);
     expect(g.chips.map((c) => [c.kind, c.words, c.box]).sort()).toEqual([
-      ["merged", "Merged · fe #3", null],
-      ["waiting", "Waiting · be #2", null],
+      ["merged", "Merged fe #3", null],
+      ["waiting", "Waiting for be #2", null],
     ]);
-    const chip = g.chips.find((c) => c.words === "Waiting · be #2");
+    const chip = g.chips.find((c) => c.words === "Waiting for be #2");
     expect(waiting?.chip).toEqual({ x: chip?.x, y: chip?.y });
     expect(chip?.w).toBe(120);
     // the arrows start at the right edge of their card and end on the left edge of qa, level with the card of track 4
@@ -292,7 +292,7 @@ describe("laneGraph", () => {
     const g = graphOf(beads, new Set(beads.map((x) => x.id)));
     const arrow = arrowOf(g, a.id, b.id);
     expect(arrow).toMatchObject({ toBox: false, dashed: true });
-    expect(g.chips.map((c) => c.words)).toEqual(["Waiting · x #11"]);
+    expect(g.chips.map((c) => c.words)).toEqual(["Waiting for x #11"]);
     const box = boxOf(g, "x");
     expect(g.chips[0].y + 20).toBeLessThan(box.y + box.h);
     expectClear(g);
@@ -528,7 +528,7 @@ describe("laneGraph chips and arrows", () => {
     const beads = [epic, a1, a2, a3, b1, gate];
     const g = graphOf(beads, new Set(beads.map((x) => x.id)));
     const chip = g.chips[0];
-    expect(chip.words).toBe("Waiting · a #11");
+    expect(chip.words).toBe("Waiting for a #11");
     expect(crossing(g, chip, g.arrows.find((x) => x.chip !== null), LANE_CHIP.clear)).toEqual([]);
     expectClear(g);
   });
