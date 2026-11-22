@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-065@e04e4564
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** e366aa8f
 
 **Preconditions:**
 - Project `alpha` has task `t-2` with owner `lead@example.com`, no assignee, no comments and no dependencies

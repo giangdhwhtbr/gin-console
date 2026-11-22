@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-028@5a22703b
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 83d16e08
 
 **Preconditions:**
 - Task `t-1` of project `alpha` has owner `lead@example.com` and no assignee

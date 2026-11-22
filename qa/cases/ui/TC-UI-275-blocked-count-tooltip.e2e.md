@@ -2,12 +2,15 @@
 
 - **REQ:** REQ-UI-132@19a2fe26
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 1eaa4a95
 
 **Preconditions:**
 - Project `example` has 4 blocked beads, so its Projects card reads "blocked 4"
 
 **Steps:**
-1. Open `/projects`
+1. Open `/`
 2. Move the keyboard focus to "blocked 4" with Tab
 3. Press Escape
 

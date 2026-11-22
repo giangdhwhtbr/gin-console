@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-MILESTONE-UI-022@e3343c6c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 6219d70d
 
 **Preconditions:**
 - Project `P` has milestone `ex-m2`, a bead of type `milestone` with status `open`

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-130@ba81e493
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 48d775c8
 
 **Preconditions:**
 - Project `alpha` has epic `e-1` with 5 tracks, 3 of them closed

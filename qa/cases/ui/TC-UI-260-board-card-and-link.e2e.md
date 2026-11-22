@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-031@5fa5ec1b
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 698c07c4
 
 **Preconditions:**
 - Project `alpha` has ready P1 bead `t-1` assigned to `alice`

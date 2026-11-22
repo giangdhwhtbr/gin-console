@@ -1,6 +1,6 @@
 # TC-UI-057: Expand all and collapse all
 
-- **REQ:** REQ-UI-044@e5b25447
+- **REQ:** REQ-UI-044@f10aa6dd
 - **Priority:** medium
 
 **Preconditions:**

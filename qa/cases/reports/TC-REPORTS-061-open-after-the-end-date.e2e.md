@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-REPORTS-013@5ea0d567
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 07ac8242
 
 **Preconditions:**
 - Project `alpha` has an open milestone `m2` that ended yesterday

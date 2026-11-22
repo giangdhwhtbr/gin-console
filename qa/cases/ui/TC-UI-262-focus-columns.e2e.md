@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-033@51749fbd
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 17e1a3c9
 
 **Preconditions:**
 - Project `alpha` has an in-progress bead, a blocked bead, a ready P1 bead and a ready P3 bead

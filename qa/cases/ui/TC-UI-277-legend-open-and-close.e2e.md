@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-133@61468990
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 6d64a113
 
 **Preconditions:**
 - Project `alpha` has beads

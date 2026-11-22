@@ -2,7 +2,7 @@
 // lanes be (T1 closed, T2 in progress with a lease), fe (T3 closed), qa (T4, blocked by two merge gates),
 // infra (T5 closed, T6 open with an expired lease) and two tracks without a lane. Shared by the lanes specs.
 import { expect, type Page } from '@playwright/test';
-import { bead, stubApi, type BeadSummary, type Stub } from './api';
+import { bead, stubApi, withCounts, type BeadSummary, type Stub } from './api';
 
 export const PROJECT = 'example';
 export const E12 = 'ex-e12';
@@ -16,11 +16,12 @@ export const at = (days: number, hh: number, mm = 0): string => {
   d.setHours(hh, mm, 0, 0);
   return d.toISOString();
 };
-/** How the console writes a date and time (lib/dates.ts factDate), in the browser's zone. */
+/** How the console writes a date and time (REQ-UI-131, lib/dates.ts formatDateTime), in the browser's zone: the year only outside the current one. */
 export const shown = (iso: string): string => {
   const d = new Date(iso);
   const two = (n: number) => String(n).padStart(2, '0');
-  return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()} ${two(d.getHours())}:${two(d.getMinutes())}`;
+  const year = d.getFullYear() === new Date().getFullYear() ? '' : ` ${d.getFullYear()}`;
+  return `${d.getDate()} ${MONTHS[d.getMonth()]}${year}, ${two(d.getHours())}:${two(d.getMinutes())}`;
 };
 export const TOMORROW_16 = at(1, 16);
 export const YESTERDAY_10 = at(-1, 10);
@@ -67,7 +68,7 @@ export const milestoneOptions = {
  * Register it after `stubApi`: the later route wins.
  */
 export async function stubDetails(page: Page, beads: BeadSummary[], project = PROJECT): Promise<void> {
-  const byId = new Map(beads.map((b) => [b.id, b]));
+  const byId = new Map(withCounts(beads).map((b) => [b.id, b]));
   const relation = (b: BeadSummary) => ({ id: b.id, title: b.title, status: b.status, type: 'blocks', waits_for: b.waits_for });
   const pattern = new RegExp(`/api/beads/${project}/([^/]+)(/comments)?$`);
   await page.route(pattern, async (route) => {

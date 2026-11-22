@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-082@5a1bd944
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 589a0cc8
 
 **Preconditions:**
 - Project `alpha` has beads assigned to `alice@example.com`, `bob@example.com` and `carol@example.com`

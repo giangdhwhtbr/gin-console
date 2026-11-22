@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-021@6fc8f7d7
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** a7822786
 
 **Preconditions:**
 - Project `alpha` as in TC-BEADS-071: beads `a`, `e`, `e.1`, `b`, `c` and `d` give 4 blocked beads and 1 in-progress bead
@@ -11,7 +14,7 @@
 - None
 
 **Steps:**
-1. Open `/projects`
+1. Open `/`
 2. Open `/beads?project=alpha&view=board`
 3. Open `/beads?project=alpha&view=focus`
 

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-MILESTONE-UI-022@e3343c6c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** c644c461
 
 **Preconditions:**
 - Project `P` has milestone `ex-m2`, a bead of type `milestone` with status `open`, whose kick-off was on 10 Nov 2026

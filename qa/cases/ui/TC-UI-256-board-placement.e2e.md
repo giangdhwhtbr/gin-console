@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-031@5fa5ec1b
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 27e68b1e
 
 **Preconditions:**
 - Project `alpha` has a deferred bead, a ready bead, an in-progress bead, a blocked bead and a closed bead, none of them a prep task

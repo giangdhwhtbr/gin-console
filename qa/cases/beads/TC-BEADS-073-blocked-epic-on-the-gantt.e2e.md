@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-021@6fc8f7d7
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** a5b507ba
 
 **Preconditions:**
 - Project `alpha` has milestone `m1` shown on the Gantt, with epic `e` of status `open` blocked by the open bead `a`

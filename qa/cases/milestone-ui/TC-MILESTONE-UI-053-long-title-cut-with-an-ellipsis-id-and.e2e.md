@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-013@b3bb8e48
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T04-57-11
+Checked: 335e933e
 
 Preconditions:
 - epic `gin-workflow-rm-process-hygiene` titled "Process hygiene: consistent skills, rules that bind where it matters"
@@ -14,6 +15,6 @@ Steps:
 
 Expected:
 - The title takes one line, cut short with an ellipsis
-- The full title is shown on hover
-- The id, the period and the closed tracks wrap onto the following lines, none of them cut to less than its first word
+- The full title is shown as the tooltip on hover
+- The id, the period and the tracks count ("1 of 2 done") wrap onto the following lines, none of them cut to less than its first word
 - The id links to its bead page

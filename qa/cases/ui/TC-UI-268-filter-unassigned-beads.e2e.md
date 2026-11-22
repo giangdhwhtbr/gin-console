@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-082@5a1bd944
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 9c212425
 
 **Preconditions:**
 - Project `alpha` has a bead assigned to `alice@example.com`, a bead without assignee, and a bead without assignee whose owner is `lead@example.com`

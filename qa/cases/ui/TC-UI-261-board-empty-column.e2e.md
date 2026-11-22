@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-031@5fa5ec1b
 - **Priority:** low
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** dcf6d30c
 
 **Preconditions:**
 - Project `alpha` has beads but none of them is blocked

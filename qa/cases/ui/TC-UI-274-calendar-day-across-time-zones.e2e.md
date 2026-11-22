@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-131@c08d8d6a
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 811e4b72
 
 **Preconditions:**
 - Milestone `m1` of project `alpha` has `end` 2026-12-01

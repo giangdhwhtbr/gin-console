@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-MILESTONE-UI-023@58b09eb6
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 4af6d228
 
 **Preconditions:**
 - Project `P` has active milestone `m1` ending on 1 Dec 2026 with a forecast `finish` of 16 Feb 2027, and an epic `e1` in `m1`

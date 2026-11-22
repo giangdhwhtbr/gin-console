@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-024@be8b68ca
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 35c12905
 
 **Preconditions:**
 - The browser holds the email `giangdhwhtbr@gmail.com` in localStorage under `gin-console.email`

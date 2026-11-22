@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-023@7ee5b152
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 842dbf66
 
 **Preconditions:**
 - Project `example` has beads assigned to `giangdhwhtbr`, `GiangDHWHTBR@gmail.com` and `ann@example.com`

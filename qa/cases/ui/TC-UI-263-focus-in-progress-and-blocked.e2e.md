@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-033@51749fbd
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** ec0251fc
 
 **Preconditions:**
 - Project `alpha` has an in-progress bead `t-1` that is also blocked (status `blocked` or an open blocker)

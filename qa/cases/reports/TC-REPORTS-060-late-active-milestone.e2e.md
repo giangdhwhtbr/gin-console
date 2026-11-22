@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-REPORTS-012@ae27226f
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** d1236adc
 
 **Preconditions:**
 - Project `alpha` has active milestone `m2` whose forecast `finish` in the Milestones list is after its `end`

@@ -1,4 +1,4 @@
-// TC: TC-UI-171@4e23af03
+// TC: TC-UI-171@0736f1cf
 import { test, expect } from '../evidence';
 import { detail, epicPlan, stubApi } from '../support/api';
 import { E12, e12, milestoneOptions, stubDetails } from '../support/lanes';
@@ -27,7 +27,7 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     // the List draws the epic's tracks under it once the epic is opened
     if (!(await row.isVisible())) await page.getByRole('button', { name: `Expand ${E12}` }).click();
     await expect(row).toBeVisible();
-    await expect(row.getByTitle('Lane be')).toHaveText('be');
+    await expect(row.locator('[data-hint^="Lane be"]')).toHaveText('be');
     await noLabelChip();
   });
 
@@ -35,7 +35,7 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     await page.goto('/beads?project=example&milestone=all&view=board&scope=ex-e12');
     const card = page.locator('[data-card]').filter({ hasText: 'Track 2' });
     await expect(card).toHaveCount(1);
-    await expect(card.getByTitle('Lane be')).toHaveText('be');
+    await expect(card.locator('[data-hint^="Lane be"]')).toHaveText('be');
     await noLabelChip();
   });
 
@@ -48,14 +48,14 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     await page.getByRole('button', { name: /^Show \d+ child beads? of ex-e12$/ }).click();
     const child = page.locator(`[data-child="${TRACK}"]`);
     await expect(child).toBeVisible();
-    await expect(child.getByTitle('Lane be')).toHaveText('be');
+    await expect(child.locator('[data-hint^="Lane be"]')).toHaveText('be');
     await noLabelChip();
   });
 
   await ev.step('5. Open /beads/example/ex-e12.2', async () => {
     await page.goto(`/beads/example/${TRACK}`);
     await expect(page.getByRole('heading', { name: 'Track 2' })).toBeVisible();
-    await expect(page.getByRole('main').getByTitle('Lane be').first()).toHaveText('be');
+    await expect(page.getByRole('main').locator('[data-hint^="Lane be"]').first()).toHaveText('be');
     await noLabelChip();
   });
 });

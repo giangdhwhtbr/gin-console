@@ -18,7 +18,7 @@ test('TC-UI-246: Sections in the sidebar (REQ-UI-129)', async ({ page, ev }) => 
       await expect(links.nth(i)).toContainText(name);
     }
     await expect(links.nth(1)).toContainText('41 beads closed');
-    await expect(links.nth(0)).toContainText('of 4 closed');
+    await expect(links.nth(0)).toContainText('of 4 done');
     await expect(sections.locator('[aria-current="page"]')).toHaveCount(1);
     await expect(links.nth(1)).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('tablist')).toHaveCount(0);

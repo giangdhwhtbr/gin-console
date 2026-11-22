@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-104@175784c8
+// TC: TC-MILESTONE-UI-104@323d6988
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -20,14 +20,14 @@ test('TC-MILESTONE-UI-104: Merge gate and lane', async ({ page, ev }) => {
   await ev.step('1. Open /milestones/P/M1', async () => {
     await page.goto('/milestones/P/M1');
     await expect(row).toBeVisible();
-    await expect(row).toContainText('0/1 closed');
+    await expect(row).toContainText('0 of 1 done');
   });
 
   await ev.step('2. Click the expand button of e-1', async () => {
     await page.getByRole('button', { name: 'Show 1 child bead of e-1' }).click();
     const kids = page.locator('[data-child]');
     await expect(kids).toHaveCount(1);
-    await expect(page.locator('[data-child="e-1.1"]').getByTitle('Lane be')).toHaveText('be');
+    await expect(page.locator('[data-child="e-1.1"]').locator('[data-hint^="Lane be"]')).toHaveText('be');
     await expect(page.locator('[data-child="g-1"]')).toHaveCount(0);
   });
 });

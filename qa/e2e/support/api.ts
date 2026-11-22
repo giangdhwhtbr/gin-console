@@ -75,6 +75,23 @@ export const bead = (id: string, o: Partial<BeadSummary> = {}): BeadSummary => (
   child_counts: { total: 0, closed: 0, prep_total: 0, prep_closed: 0 }, ...o,
 });
 
+const isPrep = (b: BeadSummary) => b.labels.includes('prep') && !b.labels.some((l) => l.startsWith('track:') || l.startsWith('req:'));
+
+/**
+ * Fills `child_counts` of each bead from its direct children in `beads`, as the backend does (REQ-BEADS-022): a merge gate
+ * (title `external: …`) is left out, prep tasks are counted apart. A bead whose counts a spec set (not all zero) keeps them.
+ */
+export const withCounts = (beads: BeadSummary[]): BeadSummary[] =>
+  beads.map((b) => {
+    const c = b.child_counts;
+    if (c.total || c.closed || c.prep_total || c.prep_closed) return b;
+    const kids = beads.filter((k) => k.parent === b.id && !k.title.startsWith('external: '));
+    const prep = kids.filter(isPrep);
+    const tracks = kids.filter((k) => !isPrep(k));
+    const done = (l: BeadSummary[]) => l.filter((k) => k.status === 'closed').length;
+    return { ...b, child_counts: { total: tracks.length, closed: done(tracks), prep_total: prep.length, prep_closed: done(prep) } };
+  });
+
 /** A 502 from the milestones API, as the backend sends it (REQ-MILESTONE-UI-008). */
 export const failure = (error: string, cause: 'outdated' | 'tracking' | 'schema' | null = null): Reply => ({
   status: 502, body: { error, cause },
@@ -130,7 +147,8 @@ export async function stubApi(
       if (typeof m === 'function') reply = resolve(m, url);
       else if (m[parts[3]] !== undefined) reply = { body: m[parts[3]] };
     } else if (url.pathname === '/api/beads') {
-      const b = opts.beads ?? [];
+      const all = opts.beads ?? [];
+      const b = typeof all === 'function' ? all : withCounts(all);
       reply = typeof b === 'function'
         ? resolve(b, url)
         : { body: url.searchParams.get('closed') === '1' ? b : b.filter((x) => x.status !== 'closed') };

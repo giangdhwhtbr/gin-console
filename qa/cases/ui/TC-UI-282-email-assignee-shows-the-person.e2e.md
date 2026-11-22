@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-135@6cf0a413
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 31ff2b50
 
 **Preconditions:**
 - Project `alpha` has bead `t-1` assigned to `ann@example.com`

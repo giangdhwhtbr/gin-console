@@ -400,7 +400,7 @@ The List view SHALL show for each row an open/close control when it has children
 
 #### Scenario: Owner is not the assignee
 - GIVEN a bead with owner `lead@example.com` and no assignee
-- WHEN the List view is shown from 1024px
+- WHEN the List view is shown at 1440px
 - THEN its row shows "Unassigned" and not `lead@example.com`
 
 ### REQ-UI-065: Card anatomy

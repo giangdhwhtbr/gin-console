@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-MILESTONE-UI-023@58b09eb6
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 30b6f524
 
 **Preconditions:**
 - Project `P` has milestone `m3` ending on Friday 27 Nov 2026 and closed on 27 Nov 2026, and milestone `m4` with the same end closed on Tuesday 1 Dec 2026

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-031@5fa5ec1b
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** da23ff11
 
 **Preconditions:**
 - Project `alpha` has an in-progress bead and a deferred bead, each with an open blocker

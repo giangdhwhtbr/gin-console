@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-034@2aaf45c7
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 96f255fe
 
 **Preconditions:**
 - Project `alpha` has beads assigned to `bob`, to `alice` and to nobody

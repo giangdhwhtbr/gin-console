@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-053@af5d7038
+// TC: TC-MILESTONE-UI-053@676deb00
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -7,7 +7,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 test('TC-MILESTONE-UI-053: Long title cut with an ellipsis, id and period wrap on a phone', async ({ page, ev }) => {
   const ID = 'gin-workflow-rm-process-hygiene';
   const TITLE = 'Process hygiene: consistent skills, rules that bind where it matters';
-  // The epic has a closed and an open track, so its row shows "1/2 closed".
+  // The epic has a closed and an open track, so its row shows "1 of 2 done".
   await stubApi(page, {
     milestone: { M1: detail([epicPlan(ID, { title: TITLE })]) },
     beads: [
@@ -35,13 +35,13 @@ test('TC-MILESTONE-UI-053: Long title cut with an ellipsis, id and period wrap o
     const title = await row.getByTitle(TITLE, { exact: true }).boundingBox();
     const id = await row.getByTitle(ID).boundingBox();
     const period = await row.getByTitle(/ – /).boundingBox();
-    const closed = await row.getByTitle('1/2 closed', { exact: true }).boundingBox();
+    const closed = await row.getByText('1 of 2 done', { exact: true }).boundingBox();
     if (!title || !id || !period || !closed) throw new Error('a line of the epic row has no box');
     expect(id.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
     expect(period.y).toBeGreaterThanOrEqual(id.y + id.height - 1);
     expect(closed.y).toBeGreaterThanOrEqual(period.y + period.height - 1);
     // The period and the closed tracks are whole; the id may be cut but keeps at least 64 px, so its link stays reachable.
-    for (const line of [row.getByTitle(/ – /), row.getByTitle('1/2 closed', { exact: true })]) {
+    for (const line of [row.getByTitle(/ – /), row.getByText('1 of 2 done', { exact: true })]) {
       expect(await line.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     }
     expect(id.width).toBeGreaterThanOrEqual(64);
