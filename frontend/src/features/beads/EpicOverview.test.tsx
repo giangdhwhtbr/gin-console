@@ -62,14 +62,22 @@ describe("EpicOverview cards", () => {
     expect(legend).toEqual(["Done 4", "In progress 1", "Ready 2", "Blocked 1"]);
   });
 
+  it("REQ-UI-120 REQ-UI-130 Progress reads the child counts: 4 of 8 tracks closed with only the open children loaded", () => {
+    stub();
+    show(ok([epic, ...E12.filter((b) => b.parent === E && b.status !== "closed" && b.waits_for === null)]));
+    expect(card("Progress").getByText(/of 8 tracks closed · 50%/)).toBeInTheDocument();
+    expect(card("Progress").getByText("4")).toBeInTheDocument();
+  });
+
   it("REQ-UI-120 Points, Bugs and Prep: points of the tracks, open bugs and the prep tasks", () => {
     stub();
     const prep = bead(`${E}.11`, { parent: E, labels: ["prep"], status: "closed" });
+    const head = { ...epic, child_counts: { total: 8, closed: 4, prep_total: 1, prep_closed: 1 } };
     const bugs = [
       { id: "b1", title: "x", status: "open", type: "discovered-from" as const },
       { id: "b2", title: "y", status: "closed", type: "discovered-from" as const },
     ];
-    show(ok([...E12, prep]), { bugs });
+    show(ok([...E12, prep]), { bugs }, head);
     const progress = card("Progress");
     expect(progress.getByText("10 of 21 pt done")).toBeInTheDocument();
     expect(progress.getByText("1 open")).toBeInTheDocument();

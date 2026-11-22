@@ -374,6 +374,7 @@ describe("MilestonePage", () => {
   });
 
   const epicBeads = [
+    bead("e-a", { issue_type: "epic", child_counts: { total: 2, closed: 1, prep_total: 0, prep_closed: 0 } }),
     bead("e-a.2", { parent: "e-a", status: "in_progress", title: "Wire the pager" }),
     bead("e-a.1", { parent: "e-a", status: "closed", closed_at: "2026-11-01T04:15:36Z" }),
     bead("e-b.1", { parent: "e-b" }),
@@ -495,6 +496,7 @@ describe("MilestonePage Gantt merge gates", () => {
   it("REQ-MILESTONE-UI-015 merge gate and lane", async () => {
     window.history.replaceState(null, "", "/milestones/alpha/m-1");
     const kids = [
+      bead("e-1", { issue_type: "epic", child_counts: { total: 1, closed: 0, prep_total: 0, prep_closed: 0 } }),
       bead("t-1", { parent: "e-1", lane: "be", labels: ["track:1"] }),
       bead("g-1", { parent: "e-1", title: "external: p#2", waits_for: { plan: "p", number: 2, track_id: null, lane: null } }),
     ];

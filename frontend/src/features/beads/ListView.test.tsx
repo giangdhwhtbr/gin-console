@@ -23,7 +23,7 @@ describe("ListView", () => {
     const id = "ex-payments-provider-migration-and-reconciliation-2026";
     stubBeads(() =>
       json([
-        bead(id, { issue_type: "epic", title: "Payments migration", assignee: "a-very-long-assignee-name", labels: ["p-label"] }),
+        bead(id, { issue_type: "epic", child_counts: { total: 1, closed: 0, prep_total: 1, prep_closed: 0 }, title: "Payments migration", assignee: "a-very-long-assignee-name", labels: ["p-label"] }),
         bead("c-1", { parent: id, title: "Child" }),
         bead("c-2", { parent: id, title: "Prep child", labels: ["prep"] }),
       ]),
@@ -206,7 +206,7 @@ describe("ListView", () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list&closed=1");
     stubBeads(() =>
       json([
-        bead("e-progress", { issue_type: "epic", title: "Progress Epic" }),
+        bead("e-progress", { issue_type: "epic", title: "Progress Epic", child_counts: { total: 5, closed: 3, prep_total: 0, prep_closed: 0 } }),
         bead("k-1", { parent: "e-progress", status: "closed", priority: 1, issue_type: "task", title: "Task 1" }),
         bead("k-2", { parent: "e-progress", status: "closed", priority: 2, issue_type: "bug", title: "Bug 2" }),
         bead("k-3", { parent: "e-progress", status: "closed", priority: 3, issue_type: "feature", title: "Feature 3" }),
@@ -238,11 +238,25 @@ describe("ListView", () => {
     expect(within(tree).getByRole("treeitem", { name: /xss-1/ })).toBeInTheDocument();
   });
 
+  it("REQ-UI-130 a list row shows 3/5 closed from the child counts with Show closed off and the closed children not loaded", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() =>
+      json([
+        bead("e-hid", { issue_type: "epic", title: "Hidden closed", child_counts: { total: 5, closed: 3, prep_total: 0, prep_closed: 0 } }),
+        bead("h-4", { parent: "e-hid", title: "Open 4" }),
+        bead("h-5", { parent: "e-hid", title: "Open 5" }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const tree = await screen.findByRole("tree");
+    expect(within(tree).getByText("3/5 closed")).toBeInTheDocument();
+  });
+
   it("REQ-UI-044 epic with a prep task: track bar, Prep 0/1 and a chip on p-1 only", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list&closed=1");
     stubBeads(() =>
       json([
-        bead("e-1", { issue_type: "epic", title: "Epic" }),
+        bead("e-1", { issue_type: "epic", title: "Epic", child_counts: { total: 2, closed: 1, prep_total: 1, prep_closed: 0 } }),
         bead("t-1", { parent: "e-1", status: "closed", title: "Track 1" }),
         bead("t-2", { parent: "e-1", title: "Track 2" }),
         bead("p-1", { parent: "e-1", title: "Prep 1", labels: ["prep", "prep:mockup"] }),
@@ -262,7 +276,7 @@ describe("ListView", () => {
   it("REQ-UI-044 an epic with only prep tasks shows no track count", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
-      json([bead("e-1", { issue_type: "epic" }), bead("p-1", { parent: "e-1", labels: ["prep"] })]),
+      json([bead("e-1", { issue_type: "epic", child_counts: { total: 0, closed: 0, prep_total: 1, prep_closed: 0 } }), bead("p-1", { parent: "e-1", labels: ["prep"] })]),
     );
     render(<BeadsPage />);
     const tree = await screen.findByRole("tree");
@@ -554,7 +568,7 @@ describe("ListView lanes", () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() =>
       json([
-        bead("e-1", { issue_type: "epic", title: "Checkout" }),
+        bead("e-1", { issue_type: "epic", title: "Checkout", child_counts: { total: 2, closed: 0, prep_total: 0, prep_closed: 0 } }),
         bead("e-1.1", { parent: "e-1", title: "Track one", lane: "be", track: { plan: null, number: 1 }, labels: ["lane:be", "track:1", "x-label"] }),
         bead("e-1.2", { parent: "e-1", title: "No lane" }),
         bead("e-1.3", { parent: "e-1", title: "external: p#2", waits_for: { plan: "p", number: 2, track_id: null, lane: null } }),

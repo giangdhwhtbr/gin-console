@@ -5,11 +5,9 @@ import { CHILDREN, E, E12, t1, t2, t3, t4, TRACKS } from "./epicFixtures";
 import { epicProgress, laneRows, sortTracks, trackRows, workingDaysLeft, type TrackRow } from "./epicOverview";
 
 describe("epicOverview", () => {
-  it("REQ-UI-120 Progress by state: counts closed, total and each state over tracks, not merge gates or prep", () => {
+  it("REQ-UI-120 Progress by state: counts each state over the loaded tracks, not merge gates or prep", () => {
     const prep = bead(`${E}.11`, { parent: E, labels: ["prep"], status: "closed" });
     const p = epicProgress([...CHILDREN, prep]);
-    expect(p.closed).toBe(4);
-    expect(p.total).toBe(8);
     expect(p.byState).toEqual({ done: 4, in_progress: 1, ready: 2, blocked: 1, deferred: 0 });
   });
 
@@ -25,7 +23,6 @@ describe("epicOverview", () => {
 
   it("REQ-UI-120 No points: null when no track has points", () => {
     expect(epicProgress([bead("a"), bead("b", { status: "closed" })]).points).toBeNull();
-    expect(epicProgress([]).total).toBe(0);
   });
 
   it("REQ-UI-120 Milestone forecast late: working days from 20 Nov to 1 Dec 2026, both counted, is 8", () => {

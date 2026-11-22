@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { SizeBadge } from "@/components/SizeBadge";
 import { KindBadge } from "@/features/beads/KindBadge";
 import { LaneChip } from "@/features/beads/LaneChip";
-import { childCounts, isPrep, prepLabel } from "@/features/beads/prep";
+import { isPrep } from "@/features/beads/prep";
+import { prepLabel } from "@/features/beads/progress";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
 import { shortId } from "@/lib/shortId";
@@ -36,6 +37,7 @@ import {
   monthsOf,
   openingDay,
   periodOf,
+  epicProgressOf,
   rowsOf,
   showsSpec,
   sortEpics,
@@ -183,7 +185,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
     });
 
   const epics = sortEpics(plan.epics);
-  const rows = rowsOf(epics, plan.today, expanded, childBeads, wide);
+  const rows = rowsOf(epics, plan.today, expanded, childBeads, wide, epicBeads);
   const height = rows.reduce((sum, r) => sum + r.height, 0);
   const chain = hot === null ? null : chainOf(epics, hot);
   const faded = (id: string) => chain !== null && !chain.has(id);
@@ -405,13 +407,13 @@ function EpicRow({
   const x0 = xOf(axis, days[0]);
   const x1 = endOf(axis, days[days.length - 1]);
   const unestimated = epic.estimate_days === null;
-  const counts = childCounts(kids);
-  const prep = prepLabel(counts);
+  const counts = epicProgressOf(epicBead);
+  const prep = counts.prepTotal > 0 ? prepLabel(counts) : null;
   const left = epic.status === "in_progress" && epic.estimate_days !== null && epic.remaining_days !== null && epic.remaining_days < epic.estimate_days;
   const size = left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate";
   const period = periodOf(epic.planned_start, epic.planned_end, today);
   const tail = tailWidth(x1, stops, axis.width);
-  const closedTracks = `${counts.closedTracks}/${counts.tracks} closed`;
+  const closedTracks = `${counts.done}/${counts.total} closed`;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
     <li data-epic={epic.id} data-faded={faded || undefined} onMouseEnter={onHot} onFocus={onHot} className="flex border-b" style={{ height: row.height }}>
@@ -453,7 +455,7 @@ function EpicRow({
             )}
             <KindBadge kind={kind} className="max-w-full" />
             <span title={period} className="min-w-0 max-w-full shrink truncate">{period}</span>
-            {counts.tracks > 0 && <span title={closedTracks} className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>}
+            {counts.total > 0 && <span title={closedTracks} className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>}
             {prep !== null && <span title={prep} className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>}
             {showsSpec(epic) && epic.spec_confirmed === true && (
               <span title="Spec confirmed" className="flex min-w-0 max-w-full shrink-[8] items-center gap-1 truncate text-state-ready">

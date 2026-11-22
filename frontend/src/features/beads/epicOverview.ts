@@ -10,10 +10,8 @@ export const STATE_ORDER: readonly GraphState[] = ["done", "in_progress", "ready
 
 const isTrack = (b: BeadSummary) => !isPrep(b.labels) && !isMergeGate(b);
 
-/** REQ-UI-120: the tracks among `children` (no prep tasks, no merge gates) by state, and their points; `points` is null when no track has points. */
+/** REQ-UI-120: the loaded tracks among `children` (no prep tasks, no merge gates) by state, and their points; the counts come from `progressOf`; `points` is null when no track has points. */
 export function epicProgress(children: readonly BeadSummary[]): {
-  closed: number;
-  total: number;
   byState: Record<GraphState, number>;
   points: { done: number; total: number } | null;
 } {
@@ -23,8 +21,6 @@ export function epicProgress(children: readonly BeadSummary[]): {
   const pointed = tracks.filter((t) => t.points !== null);
   const sum = (list: readonly BeadSummary[]) => list.reduce((n, t) => n + (t.points ?? 0), 0);
   return {
-    closed: tracks.filter((t) => t.status === "closed").length,
-    total: tracks.length,
     byState,
     points: pointed.length === 0 ? null : { done: sum(pointed.filter((t) => t.status === "closed")), total: sum(pointed) },
   };

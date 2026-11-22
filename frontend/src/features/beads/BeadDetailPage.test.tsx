@@ -301,6 +301,7 @@ describe("BeadDetailPage", () => {
   it("REQ-UI-028 epic with a prep task: progress over tracks, Prep 1/1, chip on p-1 only", async () => {
     const epic = beadDetail("e-1", {
       issue_type: "feature",
+      child_counts: { total: 2, closed: 1, prep_total: 1, prep_closed: 1 },
       children: [
         { id: "t-1", title: "Track 1", status: "closed", type: "parent-child", prep: false },
         { id: "t-2", title: "Track 2", status: "open", type: "parent-child", prep: false },
@@ -323,6 +324,7 @@ describe("BeadDetailPage", () => {
   it("REQ-UI-028 an epic with only prep children shows Prep x/y and no track bar", async () => {
     const epic = beadDetail("e-1", {
       issue_type: "feature",
+      child_counts: { total: 0, closed: 0, prep_total: 1, prep_closed: 0 },
       children: [{ id: "p-1", title: "Prep 1", status: "open", type: "parent-child", prep: true }],
     });
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(epic))));
@@ -334,6 +336,7 @@ describe("BeadDetailPage", () => {
   it("REQ-UI-028 shows epic progress and children, or omits them when absent", async () => {
     const epic = beadDetail("e-1", {
       issue_type: "feature",
+      child_counts: { total: 4, closed: 3, prep_total: 0, prep_closed: 0 },
       children: [
         { id: "c-1", title: "Child 1", status: "closed", type: "parent-child", prep: false },
         { id: "c-2", title: "Child 2", status: "closed", type: "parent-child", prep: false },
@@ -771,11 +774,12 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText("Merged")).toBeInTheDocument();
   });
 
-  it("REQ-UI-116 Not counted as a child (bead page)", async () => {
+  it("REQ-UI-116 REQ-UI-130 Not counted as a child (bead page): the progress reads the child counts", async () => {
     const gate = { plan: "p.md", number: 2, track_id: null, lane: "be" };
     stubFetch(
       beadDetail("a-5", {
         issue_type: "feature",
+        child_counts: { total: 1, closed: 1, prep_total: 0, prep_closed: 0 },
         children: [
           { id: "a-6", title: "T6", status: "closed", type: "parent-child", prep: false },
           { id: "a-7", title: "gate", status: "open", type: "parent-child", prep: false, waits_for: gate },

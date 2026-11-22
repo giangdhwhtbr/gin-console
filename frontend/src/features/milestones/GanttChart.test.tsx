@@ -25,8 +25,18 @@ const MONTH = detail([epicPlan("e-a", { planned_start: "2026-11-02", planned_end
   finish: "2026-11-27",
 });
 
-const drawKids = (kids: Record<string, BeadSummary[]>) =>
-  render(<GanttChart project="alpha" plan={detail([epicPlan("e-a"), epicPlan("e-b")])} preview={false} zoom="all" onZoom={vi.fn()} childBeads={new Map(Object.entries(kids))} />);
+const drawKids = (kids: Record<string, BeadSummary[]>, child_counts: BeadSummary["child_counts"]) =>
+  render(
+    <GanttChart
+      project="alpha"
+      plan={detail([epicPlan("e-a"), epicPlan("e-b")])}
+      preview={false}
+      zoom="all"
+      onZoom={vi.fn()}
+      childBeads={new Map(Object.entries(kids))}
+      epicBeads={new Map([["e-a", bead("e-a", { child_counts })]])}
+    />,
+  );
 const track = (id: string, status = "open") => bead(id, { parent: "e-a", status, labels: ["track:1"] });
 const prep = (id: string, status = "open") => bead(id, { parent: "e-a", status, labels: ["prep"] });
 
@@ -52,8 +62,14 @@ describe("GanttChart", () => {
     expect(within(epicRow("e-c")).getByRole("img", { name: "Open" })).toBeInTheDocument();
   });
 
+  it("REQ-UI-130 the epic row says 3/5 closed from the child counts of its bead, not from the loaded children", () => {
+    const epicBeads = new Map([["e-a", bead("e-a", { child_counts: { total: 5, closed: 3, prep_total: 0, prep_closed: 0 } })]]);
+    render(<GanttChart project="alpha" plan={detail([epicPlan("e-a")])} preview={false} zoom="all" onZoom={vi.fn()} childBeads={new Map([["e-a", [track("e-a.4")]]])} epicBeads={epicBeads} />);
+    expect(epicRow("e-a")).toHaveTextContent("3/5 closed");
+  });
+
   it("REQ-MILESTONE-UI-015 tracks and prep counted apart; prep rows carry a Prep chip", async () => {
-    drawKids({ "e-a": [track("e-a.1", "closed"), track("e-a.2"), prep("e-a.3", "closed"), prep("e-a.4")] });
+    drawKids({ "e-a": [track("e-a.1", "closed"), track("e-a.2"), prep("e-a.3", "closed"), prep("e-a.4")] }, { total: 2, closed: 1, prep_total: 2, prep_closed: 1 });
     expect(epicRow("e-a")).toHaveTextContent("1/2 closed");
     expect(epicRow("e-a")).toHaveTextContent("Prep 1/2");
     await userEvent.click(screen.getByRole("button", { name: /child beads of e-a/ }));
@@ -63,7 +79,7 @@ describe("GanttChart", () => {
   });
 
   it("REQ-MILESTONE-UI-015 an epic with only prep tasks: expand button, Prep x/y, no closed count", () => {
-    drawKids({ "e-a": [prep("e-a.1", "closed"), prep("e-a.2")] });
+    drawKids({ "e-a": [prep("e-a.1", "closed"), prep("e-a.2")] }, { total: 0, closed: 0, prep_total: 2, prep_closed: 1 });
     expect(screen.getByRole("button", { name: /child beads of e-a/ })).toBeInTheDocument();
     expect(epicRow("e-a")).toHaveTextContent("Prep 1/2");
     expect(epicRow("e-a")).not.toHaveTextContent("closed");
@@ -200,6 +216,7 @@ describe("GanttChart", () => {
     planned_end: "2026-11-23",
     warnings: [{ code: "spec_not_ready", days: null, count: null }],
   });
+  const EPIC_BEADS = new Map([["ex-e3", bead("ex-e3", { child_counts: { total: 2, closed: 1, prep_total: 0, prep_closed: 0 } })]]);
   const TRACKS = new Map([["ex-e3", [track("ex-e3.1", "closed"), track("ex-e3.2")].map((b) => ({ ...b, parent: "ex-e3" }))]]);
 
   it("REQ-MILESTONE-UI-013 label column width by window: 300 under 1280, 380 from 1280, 440 from 1600", () => {
@@ -215,7 +232,7 @@ describe("GanttChart", () => {
 
   it("REQ-MILESTONE-UI-013 Wide window: id, then '8 pt · 11d left', cut inside the column, no spec item", () => {
     stubWindow(2000);
-    render(<GanttChart project="alpha" plan={detail([E3], { today: "2026-11-12" })} preview={false} zoom="all" onZoom={vi.fn()} childBeads={TRACKS} />);
+    render(<GanttChart project="alpha" plan={detail([E3], { today: "2026-11-12" })} preview={false} zoom="all" onZoom={vi.fn()} childBeads={TRACKS} epicBeads={EPIC_BEADS} />);
     expect(labelOf("ex-e3").style.width).toBe("440px");
     const meta = labelOf("ex-e3").querySelector<HTMLElement>(":scope > div > span:nth-child(2)");
     expect(meta).toHaveClass("min-w-0", "overflow-hidden", "lg:flex-nowrap");
@@ -354,7 +371,7 @@ describe("GanttChart", () => {
 
 describe("GanttChart lanes", () => {
   it("REQ-MILESTONE-UI-015 REQ-UI-115 merge gate and lane: the child row has the lane chip", async () => {
-    drawKids({ "e-a": [bead("e-a.1", { parent: "e-a", lane: "be", labels: ["track:1"], track: { plan: null, number: 1 } })] });
+    drawKids({ "e-a": [bead("e-a.1", { parent: "e-a", lane: "be", labels: ["track:1"], track: { plan: null, number: 1 } })] }, { total: 1, closed: 0, prep_total: 0, prep_closed: 0 });
     await userEvent.click(screen.getByRole("button", { name: /child bead of e-a/ }));
     const row = document.querySelector<HTMLElement>("[data-child='e-a.1']") ?? document.body;
     expect(within(row).getByTitle("Lane be")).toBeInTheDocument();

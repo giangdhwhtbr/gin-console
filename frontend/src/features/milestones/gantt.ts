@@ -1,5 +1,5 @@
 import type { BeadSummary } from "@/features/beads/api";
-import { childCounts, prepLabel } from "@/features/beads/prep";
+import { progressOf } from "@/features/beads/progress";
 import type { EpicPlan, MilestoneDetail } from "./api";
 import { monthName, plural, shortDate, utcOf } from "./format";
 
@@ -225,10 +225,14 @@ export type Row =
 /** REQ-MILESTONE-UI-013: the spec item of the label, left out when the warnings already say the spec is not confirmed. */
 export const showsSpec = (epic: EpicPlan): boolean => epic.spec_confirmed !== null && !epic.warnings.some((w) => w.code === "spec_not_ready");
 
+/** The progress of an epic's bead; zeros while the bead is not loaded. */
+export const epicProgressOf = (epicBead: BeadSummary | undefined) =>
+  progressOf(epicBead ?? { child_counts: { total: 0, closed: 0, prep_total: 0, prep_closed: 0 } });
+
 /** REQ-MILESTONE-UI-013: below lg the meta items wrap, so the row holds the title and one line per item shown (id, period, tracks, prep, spec). */
-function narrowHeight(epic: EpicPlan, kids: readonly BeadSummary[]): number {
-  const counts = childCounts(kids);
-  const items = 2 + Number(counts.tracks > 0) + Number(prepLabel(counts) !== null) + Number(showsSpec(epic));
+function narrowHeight(epic: EpicPlan, epicBead: BeadSummary | undefined): number {
+  const counts = epicProgressOf(epicBead);
+  const items = 2 + Number(counts.total > 0) + Number(counts.prepTotal > 0) + Number(showsSpec(epic));
   return Math.max(ROW_HEIGHT, LABEL_PADDING + LABEL_LINE * (1 + items));
 }
 
@@ -239,11 +243,12 @@ export function rowsOf(
   expanded: ReadonlySet<string>,
   children: ReadonlyMap<string, readonly BeadSummary[]>,
   wide = true,
+  epicBeads: ReadonlyMap<string, BeadSummary> = new Map(),
 ): Row[] {
   const rows: Row[] = [];
   let top = 0;
   for (const epic of epics) {
-    const base = wide ? ROW_HEIGHT : narrowHeight(epic, children.get(epic.id) ?? []);
+    const base = wide ? ROW_HEIGHT : narrowHeight(epic, epicBeads.get(epic.id));
     const height = base + WARNING_HEIGHT * warningLines(epic, today, null).length;
     rows.push({ kind: "epic", epic, top, height });
     top += height;

@@ -1,7 +1,6 @@
 import type { BeadSummary } from "./api";
 import { boardColumn } from "./columns";
-import { isMergeGate } from "./mergeGates";
-import { isPrep } from "./prep";
+import { progressOf } from "./progress";
 
 export type GraphState = "ready" | "in_progress" | "blocked" | "done" | "deferred";
 export const STATE_LABEL: Record<GraphState, string> = {
@@ -60,7 +59,6 @@ export const graphViewPath = (project: string, bead: Pick<BeadSummary, "id" | "p
   hasKids ? graphViewUrl(project, bead.id, "") : graphViewUrl(project, bead.parent, bead.id);
 
 const byImportance = (a: BeadSummary, b: BeadSummary) => a.priority - b.priority || a.id.localeCompare(b.id);
-const isDone = (b: BeadSummary) => b.status === "closed";
 const indexOf = (beads: readonly BeadSummary[]) => new Map(beads.map((b) => [b.id, b]));
 
 /** The parent of a bead when it is loaded; a bead whose parent is missing counts as top-level. */
@@ -69,19 +67,6 @@ const parentOf = (byId: ReadonlyMap<string, BeadSummary>, b: BeadSummary) =>
 
 const parentIds = (beads: readonly BeadSummary[]) => new Set(beads.flatMap((b) => (b.parent === null ? [] : [b.parent])));
 export const hasChildren = (beads: readonly BeadSummary[], id: string) => beads.some((b) => b.parent === id);
-
-/** "n of m done" over the direct children of each bead that are not prep tasks; the key "" holds the beads without a parent. */
-export function progressOf(beads: readonly BeadSummary[]): Map<string, { done: number; total: number }> {
-  const byId = indexOf(beads);
-  const counts = new Map<string, { done: number; total: number }>();
-  for (const b of beads) {
-    if (isPrep(b.labels) || isMergeGate(b)) continue;
-    const key = parentOf(byId, b) ?? "";
-    const c = counts.get(key) ?? { done: 0, total: 0 };
-    counts.set(key, { done: c.done + (isDone(b) ? 1 : 0), total: c.total + 1 });
-  }
-  return counts;
-}
 
 /** The ancestors of a bead from the top, stopping at a parent loop. */
 export function ancestorsOf(beads: readonly BeadSummary[], id: string): string[] {
@@ -176,7 +161,6 @@ function layout(
   allIds: readonly string[],
   external: ReadonlySet<string>,
   edges: readonly Link[],
-  progress: ReadonlyMap<string, { done: number; total: number }>,
   parents: ReadonlySet<string>,
 ): Pick<Graph, "nodes" | "cycle"> {
   const linkedIds = new Set(edges.flatMap((e) => [e.from, e.to]));
@@ -236,7 +220,7 @@ function layout(
     row.sort((a, b) => (bary.get(a.id) ?? -1) - (bary.get(b.id) ?? -1) || byImportance(a, b));
     row.forEach((b, i) => {
       order.set(b.id, i);
-      const { done, total } = progress.get(b.id) ?? { done: 0, total: 0 };
+      const { done, total } = progressOf(b);
       nodes.push({ bead: b, external: external.has(b.id), layer: d, order: i, done, total, hasKids: parents.has(b.id), group: "layer" });
     });
   }
@@ -245,7 +229,7 @@ function layout(
     .flatMap((id) => byId.get(id) ?? [])
     .sort(byImportance)
     .forEach((b, i) => {
-      const { done, total } = progress.get(b.id) ?? { done: 0, total: 0 };
+      const { done, total } = progressOf(b);
       const layer = linkedLayers + Math.floor(i / UNLINKED_COLUMNS);
       nodes.push({
         bead: b,
@@ -297,7 +281,7 @@ export function scopeGraph(beads: readonly BeadSummary[], scope: string | null, 
   const inside = beads.filter((b) => holder(b.id) === b.id && kept(b.id)).map((b) => b.id);
   const shown = options.onlyLinked ? inside.filter((id) => linked.has(id)) : inside;
   const external = new Set([...linked].filter((id) => holder(id) === null));
-  const { nodes, cycle } = layout(byId, [...shown, ...external], external, edges, progressOf(beads), parentIds(beads));
+  const { nodes, cycle } = layout(byId, [...shown, ...external], external, edges, parentIds(beads));
   return { nodes, edges, cycle, unlinked: inside.length - shown.length };
 }
 
