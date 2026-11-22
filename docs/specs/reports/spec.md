@@ -542,10 +542,12 @@ Source: `assets/2026-11-12/mockup/index.html`
 ## Diagrams
 - [Team tab](diagrams/team-tab-activity.md)
 - [Velocity tab](diagrams/velocity-tab-activity.md)
+- [Rework](diagrams/rework-activity.md)
 
 ## Use Cases
 - [Review the team in a milestone](use-cases/review-team-in-milestone.md)
 - [Review velocity](use-cases/review-velocity.md)
+- [Review rework](use-cases/review-rework.md)
 
 ### REQ-REPORTS-018: Velocity tab
 WHEN the Velocity tab is selected, the frontend SHALL request `GET /api/milestones?project=<p>` (REQ-MILESTONE-UI-008) for the selected project, unless REQ-UI-095 has already loaded it, or for every configured project when "All projects" is selected, and SHALL show for each project (under the project's name when all are selected):

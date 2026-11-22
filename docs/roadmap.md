@@ -108,7 +108,7 @@ Kind: technical
 Complexity: low (deletions in both stacks)
 Goal: Remove two pages nobody reaches and the roadmap no longer needs.
 Scope: Delete the Sessions and Quota pages and routes, their backend contexts, sources, fakes and tests, and their config keys (ignored with a warning if still present); update README, the living specs and the roadmap goals.
-Out of scope: AI cost in Reports, which reads ai_usage and stays.
+Out of scope: AI cost in Reports, which read ai_usage (removed later by gin-console-5c4, decision 2026-11-21).
 Features: Remove the Sessions page; remove the Quota page
 Capabilities: sessions, quota, config, ui
 Legacy: none
@@ -204,7 +204,7 @@ Estimate: 4 (assumed)
 Kind: capability
 Complexity: medium (new aggregates: burn-up and scope changes)
 Goal: A PM gets a milestone status report on one screen.
-Scope: Report sections get their own addresses (status, team, delivery, velocity, rework, AI usage) as sidebar sub-items with their headline value, tabs below 1024px; Quality is renamed Rework. A new default Status section: a one-sentence verdict that reconciles bead pace and epic estimates; KPIs with change since last week; a burn-up of done against scope; changes since kickoff; risks (blocked chains with owners, unestimated epics, specs not confirmed); an epic table with verdict, strand, planned and forecast dates and owner. One scope (milestone or date range) for every section, kept when switching. Team KPI v2: points delivered, estimate accuracy per member, trend across milestones, a note when unassigned work makes per-member numbers unreliable.
+Scope: Report sections get their own addresses (status, team, delivery, velocity, rework) as sidebar sub-items with their headline value, tabs below 1024px; Quality is renamed Rework. A new default Status section: a one-sentence verdict that reconciles bead pace and epic estimates; KPIs with change since last week; a burn-up of done against scope; changes since kickoff; risks (blocked chains with owners, unestimated epics, specs not confirmed); an epic table with verdict, strand, planned and forecast dates and owner. One scope (milestone or date range) for every section, kept when switching. Team KPI v2: points delivered, estimate accuracy per member, trend across milestones, a note when unassigned work makes per-member numbers unreliable.
 Out of scope: Reports across projects.
 Features: Milestone status report; burn-up; scope changes; risks; epic verdicts; week-on-week change; team KPI v2; report sections in the sidebar
 Capabilities: reports
@@ -285,7 +285,7 @@ Kind: capability
 Complexity: low (two local file formats)
 Goal: A lead sees review health and who signed or waived what.
 Scope: Findings across beads from the review ledgers (severity, status, deferrals, follow-up beads) where ledgers exist; gate events (approvals, waivers, shipped) on the epic page and in the overview.
-Out of scope: Projects without ledgers keep the ai_usage counts only.
+Out of scope: Projects without ledgers show no review counts (ai_usage was retired, gin-console-5c4).
 Features: Review findings; gate history
 Capabilities: beads
 Legacy: none
