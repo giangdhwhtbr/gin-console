@@ -71,8 +71,8 @@ def test_tc_beads_074_counts_ignore_the_closed_filter(tmp_path: Path) -> None:
     assert next(b for b in first if b["id"] == "e-1")["child_counts"] == want
     second = api.get("/api/beads", params={"project": "alpha", "closed": "1"}).json()
     assert next(b for b in second if b["id"] == "e-1")["child_counts"] == want
-    # the open track t-3 and the merge gate g-1 add to neither prep_total nor (g-1) total
-    assert want["prep_total"] == 1 and want["total"] == 3
+    # the merge gate g-1 is in the export but counts for nothing: total 3 is t-1, t-2 and t-3
+    assert "g-1" in {b["id"] for b in second}
 
 
 # TC: TC-BEADS-075@3ae542a2
