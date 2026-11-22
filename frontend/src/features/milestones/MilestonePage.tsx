@@ -5,6 +5,7 @@ import { projectHref } from "@/app/project";
 import { usePageTitle } from "@/app/usePageTitle";
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { ProjectGuard } from "@/app/UnknownProject";
+import { Legend } from "@/components/Legend";
 import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
 import { filtersToSearch, parseFilters } from "@/features/beads/filters";
@@ -132,7 +133,10 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
     <header className="flex flex-col gap-1">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-semibold">{plan.title}</h1>
-        <span className="font-mono text-sm text-muted-foreground">{plan.id}</span>
+        <span className="flex items-center gap-3">
+          <span className="font-mono text-sm text-muted-foreground">{plan.id}</span>
+          <Legend />
+        </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <MilestoneStatus status={plan.status} />

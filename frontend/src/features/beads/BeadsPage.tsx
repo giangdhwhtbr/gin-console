@@ -3,6 +3,7 @@ import { isUnknownProject, projectHref, rememberProject, resolveProject } from "
 import { navigate, useLocation } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
+import { Legend } from "@/components/Legend";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, isStale, pullError, pullOf, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
@@ -59,7 +60,10 @@ export function BeadsPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Beads</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl font-semibold">Beads</h1>
+        <Legend />
+      </div>
       {projects.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}
       {projects.status === "error" && (
         <Alert variant="destructive">

@@ -745,7 +745,7 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-5" />);
     const h1 = await screen.findByRole("heading", { name: "Title a-5" });
     const header = h1.parentElement!;
-    expect(within(header).getByTitle("Lane be")).toBeInTheDocument();
+    expect(within(header).getAllByText("be").filter((el) => el.closest("[data-slot='badge']") !== null)).toHaveLength(1);
     expect(within(header).getByText("urgent")).toBeInTheDocument();
     expect(within(header).queryByText("lane:be")).toBeNull();
     expect(within(header).queryByText("track:2")).toBeNull();

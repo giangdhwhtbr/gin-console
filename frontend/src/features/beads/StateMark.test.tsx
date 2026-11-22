@@ -1,5 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { DEFINITIONS } from "@/lib/definitions";
 import { bead } from "./beadFixtures";
 import { StateMark, StateWord, stateEdge } from "./StateMark";
 
@@ -17,9 +18,11 @@ describe("StateMark", () => {
     expect(screen.getByText(label).closest("[data-state]")).toHaveAttribute("data-state", state);
   });
 
-  it("REQ-UI-107 the mark carries its label as title, so a cut label stays readable", () => {
+  it("REQ-UI-132 the mark has no title; its hint says what the state means", () => {
     render(<StateMark bead={bead("b", { status: "in_progress" })} />);
-    expect(screen.getByText("In progress").closest("[data-state]")).toHaveAttribute("title", "In progress");
+    const mark = screen.getByText("In progress").closest("[data-state]");
+    expect(mark).not.toHaveAttribute("title");
+    expect(document.getElementById(mark?.getAttribute("aria-describedby") ?? "")).toHaveTextContent(DEFINITIONS.inProgress);
   });
 
   it("REQ-UI-064 the edge is 4px wide in the colour of the state", () => {
@@ -39,6 +42,7 @@ describe("StateMark", () => {
     const word = screen.getByText("All tracks closed");
     expect(word).toHaveClass("truncate");
     expect(word.parentElement).toHaveClass("max-w-full", "min-w-0");
-    expect(word.parentElement).toHaveAttribute("title", "All tracks closed");
+    expect(word.parentElement).not.toHaveAttribute("title");
+    expect(document.getElementById(word.parentElement?.getAttribute("aria-describedby") ?? "")).toHaveTextContent(`All tracks closed. ${DEFINITIONS.done}`);
   });
 });

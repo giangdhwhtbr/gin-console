@@ -374,6 +374,6 @@ describe("GanttChart lanes", () => {
     drawKids({ "e-a": [bead("e-a.1", { parent: "e-a", lane: "be", labels: ["track:1"], track: { plan: null, number: 1 } })] }, { total: 1, closed: 0, prep_total: 0, prep_closed: 0 });
     await userEvent.click(screen.getByRole("button", { name: /child bead of e-a/ }));
     const row = document.querySelector<HTMLElement>("[data-child='e-a.1']") ?? document.body;
-    expect(within(row).getByTitle("Lane be")).toBeInTheDocument();
+    expect(within(row).getByText("be")).toBeInTheDocument();
   });
 });

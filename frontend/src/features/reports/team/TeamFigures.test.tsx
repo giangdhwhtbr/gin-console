@@ -1,6 +1,8 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import type { MemberFigures, TeamMilestone, TeamTotals } from "../teamApi";
+import { DEFINITIONS } from "@/lib/definitions";
 import { TeamFigures } from "./TeamFigures";
 import { teamReport, teamTotals } from "./teamFixtures";
 
@@ -20,6 +22,18 @@ const line = (text: string) => screen.getByText((_, el) => el?.tagName === "SPAN
 const warnLine = (text: string) => expect(line(text)).toHaveClass("text-state-blocked");
 
 describe("TeamFigures", () => {
+  it("REQ-REPORTS-013 REQ-UI-132 the Open figure has a hint naming the blocked rule", async () => {
+    const user = userEvent.setup();
+    show({ open: 5, blocked: 2 });
+    const open = screen.getByText("5", { selector: "span.text-2xl" });
+    expect(open).toHaveAttribute("tabindex", "0");
+    await user.tab();
+    await user.tab();
+    await user.tab();
+    expect(open).toHaveFocus();
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(DEFINITIONS.blocked);
+  });
+
   it("REQ-REPORTS-013 behind pace", () => {
     show({ pace: 2, pace_needed: 3.4 });
     warn("2.0 / day");

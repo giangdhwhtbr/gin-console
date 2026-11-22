@@ -506,6 +506,6 @@ describe("MilestonePage Gantt merge gates", () => {
     expect(document.querySelector("[data-epic='e-1']")).toHaveTextContent("0/1 closed");
     const rows = [...document.querySelectorAll<HTMLElement>("[data-child]")];
     expect(rows.map((r) => r.dataset.child)).toEqual(["t-1"]);
-    expect(within(rows[0]).getByTitle("Lane be")).toBeInTheDocument();
+    expect(within(rows[0]).getByText("be")).toBeInTheDocument();
   });
 });

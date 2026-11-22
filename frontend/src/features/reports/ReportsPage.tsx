@@ -5,6 +5,7 @@ import { isUnknownProject, projectHref, rememberProject, resolveProject } from "
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
+import { Legend } from "@/components/Legend";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
@@ -170,7 +171,10 @@ export function ReportsPage() {
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Reports</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-xl font-semibold">Reports</h1>
+            <Legend />
+          </div>
           {loaded.status === "ok" && (
             <p className="text-sm text-muted-foreground">
               Generated <time dateTime={loaded.report.generated_at}>{formatDateTime(loaded.report.generated_at)}</time>

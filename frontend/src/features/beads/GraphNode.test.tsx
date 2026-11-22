@@ -6,7 +6,7 @@ import { GraphNodeButton } from "./GraphNode";
 afterEach(cleanup);
 
 describe("GraphNodeButton state label", () => {
-  it("REQ-UI-107 the label text can end with an ellipsis and keeps its full text as title", () => {
+  it("REQ-UI-107 the label text can end with an ellipsis", () => {
     const node = { bead: bead("e-1", { status: "in_progress" }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: true, done: 2, total: 5 };
     render(
       <GraphNodeButton
@@ -21,7 +21,7 @@ describe("GraphNodeButton state label", () => {
     );
     const label = screen.getByText("In progress");
     expect(label).toHaveClass("truncate");
-    expect(label.closest("[data-state]")).toHaveAttribute("title", "In progress");
+    expect(label.closest("[data-state]")).not.toHaveAttribute("title");
     // every ancestor up to the node must be able to shrink, or the ellipsis never draws
     expect(label.closest("[data-state]")).toHaveClass("min-w-0");
     expect(label.closest("[data-state]")?.parentElement).toHaveClass("min-w-0", "flex");
@@ -39,13 +39,13 @@ const place = (b: ReturnType<typeof bead>, showLane?: boolean) => {
 describe("GraphNodeButton lanes", () => {
   it("REQ-UI-115 Chip in every view: a track shows its lane chip, and showLane false hides it", () => {
     place(bead("t-1", { lane: "be" }));
-    expect(screen.getByTitle("Lane be")).toBeInTheDocument();
+    expect(screen.getByText("be")).toBeInTheDocument();
     cleanup();
     place(bead("t-1", { lane: "be" }), false);
-    expect(screen.queryByTitle("Lane be")).toBeNull();
+    expect(screen.queryByText("be")).toBeNull();
     cleanup();
     place(bead("t-2"));
-    expect(screen.queryByTitle(/^Lane /)).toBeNull();
+    expect(screen.queryByText("be")).toBeNull();
   });
 
   it("REQ-UI-116 Merge gate node: dashed, words and state, edge colour kept", () => {

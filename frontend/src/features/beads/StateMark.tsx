@@ -1,4 +1,6 @@
 import { Ban, Check, CircleCheck, CircleDot, Clock } from "lucide-react";
+import { Hint } from "@/components/ui/tooltip";
+import { DEFINITIONS } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { STATE_LABEL, stateOf, type GraphState } from "./graph";
@@ -10,6 +12,13 @@ const TEXT: Record<GraphState, string> = {
   blocked: "text-state-blocked",
   done: "text-state-done",
   deferred: "text-state-deferred",
+};
+const DEFINITION: Record<GraphState, string> = {
+  ready: DEFINITIONS.ready,
+  in_progress: DEFINITIONS.inProgress,
+  blocked: DEFINITIONS.blocked,
+  done: DEFINITIONS.done,
+  deferred: DEFINITIONS.deferred,
 };
 const EDGE: Record<GraphState, string> = {
   ready: "border-l-state-ready",
@@ -26,10 +35,12 @@ export function StateMark({ bead, className }: { bead: BeadSummary; className?: 
   const state = stateOf(bead);
   const Icon = ICON[state];
   return (
-    <span data-state={state} title={STATE_LABEL[state]} className={cn("inline-flex min-w-0 items-center gap-1 font-medium", TEXT[state], className)}>
-      <Icon aria-hidden className="size-3.5" />
-      <span className="truncate">{STATE_LABEL[state]}</span>
-    </span>
+    <Hint text={DEFINITION[state]}>
+      <span data-state={state} className={cn("inline-flex min-w-0 items-center gap-1 font-medium", TEXT[state], className)}>
+        <Icon aria-hidden className="size-3.5" />
+        <span className="truncate">{STATE_LABEL[state]}</span>
+      </span>
+    </Hint>
   );
 }
 
@@ -37,9 +48,11 @@ export function StateMark({ bead, className }: { bead: BeadSummary; className?: 
 export function StateWord({ state, words, className }: { state: GraphState; words: string; className?: string }) {
   const Icon = ICON[state];
   return (
-    <span data-state={state} title={words} className={cn("inline-flex max-w-full min-w-0 items-center gap-1 font-medium", TEXT[state], className)}>
-      <Icon aria-hidden className="size-3.5 shrink-0" />
-      <span className="truncate">{words}</span>
-    </span>
+    <Hint text={words === STATE_LABEL[state] ? DEFINITION[state] : `${words}. ${DEFINITION[state]}`}>
+      <span data-state={state} className={cn("inline-flex max-w-full min-w-0 items-center gap-1 font-medium", TEXT[state], className)}>
+        <Icon aria-hidden className="size-3.5 shrink-0" />
+        <span className="truncate">{words}</span>
+      </span>
+    </Hint>
   );
 }

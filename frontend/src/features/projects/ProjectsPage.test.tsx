@@ -405,7 +405,8 @@ describe("ProjectsPage", () => {
       const at = pullAt(120);
       await load([project({ name: "A", beads, pull: { at, status: "ok", error: null } })]);
       const line = within(cardOf("A")).getByText("pulled 2 minutes ago");
-      expect(line).toHaveAttribute("title", formatDateTime(at));
+      expect(line).not.toHaveAttribute("title");
+      expect(document.getElementById(line.getAttribute("aria-describedby") ?? "")).toHaveTextContent(formatDateTime(at));
     });
 
     it("REQ-BEADS-018 No remote: the card shows no Dolt remote and no error", async () => {
