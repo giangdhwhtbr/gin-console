@@ -377,6 +377,10 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 - [Milestone velocity](diagrams/milestone-velocity-activity.md)
 - [Milestone status](diagrams/milestone-state.md)
 - [Milestone status and late mark](diagrams/milestone-status-activity.md)
+- [Gantt verdict](diagrams/gantt-verdict-activity.md)
+
+## Use Cases
+- [Read the verdict of a Gantt row](use-cases/read-gantt-verdict.md)
 
 ### REQ-MILESTONE-UI-016: Project forecast card
 WHEN the Milestones list of a project has a non-null `forecast`, gin-console SHALL show a forecast card above the milestone list with:

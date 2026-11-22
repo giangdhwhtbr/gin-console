@@ -1643,6 +1643,7 @@ The frontend SHALL show on every page a "Refresh data" control, in the top bar b
 - [Readability check](diagrams/readability-check-activity.md)
 - [Lanes view](diagrams/lanes-view-activity.md)
 - [Lane state](diagrams/lane-state.md)
+- [Progress strand](diagrams/strand-activity.md)
 - [Lane clusters](diagrams/lane-clusters-activity.md)
 - [Epic page](diagrams/epic-page-activity.md)
 - [Legend and tooltips](diagrams/legend-tooltip-activity.md)
