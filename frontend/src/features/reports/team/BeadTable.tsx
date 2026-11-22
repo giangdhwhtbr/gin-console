@@ -7,7 +7,8 @@ import { Tabs } from "@/components/Tabs";
 import { cn } from "@/lib/utils";
 import type { BeadStatus } from "../filters";
 import { beadPath, formatDays } from "../format";
-import { UNASSIGNED, type TeamBead } from "../teamApi";
+import { AssigneeName } from "../../beads/AssigneeName";
+import type { TeamBead } from "../teamApi";
 import { ageOf, COLUMNS, DEFAULT_SORT, sortBeads, type Column, type Dir } from "./beadSort";
 import { formatDate } from "@/lib/dates";
 import { WARN_DAYS } from "./format";
@@ -71,7 +72,9 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
     case "type":
       return <TableCell className="text-sm text-muted-foreground">{bead.issue_type}</TableCell>;
     case "assignee":
-      return <TableCell className={cn("text-sm", bead.assignee === null && "text-muted-foreground")}>{bead.assignee ?? UNASSIGNED}</TableCell>;
+      return <TableCell className="text-sm">
+          <AssigneeName assignee={bead.assignee} />
+        </TableCell>;
     case "priority":
       return <TableCell className="font-mono text-sm">{bead.priority === null ? "—" : `P${bead.priority}`}</TableCell>;
     case "status":

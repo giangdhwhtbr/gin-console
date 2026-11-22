@@ -220,7 +220,7 @@ describe("EpicOverview lanes and tracks", () => {
     expect(screen.getAllByText("No lane")).toHaveLength(2);
   });
 
-  it("REQ-UI-121 Tracks table: 8 rows by id, no 'Waits for', and ex-e12.4 reads Blocked, qa, Unclaimed and be #2 · merge pending", () => {
+  it("REQ-UI-121 Tracks table: 8 rows by id, no 'Waits for', and ex-e12.4 reads Blocked, qa, Unassigned and be #2 · merge pending", () => {
     stub();
     show();
     const rows = screen.getAllByRole("row").slice(1);
@@ -231,7 +231,7 @@ describe("EpicOverview lanes and tracks", () => {
     expect(row.getByRole("link", { name: t4.id })).toHaveAttribute("href", `/beads/example/${t4.id}`);
     expect(row.getByText("Blocked")).toBeInTheDocument();
     expect(row.getByText("qa")).toBeInTheDocument();
-    expect(row.getByText("Unclaimed")).toBeInTheDocument();
+    expect(row.getByText("Unassigned")).toHaveClass("text-muted-foreground");
     expect(row.getByText("be #2 · merge pending")).toBeInTheDocument();
     expect(g2.id).toBe(`${E}.9`);
     expect(within(rows[0]).getByText("Order API")).toHaveAttribute("title", "Order API");

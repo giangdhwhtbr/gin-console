@@ -77,7 +77,7 @@ describe("columns", () => {
   });
 
   // REQ-UI-034
-  it("REQ-UI-034 one row per assignee that has work, 'No assignee' last, empty rows left out", () => {
+  it("REQ-UI-034 one row per assignee that has work, 'Unassigned' last, empty rows left out", () => {
     const rows = focusRows(
       [
         bead("1", { assignee: "bob", status: "in_progress" }),
@@ -88,18 +88,26 @@ describe("columns", () => {
       ],
       "assignee",
     );
-    expect(rows.map((r) => r.title)).toEqual(["alice", "bob", "No assignee"]);
+    expect(rows.map((r) => r.title)).toEqual(["alice", "bob", "Unassigned"]);
     expect(ids(rows[2]?.columns.next_up ?? []).sort()).toEqual(["3", "4"]);
   });
 
-  it("focusRows uses owner as fallback when assignee is not set", () => {
+  it("REQ-UI-034 groups an email and its handle in one row", () => {
     const rows = focusRows(
       [
-        bead("1", { assignee: null, owner: "dave", status: "in_progress" }),
+        bead("1", { assignee: "Alice@Example.com", status: "in_progress" }),
+        bead("2", { assignee: "alice", blocked: true }),
       ],
       "assignee",
     );
-    expect(rows.map((r) => r.title)).toEqual(["dave"]);
+    expect(rows.map((r) => r.title)).toEqual(["alice"]);
+    expect(ids(rows[0]?.columns.in_flight ?? [])).toEqual(["1"]);
+    expect(ids(rows[0]?.columns.blocked ?? [])).toEqual(["2"]);
+  });
+
+  it("REQ-UI-034 REQ-UI-135 never groups by owner", () => {
+    const rows = focusRows([bead("1", { assignee: null, owner: "dave", status: "in_progress" })], "assignee");
+    expect(rows.map((r) => r.title)).toEqual(["Unassigned"]);
   });
 
   // REQ-UI-034

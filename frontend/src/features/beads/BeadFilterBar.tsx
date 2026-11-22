@@ -4,7 +4,7 @@ import { LabelsPopover } from "./LabelsPopover";
 import { MilestoneFilter } from "./MilestoneFilter";
 import { MobileFiltersSheet } from "./MobileFiltersSheet";
 import { MultiSelectPopover } from "./MultiSelectPopover";
-import { KIND_OPTIONS, type BeadFilters, type BeadOptions } from "./filters";
+import { assigneeLabel, KIND_OPTIONS, type BeadFilters, type BeadOptions } from "./filters";
 import type { MilestoneInEffect, MilestonesState } from "./milestoneChoice";
 
 const same = (value: string) => ({ value, label: value });
@@ -118,7 +118,7 @@ export function BeadFilterBar({
           values={filters.assignee}
           options={options.assignees.map((a) => ({
             value: a,
-            label: a === "unassigned" ? "Unassigned" : a,
+            label: assigneeLabel(a),
           }))}
           onChange={(assignee) => set({ assignee })}
         />

@@ -441,8 +441,8 @@ describe("BeadsPage", () => {
       status: "open",
       ready: true,
       labels: ["core"],
-      assignee: null,
-      owner: "bob",
+      assignee: "bob",
+      owner: "carol",
     });
     stub(() => json([p2, p1]));
     render(<BeadsPage />);

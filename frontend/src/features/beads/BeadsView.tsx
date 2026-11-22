@@ -1,10 +1,11 @@
 import { useCallback, useMemo } from "react";
+import { useEmail } from "@/app/identity";
 import { useRestoreOnBack } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { BeadFilterBar } from "./BeadFilterBar";
 import { BoardView } from "./BoardView";
-import { filterBeads, optionsOf, sortBeads, type BeadFilters } from "./filters";
+import { filterBeads, optionsOf, resolveMe, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
 import { GraphView } from "./GraphView";
 import { LanesView } from "./LanesView";
@@ -43,6 +44,7 @@ export function BeadsView({
   const clearSearch = useCallback(() => onChange({ ...filters, q: "" }), [filters, onChange]);
   useCardKeys(true, clearSearch, filters.view !== "list");
 
+  const email = useEmail();
   const milestones = useMilestones(project);
   const milestone = fixedMilestone ?? milestoneInEffect(filters.milestone, milestones);
   const closedMilestone = isClosedMilestone(milestone, milestones);
@@ -60,7 +62,7 @@ export function BeadsView({
   // Merge gates are not work: only the Graph keeps them (REQ-UI-116).
   const withGates = loaded.filter((b) => b.issue_type !== "milestone");
   const beads = withoutMergeGates(withGates);
-  const withClosed = { ...filters, closed: filters.closed || closedMilestone };
+  const withClosed = { ...resolveMe(filters, email), closed: filters.closed || closedMilestone };
   const shown = sortBeads(filterBeads(beads, withClosed, milestone));
   // Beads outside the milestone stay in the graph, so the milestone filters only the project scope.
   const matchedMilestone = milestone === "all" || milestone === "none" ? milestone : "all";

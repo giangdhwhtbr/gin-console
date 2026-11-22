@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
 import { cn } from "@/lib/utils";
+import { AssigneeName } from "./AssigneeName";
 import { CountBadge } from "./CountBadge";
 import { KindBadge } from "./KindBadge";
 import { LaneChip } from "./LaneChip";
@@ -122,9 +123,7 @@ export function ListRow({
           <CountBadge kind="comments" count={bead.comment_count} />
           <CountBadge kind="dependencies" count={bead.dependency_count} />
         </span>
-        <span className="hidden truncate text-muted-foreground @4xl:block" title={bead.assignee ?? bead.owner ?? ""}>
-          {bead.assignee ?? bead.owner ?? ""}
-        </span>
+        <AssigneeName assignee={bead.assignee} className="hidden truncate text-muted-foreground @4xl:block" />
         <span className="hidden text-xs text-muted-foreground @4xl:block">{formatDate(bead.updated_at)}</span>
       </div>
     </li>

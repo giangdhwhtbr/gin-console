@@ -7,6 +7,8 @@ import { SizeBadge } from "@/components/SizeBadge";
 import { formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { BeadDetail } from "./api";
+import { personOf } from "@/lib/people";
+import { AssigneeName } from "./AssigneeName";
 import { complexityOf } from "./complexity";
 import { graphViewPath } from "./graph";
 import { KindBadge } from "./KindBadge";
@@ -27,9 +29,8 @@ export function BeadHeader({ project, bead }: { project: string; bead: BeadDetai
     { label: "Lease", value: lease?.text ?? null },
     { label: "Placeholder", value: gate === null ? null : bead.title },
     { label: "Waits for", value: gate === null ? null : `${gate.plan} #${gate.number}` },
-    { label: "Owner", value: bead.owner },
-    { label: "Assignee", value: bead.assignee },
-    { label: "Created by", value: bead.created_by },
+    { label: "Assignee", value: <AssigneeName assignee={bead.assignee} />, title: bead.assignee ?? undefined },
+    { label: "Created by", value: personOf(bead.created_by) ?? personOf(bead.owner) },
     { label: "Created", value: formatDateTime(bead.created_at) },
     { label: "Updated", value: formatDateTime(bead.updated_at) },
     { label: "Comments", value: bead.comment_count },

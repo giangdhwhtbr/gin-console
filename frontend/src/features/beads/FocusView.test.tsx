@@ -102,7 +102,7 @@ describe("FocusView", () => {
 
     const aliceSection = screen.getByRole("region", { name: "alice" });
     const bobSection = screen.getByRole("region", { name: "bob" });
-    const nobodySection = screen.getByRole("region", { name: "No assignee" });
+    const nobodySection = screen.getByRole("region", { name: "Unassigned" });
 
     expect(aliceSection).toBeInTheDocument();
     expect(bobSection).toBeInTheDocument();
@@ -110,8 +110,8 @@ describe("FocusView", () => {
     expect(screen.queryByRole("region", { name: "charlie" })).not.toBeInTheDocument();
 
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    const rowHeadings = headings.filter((text) => text === "alice" || text === "bob" || text === "No assignee");
-    expect(rowHeadings).toEqual(["alice", "bob", "No assignee"]);
+    const rowHeadings = headings.filter((text) => text === "alice" || text === "bob" || text === "Unassigned");
+    expect(rowHeadings).toEqual(["alice", "bob", "Unassigned"]);
 
     expect(within(aliceSection).getByRole("link", { name: "Alice in flight" })).toBeInTheDocument();
     expect(within(bobSection).getByRole("link", { name: "Bob in flight" })).toBeInTheDocument();

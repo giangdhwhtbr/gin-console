@@ -237,9 +237,9 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText("frontend")).toBeInTheDocument();
     expect(screen.getByText("urgent")).toBeInTheDocument();
 
-    const facts = within(header).getByText("Owner").closest("dl");
+    const facts = within(header).getByText("Assignee").closest("dl");
     if (facts === null) throw new Error("the facts are missing");
-    expect(facts).toHaveTextContent("Owner" + "alice");
+    expect(within(facts).queryByText("Owner")).toBeNull();
     expect(facts).toHaveTextContent("Assignee" + "bob");
     expect(within(facts).getByText("11 May, 16:00")).toBeInTheDocument();
     expect(within(facts).getByText(formatDateTime(updated_at, "2026-11-22"))).toBeInTheDocument();
@@ -457,9 +457,19 @@ describe("BeadDetailPage", () => {
   });
 
   // REQ-UI-038
+  it("REQ-UI-028 REQ-UI-135 the creator falls back to the owner's person, and no assignee reads Unassigned", async () => {
+    stubFetch(beadDetail("a-5", { created_by: null, owner: "Lead@Example.com", assignee: null, comment_count: 0 }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    expect(screen.getByText("Created by").nextElementSibling).toHaveTextContent("lead");
+    expect(screen.getByText("Assignee").nextElementSibling).toHaveTextContent("Unassigned");
+    expect(screen.queryByText("Owner")).not.toBeInTheDocument();
+  });
+
   it("REQ-UI-038 no author", async () => {
     const bead = beadDetail("a-5", {
       created_by: null,
+      owner: null,
       comment_count: 0,
     });
     stubFetch(bead);
@@ -697,19 +707,18 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText("P1")).toBeInTheDocument();
     expect(screen.getByText("5 pt")).toBeInTheDocument();
     expect(screen.getByText("new endpoint and UI")).toBeInTheDocument();
-    const facts = screen.getByText("Owner").closest("dl");
+    const facts = screen.getByText("Assignee").closest("dl");
     if (facts === null) throw new Error("the facts are missing");
     const pairs = Array.from(facts.querySelectorAll("dt")).map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]);
     expect(pairs).toEqual([
-      ["Owner", "lead@example.com"],
       ["Assignee", "bao"],
       ["Created by", "lead"],
       ["Created", "11 May, 16:00"],
       ["Updated", "11 May, 16:00"],
       ["Comments", "0"],
     ]);
-    expect(within(facts).getByText("lead@example.com")).toHaveClass("text-foreground", "font-medium");
-    expect(within(facts).getByText("Owner")).toHaveClass("text-muted-foreground");
+    expect(within(facts).getByText("bao").closest("dd")).toHaveClass("text-foreground", "font-medium");
+    expect(within(facts).getByText("Assignee")).toHaveClass("text-muted-foreground");
     expect(screen.queryByText(/ · /)).toBeNull();
   });
 

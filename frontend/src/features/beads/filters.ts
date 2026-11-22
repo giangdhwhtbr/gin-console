@@ -1,4 +1,5 @@
 import type { BeadKind, BeadSummary } from "./api";
+import { personOf } from "@/lib/people";
 import { matchesMilestone, type MilestoneInEffect } from "./milestoneChoice";
 
 export const VIEWS = ["list", "board", "focus", "graph", "lanes"] as const;
@@ -91,15 +92,19 @@ export function filtersToSearch(filters: BeadFilters): string {
   return text === "" ? "" : `?${text}`;
 }
 
-export const effectiveAssignee = (bead: BeadSummary): string | null => {
-  const val =
-    bead.assignee && bead.assignee.trim() !== ""
-      ? bead.assignee
-      : bead.owner && bead.owner.trim() !== ""
-        ? bead.owner
-        : null;
-  return val ? val.trim() : null;
-};
+/** The label of an Assignee option (REQ-UI-082). */
+export const assigneeLabel = (value: string): string =>
+  value === "me" ? "Me" : value === "unassigned" ? "Unassigned" : value;
+
+/** Replaces `me` with the person of the email, or drops it when there is no email (REQ-BEADS-024). */
+export function resolveMe(filters: BeadFilters, email: string | null): BeadFilters {
+  if (!filters.assignee.includes("me")) return filters;
+  const me = personOf(email);
+  return {
+    ...filters,
+    assignee: filters.assignee.flatMap((a) => (a !== "me" ? [a] : me === null ? [] : [me])),
+  };
+}
 
 /** The bead itself when it is an epic, else its nearest epic ancestor among `byId`; null when there is none. */
 function nearestEpic(bead: BeadSummary, byId: ReadonlyMap<string, BeadSummary>): BeadSummary | null {
@@ -181,10 +186,8 @@ export function filterBeads(
 
     // Assignee filter: matches if bead matches ANY selected assignee
     if (filters.assignee.length > 0) {
-      const assigned = effectiveAssignee(bead);
-      const match = filters.assignee.some((a) =>
-        a === "unassigned" ? !assigned : assigned === a,
-      );
+      const assigned = personOf(bead.assignee);
+      const match = filters.assignee.some((a) => (a === "unassigned" ? assigned === null : assigned === personOf(a)));
       if (!match) return false;
     }
 
@@ -222,12 +225,9 @@ export function optionsOf(beads: readonly BeadSummary[]) {
   const unique = <T,>(values: T[], compare: (a: T, b: T) => number) => [...new Set(values)].sort(compare);
   const text = (a: string, b: string) => a.localeCompare(b);
 
-  const rawAssignees = beads
-    .map(effectiveAssignee)
-    .filter((a): a is string => a !== null);
-  const sortedAssignees = unique(rawAssignees, text);
-  const hasUnassigned = beads.some((b) => !effectiveAssignee(b));
-  const assignees = hasUnassigned ? ["unassigned", ...sortedAssignees] : sortedAssignees;
+  const persons = beads.map((b) => personOf(b.assignee)).filter((a): a is string => a !== null);
+  const hasUnassigned = beads.some((b) => personOf(b.assignee) === null);
+  const assignees = ["me", ...(hasUnassigned ? ["unassigned"] : []), ...unique(persons, text)];
 
   const rawStatuses: string[] = [];
   for (const b of beads) {

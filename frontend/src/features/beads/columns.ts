@@ -1,4 +1,5 @@
 import type { DefinitionKey } from "@/lib/definitions";
+import { personOf } from "@/lib/people";
 import type { BeadSummary } from "./api";
 
 export const DONE_LIMIT = 20;
@@ -80,7 +81,7 @@ export function focusColumns(beads: readonly BeadSummary[]): Record<FocusColumnK
 
 export type FocusRow = { title: string | null; columns: Record<FocusColumnKey, BeadSummary[]> };
 
-const assigneeOf = (bead: BeadSummary) => (bead.assignee ?? bead.owner ?? "").trim();
+const assigneeOf = (bead: BeadSummary) => personOf(bead.assignee) ?? "";
 const hasWork = (columns: Record<FocusColumnKey, BeadSummary[]>) => Object.values(columns).some((l) => l.length > 0);
 
 export function focusRows(beads: readonly BeadSummary[], group: "" | "assignee"): FocusRow[] {
@@ -90,6 +91,6 @@ export function focusRows(beads: readonly BeadSummary[], group: "" | "assignee")
     title: name,
     columns: focusColumns(beads.filter((b) => assigneeOf(b) === name)),
   }));
-  rows.push({ title: "No assignee", columns: focusColumns(beads.filter((b) => assigneeOf(b) === "")) });
+  rows.push({ title: "Unassigned", columns: focusColumns(beads.filter((b) => assigneeOf(b) === "")) });
   return rows.filter((row) => hasWork(row.columns));
 }
