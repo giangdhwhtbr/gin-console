@@ -58,7 +58,7 @@ export function MobileFiltersSheet({
           <div className="space-y-4 text-sm">
             {/* Status */}
             <div>
-              <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Status</div>
+              <div className="font-medium text-13 text-muted-foreground mb-2">Status</div>
               <div className="flex flex-wrap gap-1.5">
                 {options.statuses.map((status) => {
                   const selected = filters.status.includes(status);
@@ -83,7 +83,7 @@ export function MobileFiltersSheet({
 
             {/* Priority */}
             <div>
-              <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Priority</div>
+              <div className="font-medium text-13 text-muted-foreground mb-2">Priority</div>
               <div className="flex flex-wrap gap-1.5">
                 {options.priorities.map((p) => {
                   const strP = String(p);
@@ -111,7 +111,7 @@ export function MobileFiltersSheet({
             {options.labels.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="font-medium text-xs text-muted-foreground uppercase">Labels</div>
+                  <div className="font-medium text-13 text-muted-foreground">Labels</div>
                   <div className="inline-flex rounded border bg-muted p-0.5 text-xs">
                     <button
                       type="button"
@@ -164,7 +164,7 @@ export function MobileFiltersSheet({
 
             {/* Assignee */}
             <div>
-              <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Assignee</div>
+              <div className="font-medium text-13 text-muted-foreground mb-2">Assignee</div>
               <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                 {options.assignees.map((assignee) => {
                   const selected = filters.assignee.includes(assignee);
@@ -191,7 +191,7 @@ export function MobileFiltersSheet({
             {/* Sprint (hidden if no sprints exist) */}
             {options.sprints.length > 0 && (
               <div>
-                <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Sprint</div>
+                <div className="font-medium text-13 text-muted-foreground mb-2">Sprint</div>
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
@@ -243,7 +243,7 @@ export function MobileFiltersSheet({
 
             {/* Kind */}
             <div role="group" aria-label="Kind">
-              <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Kind</div>
+              <div className="font-medium text-13 text-muted-foreground mb-2">Kind</div>
               <div className="flex flex-wrap gap-1.5">
                 {[{ value: "" as const, label: "All" }, ...KIND_OPTIONS].map((o) => (
                   <button
@@ -266,7 +266,7 @@ export function MobileFiltersSheet({
             {/* Capability (hidden if no bead has one) */}
             {options.capabilities.length > 0 && (
               <div role="group" aria-label="Capability">
-                <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Capability</div>
+                <div className="font-medium text-13 text-muted-foreground mb-2">Capability</div>
                 <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                   {options.capabilities.map((cap) => (
                     <button
@@ -290,7 +290,7 @@ export function MobileFiltersSheet({
             {/* Type */}
             {options.types.length > 0 && (
               <div>
-                <div className="font-medium text-xs text-muted-foreground uppercase mb-2">Type</div>
+                <div className="font-medium text-13 text-muted-foreground mb-2">Type</div>
                 <div className="flex flex-wrap gap-1.5">
                   <button
                     type="button"
@@ -341,7 +341,7 @@ export function MobileFiltersSheet({
             <button
               type="button"
               onClick={onClear}
-              className="text-sm text-muted-foreground hover:text-foreground font-medium underline-offset-2 hover:underline cursor-pointer"
+              className="text-sm text-muted-foreground hover:text-foreground font-medium cursor-pointer"
             >
               Clear all
             </button>

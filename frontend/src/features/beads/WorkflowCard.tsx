@@ -84,7 +84,7 @@ export function WorkflowCard({ project, id }: { project: string; id: string }) {
       {state.status === "error" && (
         <p className="m-0 flex flex-wrap items-center gap-2 text-sm text-destructive">
           <span className="min-w-0 wrap-anywhere">{state.error.message}</span>
-          <button type="button" className="underline" onClick={retry}>
+          <button type="button" className="hover:text-identity" onClick={retry}>
             Retry
           </button>
         </p>

@@ -135,7 +135,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
       <MilestoneStatus status={m.status} />
       <span className="flex min-w-0 items-baseline gap-2">
         <span title={m.title} className="min-w-0 truncate font-medium">
-          <Link to={milestonePath(project, m.id)} className="underline-offset-2 hover:underline">
+          <Link to={milestonePath(project, m.id)} className="hover:text-identity">
             {m.title}
           </Link>
         </span>

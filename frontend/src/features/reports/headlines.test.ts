@@ -35,8 +35,8 @@ describe("report headlines", () => {
     const onTime = { ...t, milestones: t.milestones.map((m) => (m.id === "m1" ? { ...m, closed_on: "2026-10-30" } : m)), milestone: "m1" };
     expect(teamHeadline(onTime, null)).toEqual({ text: "Finished on time", warn: false });
     expect(teamHeadline({ ...t, milestone: "m3" }, null)).toEqual({ text: "Starts 30 Nov", warn: false });
-    expect(teamHeadline({ ...t, team: { ...team, closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 } }, null)).toEqual({ text: "27 of 64 done · on pace", warn: false });
-    expect(teamHeadline({ ...t, team: { ...team, closed: 27, scope: 64, pace: 3.4, pace_needed: 3.6 } }, null)).toEqual({ text: "27 of 64 done · behind pace", warn: true });
+    expect(teamHeadline({ ...t, team: { ...team, closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 } }, null)).toEqual({ text: "27 of 64 done, on pace", warn: false });
+    expect(teamHeadline({ ...t, team: { ...team, closed: 27, scope: 64, pace: 3.4, pace_needed: 3.6 } }, null)).toEqual({ text: "27 of 64 done, behind pace", warn: true });
     expect(teamHeadline({ ...t, milestones: [], milestone: null, team: null }, null)).toEqual({ text: "No milestones", warn: false });
     expect(figures("team", base)).toEqual([]);
     expect(figures("quality", base)).toEqual([]);
@@ -45,11 +45,11 @@ describe("report headlines", () => {
   it("REQ-UI-095 late milestone headline: by the forecast, or by today after the end", () => {
     const t = teamReport();
     const team = { ...teamTotals, closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 };
-    expect(teamHeadline({ ...t, team }, "2027-02-16")).toEqual({ text: "27 of 64 done · late", warn: true });
-    expect(teamHeadline({ ...t, team }, "2026-11-27")).toEqual({ text: "27 of 64 done · on pace", warn: false });
-    expect(teamHeadline({ ...t, team }, null)).toEqual({ text: "27 of 64 done · on pace", warn: false });
+    expect(teamHeadline({ ...t, team }, "2027-02-16")).toEqual({ text: "27 of 64 done, late", warn: true });
+    expect(teamHeadline({ ...t, team }, "2026-11-27")).toEqual({ text: "27 of 64 done, on pace", warn: false });
+    expect(teamHeadline({ ...t, team }, null)).toEqual({ text: "27 of 64 done, on pace", warn: false });
     const past = { ...t, today: "2026-11-30", team: { ...team, pace: 3.4, pace_needed: 3.6 } };
-    expect(teamHeadline(past, null)).toEqual({ text: "27 of 64 done · late", warn: true });
+    expect(teamHeadline(past, null)).toEqual({ text: "27 of 64 done, late", warn: true });
   });
   it("REQ-MILESTONE-UI-023 a milestone closed on the weekend after its end is finished on time", () => {
     const t = teamReport();

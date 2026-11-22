@@ -29,7 +29,7 @@ export function LaneSummary({ beads, epicId, rows, lanesHref }: { beads: readonl
         <h2 id="overview-lanes" className="m-0 text-base font-bold">
           Lanes
         </h2>
-        <Link to={lanesHref} className="text-xs underline underline-offset-2">
+        <Link to={lanesHref} className="text-xs prose-link">
           Open the Lanes tab →
         </Link>
       </div>
@@ -39,7 +39,7 @@ export function LaneSummary({ beads, epicId, rows, lanesHref }: { beads: readonl
           const style: RowStyle = { "--box": `var(--lane-${slots.get(row.lane) ?? 1})` };
           const waits = waitsFor(row, byId);
           const holder = row.holders.length > 0 ? row.holders.join(", ") : "Unclaimed";
-          const meta = [row.state.kind === "closed" && row.holders.length === 0 ? null : holder, row.lease === null ? null : `lease ${row.lease.text}`, waits].filter((p) => p !== null).join(" · ");
+          const meta = [row.state.kind === "closed" && row.holders.length === 0 ? null : holder, row.lease === null ? null : `lease ${row.lease.text}`, waits].filter((p) => p !== null).join(", ");
           return [
             <li
               key={row.lane}

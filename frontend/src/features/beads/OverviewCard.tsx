@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export function OverviewCard({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section aria-label={title} className="flex min-w-0 flex-col gap-3 rounded-lg border bg-card p-4 text-card-foreground">
-      <h2 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{title}</h2>
+      <h2 className="text-13 font-medium text-muted-foreground">{title}</h2>
       {children}
     </section>
   );

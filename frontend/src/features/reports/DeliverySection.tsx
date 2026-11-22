@@ -92,7 +92,7 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
                 return (
                   <TableRow key={`${e.project}/${e.id}`}>
                     <TableCell>
-                      <Link to={beadPath(e.project, e.id)} className="underline">
+                      <Link to={beadPath(e.project, e.id)} className="hover:text-identity">
                         {e.id} — {e.title}
                       </Link>
                     </TableCell>

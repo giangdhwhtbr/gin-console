@@ -28,10 +28,10 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
     <div className="flex flex-col gap-1 text-sm">
       {workspace && (
         <div>
-          <span>{`workspace · ${repos.length} repos`}</span>{" "}
+          <span>{`Workspace of ${repos.length} repos`}</span>{" "}
           <button
             type="button"
-            className="underline underline-offset-2"
+            className="hover:text-identity"
             aria-expanded={open}
             aria-controls={listId}
             onClick={() => setOpen(!open)}
@@ -43,7 +43,7 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
               {repos.map((repo) => (
                 <li key={repo.path} className="flex flex-wrap items-center gap-1">
                   <span className="break-all font-mono">{repo.path}</span>
-                  <span>{`${repo.branch ?? "-"} · ${repo.shape ?? "-"}`}</span>
+                  <span>{`${repo.branch ?? "-"}, ${repo.shape ?? "-"}`}</span>
                   {repo.frozen && <span className="text-muted-foreground">frozen</span>}
                   {!repo.present && <span className="text-destructive">missing</span>}
                 </li>
@@ -52,7 +52,7 @@ function HealthBlock({ workflow }: { workflow: Workflow }) {
           )}
         </div>
       )}
-      {activeTeam && <span>{`team · ${activeTeam.host ?? "-"}`}</span>}
+      {activeTeam && <span>{`Team mode on ${activeTeam.host ?? "-"}`}</span>}
       {alert && (
         <div role="alert" className="rounded border border-destructive/50 p-2 text-destructive">
           {workflow.decision && <p>{`decision: ${workflow.decision}`}</p>}
@@ -167,7 +167,7 @@ export function ProjectCard({ project }: { project: Project }) {
         <h2 className="font-medium">
           <Link
             to={`/beads?project=${encodeURIComponent(project.name)}`}
-            className="underline underline-offset-2"
+            className="hover:text-identity"
           >
             {project.name}
           </Link>

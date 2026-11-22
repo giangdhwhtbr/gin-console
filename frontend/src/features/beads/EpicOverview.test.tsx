@@ -218,7 +218,7 @@ describe("EpicOverview lanes and tracks", () => {
     expect(rows[2]).toHaveTextContent("Idle");
     expect(rows[2]).toHaveTextContent("lease expired");
     expect(rows[3]).toHaveTextContent("Waiting for be");
-    expect(rows[3]).toHaveTextContent("Unclaimed · waits for be #2 (merge pending), fe #3 (merged)");
+    expect(rows[3]).toHaveTextContent("Unclaimed, waits for be #2 (merge pending), fe #3 (merged)");
     expect(within(rows[3]).getByRole("img", { name: "1 blocked of 1 tracks" })).toHaveTextContent("0/1");
     expect(rows[3].querySelector("[data-swatch]")).not.toBeNull();
     const colours = rows.map((r) => r.getAttribute("style"));
@@ -236,7 +236,7 @@ describe("EpicOverview lanes and tracks", () => {
     expect(screen.getAllByText("No lane")).toHaveLength(2);
   });
 
-  it("REQ-UI-121 Tracks table: 8 rows by id, no 'Waits for', and ex-e12.4 reads Blocked, qa, Unassigned and be #2 · merge pending", () => {
+  it("REQ-UI-121 Tracks table: 8 rows by id, no 'Waits for', and ex-e12.4 reads Blocked, qa, Unassigned and be #2, merge pending", () => {
     stub();
     show();
     const rows = screen.getAllByRole("row").slice(1);
@@ -248,7 +248,7 @@ describe("EpicOverview lanes and tracks", () => {
     expect(row.getByText("Blocked")).toBeInTheDocument();
     expect(row.getByText("qa")).toBeInTheDocument();
     expect(row.getByText("Unassigned")).toHaveClass("text-muted-foreground");
-    expect(row.getByText("be #2 · merge pending")).toBeInTheDocument();
+    expect(row.getByText("be #2, merge pending")).toBeInTheDocument();
     expect(g2.id).toBe(`${E}.9`);
     expect(within(rows[0]).getByText("Order API")).toHaveAttribute("title", "Order API");
     expect(within(rows[0]).getAllByText("–")).toHaveLength(1);

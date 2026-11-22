@@ -13,10 +13,18 @@ const rememberMilestone = (path: string, search: string, project = "a", label: s
 const crumb = () => within(screen.getByRole("navigation", { name: "Breadcrumb" }));
 
 describe("Breadcrumb", () => {
+  it("REQ-UI-139 the Beads link is not underlined and takes the identity colour on hover", () => {
+    rememberSearch("?project=a&view=board");
+    render(<Breadcrumb project="a" id="a-1" title="Fix login" parent={null} />);
+    const link = crumb().getByRole("link", { name: /^Beads/ });
+    expect(link.className).not.toContain("underline");
+    expect(link.className).toContain("hover:text-identity");
+  });
+
   it("REQ-UI-072 names the view and the filters and links to the remembered place", () => {
     rememberSearch("?project=a&view=board&status=open&q=fix");
     render(<Breadcrumb project="a" id="a-1" title="Fix login" parent={null} />);
-    const first = crumb().getByRole("link", { name: "Beads › Board · 2 filters" });
+    const first = crumb().getByRole("link", { name: "Beads › Board, 2 filters" });
     const href = first.getAttribute("href") ?? "";
     expect(href.startsWith("/beads?")).toBe(true);
     for (const part of ["project=a", "view=board", "status=open", "q=fix"]) expect(href).toContain(part);
@@ -26,13 +34,13 @@ describe("Breadcrumb", () => {
   it("REQ-UI-108 counts the kind and capability filters", () => {
     rememberSearch("?project=a&kind=technical&capability=ui,beads");
     render(<Breadcrumb project="a" id="a-1" parent={null} />);
-    expect(crumb().getByRole("link", { name: "Beads › List · 2 filters" })).toBeInTheDocument();
+    expect(crumb().getByRole("link", { name: "Beads › List, 2 filters" })).toBeInTheDocument();
   });
 
   it("REQ-UI-072 from a milestone page it names the milestone and links back to its Beads tab", () => {
     rememberMilestone("/milestones/a/m2", "?tab=beads&view=board&status=open");
     render(<Breadcrumb project="a" id="a-1" parent={null} />);
-    expect(crumb().getByRole("link", { name: "Checkout v2 › Board · 1 filter" })).toHaveAttribute(
+    expect(crumb().getByRole("link", { name: "Checkout v2 › Board, 1 filter" })).toHaveAttribute(
       "href",
       "/milestones/a/m2?tab=beads&view=board&status=open",
     );
@@ -84,10 +92,10 @@ describe("Breadcrumb", () => {
     render(<Breadcrumb project="a" id="a-2" title={long} parent={{ id: "a-1", title: long }} />);
     const current = crumb().getByText(long, { selector: "[aria-current=page]" });
     expect(current).toHaveClass("truncate");
-    expect(current).toHaveAttribute("title", `${long} · a-2`);
+    expect(current).toHaveAttribute("title", `${long}, a-2`);
     const parent = crumb().getByRole("link", { name: long });
     expect(parent).toHaveClass("truncate");
-    expect(parent).toHaveAttribute("title", `${long} · a-1`);
+    expect(parent).toHaveAttribute("title", `${long}, a-1`);
   });
 
   it("REQ-UI-072 From My Tasks it reads My Tasks and goes back to the page with its query", () => {
@@ -145,13 +153,13 @@ describe("Breadcrumb", () => {
   it("REQ-UI-072 counts Show closed as a filter and says one filter in the singular", () => {
     rememberSearch("?project=a&view=list&closed=1");
     render(<Breadcrumb project="a" id="a-1" parent={null} />);
-    expect(crumb().getByRole("link", { name: "Beads › List · 1 filter" })).toBeInTheDocument();
+    expect(crumb().getByRole("link", { name: "Beads › List, 1 filter" })).toBeInTheDocument();
   });
 
   it("REQ-UI-072 counts assignee and sprint in active filters", () => {
     rememberSearch("?project=a&view=board&assignee=alice&sprint=1");
     render(<Breadcrumb project="a" id="a-1" parent={null} />);
-    expect(crumb().getByRole("link", { name: "Beads › Board · 2 filters" })).toBeInTheDocument();
+    expect(crumb().getByRole("link", { name: "Beads › Board, 2 filters" })).toBeInTheDocument();
   });
 
   it("REQ-UI-072 a remembered view that no longer exists shows the List", () => {

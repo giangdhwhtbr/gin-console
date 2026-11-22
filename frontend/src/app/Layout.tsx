@@ -197,11 +197,11 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
               aria-hidden
               title={email}
               className={cn(
-                "flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold uppercase",
+                "flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold",
                 wide && "lg:hidden",
               )}
             >
-              {email[0]}
+              {email[0]?.toUpperCase()}
             </span>
             <span className={cn("hidden truncate text-sm", wide && "lg:block")}>{email}</span>
             <button

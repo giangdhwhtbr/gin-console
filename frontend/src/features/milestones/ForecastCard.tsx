@@ -38,7 +38,7 @@ export function ForecastCard({ forecast: f, today, daysPerPoint = null }: { fore
   return (
     <section aria-label="Project forecast" className="grid gap-4 rounded border bg-card px-4 py-3 md:grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] md:items-center">
       <div className="flex flex-col gap-0.5">
-        <span className="text-xs text-muted-foreground">Project forecast · open roadmap epics</span>
+        <span className="text-xs text-muted-foreground">Project forecast of open roadmap epics</span>
         <span className={cn("font-bold tabular-nums", f.finish === null ? "text-base" : "text-2xl")}>
           {f.finish === null ? "No estimate: no open epic is estimated" : `Finishes ${date(f.finish)}`}
         </span>

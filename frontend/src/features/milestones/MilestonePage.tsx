@@ -78,7 +78,7 @@ function Milestone({ project, id }: { project: string; id: string }) {
 
   return (
     <section className="flex flex-col gap-4">
-      <Link to={milestonesPath(project)} className="inline-flex items-center gap-1 text-sm text-muted-foreground underline-offset-2 hover:underline">
+      <Link to={milestonesPath(project)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-identity">
         <ArrowLeft aria-hidden className="size-4" />
         {`Milestones in ${project}`}
       </Link>
@@ -152,7 +152,7 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
       {plan.description !== "" && (
         <div className="flex flex-col items-start gap-1 text-sm text-muted-foreground">
           <p className={cn(!more && "line-clamp-2")}>{plan.description}</p>
-          <button type="button" onClick={() => setMore(!more)} className="underline underline-offset-2">
+          <button type="button" onClick={() => setMore(!more)} className="hover:text-identity">
             {more ? "Show less" : "Show more"}
           </button>
         </div>

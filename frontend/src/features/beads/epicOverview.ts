@@ -56,14 +56,14 @@ export type TrackRow = {
 
 const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, undefined, { numeric: true });
 
-/** REQ-UI-121: the children of the epic that are not merge gates, by id; the open blockers by id, a merge gate as "be #2 · merge pending". */
+/** REQ-UI-121: the children of the epic that are not merge gates, by id; the open blockers by id, a merge gate as "be #2, merge pending". */
 export function trackRows(beads: readonly BeadSummary[], epicId: string): TrackRow[] {
   const known = new Map(beads.map((b) => [b.id, b]));
   const blockers = (b: BeadSummary) =>
     b.blocked_by.flatMap((id) => {
       const blocker = known.get(id);
       if (blocker?.status === "closed") return [];
-      return [blocker?.waits_for != null ? `${gateWords(blocker.waits_for)} · merge pending` : id];
+      return [blocker?.waits_for != null ? `${gateWords(blocker.waits_for)}, merge pending` : id];
     });
   return beads
     .filter((b) => b.parent === epicId && !isMergeGate(b))

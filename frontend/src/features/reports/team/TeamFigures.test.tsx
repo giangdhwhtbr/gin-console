@@ -71,7 +71,7 @@ describe("TeamFigures", () => {
   it("REQ-REPORTS-013 in progress and open", () => {
     show({ oldest_in_progress: 4.9, blocked: 3, unclaimed: 8, late_open: 4 });
     warnLine("oldest 4.9 d");
-    warnLine("3 blocked · 8 unassigned");
+    warnLine("3 blocked, 8 unassigned");
     warnLine("4 open after the end date");
   });
 
@@ -96,8 +96,8 @@ describe("TeamFigures", () => {
   it("REQ-UI-110 Facts as label and value: joined figures keep their text with strong numbers", () => {
     show({ blocked: 2, unclaimed: 1 });
     const strip = screen.getByRole("group", { name: "Key figures" });
-    expect(strip).toHaveTextContent("2 blocked · 1 unassigned");
-    expect(line("2 blocked · 1 unassigned").querySelectorAll("b")).toHaveLength(2);
+    expect(strip).toHaveTextContent("2 blocked, 1 unassigned");
+    expect(line("2 blocked, 1 unassigned").querySelectorAll("b")).toHaveLength(2);
     expect(screen.getByText("Done", { selector: ":not(li)" })).toHaveClass("text-muted-foreground");
     expect(screen.getByText("1 of 4")).toHaveClass("font-semibold");
   });

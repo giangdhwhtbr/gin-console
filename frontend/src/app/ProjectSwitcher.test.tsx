@@ -39,10 +39,10 @@ describe("ProjectSwitcher", () => {
     expect(button).toHaveTextContent("3 projects");
   });
 
-  it("REQ-UI-123 the rail variant is a letter button named Project: <name>", async () => {
+  it("REQ-UI-123 the rail variant is a capital letter button named Project: <name>", async () => {
     open("rail");
     const button = await trigger("Project: beta");
-    expect(button).toHaveTextContent("b");
+    expect(button).toHaveTextContent("B");
   });
 
   it("REQ-UI-123 the bar variant shows the project name", async () => {

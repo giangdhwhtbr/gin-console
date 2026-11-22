@@ -23,7 +23,7 @@ describe("BeadTable", () => {
   it("REQ-REPORTS-016 counts follow the member", async () => {
     const beads = [...many(open, 10, 4), ...many(progress, 20, 1), ...many(closed, 30, 6)];
     const onStatus = show(beads);
-    expect(screen.getByRole("heading", { name: "Beads · ann" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Beads of ann" })).toBeInTheDocument();
     for (const name of ["Open 4", "In progress 1", "Closed 6", "All 11"]) expect(screen.getByRole("tab", { name })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("tab", { name: "Closed 6" }));
     expect(onStatus).toHaveBeenCalledWith("closed");

@@ -20,7 +20,7 @@ function Details({ project, id }: { project: string; id: string }) {
     return (
       <p className="m-0 flex flex-wrap items-center gap-2 text-sm">
         <span>Milestones unavailable</span>
-        <button type="button" className="underline" onClick={retry}>
+        <button type="button" className="hover:text-identity" onClick={retry}>
           Retry
         </button>
       </p>
@@ -29,7 +29,7 @@ function Details({ project, id }: { project: string; id: string }) {
   const { today } = state.data;
   const entry = state.data.milestones.find((m) => m.id === id);
   const link = (
-    <Link to={milestonePath(project, id)} className="min-w-0 text-xl font-bold wrap-anywhere underline-offset-2 hover:underline">
+    <Link to={milestonePath(project, id)} className="min-w-0 text-xl font-bold wrap-anywhere hover:text-identity">
       {entry === undefined ? id : `${id} ${entry.title}`}
     </Link>
   );

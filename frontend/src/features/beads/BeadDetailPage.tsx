@@ -69,7 +69,7 @@ function BeadDetail({ project, id, embedded = false }: Props) {
   const parentTitle =
     state.status === "ok" ? (state.bead.dependencies.find((d) => d.type === "parent-child" && d.id === state.bead.parent)?.title ?? null) : null;
   const back = embedded ? (
-    <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`} className="text-sm underline underline-offset-2">
+    <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`} className="text-sm prose-link">
       Open page
     </Link>
   ) : (

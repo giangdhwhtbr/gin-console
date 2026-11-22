@@ -22,9 +22,9 @@ describe("RelationList", () => {
         items={[gate("a-1", "open", "be", 2), gate("a-2", "closed", "fe", 3), gate("a-3", "open", null, 7)]}
       />,
     );
-    expect(screen.getByText("Waits for be #2 · merge pending")).toBeInTheDocument();
-    expect(screen.getByText("Waits for fe #3 · merged")).toBeInTheDocument();
-    expect(screen.getByText("Waits for track 7 · merge pending")).toBeInTheDocument();
+    expect(screen.getByText("Waits for be #2, merge pending")).toBeInTheDocument();
+    expect(screen.getByText("Waits for fe #3, merged")).toBeInTheDocument();
+    expect(screen.getByText("Waits for track 7, merge pending")).toBeInTheDocument();
     expect(screen.queryByText("placeholder title")).toBeNull();
     expect(screen.queryByText("Open")).toBeNull();
   });

@@ -34,7 +34,7 @@ function milestoneId(path: string): string {
 }
 
 const viewAndFilters = (filters: BeadFilters): string =>
-  `${VIEW_NAME[filters.view] ?? "List"}${activeFilters(filters) > 0 ? ` · ${activeFilters(filters)} filter${activeFilters(filters) === 1 ? "" : "s"}` : ""}`;
+  `${VIEW_NAME[filters.view] ?? "List"}${activeFilters(filters) > 0 ? `, ${activeFilters(filters)} filter${activeFilters(filters) === 1 ? "" : "s"}` : ""}`;
 
 /** The first link: where the bead was opened from when that fits its project, else the project's Beads page. */
 function firstLink(project: string, origin: Origin | null): { to: string; label: string } {
@@ -74,14 +74,14 @@ export function Breadcrumb({
 }) {
   const origin = originFor(project, useOrigin());
   const first = firstLink(project, origin);
-  const named = (name: string | null, beadId: string) => ({ shown: name ?? beadId, hint: name === null ? beadId : `${name} · ${beadId}` });
+  const named = (name: string | null, beadId: string) => ({ shown: name ?? beadId, hint: name === null ? beadId : `${name}, ${beadId}` });
   const own = named(title, id);
   const above = parent === null ? null : named(parent.title, parent.id);
   return (
     <nav aria-label="Breadcrumb">
       <ol className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
         <li>
-          <Link to={first.to} className="underline underline-offset-2">
+          <Link to={first.to} className="hover:text-identity">
             {first.label}
           </Link>
         </li>
@@ -91,7 +91,7 @@ export function Breadcrumb({
             <Link
               to={`/beads/${enc(project)}/${enc(parent.id)}`}
               title={above.hint}
-              className={cn(TITLE, "underline underline-offset-2", parent.title === null && "font-mono")}
+              className={cn(TITLE, "hover:text-identity", parent.title === null && "font-mono")}
             >
               {above.shown}
             </Link>

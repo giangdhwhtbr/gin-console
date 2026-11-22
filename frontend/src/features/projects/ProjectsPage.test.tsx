@@ -121,8 +121,8 @@ describe("ProjectsPage", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json([project({ workflow: full })])));
     render(<ProjectsPage />);
     const card = await screen.findByRole("article", { name: "qwikfone" });
-    expect(within(card).getByText("workspace · 8 repos")).toBeInTheDocument();
-    expect(within(card).getByText("team · github")).toBeInTheDocument();
+    expect(within(card).getByText("Workspace of 8 repos")).toBeInTheDocument();
+    expect(within(card).getByText("Team mode on github")).toBeInTheDocument();
     expect(within(card).queryByText("repo-0")).not.toBeInTheDocument();
     const toggle = within(card).getByRole("button", { name: "Show repos" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -267,7 +267,7 @@ describe("ProjectsPage", () => {
     );
     render(<ProjectsPage />);
     await screen.findByRole("article", { name: "qwikfone" });
-    expect(within(cardOf("qwikfone")).getByText("workspace · 0 repos")).toBeInTheDocument();
+    expect(within(cardOf("qwikfone")).getByText("Workspace of 0 repos")).toBeInTheDocument();
     expect(within(cardOf("other")).queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -333,7 +333,7 @@ describe("ProjectsPage", () => {
     render(<ProjectsPage />);
     const card = await screen.findByRole("article", { name: "qwikfone" });
     expect(within(card).getByText(/bd not found/)).toBeInTheDocument();
-    expect(within(card).getByText("team · github")).toBeInTheDocument();
+    expect(within(card).getByText("Team mode on github")).toBeInTheDocument();
   });
 
   describe("refresh", () => {
@@ -355,11 +355,11 @@ describe("ProjectsPage", () => {
       vi.stubGlobal("fetch", fetchMock);
       render(<ProjectsPage />);
       await advance(0);
-      expect(within(cardOf("qwikfone")).getByText("workspace · 1 repos")).toBeInTheDocument();
+      expect(within(cardOf("qwikfone")).getByText("Workspace of 1 repos")).toBeInTheDocument();
       await advance(10_000);
       expect(fetchMock).toHaveBeenCalledTimes(2);
       expect(screen.queryByText(/loading/i)).not.toBeInTheDocument();
-      expect(within(cardOf("qwikfone")).getByText("workspace · 2 repos")).toBeInTheDocument();
+      expect(within(cardOf("qwikfone")).getByText("Workspace of 2 repos")).toBeInTheDocument();
     });
 
     // REQ-UI-006

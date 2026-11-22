@@ -74,7 +74,7 @@ describe("ForecastCard", () => {
       ["Not estimated", "2 not estimated"],
       ["Days per point", "1.4"],
     ]);
-    expect(screen.getByText("Project forecast · open roadmap epics")).toBeInTheDocument();
+    expect(screen.getByText("Project forecast of open roadmap epics")).toBeInTheDocument();
     expect(screen.getByText("Deadline 31 Dec")).toBeInTheDocument();
     rerender(<ForecastCard forecast={forecast({ deadline: null })} today={TODAY} daysPerPoint={{ value: 1, measured_epics: 0, assumed: true }} />);
     expect(screen.getByText("No deadline").parentElement).toHaveTextContent("No deadline add - Deadline: YYYY-MM-DD to the roadmap");

@@ -20,7 +20,7 @@ export function ScopeTrail({
             type="button"
             aria-current={i === rest.length ? "location" : undefined}
             onClick={() => onScope(id)}
-            className="font-mono underline underline-offset-2"
+            className="font-mono hover:text-identity"
           >
             {name}
           </button>

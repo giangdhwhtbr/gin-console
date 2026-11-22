@@ -67,7 +67,7 @@ export function QualitySection({ report }: { report: Report }) {
               {quality.epics.map((r) => (
                 <TableRow key={`${r.project}/${r.id}`}>
                   <TableCell>
-                    <Link to={beadPath(r.project, r.id)} className="underline">
+                    <Link to={beadPath(r.project, r.id)} className="hover:text-identity">
                       {r.title}
                     </Link>
                   </TableCell>

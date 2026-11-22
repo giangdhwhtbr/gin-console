@@ -53,7 +53,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
       return (
         <TableCell>
           <div className="flex flex-col">
-            <Link to={beadPath(project, bead.id)} className="underline">
+            <Link to={beadPath(project, bead.id)} className="hover:text-identity">
               {bead.title}
             </Link>
             <span className="font-mono text-13 text-muted-foreground">{bead.id}</span>
@@ -63,7 +63,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
     case "epic":
       return (
         <TableCell className="text-sm">
-          <Link to={beadPath(project, bead.epic.id)} className="underline">
+          <Link to={beadPath(project, bead.epic.id)} className="hover:text-identity">
             {bead.epic.title}
           </Link>
         </TableCell>
@@ -143,7 +143,7 @@ export function BeadTable({
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <h2 className="font-semibold">{member === "" ? "Beads" : `Beads · ${member}`}</h2>
+        <h2 className="font-semibold">{member === "" ? "Beads" : `Beads of ${member}`}</h2>
         <Tabs tabs={tabs} tab={status} onChange={onStatus} label="Bead status" className="border-b-0" />
       </div>
       <div role="tabpanel" id={`panel-${status}`} aria-labelledby={`tab-${status}`} className="flex flex-col gap-3">

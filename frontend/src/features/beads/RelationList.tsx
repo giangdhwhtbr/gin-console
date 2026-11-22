@@ -37,7 +37,7 @@ export function RelationList({
             </Link>
             {item.waits_for != null ? (
               <span className="min-w-0 wrap-anywhere">
-                {`Waits for ${gateWords(item.waits_for)} · ${item.status === "closed" ? "merged" : "merge pending"}`}
+                {`Waits for ${gateWords(item.waits_for)}, ${item.status === "closed" ? "merged" : "merge pending"}`}
               </span>
             ) : (
               <>

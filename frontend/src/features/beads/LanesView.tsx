@@ -35,7 +35,7 @@ export function LanesView(props: Props) {
     return (
       <p className="text-muted-foreground">
         <span>Lanes show for an epic whose tracks have lanes</span>{" "}
-        <Link to={`/beads${filtersToSearch({ ...filters, view: "graph" })}`} className="underline underline-offset-2">
+        <Link to={`/beads${filtersToSearch({ ...filters, view: "graph" })}`} className="prose-link">
           Show the Graph view
         </Link>
       </p>

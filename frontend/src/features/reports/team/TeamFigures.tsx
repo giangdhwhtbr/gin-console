@@ -24,11 +24,11 @@ function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = fal
   aside?: string;
   rule: string;
   value: string;
-  sub: string;
+  sub: string | readonly string[];
   warnValue?: boolean;
   warnSub?: boolean;
 }) {
-  const parts = sub.split(" · ");
+  const parts = typeof sub === "string" ? [sub] : sub;
   return (
     <div className="flex flex-col gap-1 p-3">
       <span className="text-xs text-muted-foreground">
@@ -42,11 +42,11 @@ function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = fal
       </Hint>
       <span className={cn("flex flex-wrap text-xs text-muted-foreground", warnSub && WARN)}>
         {parts.map((part, i) => {
-          // joined facts ("3 blocked · 8 unassigned") get a strong number; a single line stays plain text
+          // joined facts ("3 blocked, 8 unassigned") get a strong number; a single line stays plain text
           const [, count = "", rest = part] = (parts.length > 1 ? /^(\d+(?:\.\d+)?)(.*)$/.exec(part) : null) ?? [];
           return (
             <Fragment key={part}>
-              {i > 0 && <span className="whitespace-pre"> · </span>}
+              {i > 0 && <span className="whitespace-pre">, </span>}
               {part.endsWith(" unassigned") ? (
                 <Hint text={DEFINITIONS.unassigned}>
                   <span>
@@ -149,7 +149,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
           label="Open"
           rule={`${countHint("open", scope)} ${DEFINITIONS.blocked}`}
           value={String(figures.open)}
-          sub={solo ? `${figures.blocked} blocked` : `${figures.blocked} blocked · ${figures.unclaimed} unassigned`}
+          sub={solo ? `${figures.blocked} blocked` : [`${figures.blocked} blocked`, `${figures.unclaimed} unassigned`]}
           warnSub={figures.blocked > 0}
         />
         <PaceOrThroughput team={team} figures={figures} solo={solo} milestone={milestone} />
@@ -162,7 +162,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
           warnValue={onTime !== null && onTime < 1}
           warnSub={lateOpen > 0}
         />
-        <Cell label="Rework" rule={DEFINITIONS.rework} value={formatPercent(figures.rework_rate)} sub={`${figures.reopens} reopens · ${figures.bugs} bugs later`} />
+        <Cell label="Rework" rule={DEFINITIONS.rework} value={formatPercent(figures.rework_rate)} sub={[`${figures.reopens} reopens`, `${figures.bugs} bugs later`]} />
       </div>
       <ScopeBar figures={figures} member={member === null ? null : member.member} />
     </div>

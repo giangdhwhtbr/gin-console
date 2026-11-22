@@ -38,7 +38,7 @@ describe("epicOverview", () => {
     expect(rows.find((r) => r.lane === "qa")?.tracks).toMatchObject({ closed: 0, total: 1 });
   });
 
-  it("REQ-UI-121 Tracks table: 8 rows by id, no merge gate, and ex-e12.4 is Blocked with 'be #2 · merge pending'", () => {
+  it("REQ-UI-121 Tracks table: 8 rows by id, no merge gate, and ex-e12.4 is Blocked with 'be #2, merge pending'", () => {
     const rows = trackRows(E12, E);
     expect(rows.map((r) => r.id)).toEqual(TRACKS.map((t) => t.id));
     expect(rows.find((r) => r.id === t4.id)).toEqual({
@@ -48,7 +48,7 @@ describe("epicOverview", () => {
       lane: "qa",
       assignee: null,
       points: 3,
-      blockedBy: ["be #2 · merge pending"],
+      blockedBy: ["be #2, merge pending"],
     });
     expect(rows.find((r) => r.id === t3.id)?.blockedBy).toEqual([]);
   });

@@ -11,7 +11,7 @@ export function UnknownProject({ name, names, hrefOf }: { name: string; names: r
         <ul className="flex flex-wrap gap-x-3 gap-y-1">
           {names.map((project) => (
             <li key={project}>
-              <Link to={hrefOf(project)} className="underline underline-offset-2">
+              <Link to={hrefOf(project)} className="prose-link">
                 {project}
               </Link>
             </li>

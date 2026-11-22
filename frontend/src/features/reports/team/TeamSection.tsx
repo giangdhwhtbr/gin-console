@@ -91,7 +91,7 @@ export function TeamSection({
           </Button>
         )}
         {milestone !== null && (
-          <Link to={milestonePath(project, milestone.id)} className="text-sm underline">
+          <Link to={milestonePath(project, milestone.id)} className="text-sm hover:text-identity">
             Open Gantt
           </Link>
         )}

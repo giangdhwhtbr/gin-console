@@ -442,7 +442,7 @@ function EpicRow({
           {/* below lg the items keep their size and wrap; from lg the line is one row cut with an ellipsis inside the column, the size badge whole and the id giving way last-but-one, so its link stays reachable */}
           <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 overflow-hidden whitespace-nowrap pl-[26px] text-xs text-muted-foreground lg:flex-nowrap">
             <span title={epic.id} className="max-w-full shrink-0 truncate lg:min-w-16 lg:shrink-[100]">
-              <Link to={`/beads/${enc(project)}/${enc(epic.id)}`} className="font-mono underline-offset-2 hover:underline">
+              <Link to={`/beads/${enc(project)}/${enc(epic.id)}`} className="font-mono hover:text-identity">
                 <span aria-hidden={shortId(epic.id) !== epic.id || undefined}>{shortId(epic.id)}</span>
                 {shortId(epic.id) !== epic.id && <span className="sr-only">{epic.id}</span>}
               </Link>
@@ -530,7 +530,7 @@ function ChildRow({ project, row, axis, label, today, faded }: { project: string
         <span className={cn("flex min-w-0 flex-1 items-center gap-1.5 pl-[26px] text-xs", fade)}>
           <span role="img" aria-label={look.label} className="flex-none"><StateGlyph state={look.glyph} size={10} /></span>
           <span title={bead.id} className="flex-none">
-            <Link to={`/beads/${enc(project)}/${enc(bead.id)}`} className="font-mono text-muted-foreground underline-offset-2 hover:underline">
+            <Link to={`/beads/${enc(project)}/${enc(bead.id)}`} className="font-mono text-muted-foreground hover:text-identity">
               {shortId}
             </Link>
           </span>

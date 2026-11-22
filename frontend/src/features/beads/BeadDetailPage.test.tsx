@@ -456,6 +456,13 @@ describe("BeadDetailPage", () => {
     expect(container.querySelector("script")).toBeNull();
   });
 
+  it("REQ-UI-139 a Markdown link sits inside .markdown, where the CSS underlines it", async () => {
+    stubFetch(beadDetail("a-5", { design: "see [docs](https://example.com)", comment_count: 0 }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    const link = await screen.findByRole("link", { name: "docs" });
+    expect(link.closest(".markdown")).not.toBeNull();
+  });
+
   // REQ-UI-038
   it("REQ-UI-028 REQ-UI-135 the creator falls back to the owner's person, and no assignee reads Unassigned", async () => {
     stubFetch(beadDetail("a-5", { created_by: null, owner: "Lead@Example.com", assignee: null, comment_count: 0 }));

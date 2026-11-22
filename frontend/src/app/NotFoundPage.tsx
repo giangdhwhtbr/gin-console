@@ -15,12 +15,12 @@ export function NotFoundPage({ path }: { path: string }) {
       </p>
       <ul className="flex gap-4">
         <li>
-          <Link to="/" className="underline underline-offset-2">
+          <Link to="/" className="prose-link">
             Projects
           </Link>
         </li>
         <li>
-          <Link to={beads} className="underline underline-offset-2">
+          <Link to={beads} className="prose-link">
             Beads
           </Link>
         </li>

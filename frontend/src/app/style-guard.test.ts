@@ -57,3 +57,27 @@ describe("typeface", () => {
     expect(css).toContain('--default-mono-font-variation-settings: "MONO" 1');
   });
 });
+
+describe("plain text style", () => {
+  const lines = sources(src).flatMap((file) => {
+    const name = file.slice(src.length + 1);
+    return readFileSync(file, "utf8")
+      .split("\n")
+      .map((line, i) => ({ name, at: `${name}:${i + 1}`, line }));
+  });
+  // the document title of REQ-UI-063 is the one place that joins with a middle dot
+  const TITLE_FILES = ["app/usePageTitle.ts", "features/reports/ReportsPage.tsx"];
+
+  it("REQ-UI-139: no class sets text in capitals", () => {
+    expect(lines.filter(({ line }) => /\buppercase\b/.test(line)).map(({ at }) => at)).toEqual([]);
+  });
+
+  it("REQ-UI-139: no text joins facts with a middle dot outside the document title", () => {
+    expect(lines.filter(({ name, line }) => line.includes("·") && !TITLE_FILES.includes(name)).map(({ at }) => at)).toEqual([]);
+  });
+
+  it("REQ-UI-139: only .prose-link and the dotted hint trigger set an underline", () => {
+    // a dotted underline marks a hint trigger (WorkflowCard Items), not a link
+    expect(lines.filter(({ line }) => /\bunderline/.test(line) && !line.includes("decoration-dotted")).map(({ at }) => at)).toEqual([]);
+  });
+});

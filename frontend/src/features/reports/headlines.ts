@@ -21,9 +21,9 @@ export function teamHeadline(report: TeamReport, finish: string | null): Headlin
   }
   if (report.today < milestone.start) return { text: `Starts ${formatDate(milestone.start, report.today)}`, warn: false };
   const progress = `${team.closed} of ${team.scope} done`;
-  if (lateOf({ status: milestone.status, end: milestone.end, finish }, report.today)) return { text: `${progress} · late`, warn: true };
-  if (team.pace_needed !== null && team.pace_needed > team.pace) return { text: `${progress} · behind pace`, warn: true };
-  return { text: `${progress} · on pace`, warn: false };
+  if (lateOf({ status: milestone.status, end: milestone.end, finish }, report.today)) return { text: `${progress}, late`, warn: true };
+  if (team.pace_needed !== null && team.pace_needed > team.pace) return { text: `${progress}, behind pace`, warn: true };
+  return { text: `${progress}, on pace`, warn: false };
 }
 
 export function velocityHeadline(daysPerPoint: DaysPerPoint | null): Headline | null {

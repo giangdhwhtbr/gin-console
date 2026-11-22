@@ -53,14 +53,14 @@ describe("TeamSection", () => {
     expect(screen.getByText("Active").closest("[data-status]")).toHaveAttribute("data-status", "active");
     expect(screen.getByText("Active").closest("[data-milestone-status]")).toHaveTextContent(/^Active$/);
     expect(screen.getByText("2 Nov – 27 Nov")).toBeInTheDocument();
-    expect(screen.getByText("working day 9 of 20 · 11 left")).toBeInTheDocument();
+    expect(screen.getByText("working day 9 of 20, 11 left")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open Gantt" })).toHaveAttribute("href", milestonePath("alpha", "m2"));
   });
 
-  it("REQ-REPORTS-012 late active milestone: the chip reads Active · late with a warning mark", () => {
+  it("REQ-REPORTS-012 late active milestone: the chip reads Active, late with a warning mark", () => {
     show(teamReport(), {}, "2027-02-16");
     const chip = screen.getByText("Active").closest("[data-milestone-status]");
-    expect(chip).toHaveTextContent("Active · late");
+    expect(chip).toHaveTextContent("Active, late");
     expect(chip?.querySelector("svg.lucide-triangle-alert")).not.toBeNull();
     cleanup();
     show(teamReport(), {}, "2026-11-27");
@@ -69,19 +69,19 @@ describe("TeamSection", () => {
 
   it("REQ-REPORTS-012 an active milestone past its end is late without a forecast", () => {
     show(teamReport({ today: "2026-11-30" }));
-    expect(screen.getByText("Active").closest("[data-milestone-status]")).toHaveTextContent("Active · late");
+    expect(screen.getByText("Active").closest("[data-milestone-status]")).toHaveTextContent("Active, late");
   });
 
   it("REQ-REPORTS-012 milestone line of a closed milestone", () => {
     show(teamReport({ milestone: "m1" }));
-    expect(screen.getByText("Closed · 2 d late")).toBeInTheDocument();
+    expect(screen.getByText("Closed, 2 d late")).toBeInTheDocument();
     expect(screen.getByText("finished 3 Nov")).toBeInTheDocument();
   });
 
   it("REQ-MILESTONE-UI-023 a closed milestone closed on the weekend after its end reads on time", () => {
     const t = teamReport({ milestone: "m1" });
     show({ ...t, milestones: t.milestones.map((m) => (m.id === "m1" ? { ...m, end: "2026-10-30", closed_on: "2026-10-31" } : m)) });
-    expect(screen.getByText("Closed · on time")).toBeInTheDocument();
+    expect(screen.getByText("Closed, on time")).toBeInTheDocument();
   });
 
   it("REQ-REPORTS-012 milestone line of a planned milestone", () => {

@@ -32,13 +32,13 @@ export function ProjectSwitcher({ variant }: { variant: SwitcherVariant }) {
         title={variant === "rail" ? `Project: ${label}` : undefined}
         className={cn(
           TRIGGER,
-          variant === "rail" && "size-10 justify-center bg-muted font-semibold uppercase",
+          variant === "rail" && "size-10 justify-center bg-muted font-semibold",
           variant === "sidebar" && "w-full justify-between gap-2 px-3 py-2",
           variant === "bar" && "max-w-40 gap-1.5 px-2 py-1.5",
         )}
       >
         {variant === "rail" ? (
-          <span aria-hidden>{label[0]}</span>
+          <span aria-hidden>{label[0]?.toUpperCase()}</span>
         ) : (
           <>
             <span className="flex min-w-0 flex-col text-left">

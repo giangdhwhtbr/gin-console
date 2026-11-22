@@ -54,14 +54,14 @@ export function MultiSelectPopover({
               <button
                 type="button"
                 onClick={selectAll}
-                className="hover:text-foreground cursor-pointer underline-offset-2 hover:underline"
+                className="hover:text-foreground cursor-pointer"
               >
                 Select all
               </button>
               <button
                 type="button"
                 onClick={clearAll}
-                className="hover:text-foreground cursor-pointer underline-offset-2 hover:underline"
+                className="hover:text-foreground cursor-pointer"
               >
                 Clear
               </button>

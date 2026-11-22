@@ -227,13 +227,13 @@ describe("ReportsPage", () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=team");
     const mock = stub();
     render(<ReportsPage />);
-    await screen.findByText("working day 9 of 20 · 11 left");
+    await screen.findByText("working day 9 of 20, 11 left");
     await userEvent.click(screen.getByRole("tab", { name: /^Delivery/ }));
     await screen.findByText("Beads closed");
     await userEvent.click(screen.getByRole("tab", { name: /^Velocity/ }));
     expect(await screen.findByText("1.4 days per point", { selector: "dd" })).toBeTruthy();
     await userEvent.click(screen.getByRole("tab", { name: /^Team/ }));
-    await screen.findByText("working day 9 of 20 · 11 left");
+    await screen.findByText("working day 9 of 20, 11 left");
     expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
   });
 
@@ -267,7 +267,7 @@ describe("ReportsPage", () => {
       () => json(list([entry("m2", { status: "active", start: "2026-11-02", end: "2026-11-27", finish: "2027-02-16" })], { today: "2026-11-12" })),
     );
     render(<ReportsPage />);
-    const tab = await screen.findByRole("tab", { name: /Team\s*27 of 64 done · late/ });
+    const tab = await screen.findByRole("tab", { name: /Team\s*27 of 64 done, late/ });
     expect(tab.querySelector("svg")).not.toBeNull();
   });
 
@@ -275,10 +275,10 @@ describe("ReportsPage", () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
     stub(undefined, () => json(lateTeam({ closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 })), () => json({ error: "gin is down" }, 502));
     render(<ReportsPage />);
-    expect(await screen.findByRole("tab", { name: /Team\s*27 of 64 done · on pace/ })).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: /Team\s*27 of 64 done, on pace/ })).toBeInTheDocument();
   });
 
-  it("REQ-REPORTS-012 late active milestone: the Team chip reads Active · late once the list has the forecast", async () => {
+  it("REQ-REPORTS-012 late active milestone: the Team chip reads Active, late once the list has the forecast", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=team");
     stub(
       undefined,
@@ -286,8 +286,8 @@ describe("ReportsPage", () => {
       () => json(list([entry("m2", { status: "active", start: "2026-11-02", end: "2026-11-27", finish: "2027-02-16" })], { today: "2026-11-12" })),
     );
     render(<ReportsPage />);
-    await screen.findByText("working day 9 of 20 · 11 left");
-    await vi.waitFor(() => expect(document.querySelector("[data-milestone-status]")).toHaveTextContent("Active · late"));
+    await screen.findByText("working day 9 of 20, 11 left");
+    await vi.waitFor(() => expect(document.querySelector("[data-milestone-status]")).toHaveTextContent("Active, late"));
   });
 
   it("REQ-UI-095 Velocity says Loading velocity… while the page's Milestones request is open", async () => {
@@ -311,7 +311,7 @@ describe("ReportsPage", () => {
     );
     render(<ReportsPage />);
     expect(await screen.findByText("gin is down")).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Team\s*27 of 64 done · on pace/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Team\s*27 of 64 done, on pace/ })).toBeInTheDocument();
     await new Promise((resolve) => setTimeout(resolve, 30));
     expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
@@ -438,16 +438,16 @@ describe("ReportsPage", () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
     stub(undefined, () => json(lateTeam({ closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 })));
     render(<ReportsPage />);
-    expect(await screen.findByRole("tab", { name: /Team\s*27 of 64 done · on pace/ })).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: /Team\s*27 of 64 done, on pace/ })).toBeInTheDocument();
   });
 
   it("REQ-MILESTONE-UI-023 behind pace is not late: the headline warns, the Team chip does not say late", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=team");
     stub(undefined, () => json(lateTeam({ closed: 27, scope: 64, pace: 3.4, pace_needed: 3.6 })));
     render(<ReportsPage />);
-    const tab = await screen.findByRole("tab", { name: /Team\s*27 of 64 done · behind pace/ });
+    const tab = await screen.findByRole("tab", { name: /Team\s*27 of 64 done, behind pace/ });
     expect(tab.querySelector("svg")).not.toBeNull();
-    await screen.findByText("working day 9 of 20 · 11 left");
+    await screen.findByText("working day 9 of 20, 11 left");
     const chip = document.querySelector("[data-milestone-status]");
     expect(chip).toHaveTextContent(/^Active$/);
     expect(chip).not.toHaveTextContent(/late/);
@@ -514,7 +514,7 @@ describe("ReportsPage", () => {
     const mock = stub(undefined, (url) => json(teamFixture({ milestone: url.searchParams.get("milestone") ?? "m2" })));
     render(<ReportsPage />);
     await userEvent.selectOptions(await screen.findByLabelText("Milestone"), "m1");
-    expect(await screen.findByText("Closed · 2 d late")).toBeInTheDocument();
+    expect(await screen.findByText("Closed, 2 d late")).toBeInTheDocument();
     expect(teamCalls(mock)).toContain("/api/reports/team?project=alpha&milestone=m1");
     expect(window.location.search).toBe("?project=alpha&days=30&tab=team&milestone=m1");
   });
@@ -559,7 +559,7 @@ describe("ReportsPage", () => {
     render(<ReportsPage />);
     expect(await screen.findByText("boom")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Retry" }));
-    expect(await screen.findByText("working day 9 of 20 · 11 left")).toBeInTheDocument();
+    expect(await screen.findByText("working day 9 of 20, 11 left")).toBeInTheDocument();
   });
 
   it("REQ-REPORTS-017 drops a late answer", async () => {
@@ -574,11 +574,11 @@ describe("ReportsPage", () => {
     );
     render(<ReportsPage />);
     act(() => navigate("/reports?project=alpha&tab=team&milestone=m1"));
-    expect(await screen.findByText("Closed · 2 d late")).toBeInTheDocument();
+    expect(await screen.findByText("Closed, 2 d late")).toBeInTheDocument();
     release(json(teamFixture({ milestone: "m2" })));
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(screen.getByText("Closed · 2 d late")).toBeInTheDocument();
-    expect(screen.queryByText("working day 9 of 20 · 11 left")).not.toBeInTheDocument();
+    expect(screen.getByText("Closed, 2 d late")).toBeInTheDocument();
+    expect(screen.queryByText("working day 9 of 20, 11 left")).not.toBeInTheDocument();
   });
 
   it("REQ-UI-095 Hidden tabs are hinted", async () => {
