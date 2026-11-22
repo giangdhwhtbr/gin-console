@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-095: Forecast card on time with a deadline
 
-- **REQ:** REQ-MILESTONE-UI-016@8231be50
+- **REQ:** REQ-MILESTONE-UI-016@5a233a4f
 - **Priority:** medium
 
 **Preconditions:**
@@ -16,6 +16,6 @@
 **Expected:**
 - The card reads "Finishes 23 Dec"
 - The card reads "6 working days spare"
-- The card shows the pairs Default lanes "2 lanes", Open epics "5 open epics" and Unestimated "0 unestimated"
-- "0 unestimated" has no warning mark
+- The card shows the pairs Parallel lanes "2 lanes", Open epics "5 open epics" and Not estimated "0 not estimated"
+- "0 not estimated" has no warning mark
 - "Finishes 23 Dec" is the most prominent text of the card

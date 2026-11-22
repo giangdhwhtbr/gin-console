@@ -1,6 +1,6 @@
-# TC-MILESTONE-UI-098: Forecast card with every epic unestimated
+# TC-MILESTONE-UI-098: Forecast card with no open epic estimated
 
-- **REQ:** REQ-MILESTONE-UI-016@8231be50
+- **REQ:** REQ-MILESTONE-UI-016@5a233a4f
 - **Priority:** medium
 
 **Preconditions:**
@@ -14,6 +14,6 @@
 2. Open `/milestones?project=P`
 
 **Expected:**
-- The card reads "No estimate: every open epic is unestimated"
-- The card shows the pair Unestimated "2 unestimated" with a warning mark
+- The card reads "No estimate: no open epic is estimated"
+- The card shows the pair Not estimated "2 not estimated" with a warning mark
 - The card shows no deadline comparison

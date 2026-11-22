@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-096: Forecast card past the deadline
 
-- **REQ:** REQ-MILESTONE-UI-016@8231be50
+- **REQ:** REQ-MILESTONE-UI-016@5a233a4f
 - **Priority:** medium
 
 **Preconditions:**

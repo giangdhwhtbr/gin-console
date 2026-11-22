@@ -1,6 +1,6 @@
 # TC-REPORTS-030: Member figures
 
-- **REQ:** REQ-REPORTS-013@a2b9b5cf
+- **REQ:** REQ-REPORTS-013@5ea0d567
 - **Priority:** medium
 
 **Preconditions:**

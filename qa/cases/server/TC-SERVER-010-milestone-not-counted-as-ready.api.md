@@ -1,6 +1,6 @@
 # TC-SERVER-010: Milestone not counted as ready
 
-- **REQ:** REQ-SERVER-006@8dcdf4d5
+- **REQ:** REQ-SERVER-006@ea632040
 - **Priority:** medium
 
 **Preconditions:**

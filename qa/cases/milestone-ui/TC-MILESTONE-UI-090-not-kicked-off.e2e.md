@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-090: Not kicked off
 
-- **REQ:** REQ-MILESTONE-UI-021@0b96b90c
+- **REQ:** REQ-MILESTONE-UI-021@f496bedd
 - **Priority:** medium
 
 **Preconditions:**
@@ -15,4 +15,4 @@
 
 **Expected:**
 - The header shows the pairs Kick-off "Not kicked off" and Completed "0 pt"
-- The header shows no d/pt pair
+- The header shows no Days per point pair

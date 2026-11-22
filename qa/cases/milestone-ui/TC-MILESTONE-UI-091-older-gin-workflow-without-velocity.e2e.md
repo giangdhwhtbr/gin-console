@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-091: Older gin-workflow without velocity
 
-- **REQ:** REQ-MILESTONE-UI-021@0b96b90c
+- **REQ:** REQ-MILESTONE-UI-021@f496bedd
 - **Priority:** medium
 
 **Preconditions:**

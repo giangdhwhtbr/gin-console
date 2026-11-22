@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-089: Kicked off
 
-- **REQ:** REQ-MILESTONE-UI-021@0b96b90c
+- **REQ:** REQ-MILESTONE-UI-021@f496bedd
 - **Priority:** medium
 
 **Preconditions:**
@@ -14,6 +14,6 @@
 2. Open `/milestones/P/m1`
 
 **Expected:**
-- The header shows the pairs Committed "13 pt", Completed "8 pt", Added "3 pt" and Say/do "62%"
-- The header shows the pair d/pt "1.4 (planned 1.2, accuracy 0.86)"
+- The header shows the pairs Committed "13 pt", Completed "8 pt", Added "3 pt" and Commitment met "62%"
+- The header shows the pair Days per point "1.4 (planned 1.2, accuracy 0.86)"
 - Each label is in the muted color and each value in the text color with a heavier weight

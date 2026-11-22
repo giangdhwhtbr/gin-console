@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-099: Days per point on the forecast card
 
-- **REQ:** REQ-MILESTONE-UI-016@8231be50
+- **REQ:** REQ-MILESTONE-UI-016@5a233a4f
 - **Priority:** medium
 
 **Preconditions:**

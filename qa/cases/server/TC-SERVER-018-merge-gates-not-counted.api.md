@@ -1,6 +1,6 @@
 # TC-SERVER-018: Merge gates not counted
 
-- **REQ:** REQ-SERVER-006@8dcdf4d5
+- **REQ:** REQ-SERVER-006@ea632040
 - **Priority:** high
 
 **Preconditions:**

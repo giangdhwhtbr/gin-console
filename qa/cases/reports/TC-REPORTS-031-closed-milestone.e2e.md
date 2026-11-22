@@ -1,6 +1,6 @@
 # TC-REPORTS-031: Closed milestone
 
-- **REQ:** REQ-REPORTS-013@a2b9b5cf
+- **REQ:** REQ-REPORTS-013@5ea0d567
 - **Priority:** medium
 
 **Preconditions:**
@@ -13,4 +13,4 @@
 1. Select the Team tab
 
 **Expected:**
-- The figures show Throughput "13.2 / week" and On time "88%" in the warning color
+- The figures show Throughput "13.2 done per week" and On time "88%" in the warning color

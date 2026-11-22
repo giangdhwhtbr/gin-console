@@ -1,6 +1,6 @@
 # TC-UI-199: Points
 
-- **REQ:** REQ-UI-120@39a3c2e0
+- **REQ:** REQ-UI-120@510ca667
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-21T05-35-36

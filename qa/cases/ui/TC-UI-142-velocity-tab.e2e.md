@@ -1,6 +1,6 @@
 # TC-UI-142: Velocity tab
 
-- **REQ:** REQ-UI-095@be92ba05
+- **REQ:** REQ-UI-095@c32236ad
 - **Priority:** medium
 
 **Preconditions:**
@@ -18,4 +18,4 @@
 **Expected:**
 - The URL has `tab=velocity`
 - `GET /api/milestones?project=alpha` is requested once
-- The Velocity headline reads "1.4 d/pt"
+- The Velocity headline reads "1.4 days per point"

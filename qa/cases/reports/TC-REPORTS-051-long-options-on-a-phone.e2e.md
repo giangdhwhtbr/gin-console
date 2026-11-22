@@ -1,6 +1,6 @@
 # TC-REPORTS-051: Long options on a phone
 
-- **REQ:** REQ-REPORTS-012@702fde2d
+- **REQ:** REQ-REPORTS-012@ae27226f
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57

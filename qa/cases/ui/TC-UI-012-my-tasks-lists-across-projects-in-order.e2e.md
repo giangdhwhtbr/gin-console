@@ -1,6 +1,6 @@
 # TC-UI-012: My Tasks lists across projects in order
 
-- **REQ:** REQ-UI-100@651177c0
+- **REQ:** REQ-UI-100@906b78b7
 - **Priority:** high
 
 **Preconditions:**
