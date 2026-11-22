@@ -6,6 +6,7 @@ import statistics
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
+from gin_console.beads.definitions import person_key
 from gin_console.beads.milestones import current_milestone, milestone_status, parse_date
 from gin_console.beads.prep import is_prep
 from gin_console.reports.models import (
@@ -40,7 +41,7 @@ def _workdays(first: date, last: date) -> list[date]:
 
 
 def _member(row: TeamBead) -> str:
-    return row.assignee or UNASSIGNED
+    return person_key(row.assignee) or UNASSIGNED
 
 
 def _milestones(beads: list[ReportBead], today: date) -> tuple[list[TeamMilestone], int]:
@@ -119,7 +120,7 @@ def _figures(
         closed=len(done),
         in_progress=len(active),
         open=len(waiting),
-        blocked=sum(1 for r in waiting if r.status == "blocked"),
+        blocked=sum(1 for r in rows if r.bucket != "closed" and r.blocked),
         unclaimed=sum(1 for r in waiting if r.assignee is None),
         done=round(len(done) / len(rows), 4) if rows else None,
         throughput=throughput,
@@ -163,7 +164,7 @@ def build_team(
             "closed"
             if bead.status == "closed"
             else "in_progress"
-            if bead.status == "in_progress"
+            if bead.status == "in_progress" and not bead.blocked
             else "open"
         )
         cycle = _span(bead.started_at, bead.closed_at) if bucket == "closed" else None
@@ -177,6 +178,7 @@ def build_team(
                 issue_type=bead.issue_type,
                 status=bead.status,
                 bucket=bucket,
+                blocked=bead.blocked,
                 assignee=bead.assignee,
                 priority=bead.priority,
                 created_at=bead.created_at,

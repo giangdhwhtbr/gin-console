@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 
 import pytest
+from fake_export import dep
 from report_beads import closed, row, snap, usage
 
 from gin_console.reports.models import TeamReport
@@ -155,6 +156,7 @@ def test_reports_009_nested_epic_without_children() -> None:
 def test_reports_009_buckets_and_members() -> None:
     rows = [
         *standard(),
+        row("x1"),
         *scoped(
             "m2",
             "e1",
@@ -162,17 +164,37 @@ def test_reports_009_buckets_and_members() -> None:
                 row("t1", parent="e1", status="blocked"),
                 row("t2", parent="e1", status="deferred", assignee="ann"),
                 row("t3", parent="e1", status="in_progress", assignee="bao"),
+                row(
+                    "t4",
+                    parent="e1",
+                    status="in_progress",
+                    assignee="bao@example.com",
+                    dependencies=[dep("t4", "x1", "blocks")],
+                ),
             ],
         ),
     ]
     r = team(rows)
     by_id = {b.id: b for b in r.beads}
-    assert [by_id[i].bucket for i in ("t1", "t2", "t3")] == ["open", "open", "in_progress"]
+    ids = ("t1", "t2", "t3", "t4")
+    assert [by_id[i].bucket for i in ids] == ["open", "open", "in_progress", "open"]
+    assert [by_id[i].blocked for i in ids] == [True, False, False, True]
+    assert [m.member for m in r.members if m.member != "Unassigned"] == ["bao", "ann"]
     assert {m.member: (m.open, m.in_progress) for m in r.members} == {
         "Unassigned": (1, 0),
         "ann": (1, 0),
-        "bao": (0, 1),
+        "bao": (1, 1),
     }
+
+
+# REQ-BEADS-023
+def test_beads_023_same_handle_two_domains() -> None:
+    beads = [
+        row("t1", parent="e1", assignee="ann@a.example"),
+        row("t2", parent="e1", assignee="ann@b.example"),
+    ]
+    r = team([*standard(), *scoped("m2", "e1", beads)])
+    assert [(m.member, m.scope) for m in r.members] == [("ann", 2)]
 
 
 # REQ-REPORTS-009
@@ -280,6 +302,25 @@ def test_reports_010_past_end() -> None:
     assert t.late_open == 4
     assert t.pace_needed is None
     assert t.days_left == 0
+
+
+# REQ-REPORTS-010
+def test_reports_010_blocked_whatever_status() -> None:
+    beads = [
+        row("t1", parent="e1", status="blocked"),
+        row("t2", parent="e1", status="in_progress", assignee="bao"),
+        row(
+            "t3",
+            parent="e1",
+            status="in_progress",
+            assignee="bao",
+            dependencies=[dep("t3", "x1", "blocks")],
+        ),
+        row("t4", parent="e1", dependencies=[dep("t4", "x1", "blocks")]),
+    ]
+    t = team([*standard(), row("x1"), *scoped("m2", "e1", beads)]).team
+    assert t is not None
+    assert (t.blocked, t.in_progress, t.open) == (3, 1, 3)
 
 
 # REQ-REPORTS-010

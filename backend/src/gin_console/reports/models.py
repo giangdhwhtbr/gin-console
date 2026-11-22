@@ -68,6 +68,7 @@ class ReportBead(BaseModel):
     assignee: str | None = None
     parent: str | None = None
     labels: list[str] = Field(default_factory=list)
+    blocked: bool = False
     created_at: datetime
     updated_at: datetime
     started_at: datetime | None = None
@@ -280,6 +281,7 @@ class TeamBead(BaseModel):
     issue_type: str
     status: str
     bucket: BeadBucket
+    blocked: bool
     assignee: str | None
     priority: int | None
     created_at: datetime

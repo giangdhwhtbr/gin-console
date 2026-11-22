@@ -94,3 +94,15 @@ def test_server_006_blocked_prep_task_is_not_blocked(tmp_path: Path) -> None:
     ]
     beads = counts(tmp_path, rows)
     assert (beads.open, beads.blocked, beads.ready, beads.prep) == (1, 0, 1, 1)
+
+
+# REQ-SERVER-006
+def test_server_006_blocked_whatever_status(tmp_path: Path) -> None:
+    rows = [
+        bead("a"),
+        bead("b", status="blocked"),
+        bead("c", status="in_progress", dependencies=[dep("c", "a", "blocks")]),
+        bead("d", status="in_progress"),
+    ]
+    beads = counts(tmp_path, rows)
+    assert (beads.blocked, beads.in_progress) == (2, 1)

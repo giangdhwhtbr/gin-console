@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from gin_console.beads.definitions import counts_toward, is_blocked
 from gin_console.beads.errors import BeadsError
 from gin_console.beads.lanes import is_merge_gate
 from gin_console.beads.prep import row_is_prep
@@ -30,8 +31,14 @@ def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
     try:
         return Beads(
             open=sum(r["status"] == "open" for r in active),
-            in_progress=sum(r["status"] == "in_progress" for r in active),
-            blocked=len(rows.blocked - left_out),
+            in_progress=sum(
+                r["status"] == "in_progress" and not is_blocked(r["id"], r, rows) for r in active
+            ),
+            blocked=sum(
+                1
+                for i, r in rows.rows.items()
+                if i not in left_out and counts_toward(r) and is_blocked(i, r, rows)
+            ),
             ready=len(ready),
             prep=sum(r.get("status") != "closed" for i, r in rows.rows.items() if i in prep_ids),
             epics=[

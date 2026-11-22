@@ -6,6 +6,7 @@ from collections.abc import Callable, Iterable
 from datetime import UTC, date, datetime, timedelta
 from typing import NamedTuple
 
+from gin_console.beads.definitions import person_key
 from gin_console.beads.prep import is_prep
 from gin_console.reports.models import (
     AiUsage,
@@ -56,7 +57,7 @@ def _key(bead: ReportBead) -> Key:
 
 
 def member_of(bead: ReportBead) -> str:
-    return bead.assignee or UNASSIGNED
+    return person_key(bead.assignee) or UNASSIGNED
 
 
 def tokens_of(usage: AiUsage) -> int:
