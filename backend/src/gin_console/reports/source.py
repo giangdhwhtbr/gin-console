@@ -2,11 +2,12 @@
 `metadata.ai_usage`."""
 
 import json
+from collections.abc import Mapping
 from typing import Any
 
 from pydantic import ValidationError
 
-from gin_console.beads.definitions import is_blocked
+from gin_console.beads.definitions import bugs_found, is_blocked
 from gin_console.beads.kinds import points_of
 from gin_console.beads.lanes import is_merge_gate
 from gin_console.beads.snapshot import Snapshot
@@ -49,8 +50,11 @@ def parse_usage(metadata: Any) -> tuple[AiUsage | None, str | None]:
         return None, "unreadable"
 
 
-def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
+def read_beads(
+    snapshot: Snapshot, project: str, reopens: Mapping[str, int]
+) -> list[ReportBead]:
     beads: list[ReportBead] = []
+    bugs = bugs_found(snapshot)
     for ident, raw in snapshot.rows.items():
         if is_merge_gate(raw):
             continue  # a placeholder, not work (REQ-BEADS-019)
@@ -69,7 +73,10 @@ def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
         try:
             beads.append(
                 ReportBead.model_validate(
-                    {**fields, "project": project, "usage": usage, "usage_problem": problem}
+                    {**fields, "project": project,
+                        "reopens": reopens.get(ident, 0),
+                        "bugs": bugs.get(ident, 0),
+                        "usage": usage, "usage_problem": problem}
                 )
             )
         except ValidationError:

@@ -43,7 +43,7 @@ def test_beads_021_blocked_counts_agree(tmp_path: Path) -> None:
     everything = list_beads(snapshot, closed=True)
     listed = [b for b in everything if b.blocked and b.issue_type != "milestone"]
     team = build_team(
-        read_beads(build_snapshot(rows), "alpha"), now=NOW, project="alpha", milestone="m1"
+        read_beads(build_snapshot(rows), "alpha", {}), now=NOW, project="alpha", milestone="m1"
     ).team
     assert team is not None
     assert (counted.blocked, len(listed)) == (4, 4)

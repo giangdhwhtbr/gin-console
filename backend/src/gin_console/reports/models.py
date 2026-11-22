@@ -79,6 +79,8 @@ class ReportBead(BaseModel):
     start: str | None = None  # milestone rows only: metadata.start as written
     end: str | None = None
     kickoff: str | None = None
+    reopens: int = 0
+    bugs: int = 0
     usage: AiUsage | None = None
     usage_problem: str | None = (
         None  # "unreadable" or "version N"; None when usage is fine or absent

@@ -2,7 +2,13 @@ from typing import Any
 
 from fake_export import bead, dep
 
-from gin_console.beads.definitions import Counts, child_counts, is_blocked, person_key
+from gin_console.beads.definitions import (
+    Counts,
+    bugs_found,
+    child_counts,
+    is_blocked,
+    person_key,
+)
 from gin_console.beads.snapshot import build_snapshot
 
 
@@ -73,3 +79,28 @@ def test_beads_023_person_key_is_the_lowercased_local_part() -> None:
     assert person_key("") is None
     assert person_key(None) is None
     assert person_key("@x") == "@x"
+
+
+def _found(rows: list[dict[str, Any]]) -> dict[str, int]:
+    return bugs_found(build_snapshot(rows))
+
+
+def _found_from(ident: str, target: str, **extra: Any) -> dict[str, Any]:
+    return bead(ident, dependencies=[dep(ident, target, "discovered-from")], **extra)
+
+
+# REQ-REPORTS-019
+def test_reports_019_bugs_found_counts_open_and_closed_bugs_not_tasks() -> None:
+    rows = [
+        bead("a-1"),
+        _found_from("a-9", "a-1", issue_type="bug", status="closed"),
+        _found_from("a-10", "a-1", issue_type="bug"),
+        _found_from("a-11", "a-1", issue_type="task"),
+    ]
+    assert _found(rows) == {"a-1": 2}
+
+
+# REQ-REPORTS-019
+def test_reports_019_bugs_found_ignores_other_dependency_kinds_and_none() -> None:
+    rows = [bead("a-1"), blocks("a-2", "a-1", issue_type="bug"), bead("a-3", issue_type="bug")]
+    assert _found(rows) == {}

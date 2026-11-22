@@ -33,7 +33,7 @@ def at(day: str) -> str:
 
 def team(rows: list[Any], milestone: str | None = None) -> TeamReport:
     return build_team(
-        read_beads(snap(rows), "alpha"), now=NOW, project="alpha", milestone=milestone
+        read_beads(snap(rows), "alpha", {}), now=NOW, project="alpha", milestone=milestone
     )
 
 

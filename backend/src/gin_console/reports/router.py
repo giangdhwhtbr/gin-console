@@ -11,6 +11,7 @@ from gin_console.beads.service import KeyedCache
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import BeadsError
 from gin_console.config import Settings
+from gin_console.reports.interactions import InteractionStore
 from gin_console.reports.models import ProjectError, Report, ReportBead, TeamReport
 from gin_console.reports.service import build_report
 from gin_console.reports.source import read_beads
@@ -30,6 +31,7 @@ def _message(exc: BeadsError | RecursionError) -> str:
 def build_router(
     settings: Settings,
     snapshots: SnapshotStore,
+    interactions: InteractionStore,
     clock: Callable[[], datetime],
     on_refresh: list[Callable[[], None]],
 ) -> APIRouter:
@@ -54,7 +56,13 @@ def build_router(
                 )
                 continue
             try:
-                beads.extend(read_beads(snapshots.get(entry.path), entry.name))
+                beads.extend(
+                    read_beads(
+                        snapshots.get(entry.path),
+                        entry.name,
+                        interactions.reopens(entry.path),
+                    )
+                )
             except (BeadsError, RecursionError) as exc:
                 if project != ALL:
                     raise
@@ -105,7 +113,11 @@ def build_router(
             return team.get(
                 (entry.name, milestone),
                 lambda: build_team(
-                    read_beads(snapshots.get(entry.path), entry.name),
+                    read_beads(
+                        snapshots.get(entry.path),
+                        entry.name,
+                        interactions.reopens(entry.path),
+                    ),
                     now=clock(),
                     project=entry.name,
                     milestone=milestone,
