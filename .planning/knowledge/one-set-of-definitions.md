@@ -41,7 +41,7 @@ The UX review of 2026-11-21 found the same scope showing 19, 17 and 0 blocked be
 - **E2E facts:** the Projects page is `/`, not `/projects`. The List assignee column is hidden below the `@4xl` container width, so assignee checks need a 1440px window.
 - **Backend fixtures:** `fake_export.bead(parent=...)` does not make a child for counts or blocked inheritance; use `dep(child, parent, "parent-child")`.
 - **Plain labels:** "Prep n of m done" is longer than "Prep n/m", so the second Gantt line cuts sooner (ellipsis plus hint). The Pace figure "2.4 done per day" wraps in the large value font; epic gin-console-rm-strung may restyle both.
-- **Conflict:** epic gin-console-5c4 also changes REQ-UI-095; whichever archives second refreshes its `base:` hash.
+- **REQ-UI-095:** epic gin-console-5c4 changed it again after this epic archived (tabs without AI usage and Data coverage); its delta used the base hash of this epic's text.
 
 **References**
 - Change: `docs/changes/archive/2026-11-22-gin-console-rm-definitions-definitions/`.

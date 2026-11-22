@@ -10,7 +10,7 @@ The UX review of 2026-11-21 found no way to reach the Sessions and Quota pages, 
 - Docker: the image no longer installs `claude` or `codex`, compose no longer mounts the login directories, and `scripts/docker-smoke.sh` checks they are absent. `.dockerignore` keeps `.claude` and `.codex` to keep a checkout's local agent settings out of the build context.
 
 **Consequences**
-- AI cost in Reports is unaffected: it reads the beads' `ai_usage`.
+- AI cost in Reports was unaffected at the time; epic gin-console-5c4 (2026-11-22) later removed every `ai_usage` reading from Reports (see `reports-without-ai-usage.md`).
 - `docker compose build` fails with the compose default `GIN_WORKFLOW_REF=v1.4.2`, a tag older than the `gin` executable; build with `GIN_WORKFLOW_REF=v3.0.0` (the Dockerfile default) until the compose default is fixed.
 - The runtime image still starts from `node:22-bookworm-slim` though Node is no longer needed at run time.
 
