@@ -81,3 +81,9 @@ describe("plain text style", () => {
     expect(lines.filter(({ line }) => /\bunderline/.test(line) && !line.includes("decoration-dotted")).map(({ at }) => at)).toEqual([]);
   });
 });
+
+describe("control outlines", () => {
+  it("REQ-UI-059 Contrast: inputs, selects and textareas draw their outline in --input", () => {
+    expect(css).toMatch(/input:not\(\[type="checkbox"\]\):not\(\[type="radio"\]\),\s*select,\s*textarea\s*\{[^}]*border-color:\s*var\(--input\)/);
+  });
+});

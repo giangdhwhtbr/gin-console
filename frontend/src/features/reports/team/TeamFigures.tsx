@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { formatDays, formatPercent } from "../format";
 import type { MemberFigures, TeamFigures as Figures, TeamMilestone, TeamTotals } from "../teamApi";
 import { formatDate } from "@/lib/dates";
+import { plural } from "@/features/milestones/format";
 import { WARN_DAYS } from "./format";
 
 const WARN = "text-state-blocked";
@@ -162,7 +163,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
           warnValue={onTime !== null && onTime < 1}
           warnSub={lateOpen > 0}
         />
-        <Cell label="Rework" rule={DEFINITIONS.rework} value={formatPercent(figures.rework_rate)} sub={[`${figures.reopens} reopens`, `${figures.bugs} bugs later`]} />
+        <Cell label="Rework" rule={DEFINITIONS.rework} value={formatPercent(figures.rework_rate)} sub={[plural(figures.reopens, "reopen"), `${plural(figures.bugs, "bug")} later`]} />
       </div>
       <ScopeBar figures={figures} member={member === null ? null : member.member} />
     </div>

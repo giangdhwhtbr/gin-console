@@ -185,6 +185,11 @@
   * {
     @apply border-border outline-ring/50;
     }
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    border-color: var(--input);
+  }
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;

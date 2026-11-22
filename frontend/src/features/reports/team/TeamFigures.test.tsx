@@ -106,4 +106,9 @@ describe("TeamFigures", () => {
     show({ pace: 2, pace_needed: 3.4 });
     expect(screen.getByText("last 5 days").className).not.toMatch(/opacity-/);
   });
+
+  it("REQ-REPORTS-013 the Rework figure uses singular for one reopen and one bug", () => {
+    show({ rework_rate: 0.5, reopens: 1, bugs: 1 });
+    expect(line("1 reopen, 1 bug later")).toBeInTheDocument();
+  });
 });
