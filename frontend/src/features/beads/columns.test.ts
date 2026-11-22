@@ -19,12 +19,13 @@ describe("columns", () => {
       bead("h", { status: "hooked" }),
       bead("b", { blocked: true }),
       bead("pb", { status: "in_progress", blocked: true }),
+      bead("db", { status: "deferred", blocked: true }),
       bead("c", { status: "closed", closed_at: "2026-10-15T00:00:00Z" }),
     ]);
     expect(ids(columns.backlog)).toEqual(["d"]);
     expect(ids(columns.ready)).toEqual(["r"]);
-    expect(ids(columns.in_progress).sort()).toEqual(["h", "p", "pb"]);
-    expect(ids(columns.blocked)).toEqual(["b"]);
+    expect(ids(columns.in_progress).sort()).toEqual(["h", "p"]);
+    expect(ids(columns.blocked).sort()).toEqual(["b", "db", "pb"]);
     expect(ids(columns.done)).toEqual(["c"]);
   });
 
@@ -70,8 +71,8 @@ describe("columns", () => {
       bead("n3", { ready: true, priority: 3 }),
       bead("c", { status: "closed" }),
     ]);
-    expect(ids(columns.in_flight).sort()).toEqual(["h", "p", "pb"]);
-    expect(ids(columns.blocked)).toEqual(["b"]);
+    expect(ids(columns.in_flight).sort()).toEqual(["h", "p"]);
+    expect(ids(columns.blocked).sort()).toEqual(["b", "pb"]);
     expect(ids(columns.next_up)).toEqual(["n0", "n1"]);
   });
 

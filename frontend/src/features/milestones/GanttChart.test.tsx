@@ -31,6 +31,27 @@ const track = (id: string, status = "open") => bead(id, { parent: "e-a", status,
 const prep = (id: string, status = "open") => bead(id, { parent: "e-a", status, labels: ["prep"] });
 
 describe("GanttChart", () => {
+  it("REQ-BEADS-021 an open epic whose bead is blocked shows the Blocked look; a closed one does not", () => {
+    const epicBeads = new Map([
+      ["e-a", bead("e-a", { blocked: true })],
+      ["e-b", bead("e-b", { blocked: true, status: "closed" })],
+    ]);
+    render(
+      <GanttChart
+        project="alpha"
+        plan={detail([epicPlan("e-a"), epicPlan("e-b", { status: "closed" }), epicPlan("e-c")])}
+        preview={false}
+        zoom="all"
+        onZoom={vi.fn()}
+        childBeads={new Map()}
+        epicBeads={epicBeads}
+      />,
+    );
+    expect(within(epicRow("e-a")).getByRole("img", { name: "Blocked" })).toBeInTheDocument();
+    expect(within(epicRow("e-b")).getByRole("img", { name: "Closed" })).toBeInTheDocument();
+    expect(within(epicRow("e-c")).getByRole("img", { name: "Open" })).toBeInTheDocument();
+  });
+
   it("REQ-MILESTONE-UI-015 tracks and prep counted apart; prep rows carry a Prep chip", async () => {
     drawKids({ "e-a": [track("e-a.1", "closed"), track("e-a.2"), prep("e-a.3", "closed"), prep("e-a.4")] });
     expect(epicRow("e-a")).toHaveTextContent("1/2 closed");

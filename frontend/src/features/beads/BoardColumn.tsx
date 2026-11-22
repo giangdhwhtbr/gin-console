@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { BeadSummary } from "./api";
 import { BeadCard } from "./BeadCard";
+import { isPrep } from "./prep";
 
 export function BoardColumn({
   title,
@@ -17,7 +18,10 @@ export function BoardColumn({
   empty?: string;
   footer?: ReactNode;
 }) {
-  const count = total === undefined || total === beads.length ? String(beads.length) : `${beads.length} of ${total}`;
+  const prep = beads.filter((b) => isPrep(b.labels)).length;
+  const own = beads.length - prep;
+  const shown = prep === 0 ? String(own) : `${own} + ${prep} prep`;
+  const count = total === undefined || total === beads.length ? shown : `${beads.length} of ${total}`;
   return (
     <section aria-label={title} className="flex min-w-48 flex-1 flex-col gap-2 rounded border p-2">
       <h2 className="flex items-baseline justify-between text-sm font-medium">

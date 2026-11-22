@@ -30,9 +30,9 @@ const HEAD: Record<Column, string> = {
 const RIGHT: Column[] = ["age", "progress", "closed", "cycle", "rework"];
 const STATUS_NAME: Record<BeadStatus, string> = { open: "open", in_progress: "in progress", closed: "closed", all: "" };
 
-const statusChip = (status: string): { text: string; warn: boolean } => {
+const statusChip = (status: string, blocked: boolean): { text: string; warn: boolean } => {
+  if (blocked) return { text: "Blocked", warn: true };
   if (status === "open") return { text: "Open", warn: false };
-  if (status === "blocked") return { text: "Blocked", warn: true };
   if (status === "in_progress") return { text: "In progress", warn: false };
   if (status === "closed") return { text: "Closed", warn: false };
   return { text: status, warn: false };
@@ -76,7 +76,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
     case "status":
       return (
         <TableCell>
-          <Chip {...statusChip(bead.status)} />
+          <Chip {...statusChip(bead.status, bead.blocked)} />
         </TableCell>
       );
     case "age":

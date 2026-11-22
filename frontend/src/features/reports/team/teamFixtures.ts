@@ -25,6 +25,7 @@ const bead = (overrides: Partial<TeamBead>): TeamBead => ({
   issue_type: "task",
   status: "open",
   bucket: "open",
+  blocked: false,
   assignee: "ann",
   priority: 2,
   created_at: "2026-11-02T09:00:00Z",

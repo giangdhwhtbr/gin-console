@@ -76,6 +76,7 @@ const DEFAULT_WIDTH = 960; // until the first measure, and in tests, which have 
 const TAIL_ROOM = 90;
 const MIN_TAIL = 24;
 const NO_KINDS: ReadonlyMap<string, BeadKind> = new Map();
+const NO_EPIC_BEADS: ReadonlyMap<string, BeadSummary> = new Map();
 
 type Props = {
   project: string;
@@ -85,6 +86,7 @@ type Props = {
   onZoom: (zoom: Zoom) => void;
   childBeads: ReadonlyMap<string, readonly BeadSummary[]>;
   kinds?: ReadonlyMap<string, BeadKind>;
+  epicBeads?: ReadonlyMap<string, BeadSummary>;
 };
 
 /** REQ-MILESTONE-UI-003 and -011 to -015: each epic as beads on a thread, one bead per working day, zoomed to fit the width. */
@@ -115,7 +117,7 @@ function useWidth(ref: RefObject<HTMLElement | null>) {
   return width;
 }
 
-function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KINDS }: Props) {
+function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KINDS, epicBeads = NO_EPIC_BEADS }: Props) {
   const wide = useWide();
   const label = useLabelWidth();
   const scroller = useRef<HTMLDivElement>(null);
@@ -244,6 +246,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
                     integration={plan.integration}
                     kids={childBeads.get(row.epic.id) ?? []}
                     kind={kinds.get(row.epic.id) ?? null}
+                    epicBead={epicBeads.get(row.epic.id)}
                     open={expanded.has(row.epic.id)}
                     faded={faded(row.epic.id)}
                     onToggle={() => toggle(row.epic.id)}
@@ -374,6 +377,7 @@ function EpicRow({
   integration,
   kids,
   kind,
+  epicBead,
   open,
   faded,
   onToggle,
@@ -388,13 +392,14 @@ function EpicRow({
   integration: string | null;
   kids: readonly BeadSummary[];
   kind: BeadKind | null;
+  epicBead: BeadSummary | undefined;
   open: boolean;
   faded: boolean;
   onToggle: () => void;
   onHot: () => void;
 }) {
   const { epic } = row;
-  const look = lookOf(epic.status);
+  const look = epicBead?.blocked && epic.status !== "closed" ? LOOK.blocked : lookOf(epic.status);
   const Icon = look.icon;
   const days = beadsOf(epic);
   const x0 = xOf(axis, days[0]);

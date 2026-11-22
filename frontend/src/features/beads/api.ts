@@ -6,6 +6,7 @@ export type BeadComplexity = "low" | "medium" | "high";
 export type TrackRef = { plan: string | null; number: number };
 export type GateRef = { plan: string; number: number; track_id: string | null; lane: string | null };
 export type Claim = { holder: string; expires_at: string };
+export type ChildCounts = { total: number; closed: number; prep_total: number; prep_closed: number };
 export type BeadSummary = {
   id: string;
   title: string;
@@ -37,6 +38,7 @@ export type BeadSummary = {
   track: TrackRef | null;
   claim: Claim | null;
   waits_for: GateRef | null;
+  child_counts: ChildCounts;
 };
 export type MilestoneStatus = "active" | "scheduled" | "planned" | "closed";
 export type MilestoneOption = {
@@ -87,6 +89,9 @@ const isGateRef = (value: unknown) =>
 const KINDS: readonly BeadKind[] = ["capability", "technical", "parity"];
 const COMPLEXITIES: readonly BeadComplexity[] = ["low", "medium", "high"];
 
+const isChildCounts = (value: unknown): value is ChildCounts =>
+  isObject(value) && ["total", "closed", "prep_total", "prep_closed"].every((k) => isFiniteNumber(field(value, k)));
+
 function isSummary(value: unknown): value is BeadSummary {
   return (
     isObject(value) &&
@@ -99,6 +104,7 @@ function isSummary(value: unknown): value is BeadSummary {
     ["ready", "blocked"].every((k) => typeof field(value, k) === "boolean") &&
     isStringArray(field(value, "labels")) &&
     isStringArray(field(value, "blocked_by")) &&
+    isChildCounts(field(value, "child_counts")) &&
     isMissingOr(field(value, "kind"), isString) &&
     isMissingOr(field(value, "capabilities"), isStringArray) &&
     isMissingOr(field(value, "complexity"), isString) &&

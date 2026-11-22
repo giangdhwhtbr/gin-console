@@ -36,6 +36,7 @@ export const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSumm
   track: null,
   claim: null,
   waits_for: null,
+  child_counts: { total: 0, closed: 0, prep_total: 0, prep_closed: 0 },
   ...overrides,
 });
 

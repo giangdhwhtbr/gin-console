@@ -41,6 +41,7 @@ export function GanttTab({
     if (beads.status === "ok") for (const b of beads.beads) if (b.kind !== null) map.set(b.id, b.kind);
     return map;
   }, [beads]);
+  const epicBeads = useMemo(() => new Map(beads.status === "ok" ? beads.beads.map((b) => [b.id, b]) : []), [beads]);
   const pickable = plan.status === "planned" || plan.status === "scheduled";
   const previewing = pickable && start !== null;
   const failed = previewing && preview.status === "error";
@@ -80,7 +81,7 @@ export function GanttTab({
           Loading preview…
         </p>
       ) : (
-        <GanttChart project={project} plan={shown} preview={previewing} zoom={zoom} onZoom={onZoom} childBeads={childBeads} kinds={kinds} />
+        <GanttChart project={project} plan={shown} preview={previewing} zoom={zoom} onZoom={onZoom} childBeads={childBeads} kinds={kinds} epicBeads={epicBeads} />
       )}
     </div>
   );

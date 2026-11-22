@@ -91,6 +91,23 @@ describe("BoardView", () => {
     expect(within(done).getAllByRole("link")).toHaveLength(1);
   });
 
+  it("REQ-UI-031 blocked first and prep tasks counted apart", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stubBeads(() =>
+      json([
+        bead("t-1", { blocked: true, status: "in_progress", labels: ["track:1"], title: "Blocked track one" }),
+        bead("t-2", { blocked: true, ready: true, labels: ["track:2"], title: "Blocked track two" }),
+        bead("p-1", { blocked: true, labels: ["prep"], title: "Blocked prep" }),
+      ]),
+    );
+    render(<BeadsPage />);
+
+    const blocked = await screen.findByRole("region", { name: "Blocked" });
+    expect(within(blocked).getByText("2 + 1 prep")).toBeInTheDocument();
+    expect(within(blocked).getAllByRole("link")).toHaveLength(3);
+    expect(within(screen.getByRole("region", { name: "In Progress" })).queryAllByRole("link")).toHaveLength(0);
+  });
+
   it("REQ-UI-031 pinned bead", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=board");
     stubBeads(() =>

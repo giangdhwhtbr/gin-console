@@ -71,7 +71,8 @@ export const bead = (id: string, o: Partial<BeadSummary> = {}): BeadSummary => (
   assignee: null, parent: null, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-10T00:00:00Z',
   dependency_count: 0, dependent_count: 0, comment_count: 0, ready: false, blocked: false,
   created_by: null, blocked_by: [], closed_at: null, milestone: null,
-  lane: null, track: null, claim: null, waits_for: null, ...o,
+  lane: null, track: null, claim: null, waits_for: null,
+  child_counts: { total: 0, closed: 0, prep_total: 0, prep_closed: 0 }, ...o,
 });
 
 /** A 502 from the milestones API, as the backend sends it (REQ-MILESTONE-UI-008). */

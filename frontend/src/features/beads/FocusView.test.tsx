@@ -43,14 +43,14 @@ describe("FocusView", () => {
     const inFlight = await screen.findByRole("region", { name: "In flight" });
     expect(within(inFlight).getByRole("link", { name: "In progress bead" })).toBeInTheDocument();
     expect(within(inFlight).getByRole("link", { name: "Hooked bead" })).toBeInTheDocument();
-    expect(within(inFlight).getByRole("link", { name: "In progress and blocked bead" })).toBeInTheDocument();
-    expect(within(inFlight).getByText("3")).toBeInTheDocument();
-    expect(within(inFlight).getAllByRole("link")).toHaveLength(3);
+    expect(within(inFlight).getByText("2")).toBeInTheDocument();
+    expect(within(inFlight).getAllByRole("link")).toHaveLength(2);
 
     const blocked = screen.getByRole("region", { name: "Blocked" });
     expect(within(blocked).getByRole("link", { name: "Blocked bead" })).toBeInTheDocument();
-    expect(within(blocked).getByText("1")).toBeInTheDocument();
-    expect(within(blocked).getAllByRole("link")).toHaveLength(1);
+    expect(within(blocked).getByRole("link", { name: "In progress and blocked bead" })).toBeInTheDocument();
+    expect(within(blocked).getByText("2")).toBeInTheDocument();
+    expect(within(blocked).getAllByRole("link")).toHaveLength(2);
 
     const nextUp = screen.getByRole("region", { name: "Next up" });
     expect(within(nextUp).getByRole("link", { name: "Next up P1 bead" })).toBeInTheDocument();

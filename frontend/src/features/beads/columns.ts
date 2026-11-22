@@ -32,11 +32,11 @@ export function closedNewestFirst(beads: readonly BeadSummary[]): BeadSummary[] 
 const working = (bead: BeadSummary) => bead.status === "in_progress" || bead.status === "hooked";
 
 export function boardColumn(bead: BeadSummary): BoardColumnKey | null {
+  if (bead.status === "closed") return "done";
+  if (bead.blocked) return "blocked";
   if (bead.status === "deferred") return "backlog";
   if (bead.ready) return "ready";
   if (working(bead)) return "in_progress";
-  if (bead.blocked) return "blocked";
-  if (bead.status === "closed") return "done";
   return null;
 }
 
@@ -58,8 +58,9 @@ export function boardColumns(beads: readonly BeadSummary[]): Record<BoardColumnK
 }
 
 function focusColumn(bead: BeadSummary): FocusColumnKey | null {
-  if (working(bead)) return "in_flight";
+  if (bead.status === "closed") return null;
   if (bead.blocked) return "blocked";
+  if (working(bead)) return "in_flight";
   if (bead.ready && bead.priority <= 1) return "next_up";
   return null;
 }
