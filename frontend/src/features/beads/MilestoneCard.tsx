@@ -2,15 +2,15 @@ import { TriangleAlert } from "lucide-react";
 import { useCallback } from "react";
 import { Link } from "@/app/Link";
 import { fetchMilestones, milestonePath } from "@/features/milestones/api";
+import { lateOf } from "@/features/milestones/late";
 import { plural } from "@/features/milestones/format";
+import { MilestoneStatus } from "@/features/milestones/MilestoneStatus";
 import { formatDate, formatRange } from "@/lib/dates";
 import { useLoad } from "@/features/milestones/useLoad";
 import { cn } from "@/lib/utils";
 import type { BeadDetail } from "./api";
 import { workingDaysLeft } from "./epicOverview";
 import { Fact, Facts, OverviewCard } from "./OverviewCard";
-
-const STATUS: Record<string, string> = { active: "Active", scheduled: "Scheduled", planned: "Planned", closed: "Closed" };
 
 function Details({ project, id }: { project: string; id: string }) {
   const fetcher = useCallback(() => fetchMilestones(project), [project]);
@@ -35,14 +35,17 @@ function Details({ project, id }: { project: string; id: string }) {
   );
   if (entry === undefined) return link;
   const { start, end, finish } = entry;
-  const late = end !== null && finish !== null && finish > end;
+  // the list has no closing date, so a closed milestone is never marked late here (REQ-MILESTONE-UI-023)
+  const late = lateOf({ status: entry.status, end, finish }, today);
   const window = start !== null && end !== null ? formatRange(start, end, today) : null;
   const left = entry.status === "active" && end !== null ? workingDaysLeft(today, end) : null;
   return (
     <>
       {link}
       <Facts>
-        <Fact label="Status">{STATUS[entry.status] ?? entry.status}</Fact>
+        <Fact label="Status">
+          <MilestoneStatus status={entry.status} />
+        </Fact>
         {window !== null && <Fact label="Window">{window}</Fact>}
         {left !== null && <Fact label="Ends in">{plural(left, "working day")}</Fact>}
         {finish !== null && (

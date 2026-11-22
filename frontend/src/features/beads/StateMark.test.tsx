@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { HintProvider } from "@/components/HintProvider";
 import { DEFINITIONS } from "@/lib/definitions";
 import { bead } from "./beadFixtures";
+import { MilestoneStatusProvider } from "./milestoneStatus";
 import { StateMark, StateWord, stateEdge } from "./StateMark";
 
 afterEach(cleanup);
@@ -45,5 +46,23 @@ describe("StateMark", () => {
     expect(word.parentElement).toHaveClass("max-w-full", "min-w-0");
     expect(word.parentElement).not.toHaveAttribute("title");
     expect(document.getElementById(word.parentElement?.getAttribute("aria-describedby") ?? "")).toHaveTextContent(`All tracks closed. ${DEFINITIONS.done}`);
+  });
+
+  it("REQ-MILESTONE-UI-022 a milestone bead draws its milestone status; others and unknown milestones draw their state", () => {
+    const statuses = new Map([["m-1", "scheduled" as const], ["t-1", "active" as const]]);
+    const draw = (item: ReturnType<typeof bead>) =>
+      render(
+        <MilestoneStatusProvider statuses={statuses}>
+          <StateMark bead={item} />
+        </MilestoneStatusProvider>,
+      );
+    draw(bead("m-1", { issue_type: "milestone", ready: true }));
+    expect(screen.getByText("Scheduled").closest("[data-status]")).toHaveAttribute("data-status", "scheduled");
+    cleanup();
+    draw(bead("m-9", { issue_type: "milestone", ready: true }));
+    expect(screen.getByText("Ready")).toBeInTheDocument();
+    cleanup();
+    draw(bead("t-1", { ready: true }));
+    expect(screen.getByText("Ready")).toBeInTheDocument();
   });
 });

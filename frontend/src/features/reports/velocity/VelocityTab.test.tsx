@@ -1,6 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { json } from "@/features/beads/beadFixtures";
+import type { MilestoneList } from "@/features/milestones/api";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
 import { VelocityTab } from "./VelocityTab";
 import { vel } from "./velocityFixtures";
@@ -26,7 +27,7 @@ const stub = (answer: (project: string) => Response) => {
   });
   vi.stubGlobal("fetch", mock);
 };
-const show = (projects: string[]) => render(<VelocityTab projects={projects} onDaysPerPoint={() => undefined} />);
+const show = (projects: string[], loaded: ReadonlyMap<string, MilestoneList> = new Map()) => render(<VelocityTab projects={projects} loaded={loaded} />);
 
 describe("VelocityTab", () => {
   it("REQ-REPORTS-018 milestones with velocity: figures, charts and table", async () => {
@@ -70,5 +71,13 @@ describe("VelocityTab", () => {
     expect(screen.getByRole("heading", { name: "beta" })).toBeTruthy();
     expect(screen.getByText("1.4 d/pt")).toBeTruthy();
     expect(screen.getAllByRole("table")).toHaveLength(1);
+  });
+
+  it("REQ-REPORTS-018 a project the page already loaded is shown without a request; the others are requested", async () => {
+    stub(() => json(alpha({ value: 2, measured_epics: 1, assumed: false })));
+    show(["alpha", "beta"], new Map([["alpha", alpha()]]));
+    expect(await screen.findByText("2.0 d/pt")).toBeTruthy();
+    expect(screen.getByText("1.4 d/pt")).toBeTruthy();
+    expect(vi.mocked(fetch).mock.calls.map(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.href : input.url))).toEqual(["/api/milestones?project=beta"]);
   });
 });

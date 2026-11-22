@@ -222,6 +222,22 @@ describe("MilestonesPage", () => {
     expect(within(hardening).getByText("Finishes 1 Dec")).not.toHaveClass("text-state-blocked");
   });
 
+  it("REQ-MILESTONE-UI-001 finish is in the warning color when late by today, never for a closed milestone", async () => {
+    open(
+      json(
+        list(
+          [
+            entry("m-1", { title: "Beta", status: "active", start: "2026-11-02", end: "2026-11-12", finish: "2026-11-10" }),
+            entry("m-2", { title: "Old", status: "closed", start: "2026-10-01", end: "2026-10-12", finish: "2026-10-30" }),
+          ],
+          { today: "2026-11-16" },
+        ),
+      ),
+    );
+    expect(within(await rowOf("Beta")).getByText("Finishes 10 Nov")).toHaveClass("text-state-blocked");
+    expect(within(await rowOf("Old")).getByText("Finishes 30 Oct")).not.toHaveClass("text-state-blocked");
+  });
+
   it("REQ-MILESTONE-UI-001 say/do", async () => {
     const v = { committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86 };
     open(

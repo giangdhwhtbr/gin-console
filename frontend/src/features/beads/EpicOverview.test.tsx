@@ -151,7 +151,7 @@ describe("EpicOverview cards", () => {
     const milestone = card("Milestone");
     const link = await milestone.findByRole("link", { name: "ex-m2 Checkout v2" });
     expect(link).toHaveAttribute("href", "/milestones/example/ex-m2");
-    expect(milestone.getByText("Active")).toBeInTheDocument();
+    expect(milestone.getByText("Active").closest("[data-status]")).toHaveAttribute("data-status", "active");
     expect(milestone.getByText("10 Nov – 1 Dec")).toBeInTheDocument();
     expect(milestone.getByText("8 working days")).toBeInTheDocument();
     const finish = milestone.getByText("finish 16 Feb 2027, after the end");
@@ -165,6 +165,22 @@ describe("EpicOverview cards", () => {
     const milestone = card("Milestone");
     expect(await milestone.findByText("finish 1 Dec")).toBeInTheDocument();
     expect(milestone.queryByText(/working day/)).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-023 a closed milestone shows no late mark, whatever its forecast", async () => {
+    stub(WORKFLOW, list([entry("ex-m2", { title: "Checkout v2", status: "closed", start: "2026-11-10", end: "2026-12-01", finish: "2027-02-16" })], { today: "2026-12-20" }));
+    show();
+    const milestone = card("Milestone");
+    const finish = await milestone.findByText("finish 16 Feb 2027");
+    expect(finish.parentElement?.querySelector("svg")).toBeNull();
+    expect(milestone.queryByText(/after the end/)).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-023 an active milestone is late once today is past its end", async () => {
+    stub(WORKFLOW, list([entry("ex-m2", { title: "Checkout v2", status: "active", start: "2026-11-10", end: "2026-12-01", finish: "2026-12-01" })], { today: "2026-12-03" }));
+    show();
+    const finish = await card("Milestone").findByText(/^finish 1 Dec/);
+    expect(finish.parentElement?.querySelector("svg")).not.toBeNull();
   });
 
   it("REQ-UI-120 No milestone: an epic without a milestone says No milestone and asks nothing", () => {

@@ -13,6 +13,7 @@ import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } f
 import { CopyCommand } from "./CopyCommand";
 import { ForecastCard } from "./ForecastCard";
 import { percent, plural } from "./format";
+import { lateOf } from "./late";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
 import { UnassignedEpics } from "./UnassignedEpics";
@@ -136,7 +137,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
           {m.start === null || m.end === null ? "No dates" : formatRange(m.start, m.end, today)}
         </span>
         {m.finish !== null && (
-          <span className={cn(m.end !== null && m.finish > m.end ? "text-state-blocked" : "text-muted-foreground")}>{`Finishes ${date(m.finish)}`}</span>
+          <span className={cn(lateOf({ status: m.status, end: m.end, finish: m.finish }, today) ? "text-state-blocked" : "text-muted-foreground")}>{`Finishes ${date(m.finish)}`}</span>
         )}
       </span>
       <span className="text-sm">{m.lanes === null ? "–" : plural(m.lanes, "lane")}</span>

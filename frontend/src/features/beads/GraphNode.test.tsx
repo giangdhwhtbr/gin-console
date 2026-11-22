@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { bead } from "./beadFixtures";
 import { GraphNodeButton } from "./GraphNode";
+import { MilestoneStatusProvider } from "./milestoneStatus";
 
 afterEach(cleanup);
 
@@ -59,5 +60,19 @@ describe("GraphNodeButton lanes", () => {
     place(bead("g-1", { status: "closed", waits_for: { plan: "p", number: 7, track_id: null, lane: null } }));
     expect(screen.getByText("Waits for track 7 to merge")).toBeInTheDocument();
     expect(screen.getByText("Merged")).toBeInTheDocument();
+  });
+});
+
+describe("GraphNodeButton milestone status", () => {
+  // REQ-MILESTONE-UI-022 Graph node
+  it("REQ-MILESTONE-UI-022 a milestone node reads its milestone status", () => {
+    const node = { bead: bead("ex-m2", { issue_type: "milestone", status: "open", ready: true }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, done: 0, total: 0 };
+    render(
+      <MilestoneStatusProvider statuses={new Map([["ex-m2", "active" as const]])}>
+        <GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} />
+      </MilestoneStatusProvider>,
+    );
+    expect(screen.getByText("Active").closest("[data-status]")).toHaveAttribute("data-status", "active");
+    expect(screen.queryByText("Ready")).toBeNull();
   });
 });

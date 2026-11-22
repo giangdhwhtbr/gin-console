@@ -10,9 +10,9 @@ import type { TeamReport } from "../teamApi";
 afterEach(cleanup);
 
 const filters = (over: Partial<ReportFilters> = {}): ReportFilters => ({ ...parseReportSearch("?project=alpha&tab=team"), ...over });
-function show(report: TeamReport, over: Partial<ReportFilters> = {}) {
+function show(report: TeamReport, over: Partial<ReportFilters> = {}, finish: string | null = null) {
   const onChange = vi.fn();
-  render(<TeamSection project="alpha" report={report} filters={filters(over)} onChange={onChange} />);
+  render(<TeamSection project="alpha" report={report} filters={filters(over)} finish={finish} onChange={onChange} />);
   return onChange;
 }
 const optionsOf = (group: string) => within(screen.getByRole("group", { name: group })).getAllByRole("option").map((o) => o.getAttribute("value"));
@@ -50,10 +50,26 @@ describe("TeamSection", () => {
 
   it("REQ-REPORTS-012 milestone line of an active milestone", () => {
     show(teamReport());
-    expect(screen.getByText("Active", { selector: "[data-slot=badge]" })).toBeInTheDocument();
+    expect(screen.getByText("Active").closest("[data-status]")).toHaveAttribute("data-status", "active");
+    expect(screen.getByText("Active").closest("[data-slot=badge]")).toHaveTextContent(/^Active$/);
     expect(screen.getByText("2 Nov – 27 Nov")).toBeInTheDocument();
     expect(screen.getByText("working day 9 of 20 · 11 left")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open Gantt" })).toHaveAttribute("href", milestonePath("alpha", "m2"));
+  });
+
+  it("REQ-REPORTS-012 late active milestone: the chip reads Active · late with a warning mark", () => {
+    show(teamReport(), {}, "2027-02-16");
+    const chip = screen.getByText("Active").closest("[data-slot=badge]");
+    expect(chip).toHaveTextContent("Active · late");
+    expect(chip?.querySelector("svg.lucide-triangle-alert")).not.toBeNull();
+    cleanup();
+    show(teamReport(), {}, "2026-11-27");
+    expect(screen.getByText("Active").closest("[data-slot=badge]")).toHaveTextContent(/^Active$/);
+  });
+
+  it("REQ-REPORTS-012 an active milestone past its end is late without a forecast", () => {
+    show(teamReport({ today: "2026-11-30" }));
+    expect(screen.getByText("Active").closest("[data-slot=badge]")).toHaveTextContent("Active · late");
   });
 
   it("REQ-REPORTS-012 milestone line of a closed milestone", () => {
@@ -64,7 +80,7 @@ describe("TeamSection", () => {
 
   it("REQ-REPORTS-012 milestone line of a planned milestone", () => {
     show(teamReport({ milestone: "m3" }));
-    expect(screen.getByText("Planned", { selector: "[data-slot=badge]" })).toBeInTheDocument();
+    expect(screen.getByText("Planned").closest("[data-slot=badge]")).toHaveTextContent(/^Planned$/);
     expect(screen.getByText("starts in 12 working days")).toBeInTheDocument();
   });
 

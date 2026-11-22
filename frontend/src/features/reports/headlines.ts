@@ -1,3 +1,4 @@
+import { lateOf } from "@/features/milestones/late";
 import { formatDate } from "@/lib/dates";
 import type { DaysPerPoint } from "@/features/milestones/api";
 import { oneDecimal } from "@/features/milestones/format";
@@ -14,7 +15,8 @@ export function gapCount(report: Report): number {
   return c.not_collected.length + c.invalid.length + c.unpriced.length + c.sources.length + report.errors.length;
 }
 
-export function teamHeadline(report: TeamReport): Headline {
+/** `finish` is the forecast of the selected milestone from the Milestones list, `null` while that has not loaded. */
+export function teamHeadline(report: TeamReport, finish: string | null): Headline {
   const milestone = selectedMilestone(report);
   const { team } = report;
   if (milestone === null || team === null) return { text: "No milestones", warn: false };
@@ -23,8 +25,8 @@ export function teamHeadline(report: TeamReport): Headline {
     return late > 0 ? { text: `Finished ${late} d late`, warn: true } : { text: "Finished on time", warn: false };
   }
   if (report.today < milestone.start) return { text: `Starts ${formatDate(milestone.start, report.today)}`, warn: false };
-  const progress = `${team.closed} of ${team.scope} closed`;
-  if (team.late_open > 0) return { text: `${progress} · past end`, warn: true };
+  const progress = `${team.closed} of ${team.scope} done`;
+  if (lateOf({ status: milestone.status, end: milestone.end, finish }, report.today)) return { text: `${progress} · late`, warn: true };
   if (team.pace_needed !== null && team.pace_needed > team.pace) return { text: `${progress} · behind pace`, warn: true };
   return { text: `${progress} · on pace`, warn: false };
 }

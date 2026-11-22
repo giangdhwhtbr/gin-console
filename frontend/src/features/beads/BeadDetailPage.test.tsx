@@ -826,4 +826,44 @@ describe("BeadDetailPage", () => {
     const crumb = within(await screen.findByRole("navigation", { name: "Breadcrumb" }));
     expect(await crumb.findByRole("link", { name: "p-1" })).toHaveAttribute("href", "/beads/p/p-1");
   });
+  describe("REQ-MILESTONE-UI-022 milestone beads show their milestone status", () => {
+    const stubMilestones = (detail: BeadDetail, milestones: () => Response) =>
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((input: RequestInfo | URL) => {
+          const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+          if (url.includes("/api/beads/milestones")) return Promise.resolve(milestones());
+          if (url.endsWith("/comments")) return Promise.resolve(json([]));
+          return Promise.resolve(json(detail));
+        }),
+      );
+
+    it("bead page of a milestone: Active with the active icon, not Open or Ready", async () => {
+      stubMilestones(beadDetail("ex-m2", { issue_type: "milestone", status: "open", ready: true }), () =>
+        json({ milestones: [{ id: "ex-m2", title: "M2", status: "active", start: "2026-11-10", end: "2026-12-01" }], current: "ex-m2" }),
+      );
+      render(<BeadDetailPage project="alpha" id="ex-m2" />);
+      const header = await screen.findByRole("heading", { name: "Title ex-m2" });
+      const status = await within(header.parentElement as HTMLElement).findByText("Active");
+      expect(status.closest("[data-status]")).toHaveAttribute("data-status", "active");
+      expect(screen.queryByText("Ready")).toBeNull();
+      expect(screen.queryByText("Open")).toBeNull();
+    });
+
+    it("milestones unavailable: the header shows the bead status", async () => {
+      stubMilestones(beadDetail("ex-m2", { issue_type: "milestone", status: "in_progress" }), () => json({ error: "gin is down" }, 502));
+      render(<BeadDetailPage project="alpha" id="ex-m2" />);
+      const header = await screen.findByRole("heading", { name: "Title ex-m2" });
+      expect(await within(header.parentElement as HTMLElement).findByText("In progress")).toBeInTheDocument();
+      expect(screen.queryByText("Active")).toBeNull();
+    });
+
+    it("a bead that is not a milestone does not ask for the milestones", async () => {
+      stubFetch(beadDetail("a-5"));
+      render(<BeadDetailPage project="alpha" id="a-5" />);
+      await screen.findByRole("heading", { name: "Title a-5" });
+      const calls = vi.mocked(fetch).mock.calls.map(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url));
+      expect(calls.some((url) => url.includes("/api/beads/milestones"))).toBe(false);
+    });
+  });
 });

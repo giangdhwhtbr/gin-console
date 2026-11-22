@@ -1,19 +1,38 @@
+import { TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { workdaysAfter } from "@/features/milestones/format";
+import { lateOf } from "@/features/milestones/late";
+import { MilestoneStatus } from "@/features/milestones/MilestoneStatus";
 import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { TeamMilestone, TeamReport } from "../teamApi";
 import { lateDays } from "./format";
 
-const STATUS_LABEL = { active: "Active", scheduled: "Scheduled", planned: "Planned", closed: "Closed" } as const;
-
-function chipText(m: TeamMilestone): string {
-  if (m.status !== "closed") return STATUS_LABEL[m.status];
-  const late = lateDays(m);
-  return late > 0 ? `Closed · ${late} d late` : "Closed · on time";
+/** The chip of the milestone line: how a closed milestone ended, else the milestone status and " · late" by REQ-MILESTONE-UI-023. */
+function Chip({ milestone, finish, today }: { milestone: TeamMilestone; finish: string | null; today: string }) {
+  if (milestone.status === "closed") {
+    const late = lateDays(milestone);
+    return (
+      <Badge variant="outline" className={cn(late > 0 && "text-state-blocked")}>
+        {late > 0 ? `Closed · ${late} d late` : "Closed · on time"}
+      </Badge>
+    );
+  }
+  const late = lateOf({ status: milestone.status, end: milestone.end, finish, closedOn: milestone.closed_on }, today);
+  return (
+    <Badge variant="outline" className={cn(late && "text-state-blocked")}>
+      <MilestoneStatus status={milestone.status} />
+      {late && (
+        <>
+          <TriangleAlert aria-hidden className="size-3.5" />
+          {" · late"}
+        </>
+      )}
+    </Badge>
+  );
 }
 
-export function MilestoneLine({ report, milestone }: { report: TeamReport; milestone: TeamMilestone }) {
+export function MilestoneLine({ report, milestone, finish }: { report: TeamReport; milestone: TeamMilestone; finish: string | null }) {
   const { team, today } = report;
   let progress: string | null = null;
   if (milestone.status === "closed" && milestone.closed_on !== null) progress = `finished ${formatDate(milestone.closed_on, today)}`;
@@ -22,9 +41,7 @@ export function MilestoneLine({ report, milestone }: { report: TeamReport; miles
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <h2 className="font-semibold">{milestone.title}</h2>
-      <Badge variant="outline" className={cn(milestone.status === "closed" && lateDays(milestone) > 0 && "text-state-blocked")}>
-        {chipText(milestone)}
-      </Badge>
+      <Chip milestone={milestone} finish={finish} today={today} />
       <span className="text-sm text-muted-foreground">
         {formatRange(milestone.start, milestone.end, today)}
       </span>

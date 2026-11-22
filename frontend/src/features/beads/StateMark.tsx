@@ -2,8 +2,10 @@ import { Ban, Check, CircleCheck, CircleDot, Clock } from "lucide-react";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
+import { MilestoneStatus } from "@/features/milestones/MilestoneStatus";
 import type { BeadSummary } from "./api";
 import { STATE_LABEL, stateOf, type GraphState } from "./graph";
+import { useMilestoneStatus } from "./milestoneStatus";
 
 const ICON = { ready: CircleCheck, in_progress: CircleDot, blocked: Ban, done: Check, deferred: Clock } as const;
 const TEXT: Record<GraphState, string> = {
@@ -31,7 +33,10 @@ const EDGE: Record<GraphState, string> = {
 /** The 4px left edge of a card or a node, in the colour of the state. */
 export const stateEdge = (state: GraphState) => `border-l-4 ${EDGE[state]}`;
 
+/** The state of a bead; a milestone bead draws its milestone status when it is known (REQ-MILESTONE-UI-022). */
 export function StateMark({ bead, className }: { bead: BeadSummary; className?: string }) {
+  const milestone = useMilestoneStatus(bead.id);
+  if (bead.issue_type === "milestone" && milestone !== null) return <MilestoneStatus status={milestone} className={className} />;
   const state = stateOf(bead);
   const Icon = ICON[state];
   return (

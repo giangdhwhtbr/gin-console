@@ -234,17 +234,83 @@ describe("ReportsPage", () => {
     expect(screen.getByLabelText("Sprint")).toHaveValue("s7");
   });
 
-  it("REQ-UI-095 velocity tab requests the milestones once and shows the headline", async () => {
+  it("REQ-UI-095 velocity tab shows the headline of the list the page already asked for, once", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
     const mock = stub();
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
-    expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual([]);
     await userEvent.click(screen.getByRole("tab", { name: /^Velocity/ }));
     expect(window.location.search).toContain("tab=velocity");
     expect(await screen.findByRole("tab", { name: /^Velocity.*1\.4 d\/pt/ })).toBeTruthy();
     expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
     expect(screen.queryByLabelText("Sprint")).toBeNull();
+  });
+
+  it("REQ-UI-095 requests the Milestones list once for a project when switching Team, Delivery and Velocity", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=team");
+    const mock = stub();
+    render(<ReportsPage />);
+    await screen.findByText("working day 9 of 20 · 11 left");
+    await userEvent.click(screen.getByRole("tab", { name: /^Delivery/ }));
+    await screen.findByText("Beads closed");
+    await userEvent.click(screen.getByRole("tab", { name: /^Velocity/ }));
+    expect(await screen.findByText("1.4 d/pt", { selector: "dd" })).toBeTruthy();
+    await userEvent.click(screen.getByRole("tab", { name: /^Team/ }));
+    await screen.findByText("working day 9 of 20 · 11 left");
+    expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
+  });
+
+  it("REQ-UI-095 opening Velocity first still requests the Milestones list once", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=velocity");
+    const mock = stub();
+    render(<ReportsPage />);
+    expect(await screen.findByRole("tab", { name: /^Velocity.*1\.4 d\/pt/ })).toBeTruthy();
+    await screen.findByText("No kicked-off milestones with points yet");
+    expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
+  });
+
+  it("REQ-UI-095 All projects on Velocity asks for the projects not yet loaded only", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    const mock = stub();
+    render(<ReportsPage />);
+    await screen.findByText("Beads closed");
+    await vi.waitFor(() => expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toHaveLength(1));
+    await userEvent.selectOptions(screen.getByLabelText("Project"), "all");
+    await userEvent.click(screen.getByRole("tab", { name: /^Velocity/ }));
+    await screen.findByRole("heading", { name: "beta" });
+    await vi.waitFor(() => expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toHaveLength(2));
+    expect(requested(mock).filter((u) => u.startsWith("/api/milestones")).sort()).toEqual(["/api/milestones?project=alpha", "/api/milestones?project=beta"]);
+  });
+
+  it("REQ-UI-095 late milestone headline: the forecast of the selected milestone, with a warning icon", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub(
+      undefined,
+      () => json(lateTeam({ closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 })),
+      () => json(list([entry("m2", { status: "active", start: "2026-11-02", end: "2026-11-27", finish: "2027-02-16" })], { today: "2026-11-12" })),
+    );
+    render(<ReportsPage />);
+    const tab = await screen.findByRole("tab", { name: /Team\s*27 of 64 done · late/ });
+    expect(tab.querySelector("svg")).not.toBeNull();
+  });
+
+  it("REQ-UI-095 the Team headline applies the rule without the forecast while the list loads or after it failed", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub(undefined, () => json(lateTeam({ closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 })), () => json({ error: "gin is down" }, 502));
+    render(<ReportsPage />);
+    expect(await screen.findByRole("tab", { name: /Team\s*27 of 64 done · on pace/ })).toBeInTheDocument();
+  });
+
+  it("REQ-REPORTS-012 late active milestone: the Team chip reads Active · late once the list has the forecast", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=team");
+    stub(
+      undefined,
+      undefined,
+      () => json(list([entry("m2", { status: "active", start: "2026-11-02", end: "2026-11-27", finish: "2027-02-16" })], { today: "2026-11-12" })),
+    );
+    render(<ReportsPage />);
+    await screen.findByText("working day 9 of 20 · 11 left");
+    await vi.waitFor(() => expect(document.querySelector("[data-slot=badge]")).toHaveTextContent("Active · late"));
   });
 
   it("REQ-UI-095 tab order puts Velocity after Delivery", async () => {
@@ -331,14 +397,14 @@ describe("ReportsPage", () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
     stub(undefined, () => json(lateTeam({ closed: 27, scope: 64, pace: 3.6, pace_needed: 3.4 })));
     render(<ReportsPage />);
-    expect(await screen.findByRole("tab", { name: /Team\s*27 of 64 closed · on pace/ })).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: /Team\s*27 of 64 done · on pace/ })).toBeInTheDocument();
   });
 
   it("REQ-UI-095 headline under Team behind pace", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
     stub(undefined, () => json(lateTeam({ closed: 27, scope: 64, pace: 3.4, pace_needed: 3.6 })));
     render(<ReportsPage />);
-    const tab = await screen.findByRole("tab", { name: /Team\s*27 of 64 closed · behind pace/ });
+    const tab = await screen.findByRole("tab", { name: /Team\s*27 of 64 done · behind pace/ });
     expect(tab.querySelector("svg")).not.toBeNull();
   });
 
