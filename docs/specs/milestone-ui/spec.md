@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-MILESTONE-UI-001: Milestones list
-gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status, start and end (and kickoff when set), lanes, forecast finish, epic progress, say/do, and warning count, from `gin milestone list --all --json`. Lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" when the entry's `finish` is set, in the warning color when it is after the entry's `end`. Say/do SHALL read "Say/do <n>%" with the entry's `velocity.say_do` as a whole percent, or "–" when the entry has no `velocity` or its `say_do` is `null`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, SHALL show "No dates" in place of the period of an entry whose `start` or `end` is `null`, SHALL cut a long title short with the full title as `title`, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
+gin-console SHALL show a Milestones entry in the sidebar that opens a per-project list of milestones with title, status (REQ-MILESTONE-UI-022), start and end (and kickoff when set), parallel lanes, forecast finish, epic progress, commitment met, and warning count, from `gin milestone list --all --json`, under the column headers Status, Milestone, Period, Parallel lanes, Commitment met, Epics and Warnings. Parallel lanes SHALL read "<n> lanes" ("1 lane" when `<n>` is 1), or "–" when the entry has no `lanes`. The forecast finish SHALL read "Finishes <date>" (REQ-UI-131) when the entry's `finish` is set, in the warning color when the milestone is late (REQ-MILESTONE-UI-023). Commitment met SHALL read "Commitment met <n>%" with the entry's `velocity.say_do` as a whole percent, or "–" when the entry has no `velocity` or its `say_do` is `null`. gin-console SHALL show a list entry's `error` in place of its progress and warnings, SHALL show "No dates" in place of the period of an entry whose `start` or `end` is `null`, SHALL cut a long title short with the full title as `title`, and SHALL NOT show the `unassigned_epics` count, which REQ-MILESTONE-UI-010 replaces with a list.
 Source: `assets/2026-11-08/mockup/index.html#milestones`
 
 #### Scenario: list
@@ -18,10 +18,10 @@ Source: `assets/2026-11-08/mockup/index.html#milestones`
 - WHEN the user opens Milestones for P
 - THEN M1 shows "2 lanes" and "Finishes 23 Nov" in the warning color, and M2 shows "1 lane" and "Finishes 1 Dec" without it
 
-#### Scenario: say/do
+#### Scenario: commitment met
 - GIVEN project P whose `milestone list` reports M1 with `velocity.say_do: 0.62`, M2 with `velocity.say_do: null`, and M3 without `velocity`
 - WHEN the user opens Milestones for P
-- THEN M1 shows "Say/do 62%", and M2 and M3 show "–" for say/do
+- THEN M1 shows "Commitment met 62%", and M2 and M3 show "–" for commitment met
 
 #### Scenario: older gin-workflow
 - GIVEN project P whose `milestone list` entries have no `lanes` key
@@ -375,27 +375,28 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 - [Milestone Beads tab](diagrams/milestone-beads-tab-activity.md)
 - [Milestone Retro tab](diagrams/milestone-retro-activity.md)
 - [Milestone velocity](diagrams/milestone-velocity-activity.md)
+- [Milestone status](diagrams/milestone-state.md)
+- [Milestone status and late mark](diagrams/milestone-status-activity.md)
 
 ### REQ-MILESTONE-UI-016: Project forecast card
 WHEN the Milestones list of a project has a non-null `forecast`, gin-console SHALL show a forecast card above the milestone list with:
-- the forecast `finish` ("Finishes <date>") as its most prominent text, or "No estimate: every open epic is unestimated" when `finish` is null;
+- the forecast `finish` ("Finishes <date>") as its most prominent text, or "No estimate: no open epic is estimated" when `finish` is null;
 - the `deadline` and how `finish` compares with it:
   - "<n> working days past the deadline" in the warning color when `overflow_days` is above 0;
   - "on the deadline" when `finish` equals `deadline`;
   - "<n> working days spare" otherwise. `<n>` counts the days Monday to Friday after `finish` up to and including `deadline`, the same count as gin-workflow `workdays_after`.
   - The comparison is left out when `finish` is null.
 - "No deadline" when `deadline` is null, with the roadmap line `- Deadline: YYYY-MM-DD` to add;
-- as label/value pairs (REQ-UI-110): Default lanes "<n> lanes" (`lanes`), Open epics "<n> open epics" (`open_epics`), and Unestimated "<n> unestimated" (`unestimated`), with a warning mark when `unestimated` is above 0;
+- as label/value pairs (REQ-UI-110): Parallel lanes "<n> lanes" (`lanes`), Open epics "<n> open epics" (`open_epics`), and Not estimated "<n> not estimated" (`unestimated`), with a warning mark when `unestimated` is above 0;
 - the pair Days per point "<x>" from the list's `days_per_point` to one decimal, followed by "(assumed)" when `assumed` is true, left out when `days_per_point` is `null` or missing;
 - the forecast `error`, when set, in the destructive color, with the other figures still shown.
 Source: `assets/2026-11-08/mockup/index.html#milestones`
-
 The page SHALL NOT show the card when `forecast` is null or missing.
 
 #### Scenario: on time with a deadline
 - GIVEN project P whose `milestone list` reports forecast `finish: 2026-12-23`, `deadline: 2026-12-31`, `overflow_days: 0`, `lanes: 2`, `open_epics: 5`, `unestimated: 0`
 - WHEN the user opens Milestones for P
-- THEN the card reads "Finishes 23 Dec", "6 working days spare", "2 lanes", "5 open epics", and "0 unestimated" without a warning mark
+- THEN the card reads "Finishes 23 Dec", "6 working days spare", "2 lanes", "5 open epics", and "0 not estimated" without a warning mark
 
 #### Scenario: past the deadline
 - GIVEN project P whose forecast has `finish: 2027-01-07`, `deadline: 2026-12-31`, `overflow_days: 5`
@@ -410,7 +411,7 @@ The page SHALL NOT show the card when `forecast` is null or missing.
 #### Scenario: every epic unestimated
 - GIVEN project P whose forecast has `finish: null`, `open_epics: 2`, `unestimated: 2`
 - WHEN the user opens Milestones for P
-- THEN the card reads "No estimate: every open epic is unestimated" and "2 unestimated" with a warning mark, and shows no deadline comparison
+- THEN the card reads "No estimate: no open epic is estimated" and "2 not estimated" with a warning mark, and shows no deadline comparison
 
 #### Scenario: days per point
 - GIVEN project P whose list has a forecast and `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}`, and project Q whose list has a forecast and `days_per_point: {value: 1.0, measured_epics: 0, assumed: true}`
@@ -421,11 +422,6 @@ The page SHALL NOT show the card when `forecast` is null or missing.
 - GIVEN project P whose forecast has `error: "Deadline: soon is not a date (YYYY-MM-DD)"`, `deadline: null`, `finish: 2026-11-20`
 - WHEN the user opens Milestones for P
 - THEN the card shows that error in the destructive color and still reads "Finishes 20 Nov"
-
-#### Scenario: no forecast
-- GIVEN project P whose `milestone list` reports `forecast: null`, or no `forecast` key
-- WHEN the user opens Milestones for P
-- THEN no forecast card is shown and the milestone list is shown as before
 
 ### REQ-MILESTONE-UI-017: Lanes on the milestone page
 WHEN a milestone's `show` output has `lanes`, gin-console SHALL show "<n> lanes" ("1 lane" when `<n>` is 1) in the milestone page header next to the finish line, and SHALL show nothing in its place when `lanes` is missing.
@@ -516,19 +512,56 @@ WHEN a milestone's `show` output has `integration`, `deadline` or a non-empty `a
 - THEN the header shows none of them and the rest of the header is unchanged
 
 ### REQ-MILESTONE-UI-021: Velocity on the milestone page
-WHEN the shown milestone's `show` output has a `velocity`, the milestone page header SHALL show it as label/value pairs (REQ-UI-110): Committed "<c> pt", Completed "<d> pt", Added "<a> pt" and Say/do "<s>%" (`say_do` as a whole percent, "–" when `null`), or Kick-off "Not kicked off" and Completed "<d> pt" when `committed_points` is `null`, and, when `velocity.days_per_point` is not `null`, d/pt "<x> (planned <y>, accuracy <z>)" with `<x>` and `<y>` to one decimal and `<z>` to two decimals, leaving out "planned" or "accuracy" when it is `null`; it SHALL show none of this when `velocity` is `null` or missing, and nothing per member.
+WHEN the shown milestone's `show` output has a `velocity`, the milestone page header SHALL show it as label/value pairs (REQ-UI-110): Committed "<c> pt", Completed "<d> pt", Added "<a> pt" and Commitment met "<s>%" (`say_do` as a whole percent, "–" when `null`), or Kick-off "Not kicked off" and Completed "<d> pt" when `committed_points` is `null`, and, when `velocity.days_per_point` is not `null`, Days per point "<x> (planned <y>, accuracy <z>)" with `<x>` and `<y>` to one decimal and `<z>` to two decimals, leaving out "planned" or "accuracy" when it is `null`; it SHALL show none of this when `velocity` is `null` or missing, and nothing per member.
 
 #### Scenario: Kicked off
 - GIVEN milestone `m1` whose `show` output has `velocity` `{committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86}`
 - WHEN the user opens `m1`
-- THEN the header shows the pairs Committed "13 pt", Completed "8 pt", Added "3 pt", Say/do "62%" and d/pt "1.4 (planned 1.2, accuracy 0.86)"
+- THEN the header shows the pairs Committed "13 pt", Completed "8 pt", Added "3 pt", Commitment met "62%" and Days per point "1.4 (planned 1.2, accuracy 0.86)"
 
 #### Scenario: Not kicked off
 - GIVEN milestone `m2` whose `velocity` has `committed_points: null`, `completed_points: 0`, `say_do: null` and `days_per_point: null`
 - WHEN the user opens `m2`
-- THEN the header shows the pairs Kick-off "Not kicked off" and Completed "0 pt", and no d/pt pair
+- THEN the header shows the pairs Kick-off "Not kicked off" and Completed "0 pt", and no Days per point pair
 
 #### Scenario: Older gin-workflow
 - GIVEN milestone `m1` whose `show` output has no `velocity` key
 - WHEN the user opens `m1`
 - THEN the header shows no velocity and the rest of the header is unchanged
+
+### REQ-MILESTONE-UI-022: Status of a milestone bead
+Wherever the frontend shows the state of a bead of type `milestone` (the header of its bead page, and any view that draws a milestone bead with a state mark; the Beads views leave milestone beads out, REQ-MILESTONE-UI-009), it SHALL show its milestone status (Planned, Scheduled, Active or Closed) from `GET /api/beads/milestones` (REQ-BEADS-015) instead of its bead status; the Milestones list, the milestone page, the milestone card of a bead page and the Team tab SHALL draw a milestone status with the same icon and word. IF that request fails, THEN the bead page SHALL show the bead status as REQ-UI-064 describes.
+
+#### Scenario: Bead page of a milestone
+- GIVEN milestone `ex-m2` with status `open` whose kick-off was on 10 Nov 2026, shown on 21 Nov 2026
+- WHEN its bead page is shown
+- THEN its header shows "Active" with the active icon and not "Open" or "Ready"
+
+#### Scenario: Milestones unavailable
+- GIVEN `GET /api/beads/milestones` answers 502
+- WHEN the bead page of `ex-m2` is shown
+- THEN its header shows its bead status
+
+### REQ-MILESTONE-UI-023: Late milestone
+Type: business-rule
+A milestone SHALL be late WHEN it is not closed and today is after its `end`, WHEN it is not closed and its forecast `finish` (REQ-MILESTONE-UI-008) is after its `end`, or WHEN it is closed and the day it closed is after its `end`. The Milestones list (REQ-MILESTONE-UI-001), the milestone card of a bead page and of an epic Overview (REQ-UI-120), the Team tab (REQ-REPORTS-012) and the Team headline (REQ-UI-095) SHALL mark a milestone late by this rule only, and "behind pace" SHALL describe the pace of closing only, never lateness.
+
+#### Scenario: Forecast after the end
+- GIVEN active milestone `m1` ending on 1 Dec 2026 with a forecast `finish` of 16 Feb 2027, shown on 21 Nov 2026
+- WHEN the Milestones list, the Team tab and the milestone card of one of its epics are shown
+- THEN each marks `m1` late
+
+#### Scenario: Past the end without a forecast
+- GIVEN active milestone `m2` ending on 20 Nov 2026 with no forecast `finish`, shown on 21 Nov 2026
+- WHEN the Team tab is shown
+- THEN `m2` is marked late
+
+#### Scenario: Closed on time and closed late
+- GIVEN milestone `m3` ending on Friday 27 Nov 2026 and closed that day, and milestone `m4` with the same end closed on Tuesday 1 Dec 2026
+- WHEN the Team tab is shown for each
+- THEN `m3` reads "Closed · on time" and `m4` reads "Closed · 2 d late"
+
+#### Scenario: Behind pace is not late
+- GIVEN active milestone `m5` ending on 11 Dec 2026 with a forecast `finish` of 10 Dec 2026, `pace` 2.0 and `pace_needed` 3.4, shown on 21 Nov 2026
+- WHEN the Team tab is shown
+- THEN its headline says "behind pace" and nothing calls `m5` late

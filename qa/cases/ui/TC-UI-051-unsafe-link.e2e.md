@@ -1,6 +1,6 @@
 # TC-UI-051: Unsafe link
 
-- **REQ:** REQ-UI-028@286b7a7b
+- **REQ:** REQ-UI-028@5a22703b
 - **Priority:** high
 
 **Preconditions:**

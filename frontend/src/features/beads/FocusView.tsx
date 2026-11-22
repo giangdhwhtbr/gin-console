@@ -23,8 +23,8 @@ export function FocusView({
       {rows.map((row) => {
         const columns = (
           <div className="flex flex-wrap items-start gap-3">
-            {FOCUS_COLUMNS.map(({ key, title }) => (
-              <BoardColumn key={key} title={title} project={project} beads={row.columns[key]} />
+            {FOCUS_COLUMNS.map(({ key, title, rule }) => (
+              <BoardColumn key={key} title={title} rule={rule} project={project} beads={row.columns[key]} />
             ))}
           </div>
         );
@@ -40,6 +40,7 @@ export function FocusView({
       {filters.finished && (
         <ClosedColumn
           title="Recently finished"
+          rule="done"
           project={project}
           beads={closedNewestFirst(beads)}
           limit={FINISHED_LIMIT}

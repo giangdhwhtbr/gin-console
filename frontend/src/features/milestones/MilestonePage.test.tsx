@@ -5,6 +5,7 @@ import { forgetConfiguredProjects, rememberProject, resolveProject, setFavorite 
 import { bead, json } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import type { MilestoneDetail } from "./api";
+import { clearEmail, setEmail } from "@/app/identity";
 import { getOrigin } from "@/app/origin";
 import { detail, epicPlan, stubMilestones } from "./milestoneFixtures";
 import { MilestonePage } from "./MilestonePage";
@@ -216,6 +217,24 @@ describe("MilestonePage", () => {
     expect(screen.queryByText("Milestone")).toBeNull();
   });
 
+  it("REQ-BEADS-024 the Beads tab of a milestone offers Me first and filters by it", async () => {
+    setEmail("ann@example.com");
+    openBeads("?tab=beads", "m2", [
+      bead("m2", { issue_type: "milestone" }),
+      bead("e1", { issue_type: "epic", parent: "m2", milestone: "m2", assignee: "ann@example.com" }),
+      bead("e2", { issue_type: "epic", parent: "m2", milestone: "m2", assignee: "bob" }),
+    ]);
+    await screen.findByText("Title e1");
+    await userEvent.click(screen.getByRole("button", { name: "Assignee" }));
+    const me = await screen.findByRole("checkbox", { name: "Me" });
+    expect(screen.getAllByRole("checkbox").filter((box) => box !== screen.queryByRole("checkbox", { name: "Show closed" }))[0]).toBe(me);
+    await userEvent.click(me);
+    await waitFor(() => expect(window.location.search).toContain("assignee=me"));
+    expect(screen.queryByText("Title e2")).toBeNull();
+    expect(screen.getByText("Title e1")).toBeInTheDocument();
+    clearEmail();
+  });
+
   it("REQ-MILESTONE-UI-018 the view and the filters are kept in the URL", async () => {
     openBeads("?tab=beads");
     await userEvent.click(await screen.findByRole("button", { name: "Board" }));
@@ -374,6 +393,7 @@ describe("MilestonePage", () => {
   });
 
   const epicBeads = [
+    bead("e-a", { issue_type: "epic", child_counts: { total: 2, closed: 1, prep_total: 0, prep_closed: 0 } }),
     bead("e-a.2", { parent: "e-a", status: "in_progress", title: "Wire the pager" }),
     bead("e-a.1", { parent: "e-a", status: "closed", closed_at: "2026-11-01T04:15:36Z" }),
     bead("e-b.1", { parent: "e-b" }),
@@ -388,7 +408,7 @@ describe("MilestonePage", () => {
   it("REQ-MILESTONE-UI-015 expand an epic to list its children; the others stay collapsed", async () => {
     const fetchMock = openWithBeads(epicBeads);
     const toggle = await screen.findByRole("button", { name: "Show 2 child beads of e-a" });
-    expect(await row("e-a")).toHaveTextContent("1/2 closed");
+    expect(await row("e-a")).toHaveTextContent("1 of 2 done");
     expect(fetchMock.mock.calls.some(([input]) => typeof input === "string" && input.startsWith("/api/beads") && input.includes("closed=1"))).toBe(true);
     expect(within(await row("e-c")).queryByRole("button")).toBeNull();
     expect(await row("e-c")).not.toHaveTextContent("closed");
@@ -446,12 +466,12 @@ describe("MilestonePage", () => {
     open({ ...OVERFLOW, velocity: { committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86 } });
     const header = await headerOf();
     const fact = (label: string) => within(header).getByText(label).nextElementSibling;
-    expect(["Committed", "Completed", "Added", "Say/do", "d/pt"].map((label) => `${label} ${fact(label)?.textContent}`)).toEqual([
+    expect(["Committed", "Completed", "Added", "Commitment met", "Days per point"].map((label) => `${label} ${fact(label)?.textContent}`)).toEqual([
       "Committed 13 pt",
       "Completed 8 pt",
       "Added 3 pt",
-      "Say/do 62%",
-      "d/pt 1.4 (planned 1.2, accuracy 0.86)",
+      "Commitment met 62%",
+      "Days per point 1.4 (planned 1.2, accuracy 0.86)",
     ]);
     // REQ-UI-110: labels muted, values strong
     expect(within(header).getByText("Committed")).toHaveClass("text-muted-foreground");
@@ -466,13 +486,13 @@ describe("MilestonePage", () => {
       ["Kick-off", "Not kicked off"],
       ["Completed", "0 pt"],
     ]);
-    expect(header).not.toHaveTextContent("d/pt");
+    expect(header).not.toHaveTextContent("Days per point");
   });
 
   it("REQ-MILESTONE-UI-021 Older gin-workflow: no velocity in the header", async () => {
     open(OVERFLOW);
     const header = await headerOf();
-    expect(header).not.toHaveTextContent(/Committed|Not kicked off|d\/pt|Say\/do/);
+    expect(header).not.toHaveTextContent(/Committed|Not kicked off|Days per point|Commitment met/);
     expect(within(header).getByText("Beta readiness")).toBeInTheDocument();
   });
 
@@ -495,15 +515,16 @@ describe("MilestonePage Gantt merge gates", () => {
   it("REQ-MILESTONE-UI-015 merge gate and lane", async () => {
     window.history.replaceState(null, "", "/milestones/alpha/m-1");
     const kids = [
+      bead("e-1", { issue_type: "epic", child_counts: { total: 1, closed: 0, prep_total: 0, prep_closed: 0 } }),
       bead("t-1", { parent: "e-1", lane: "be", labels: ["track:1"] }),
       bead("g-1", { parent: "e-1", title: "external: p#2", waits_for: { plan: "p", number: 2, track_id: null, lane: null } }),
     ];
     stubMilestones(() => json(detail([epicPlan("e-1")])), kids);
     render(<MilestonePage project="alpha" id="m-1" />);
     await userEvent.click(await screen.findByRole("button", { name: /child bead of e-1/ }));
-    expect(document.querySelector("[data-epic='e-1']")).toHaveTextContent("0/1 closed");
+    expect(document.querySelector("[data-epic='e-1']")).toHaveTextContent("0 of 1 done");
     const rows = [...document.querySelectorAll<HTMLElement>("[data-child]")];
     expect(rows.map((r) => r.dataset.child)).toEqual(["t-1"]);
-    expect(within(rows[0]).getByTitle("Lane be")).toBeInTheDocument();
+    expect(within(rows[0]).getByText("be")).toBeInTheDocument();
   });
 });

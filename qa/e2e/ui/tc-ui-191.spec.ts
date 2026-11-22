@@ -1,4 +1,4 @@
-// TC: TC-UI-191@9cf5e3b1
+// TC: TC-UI-191@ea96a964
 import { test, expect } from '../evidence';
 import { E12, graphGeometry, openGraph, stubExample } from '../support/lanes';
 
@@ -17,6 +17,6 @@ test('TC-UI-191: No chip inside a lane box', async ({ page, ev }) => {
     expect(card.y).toBeGreaterThanOrEqual(be.y);
     expect(card.y + card.h).toBeLessThanOrEqual(be.y + be.h);
     await expect(page.getByRole('region', { name: 'Lane be' }).getByRole('heading', { name: 'be' })).toBeVisible();
-    await expect(page.locator(`[data-node="${E12}.2"]`).getByTitle('Lane be')).toHaveCount(0);
+    await expect(page.locator(`[data-node="${E12}.2"]`).locator('[data-hint^="Lane be"]')).toHaveCount(0);
   });
 });

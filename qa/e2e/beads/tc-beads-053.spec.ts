@@ -1,5 +1,6 @@
-// TC: TC-BEADS-053@e91a6ca8
+// TC: TC-BEADS-053@631f42bb
 import { test, expect } from '../evidence';
+import { shown } from '../support/lanes';
 import { pulled, stubProjectPulls } from '../support/pull';
 
 test('TC-BEADS-053: Pulled (REQ-BEADS-018)', async ({ page, ev }) => {
@@ -12,6 +13,6 @@ test('TC-BEADS-053: Pulled (REQ-BEADS-018)', async ({ page, ev }) => {
     await page.goto('/');
     const card = page.getByRole('article', { name: 'A' });
     await expect(card.getByText('pulled 2 minutes ago')).toBeVisible();
-    await expect(card.getByText('pulled 2 minutes ago')).toHaveAttribute('title', new RegExp(`\\(${pull.at.slice(0, 16).replace('T', ' ')} UTC\\)`));
+    await expect(card.getByText('pulled 2 minutes ago')).toHaveAttribute('data-hint', shown(pull.at));
   });
 });

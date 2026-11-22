@@ -4,6 +4,7 @@ import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
+import { AssigneeName } from "./AssigneeName";
 import { CountBadge } from "./CountBadge";
 import { stateOf } from "./graph";
 import { KindBadge } from "./KindBadge";
@@ -33,9 +34,7 @@ export function BeadCard({ project, bead }: { project: string; bead: BeadSummary
         <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />
         <CountBadge kind="comments" count={bead.comment_count} />
         <CountBadge kind="dependencies" count={bead.dependency_count} />
-        {(bead.assignee ?? bead.owner ?? "") !== "" && (
-          <span className="text-muted-foreground wrap-anywhere">{bead.assignee ?? bead.owner}</span>
-        )}
+        <AssigneeName assignee={bead.assignee} className="text-muted-foreground wrap-anywhere" />
       </div>
     </li>
   );

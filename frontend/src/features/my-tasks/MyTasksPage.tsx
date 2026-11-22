@@ -14,6 +14,7 @@ import { PullNote } from "@/features/beads/PullNote";
 import { StaleNote } from "@/features/beads/StaleNote";
 import { StateMark } from "@/features/beads/StateMark";
 import { TypeBadge } from "@/features/beads/TypeBadge";
+import { formatDate } from "@/lib/dates";
 import { loadMyTasks, type MyTasks } from "./load";
 
 type Outcome =
@@ -160,7 +161,7 @@ export function MyTasksPage() {
                       <TypeBadge type={bead.issue_type} />
                     </TableCell>
                     <TableCell>P{bead.priority}</TableCell>
-                    <TableCell className="hidden md:table-cell">{new Date(bead.updated_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="hidden md:table-cell">{formatDate(bead.updated_at)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

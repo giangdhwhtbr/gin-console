@@ -78,7 +78,7 @@ describe("tree", () => {
   });
 
   // REQ-UI-044
-  it("REQ-UI-044 rows carry level, branch state and child progress", () => {
+  it("REQ-UI-044 rows carry level and branch state", () => {
     const index = treeIndex(
       [
         bead("e-1", { issue_type: "epic" }),
@@ -87,7 +87,7 @@ describe("tree", () => {
       ],
     );
     const [epic, , second] = expanded(index).rows;
-    expect(epic).toMatchObject({ level: 0, hasKids: true, open: true, counts: { tracks: 2, closedTracks: 1, prep: 0, closedPrep: 0 } });
+    expect(epic).toMatchObject({ level: 0, hasKids: true, open: true });
     expect(second).toMatchObject({ level: 1, hasKids: false });
     expect(treeRows(index, new Set(), null).rows[0]).toMatchObject({ open: false });
   });

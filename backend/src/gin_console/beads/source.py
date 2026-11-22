@@ -3,13 +3,14 @@ JSON."""
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
 from typing import Any
 
 from pydantic import ValidationError
 
+from gin_console.beads.definitions import Counts, child_counts, is_blocked
 from gin_console.beads.errors import BeadNotFound, BeadsError
 from gin_console.beads.kinds import (
     complexity_of,
@@ -145,7 +146,7 @@ def _points(raw: dict[str, Any]) -> tuple[int | None, str | None]:
     return points, reason if isinstance(reason, str) else None
 
 
-def _fields(snapshot: Snapshot, ident: str) -> dict[str, Any]:
+def _fields(snapshot: Snapshot, ident: str, counts: dict[str, Counts]) -> dict[str, Any]:
     raw = snapshot.rows[ident]
     issue_type = raw.get("issue_type")
     points, points_reason = _points(raw)
@@ -165,21 +166,23 @@ def _fields(snapshot: Snapshot, ident: str) -> dict[str, Any]:
         "ready": ident in snapshot.ready
         and raw.get("issue_type") != "milestone"
         and not is_merge_gate(raw),
-        "blocked": ident in snapshot.blocked or raw.get("status") == "blocked",
+        "blocked": is_blocked(ident, raw, snapshot),
         "lane": lane_of(_description(raw), _labels(raw)),
         "track": track_of(_description(raw), _labels(raw)),
         "claim": claim_of(raw.get("metadata")),
         "waits_for": gate_ref(snapshot, ident),
+        "child_counts": asdict(counts.get(ident, Counts())),
     }
 
 
 def list_beads(snapshot: Snapshot, closed: bool) -> list[BeadSummary]:
     beads: list[BeadSummary] = []
+    counts = child_counts(snapshot)
     for ident, raw in snapshot.rows.items():
         if not closed and raw.get("status") == "closed":
             continue
         try:
-            beads.append(BeadSummary.model_validate(_fields(snapshot, ident)))
+            beads.append(BeadSummary.model_validate(_fields(snapshot, ident, counts)))
         except ValidationError:
             continue  # a malformed bead is left out (REQ-BEADS-005)
     return beads
@@ -284,7 +287,7 @@ def get_bead(snapshot: Snapshot, bead_id: str) -> BeadDetail:
     try:
         return BeadDetail.model_validate(
             {
-                **_fields(snapshot, bead_id),
+                **_fields(snapshot, bead_id, child_counts(snapshot)),
                 "description": raw.get("description") or None,
                 "design": raw.get("design") or None,
                 "notes": raw.get("notes") or None,

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { useEmail } from "@/app/identity";
 import { navigate } from "@/app/route";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { DetailsPanel } from "./DetailsPanel";
-import { filterBeads, type BeadFilters } from "./filters";
+import { filterBeads, resolveMe, type BeadFilters } from "./filters";
 import { COLUMNS, ListRow } from "./ListRow";
 import type { MilestoneInEffect } from "./milestoneChoice";
 import { getOrigin, rememberOpen } from "@/app/origin";
@@ -28,6 +29,7 @@ export function ListView({
   onChange: (next: BeadFilters) => void;
 }) {
   const wide = useWide();
+  const email = useEmail();
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(getOrigin().open[project] ?? []));
   const base = beads.filter(
     (b) => filters.closed || closedMilestone || (filters.sprint !== "" && filters.sprint !== "none") || b.status !== "closed",
@@ -45,7 +47,7 @@ export function ListView({
     filters.sprint !== "" ||
     milestone !== "all";
   const keep = filtering
-    ? keepSet(index, new Set(filterBeads(beads, { ...filters, closed: filters.closed || closedMilestone }, milestone).map((b) => b.id)))
+    ? keepSet(index, new Set(filterBeads(beads, { ...resolveMe(filters, email), closed: filters.closed || closedMilestone }, milestone).map((b) => b.id)))
     : null;
   // a branch is open when the user opened it, when it leads to a match, or when it holds the selection
   const shownOpen = new Set<string>([

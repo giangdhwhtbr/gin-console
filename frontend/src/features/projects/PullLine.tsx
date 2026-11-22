@@ -1,4 +1,6 @@
-import { formatAge, formatTimes } from "@/lib/format";
+import { Hint } from "@/components/ui/tooltip";
+import { formatDateTime } from "@/lib/dates";
+import { formatAge } from "@/lib/format";
 import { useNow } from "@/lib/useNow";
 import { pullError, type PullResult } from "./api";
 
@@ -13,8 +15,8 @@ export function PullLine({ pull }: { pull: PullResult }) {
         ? "no Dolt remote"
         : `pull failed: ${pullError(pull)}`;
   return (
-    <p title={formatTimes(pull.at)} className={failed ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>
-      {text}
-    </p>
+    <Hint text={formatDateTime(pull.at)}>
+      <p className={failed ? "text-sm text-destructive" : "text-sm text-muted-foreground"}>{text}</p>
+    </Hint>
   );
 }

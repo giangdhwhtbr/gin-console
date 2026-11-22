@@ -1,6 +1,6 @@
 # TC-REPORTS-053: Assumed days per point
 
-- **REQ:** REQ-REPORTS-018@d6b9d106
+- **REQ:** REQ-REPORTS-018@2d3d5d2a
 - **Priority:** medium
 
 **Preconditions:**
@@ -14,4 +14,4 @@
 2. Open `/reports?project=alpha&tab=velocity`
 
 **Expected:**
-- The figure reads "1.0 d/pt" with "assumed"
+- The figure reads "1.0 days per point" with "assumed"

@@ -458,3 +458,42 @@ def test_beads_001_story_points() -> None:
         "e-5": (5, None),
         "e-6": (None, None),
     }
+
+
+def _epic_snapshot() -> Snapshot:
+    def under(ident: str, **extra: Any) -> dict[str, Any]:
+        return bead(ident, dependencies=[dep(ident, "e-1", "parent-child")], **extra)
+
+    return snap(
+        bead("e-1", issue_type="epic"),
+        under("t-1", status="closed"),
+        under("t-2", status="closed"),
+        under("t-3"),
+        under("p-1", status="closed", labels=["prep"]),
+        under("g-1", title="external: .planning/plans/p.md#1"),
+    )
+
+
+# REQ-BEADS-022
+def test_beads_022_child_counts_do_not_depend_on_the_closed_flag() -> None:
+    expected = {"total": 3, "closed": 2, "prep_total": 1, "prep_closed": 1}
+    for closed in (False, True):
+        epic = next(b for b in list_beads(_epic_snapshot(), closed=closed) if b.id == "e-1")
+        assert epic.child_counts.model_dump() == expected
+    hidden = {b.id for b in list_beads(_epic_snapshot(), closed=False)}
+    assert not hidden & {"t-1", "t-2", "p-1"}
+
+
+# REQ-BEADS-022
+def test_beads_022_a_task_has_zero_child_counts() -> None:
+    detail = get_bead(_epic_snapshot(), "t-3")
+    assert detail.child_counts.model_dump() == dict.fromkeys(
+        ("total", "closed", "prep_total", "prep_closed"), 0
+    )
+    assert get_bead(_epic_snapshot(), "e-1").child_counts.total == 3
+
+
+# REQ-BEADS-007
+def test_beads_007_status_blocked_without_a_blocker_is_blocked() -> None:
+    (summary,) = list_beads(snap(bead("a-1", status="blocked")), closed=False)
+    assert summary.blocked

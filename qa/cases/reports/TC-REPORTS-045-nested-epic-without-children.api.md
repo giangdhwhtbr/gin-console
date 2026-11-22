@@ -1,6 +1,6 @@
 # TC-REPORTS-045: Nested epic without children
 
-- **REQ:** REQ-REPORTS-009@11754631
+- **REQ:** REQ-REPORTS-009@fa920d07
 - **Priority:** medium
 
 **Preconditions:**

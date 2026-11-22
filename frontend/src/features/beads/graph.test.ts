@@ -9,7 +9,6 @@ import {
   linkLabels,
   NODE,
   place,
-  progressOf,
   scopeGraph,
   stateOf,
   step,
@@ -109,11 +108,10 @@ describe("scope graph", () => {
     expect(g.unlinked).toBe(5);
   });
 
-  it("REQ-UI-049 a node carries n of m done over its direct children", () => {
-    const beads = [epic("e-1"), task("a", "e-1", [], { status: "closed" }), task("b", "e-1"), task("c", "e-1")];
+  it("REQ-UI-049 REQ-UI-130 a node says 3 of 5 done from the child counts, whatever children are loaded", () => {
+    const beads = [epic("e-1", { child_counts: { total: 5, closed: 3, prep_total: 0, prep_closed: 0 } }), task("a", "e-1"), task("b", "e-1")];
     const node = scopeGraph(beads, null, OFF).nodes[0];
-    expect({ done: node.done, total: node.total }).toEqual({ done: 1, total: 3 });
-    expect(progressOf(beads).get("")).toEqual({ done: 0, total: 1 });
+    expect({ done: node.done, total: node.total }).toEqual({ done: 3, total: 5 });
   });
 });
 
@@ -310,13 +308,5 @@ describe("link labels", () => {
   it("REQ-UI-110 an edge with one link has no label", () => {
     const graph = { nodes: [n("a", 0, 0), n("c", 1, 0)], edges: [link("a", "c", 1)], cycle: [], unlinked: 0 };
     expect(linkLabels(graph, place(graph).at).size).toBe(0);
-  });
-});
-
-describe("progressOf merge gates", () => {
-  it("REQ-UI-116 Not counted as a child: a gate child is ignored", () => {
-    const gate = task("e.2", "e", [], { waits_for: { plan: "p", number: 1, track_id: null, lane: null } });
-    const counts = progressOf([epic("e"), task("e.1", "e", [], { status: "closed" }), gate]);
-    expect(counts.get("e")).toEqual({ done: 1, total: 1 });
   });
 });

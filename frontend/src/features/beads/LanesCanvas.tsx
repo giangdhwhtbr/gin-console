@@ -3,7 +3,8 @@ import type { KeyboardEvent } from "react";
 import { FactList, type Fact } from "@/components/FactList";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
-import { progressOf, type GraphNode } from "./graph";
+import type { GraphNode } from "./graph";
+import { progressOf } from "./progress";
 import { GraphNodeButton } from "./GraphNode";
 import { GRAPH_STATE_OF, LANE, laneLines, laneStep, MARKER, type LaneBoard, type LaneKey, type LaneRow } from "./lanes";
 import { StateWord } from "./StateMark";
@@ -41,15 +42,14 @@ export function LanesCanvas({
   onEscape: () => void;
 }) {
   const headerW = useLaneHeaderWidth();
-  const progress = progressOf(beads);
   const parents = new Set(beads.flatMap((b) => (b.parent === null ? [] : [b.parent])));
   const nodeOf = (bead: BeadSummary, row: number, column: number): GraphNode => ({
     bead,
     external: false,
     layer: row,
     order: column,
-    done: progress.get(bead.id)?.done ?? 0,
-    total: progress.get(bead.id)?.total ?? 0,
+    done: progressOf(bead).done,
+    total: progressOf(bead).total,
     hasKids: parents.has(bead.id),
     group: "layer",
   });

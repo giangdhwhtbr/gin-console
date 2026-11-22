@@ -1,8 +1,19 @@
+import { Hint } from "@/components/ui/tooltip";
+import { DEFINITIONS } from "@/lib/definitions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { oneDecimal, percent, twoDecimals } from "@/features/milestones/format";
 import type { VelocityPoint } from "./velocity";
 
-const HEADS = ["Milestone", "Committed", "Completed", "Added", "Say/do", "d/pt", "Planned d/pt", "Accuracy"];
+const HEADS: readonly (readonly [string, string?])[] = [
+  ["Milestone"],
+  ["Committed"],
+  ["Completed"],
+  ["Added"],
+  ["Commitment met", DEFINITIONS.commitmentMet],
+  ["Days per point", DEFINITIONS.daysPerPoint],
+  ["Planned days per point", DEFINITIONS.daysPerPoint],
+  ["Accuracy"],
+];
 const orDash = (value: number | null, show: (n: number) => string) => (value === null ? "—" : show(value));
 
 export function VelocityTable({ points }: { points: readonly VelocityPoint[] }) {
@@ -10,8 +21,8 @@ export function VelocityTable({ points }: { points: readonly VelocityPoint[] }) 
     <Table>
       <TableHeader>
         <TableRow>
-          {HEADS.map((name) => (
-            <TableHead key={name}>{name}</TableHead>
+          {HEADS.map(([name, hint]) => (
+            <TableHead key={name}>{hint === undefined ? name : <Hint text={hint}><span>{name}</span></Hint>}</TableHead>
           ))}
         </TableRow>
       </TableHeader>

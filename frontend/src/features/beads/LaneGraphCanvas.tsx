@@ -2,7 +2,8 @@ import { Check, Clock } from "lucide-react";
 import type { KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
-import { progressOf, type GraphNode, type StepKey } from "./graph";
+import type { GraphNode, StepKey } from "./graph";
+import { progressOf } from "./progress";
 import { GraphNodeButton } from "./GraphNode";
 import { LaneBox } from "./LaneBox";
 import { LANE_CHIP, laneGraphChain, laneGraphLines, laneGraphStep, type LaneGraph } from "./laneGraph";
@@ -31,7 +32,6 @@ export function LaneGraphCanvas({
   onEscape: () => void;
 }) {
   const { box, scale, fit, zoomIn, zoomOut } = useZoom(graph.width);
-  const progress = progressOf(beads);
   const parents = new Set(beads.flatMap((b) => (b.parent === null ? [] : [b.parent])));
   const chain = graph.cards.some((c) => c.bead.id === selected) ? laneGraphChain(graph, selected) : null;
   const nodeOf = (bead: BeadSummary, layer: number, stack: number): GraphNode => ({
@@ -39,8 +39,8 @@ export function LaneGraphCanvas({
     external: false,
     layer,
     order: stack,
-    done: progress.get(bead.id)?.done ?? 0,
-    total: progress.get(bead.id)?.total ?? 0,
+    done: progressOf(bead).done,
+    total: progressOf(bead).total,
     hasKids: parents.has(bead.id),
     group: "layer",
   });

@@ -5,13 +5,17 @@ import { isUnknownProject, projectHref, rememberProject, resolveProject } from "
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
+import { Hint } from "@/components/ui/tooltip";
+import { DEFINITIONS, type DefinitionKey } from "@/lib/definitions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
+import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
 import { ForecastCard } from "./ForecastCard";
-import { percent, plural, shortDate } from "./format";
+import { percent, plural } from "./format";
+import { lateOf } from "./late";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
 import { UnassignedEpics } from "./UnassignedEpics";
@@ -92,8 +96,8 @@ function MilestoneTable({ project }: { project: string }) {
             <span>Status</span>
             <span>Milestone</span>
             <span>Period</span>
-            <span>Lanes</span>
-            <span>Say/do</span>
+            <Header label="Parallel lanes" rule="parallelLanes" />
+            <Header label="Commitment met" rule="commitmentMet" />
             <span>Epics</span>
             <span>Warnings</span>
           </li>
@@ -107,8 +111,16 @@ function MilestoneTable({ project }: { project: string }) {
   );
 }
 
+function Header({ label, rule }: { label: string; rule: DefinitionKey }) {
+  return (
+    <Hint text={DEFINITIONS[rule]}>
+      <span>{label}</span>
+    </Hint>
+  );
+}
+
 function Row({ project, milestone: m, today }: { project: string; milestone: MilestoneEntry; today: string }) {
-  const date = (iso: string) => shortDate(iso, today);
+  const date = (iso: string) => formatDate(iso, today);
   const warnings = m.warnings ?? 0;
   const sayDo = m.velocity?.say_do ?? null;
   const share = m.epics.total === 0 ? 0 : (100 * m.epics.closed) / m.epics.total;
@@ -132,14 +144,14 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
       <span className="flex flex-col text-sm">
         {m.kickoff !== null && <span>{`Kicks off ${date(m.kickoff)}`}</span>}
         <span className={cn(m.kickoff !== null && "text-muted-foreground")}>
-          {m.start === null || m.end === null ? "No dates" : `${date(m.start)} – ${date(m.end)}`}
+          {m.start === null || m.end === null ? "No dates" : formatRange(m.start, m.end, today)}
         </span>
         {m.finish !== null && (
-          <span className={cn(m.end !== null && m.finish > m.end ? "text-state-blocked" : "text-muted-foreground")}>{`Finishes ${date(m.finish)}`}</span>
+          <span className={cn(lateOf({ status: m.status, end: m.end, finish: m.finish }, today) ? "text-state-blocked" : "text-muted-foreground")}>{`Finishes ${date(m.finish)}`}</span>
         )}
       </span>
       <span className="text-sm">{m.lanes === null ? "–" : plural(m.lanes, "lane")}</span>
-      <span className="text-sm tabular-nums">{sayDo === null ? "–" : `Say/do ${percent(sayDo)}`}</span>
+      <span className="text-sm tabular-nums">{sayDo === null ? "–" : `Commitment met ${percent(sayDo)}`}</span>
       {m.error !== null ? (
         <span className="col-span-2 text-sm text-destructive">{m.error}</span>
       ) : (

@@ -1,6 +1,6 @@
 # TC-UI-050: Raw HTML stays text
 
-- **REQ:** REQ-UI-028@286b7a7b
+- **REQ:** REQ-UI-028@5a22703b
 - **Priority:** high
 
 **Preconditions:**

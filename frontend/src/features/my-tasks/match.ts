@@ -1,9 +1,7 @@
 import type { BeadSummary } from "@/features/beads/api";
+import { samePerson } from "@/lib/people";
 
-/** Mine when the assignee is the email or its part before @, ignoring case and surrounding spaces; owner is the creator and never counts. */
+/** Mine when the assignee is the same person as the email (REQ-BEADS-023); owner is the creator and never counts. */
 export function isMine(bead: Pick<BeadSummary, "assignee">, email: string): boolean {
-  const assignee = (bead.assignee ?? "").trim().toLowerCase();
-  if (assignee === "") return false;
-  const mine = email.trim().toLowerCase();
-  return assignee === mine || assignee === mine.slice(0, mine.indexOf("@"));
+  return samePerson(bead.assignee, email);
 }

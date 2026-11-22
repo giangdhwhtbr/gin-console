@@ -1,6 +1,6 @@
-# TC-MILESTONE-UI-092: Say/do in the list
+# TC-MILESTONE-UI-092: Commitment met in the list
 
-- **REQ:** REQ-MILESTONE-UI-001@ecd0d02b
+- **REQ:** REQ-MILESTONE-UI-001@ec0ce005
 - **Priority:** medium
 
 **Preconditions:**
@@ -14,6 +14,6 @@
 2. Open `/milestones?project=P`
 
 **Expected:**
-- M1 shows "Say/do 62%"
-- M2 shows "–" for say/do
-- M3 shows "–" for say/do
+- M1 shows "Commitment met 62%"
+- M2 shows "–" for commitment met
+- M3 shows "–" for commitment met

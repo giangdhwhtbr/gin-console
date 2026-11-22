@@ -1,21 +1,25 @@
+import type { DefinitionKey } from "@/lib/definitions";
+import { personOf } from "@/lib/people";
 import type { BeadSummary } from "./api";
 
 export const DONE_LIMIT = 20;
 export const FINISHED_LIMIT = 7;
 
 export type BoardColumnKey = "backlog" | "ready" | "in_progress" | "blocked" | "done";
-export const BOARD_COLUMNS: readonly { key: BoardColumnKey; title: string }[] = [
+/** `rule` is the definition a column's count is made by, when REQ-UI-132 asks the count to carry one. */
+type ColumnRule = { rule?: DefinitionKey };
+export const BOARD_COLUMNS: readonly ({ key: BoardColumnKey; title: string } & ColumnRule)[] = [
   { key: "backlog", title: "Backlog" },
   { key: "ready", title: "Ready" },
-  { key: "in_progress", title: "In Progress" },
-  { key: "blocked", title: "Blocked" },
-  { key: "done", title: "Done" },
+  { key: "in_progress", title: "In Progress", rule: "inProgress" },
+  { key: "blocked", title: "Blocked", rule: "blocked" },
+  { key: "done", title: "Done", rule: "done" },
 ];
 
 export type FocusColumnKey = "in_flight" | "blocked" | "next_up";
-export const FOCUS_COLUMNS: readonly { key: FocusColumnKey; title: string }[] = [
-  { key: "in_flight", title: "In flight" },
-  { key: "blocked", title: "Blocked" },
+export const FOCUS_COLUMNS: readonly ({ key: FocusColumnKey; title: string } & ColumnRule)[] = [
+  { key: "in_flight", title: "In flight", rule: "inProgress" },
+  { key: "blocked", title: "Blocked", rule: "blocked" },
   { key: "next_up", title: "Next up" },
 ];
 
@@ -32,11 +36,11 @@ export function closedNewestFirst(beads: readonly BeadSummary[]): BeadSummary[] 
 const working = (bead: BeadSummary) => bead.status === "in_progress" || bead.status === "hooked";
 
 export function boardColumn(bead: BeadSummary): BoardColumnKey | null {
+  if (bead.status === "closed") return "done";
+  if (bead.blocked) return "blocked";
   if (bead.status === "deferred") return "backlog";
   if (bead.ready) return "ready";
   if (working(bead)) return "in_progress";
-  if (bead.blocked) return "blocked";
-  if (bead.status === "closed") return "done";
   return null;
 }
 
@@ -58,8 +62,9 @@ export function boardColumns(beads: readonly BeadSummary[]): Record<BoardColumnK
 }
 
 function focusColumn(bead: BeadSummary): FocusColumnKey | null {
-  if (working(bead)) return "in_flight";
+  if (bead.status === "closed") return null;
   if (bead.blocked) return "blocked";
+  if (working(bead)) return "in_flight";
   if (bead.ready && bead.priority <= 1) return "next_up";
   return null;
 }
@@ -76,7 +81,7 @@ export function focusColumns(beads: readonly BeadSummary[]): Record<FocusColumnK
 
 export type FocusRow = { title: string | null; columns: Record<FocusColumnKey, BeadSummary[]> };
 
-const assigneeOf = (bead: BeadSummary) => (bead.assignee ?? bead.owner ?? "").trim();
+const assigneeOf = (bead: BeadSummary) => personOf(bead.assignee) ?? "";
 const hasWork = (columns: Record<FocusColumnKey, BeadSummary[]>) => Object.values(columns).some((l) => l.length > 0);
 
 export function focusRows(beads: readonly BeadSummary[], group: "" | "assignee"): FocusRow[] {
@@ -86,6 +91,6 @@ export function focusRows(beads: readonly BeadSummary[], group: "" | "assignee")
     title: name,
     columns: focusColumns(beads.filter((b) => assigneeOf(b) === name)),
   }));
-  rows.push({ title: "No assignee", columns: focusColumns(beads.filter((b) => assigneeOf(b) === "")) });
+  rows.push({ title: "Unassigned", columns: focusColumns(beads.filter((b) => assigneeOf(b) === "")) });
   return rows.filter((row) => hasWork(row.columns));
 }

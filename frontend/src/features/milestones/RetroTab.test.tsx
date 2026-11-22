@@ -2,10 +2,14 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Comment } from "@/features/beads/api";
+import { formatDateTime } from "@/lib/dates";
 import { RetroTab } from "./RetroTab";
 import type { useMilestoneComments } from "./useMilestoneComments";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.useRealTimers();
+});
 
 type Comments = ReturnType<typeof useMilestoneComments>;
 const note = (id: string, author: string, created_at: string, text: string): Comment => ({ id, author, created_at, text, truncated: false });
@@ -13,6 +17,8 @@ const ok = (comments: Comment[]): Comments => ({ state: "ok", comments, error: n
 
 describe("RetroTab", () => {
   it("REQ-MILESTONE-UI-019 shows the close block and the retro of each member", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
     render(
       <RetroTab
         milestoneId="m1"
@@ -24,7 +30,7 @@ describe("RetroTab", () => {
       />,
     );
     expect(screen.getByText("lead")).toBeInTheDocument();
-    expect(screen.getByText(new Date("2026-11-10T10:00:00Z").toLocaleString())).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime("2026-11-10T10:00:00Z", "2026-11-22"))).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Delivered" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Action" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Spillover" })).toBeNull();

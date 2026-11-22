@@ -7,6 +7,7 @@ import { MilestonesPage } from "@/features/milestones/MilestonesPage";
 import { MyTasksPage } from "@/features/my-tasks/MyTasksPage";
 import { ProjectsPage } from "@/features/projects/ProjectsPage";
 import { useEmail } from "./identity";
+import { HintProvider } from "@/components/HintProvider";
 import { Layout } from "./Layout";
 import { LoginPage } from "./LoginPage";
 import { NotFoundPage } from "./NotFoundPage";
@@ -54,6 +55,7 @@ export function App() {
   const email = useEmail();
   if (email === null) return <LoginPage />;
   return (
+    <HintProvider>
     <Layout onRefreshed={() => setEpoch((n) => n + 1)}>
       <Fragment key={epoch}>
       {graph !== null ? (
@@ -79,6 +81,7 @@ export function App() {
       )}
       </Fragment>
     </Layout>
+    </HintProvider>
   );
 }
 

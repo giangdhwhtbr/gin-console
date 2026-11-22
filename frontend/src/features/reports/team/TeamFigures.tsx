@@ -1,14 +1,27 @@
 import { Fragment } from "react";
+import { Hint } from "@/components/ui/tooltip";
+import { DEFINITIONS, countHint } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
 import { formatDays, formatPercent } from "../format";
 import type { MemberFigures, TeamFigures as Figures, TeamMilestone, TeamTotals } from "../teamApi";
-import { formatDate, WARN_DAYS } from "./format";
+import { formatDate } from "@/lib/dates";
+import { WARN_DAYS } from "./format";
 
 const WARN = "text-state-blocked";
 
-function Cell({ label, aside, value, sub, warnValue = false, warnSub = false }: {
+// REQ-REPORTS-013: the rules of the figures that DEFINITIONS does not state
+const RULE = {
+  pace: "Pace: beads closed per working day over the last 5 working days, up to today.",
+  throughput: "Throughput: beads closed per 5 working days; for a closed milestone, over the milestone.",
+  cycle: "Median cycle: the median days from start to close of the closed beads.",
+  onTime: "On time: the share of closed beads closed by the end of the milestone.",
+  rework: "Rework: the share of closed beads with readable AI usage that were reworked.",
+} as const;
+
+function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = false }: {
   label: string;
   aside?: string;
+  rule: string;
   value: string;
   sub: string;
   warnValue?: boolean;
@@ -21,18 +34,31 @@ function Cell({ label, aside, value, sub, warnValue = false, warnSub = false }: 
         {label}
         {aside !== undefined && <span className="ml-1">{aside}</span>}
       </span>
-      <span className={cn("text-2xl font-semibold", warnValue && WARN)}>{value}</span>
+      <Hint text={rule}>
+        <span tabIndex={0} className={cn("w-fit rounded text-2xl font-semibold focus-visible:outline-2 focus-visible:outline-ring", warnValue && WARN)}>
+          {value}
+        </span>
+      </Hint>
       <span className={cn("flex flex-wrap text-xs text-muted-foreground", warnSub && WARN)}>
         {parts.map((part, i) => {
-          // joined facts ("3 blocked · 8 unclaimed") get a strong number; a single line stays plain text
+          // joined facts ("3 blocked · 8 unassigned") get a strong number; a single line stays plain text
           const [, count = "", rest = part] = (parts.length > 1 ? /^(\d+(?:\.\d+)?)(.*)$/.exec(part) : null) ?? [];
           return (
             <Fragment key={part}>
               {i > 0 && <span className="whitespace-pre"> · </span>}
-              <span>
-                {count !== "" && <b className="font-semibold">{count}</b>}
-                {rest}
-              </span>
+              {part.endsWith(" unassigned") ? (
+                <Hint text={DEFINITIONS.unassigned}>
+                  <span>
+                    {count !== "" && <b className="font-semibold">{count}</b>}
+                    {rest}
+                  </span>
+                </Hint>
+              ) : (
+                <span>
+                  {count !== "" && <b className="font-semibold">{count}</b>}
+                  {rest}
+                </span>
+              )}
             </Fragment>
           );
         })}
@@ -84,8 +110,9 @@ function PaceOrThroughput({ team, figures, solo, milestone }: { team: TeamTotals
       <Cell
         label="Pace"
         aside="last 5 days"
-        value={`${team.pace.toFixed(1)} / day`}
-        sub={`needs ${team.pace_needed.toFixed(1)} / day to end on ${formatDate(milestone.end)}`}
+        rule={RULE.pace}
+        value={`${team.pace.toFixed(1)} done per day`}
+        sub={`needs ${team.pace_needed.toFixed(1)} done per day to finish by ${formatDate(milestone.end)}`}
         warnValue={behind}
         warnSub={behind}
       />
@@ -94,7 +121,8 @@ function PaceOrThroughput({ team, figures, solo, milestone }: { team: TeamTotals
   return (
     <Cell
       label="Throughput"
-      value={`${figures.throughput.toFixed(1)} / week`}
+      rule={RULE.throughput}
+      value={`${figures.throughput.toFixed(1)} done per week`}
       sub={milestone.status === "closed" ? "over the milestone" : "last 5 working days"}
     />
   );
@@ -106,6 +134,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
   const lateOpen = solo ? 0 : team.late_open;
   const slow = figures.oldest_in_progress !== null && figures.oldest_in_progress > WARN_DAYS;
   const onTime = figures.on_time;
+  const scope = solo ? `beads assigned to ${member.member}` : "the milestone's epics";
   return (
     <div className="flex flex-col gap-6">
       <div
@@ -114,29 +143,32 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
         className="grid divide-x divide-y rounded border"
         style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}
       >
-        <Cell label="Done" value={`${figures.closed} / ${figures.scope}`} sub={`${formatPercent(figures.done)} of ${solo ? "assigned" : "scope"}`} />
+        <Cell label="Done" rule={countHint("done", scope)} value={`${figures.closed} / ${figures.scope}`} sub={`${formatPercent(figures.done)} of ${solo ? "assigned" : "scope"}`} />
         <Cell
           label="In progress"
+          rule={countHint("inProgress", scope)}
           value={String(figures.in_progress)}
           sub={figures.oldest_in_progress === null ? "nothing started" : `oldest ${formatDays(figures.oldest_in_progress)}`}
           warnSub={slow}
         />
         <Cell
           label="Open"
+          rule={`${countHint("open", scope)} ${DEFINITIONS.blocked}`}
           value={String(figures.open)}
-          sub={solo ? `${figures.blocked} blocked` : `${figures.blocked} blocked · ${figures.unclaimed} unclaimed`}
+          sub={solo ? `${figures.blocked} blocked` : `${figures.blocked} blocked · ${figures.unclaimed} unassigned`}
           warnSub={figures.blocked > 0}
         />
         <PaceOrThroughput team={team} figures={figures} solo={solo} milestone={milestone} />
-        <Cell label="Median cycle" value={formatDays(figures.cycle_median)} sub="start → close" />
+        <Cell label="Median cycle" rule={RULE.cycle} value={formatDays(figures.cycle_median)} sub="start → close" />
         <Cell
           label="On time"
+          rule={RULE.onTime}
           value={formatPercent(onTime)}
-          sub={lateOpen > 0 ? `${lateOpen} still open after end` : `closed by ${formatDate(milestone.end)}`}
+          sub={lateOpen > 0 ? `${lateOpen} open after the end date` : `closed by ${formatDate(milestone.end)}`}
           warnValue={onTime !== null && onTime < 1}
           warnSub={lateOpen > 0}
         />
-        <Cell label="Rework" value={formatPercent(figures.rework_rate)} sub={`${figures.reopens} reopens · ${figures.bugs} bugs later`} />
+        <Cell label="Rework" rule={RULE.rework} value={formatPercent(figures.rework_rate)} sub={`${figures.reopens} reopens · ${figures.bugs} bugs later`} />
       </div>
       <ScopeBar figures={figures} member={member === null ? null : member.member} />
     </div>

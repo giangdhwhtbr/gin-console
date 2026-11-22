@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-062@cc8f4750
+// TC: TC-MILESTONE-UI-062@6e45d22a
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -15,7 +15,7 @@ test('TC-MILESTONE-UI-062: Expand an epic shows its closed children', async ({ p
   await ev.step('1. Open /milestones/P/M1', async () => {
     await page.goto('/milestones/P/M1');
     await expect(page.getByRole('button', { name: `Show 4 child beads of ${epicId}` })).toBeVisible();
-    await expect(page.locator(`[data-epic="${epicId}"]`)).toContainText('4/4 closed');
+    await expect(page.locator(`[data-epic="${epicId}"]`)).toContainText('4 of 4 done');
     await expect(page.locator('[data-child]')).toHaveCount(0);
   });
 

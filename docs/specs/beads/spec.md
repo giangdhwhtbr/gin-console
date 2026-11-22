@@ -292,10 +292,14 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 - [Pull status](diagrams/pull-status-state.md)
 - [Lane fields](diagrams/lane-fields-activity.md)
 - [Workflow of an epic](diagrams/epic-workflow-activity.md)
+- [Bead counts](diagrams/bead-counts-activity.md)
+- [Bead state as shown](diagrams/bead-state.md)
+- [Me filter](diagrams/me-filter-activity.md)
 
 ## Use Cases
 - [Refresh pulls Beads](use-cases/refresh-pulls-beads.md)
 - [Scheduled Beads pull](use-cases/scheduled-beads-pull.md)
+- [Filter my beads](use-cases/filter-my-beads.md)
 
 ### REQ-BEADS-013: Stale export
 The server SHALL record, each time it reads a project's `.beads/issues.jsonl`, the content of the project's embedded Dolt manifests (`.beads/embeddeddolt/*/.dolt/noms/manifest`), and SHALL report the project's export as stale WHILE that content differs from the recorded content and the file has not changed since; WHERE a project has no such manifest, its export SHALL never be stale. `GET /api/projects` and `GET /api/projects/beads` SHALL include `stale` (a boolean) in the `beads` object of each project whose beads were read.
@@ -530,3 +534,62 @@ WHEN a client requests `GET /api/beads/{project}/{id}/workflow`, the server SHAL
 - GIVEN no bead `nope` in project `p`
 - WHEN a client requests `GET /api/beads/p/nope/workflow`
 - THEN the answer is 404 and no command ran
+
+### REQ-BEADS-021: One rule for blocked and in-progress counts
+Type: business-rule
+Every count of blocked beads in the console (the Projects page, REQ-SERVER-006; the Board and Focus columns, REQ-UI-031 and REQ-UI-033; the Team figures, REQ-REPORTS-010) SHALL count the beads whose `blocked` is true by REQ-BEADS-007, whatever their status, and every count of beads in progress SHALL leave those beads out, so that a bead is counted once. These counts SHALL leave out merge gates (REQ-BEADS-019) and milestones, and SHALL count prep tasks (REQ-BEADS-002) apart. The row of an epic on the Gantt (REQ-MILESTONE-UI-013) SHALL show the state Blocked WHEN that epic's `blocked` is true, whatever its status.
+
+#### Scenario: Blocked whatever the status
+- GIVEN open bead `a`, epic `e` blocked by `a` with the open child `e.1`, bead `b` with status `blocked` and no blocker, in-progress bead `c` blocked by `a`, and in-progress bead `d` without blockers
+- WHEN the Projects page counts are built
+- THEN `blocked` is 4 (`e`, `e.1`, `b` and `c`) and `in_progress` is 1 (`d`)
+
+#### Scenario: Same number on Projects and in the Beads views
+- GIVEN the same project
+- WHEN the Projects page, the Board and the Focus view are shown
+- THEN the Projects card reads "blocked 4", and the Blocked columns of the Board and of the Focus view each say 4
+
+#### Scenario: Blocked epic on the Gantt
+- GIVEN epic `e` with status `open` blocked by the open bead `a`, in a milestone shown on the Gantt
+- WHEN the Gantt is shown
+- THEN the row of `e` shows the state Blocked
+
+### REQ-BEADS-022: Child counts
+WHEN a client requests the bead list or a bead detail, the server SHALL add to each bead `child_counts`, an object with `total` and `closed`, the number of its direct children that are tracks (neither prep tasks, REQ-BEADS-002, nor merge gates, REQ-BEADS-019) and the number of those whose status is `closed`, and `prep_total` and `prep_closed`, the number of its direct children that are prep tasks and of those that are closed, counted over every bead of the export whatever `closed` the request has. A bead SHALL count as done when, and only when, its status is `closed`.
+
+#### Scenario: Counts ignore the closed filter
+- GIVEN epic `e-1` with tracks `t-1` and `t-2` (closed) and `t-3` (open), the closed prep task `p-1` labelled `prep`, and the merge gate `g-1` titled `external: .planning/plans/p.md#1`
+- WHEN a client requests `GET /api/beads?project=<name>` without `closed=1`
+- THEN `e-1` has `child_counts` `{total: 3, closed: 2, prep_total: 1, prep_closed: 1}` although `t-1`, `t-2` and `p-1` are not in the list
+
+#### Scenario: Bead without children
+- GIVEN a task without children
+- WHEN a client requests its detail
+- THEN its `child_counts` is `{total: 0, closed: 0, prep_total: 0, prep_closed: 0}`
+
+### REQ-BEADS-023: One person for an email and its handle
+Type: business-rule
+The console SHALL take two assignee values for the same person WHEN they are equal once each is trimmed, lower-cased and cut before its first `@`, SHALL name that person by that cut value (its handle), and SHALL apply this rule in the Assignee filter (REQ-UI-082), Group by assignee (REQ-UI-034), the assignee shown on beads (REQ-UI-135), My Tasks (REQ-UI-100) and the members of the Team report (REQ-REPORTS-009).
+
+#### Scenario: Email and handle
+- GIVEN beads assigned to `giangdhwhtbr`, `GiangDHWHTBR@gmail.com` and `ann@example.com`
+- WHEN the Assignee filter lists its options
+- THEN it lists the people `ann` and `giangdhwhtbr` once each
+
+#### Scenario: Same handle at two domains
+- GIVEN beads assigned to `ann@a.example` and `ann@b.example`
+- WHEN the team report is built
+- THEN both count for the one member `ann`
+
+### REQ-BEADS-024: Me in the Assignee filter
+The Assignee filter of the Beads page and of the Beads tab of a milestone page SHALL offer "Me" as its first option, kept in the URL as `me` within `assignee`, which SHALL match the beads whose assignee is the same person (REQ-BEADS-023) as the email the browser holds for the console (REQ-UI-097).
+
+#### Scenario: Me by handle or email
+- GIVEN the browser holds the email `giangdhwhtbr@gmail.com`, and beads assigned to `giangdhwhtbr`, to `giangdhwhtbr@gmail.com` and to `ann`
+- WHEN the user selects "Me" in the Assignee filter
+- THEN the first two beads remain, and the URL query holds `assignee=me`
+
+#### Scenario: Shared link means the viewer
+- GIVEN the link `/beads?project=example&assignee=me` opened in a browser that holds the email `ann@example.com`
+- WHEN the Beads page loads
+- THEN it shows the beads assigned to `ann` or `ann@example.com`, with "Me" selected

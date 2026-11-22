@@ -1,6 +1,6 @@
 # TC-SERVER-008: Counts and active epics
 
-- **REQ:** REQ-SERVER-006@8dcdf4d5
+- **REQ:** REQ-SERVER-006@ea632040
 - **Priority:** high
 
 **Preconditions:**

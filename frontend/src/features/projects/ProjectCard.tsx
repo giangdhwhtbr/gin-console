@@ -1,6 +1,8 @@
 import { Link } from "@/app/Link";
 import { TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Hint } from "@/components/ui/tooltip";
+import { countHint, type DefinitionKey } from "@/lib/definitions";
 import { useId, useState } from "react";
 import { isBlockError, pullOf, type Beads, type Epic, type Project, type Workflow } from "./api";
 import { PullLine } from "./PullLine";
@@ -116,26 +118,28 @@ function EpicStage({ epic }: { epic: Epic }) {
 }
 
 function BeadsBlock({ beads, projectName }: { beads: Beads; projectName: string }) {
-  const counts: [string, number][] = [
-    ["open", beads.open],
-    ["in progress", beads.in_progress],
-    ["blocked", beads.blocked],
-    ["ready", beads.ready],
+  const counts: [string, number, DefinitionKey][] = [
+    ["open", beads.open, "open"],
+    ["in progress", beads.in_progress, "inProgress"],
+    ["blocked", beads.blocked, "blocked"],
+    ["ready", beads.ready, "ready"],
   ];
-  if ((beads.prep ?? 0) > 0) counts.push(["prep", beads.prep ?? 0]);
+  if ((beads.prep ?? 0) > 0) counts.push(["prep", beads.prep ?? 0, "prep"]);
   return (
     <div className="flex flex-col gap-2 text-sm">
       <div className="flex flex-wrap gap-3">
-        {counts.map(([label, count]) =>
-          label === "blocked" && count > 0 ? (
-            <span key={label} className="inline-flex items-center gap-1 font-medium text-state-blocked">
-              <TriangleAlert aria-hidden className="size-3.5" />
-              {`${label} ${count}`}
-            </span>
-          ) : (
-            <span key={label}>{`${label} ${count}`}</span>
-          ),
-        )}
+        {counts.map(([label, count, rule]) => (
+          <Hint key={label} text={countHint(rule, "this project")}>
+            {label === "blocked" && count > 0 ? (
+              <span tabIndex={0} className="inline-flex items-center gap-1 rounded font-medium text-state-blocked focus-visible:outline-2 focus-visible:outline-ring">
+                <TriangleAlert aria-hidden className="size-3.5" />
+                {`${label} ${count}`}
+              </span>
+            ) : (
+              <span tabIndex={0} className="rounded focus-visible:outline-2 focus-visible:outline-ring">{`${label} ${count}`}</span>
+            )}
+          </Hint>
+        ))}
       </div>
       {beads.epics.length === 0 ? (
         <p className="text-muted-foreground">no active epics</p>

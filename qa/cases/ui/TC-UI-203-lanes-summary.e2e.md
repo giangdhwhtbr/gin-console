@@ -1,6 +1,6 @@
 # TC-UI-203: Lanes summary
 
-- **REQ:** REQ-UI-121@dc1ca926
+- **REQ:** REQ-UI-121@3ec4d754
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-21T05-35-24

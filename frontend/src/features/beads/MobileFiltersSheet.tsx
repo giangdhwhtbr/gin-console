@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { SlidersHorizontal, X } from "lucide-react";
 import { activeFilters } from "./Breadcrumb";
-import { KIND_OPTIONS, type BeadFilters, type BeadOptions } from "./filters";
+import { assigneeLabel, KIND_OPTIONS, type BeadFilters, type BeadOptions } from "./filters";
 import { MilestoneFilter } from "./MilestoneFilter";
 import type { MilestoneInEffect, MilestonesState } from "./milestoneChoice";
 
@@ -168,7 +168,7 @@ export function MobileFiltersSheet({
               <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                 {options.assignees.map((assignee) => {
                   const selected = filters.assignee.includes(assignee);
-                  const label = assignee === "unassigned" ? "Unassigned" : assignee;
+                  const label = assigneeLabel(assignee);
                   return (
                     <button
                       key={assignee}

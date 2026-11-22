@@ -50,9 +50,16 @@ describe("BeadCard", () => {
     expect(card(bead("a-3", { blocked: true }))).toHaveClass("border-l-4", "border-l-state-blocked");
   });
 
-  it("shows owner as assignee fallback on the card", () => {
+  it("REQ-UI-065 REQ-UI-135 shows Unassigned when only an owner is set", () => {
     card(bead("a-4", { assignee: null, owner: "bob" }));
+    expect(screen.getByText("Unassigned")).toBeInTheDocument();
+    expect(screen.queryByText("bob")).not.toBeInTheDocument();
+  });
+
+  it("REQ-UI-065 REQ-UI-135 shows the person of the assignee", () => {
+    card(bead("a-5", { assignee: "Bob@Example.com" }));
     expect(screen.getByText("bob")).toBeInTheDocument();
+    expect(screen.queryByText("Unassigned")).not.toBeInTheDocument();
   });
 
   it("REQ-UI-109 shows the kind badge of a technical epic and none for a capability epic", () => {

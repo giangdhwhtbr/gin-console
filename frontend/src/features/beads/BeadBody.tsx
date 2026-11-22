@@ -1,16 +1,15 @@
 import { ProgressBar } from "@/components/ProgressBar";
 import type { BeadDetail } from "./api";
 import { MarkdownText } from "./MarkdownText";
-import { childCounts, prepLabel } from "./prep";
+import { prepLabel, progressOf } from "./progress";
 import { RelationList } from "./RelationList";
 import { TextSection } from "./TextSection";
 
 /** The description, text sections, relations and children of a bead (REQ-UI-038), shared by the bead page and the Overview of an epic; `overview` leaves out the children (the Tracks table shows them) and heads the description. */
 export function BeadBody({ project, bead, overview = false }: { project: string; bead: BeadDetail; overview?: boolean }) {
-  const counts = childCounts(bead.children.map((c) => ({ labels: c.prep ? ["prep"] : [], status: c.status, waits_for: c.waits_for })));
-  const closed = counts.closedTracks;
-  const total = counts.tracks;
-  const prep = prepLabel(counts);
+  const progress = progressOf(bead);
+  const { done: closed, total } = progress;
+  const prep = progress.prepTotal > 0 ? prepLabel(progress) : null;
 
   return (
     <>

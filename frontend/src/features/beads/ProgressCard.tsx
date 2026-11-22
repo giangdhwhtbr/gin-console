@@ -4,7 +4,7 @@ import type { BeadDetail } from "./api";
 import { epicProgress, STATE_ORDER } from "./epicOverview";
 import { STATE_LABEL, type GraphState } from "./graph";
 import { OverviewCard } from "./OverviewCard";
-import { childCounts } from "./prep";
+import { progressOf } from "./progress";
 import type { BeadsState } from "./useBeads";
 
 const FILL: Record<GraphState, string> = {
@@ -27,8 +27,8 @@ export function ProgressCard({ bead, beads }: { bead: BeadDetail; beads: BeadsSt
     );
   }
   const children = beads.beads.filter((b) => b.parent === bead.id);
-  const { closed, total, byState, points } = epicProgress(children);
-  const prep = childCounts(children);
+  const { byState, points } = epicProgress(children);
+  const { done: closed, total, prepDone, prepTotal } = progressOf(bead);
   const openBugs = bead.bugs.filter((b) => b.status !== "closed").length;
   const percent = total === 0 ? 0 : Math.round((100 * closed) / total);
   return (
@@ -56,7 +56,7 @@ export function ProgressCard({ bead, beads }: { bead: BeadDetail; beads: BeadsSt
         facts={[
           { label: "Points", value: points === null ? "No points" : `${points.done} of ${points.total} pt done` },
           { label: "Bugs", value: `${openBugs} open` },
-          { label: "Prep", value: prep.prep === 0 ? "none" : `${prep.closedPrep}/${prep.prep}` },
+          { label: "Prep", value: prepTotal === 0 ? "none" : `${prepDone}/${prepTotal}` },
         ]}
       />
     </OverviewCard>

@@ -10,6 +10,7 @@ export type TeamBead = {
   issue_type: string;
   status: string;
   bucket: Bucket;
+  blocked: boolean;
   assignee: string | null;
   priority: number | null;
   created_at: string;

@@ -1,6 +1,6 @@
 # TC-REPORTS-052: Milestones with velocity
 
-- **REQ:** REQ-REPORTS-018@d6b9d106
+- **REQ:** REQ-REPORTS-018@2d3d5d2a
 - **Priority:** medium
 
 **Preconditions:**
@@ -17,6 +17,6 @@
 2. Open `/reports?project=alpha&tab=velocity`
 
 **Expected:**
-- The figures read "1.4 d/pt", "38%" and "1.08"
+- The figures read "1.4 days per point", commitment met "38%" and accuracy "1.08"
 - The charts and the table hold `m1` then `m2`
 - `m3` is not shown

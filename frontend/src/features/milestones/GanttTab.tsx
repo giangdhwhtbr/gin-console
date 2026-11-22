@@ -1,3 +1,4 @@
+import { formatDate } from "@/lib/dates";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import type { BeadKind, BeadSummary } from "@/features/beads/api";
@@ -5,7 +6,7 @@ import { withoutMergeGates } from "@/features/beads/mergeGates";
 import { useBeads } from "@/features/beads/useBeads";
 import type { MilestoneDetail } from "./api";
 import { CopyCommand } from "./CopyCommand";
-import { shortDate, weekday } from "./format";
+import { weekday } from "./format";
 import { childrenOf, type Zoom } from "./gantt";
 import { GanttChart } from "./GanttChart";
 import { MilestoneError } from "./MilestoneError";
@@ -41,6 +42,7 @@ export function GanttTab({
     if (beads.status === "ok") for (const b of beads.beads) if (b.kind !== null) map.set(b.id, b.kind);
     return map;
   }, [beads]);
+  const epicBeads = useMemo(() => new Map(beads.status === "ok" ? beads.beads.map((b) => [b.id, b]) : []), [beads]);
   const pickable = plan.status === "planned" || plan.status === "scheduled";
   const previewing = pickable && start !== null;
   const failed = previewing && preview.status === "error";
@@ -69,7 +71,7 @@ export function GanttTab({
       )}
       {previewing && !failed && (
         <div className="flex flex-col gap-2 rounded border border-dashed p-3 text-sm md:flex-row md:items-center md:justify-between">
-          <p>{`Preview from ${weekday(start)} ${shortDate(start, plan.today)}. Nothing changes until you run:`}</p>
+          <p>{`Preview from ${weekday(start)} ${formatDate(start, plan.today)}. Nothing changes until you run:`}</p>
           <CopyCommand command={`gin milestone kickstart ${plan.id} --date ${start}`} />
         </div>
       )}
@@ -80,7 +82,7 @@ export function GanttTab({
           Loading preview…
         </p>
       ) : (
-        <GanttChart project={project} plan={shown} preview={previewing} zoom={zoom} onZoom={onZoom} childBeads={childBeads} kinds={kinds} />
+        <GanttChart project={project} plan={shown} preview={previewing} zoom={zoom} onZoom={onZoom} childBeads={childBeads} kinds={kinds} epicBeads={epicBeads} />
       )}
     </div>
   );

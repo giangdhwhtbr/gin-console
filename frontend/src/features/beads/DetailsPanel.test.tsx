@@ -57,7 +57,7 @@ describe("DetailsPanel", () => {
   it("REQ-UI-115 Chip in every view (details panel) and REQ-UI-116 gate words", async () => {
     stub({ lane: "be", track: { plan: null, number: 3 } });
     render(<DetailsPanel project="alpha" id="t-1" onClose={() => {}} />);
-    expect(await screen.findByTitle("Lane be")).toBeInTheDocument();
+    expect((await screen.findAllByText("be")).filter((el) => el.closest("[data-slot='badge']") !== null)).toHaveLength(1);
     expect(screen.getByText("#3")).toBeInTheDocument();
     cleanup();
     stub({ waits_for: { plan: "p.md", number: 2, track_id: null, lane: "be" } });

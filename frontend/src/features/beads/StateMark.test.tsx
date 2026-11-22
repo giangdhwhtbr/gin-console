@@ -1,6 +1,9 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
+import { HintProvider } from "@/components/HintProvider";
+import { DEFINITIONS } from "@/lib/definitions";
 import { bead } from "./beadFixtures";
+import { MilestoneStatusProvider } from "./milestoneStatus";
 import { StateMark, StateWord, stateEdge } from "./StateMark";
 
 afterEach(cleanup);
@@ -17,9 +20,11 @@ describe("StateMark", () => {
     expect(screen.getByText(label).closest("[data-state]")).toHaveAttribute("data-state", state);
   });
 
-  it("REQ-UI-107 the mark carries its label as title, so a cut label stays readable", () => {
-    render(<StateMark bead={bead("b", { status: "in_progress" })} />);
-    expect(screen.getByText("In progress").closest("[data-state]")).toHaveAttribute("title", "In progress");
+  it("REQ-UI-132 the mark has no title; its hint says what the state means", () => {
+    render(<HintProvider><StateMark bead={bead("b", { status: "in_progress" })} /></HintProvider>);
+    const mark = screen.getByText("In progress").closest("[data-state]");
+    expect(mark).not.toHaveAttribute("title");
+    expect(document.getElementById(mark?.getAttribute("aria-describedby") ?? "")).toHaveTextContent(DEFINITIONS.inProgress);
   });
 
   it("REQ-UI-064 the edge is 4px wide in the colour of the state", () => {
@@ -35,10 +40,29 @@ describe("StateMark", () => {
   });
 
   it("REQ-UI-110 StateWord is capped to its container so the words end with an ellipsis and keep the title", () => {
-    render(<StateWord state="done" words="All tracks closed" />);
+    render(<HintProvider><StateWord state="done" words="All tracks closed" /></HintProvider>);
     const word = screen.getByText("All tracks closed");
     expect(word).toHaveClass("truncate");
     expect(word.parentElement).toHaveClass("max-w-full", "min-w-0");
-    expect(word.parentElement).toHaveAttribute("title", "All tracks closed");
+    expect(word.parentElement).not.toHaveAttribute("title");
+    expect(document.getElementById(word.parentElement?.getAttribute("aria-describedby") ?? "")).toHaveTextContent(`All tracks closed. ${DEFINITIONS.done}`);
+  });
+
+  it("REQ-MILESTONE-UI-022 a milestone bead draws its milestone status; others and unknown milestones draw their state", () => {
+    const statuses = new Map([["m-1", "scheduled" as const], ["t-1", "active" as const]]);
+    const draw = (item: ReturnType<typeof bead>) =>
+      render(
+        <MilestoneStatusProvider statuses={statuses}>
+          <StateMark bead={item} />
+        </MilestoneStatusProvider>,
+      );
+    draw(bead("m-1", { issue_type: "milestone", ready: true }));
+    expect(screen.getByText("Scheduled").closest("[data-status]")).toHaveAttribute("data-status", "scheduled");
+    cleanup();
+    draw(bead("m-9", { issue_type: "milestone", ready: true }));
+    expect(screen.getByText("Ready")).toBeInTheDocument();
+    cleanup();
+    draw(bead("t-1", { ready: true }));
+    expect(screen.getByText("Ready")).toBeInTheDocument();
   });
 });

@@ -1,7 +1,10 @@
 # TC-UI-142: Velocity tab
 
-- **REQ:** REQ-UI-095@be92ba05
+- **REQ:** REQ-UI-095@c32236ad
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** fb3d690d
 
 **Preconditions:**
 - The Reports page for `alpha` on the Delivery tab
@@ -18,4 +21,4 @@
 **Expected:**
 - The URL has `tab=velocity`
 - `GET /api/milestones?project=alpha` is requested once
-- The Velocity headline reads "1.4 d/pt"
+- The Velocity headline reads "1.4 days per point"

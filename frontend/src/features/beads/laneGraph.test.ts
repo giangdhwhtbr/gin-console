@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { factDate } from "@/lib/dates";
+import { formatDateTime } from "@/lib/dates";
 import type { BeadSummary } from "./api";
 import { bead } from "./beadFixtures";
 import {
@@ -599,7 +599,7 @@ describe("laneGraph header and colours", () => {
   it("REQ-UI-118 Header: the be box carries Running and the holder, lease and closed count", () => {
     const be = boxOf(graphOf(), "be");
     expect(be.state).toEqual({ kind: "running", words: "Running" });
-    expect(be.meta).toBe(`ann · lease until ${factDate("2099-01-01T16:00:00Z")} · 1/2 closed`);
+    expect(be.meta).toBe(`ann · lease until ${formatDateTime("2099-01-01T16:00:00Z")} · 1/2 closed`);
   });
 
   it("REQ-UI-118 a lane with no holder reads Unclaimed, and a closed lane shows only the count", () => {

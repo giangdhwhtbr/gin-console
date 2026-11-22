@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bead } from "@/features/beads/beadFixtures";
 import {
+  periodOf,
   axisOf,
   beadsOf,
   chainOf,
@@ -275,6 +276,15 @@ describe("gantt", () => {
     // only spec_not_ready drops it: spec_due and the other warnings keep it
     const due = [{ code: "spec_due", days: null, count: null }, { code: "late", days: null, count: null }];
     expect(showsSpec(epicPlan("a", { spec_confirmed: false, warnings: due }))).toBe(true);
+  });
+});
+
+describe("periodOf", () => {
+  it("REQ-UI-131 writes the year of an epic period once after the end, or after each end", () => {
+    expect(periodOf("2025-11-03", "2025-11-28", "2026-11-21")).toBe("3 Nov – 28 Nov 2025");
+    expect(periodOf("2026-12-14", "2027-01-08", "2026-11-21")).toBe("14 Dec 2026 – 8 Jan 2027");
+    expect(periodOf("2026-11-10", "2026-12-01", "2026-11-21")).toBe("10 Nov – 1 Dec");
+    expect(periodOf("2025-11-03", "2025-11-03", "2026-11-21")).toBe("3 Nov 2025");
   });
 });
 

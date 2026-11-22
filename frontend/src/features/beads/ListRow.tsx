@@ -5,13 +5,16 @@ import { Badge } from "@/components/ui/badge";
 import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
 import { cn } from "@/lib/utils";
+import { AssigneeName } from "./AssigneeName";
 import { CountBadge } from "./CountBadge";
 import { KindBadge } from "./KindBadge";
 import { LaneChip } from "./LaneChip";
 import { visibleLabels } from "./laneFacts";
-import { isPrep, prepLabel } from "./prep";
+import { isPrep } from "./prep";
+import { prepLabel, progressOf } from "./progress";
 import { PrepChip } from "./PrepChip";
 import { StateMark } from "./StateMark";
+import { formatDate } from "@/lib/dates";
 import type { TreeRow } from "./tree";
 import { TypeBadge } from "./TypeBadge";
 
@@ -39,6 +42,7 @@ export function ListRow({
   onSelect: (id: string) => void;
 }) {
   const { bead } = row;
+  const progress = progressOf(bead);
   const short = shortId(bead.id);
   return (
     <li
@@ -88,19 +92,19 @@ export function ListRow({
         )}
         {bead.issue_type === "epic" && <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} className="shrink-0" />}
         <div className="hidden min-w-0 shrink items-center gap-2 overflow-hidden @xl:flex">
-          {bead.issue_type === "epic" && row.counts.tracks > 0 && (
+          {bead.issue_type === "epic" && progress.total > 0 && (
             <span className="hidden shrink-0 items-center gap-2 text-xs text-muted-foreground @xl:flex">
               <span className="h-1.5 w-12 overflow-hidden rounded bg-muted">
                 <span
                   className="block h-full bg-foreground/60"
-                  style={{ width: `${(row.counts.closedTracks / row.counts.tracks) * 100}%` }}
+                  style={{ width: `${(progress.done / progress.total) * 100}%` }}
                 />
               </span>
-              {`${row.counts.closedTracks}/${row.counts.tracks} closed`}
+              {`${progress.done}/${progress.total} closed`}
             </span>
           )}
-          {bead.issue_type === "epic" && prepLabel(row.counts) !== null && (
-            <span className="hidden shrink-0 text-xs text-muted-foreground @xl:inline">{prepLabel(row.counts)}</span>
+          {bead.issue_type === "epic" && progress.prepTotal > 0 && (
+            <span className="hidden shrink-0 text-xs text-muted-foreground @xl:inline">{prepLabel(progress)}</span>
           )}
           <span className="hidden min-w-0 shrink items-center gap-1 @3xl:flex">
             {visibleLabels(bead).slice(0, 3).map((label) => (
@@ -119,10 +123,8 @@ export function ListRow({
           <CountBadge kind="comments" count={bead.comment_count} />
           <CountBadge kind="dependencies" count={bead.dependency_count} />
         </span>
-        <span className="hidden truncate text-muted-foreground @4xl:block" title={bead.assignee ?? bead.owner ?? ""}>
-          {bead.assignee ?? bead.owner ?? ""}
-        </span>
-        <span className="hidden text-xs text-muted-foreground @4xl:block">{new Date(bead.updated_at).toLocaleDateString()}</span>
+        <AssigneeName assignee={bead.assignee} className="hidden truncate text-muted-foreground @4xl:block" />
+        <span className="hidden text-xs text-muted-foreground @4xl:block">{formatDate(bead.updated_at)}</span>
       </div>
     </li>
   );

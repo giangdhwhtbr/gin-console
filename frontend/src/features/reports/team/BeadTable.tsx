@@ -7,9 +7,11 @@ import { Tabs } from "@/components/Tabs";
 import { cn } from "@/lib/utils";
 import type { BeadStatus } from "../filters";
 import { beadPath, formatDays } from "../format";
-import { UNASSIGNED, type TeamBead } from "../teamApi";
+import { AssigneeName } from "../../beads/AssigneeName";
+import type { TeamBead } from "../teamApi";
 import { ageOf, COLUMNS, DEFAULT_SORT, sortBeads, type Column, type Dir } from "./beadSort";
-import { formatDate, WARN_DAYS } from "./format";
+import { formatDate } from "@/lib/dates";
+import { WARN_DAYS } from "./format";
 
 const PAGE = 15;
 const WARN = "text-state-blocked";
@@ -30,9 +32,9 @@ const HEAD: Record<Column, string> = {
 const RIGHT: Column[] = ["age", "progress", "closed", "cycle", "rework"];
 const STATUS_NAME: Record<BeadStatus, string> = { open: "open", in_progress: "in progress", closed: "closed", all: "" };
 
-const statusChip = (status: string): { text: string; warn: boolean } => {
+const statusChip = (status: string, blocked: boolean): { text: string; warn: boolean } => {
+  if (blocked) return { text: "Blocked", warn: true };
   if (status === "open") return { text: "Open", warn: false };
-  if (status === "blocked") return { text: "Blocked", warn: true };
   if (status === "in_progress") return { text: "In progress", warn: false };
   if (status === "closed") return { text: "Closed", warn: false };
   return { text: status, warn: false };
@@ -70,13 +72,15 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
     case "type":
       return <TableCell className="text-sm text-muted-foreground">{bead.issue_type}</TableCell>;
     case "assignee":
-      return <TableCell className={cn("text-sm", bead.assignee === null && "text-muted-foreground")}>{bead.assignee ?? UNASSIGNED}</TableCell>;
+      return <TableCell className="text-sm">
+          <AssigneeName assignee={bead.assignee} />
+        </TableCell>;
     case "priority":
       return <TableCell className="font-mono text-sm">{bead.priority === null ? "—" : `P${bead.priority}`}</TableCell>;
     case "status":
       return (
         <TableCell>
-          <Chip {...statusChip(bead.status)} />
+          <Chip {...statusChip(bead.status, bead.blocked)} />
         </TableCell>
       );
     case "age":
@@ -86,7 +90,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
         <TableCell className={cn("text-right", bead.age_days !== null && bead.age_days > WARN_DAYS && WARN)}>{formatDays(bead.age_days)}</TableCell>
       );
     case "closed":
-      return <TableCell className="text-right text-sm">{bead.closed_at === null ? "—" : formatDate(bead.closed_at)}</TableCell>;
+      return <TableCell className="text-right text-sm">{bead.closed_at === null ? "—" : formatDate(bead.closed_at, today)}</TableCell>;
     case "cycle":
       return <TableCell className="text-right">{formatDays(bead.cycle_days)}</TableCell>;
     case "on_time": {

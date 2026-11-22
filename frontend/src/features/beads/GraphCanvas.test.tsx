@@ -36,7 +36,7 @@ describe("GraphNode content", () => {
   it("REQ-UI-049 REQ-UI-054 REQ-UI-107 Long state line: the row does not wrap and the id is shortened", () => {
     const id = "ex-payments-provider-migration-and-reconciliation-2026";
     const kids = ["a", "b", "c", "d", "e"].map((k, i) => task(k, id, [], { status: i < 2 ? "closed" : "open" }));
-    show(scopeGraph([epic(id, { status: "in_progress" }), ...kids], null, OFF));
+    show(scopeGraph([epic(id, { status: "in_progress", child_counts: { total: 5, closed: 2, prep_total: 0, prep_closed: 0 } }), ...kids], null, OFF));
     const n = node(id);
     expect(n).toHaveAccessibleName(new RegExp(`^${id}`));
     expect(within(n).getByText("ex-payments-pr…tion-2026")).toHaveAttribute("title", id);
@@ -45,7 +45,7 @@ describe("GraphNode content", () => {
     expect(done.parentElement).toHaveClass("whitespace-nowrap", "min-w-0");
     const label = within(n).getByText("In progress");
     expect(label).toHaveClass("truncate");
-    expect(label.closest("[data-state]")).toHaveAttribute("title", "In progress");
+    expect(label.closest("[data-state]")).not.toHaveAttribute("title");
   });
 });
 
@@ -146,7 +146,7 @@ describe("GraphCanvas", () => {
   });
 
   it("REQ-UI-049 a node with children reads n of m done; a click selects and a double click opens", async () => {
-    const g = scopeGraph([epic("e-1"), task("a", "e-1", [], { status: "closed" }), task("b", "e-1"), task("c", "e-1")], null, OFF);
+    const g = scopeGraph([epic("e-1", { child_counts: { total: 3, closed: 1, prep_total: 0, prep_closed: 0 } }), task("a", "e-1", [], { status: "closed" }), task("b", "e-1"), task("c", "e-1")], null, OFF);
     const calls = show(g);
     expect(node("e-1")).toHaveTextContent("1 of 3 done");
     await userEvent.click(node("e-1"));
@@ -157,7 +157,7 @@ describe("GraphCanvas", () => {
 
   it("REQ-UI-049 node with a prep task: 1 of 2 done, open icon, chip on p-1 only", () => {
     const g = scopeGraph(
-      [epic("e-1"), task("t-1", "e-1", [], { status: "closed" }), task("t-2", "e-1"), task("p-1", "e-1", [], { labels: ["prep", "prep:mockup"] })],
+      [epic("e-1", { child_counts: { total: 2, closed: 1, prep_total: 1, prep_closed: 0 } }), task("t-1", "e-1", [], { status: "closed" }), task("t-2", "e-1"), task("p-1", "e-1", [], { labels: ["prep", "prep:mockup"] })],
       null,
       OFF,
     );

@@ -1,4 +1,5 @@
 import { FactList, type Fact } from "@/components/FactList";
+import { DEFINITIONS } from "@/lib/definitions";
 import type { Velocity } from "./api";
 import { oneDecimal, percent, twoDecimals } from "./format";
 
@@ -19,10 +20,10 @@ export function MilestoneVelocity({ velocity: v }: { velocity: Velocity | null }
           { label: "Committed", value: `${v.committed_points} pt` },
           { label: "Completed", value: `${v.completed_points} pt` },
           { label: "Added", value: `${v.added_points} pt` },
-          { label: "Say/do", value: v.say_do === null ? "–" : percent(v.say_do) },
+          { label: "Commitment met", hint: DEFINITIONS.commitmentMet, value: v.say_do === null ? "–" : percent(v.say_do) },
         ];
   if (v.days_per_point !== null) {
-    facts.push({ label: "d/pt", value: `${oneDecimal(v.days_per_point)}${details.length > 0 ? ` (${details.join(", ")})` : ""}` });
+    facts.push({ label: "Days per point", hint: DEFINITIONS.daysPerPoint, value: `${oneDecimal(v.days_per_point)}${details.length > 0 ? ` (${details.join(", ")})` : ""}` });
   }
   return <FactList facts={facts} layout="inline" />;
 }

@@ -20,11 +20,14 @@ export function TeamSection({
   project,
   report,
   filters,
+  finish,
   onChange,
 }: {
   project: string;
   report: TeamReport;
   filters: ReportFilters;
+  /** The forecast finish of the selected milestone from the Milestones list, when it has loaded (REQ-MILESTONE-UI-023). */
+  finish: string | null;
   onChange: (next: ReportFilters) => void;
 }) {
   if (report.milestones.length === 0) {
@@ -93,7 +96,7 @@ export function TeamSection({
           </Link>
         )}
       </div>
-      {milestone !== null && <MilestoneLine report={report} milestone={milestone} />}
+      {milestone !== null && <MilestoneLine report={report} milestone={milestone} finish={finish} />}
       {report.undated > 0 && (
         <p className="text-sm text-muted-foreground">{report.undated} milestones without start and end dates are not listed</p>
       )}

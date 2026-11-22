@@ -1,6 +1,6 @@
 # TC-REPORTS-020: Rework rate
 
-- **REQ:** REQ-REPORTS-010@fef59b89
+- **REQ:** REQ-REPORTS-010@4bd4f1af
 - **Priority:** medium
 
 **Preconditions:**

@@ -1,4 +1,4 @@
-// TC: TC-UI-142@5794a661
+// TC: TC-UI-142@54182ab8
 import { test, expect } from '../evidence';
 import { entry, list } from '../support/api';
 import { stubReports } from '../support/reports';
@@ -16,13 +16,12 @@ test('TC-UI-142: Velocity tab (REQ-UI-095)', async ({ page, ev }) => {
   await ev.step('1. Open `/reports?project=alpha&tab=delivery`', async () => {
     await page.goto('/reports?project=alpha&tab=delivery');
     await expect(page.getByRole('tab', { name: /^Delivery/ })).toHaveAttribute('aria-selected', 'true');
-    expect(milestones()).toHaveLength(0);
   });
 
   await ev.step('2. Pick the Velocity tab', async () => {
     await page.getByRole('tab', { name: /^Velocity/ }).click();
     await expect(page).toHaveURL(/tab=velocity/);
-    await expect(page.getByRole('tab', { name: /^Velocity/ })).toContainText('1.4 d/pt');
+    await expect(page.getByRole('tabpanel').getByText('1.4 days per point', { exact: true })).toBeVisible();
     expect(milestones()).toHaveLength(1);
   });
 });

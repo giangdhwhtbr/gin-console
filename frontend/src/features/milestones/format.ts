@@ -1,15 +1,10 @@
+import { formatDate } from "@/lib/dates";
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
 /** UTC midnight of an ISO date, so the browser's timezone never moves a day. */
 export const utcOf = (iso: string) => new Date(`${iso}T00:00:00Z`);
-
-/** "2 Nov", with the year when it is not the year of `today` (the JSON's today, never the browser's). */
-export function shortDate(iso: string, today: string): string {
-  const day = utcOf(iso);
-  const year = iso.slice(0, 4) === today.slice(0, 4) ? "" : ` ${iso.slice(0, 4)}`;
-  return `${day.getUTCDate()} ${MONTHS[day.getUTCMonth()]}${year}`;
-}
 
 export const monthName = (index: number): string => MONTHS[index];
 export const weekday = (iso: string): string => WEEKDAYS[utcOf(iso).getUTCDay()];
@@ -36,9 +31,9 @@ export function awayLine(away: Readonly<Record<string, readonly string[]>>, toda
   const range = (value: string) => {
     const [from, to, ...rest] = value.split("..");
     if (!ISO.test(from) || rest.length > 0 || (to !== undefined && !ISO.test(to))) return value;
-    if (to === undefined || to === from) return shortDate(from, today);
-    const a = shortDate(from, today);
-    const b = shortDate(to, today);
+    if (to === undefined || to === from) return formatDate(from, today);
+    const a = formatDate(from, today);
+    const b = formatDate(to, today);
     // the same month and year: "18–20 Nov"
     return from.slice(0, 7) === to.slice(0, 7) ? `${a.split(" ")[0]}–${b}` : `${a}–${b}`;
   };

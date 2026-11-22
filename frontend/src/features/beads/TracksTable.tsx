@@ -3,6 +3,7 @@ import { useState, type CSSProperties } from "react";
 import { Link } from "@/app/Link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { shortId } from "@/lib/shortId";
+import { AssigneeName } from "./AssigneeName";
 import { sortTracks, type TrackRow } from "./epicOverview";
 import { laneSlots } from "./laneGraph";
 import { LaneChip } from "./LaneChip";
@@ -82,7 +83,9 @@ export function TracksTable({ project, epicId, beads, rows }: { project: string;
                     </span>
                   )}
                 </TableCell>
-                <TableCell className={row.assignee === null ? "text-muted-foreground" : undefined}>{row.assignee ?? "Unclaimed"}</TableCell>
+                <TableCell>
+                  <AssigneeName assignee={row.assignee} />
+                </TableCell>
                 <TableCell>{row.points ?? "–"}</TableCell>
                 <TableCell className="max-w-40 min-w-28 whitespace-normal wrap-anywhere text-state-blocked">{row.blockedBy.length === 0 ? <span className="text-muted-foreground">–</span> : row.blockedBy.join(", ")}</TableCell>
               </TableRow>

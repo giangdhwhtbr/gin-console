@@ -62,14 +62,22 @@ describe("EpicOverview cards", () => {
     expect(legend).toEqual(["Done 4", "In progress 1", "Ready 2", "Blocked 1"]);
   });
 
+  it("REQ-UI-120 REQ-UI-130 Progress reads the child counts: 4 of 8 tracks closed with only the open children loaded", () => {
+    stub();
+    show(ok([epic, ...E12.filter((b) => b.parent === E && b.status !== "closed" && b.waits_for === null)]));
+    expect(card("Progress").getByText(/of 8 tracks closed · 50%/)).toBeInTheDocument();
+    expect(card("Progress").getByText("4")).toBeInTheDocument();
+  });
+
   it("REQ-UI-120 Points, Bugs and Prep: points of the tracks, open bugs and the prep tasks", () => {
     stub();
     const prep = bead(`${E}.11`, { parent: E, labels: ["prep"], status: "closed" });
+    const head = { ...epic, child_counts: { total: 8, closed: 4, prep_total: 1, prep_closed: 1 } };
     const bugs = [
       { id: "b1", title: "x", status: "open", type: "discovered-from" as const },
       { id: "b2", title: "y", status: "closed", type: "discovered-from" as const },
     ];
-    show(ok([...E12, prep]), { bugs });
+    show(ok([...E12, prep]), { bugs }, head);
     const progress = card("Progress");
     expect(progress.getByText("10 of 21 pt done")).toBeInTheDocument();
     expect(progress.getByText("1 open")).toBeInTheDocument();
@@ -137,14 +145,14 @@ describe("EpicOverview cards", () => {
     expect(await card("Milestone").findByRole("link", { name: "ex-m2 Checkout v2" })).toBeInTheDocument();
   });
 
-  it("REQ-UI-120 Milestone forecast late: ex-m2 Checkout v2, 10 Nov – 1 Dec 2026, 8 working days and a warned finish on 20 Nov 2026", async () => {
+  it("REQ-UI-120 Milestone forecast late: ex-m2 Checkout v2, 10 Nov – 1 Dec, 8 working days and a warned finish on 16 Feb 2027", async () => {
     stub();
     show();
     const milestone = card("Milestone");
     const link = await milestone.findByRole("link", { name: "ex-m2 Checkout v2" });
     expect(link).toHaveAttribute("href", "/milestones/example/ex-m2");
-    expect(milestone.getByText("Active")).toBeInTheDocument();
-    expect(milestone.getByText("10 Nov – 1 Dec 2026")).toBeInTheDocument();
+    expect(milestone.getByText("Active").closest("[data-status]")).toHaveAttribute("data-status", "active");
+    expect(milestone.getByText("10 Nov – 1 Dec")).toBeInTheDocument();
     expect(milestone.getByText("8 working days")).toBeInTheDocument();
     const finish = milestone.getByText("finish 16 Feb 2027, after the end");
     expect(finish.parentElement?.querySelector("svg")).not.toBeNull();
@@ -155,8 +163,24 @@ describe("EpicOverview cards", () => {
     stub(WORKFLOW, list([entry("ex-m2", { title: "Checkout v2", status: "closed", start: "2026-11-10", end: "2026-12-01", finish: "2026-12-01" })], { today: "2026-11-20" }));
     show();
     const milestone = card("Milestone");
-    expect(await milestone.findByText("finish 1 Dec 2026")).toBeInTheDocument();
+    expect(await milestone.findByText("finish 1 Dec")).toBeInTheDocument();
     expect(milestone.queryByText(/working day/)).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-023 a closed milestone shows no late mark, whatever its forecast", async () => {
+    stub(WORKFLOW, list([entry("ex-m2", { title: "Checkout v2", status: "closed", start: "2026-11-10", end: "2026-12-01", finish: "2027-02-16" })], { today: "2026-12-20" }));
+    show();
+    const milestone = card("Milestone");
+    const finish = await milestone.findByText("finish 16 Feb 2027");
+    expect(finish.parentElement?.querySelector("svg")).toBeNull();
+    expect(milestone.queryByText(/after the end/)).toBeNull();
+  });
+
+  it("REQ-MILESTONE-UI-023 an active milestone is late once today is past its end", async () => {
+    stub(WORKFLOW, list([entry("ex-m2", { title: "Checkout v2", status: "active", start: "2026-11-10", end: "2026-12-01", finish: "2026-12-01" })], { today: "2026-12-03" }));
+    show();
+    const finish = await card("Milestone").findByText(/^finish 1 Dec/);
+    expect(finish.parentElement?.querySelector("svg")).not.toBeNull();
   });
 
   it("REQ-UI-120 No milestone: an epic without a milestone says No milestone and asks nothing", () => {
@@ -212,7 +236,7 @@ describe("EpicOverview lanes and tracks", () => {
     expect(screen.getAllByText("No lane")).toHaveLength(2);
   });
 
-  it("REQ-UI-121 Tracks table: 8 rows by id, no 'Waits for', and ex-e12.4 reads Blocked, qa, Unclaimed and be #2 · merge pending", () => {
+  it("REQ-UI-121 Tracks table: 8 rows by id, no 'Waits for', and ex-e12.4 reads Blocked, qa, Unassigned and be #2 · merge pending", () => {
     stub();
     show();
     const rows = screen.getAllByRole("row").slice(1);
@@ -223,7 +247,7 @@ describe("EpicOverview lanes and tracks", () => {
     expect(row.getByRole("link", { name: t4.id })).toHaveAttribute("href", `/beads/example/${t4.id}`);
     expect(row.getByText("Blocked")).toBeInTheDocument();
     expect(row.getByText("qa")).toBeInTheDocument();
-    expect(row.getByText("Unclaimed")).toBeInTheDocument();
+    expect(row.getByText("Unassigned")).toHaveClass("text-muted-foreground");
     expect(row.getByText("be #2 · merge pending")).toBeInTheDocument();
     expect(g2.id).toBe(`${E}.9`);
     expect(within(rows[0]).getByText("Order API")).toHaveAttribute("title", "Order API");

@@ -1,15 +1,17 @@
 import { TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { rememberOrigin } from "@/app/origin";
 import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
+import { Legend } from "@/components/Legend";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
-import type { DaysPerPoint } from "@/features/milestones/api";
+import { fetchMilestones, MilestonesError, type MilestoneList } from "@/features/milestones/api";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
+import { formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchReport, type Report } from "./api";
 import { PERIODS, TABS, parseReportSearch, reportSearch, type ReportFilters, type ReportTab } from "./filters";
@@ -19,7 +21,7 @@ import { Figures } from "./Figures";
 import { figures, headlines, teamHeadline, velocityHeadline, type Headline } from "./headlines";
 import { QualitySection } from "./QualitySection";
 import { TeamSection } from "./team/TeamSection";
-import { fetchTeam, type TeamReport } from "./teamApi";
+import { fetchTeam, selectedMilestone, type TeamReport } from "./teamApi";
 import { clearSections, publishSections } from "./sectionStore";
 import { TabStrip } from "./TabStrip";
 import { UsageSection } from "./UsageSection";
@@ -51,7 +53,8 @@ export function ReportsPage() {
   const [attempt, setAttempt] = useState(0);
   const [settledTeam, setSettledTeam] = useState<{ base: string; requested: string; value: SettledTeam } | null>(null);
   const [teamAttempt, setTeamAttempt] = useState(0);
-  const [daysPerPoint, setDaysPerPoint] = useState<{ project: string; value: DaysPerPoint | null } | null>(null);
+  // the Milestones list of each project asked for (REQ-UI-095), or why the request failed
+  const [lists, setLists] = useState<ReadonlyMap<string, MilestoneList | MilestonesError>>(new Map());
   const { search } = useLocation();
   const filters = parseReportSearch(search);
 
@@ -78,9 +81,6 @@ export function ReportsPage() {
       navigate(`/reports${reportSearch({ ...parseReportSearch(window.location.search), project: selected })}`, { replace: true });
     }
   }, [selected, filters.project]);
-  // the Velocity tab asks for the Milestones lists only once it is selected; its headline stays after that
-  const onDaysPerPoint = useCallback((project: string, value: DaysPerPoint | null) => setDaysPerPoint({ project, value }), []);
-
   // an answer counts only for the request it was made for, so a change of filters shows "loading" without a reset
   const key = JSON.stringify([selected, days, sprint, attempt]);
   const loaded: Loaded = settled !== null && settled.key === key ? settled.value : { status: "loading" };
@@ -114,8 +114,43 @@ export function ReportsPage() {
     };
   }, [selected, milestone, teamBase, teamWanted, teamCurrent]);
 
+  // REQ-UI-095: the Milestones list of a single project is asked for once, whatever the tab; the page reloads it on Refresh
+  const listed = lists.has(selected);
+  useEffect(() => {
+    if (!teamWanted || listed) return;
+    let live = true;
+    const settle = (answer: MilestoneList | MilestonesError) => {
+      if (live) setLists((prev) => new Map(prev).set(selected, answer));
+    };
+    fetchMilestones(selected).then(settle, (error: unknown) => settle(error instanceof MilestonesError ? error : new MilestonesError(messageOf(error))));
+    return () => {
+      live = false;
+    };
+  }, [selected, teamWanted, listed]);
+  const answer = lists.get(selected);
+  const list = answer === undefined || answer instanceof MilestonesError ? null : answer;
+  const { loadedLists, failedLists } = useMemo(() => {
+    const ok = new Map<string, MilestoneList>();
+    const failed = new Map<string, MilestonesError>();
+    lists.forEach((value, name) => {
+      if (value instanceof MilestonesError) failed.set(name, value);
+      else ok.set(name, value);
+    });
+    return { loadedLists: ok, failedLists: failed };
+  }, [lists]);
+  // Retry forgets the failure; for a single project the effect above then asks again, for All the block asks itself
+  const retryList = (name: string) =>
+    setLists((prev) => {
+      const next = new Map(prev);
+      next.delete(name);
+      return next;
+    });
+
   // the URL follows the answer on the Team tab: the server's default milestone, and no member that is not in the milestone
   const teamReport = team.status === "ok" ? team.report : null;
+  // the forecast of the selected milestone; none while the list loads or after it failed (REQ-MILESTONE-UI-023)
+  const chosen = teamReport === null ? null : selectedMilestone(teamReport);
+  const finish = list?.milestones.find((m) => m.id === chosen?.id)?.finish ?? null;
   useEffect(() => {
     if (tab !== "team" || teamReport === null) return;
     const next = { ...parseReportSearch(window.location.search), project: selected };
@@ -143,8 +178,8 @@ export function ReportsPage() {
   }, [selected, days, sprint, key]);
 
   const headlineFor = (value: ReportTab): Headline | null => {
-    if (value === "velocity") return selected === "all" || daysPerPoint === null || daysPerPoint.project !== selected ? null : velocityHeadline(daysPerPoint.value);
-    if (value === "team") return teamReport === null ? null : teamHeadline(teamReport);
+    if (value === "velocity") return selected === "all" || list === null ? null : velocityHeadline(list.days_per_point);
+    if (value === "team") return teamReport === null ? null : teamHeadline(teamReport, finish);
     return loaded.status === "ok" ? headlines(loaded.report)[value] : null;
   };
   const hintFor = (value: ReportTab) => {
@@ -169,10 +204,13 @@ export function ReportsPage() {
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">Reports</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-xl font-semibold">Reports</h1>
+            <Legend />
+          </div>
           {loaded.status === "ok" && (
             <p className="text-sm text-muted-foreground">
-              Generated <time dateTime={loaded.report.generated_at}>{new Date(loaded.report.generated_at).toLocaleString()}</time>
+              Generated <time dateTime={loaded.report.generated_at}>{formatDateTime(loaded.report.generated_at)}</time>
             </p>
           )}
         </div>
@@ -251,10 +289,14 @@ export function ReportsPage() {
                     </Button>
                   </Alert>
                 )}
-                {teamReport !== null && <TeamSection project={selected} report={teamReport} filters={filters} onChange={change} />}
+                {teamReport !== null && <TeamSection project={selected} report={teamReport} filters={filters} finish={finish} onChange={change} />}
               </>
             ) : tab === "velocity" ? (
-              <VelocityTab projects={selected === "all" ? names : [selected]} onDaysPerPoint={onDaysPerPoint} />
+              selected !== "all" && !listed ? (
+                <p className="text-muted-foreground">Loading velocity…</p>
+              ) : (
+                <VelocityTab projects={selected === "all" ? names : [selected]} loaded={loadedLists} failed={failedLists} onRetry={retryList} />
+              )
             ) : (
               <>
               <div className="flex flex-wrap items-center gap-3">

@@ -45,6 +45,11 @@ describe("BeadTable", () => {
     expect(within(row).getByText("10 Nov")).toBeInTheDocument();
   });
 
+  it("REQ-REPORTS-009 a bead in progress and blocked reads Blocked", () => {
+    show([make(progress, 4, { status: "in_progress", blocked: true })], "all");
+    expect(within(screen.getAllByRole("row")[1]).getByText("Blocked")).toBeInTheDocument();
+  });
+
   it("REQ-REPORTS-016 show more", async () => {
     show(many(closed, 100, 43), "closed");
     expect(screen.getAllByRole("row")).toHaveLength(16);
@@ -83,7 +88,7 @@ describe("BeadTable", () => {
   });
 
   it("REQ-REPORTS-016 chips and warnings", () => {
-    show([make(open, 1, { status: "blocked" }), make(open, 2, { status: "open" }), make(open, 3, { status: "deferred" })]);
+    show([make(open, 1, { blocked: true }), make(open, 2, { status: "open" }), make(open, 3, { status: "deferred" })]);
     for (const text of ["Blocked", "Open", "deferred"]) expect(screen.getByText(text, { selector: "[data-slot=badge]" })).toBeInTheDocument();
     cleanup();
     show([make(progress, 4, { age_days: 4 }), make(progress, 5, { age_days: 2 })], "in_progress");

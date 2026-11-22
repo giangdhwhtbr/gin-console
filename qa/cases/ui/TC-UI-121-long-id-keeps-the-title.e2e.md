@@ -1,6 +1,6 @@
 # TC-UI-121: Long id keeps the title
 
-- **REQ:** REQ-UI-044@fa72c885
+- **REQ:** REQ-UI-044@f10aa6dd
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-18T15-52-57

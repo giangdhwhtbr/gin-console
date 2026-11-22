@@ -3,18 +3,22 @@ import { useId, useLayoutEffect, useRef, useState, type RefObject, type UIEvent 
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
 import type { BeadKind, BeadSummary } from "@/features/beads/api";
+import { Hint } from "@/components/ui/tooltip";
+import { DEFINITIONS } from "@/lib/definitions";
 import { Badge } from "@/components/ui/badge";
 import { SizeBadge } from "@/components/SizeBadge";
 import { KindBadge } from "@/features/beads/KindBadge";
 import { LaneChip } from "@/features/beads/LaneChip";
-import { childCounts, isPrep, prepLabel } from "@/features/beads/prep";
+import { isPrep } from "@/features/beads/prep";
+import { prepWords } from "@/features/beads/progress";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
+import { formatDate, formatRange } from "@/lib/dates";
 import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import type { MilestoneDetail } from "./api";
 import { CopyCommand } from "./CopyCommand";
-import { plural, shortDate, weekday } from "./format";
+import { plural, weekday } from "./format";
 import {
   axisOf,
   BAR_TOP,
@@ -36,6 +40,7 @@ import {
   monthsOf,
   openingDay,
   periodOf,
+  epicProgressOf,
   rowsOf,
   showsSpec,
   sortEpics,
@@ -76,6 +81,7 @@ const DEFAULT_WIDTH = 960; // until the first measure, and in tests, which have 
 const TAIL_ROOM = 90;
 const MIN_TAIL = 24;
 const NO_KINDS: ReadonlyMap<string, BeadKind> = new Map();
+const NO_EPIC_BEADS: ReadonlyMap<string, BeadSummary> = new Map();
 
 type Props = {
   project: string;
@@ -85,6 +91,7 @@ type Props = {
   onZoom: (zoom: Zoom) => void;
   childBeads: ReadonlyMap<string, readonly BeadSummary[]>;
   kinds?: ReadonlyMap<string, BeadKind>;
+  epicBeads?: ReadonlyMap<string, BeadSummary>;
 };
 
 /** REQ-MILESTONE-UI-003 and -011 to -015: each epic as beads on a thread, one bead per working day, zoomed to fit the width. */
@@ -115,7 +122,7 @@ function useWidth(ref: RefObject<HTMLElement | null>) {
   return width;
 }
 
-function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KINDS }: Props) {
+function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KINDS, epicBeads = NO_EPIC_BEADS }: Props) {
   const wide = useWide();
   const label = useLabelWidth();
   const scroller = useRef<HTMLDivElement>(null);
@@ -181,12 +188,11 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
     });
 
   const epics = sortEpics(plan.epics);
-  const rows = rowsOf(epics, plan.today, expanded, childBeads, wide);
+  const rows = rowsOf(epics, plan.today, expanded, childBeads, wide, epicBeads);
   const height = rows.reduce((sum, r) => sum + r.height, 0);
   const chain = hot === null ? null : chainOf(epics, hot);
   const faded = (id: string) => chain !== null && !chain.has(id);
   const stops = todayX === null ? [endX] : [todayX, endX];
-  const date = (day: number) => shortDate(isoOf(day), plan.today);
 
   return (
     <figure aria-label="Schedule" className={cn("flex flex-col rounded border bg-card", preview && "border-dashed")}>
@@ -204,7 +210,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
               <ChevronLeft aria-hidden />
             </Button>
             <span data-range className="min-w-32 text-center tabular-nums">
-              {`${date(dayAt(axis, left + 0.5))} – ${date(dayAt(axis, left + plot - 0.5))}`}
+              {formatRange(isoOf(dayAt(axis, left + 0.5)), isoOf(dayAt(axis, left + plot - 0.5)), plan.today)}
             </span>
             <Button variant="outline" size="icon-sm" aria-label="Later" disabled={left >= maxLeft - 0.5} onClick={() => step(1)}>
               <ChevronRight aria-hidden />
@@ -244,6 +250,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
                     integration={plan.integration}
                     kids={childBeads.get(row.epic.id) ?? []}
                     kind={kinds.get(row.epic.id) ?? null}
+                    epicBead={epicBeads.get(row.epic.id)}
                     open={expanded.has(row.epic.id)}
                     faded={faded(row.epic.id)}
                     onToggle={() => toggle(row.epic.id)}
@@ -321,7 +328,7 @@ function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: 
           </span>
         )}
         <span data-chip="end" className="absolute top-[22px]" style={{ left: endX }}>
-          <span className={cn("absolute whitespace-nowrap text-[11px] font-medium text-foreground", chip(sides.end))}>{`End ${shortDate(end, today)}`}</span>
+          <span className={cn("absolute whitespace-nowrap text-[11px] font-medium text-foreground", chip(sides.end))}>{`End ${formatDate(end, today)}`}</span>
         </span>
       </div>
     </div>
@@ -374,6 +381,7 @@ function EpicRow({
   integration,
   kids,
   kind,
+  epicBead,
   open,
   faded,
   onToggle,
@@ -388,25 +396,26 @@ function EpicRow({
   integration: string | null;
   kids: readonly BeadSummary[];
   kind: BeadKind | null;
+  epicBead: BeadSummary | undefined;
   open: boolean;
   faded: boolean;
   onToggle: () => void;
   onHot: () => void;
 }) {
   const { epic } = row;
-  const look = lookOf(epic.status);
+  const look = epicBead?.blocked && epic.status !== "closed" ? LOOK.blocked : lookOf(epic.status);
   const Icon = look.icon;
   const days = beadsOf(epic);
   const x0 = xOf(axis, days[0]);
   const x1 = endOf(axis, days[days.length - 1]);
   const unestimated = epic.estimate_days === null;
-  const counts = childCounts(kids);
-  const prep = prepLabel(counts);
+  const counts = epicProgressOf(epicBead);
+  const prep = counts.prepTotal > 0 ? prepWords(counts) : null;
   const left = epic.status === "in_progress" && epic.estimate_days !== null && epic.remaining_days !== null && epic.remaining_days < epic.estimate_days;
   const size = left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate";
   const period = periodOf(epic.planned_start, epic.planned_end, today);
   const tail = tailWidth(x1, stops, axis.width);
-  const closedTracks = `${counts.closedTracks}/${counts.tracks} closed`;
+  const closedTracks = `${counts.done} of ${counts.total} done`;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
     <li data-epic={epic.id} data-faded={faded || undefined} onMouseEnter={onHot} onFocus={onHot} className="flex border-b" style={{ height: row.height }}>
@@ -448,16 +457,28 @@ function EpicRow({
             )}
             <KindBadge kind={kind} className="max-w-full" />
             <span title={period} className="min-w-0 max-w-full shrink truncate">{period}</span>
-            {counts.tracks > 0 && <span title={closedTracks} className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>}
-            {prep !== null && <span title={prep} className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>}
+            {counts.total > 0 && (
+              <Hint text={DEFINITIONS.progress}>
+                <span className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>
+              </Hint>
+            )}
+            {prep !== null && (
+              <Hint text={DEFINITIONS.prep}>
+                <span className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>
+              </Hint>
+            )}
             {showsSpec(epic) && epic.spec_confirmed === true && (
-              <span title="Spec confirmed" className="flex min-w-0 max-w-full shrink-[8] items-center gap-1 truncate text-state-ready">
-                <FileCheck aria-hidden className="size-3 flex-none" />
-                Spec confirmed
-              </span>
+              <Hint text={DEFINITIONS.specApproved}>
+                <span className="flex min-w-0 max-w-full shrink-[8] items-center gap-1 truncate text-state-ready">
+                  <FileCheck aria-hidden className="size-3 flex-none" />
+                  Spec approved
+                </span>
+              </Hint>
             )}
             {showsSpec(epic) && epic.spec_confirmed === false && (
-              <span title="No confirmed spec" className="min-w-0 max-w-full shrink-[8] truncate text-muted-foreground">No confirmed spec</span>
+              <Hint text={DEFINITIONS.specApproved}>
+                <span className="min-w-0 max-w-full shrink-[8] truncate text-muted-foreground">Spec not approved yet</span>
+              </Hint>
             )}
           </span>
           {warningLines(epic, today, integration).map((text) => (
@@ -508,7 +529,7 @@ function ChildRow({ project, row, axis, label, today, faded }: { project: string
   const x0 = xOf(axis, days[0]);
   const x1 = endOf(axis, days[days.length - 1]);
   const shortId = bead.id.startsWith(epic.id) ? bead.id.slice(epic.id.length) : bead.id;
-  const state = bead.status === "closed" && bead.closed_at !== null ? `closed ${shortDate(bead.closed_at.slice(0, 10), today)}` : look.label;
+  const state = bead.status === "closed" && bead.closed_at !== null ? `closed ${formatDate(bead.closed_at.slice(0, 10), today)}` : look.label;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
     <li data-child={bead.id} data-faded={faded || undefined} className="flex border-b" style={{ height: row.height }}>

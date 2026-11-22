@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BeadSummary } from "./api";
-import { filterBeads, filtersToSearch, optionsOf, parseFilters, sortBeads } from "./filters";
+import { filterBeads, filtersToSearch, optionsOf, parseFilters, resolveMe, sortBeads } from "./filters";
 
 const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => ({
   id,
@@ -33,6 +33,7 @@ const bead = (id: string, overrides: Partial<BeadSummary> = {}): BeadSummary => 
   track: null,
   claim: null,
   waits_for: null,
+  child_counts: { total: 0, closed: 0, prep_total: 0, prep_closed: 0 },
   ...overrides,
 });
 
@@ -138,7 +139,7 @@ describe("filters", () => {
   // REQ-UI-082, REQ-UI-083
   it("REQ-UI-082, REQ-UI-083 parses assignee and sprint from URL", () => {
     const f = parseFilters("?assignee=alice%40example.com&sprint=sprint-1");
-    expect(f.assignee).toEqual(["alice@example.com"]);
+    expect(f.assignee).toEqual(["alice"]);
     expect(f.sprint).toBe("sprint-1");
   });
 
@@ -273,7 +274,7 @@ describe("filters", () => {
       labels: ["a", "b"],
       capabilities: [],
       types: ["bug", "task"],
-      assignees: ["unassigned", "alice", "bob"],
+      assignees: ["me", "unassigned", "alice", "bob"],
       sprints: ["10", "2", "1"],
     });
   });
@@ -284,7 +285,7 @@ describe("filters", () => {
       bead("1", { assignee: "bob" }),
       bead("2", { assignee: "alice" }),
     ]);
-    expect(options.assignees).toEqual(["alice", "bob"]);
+    expect(options.assignees).toEqual(["me", "alice", "bob"]);
   });
 
   // REQ-UI-082
@@ -300,18 +301,44 @@ describe("filters", () => {
     expect(filterBeads(beads, { ...empty, assignee: ["unassigned", "carol"] }).map((b) => b.id)).toEqual(["3", "4"]);
   });
 
-  it("optionsOf and filterBeads support owner as fallback when assignee is not set", () => {
+  it("REQ-UI-082 REQ-UI-135 Unassigned lists beads without an assignee whatever their owner, and the owner is never an assignee", () => {
     const beads = [
       bead("1", { assignee: null, owner: "owner-alice" }),
       bead("2", { assignee: "assigned-bob", owner: "owner-bob" }),
       bead("3", { assignee: null, owner: null }),
     ];
-    const options = optionsOf(beads);
-    expect(options.assignees).toEqual(["unassigned", "assigned-bob", "owner-alice"]);
-
-    expect(filterBeads(beads, { ...empty, assignee: ["owner-alice"] }).map((b) => b.id)).toEqual(["1"]);
+    expect(optionsOf(beads).assignees).toEqual(["me", "unassigned", "assigned-bob"]);
+    expect(filterBeads(beads, { ...empty, assignee: ["owner-alice"] })).toEqual([]);
     expect(filterBeads(beads, { ...empty, assignee: ["assigned-bob"] }).map((b) => b.id)).toEqual(["2"]);
-    expect(filterBeads(beads, { ...empty, assignee: ["unassigned"] }).map((b) => b.id)).toEqual(["3"]);
+    expect(filterBeads(beads, { ...empty, assignee: ["unassigned"] }).map((b) => b.id)).toEqual(["1", "3"]);
+  });
+
+  it("REQ-BEADS-023 REQ-UI-082 an email and its handle are one option and one match", () => {
+    const beads = [bead("1", { assignee: "Alice@Example.com" }), bead("2", { assignee: "alice" }), bead("3", { assignee: "bob" })];
+    expect(optionsOf(beads).assignees).toEqual(["me", "alice", "bob"]);
+    expect(filterBeads(beads, { ...empty, assignee: ["alice"] }).map((b) => b.id)).toEqual(["1", "2"]);
+  });
+
+  it("REQ-UI-082 old link with an email selects its person", () => {
+    const beads = [bead("1", { assignee: "alice" }), bead("2", { assignee: "bob" })];
+    const filters = parseFilters("?assignee=alice%40example.com");
+    expect(filters.assignee).toEqual(["alice"]);
+    expect(filterBeads(beads, filters).map((b) => b.id)).toEqual(["1"]);
+  });
+
+  it("REQ-BEADS-024 resolveMe replaces me with the person of the email and keeps the others", () => {
+    const beads = [bead("1", { assignee: "alice" }), bead("2", { assignee: "Bob@x.org" }), bead("3", { assignee: "carol" })];
+    const filters = { ...empty, assignee: ["me", "carol"] };
+    expect(resolveMe(filters, "Bob@x.org").assignee).toEqual(["bob", "carol"]);
+    expect(filterBeads(beads, resolveMe({ ...empty, assignee: ["me"] }, "bob@x.org")).map((b) => b.id)).toEqual(["2"]);
+  });
+
+  it("REQ-BEADS-024 with no email me stays selected and matches no bead", () => {
+    const beads = [bead("1", { assignee: "alice" }), bead("2", { assignee: null })];
+    const filters = resolveMe({ ...empty, assignee: ["me"] }, null);
+    expect(filters.assignee).toEqual(["me"]);
+    expect(filterBeads(beads, filters)).toEqual([]);
+    expect(filterBeads(beads, resolveMe({ ...empty, assignee: ["me", "alice"] }, null)).map((b) => b.id)).toEqual(["1"]);
   });
 
   it("optionsOf and filterBeads support ready and blocked state filtering for open beads", () => {

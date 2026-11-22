@@ -1,6 +1,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { json } from "@/features/beads/beadFixtures";
+import { MilestonesError, type MilestoneList } from "@/features/milestones/api";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
 import { VelocityTab } from "./VelocityTab";
 import { vel } from "./velocityFixtures";
@@ -26,13 +28,18 @@ const stub = (answer: (project: string) => Response) => {
   });
   vi.stubGlobal("fetch", mock);
 };
-const show = (projects: string[]) => render(<VelocityTab projects={projects} onDaysPerPoint={() => undefined} />);
+const show = (
+  projects: string[],
+  loaded: ReadonlyMap<string, MilestoneList> = new Map(),
+  failed: ReadonlyMap<string, MilestonesError> = new Map(),
+  onRetry: (project: string) => void = () => undefined,
+) => render(<VelocityTab projects={projects} loaded={loaded} failed={failed} onRetry={onRetry} />);
 
 describe("VelocityTab", () => {
   it("REQ-REPORTS-018 milestones with velocity: figures, charts and table", async () => {
     stub(() => json(alpha()));
     show(["alpha"]);
-    expect(await screen.findByText("1.4 d/pt")).toBeTruthy();
+    expect(await screen.findByText("1.4 days per point")).toBeTruthy();
     expect(screen.getByText("38%", { selector: "dd" })).toBeTruthy();
     expect(screen.getByText("1.08", { selector: "dd" })).toBeTruthy();
     expect(screen.getByRole("img", { name: /Committed and completed points/ })).toBeTruthy();
@@ -49,7 +56,7 @@ describe("VelocityTab", () => {
   it("REQ-REPORTS-018 assumed days per point", async () => {
     stub(() => json(alpha({ value: 1, measured_epics: 0, assumed: true })));
     show(["alpha"]);
-    expect(await screen.findByText("1.0 d/pt")).toBeTruthy();
+    expect(await screen.findByText("1.0 days per point")).toBeTruthy();
     expect(screen.getByText("assumed")).toBeTruthy();
   });
 
@@ -68,7 +75,25 @@ describe("VelocityTab", () => {
     expect(await screen.findByText("Milestones need a newer gin")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "alpha" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "beta" })).toBeTruthy();
-    expect(screen.getByText("1.4 d/pt")).toBeTruthy();
+    expect(screen.getByText("1.4 days per point")).toBeTruthy();
     expect(screen.getAllByRole("table")).toHaveLength(1);
+  });
+
+  it("REQ-REPORTS-018 a project the page already loaded is shown without a request; the others are requested", async () => {
+    stub(() => json(alpha({ value: 2, measured_epics: 1, assumed: false })));
+    show(["alpha", "beta"], new Map([["alpha", alpha()]]));
+    expect(await screen.findByText("2.0 days per point")).toBeTruthy();
+    expect(screen.getByText("1.4 days per point")).toBeTruthy();
+    expect(vi.mocked(fetch).mock.calls.map(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.href : input.url))).toEqual(["/api/milestones?project=beta"]);
+  });
+
+  it("REQ-UI-095 a project the page failed to load shows its error without a request; Retry asks the page", async () => {
+    stub(() => json(alpha()));
+    const onRetry = vi.fn();
+    show(["alpha"], new Map(), new Map([["alpha", new MilestonesError("gin is down")]]), onRetry);
+    expect(screen.getByText("gin is down")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(onRetry).toHaveBeenCalledWith("alpha");
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
   });
 });

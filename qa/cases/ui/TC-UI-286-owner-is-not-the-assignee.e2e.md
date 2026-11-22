@@ -1,0 +1,18 @@
+# TC-UI-286: Owner is not the assignee
+
+- **REQ:** REQ-UI-044@f10aa6dd
+- **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Checked:** 1253a8ad
+
+**Preconditions:**
+- Project `alpha` has bead `t-1` with owner `lead@example.com` and no assignee
+- The browser window is 1440px wide
+
+**Steps:**
+1. Open `/beads?project=alpha&milestone=all&view=list`
+
+**Expected:**
+- The row of `t-1` shows "Unassigned"
+- The row of `t-1` does not show `lead@example.com`

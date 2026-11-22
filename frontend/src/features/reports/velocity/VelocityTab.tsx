@@ -1,5 +1,5 @@
-import { useCallback, useEffect } from "react";
-import { fetchMilestones, type DaysPerPoint } from "@/features/milestones/api";
+import { useCallback } from "react";
+import { fetchMilestones, type MilestoneList, type MilestonesError } from "@/features/milestones/api";
 import { MilestoneError } from "@/features/milestones/MilestoneError";
 import { useLoad } from "@/features/milestones/useLoad";
 import { VelocityCharts } from "./VelocityCharts";
@@ -7,43 +7,69 @@ import { VelocityFigures } from "./VelocityFigures";
 import { VelocityTable } from "./VelocityTable";
 import { latestSayDo, velocityMilestones } from "./velocity";
 
-function VelocityBlock({ project, named, onDaysPerPoint }: { project: string; named: boolean; onDaysPerPoint: (project: string, value: DaysPerPoint | null) => void }) {
-  const fetcher = useCallback(() => fetchMilestones(project), [project]);
-  const { state, retry } = useLoad(fetcher, false);
-  const loaded = state.status === "ok" ? state.data : null;
-  useEffect(() => {
-    if (loaded !== null) onDaysPerPoint(project, loaded.days_per_point);
-  }, [loaded, project, onDaysPerPoint]);
-  const points = loaded === null ? [] : velocityMilestones(loaded);
+function VelocityBody({ list }: { list: MilestoneList }) {
+  const points = velocityMilestones(list);
   return (
-    <section className="flex flex-col gap-4">
-      {named && <h2 className="font-semibold">{project}</h2>}
-      {state.status === "loading" && <p className="text-muted-foreground">Loading velocity…</p>}
-      {state.status === "error" && <MilestoneError error={state.error} onRetry={retry} />}
-      {loaded !== null && (
+    <>
+      <VelocityFigures daysPerPoint={list.days_per_point} latest={latestSayDo(list)} />
+      {points.length === 0 ? (
+        <p className="text-muted-foreground">No kicked-off milestones with points yet</p>
+      ) : (
         <>
-          <VelocityFigures daysPerPoint={loaded.days_per_point} latest={latestSayDo(loaded)} />
-          {points.length === 0 ? (
-            <p className="text-muted-foreground">No kicked-off milestones with points yet</p>
-          ) : (
-            <>
-              <VelocityCharts points={points} />
-              <VelocityTable points={points} />
-            </>
-          )}
+          <VelocityCharts points={points} />
+          <VelocityTable points={points} />
         </>
       )}
-    </section>
+    </>
   );
 }
 
-/** REQ-REPORTS-018: one independent block per project; `onDaysPerPoint` feeds the tab's headline. */
-export function VelocityTab({ projects, onDaysPerPoint }: { projects: readonly string[]; onDaysPerPoint: (project: string, value: DaysPerPoint | null) => void }) {
+/** A project the page has not loaded: it asks for its Milestones list itself. */
+function RequestedVelocity({ project }: { project: string }) {
+  const fetcher = useCallback(() => fetchMilestones(project), [project]);
+  const { state, retry } = useLoad(fetcher, false);
   return (
     <>
-      {projects.map((project) => (
-        <VelocityBlock key={project} project={project} named={projects.length > 1} onDaysPerPoint={onDaysPerPoint} />
-      ))}
+      {state.status === "loading" && <p className="text-muted-foreground">Loading velocity…</p>}
+      {state.status === "error" && <MilestoneError error={state.error} onRetry={retry} />}
+      {state.status === "ok" && <VelocityBody list={state.data} />}
+    </>
+  );
+}
+
+/**
+ * REQ-REPORTS-018: one independent block per project. A project in `loaded` (REQ-UI-095) is not requested again; one in `failed`
+ * shows the page's failure, and only the user's Retry asks again, through `onRetry`.
+ */
+export function VelocityTab({
+  projects,
+  loaded,
+  failed,
+  onRetry,
+}: {
+  projects: readonly string[];
+  loaded: ReadonlyMap<string, MilestoneList>;
+  failed: ReadonlyMap<string, MilestonesError>;
+  onRetry: (project: string) => void;
+}) {
+  return (
+    <>
+      {projects.map((project) => {
+        const list = loaded.get(project);
+        const error = failed.get(project);
+        return (
+          <section key={project} className="flex flex-col gap-4">
+            {projects.length > 1 && <h2 className="font-semibold">{project}</h2>}
+            {list !== undefined ? (
+              <VelocityBody list={list} />
+            ) : error !== undefined ? (
+              <MilestoneError error={error} onRetry={() => onRetry(project)} />
+            ) : (
+              <RequestedVelocity project={project} />
+            )}
+          </section>
+        );
+      })}
     </>
   );
 }

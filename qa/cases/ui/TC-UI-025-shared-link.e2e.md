@@ -1,6 +1,6 @@
 # TC-UI-025: Shared link
 
-- **REQ:** REQ-UI-095@be92ba05
+- **REQ:** REQ-UI-095@c32236ad
 - **Priority:** medium
 
 **Preconditions:**

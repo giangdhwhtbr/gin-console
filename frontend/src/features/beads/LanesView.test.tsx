@@ -149,7 +149,7 @@ describe("LanesView", () => {
     view();
     const list = screen.getByRole("list", { name: "Lanes" });
     const text = within(list).getAllByRole("listitem").map((li) => li.textContent);
-    expect(text).toContain("be: Running, held by ann, lease until 1 Jan 2099 16:00, 1/2 closed");
+    expect(text).toContain("be: Running, held by ann, lease until 1 Jan 2099, 16:00, 1/2 closed");
     expect(text).toContain("qa #4 waits for be #2: merge pending");
     expect(text).toContain("qa #4 waits for fe #3: merged");
     expect(list.className).toContain("sr-only");

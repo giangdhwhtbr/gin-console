@@ -6,6 +6,7 @@ from typing import Any
 
 from pydantic import ValidationError
 
+from gin_console.beads.definitions import is_blocked
 from gin_console.beads.kinds import points_of
 from gin_console.beads.lanes import is_merge_gate
 from gin_console.beads.snapshot import Snapshot
@@ -64,6 +65,7 @@ def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
             fields["points"] = points
         if ident in snapshot.parents:
             fields["parent"] = snapshot.parents[ident]
+        fields["blocked"] = is_blocked(ident, raw, snapshot)
         try:
             beads.append(
                 ReportBead.model_validate(

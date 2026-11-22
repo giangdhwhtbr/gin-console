@@ -43,14 +43,14 @@ describe("FocusView", () => {
     const inFlight = await screen.findByRole("region", { name: "In flight" });
     expect(within(inFlight).getByRole("link", { name: "In progress bead" })).toBeInTheDocument();
     expect(within(inFlight).getByRole("link", { name: "Hooked bead" })).toBeInTheDocument();
-    expect(within(inFlight).getByRole("link", { name: "In progress and blocked bead" })).toBeInTheDocument();
-    expect(within(inFlight).getByText("3")).toBeInTheDocument();
-    expect(within(inFlight).getAllByRole("link")).toHaveLength(3);
+    expect(within(inFlight).getByText("2")).toBeInTheDocument();
+    expect(within(inFlight).getAllByRole("link")).toHaveLength(2);
 
     const blocked = screen.getByRole("region", { name: "Blocked" });
     expect(within(blocked).getByRole("link", { name: "Blocked bead" })).toBeInTheDocument();
-    expect(within(blocked).getByText("1")).toBeInTheDocument();
-    expect(within(blocked).getAllByRole("link")).toHaveLength(1);
+    expect(within(blocked).getByRole("link", { name: "In progress and blocked bead" })).toBeInTheDocument();
+    expect(within(blocked).getByText("2")).toBeInTheDocument();
+    expect(within(blocked).getAllByRole("link")).toHaveLength(2);
 
     const nextUp = screen.getByRole("region", { name: "Next up" });
     expect(within(nextUp).getByRole("link", { name: "Next up P1 bead" })).toBeInTheDocument();
@@ -58,6 +58,20 @@ describe("FocusView", () => {
     expect(within(nextUp).getAllByRole("link")).toHaveLength(1);
 
     expect(screen.queryByRole("link", { name: "Ready P3 bead" })).not.toBeInTheDocument();
+  });
+
+  it("REQ-UI-033 the Blocked column counts prep tasks apart", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=focus");
+    stubBeads(() =>
+      json([
+        bead("t-1", { blocked: true, labels: ["track:1"], title: "Blocked track one" }),
+        bead("t-2", { blocked: true, labels: ["track:2"], title: "Blocked track two" }),
+        bead("p-1", { blocked: true, labels: ["prep"], title: "Blocked prep" }),
+      ]),
+    );
+    render(<BeadsPage />);
+    const blocked = await screen.findByRole("region", { name: "Blocked" });
+    expect(within(blocked).getByText("2 + 1 prep")).toBeInTheDocument();
   });
 
   it("REQ-UI-034 group by assignee rows", async () => {
@@ -88,7 +102,7 @@ describe("FocusView", () => {
 
     const aliceSection = screen.getByRole("region", { name: "alice" });
     const bobSection = screen.getByRole("region", { name: "bob" });
-    const nobodySection = screen.getByRole("region", { name: "No assignee" });
+    const nobodySection = screen.getByRole("region", { name: "Unassigned" });
 
     expect(aliceSection).toBeInTheDocument();
     expect(bobSection).toBeInTheDocument();
@@ -96,8 +110,8 @@ describe("FocusView", () => {
     expect(screen.queryByRole("region", { name: "charlie" })).not.toBeInTheDocument();
 
     const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
-    const rowHeadings = headings.filter((text) => text === "alice" || text === "bob" || text === "No assignee");
-    expect(rowHeadings).toEqual(["alice", "bob", "No assignee"]);
+    const rowHeadings = headings.filter((text) => text === "alice" || text === "bob" || text === "Unassigned");
+    expect(rowHeadings).toEqual(["alice", "bob", "Unassigned"]);
 
     expect(within(aliceSection).getByRole("link", { name: "Alice in flight" })).toBeInTheDocument();
     expect(within(bobSection).getByRole("link", { name: "Bob in flight" })).toBeInTheDocument();

@@ -1,6 +1,6 @@
 # TC-REPORTS-029: Behind pace
 
-- **REQ:** REQ-REPORTS-013@a2b9b5cf
+- **REQ:** REQ-REPORTS-013@5ea0d567
 - **Priority:** high
 
 **Preconditions:**
@@ -13,4 +13,4 @@
 1. Select the Team tab
 
 **Expected:**
-- The Pace figure reads "2.0 / day" and "needs 3.4 / day to end on 27 Nov", in the warning color
+- The Pace figure reads "2.0 done per day" and "needs 3.4 done per day to finish by 27 Nov", in the warning color

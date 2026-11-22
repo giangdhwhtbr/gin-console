@@ -5,13 +5,15 @@ import { projectHref } from "@/app/project";
 import { usePageTitle } from "@/app/usePageTitle";
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { ProjectGuard } from "@/app/UnknownProject";
+import { Legend } from "@/components/Legend";
 import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
 import { filtersToSearch, parseFilters } from "@/features/beads/filters";
 import { rememberOrigin } from "@/app/origin";
+import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
-import { awayLine, plural, shortDate } from "./format";
+import { awayLine, plural } from "./format";
 import { dayOf, isoOf, zoomOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
@@ -120,7 +122,7 @@ function Milestone({ project, id }: { project: string; id: string }) {
 
 export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDetail }) {
   const [more, setMore] = useState(false);
-  const date = (iso: string) => shortDate(iso, plan.today);
+  const date = (iso: string) => formatDate(iso, plan.today);
   const late = plan.overflow_days > 0;
   const away = awayLine(plan.away, plan.today);
   const outcome =
@@ -131,11 +133,14 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
     <header className="flex flex-col gap-1">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h1 className="text-xl font-semibold">{plan.title}</h1>
-        <span className="font-mono text-sm text-muted-foreground">{plan.id}</span>
+        <span className="flex items-center gap-3">
+          <span className="font-mono text-sm text-muted-foreground">{plan.id}</span>
+          <Legend />
+        </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <MilestoneStatus status={plan.status} />
-        <span>{`${date(plan.start)} – ${date(plan.end)}`}</span>
+        <span>{formatRange(plan.start, plan.end, plan.today)}</span>
         {plan.kickoff !== null && <span>{`Kicks off ${date(plan.kickoff)}`}</span>}
         <span className={cn(late && "text-state-blocked")}>{outcome}</span>
         {plan.lanes !== null && <span>{plural(plan.lanes, "lane")}</span>}

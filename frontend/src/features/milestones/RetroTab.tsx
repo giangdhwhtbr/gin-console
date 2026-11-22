@@ -1,10 +1,9 @@
 import { MarkdownText } from "@/features/beads/MarkdownText";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { formatDateTime } from "@/lib/dates";
 import { parseRetros, type Section } from "./retro";
 import type { useMilestoneComments } from "./useMilestoneComments";
-
-const when = (iso: string) => new Date(iso).toLocaleString(); // as the bead comments show it
 
 function Sections({ sections }: { sections: Section[] }) {
   return (
@@ -23,7 +22,7 @@ const Byline = ({ name, at, truncated }: { name: string; at: string; truncated: 
   <>
     <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
       <span className="font-semibold">{name}</span>
-      <span className="text-muted-foreground">{when(at)}</span>
+      <span className="text-muted-foreground">{formatDateTime(at)}</span>
     </p>
     {truncated && <p className="text-xs text-muted-foreground">Comment truncated</p>}
   </>

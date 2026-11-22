@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatAge, formatTimes } from "./format";
+import { formatAge } from "./format";
 
 const NOW = Date.parse("2026-10-15T03:00:00Z");
 
@@ -12,10 +12,5 @@ describe("format", () => {
     expect(formatAge(ago(3 * 86400), NOW)).toBe("3 days ago");
     expect(formatAge(ago(-500), NOW)).toBe("just now");
     expect(formatAge("garbage", NOW)).toBe("just now");
-  });
-
-  it("REQ-BEADS-018 writes the full time in local time and in UTC", () => {
-    expect(formatTimes("2026-10-15T08:00:00Z")).toContain("2026-10-15 08:00 UTC");
-    expect(formatTimes("nonsense")).toBe("nonsense");
   });
 });

@@ -1,6 +1,6 @@
 # TC-UI-054: Epic with a prep task
 
-- **REQ:** REQ-UI-028@286b7a7b
+- **REQ:** REQ-UI-028@5a22703b
 - **Priority:** high
 
 **Preconditions:**

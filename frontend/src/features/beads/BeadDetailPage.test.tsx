@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadDetail, Comment } from "./api";
 import { forgetConfiguredProjects, rememberProject, resolveProject } from "@/app/project";
-import { factDate } from "@/lib/dates";
+import { formatDateTime } from "@/lib/dates";
 import { BeadDetailPage } from "./BeadDetailPage";
 
 const json = (body: unknown, status = 200) =>
@@ -62,6 +62,7 @@ const beadDetail = (id: string, overrides: Partial<BeadDetail> = {}): BeadDetail
   track: null,
   claim: null,
   waits_for: null,
+  child_counts: { total: 0, closed: 0, prep_total: 0, prep_closed: 0 },
   description: "A description",
   design: null,
   notes: null,
@@ -204,7 +205,9 @@ describe("BeadDetailPage", () => {
 
   // REQ-UI-028
   it("REQ-UI-028 shows fields and the description as Markdown", async () => {
-    const created_at = "2026-10-01T12:00:00Z";
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
+    const created_at = new Date(2026, 4, 11, 16, 0).toISOString();
     const updated_at = "2026-10-10T12:00:00Z";
     const rawDesc = "**bold** <script>window.hacked = 1</script>\nsecond line";
     const bead = beadDetail("a-5", {
@@ -234,12 +237,12 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText("frontend")).toBeInTheDocument();
     expect(screen.getByText("urgent")).toBeInTheDocument();
 
-    const facts = within(header).getByText("Owner").closest("dl");
+    const facts = within(header).getByText("Assignee").closest("dl");
     if (facts === null) throw new Error("the facts are missing");
-    expect(facts).toHaveTextContent("Owner" + "alice");
+    expect(within(facts).queryByText("Owner")).toBeNull();
     expect(facts).toHaveTextContent("Assignee" + "bob");
-    expect(within(facts).getByText(factDate(created_at))).toBeInTheDocument();
-    expect(within(facts).getByText(factDate(updated_at))).toBeInTheDocument();
+    expect(within(facts).getByText("11 May, 16:00")).toBeInTheDocument();
+    expect(within(facts).getByText(formatDateTime(updated_at, "2026-11-22"))).toBeInTheDocument();
     expect(facts).toHaveTextContent("Comments" + "3");
 
     expect(await screen.findByText("bold", { selector: "strong" })).toBeInTheDocument();
@@ -300,6 +303,7 @@ describe("BeadDetailPage", () => {
   it("REQ-UI-028 epic with a prep task: progress over tracks, Prep 1/1, chip on p-1 only", async () => {
     const epic = beadDetail("e-1", {
       issue_type: "feature",
+      child_counts: { total: 2, closed: 1, prep_total: 1, prep_closed: 1 },
       children: [
         { id: "t-1", title: "Track 1", status: "closed", type: "parent-child", prep: false },
         { id: "t-2", title: "Track 2", status: "open", type: "parent-child", prep: false },
@@ -322,6 +326,7 @@ describe("BeadDetailPage", () => {
   it("REQ-UI-028 an epic with only prep children shows Prep x/y and no track bar", async () => {
     const epic = beadDetail("e-1", {
       issue_type: "feature",
+      child_counts: { total: 0, closed: 0, prep_total: 1, prep_closed: 0 },
       children: [{ id: "p-1", title: "Prep 1", status: "open", type: "parent-child", prep: true }],
     });
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json(epic))));
@@ -333,6 +338,7 @@ describe("BeadDetailPage", () => {
   it("REQ-UI-028 shows epic progress and children, or omits them when absent", async () => {
     const epic = beadDetail("e-1", {
       issue_type: "feature",
+      child_counts: { total: 4, closed: 3, prep_total: 0, prep_closed: 0 },
       children: [
         { id: "c-1", title: "Child 1", status: "closed", type: "parent-child", prep: false },
         { id: "c-2", title: "Child 2", status: "closed", type: "parent-child", prep: false },
@@ -451,9 +457,19 @@ describe("BeadDetailPage", () => {
   });
 
   // REQ-UI-038
+  it("REQ-UI-028 REQ-UI-135 the creator falls back to the owner's person, and no assignee reads Unassigned", async () => {
+    stubFetch(beadDetail("a-5", { created_by: null, owner: "Lead@Example.com", assignee: null, comment_count: 0 }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
+    expect(screen.getByText("Created by").nextElementSibling).toHaveTextContent("lead");
+    expect(screen.getByText("Assignee").nextElementSibling).toHaveTextContent("Unassigned");
+    expect(screen.queryByText("Owner")).not.toBeInTheDocument();
+  });
+
   it("REQ-UI-038 no author", async () => {
     const bead = beadDetail("a-5", {
       created_by: null,
+      owner: null,
       comment_count: 0,
     });
     stubFetch(bead);
@@ -479,6 +495,9 @@ describe("BeadDetailPage", () => {
     expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
     expect(screen.getByText("Loading comments…")).toBeInTheDocument();
 
+
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
     const c1 = note("c-1");
     const c2 = note("c-2", { created_at: "2026-10-06T10:00:00Z" });
 
@@ -491,8 +510,8 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText("Text of c-2")).toBeInTheDocument();
     expect(screen.getByText("Text of c-1")).toBeInTheDocument();
     expect(screen.getAllByText("alice", { selector: ":not(dd)" })).toHaveLength(2);
-    expect(screen.getByText(new Date("2026-10-06T10:00:00Z").toLocaleString())).toBeInTheDocument();
-    expect(screen.getByText(new Date("2026-10-05T10:00:00Z").toLocaleString())).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime("2026-10-06T10:00:00Z", "2026-11-22"))).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime("2026-10-05T10:00:00Z", "2026-11-22"))).toBeInTheDocument();
   });
 
   // REQ-UI-039
@@ -665,6 +684,8 @@ describe("BeadDetailPage", () => {
   });
 
   it("REQ-UI-028 Badges and facts: badge row, reason line and label/value facts", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
     const at = new Date(2026, 4, 11, 16, 0).toISOString();
     stubFetch(
       beadDetail("e-3", {
@@ -686,19 +707,18 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText("P1")).toBeInTheDocument();
     expect(screen.getByText("5 pt")).toBeInTheDocument();
     expect(screen.getByText("new endpoint and UI")).toBeInTheDocument();
-    const facts = screen.getByText("Owner").closest("dl");
+    const facts = screen.getByText("Assignee").closest("dl");
     if (facts === null) throw new Error("the facts are missing");
     const pairs = Array.from(facts.querySelectorAll("dt")).map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]);
     expect(pairs).toEqual([
-      ["Owner", "lead@example.com"],
       ["Assignee", "bao"],
       ["Created by", "lead"],
-      ["Created", "11 May 2026 16:00"],
-      ["Updated", "11 May 2026 16:00"],
+      ["Created", "11 May, 16:00"],
+      ["Updated", "11 May, 16:00"],
       ["Comments", "0"],
     ]);
-    expect(within(facts).getByText("lead@example.com")).toHaveClass("text-foreground", "font-medium");
-    expect(within(facts).getByText("Owner")).toHaveClass("text-muted-foreground");
+    expect(within(facts).getByText("bao").closest("dd")).toHaveClass("text-foreground", "font-medium");
+    expect(within(facts).getByText("Assignee")).toHaveClass("text-muted-foreground");
     expect(screen.queryByText(/ · /)).toBeNull();
   });
 
@@ -734,19 +754,19 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="alpha" id="a-5" />);
     const h1 = await screen.findByRole("heading", { name: "Title a-5" });
     const header = h1.parentElement!;
-    expect(within(header).getByTitle("Lane be")).toBeInTheDocument();
+    expect(within(header).getAllByText("be").filter((el) => el.closest("[data-slot='badge']") !== null)).toHaveLength(1);
     expect(within(header).getByText("urgent")).toBeInTheDocument();
     expect(within(header).queryByText("lane:be")).toBeNull();
     expect(within(header).queryByText("track:2")).toBeNull();
     expect(within(header).getByText("Lane").nextElementSibling).toHaveTextContent("be");
     expect(within(header).getByText("Track").nextElementSibling).toHaveTextContent("#2 2026-11-17-team-checkout.md");
-    expect(within(header).getByText("Lease").nextElementSibling).toHaveTextContent(`until ${factDate("2999-01-01T00:00:00Z")}`);
+    expect(within(header).getByText("Lease").nextElementSibling).toHaveTextContent(`until ${formatDateTime("2999-01-01T00:00:00Z", "2026-11-22")}`);
   });
 
   it("REQ-UI-115 Facts: an expired lease", async () => {
     stubFetch(beadDetail("a-5", { lane: "be", claim: { holder: "w", expires_at: "2020-01-01T00:00:00Z" } }));
     render(<BeadDetailPage project="alpha" id="a-5" />);
-    expect(await screen.findByText(`expired ${factDate("2020-01-01T00:00:00Z")}`)).toBeInTheDocument();
+    expect(await screen.findByText(`expired ${formatDateTime("2020-01-01T00:00:00Z", "2026-11-22")}`)).toBeInTheDocument();
   });
 
   it("REQ-UI-116 gate bead page", async () => {
@@ -770,11 +790,12 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText("Merged")).toBeInTheDocument();
   });
 
-  it("REQ-UI-116 Not counted as a child (bead page)", async () => {
+  it("REQ-UI-116 REQ-UI-130 Not counted as a child (bead page): the progress reads the child counts", async () => {
     const gate = { plan: "p.md", number: 2, track_id: null, lane: "be" };
     stubFetch(
       beadDetail("a-5", {
         issue_type: "feature",
+        child_counts: { total: 1, closed: 1, prep_total: 0, prep_closed: 0 },
         children: [
           { id: "a-6", title: "T6", status: "closed", type: "parent-child", prep: false },
           { id: "a-7", title: "gate", status: "open", type: "parent-child", prep: false, waits_for: gate },
@@ -804,5 +825,45 @@ describe("BeadDetailPage", () => {
     render(<BeadDetailPage project="p" id="p-2" />);
     const crumb = within(await screen.findByRole("navigation", { name: "Breadcrumb" }));
     expect(await crumb.findByRole("link", { name: "p-1" })).toHaveAttribute("href", "/beads/p/p-1");
+  });
+  describe("REQ-MILESTONE-UI-022 milestone beads show their milestone status", () => {
+    const stubMilestones = (detail: BeadDetail, milestones: () => Response) =>
+      vi.stubGlobal(
+        "fetch",
+        vi.fn((input: RequestInfo | URL) => {
+          const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+          if (url.includes("/api/beads/milestones")) return Promise.resolve(milestones());
+          if (url.endsWith("/comments")) return Promise.resolve(json([]));
+          return Promise.resolve(json(detail));
+        }),
+      );
+
+    it("bead page of a milestone: Active with the active icon, not Open or Ready", async () => {
+      stubMilestones(beadDetail("ex-m2", { issue_type: "milestone", status: "open", ready: true }), () =>
+        json({ milestones: [{ id: "ex-m2", title: "M2", status: "active", start: "2026-11-10", end: "2026-12-01" }], current: "ex-m2" }),
+      );
+      render(<BeadDetailPage project="alpha" id="ex-m2" />);
+      const header = await screen.findByRole("heading", { name: "Title ex-m2" });
+      const status = await within(header.parentElement as HTMLElement).findByText("Active");
+      expect(status.closest("[data-status]")).toHaveAttribute("data-status", "active");
+      expect(screen.queryByText("Ready")).toBeNull();
+      expect(screen.queryByText("Open")).toBeNull();
+    });
+
+    it("milestones unavailable: the header shows the bead status", async () => {
+      stubMilestones(beadDetail("ex-m2", { issue_type: "milestone", status: "in_progress" }), () => json({ error: "gin is down" }, 502));
+      render(<BeadDetailPage project="alpha" id="ex-m2" />);
+      const header = await screen.findByRole("heading", { name: "Title ex-m2" });
+      expect(await within(header.parentElement as HTMLElement).findByText("In progress")).toBeInTheDocument();
+      expect(screen.queryByText("Active")).toBeNull();
+    });
+
+    it("a bead that is not a milestone does not ask for the milestones", async () => {
+      stubFetch(beadDetail("a-5"));
+      render(<BeadDetailPage project="alpha" id="a-5" />);
+      await screen.findByRole("heading", { name: "Title a-5" });
+      const calls = vi.mocked(fetch).mock.calls.map(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url));
+      expect(calls.some((url) => url.includes("/api/beads/milestones"))).toBe(false);
+    });
   });
 });

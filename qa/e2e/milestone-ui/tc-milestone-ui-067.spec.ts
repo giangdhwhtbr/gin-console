@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-067@e4cea148
+// TC: TC-MILESTONE-UI-067@6804c59c
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -33,10 +33,10 @@ test('TC-MILESTONE-UI-067: Prep task', async ({ page, ev }) => {
     await page.goto('/milestones/alpha/m2');
     await expect(e1).toBeVisible();
     await expect(e2).toBeVisible();
-    await expect(e1).toContainText('1/2 closed');
-    await expect(e1).toContainText('Prep 1/1');
-    await expect(e2).toContainText('Prep 0/1');
-    await expect(e2).not.toContainText('closed');
+    await expect(e1).toContainText('1 of 2 done');
+    await expect(e1).toContainText('Prep 1 of 1 done');
+    await expect(e2).toContainText('Prep 0 of 1 done');
+    await expect(e2.getByText(/^\d+ of \d+ done$/)).toHaveCount(0);
   });
 
   await ev.step('2. Expand `e-1`', async () => {
