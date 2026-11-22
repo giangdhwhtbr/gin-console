@@ -1,7 +1,10 @@
 # TC-REPORTS-017: Late close
 
-- **REQ:** REQ-REPORTS-009@fa920d07
+- **REQ:** REQ-REPORTS-009@b3daf2cc
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-49-45-api
+- **Checked:** f3d5316f
 
 **Preconditions:**
 - Project `alpha` has milestone `m2` ending on Friday 2026-11-27, with epic `e1`

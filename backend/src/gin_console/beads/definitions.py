@@ -57,3 +57,17 @@ def person_key(value: str | None) -> str | None:
     if not text:
         return None
     return text.split("@", 1)[0] or text
+
+
+def bugs_found(snapshot: Snapshot) -> dict[str, int]:
+    """Bugs, open or closed, with a `discovered-from` dependency on each bead (REQ-REPORTS-019)."""
+    found: dict[str, int] = {}
+    for target, links in snapshot.dependents.items():
+        count = sum(
+            1
+            for issue, kind in links
+            if kind == "discovered-from" and snapshot.rows.get(issue, {}).get("issue_type") == "bug"
+        )
+        if count:
+            found[target] = count
+    return found

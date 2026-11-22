@@ -1,7 +1,10 @@
 # TC-REPORTS-015: Nested beads
 
-- **REQ:** REQ-REPORTS-009@fa920d07
+- **REQ:** REQ-REPORTS-009@b3daf2cc
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-49-45-api
+- **Checked:** 3fda95f1
 
 **Preconditions:**
 - Project `alpha` has milestones `m2` and `m3`

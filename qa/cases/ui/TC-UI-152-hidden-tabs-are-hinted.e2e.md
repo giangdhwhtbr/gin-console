@@ -1,15 +1,18 @@
 # TC-UI-152: Hidden tabs are hinted
 
-- **REQ:** REQ-UI-095@c32236ad
+- **REQ:** REQ-UI-095@2f17c833
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** dfaf38a5
 
 **Preconditions:**
 - Project `alpha` exists
-- The Data coverage tab does not fit in a 768 px window
+- The Quality tab does not fit in a 360 px window
 - The sidebar shows the icon rail at this width, so the page shows its tab list
 
 **Steps:**
-1. Set the window width to 768 px
+1. Set the window width to 360 px
 2. Open `/reports?project=alpha&tab=team`
 3. Scroll the tab list to its end
 

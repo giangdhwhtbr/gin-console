@@ -27,7 +27,7 @@ test('TC-REPORTS-051: Long options on a phone', async ({ page, ev }) => {
         beads: [{
           id: 'a-1', title: 'Bead', issue_type: 'task', status: 'closed', bucket: 'closed', assignee: LONG_MEMBER, priority: 2,
           created_at: '2026-11-02T09:00:00Z', epic: { id: 'a-e1', title: 'Epic one' }, started_at: '2026-11-09T09:00:00Z',
-          closed_at: '2026-11-10T09:00:00Z', cycle_days: 1, age_days: null, late_days: null, rework: null,
+          closed_at: '2026-11-10T09:00:00Z', cycle_days: 1, age_days: null, late_days: null, rework: 0,
         }],
       },
     }),
@@ -36,11 +36,9 @@ test('TC-REPORTS-051: Long options on a phone', async ({ page, ev }) => {
     route.fulfill({
       json: {
         generated_at: '2026-11-12T10:00:00Z', project: 'alpha', days: 30, sprint: null,
-        totals: { tokens: 0, cost: null, closed: 0, tokens_per_bead: null, cache_ratio: null, rework_rate: null },
-        usage: { members: [], epics: [], beads: [], stages: [], models: [] },
+        totals: { closed: 0, rework_rate: null },
         delivery: { weeks: [], by_type: [], by_member: [], overall: { key: 'all', cycle: null, lead: null }, estimates: [] },
-        quality: { members: [], epics: [], points: [] },
-        coverage: { not_collected: [], invalid: [], unpriced: [], unassigned_share: null, sources: [] },
+        quality: { members: [], epics: [] },
         errors: [],
       },
     }),

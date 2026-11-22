@@ -1,4 +1,4 @@
-// TC: TC-UI-246@f2234ce4
+// TC: TC-UI-246@4551d9ca
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 import { mainNav } from '../support/shell';
@@ -13,8 +13,8 @@ test('TC-UI-246: Sections in the sidebar (REQ-UI-129)', async ({ page, ev }) => 
     await page.goto('/reports?project=a&tab=delivery');
     const sections = mainNav(page).getByRole('list', { name: 'Report sections' });
     const links = sections.getByRole('link');
-    await expect(links).toHaveCount(6);
-    for (const [i, name] of ['Team', 'Delivery', 'Velocity', 'AI usage', 'Quality', 'Data coverage'].entries()) {
+    await expect(links).toHaveCount(4);
+    for (const [i, name] of ['Team', 'Delivery', 'Velocity', 'Quality'].entries()) {
       await expect(links.nth(i)).toContainText(name);
     }
     await expect(links.nth(1)).toContainText('41 beads closed');

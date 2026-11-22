@@ -185,7 +185,7 @@ def gate_closed(ident: str, days: int) -> dict[str, Any]:
 
 
 # REQ-REPORTS-001
-# TC: TC-REPORTS-057@035c5d75
+# TC: TC-REPORTS-057@e48f97b5
 def test_tc_reports_057_merge_gates_left_out(tmp_path: Path) -> None:
     rows = [closed_days_ago("t-1", 3), gate_closed("g-1", 3)]
     body = make(tmp_path, rows).get("/api/reports", params={"project": "alpha"}).json()

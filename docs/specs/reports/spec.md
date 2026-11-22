@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-REPORTS-001: Report request
-WHEN a client requests `GET /api/reports` with `project` (a configured project name or `all`), `days` (7, 30 or 90, default 30) and optionally `sprint`, the server SHALL read every bead of each selected project from its `bd export` snapshot (REQ-BEADS-012), SHALL select the beads closed in the last `days` days or, when `sprint` is given, the epics labelled `sprint:<sprint>` and their descendants whatever their close date, leaving out merge gates (REQ-BEADS-019) in both cases, SHALL return the sections of REQ-REPORTS-003 to REQ-REPORTS-006 together with `generated_at`, SHALL serve the same answer for the same `project`, `days` and `sprint` for 60 seconds without running `bd` again unless `POST /api/refresh` dropped it, SHALL respond 404 when `project` is neither `all` nor configured, and SHALL respond 422 when `days` is another value or `sprint` holds a character outside letters, digits, `.`, `_` and `-`.
+WHEN a client requests `GET /api/reports` with `project` (a configured project name or `all`), `days` (7, 30 or 90, default 30) and optionally `sprint`, the server SHALL read every bead of each selected project from its `bd export` snapshot (REQ-BEADS-012), SHALL select the beads closed in the last `days` days or, when `sprint` is given, the epics labelled `sprint:<sprint>` and their descendants whatever their close date, leaving out merge gates (REQ-BEADS-019) in both cases, SHALL return `totals` (`closed`, the number of selected closed beads, and the `rework_rate` of REQ-REPORTS-005), the Delivery section of REQ-REPORTS-004, the Quality section of REQ-REPORTS-005 and `errors` (REQ-REPORTS-007) together with `generated_at`, and SHALL read no `ai_usage` metadata, SHALL serve the same answer for the same `project`, `days` and `sprint` for 60 seconds without running `bd` again unless `POST /api/refresh` dropped it, SHALL respond 404 when `project` is neither `all` nor configured, and SHALL respond 422 when `days` is another value or `sprint` holds a character outside letters, digits, `.`, `_` and `-`.
 
 #### Scenario: default period
 - GIVEN project `alpha` with beads closed 3, 20 and 40 days ago
@@ -20,7 +20,7 @@ WHEN a client requests `GET /api/reports` with `project` (a configured project n
 #### Scenario: merge gates left out
 - GIVEN project `alpha` with a task and a merge gate titled `external: .planning/plans/p.md#2`, both closed 3 days ago
 - WHEN a client requests `/api/reports?project=alpha`
-- THEN the report counts the task and not the merge gate, and the merge gate is not listed without `ai_usage`
+- THEN the report counts the task and not the merge gate, and no section lists the merge gate
 
 #### Scenario: cached
 - GIVEN a report for `alpha` and 30 days was answered 20 seconds ago
@@ -32,52 +32,10 @@ WHEN a client requests `GET /api/reports` with `project` (a configured project n
 - WHEN a client requests `project=nope`, `days=14` or `sprint=a b`
 - THEN the responses are 404, 422 and 422, and no `bd` command ran
 
-### REQ-REPORTS-002: Own share of a bead
-The server SHALL read `metadata.ai_usage` (a JSON string or object with `version` 1) of each selected bead, SHALL take as a bead's own share its tokens, cost and quality counts minus, for an epic, the sum of those of its children that hold `ai_usage`, per model, per role and model, and per stage, never below 0, SHALL count a token as `input + output + cache_read + cache_write`, SHALL count each bead's own share once, at its `closed_at`, and SHALL keep a cost absent when gin-workflow wrote none for that model.
-
-#### Scenario: epic with collected children
-- GIVEN epic `a-1` whose `ai_usage` holds 1000 tokens of model `m` in `discuss` and 600 in `execute`, and its only child `a-1.1` holds 600 tokens of `m` in `execute`
-- WHEN the report is built
-- THEN `a-1` owns 1000 tokens in `discuss` and 0 in `execute`, `a-1.1` owns 600 in `execute`, and the total is 1600
-
-#### Scenario: child larger than its share in the epic
-- GIVEN epic `a-1` holds 500 tokens of `m` in `execute` and its child holds 700
-- WHEN the report is built
-- THEN `a-1` owns 0 tokens in `execute`, not -200
-
-#### Scenario: unpriced model
-- GIVEN a bead whose `ai_usage` has `cost: null` for model `m`
-- WHEN the report is built
-- THEN its tokens count and its cost is absent, not 0
-
-### REQ-REPORTS-003: AI usage section
-The report SHALL hold the following, over the own shares of the selected closed beads:
-- Totals: tokens, cost, closed beads, tokens per closed bead, the cache ratio `cache_read / (input + cache_read + cache_write)` summed over the models of every own share (absent when the denominator is 0), and the rework rate of REQ-REPORTS-005.
-- One row per member, keyed by `assignee` (beads without one fall under `Unassigned`). Each row holds closed beads, tokens, cost, tokens per closed bead, tokens per stage, and the cache ratio.
-- The 10 epics with the most tokens. An epic's tokens are its own share plus those of its selected descendants. Each epic row holds its project, `ai_usage.budget` when present, its closed and total tracks as `closed_children` and `children`, and its closed and total prep tasks (REQ-BEADS-002) as `closed_prep_children` and `prep_children`. Prep tasks still count toward the epic's tokens and cost.
-- The 10 beads with the largest own share.
-- Tokens and cost per stage.
-- Tokens and cost per model and role.
-
-#### Scenario: member rows
-- GIVEN `ann` closed two beads of 100 and 300 tokens and an unassigned bead of 50 tokens closed
-- WHEN the report is built
-- THEN `ann` has 2 closed beads, 400 tokens and 200 tokens per bead, and `Unassigned` has 1 bead and 50 tokens
-
-#### Scenario: open epic with closed children
-- GIVEN open epic `a-1` without `ai_usage` and two closed children of 200 tokens each
-- WHEN the report is built
-- THEN `a-1` is in the epic list with 400 tokens and 2 of 2 children closed
-
-#### Scenario: total cache ratio
-- GIVEN two closed beads whose own shares hold model tokens of input 100, cache_read 300, cache_write 0, and input 100, cache_read 0, cache_write 0
-- WHEN the report is built
-- THEN `totals.cache_ratio` is 0.6
-
-#### Scenario: epic with a prep task
-- GIVEN open epic `e-1` without `ai_usage`, its closed track `t-1` of 200 tokens, its open track `t-2`, and its closed prep task `p-1` labelled `prep` and `prep:mockup` of 100 tokens
-- WHEN the report is built
-- THEN `e-1` is in the epic list with 300 tokens, `closed_children` 1, `children` 2, `closed_prep_children` 1 and `prep_children` 1
+#### Scenario: no AI usage in the answer
+- GIVEN project `alpha` with a closed task whose metadata still holds an `ai_usage` object
+- WHEN a client requests `/api/reports?project=alpha`
+- THEN the answer has no `usage` and no `coverage` key, and `totals` holds only `closed` and `rework_rate`
 
 ### REQ-REPORTS-004: Delivery flow section
 The report SHALL hold:
@@ -123,30 +81,22 @@ The report SHALL NOT hold in-progress beads; the Team report (REQ-REPORTS-010) h
 - THEN `delivery` has neither `wip` nor `oldest`
 
 ### REQ-REPORTS-005: Quality section
-The report SHALL hold, from the own shares of `ai_usage.quality`, per member and per epic of REQ-REPORTS-003: reopens, bugs, review cycles, rejections, findings by severity (critical, important, minor, suggestion), waivers and the rework rate (the share of beads with `ai_usage` that have reopens or bugs above 0), and one point per selected closed non-epic bead with `ai_usage` holding its id, project, title, tokens and rework (reopens + bugs + rejections).
+The report SHALL hold `quality` with `members`, one row per member (the person, REQ-BEADS-023, of the bead's `assignee`, or `Unassigned`), and `epics`, one row per epic that is the nearest epic among a selected closed bead and its ancestors, keeping the 10 epics with the most rework, then the most closed beads, then by id. Each row SHALL hold `closed` (its selected closed beads), `reopens` and `bugs` (REQ-REPORTS-019) summed over them, and `rework_rate`: the share of them whose `rework` is above 0, or `null` when it has none; an epic row SHALL also hold the epic's `project`, `id` and `title`. `totals.rework_rate` SHALL be the same share over every selected closed bead. The section SHALL NOT use `ai_usage`.
 
 #### Scenario: rework rate
-- GIVEN `ann` closed 4 beads with `ai_usage`, one of them reopened once
+- GIVEN `ann` closed 4 beads, one of them reopened once in the interaction log
 - WHEN the report is built
-- THEN `ann` has 1 reopen and a rework rate of 25%
+- THEN `ann`'s row has `closed` 4, `reopens` 1 and a `rework_rate` of 0.25
 
-#### Scenario: points
-- GIVEN a closed task of 900 tokens with 1 reopen and 2 rejections, and a closed epic
+#### Scenario: epic rows
+- GIVEN epic `e-1` with closed tasks `t-1` (reopened once) and `t-2`, and epic `e-2` with closed tasks `t-3` and `t-4` and no rework
 - WHEN the report is built
-- THEN the points hold the task with tokens 900 and rework 3, and not the epic
+- THEN `epics` lists `e-1` (closed 2, reopens 1, rework rate 0.5) before `e-2` (closed 2, rework rate 0)
 
-### REQ-REPORTS-006: Data coverage section
-The report SHALL list the selected closed beads without `ai_usage` with the command `gin usage collect --bead <id>`, the selected beads whose `ai_usage` is not readable or not `version` 1 (left out of every other section), the models listed in `unpriced`, the share of tokens under `Unassigned`, the beads whose `sources` hold a value other than `ok` or whose `skipped_lines` is above 0, and the projects that failed.
-
-#### Scenario: not collected
-- GIVEN a closed bead `a-9` without `ai_usage`
+#### Scenario: old ai_usage ignored
+- GIVEN a closed task whose metadata holds `ai_usage.quality.reopens` 5 and whose interaction log has no reopen
 - WHEN the report is built
-- THEN coverage lists `a-9` with `gin usage collect --bead a-9`, and no section counts its tokens
-
-#### Scenario: unreadable usage
-- GIVEN a closed bead whose `ai_usage` is `{"version": 2}` and one whose `ai_usage` is not JSON
-- WHEN the report is built
-- THEN coverage lists both and the report is answered
+- THEN the task counts 0 reopens
 
 ### REQ-REPORTS-007: Failures
 IF `bd` fails in the selected project as in REQ-BEADS-005, THEN the server SHALL respond 502 with an `error`; WHILE `project` is `all`, the server SHALL instead build the report from the projects that answered, list each failed project with its error under `errors`, and respond 502 only when every project failed; and the server SHALL NOT keep a failed answer in the cache.
@@ -162,9 +112,9 @@ IF `bd` fails in the selected project as in REQ-BEADS-005, THEN the server SHALL
 - THEN both responses are 502 and `bd` ran twice
 
 #### Scenario: all members merged
-- GIVEN `ann` closed a bead of 100 tokens in `alpha` and one of 200 in `beta`
+- GIVEN `ann` closed a bead in `alpha` that was reopened once and a bead in `beta`
 - WHEN a client requests `/api/reports?project=all`
-- THEN one member row `ann` holds 2 beads and 300 tokens
+- THEN one Quality member row `ann` holds 2 closed beads and 1 reopen
 
 ### REQ-REPORTS-008: Team report request
 WHEN a client requests `GET /api/reports/team` with `project` (a configured project name) and optionally `milestone` (a bead id), the server SHALL read every bead of the project from its `bd export` snapshot (REQ-BEADS-012) without starting a process, and SHALL return:
@@ -249,7 +199,7 @@ The response SHALL hold `beads`, one row per scope bead, with:
 - `cycle_days`, as the cycle time of REQ-REPORTS-004, or `null`;
 - `age_days`: for an in-progress bead, the days since `started_at` (else `updated_at`); otherwise `null`;
 - `late_days`: for a closed bead, the working days (Monday to Friday) after the milestone's `end` up to the date of `closed_at`, 0 when it closed on or before `end`; otherwise `null`;
-- `rework`: the bead's own reopens plus bugs found later (REQ-REPORTS-002), or `null` when it has no readable `ai_usage`.
+- `rework`: the bead's reopens plus bugs found later (REQ-REPORTS-019), 0 when it has none.
 
 #### Scenario: nested beads
 - GIVEN milestone `m2` with epic `e1`, whose child `e1.1` has child `e1.1.1`, and epic `e9` under milestone `m3` with child `e9.1`
@@ -296,8 +246,8 @@ The response SHALL hold `team`, over the whole scope, and `members`, with one ro
 - `cycle_median`: the median `cycle_days` of the closed beads, or `null`;
 - `oldest_in_progress`: the largest `age_days`, or `null`;
 - `on_time`: the share of closed beads with `late_days` 0, or `null` when none is closed;
-- `rework_rate`: the share of closed beads with readable `ai_usage` whose `rework` is above 0, or `null` when there are none;
-- `reopens` and `bugs`, summed over the closed beads.
+- `rework_rate`: the share of closed beads whose `rework` (REQ-REPORTS-019) is above 0, or `null` when none is closed;
+- `reopens` and `bugs` (REQ-REPORTS-019), summed over the closed beads.
 
 `team` SHALL also hold:
 - `working_days`: the working days from `start` to `end`;
@@ -318,9 +268,9 @@ The response SHALL hold `team`, over the whole scope, and `members`, with one ro
 - THEN `team.throughput` is 13.2, `pace_needed` is `null` and `on_time` is 51 ÷ 58
 
 #### Scenario: rework rate
-- GIVEN `ann` closed 4 beads with `ai_usage`, one with 1 reopen, and 1 bead without `ai_usage`
+- GIVEN `ann` closed 4 beads, one of them reopened once in the interaction log and another with one bug found later
 - WHEN the team report is built
-- THEN `ann`'s row has `rework_rate` 0.25 and `reopens` 1
+- THEN `ann`'s row has `rework_rate` 0.5, `reopens` 1 and `bugs` 1
 
 #### Scenario: member order
 - GIVEN `ann` with 3 scope beads, `bao` with 5 and 6 without an assignee
@@ -479,7 +429,7 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-member.pn
 The Team tab SHALL show the scope beads of the selected member, or of every member, under the heading "Beads" (with " · <member>" when one is selected). A tab list holds Open, In progress, Closed and All, each with its count. The default is Open, or Closed for a closed milestone. The columns are:
 - Open: Bead, Epic, Type, Assignee, Priority (`P<priority>`), a status chip (Open, Blocked, or the status), and Age (days since `created_at`). Sorted by priority, then oldest first.
 - In progress: Bead, Epic, Type, Assignee, and "In progress for" (`age_days`, in the warning color above 3 days). Sorted longest first.
-- Closed: Bead, Epic, Type, Assignee, Closed (the date), Cycle, an On time chip ("On time" or "<late_days> d late"), and Rework ("—" when `null`). Sorted newest first.
+- Closed: Bead, Epic, Type, Assignee, Closed (the date), Cycle, an On time chip ("On time" or "<late_days> d late"), and Rework (the bead's `rework`, REQ-REPORTS-019). Sorted newest first.
 - All: Bead, Epic, Type, Assignee, and a status chip.
 
 In every list:
@@ -496,9 +446,9 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-closed.pn
 - THEN the tabs read Open 4, In progress 1, Closed 6 and All 11
 
 #### Scenario: closed row
-- GIVEN a closed bead `a-3` with cycle 0.9 days, `late_days` 2 and `rework` `null`
+- GIVEN a closed bead `a-3` with cycle 0.9 days, `late_days` 2 and `rework` 0
 - WHEN the Closed list is shown
-- THEN its row shows "0.9 d", "2 d late" and "—", and its title opens `/beads/alpha/a-3`
+- THEN its row shows "0.9 d", "2 d late" and "0", and its title opens `/beads/alpha/a-3`
 
 #### Scenario: show more
 - GIVEN 43 closed beads
@@ -542,10 +492,12 @@ Source: `assets/2026-11-12/mockup/index.html`
 ## Diagrams
 - [Team tab](diagrams/team-tab-activity.md)
 - [Velocity tab](diagrams/velocity-tab-activity.md)
+- [Rework](diagrams/rework-activity.md)
 
 ## Use Cases
 - [Review the team in a milestone](use-cases/review-team-in-milestone.md)
 - [Review velocity](use-cases/review-velocity.md)
+- [Review rework](use-cases/review-rework.md)
 
 ### REQ-REPORTS-018: Velocity tab
 WHEN the Velocity tab is selected, the frontend SHALL request `GET /api/milestones?project=<p>` (REQ-MILESTONE-UI-008) for the selected project, unless REQ-UI-095 has already loaded it, or for every configured project when "All projects" is selected, and SHALL show for each project (under the project's name when all are selected):
@@ -577,3 +529,27 @@ The tab SHALL hold no period or sprint choice, SHALL show nothing per member, an
 - GIVEN projects `alpha` with velocity and `beta` whose `GET /api/milestones?project=beta` answers 502 with `cause: "outdated"`
 - WHEN the user opens `/reports?project=all&tab=velocity`
 - THEN `alpha` shows its figures, charts and table, and `beta` shows the outdated error
+
+### REQ-REPORTS-019: Rework from Beads
+Type: business-rule
+The server SHALL count, for each bead of a report (REQ-REPORTS-001, REQ-REPORTS-008), `reopens`: the lines of its project's `.beads/interactions.jsonl` whose `kind` is `field_change`, whose `issue_id` is the bead, and whose `extra` has `field` `status`, `old_value` `closed` and a `new_value` other than `closed`; and `bugs`: the beads of type `bug`, open or closed, that have a `discovered-from` dependency on it (as REQ-UI-086 lists them). Its `rework` SHALL be `reopens` + `bugs`. A missing log, a line that is not JSON and a line of another shape SHALL count nothing and SHALL NOT fail the report, and the server SHALL read a project's log again only when its size or modification time changed.
+
+#### Scenario: Reopens counted
+- GIVEN the log of `alpha` holds, for bead `a-1`, status changes `in_progress`→`closed`, `closed`→`open`, `open`→`closed` and `closed`→`in_progress`
+- WHEN a report of `alpha` is built
+- THEN `a-1` has `reopens` 2
+
+#### Scenario: Bugs found later
+- GIVEN bead `a-1`, a closed bug `a-9` and an open bug `a-10` with `discovered-from` dependencies on `a-1`, and a task `a-11` with one too
+- WHEN a report of `alpha` is built
+- THEN `a-1` has `bugs` 2 and, with no reopen, `rework` 2
+
+#### Scenario: Missing or broken log
+- GIVEN project `alpha` without `.beads/interactions.jsonl`, and project `beta` whose log holds a line that is not JSON, a line without `extra`, and one reopen of `b-1`
+- WHEN a report of all projects is built
+- THEN the response is 200, every bead of `alpha` has `reopens` 0, and `b-1` has `reopens` 1
+
+#### Scenario: Read again only on change
+- GIVEN the log of `alpha` was read for a report and has not changed since
+- WHEN another report of `alpha` is built, and then a reopen line is appended and a report is built again
+- THEN the second build does not read the log, and the third reads it and counts the new reopen

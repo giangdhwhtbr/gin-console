@@ -23,6 +23,7 @@ from gin_console.milestones.source import run_gw as default_run_gw
 from gin_console.projects.collect import collect_epic_workflow
 from gin_console.projects.models import BlockError, EpicWorkflow
 from gin_console.projects.router import build_router as build_projects_router
+from gin_console.reports.interactions import InteractionStore
 from gin_console.reports.router import build_router as build_reports_router
 
 # backend/src/gin_console/app.py -> repository root is parents[3]
@@ -42,6 +43,7 @@ def create_app(
 ) -> FastAPI:
     # one read of .beads/issues.jsonl per project, reused until the file changes or a refresh
     snapshots = SnapshotStore(read_beads)
+    interactions = InteractionStore()
     on_refresh: list[Callable[[], None]] = [snapshots.clear]
     # the only bd command the console runs (ADR 0003): on refresh and on schedule
     pulls = PullService(settings.projects, run_bd, clock)
@@ -86,7 +88,7 @@ def create_app(
         build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh)
     )
     api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh))
-    api.include_router(build_reports_router(settings, snapshots, clock, on_refresh))
+    api.include_router(build_reports_router(settings, snapshots, interactions, clock, on_refresh))
 
     @api.api_route("/{rest:path}", methods=_METHODS)
     def api_not_found(rest: str) -> None:

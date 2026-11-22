@@ -1,65 +1,7 @@
 import { field } from "@/lib/guards";
 import type { ReportFilters } from "./filters";
 
-export type Totals = {
-  tokens: number;
-  cost: number | null;
-  closed: number;
-  tokens_per_bead: number | null;
-  cache_ratio: number | null;
-  rework_rate: number | null;
-};
-export type MemberUsage = {
-  member: string;
-  closed: number;
-  tokens: number;
-  cost: number | null;
-  tokens_per_bead: number | null;
-  cache_ratio: number | null;
-  stages: Record<string, number>;
-};
-export type Budget = { budget_usd: number; cost: number | null; status: string };
-export type EpicUsage = {
-  project: string;
-  id: string;
-  title: string;
-  status: string;
-  tokens: number;
-  cost: number | null;
-  children: number;
-  closed_children: number;
-  /** absent from an older backend: read as 0 */
-  prep_children?: number;
-  closed_prep_children?: number;
-  budget: Budget | null;
-};
-export type BeadUsage = {
-  project: string;
-  id: string;
-  title: string;
-  issue_type: string;
-  assignee: string | null;
-  tokens: number;
-  cost: number | null;
-};
-export type StageRow = { stage: string; tokens: number; cost: number | null };
-export type ModelRow = {
-  model: string;
-  role: string;
-  input: number;
-  output: number;
-  cache_read: number;
-  cache_write: number;
-  tokens: number;
-  cost: number | null;
-};
-export type UsageSection = {
-  members: MemberUsage[];
-  epics: EpicUsage[];
-  beads: BeadUsage[];
-  stages: StageRow[];
-  models: ModelRow[];
-};
+export type Totals = { closed: number; rework_rate: number | null };
 export type WeekRow = { week: string; counts: Record<string, number> };
 export type Stat = { n: number; median: number; p85: number };
 export type TimeRow = { key: string; cycle: Stat | null; lead: Stat | null };
@@ -71,37 +13,9 @@ export type DeliverySection = {
   overall: TimeRow;
   estimates: EstimateRow[];
 };
-export type Findings = { critical: number; important: number; minor: number; suggestion: number };
-export type QualityRow = {
-  key: string;
-  project: string | null;
-  title: string | null;
-  beads: number;
-  reopens: number;
-  bugs: number;
-  review_cycles: number;
-  rejections: number;
-  waivers: number;
-  findings: Findings;
-  rework_rate: number | null;
-};
-export type Point = { project: string; id: string; title: string; tokens: number; rework: number };
-export type QualitySection = { members: QualityRow[]; epics: QualityRow[]; points: Point[] };
-export type CoverageBead = { project: string; id: string; title: string; detail: string };
-export type SourceIssue = {
-  project: string;
-  id: string;
-  title: string;
-  sources: Record<string, string>;
-  skipped_lines: number;
-};
-export type Coverage = {
-  not_collected: CoverageBead[];
-  invalid: CoverageBead[];
-  unpriced: string[];
-  unassigned_share: number | null;
-  sources: SourceIssue[];
-};
+export type MemberQuality = { member: string; closed: number; reopens: number; bugs: number; rework_rate: number | null };
+export type EpicQuality = { project: string; id: string; title: string; closed: number; reopens: number; bugs: number; rework_rate: number | null };
+export type QualitySection = { members: MemberQuality[]; epics: EpicQuality[] };
 export type ProjectError = { project: string; error: string };
 export type Report = {
   generated_at: string;
@@ -109,35 +23,46 @@ export type Report = {
   days: number;
   sprint: string | null;
   totals: Totals;
-  usage: UsageSection;
   delivery: DeliverySection;
   quality: QualitySection;
-  coverage: Coverage;
   errors: ProjectError[];
 };
 
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
 
 const ARRAYS: Record<string, string[]> = {
-  usage: ["members", "epics", "beads", "stages", "models"],
   delivery: ["weeks", "by_type", "by_member", "estimates"],
-  quality: ["members", "epics", "points"],
-  coverage: ["not_collected", "invalid", "unpriced", "sources"],
+  quality: ["members", "epics"],
 };
 
-// simplified: checks the shape down to the arrays, not every row; the backend's pydantic model owns the rows.
+const isRate = (value: unknown): boolean => value === null || typeof value === "number";
+const hasStrings = (row: object, keys: string[]): boolean => keys.every((key) => typeof field(row, key) === "string");
+const hasNumbers = (row: object, keys: string[]): boolean => keys.every((key) => typeof field(row, key) === "number");
+
+function isQualityRow(row: unknown, strings: string[]): boolean {
+  return isObject(row) && hasStrings(row, strings) && hasNumbers(row, ["closed", "reopens", "bugs"]) && isRate(field(row, "rework_rate"));
+}
+
+function qualityRows(quality: unknown, key: string, strings: string[]): boolean {
+  const rows = isObject(quality) ? field(quality, key) : undefined;
+  return Array.isArray(rows) && rows.every((row) => isQualityRow(row, strings));
+}
+
+// simplified: checks the shape down to the arrays, and the quality rows; the backend's pydantic model owns the other rows.
 function isReport(value: unknown): value is Report {
   if (!isObject(value) || typeof field(value, "generated_at") !== "string") return false;
   const totals = field(value, "totals");
-  if (!isObject(totals) || typeof field(totals, "tokens") !== "number" || typeof field(totals, "closed") !== "number") {
-    return false;
-  }
+  if (!isObject(totals) || typeof field(totals, "closed") !== "number") return false;
+  const rate = field(totals, "rework_rate");
+  if (!isRate(rate)) return false;
   return (
     Array.isArray(field(value, "errors")) &&
     Object.entries(ARRAYS).every(([section, keys]) => {
       const body = field(value, section);
       return isObject(body) && keys.every((key) => Array.isArray(field(body, key)));
-    })
+    }) &&
+    qualityRows(field(value, "quality"), "members", ["member"]) &&
+    qualityRows(field(value, "quality"), "epics", ["project", "id", "title"])
   );
 }
 

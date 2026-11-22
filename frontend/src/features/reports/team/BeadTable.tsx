@@ -102,7 +102,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
       );
     }
     case "rework":
-      return <TableCell className="text-right">{bead.rework === null ? "—" : bead.rework}</TableCell>;
+      return <TableCell className="text-right">{bead.rework}</TableCell>;
   }
 }
 

@@ -21,7 +21,7 @@ from gin_console.reports.models import (
     TeamReport,
     TeamTotals,
 )
-from gin_console.reports.service import DAY, UNASSIGNED, _key, _span, _Tree
+from gin_console.reports.service import DAY, UNASSIGNED, _key, _rework, _span, _Tree
 
 PACE_WINDOW = 5  # working days behind `throughput`
 
@@ -108,7 +108,6 @@ def _figures(
     waiting = [r for r in rows if r.bucket == "open"]
     cycles = [s for r in done if (s := _span(r.started_at, r.closed_at)) is not None]
     ages = [r.age_days for r in active if r.age_days is not None]
-    measured = [r for r in done if r.rework is not None]
     if closed_span is None:
         throughput = float(
             sum(1 for r in done if r.closed_at is not None and _workday(_day(r.closed_at)) in last)
@@ -127,13 +126,9 @@ def _figures(
         cycle_median=round(statistics.median(cycles), 2) if cycles else None,
         oldest_in_progress=max(ages) if ages else None,
         on_time=round(sum(1 for r in done if r.late_days == 0) / len(done), 4) if done else None,
-        rework_rate=(
-            round(sum(1 for r in measured if (r.rework or 0) > 0) / len(measured), 4)
-            if measured
-            else None
-        ),
-        reopens=sum(reworks[r.id][0] for r in done if r.id in reworks),
-        bugs=sum(reworks[r.id][1] for r in done if r.id in reworks),
+        rework_rate=(round(sum(1 for r in done if r.rework > 0) / len(done), 4) if done else None),
+        reopens=sum(reworks[r.id][0] for r in done),
+        bugs=sum(reworks[r.id][1] for r in done),
     )
 
 
@@ -158,7 +153,7 @@ def build_team(
     chosen = next((m for m in milestones if m.id == milestone), None) or _default(milestones, today)
     tree = _Tree(beads)
     rows: list[TeamBead] = []
-    reworks: dict[str, tuple[int, int]] = {}
+    reworks: dict[str, tuple[int, int]] = {}  # bead id -> (reopens, bugs)
     for bead, epic in _scope(tree, beads, chosen.id):
         bucket: BeadBucket = (
             "closed"
@@ -168,9 +163,7 @@ def build_team(
             else "open"
         )
         cycle = _span(bead.started_at, bead.closed_at) if bucket == "closed" else None
-        own = tree.own(bead)
-        if own is not None:
-            reworks[bead.id] = (own.quality.reopens, own.quality.bugs)
+        reworks[bead.id] = (bead.reopens, bead.bugs)
         rows.append(
             TeamBead(
                 id=bead.id,
@@ -196,7 +189,7 @@ def build_team(
                     if bucket == "closed" and bead.closed_at is not None
                     else None
                 ),
-                rework=(own.quality.reopens + own.quality.bugs if own is not None else None),
+                rework=_rework(bead),
             )
         )
     last = set(_workdays(today - timedelta(days=14), today)[-PACE_WINDOW:])

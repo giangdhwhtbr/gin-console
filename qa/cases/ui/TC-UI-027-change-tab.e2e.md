@@ -1,7 +1,10 @@
 # TC-UI-027: Change tab
 
-- **REQ:** REQ-UI-095@c32236ad
+- **REQ:** REQ-UI-095@2f17c833
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** 30c9780a
 
 **Preconditions:**
 - The Reports page for `alpha`, 90 days and the Delivery tab
@@ -11,7 +14,7 @@
 - None
 
 **Steps:**
-1. Pick the AI usage tab
+1. Pick the Quality tab
 
 **Expected:**
-- The URL becomes `/reports?project=alpha&days=90&tab=usage` without a reload and no new report is requested
+- The URL becomes `/reports?project=alpha&days=90&tab=quality` without a reload and no new report is requested

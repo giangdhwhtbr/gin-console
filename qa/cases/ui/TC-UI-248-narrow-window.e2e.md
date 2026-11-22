@@ -1,7 +1,10 @@
 # TC-UI-248: Narrow window
 
-- **REQ:** REQ-UI-129@32c4e2b1
+- **REQ:** REQ-UI-129@de1adeec
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** e12f82c5
 
 **Preconditions:**
 - Project `a` is configured with a report

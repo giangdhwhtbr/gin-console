@@ -35,7 +35,7 @@ const bead = (overrides: Partial<TeamBead>): TeamBead => ({
   cycle_days: null,
   age_days: null,
   late_days: null,
-  rework: null,
+  rework: 0,
   ...overrides,
 });
 

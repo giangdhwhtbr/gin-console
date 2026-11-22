@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -46,16 +47,6 @@ def closed(
     return bead(ident, status="closed", closed_at=at.isoformat(), **extra)
 
 
-def usage(tokens: int) -> dict[str, Any]:
-    return {
-        "ai_usage": {
-            "version": 1,
-            "models": {"m": {"input": tokens}},
-            "stages": {"execute": {"tokens": tokens}},
-        }
-    }
-
-
 # REQ-REPORTS-001
 def test_reports_001_default_period_is_30_days(tmp_path: Path) -> None:
     fake = FakeExport([closed("a-1", 3), closed("a-2", 20), closed("a-3", 40)])
@@ -64,11 +55,21 @@ def test_reports_001_default_period_is_30_days(tmp_path: Path) -> None:
     assert body["days"] == 30
 
 
-# REQ-REPORTS-003, REQ-REPORTS-004
-def test_reports_003_004_new_fields_in_json(tmp_path: Path) -> None:
-    fake = FakeExport([closed("a-1", 3)])
+# REQ-REPORTS-001
+def test_reports_001_no_ai_usage_in_the_answer(tmp_path: Path) -> None:
+    fake = FakeExport([closed("a-1", 3, metadata={"ai_usage": {"version": 1}})])
     body = make(tmp_path, {"alpha": fake}).get("/api/reports", params={"project": "alpha"}).json()
-    assert "cache_ratio" in body["totals"]
+    assert set(body) == {
+        "generated_at",
+        "project",
+        "days",
+        "sprint",
+        "totals",
+        "delivery",
+        "quality",
+        "errors",
+    }
+    assert set(body["totals"]) == {"closed", "rework_rate"}
     assert body["delivery"]["overall"]["key"] == "all"
 
 
@@ -150,13 +151,13 @@ def test_reports_007_single_project_failure_is_502_and_not_cached(tmp_path: Path
 # REQ-REPORTS-007
 def test_reports_007_members_are_merged_across_projects(tmp_path: Path) -> None:
     runners = {
-        "alpha": FakeExport([closed("a-1", 3, assignee="ann", metadata=usage(100))]),
-        "beta": FakeExport([closed("b-1", 3, assignee="ann", metadata=usage(200))]),
+        "alpha": FakeExport([closed("a-1", 3, assignee="ann")]),
+        "beta": FakeExport([closed("b-1", 3, assignee="ann")]),
     }
     body = make(tmp_path, runners).get("/api/reports", params={"project": "all"}).json()
-    ann = [m for m in body["usage"]["members"] if m["member"] == "ann"]
+    ann = [m for m in body["quality"]["members"] if m["member"] == "ann"]
     assert len(ann) == 1
-    assert ann[0]["closed"] == 2 and ann[0]["tokens"] == 300
+    assert ann[0]["closed"] == 2
 
 
 # REQ-REPORTS-001
@@ -169,3 +170,26 @@ def test_reports_001_refresh_drops_the_cached_report(tmp_path: Path) -> None:
     assert api.post("/api/refresh").status_code == 204
     body = api.get("/api/reports", params={"project": "alpha"}).json()
     assert len(fake.calls) == 2 and body["totals"]["closed"] == 2
+
+
+# REQ-REPORTS-019
+def test_reports_019_missing_or_broken_log_does_not_fail_the_report(tmp_path: Path) -> None:
+    client = make(
+        tmp_path, {"alpha": FakeExport([closed("a-1", 3)]), "beta": FakeExport([closed("b-1", 3)])}
+    )
+    log = tmp_path / "beta" / ".beads" / "interactions.jsonl"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    reopen = {
+        "kind": "field_change",
+        "issue_id": "b-1",
+        "extra": {"field": "status", "old_value": "closed", "new_value": "open"},
+    }
+    log.write_text(
+        'not json\n{"kind": "field_change", "issue_id": "b-1"}\n' + json.dumps(reopen) + "\n"
+    )
+    response = client.get("/api/reports", params={"project": "all"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["totals"]["closed"] == 2
+    beta = next(m for m in body["quality"]["members"] if m["member"] == "Unassigned")
+    assert (beta["closed"], beta["reopens"]) == (2, 1)

@@ -33,11 +33,7 @@ const stub = (
   return mock;
 };
 const requested = (mock: ReturnType<typeof stub>) => mock.mock.calls.map(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.href : input.url));
-const bead = (id: string) => ({ project: "alpha", id, title: id, detail: "" });
-const withTokens = (tokens: number): Report => {
-  const base = report();
-  return report({ totals: { ...base.totals, tokens } });
-};
+const withClosed = (closed: number): Report => report({ totals: { ...report().totals, closed } });
 
 beforeEach(() => window.history.replaceState(null, "", "/reports"));
 afterEach(() => {
@@ -152,13 +148,6 @@ describe("ReportsPage", () => {
     expect(screen.getByRole("button", { name: "7 days" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("REQ-UI-088 shows 'no price' when the cost is unknown", async () => {
-    window.history.replaceState(null, "", "/reports?tab=usage");
-    stub(() => json(report({ totals: { ...report().totals, cost: null } })));
-    render(<ReportsPage />);
-    expect((await screen.findAllByText("no price")).length).toBeGreaterThan(0);
-  });
-
   it("REQ-UI-095 opens the tab of a shared link", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&days=7&tab=quality");
     const mock = stub();
@@ -183,35 +172,23 @@ describe("ReportsPage", () => {
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
     const before = reportCalls(mock).length;
-    await userEvent.click(screen.getByRole("tab", { name: /^AI usage/ }));
-    expect(window.location.search).toBe("?project=alpha&days=90&tab=usage");
-    expect(await screen.findByText("Cache reads")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("tab", { name: /^Quality/ }));
+    expect(window.location.search).toBe("?project=alpha&days=90&tab=quality");
+    expect((await screen.findAllByText("Rework rate")).length).toBeGreaterThan(0);
     expect(reportCalls(mock)).toHaveLength(before);
   });
 
   it("REQ-UI-095 shows a headline under each tab", async () => {
-    const base = report();
-    stub(() => json(report({ coverage: { ...base.coverage, unpriced: ["m1", "m2"] } })));
-    render(<ReportsPage />);
-    expect(await screen.findByRole("tab", { name: /Delivery\s*4 beads closed/ })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /AI usage\s*51\.1M tokens, \$12\.34/ })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Quality\s*25% rework/ })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: /Data coverage\s*2 gaps/ })).toBeInTheDocument();
-  });
-
-  it("REQ-UI-095 flags coverage gaps with a warning icon", async () => {
-    const base = report();
-    stub(() => json(report({ coverage: { ...base.coverage, not_collected: ["a", "b", "c"].map(bead), invalid: [bead("x")], unpriced: ["m1"] } })));
-    render(<ReportsPage />);
-    const tab = await screen.findByRole("tab", { name: /Data coverage\s*5 gaps/ });
-    expect(tab.querySelector("svg")).not.toBeNull();
-  });
-
-  it("REQ-UI-095 shows no warning icon at 0 gaps", async () => {
     stub();
     render(<ReportsPage />);
-    const tab = await screen.findByRole("tab", { name: /Data coverage\s*0 gaps/ });
-    expect(tab.querySelector("svg")).toBeNull();
+    expect(await screen.findByRole("tab", { name: /Delivery\s*4 beads closed/ })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /Quality\s*25% rework/ })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-095 quality headline reads a dash without a rate", async () => {
+    stub(() => json(report({ totals: { closed: 0, rework_rate: null } })));
+    render(<ReportsPage />);
+    expect(await screen.findByRole("tab", { name: /Quality\s*— rework/ })).toBeInTheDocument();
   });
 
   it("REQ-UI-095 shows no headline after a failed load", async () => {
@@ -219,7 +196,7 @@ describe("ReportsPage", () => {
     stub(() => json({ error: "boom" }, 502));
     render(<ReportsPage />);
     await screen.findByText("boom");
-    for (const name of ["Delivery", "AI usage", "Quality", "Data coverage"]) {
+    for (const name of ["Delivery", "Quality"]) {
       expect(screen.getByRole("tab", { name })).toBeInTheDocument();
     }
   });
@@ -347,7 +324,7 @@ describe("ReportsPage", () => {
     stub();
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
-    const order = ["Team", "Delivery", "Velocity", "AI usage", "Quality", "Data coverage"];
+    const order = ["Team", "Delivery", "Velocity", "Quality"];
     screen.getAllByRole("tab").forEach((t, i) => expect(t.textContent?.startsWith(order[i])).toBe(true));
     expect(screen.getAllByRole("tab")).toHaveLength(order.length);
   });
@@ -364,10 +341,10 @@ describe("ReportsPage", () => {
     expect(velocity).toHaveFocus();
     expect(window.location.search).toContain("tab=velocity");
     await userEvent.keyboard("{ArrowRight}");
-    const usage = screen.getByRole("tab", { name: /^AI usage/ });
-    expect(usage).toHaveAttribute("aria-selected", "true");
-    expect(usage).toHaveFocus();
-    expect(window.location.search).toContain("tab=usage");
+    const quality = screen.getByRole("tab", { name: /^Quality/ });
+    expect(quality).toHaveAttribute("aria-selected", "true");
+    expect(quality).toHaveFocus();
+    expect(window.location.search).toContain("tab=quality");
   });
 
   it("REQ-UI-093 shows a loading state without headlines", async () => {
@@ -398,23 +375,58 @@ describe("ReportsPage", () => {
     expect(screen.getByText("Beads closed")).toBeInTheDocument();
   });
 
+  it("REQ-UI-093 the warning sits above the tabs and stays when the user picks another tab", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
+    stub(() => json(report({ errors: [{ project: "beta", error: "bd failed" }] })));
+    render(<ReportsPage />);
+    const warning = await screen.findByText("Some projects could not be read");
+    const list = screen.getByRole("tablist", { name: "Report" });
+    expect(warning.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const name of [/^Quality/, /^Velocity/, /^Team/]) {
+      await userEvent.click(screen.getByRole("tab", { name }));
+      expect(screen.getByText("beta: bd failed")).toBeInTheDocument();
+    }
+  });
+
+  it("REQ-UI-095 a retired tab link selects Team", async () => {
+    for (const tab of ["usage", "coverage"]) {
+      window.history.replaceState(null, "", `/reports?project=alpha&tab=${tab}`);
+      stub();
+      render(<ReportsPage />);
+      await screen.findByLabelText("Milestone");
+      expect(screen.getByRole("tab", { name: /^Team/ })).toHaveAttribute("aria-selected", "true");
+      cleanup();
+    }
+  });
+
+  it("REQ-UI-088 the period choice shows on Delivery and Quality, not on Team", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&tab=quality");
+    stub();
+    render(<ReportsPage />);
+    expect(await screen.findByRole("button", { name: "7 days" })).toBeInTheDocument();
+    expect(screen.queryByText(/tokens|cost|budget|gin usage/i)).toBeNull();
+    await userEvent.click(screen.getByRole("tab", { name: /^Team/ }));
+    await screen.findByLabelText("Milestone");
+    expect(screen.queryByRole("button", { name: "7 days" })).toBeNull();
+  });
+
   it("REQ-UI-093 drops a late answer", async () => {
-    window.history.replaceState(null, "", "/reports?tab=usage");
+    window.history.replaceState(null, "", "/reports?tab=delivery");
     let release: (response: Response) => void = () => {};
     stub((url) =>
       url.searchParams.get("days") === "30"
         ? new Promise<Response>((resolve) => {
             release = resolve;
           })
-        : json(withTokens(7000)),
+        : json(withClosed(7000)),
     );
     render(<ReportsPage />);
     await userEvent.click(await screen.findByRole("button", { name: "7 days" }));
-    expect((await screen.findAllByText("7K")).length).toBeGreaterThan(0);
-    release(json(withTokens(9000000)));
+    expect((await screen.findAllByText("7000")).length).toBeGreaterThan(0);
+    release(json(withClosed(9000000)));
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(screen.getAllByText("7K").length).toBeGreaterThan(0);
-    expect(screen.queryByText("9M")).not.toBeInTheDocument();
+    expect(screen.getAllByText("7000").length).toBeGreaterThan(0);
+    expect(screen.queryByText("9000000")).not.toBeInTheDocument();
   });
 
   const lateTeam = (over: Partial<TeamReport["team"] & object>): TeamReport => {
@@ -634,7 +646,7 @@ describe("ReportsPage", () => {
     const { result } = renderHook(() => useSections());
     await waitFor(() => expect(result.current.sections.find((s) => s.tab === "delivery")?.headline).not.toBe(""));
     expect(result.current.selected).toBe("delivery");
-    expect(result.current.sections.map((s) => s.tab)).toEqual(["team", "delivery", "velocity", "usage", "quality", "coverage"]);
+    expect(result.current.sections.map((s) => s.tab)).toEqual(["team", "delivery", "velocity", "quality"]);
     const quality = result.current.sections.find((s) => s.tab === "quality");
     expect(new URLSearchParams(quality?.href.split("?")[1]).get("tab")).toBe("quality");
     expect(quality?.href).toContain("project=alpha");
@@ -647,7 +659,7 @@ describe("ReportsPage", () => {
     const view = render(<ReportsPage />);
     await screen.findByRole("tablist", { name: "Report" });
     const { result } = renderHook(() => useSections());
-    expect(result.current.sections).toHaveLength(6);
+    expect(result.current.sections).toHaveLength(4);
     view.unmount();
     expect(result.current.sections).toHaveLength(0);
   });

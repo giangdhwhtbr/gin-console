@@ -74,17 +74,9 @@ const milestoneList = {
   days_per_point: { value: 1.4, measured_epics: 3, assumed: false },
 };
 
-const stage = { critical: 0, important: 1, minor: 2, suggestion: 3 };
 const report = {
   generated_at: '2026-11-12T10:00:00Z', project: 'example', days: 30, sprint: null,
-  totals: { tokens: 51136800, cost: 12.34, closed: 4, tokens_per_bead: 12784200, cache_ratio: 0.9, rework_rate: 0.25 },
-  usage: {
-    members: [{ member: LONG_MEMBER, closed: 4, tokens: 51136800, cost: 12.34, tokens_per_bead: 12784200, cache_ratio: 0.9, stages: { implement: 40000000, review: 11136800 } }],
-    epics: [{ project: 'example', id: LONG_ID, title: LONG_TITLE, status: 'open', tokens: 1000, cost: 1, children: 2, closed_children: 1, budget: { budget_usd: 5, cost: 6, status: 'over' } }],
-    beads: [{ project: 'example', id: 'ex-e3.1', title: LONG_TITLE, issue_type: 'task', assignee: LONG_MEMBER, tokens: 500, cost: 0.5 }],
-    stages: [{ stage: 'implement', tokens: 40000000, cost: 10 }, { stage: 'review', tokens: 11136800, cost: 2.34 }],
-    models: [{ model: 'opus', role: 'developer', input: 1, output: 2, cache_read: 3, cache_write: 4, tokens: 10, cost: 1 }],
-  },
+  totals: { closed: 4, rework_rate: 0.25 },
   delivery: {
     weeks: [{ week: '2026-W44', counts: { task: 3, bug: 1, epic: 1 } }, { week: '2026-W45', counts: { task: 5, feature: 2 } }],
     by_type: [{ key: 'task', cycle: { n: 5, median: 1.5, p85: 3 }, lead: { n: 5, median: 3, p85: 6 } }],
@@ -93,22 +85,15 @@ const report = {
     estimates: [{ project: 'example', id: 'ex-e2', title: LONG_TITLE, estimate_days: 9, points: 13, actual_days: 8, days_per_point: 0.6 }],
   },
   quality: {
-    members: [{ key: LONG_MEMBER, project: null, title: null, beads: 4, reopens: 1, bugs: 1, review_cycles: 3, rejections: 1, waivers: 0, findings: stage, rework_rate: 0.25 }],
-    epics: [{ key: LONG_ID, project: 'example', title: LONG_TITLE, beads: 4, reopens: 1, bugs: 1, review_cycles: 3, rejections: 1, waivers: 1, findings: stage, rework_rate: 0.5 }],
-    points: [{ project: 'example', id: 'ex-e3.1', title: LONG_TITLE, tokens: 500, rework: 1 }, { project: 'example', id: 'ex-e2.1', title: 'Tune ranking weights', tokens: 90000, rework: 3 }],
-  },
-  coverage: {
-    not_collected: [{ project: 'example', id: 'ex-e3.2', title: LONG_TITLE, detail: 'no session found' }],
-    invalid: [{ project: 'example', id: 'ex-e2.2', title: 'Tune ranking weights', detail: 'bad stamp' }],
-    unpriced: ['mystery-model-2'], unassigned_share: 0.2,
-    sources: [{ project: 'example', id: 'ex-e2.1', title: 'Tune ranking weights', sources: { claude: 'ok' }, skipped_lines: 2 }],
+    members: [{ member: LONG_MEMBER, closed: 4, reopens: 1, bugs: 1, rework_rate: 0.25 }],
+    epics: [{ project: 'example', id: LONG_ID, title: LONG_TITLE, closed: 4, reopens: 1, bugs: 1, rework_rate: 0.5 }],
   },
   errors: [],
 };
 const figures = { scope: 4, closed: 1, in_progress: 1, open: 2, blocked: 1, unclaimed: 1, done: 0.25, throughput: 1, cycle_median: 1.5, oldest_in_progress: 4, on_time: 1, rework_rate: 0.1, reopens: 1, bugs: 1 };
 const tb = (id: string, o: object) => ({
   id, title: LONG_TITLE, issue_type: 'task', status: 'open', bucket: 'open', assignee: LONG_MEMBER, priority: 2, created_at: '2026-11-02T09:00:00Z',
-  epic: { id: LONG_ID, title: LONG_TITLE }, started_at: null, closed_at: null, cycle_days: null, age_days: null, late_days: null, rework: null, ...o,
+  epic: { id: LONG_ID, title: LONG_TITLE }, started_at: null, closed_at: null, cycle_days: null, age_days: null, late_days: null, rework: 0, ...o,
 });
 const team = {
   generated_at: '2026-11-12T10:00:00Z', project: 'example', today: TODAY,
@@ -218,8 +203,7 @@ const groups: Record<string, Visit[]> = {
     { name: 'milestone retro', url: '/milestones/example/ex-m1?tab=retro', ready: text('Went well') },
   ],
   'reports team and delivery': [report_('team'), report_('delivery')],
-  'reports velocity and usage': [report_('velocity'), report_('usage')],
-  'reports quality and coverage': [report_('quality'), report_('coverage')],
+  'reports velocity and quality': [report_('velocity'), report_('quality')],
 };
 
 const show = (findings: Finding[]) => findings.map((f) => `${f.kind}: "${f.text}"${f.other ? ` x "${f.other}"` : ''}\n    ${f.selector}\n    ${f.detail}`).join('\n');

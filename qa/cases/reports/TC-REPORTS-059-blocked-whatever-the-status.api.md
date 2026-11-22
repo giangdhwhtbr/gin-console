@@ -1,6 +1,6 @@
 # TC-REPORTS-059: Blocked whatever the status
 
-- **REQ:** REQ-REPORTS-010@4bd4f1af
+- **REQ:** REQ-REPORTS-010@5a79bc07
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-35-00-api

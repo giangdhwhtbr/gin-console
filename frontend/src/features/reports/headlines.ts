@@ -2,18 +2,13 @@ import { lateOf } from "@/features/milestones/late";
 import { formatDate } from "@/lib/dates";
 import type { DaysPerPoint } from "@/features/milestones/api";
 import { oneDecimal } from "@/features/milestones/format";
-import type { QualityRow, Report } from "./api";
+import type { Report } from "./api";
 import type { ReportTab } from "./filters";
-import { formatCost, formatDays, formatPercent, formatTokens } from "./format";
+import { formatDays, formatPercent } from "./format";
 import { lateDays } from "./team/format";
 import { selectedMilestone, type TeamReport } from "./teamApi";
 
 export type Headline = { text: string; warn: boolean };
-
-export function gapCount(report: Report): number {
-  const c = report.coverage;
-  return c.not_collected.length + c.invalid.length + c.unpriced.length + c.sources.length + report.errors.length;
-}
 
 /** `finish` is the forecast of the selected milestone from the Milestones list, `null` while that has not loaded. */
 export function teamHeadline(report: TeamReport, finish: string | null): Headline {
@@ -38,18 +33,14 @@ export function velocityHeadline(daysPerPoint: DaysPerPoint | null): Headline | 
 
 export function headlines(report: Report): Record<Exclude<ReportTab, "team" | "velocity">, Headline> {
   const { totals } = report;
-  const gaps = gapCount(report);
   return {
     delivery: { text: `${totals.closed} beads closed`, warn: false },
-    usage: { text: `${formatTokens(totals.tokens)} tokens, ${formatCost(totals.cost)}`, warn: false },
     quality: { text: `${formatPercent(totals.rework_rate)} rework`, warn: false },
-    coverage: { text: gaps === 1 ? "1 gap" : `${gaps} gaps`, warn: gaps > 0 },
   };
 }
 
 export function figures(tab: ReportTab, report: Report): [string, string][] {
-  const { totals, delivery, quality } = report;
-  const sum = (pick: (r: QualityRow) => number) => quality.members.reduce((n, r) => n + pick(r), 0);
+  const { totals, delivery } = report;
   switch (tab) {
     case "team":
       return [];
@@ -61,23 +52,7 @@ export function figures(tab: ReportTab, report: Report): [string, string][] {
       ];
     case "velocity":
       return [];
-    case "usage":
-      return [
-        ["Tokens", formatTokens(totals.tokens)],
-        ["Estimated cost", formatCost(totals.cost)],
-        ["Tokens per closed bead", totals.tokens_per_bead === null ? "—" : formatTokens(totals.tokens_per_bead)],
-        ["Cache reads", formatPercent(totals.cache_ratio)],
-      ];
-    case "quality": {
-      const beads = sum((r) => r.beads);
-      return [
-        ["Rework rate", formatPercent(totals.rework_rate)],
-        ["Reopens", String(sum((r) => r.reopens))],
-        ["Bugs found later", String(sum((r) => r.bugs))],
-        ["Review cycles per bead", beads === 0 ? "—" : (sum((r) => r.review_cycles) / beads).toFixed(1)],
-      ];
-    }
-    case "coverage":
+    case "quality":
       return [];
   }
 }

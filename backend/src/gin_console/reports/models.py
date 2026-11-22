@@ -1,62 +1,9 @@
-"""The report of GET /api/reports and the parsed `ai_usage` it is built from."""
+"""The report of GET /api/reports and the beads it is built from."""
 
 from datetime import date, datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
-
-
-class Tokens(BaseModel):
-    input: int = 0
-    output: int = 0
-    cache_read: int = 0
-    cache_write: int = 0
-    cost: float | None = None
-
-    @property
-    def total(self) -> int:
-        return self.input + self.output + self.cache_read + self.cache_write
-
-
-class StageUsage(BaseModel):
-    tokens: int = 0
-    cost: float | None = None
-
-
-class Findings(BaseModel):
-    critical: int = 0
-    important: int = 0
-    minor: int = 0
-    suggestion: int = 0
-
-
-class Quality(BaseModel):
-    reopens: int = 0
-    bugs: int = 0
-    review_cycles: int = 0
-    rejections: int = 0
-    waivers: int = 0
-    findings: Findings = Field(default_factory=Findings)
-
-
-class Budget(BaseModel):
-    budget_usd: float
-    cost: float | None = None
-    status: str
-
-
-class AiUsage(BaseModel):
-    """`metadata.ai_usage` version 1, as gin-workflow `usage collect` writes it."""
-
-    version: int
-    models: dict[str, Tokens] = Field(default_factory=dict)
-    roles: dict[str, dict[str, Tokens]] = Field(default_factory=dict)
-    stages: dict[str, StageUsage] = Field(default_factory=dict)
-    quality: Quality = Field(default_factory=Quality)
-    unpriced: list[str] = Field(default_factory=list)
-    sources: dict[str, str] = Field(default_factory=dict)
-    skipped_lines: int = 0
-    budget: Budget | None = None
 
 
 class ReportBead(BaseModel):
@@ -79,78 +26,13 @@ class ReportBead(BaseModel):
     start: str | None = None  # milestone rows only: metadata.start as written
     end: str | None = None
     kickoff: str | None = None
-    usage: AiUsage | None = None
-    usage_problem: str | None = (
-        None  # "unreadable" or "version N"; None when usage is fine or absent
-    )
+    reopens: int = 0
+    bugs: int = 0
 
 
 class Totals(BaseModel):
-    tokens: int
-    cost: float | None
     closed: int
-    tokens_per_bead: float | None
-    cache_ratio: float | None
     rework_rate: float | None
-
-
-class MemberUsage(BaseModel):
-    member: str
-    closed: int
-    tokens: int
-    cost: float | None
-    tokens_per_bead: float | None
-    cache_ratio: float | None
-    stages: dict[str, int]
-
-
-class EpicUsage(BaseModel):
-    project: str
-    id: str
-    title: str
-    status: str
-    tokens: int
-    cost: float | None
-    children: int
-    closed_children: int
-    prep_children: int = 0
-    closed_prep_children: int = 0
-    budget: Budget | None
-
-
-class BeadUsage(BaseModel):
-    project: str
-    id: str
-    title: str
-    issue_type: str
-    assignee: str | None
-    tokens: int
-    cost: float | None
-
-
-class StageRow(BaseModel):
-    stage: str
-    tokens: int
-    cost: float | None
-
-
-class ModelRow(BaseModel):
-    model: str
-    role: str
-    input: int
-    output: int
-    cache_read: int
-    cache_write: int
-    tokens: int
-    cost: float | None
-
-
-class UsageSection(BaseModel):
-    members: list[MemberUsage]
-    epics: list[EpicUsage]
-    beads: list[BeadUsage]
-    stages: list[StageRow]
-    models: list[ModelRow]
 
 
 class Stat(BaseModel):
@@ -189,54 +71,26 @@ class DeliverySection(BaseModel):
 
 
 class QualityRow(BaseModel):
-    key: str
-    project: str | None
-    title: str | None
-    beads: int
+    member: str
+    closed: int
     reopens: int
     bugs: int
-    review_cycles: int
-    rejections: int
-    waivers: int
-    findings: Findings
     rework_rate: float | None
 
 
-class Point(BaseModel):
+class EpicQuality(BaseModel):
     project: str
     id: str
     title: str
-    tokens: int
-    rework: int
+    closed: int
+    reopens: int
+    bugs: int
+    rework_rate: float | None
 
 
 class QualitySection(BaseModel):
     members: list[QualityRow]
-    epics: list[QualityRow]
-    points: list[Point]
-
-
-class CoverageBead(BaseModel):
-    project: str
-    id: str
-    title: str
-    detail: str
-
-
-class SourceIssue(BaseModel):
-    project: str
-    id: str
-    title: str
-    sources: dict[str, str]
-    skipped_lines: int
-
-
-class Coverage(BaseModel):
-    not_collected: list[CoverageBead]
-    invalid: list[CoverageBead]
-    unpriced: list[str]
-    unassigned_share: float | None
-    sources: list[SourceIssue]
+    epics: list[EpicQuality]
 
 
 class ProjectError(BaseModel):
@@ -250,10 +104,8 @@ class Report(BaseModel):
     days: int
     sprint: str | None
     totals: Totals
-    usage: UsageSection
     delivery: DeliverySection
     quality: QualitySection
-    coverage: Coverage
     errors: list[ProjectError]
 
 
@@ -291,7 +143,7 @@ class TeamBead(BaseModel):
     cycle_days: float | None
     age_days: float | None  # in_progress only
     late_days: int | None  # closed only
-    rework: int | None  # own reopens + bugs; None without readable ai_usage
+    rework: int  # reopens + bugs found later; 0 when none
 
 
 class TeamFigures(BaseModel):

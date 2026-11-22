@@ -1,16 +1,14 @@
-"""Beads of one project for reports, from its `.beads/issues.jsonl` snapshot; parses
-`metadata.ai_usage`."""
+"""Beads of one project for reports, from its `.beads/issues.jsonl` snapshot."""
 
-import json
-from typing import Any
+from collections.abc import Mapping
 
 from pydantic import ValidationError
 
-from gin_console.beads.definitions import is_blocked
+from gin_console.beads.definitions import bugs_found, is_blocked
 from gin_console.beads.kinds import points_of
 from gin_console.beads.lanes import is_merge_gate
 from gin_console.beads.snapshot import Snapshot
-from gin_console.reports.models import AiUsage, ReportBead
+from gin_console.reports.models import ReportBead
 
 _KEYS = (
     "id",
@@ -29,32 +27,12 @@ _KEYS = (
 )
 
 
-def parse_usage(metadata: Any) -> tuple[AiUsage | None, str | None]:
-    """(usage, None) when readable; (None, None) when absent; (None, problem) otherwise."""
-    raw = metadata.get("ai_usage") if isinstance(metadata, dict) else None
-    if raw is None:
-        return None, None
-    if isinstance(raw, str):
-        try:
-            raw = json.loads(raw)
-        except json.JSONDecodeError:
-            return None, "unreadable"
-    if not isinstance(raw, dict):
-        return None, "unreadable"
-    if raw.get("version") != 1:
-        return None, f"version {raw.get('version')}"
-    try:
-        return AiUsage.model_validate(raw), None
-    except ValidationError:
-        return None, "unreadable"
-
-
-def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
+def read_beads(snapshot: Snapshot, project: str, reopens: Mapping[str, int]) -> list[ReportBead]:
     beads: list[ReportBead] = []
+    bugs = bugs_found(snapshot)
     for ident, raw in snapshot.rows.items():
         if is_merge_gate(raw):
             continue  # a placeholder, not work (REQ-BEADS-019)
-        usage, problem = parse_usage(raw.get("metadata"))
         fields = {key: raw[key] for key in _KEYS if raw.get(key) is not None}
         metadata = raw.get("metadata")
         if raw.get("issue_type") == "milestone" and isinstance(metadata, dict):
@@ -69,7 +47,12 @@ def read_beads(snapshot: Snapshot, project: str) -> list[ReportBead]:
         try:
             beads.append(
                 ReportBead.model_validate(
-                    {**fields, "project": project, "usage": usage, "usage_problem": problem}
+                    {
+                        **fields,
+                        "project": project,
+                        "reopens": reopens.get(ident, 0),
+                        "bugs": bugs.get(ident, 0),
+                    }
                 )
             )
         except ValidationError:
