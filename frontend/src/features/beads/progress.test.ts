@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bead } from "./beadFixtures";
-import { countsOf, prepLabel, prepWords, progressOf } from "./progress";
+import { countsOf, prepLabel, progressOf } from "./progress";
 
 // REQ-UI-130
 describe("progress", () => {
@@ -10,9 +10,8 @@ describe("progress", () => {
     expect(progressOf(e)).toEqual({ done: 3, total: 5, prepDone: 1, prepTotal: 3, counts: { done: 3, inProgress: 0, blocked: 0, ready: 2, deferred: 0 } });
   });
 
-  it("REQ-UI-130 prepLabel is x/y and prepWords says x of y done", () => {
+  it("REQ-UI-130 prepLabel is x/y", () => {
     expect(prepLabel(progressOf(e))).toBe("Prep 1/3");
-    expect(prepWords(progressOf(e))).toBe("Prep 1 of 3 done");
   });
 
   it("REQ-UI-130 progressOf takes the states of the child counts when the API sends them", () => {

@@ -67,8 +67,10 @@ describe("MilestonesPage", () => {
     expect(within(beta).getByText("Active")).toBeInTheDocument();
     expect(beta).toHaveTextContent("Kicks off 2 Nov");
     expect(beta).toHaveTextContent("2 Nov – 18 Dec");
-    expect(beta).toHaveTextContent("2 of 6");
+    // REQ-MILESTONE-UI-001: the epics as a strand, the warnings after a dashed glyph
+    expect(within(beta).getByRole("img", { name: "2 done, 4 ready of 6 epics" })).toHaveTextContent("2/6");
     expect(beta).toHaveTextContent("2 warnings");
+    expect(beta.querySelector('svg[data-glyph="deferred"]')).not.toBeNull();
     const hardening = await rowOf("Hardening");
     expect(within(hardening).getByText("Planned")).toBeInTheDocument();
     expect(hardening).toHaveTextContent("None");
@@ -161,8 +163,8 @@ describe("MilestonesPage", () => {
     );
     const hardening = await rowOf("Hardening");
     expect(hardening).toHaveTextContent("dependency cycle: A -> B -> A");
-    expect(within(hardening).queryByRole("progressbar")).toBeNull();
-    expect(within(await rowOf("Beta")).getByRole("progressbar")).toBeInTheDocument();
+    expect(within(hardening).queryByRole("img", { name: /epics$/ })).toBeNull();
+    expect(within(await rowOf("Beta")).getByRole("img", { name: /epics$/ })).toBeInTheDocument();
   });
 
   it("REQ-MILESTONE-UI-001 an empty project says how to create a milestone", async () => {

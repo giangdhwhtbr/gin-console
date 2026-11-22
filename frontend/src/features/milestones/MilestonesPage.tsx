@@ -1,10 +1,11 @@
-import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/app/Link";
 import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
+import { StateGlyph } from "@/components/StateGlyph";
+import { Strand, toStrandCounts } from "@/components/Strand";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS, type DefinitionKey } from "@/lib/definitions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -123,7 +124,6 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
   const date = (iso: string) => formatDate(iso, today);
   const warnings = m.warnings ?? 0;
   const sayDo = m.velocity?.say_do ?? null;
-  const share = m.epics.total === 0 ? 0 : (100 * m.epics.closed) / m.epics.total;
   return (
     <li
       className={cn(
@@ -156,22 +156,12 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
         <span className="col-span-2 text-sm text-destructive">{m.error}</span>
       ) : (
         <>
-          <span className="flex items-center gap-2 text-sm tabular-nums">
-            <span
-              role="progressbar"
-              aria-label={`Epics closed in ${m.title}`}
-              aria-valuemin={0}
-              aria-valuemax={m.epics.total}
-              aria-valuenow={m.epics.closed}
-              className="h-1.5 w-16 overflow-hidden rounded bg-muted"
-            >
-              <span className="block h-full bg-state-done" style={{ width: `${share}%` }} />
-            </span>
-            {`${m.epics.closed} of ${m.epics.total}`}
+          <span className="flex items-center text-sm">
+            <Strand counts={toStrandCounts(m.epics)} noun="epics" />
           </span>
           {warnings > 0 ? (
             <span className="inline-flex items-center gap-1 text-sm text-state-blocked">
-              <TriangleAlert aria-hidden className="size-3.5" />
+              <StateGlyph state="deferred" color="var(--state-blocked)" size={10} />
               {plural(warnings, "warning")}
             </span>
           ) : (

@@ -23,6 +23,3 @@ export function countsOf(beads: readonly BeadSummary[]): StrandCounts {
 
 /** The Prep count of the Beads views and the bead page. */
 export const prepLabel = (p: Progress): string => `Prep ${p.prepDone}/${p.prepTotal}`;
-
-/** The Prep count of the PM views. */
-export const prepWords = (p: Progress): string => `Prep ${p.prepDone} of ${p.prepTotal} done`;

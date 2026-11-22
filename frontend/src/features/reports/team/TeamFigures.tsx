@@ -1,4 +1,6 @@
 import { Fragment } from "react";
+import { StateGlyph } from "@/components/StateGlyph";
+import { Strand } from "@/components/Strand";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS, countHint } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
@@ -66,17 +68,14 @@ function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = fal
   );
 }
 
-const STRIPES = "repeating-linear-gradient(45deg, var(--color-state-blocked) 0 3px, transparent 3px 6px)";
-
 function ScopeBar({ figures, member }: { figures: Figures; member: string | null }) {
-  const open = figures.open - figures.blocked;
-  const segments = [
-    { name: "Closed", n: figures.closed, className: "bg-state-ready", style: undefined },
-    { name: "In progress", n: figures.in_progress, className: "bg-state-progress", style: undefined },
-    { name: "Open", n: open, className: "bg-muted-foreground/40", style: undefined },
-    { name: "Blocked", n: figures.blocked, className: "border border-state-blocked", style: { background: STRIPES } },
-  ];
-  const label = `${figures.closed} closed, ${figures.in_progress} in progress, ${open} open, ${figures.blocked} blocked`;
+  const counts = { done: figures.closed, inProgress: figures.in_progress, blocked: figures.blocked, ready: figures.open - figures.blocked, deferred: 0 };
+  const legend = [
+    { name: "Done", state: "done", n: counts.done },
+    { name: "In progress", state: "in_progress", n: counts.inProgress },
+    { name: "Ready", state: "ready", n: counts.ready },
+    { name: "Blocked", state: "blocked", n: counts.blocked },
+  ] as const;
   return (
     <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -85,15 +84,11 @@ function ScopeBar({ figures, member }: { figures: Figures; member: string | null
           {figures.scope} beads {member === null ? "under the milestone's epics" : `assigned to ${member}`}
         </span>
       </div>
-      <div role="img" aria-label={label} className="flex h-3 overflow-hidden rounded bg-muted">
-        {segments.map((s) => (
-          <span key={s.name} className={s.className} style={{ ...s.style, width: `${figures.scope === 0 ? 0 : (s.n / figures.scope) * 100}%` }} />
-        ))}
-      </div>
+      <Strand counts={counts} noun="beads" />
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-        {segments.map((s) => (
+        {legend.map((s) => (
           <li key={s.name} className="flex items-center gap-1">
-            <span aria-hidden className={cn("size-2.5 rounded-full", s.className)} style={s.style} />
+            <StateGlyph state={s.state} />
             {s.name} <b>{s.n}</b>
           </li>
         ))}
@@ -142,7 +137,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
         className="grid divide-x divide-y rounded border"
         style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}
       >
-        <Cell label="Done" rule={countHint("done", scope)} value={`${figures.closed} / ${figures.scope}`} sub={`${formatPercent(figures.done)} of ${solo ? "assigned" : "scope"}`} />
+        <Cell label="Done" rule={countHint("done", scope)} value={`${figures.closed} of ${figures.scope}`} sub={`${formatPercent(figures.done)} of ${solo ? "assigned" : "scope"}`} />
         <Cell
           label="In progress"
           rule={countHint("inProgress", scope)}

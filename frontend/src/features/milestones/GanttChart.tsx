@@ -6,12 +6,13 @@ import type { BeadKind, BeadSummary } from "@/features/beads/api";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS } from "@/lib/definitions";
 import { Badge } from "@/components/ui/badge";
+import { Strand } from "@/components/Strand";
 import { StateGlyph, type GlyphState } from "@/components/StateGlyph";
 import { SizeBadge } from "@/components/SizeBadge";
 import { KindBadge } from "@/features/beads/KindBadge";
 import { LaneChip } from "@/features/beads/LaneChip";
 import { isPrep } from "@/features/beads/prep";
-import { prepWords } from "@/features/beads/progress";
+import { prepLabel } from "@/features/beads/progress";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
 import { formatDate, formatRange } from "@/lib/dates";
@@ -410,12 +411,11 @@ function EpicRow({
   const x1 = endOf(axis, days[days.length - 1]);
   const unestimated = epic.estimate_days === null;
   const counts = epicProgressOf(epicBead);
-  const prep = counts.prepTotal > 0 ? prepWords(counts) : null;
+  const prep = counts.prepTotal > 0 ? prepLabel(counts) : null;
   const left = epic.status === "in_progress" && epic.estimate_days !== null && epic.remaining_days !== null && epic.remaining_days < epic.estimate_days;
   const size = left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate";
   const period = periodOf(epic.planned_start, epic.planned_end, today);
   const tail = tailWidth(x1, stops, axis.width);
-  const closedTracks = `${counts.done} of ${counts.total} done`;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
     <li data-epic={epic.id} data-faded={faded || undefined} onMouseEnter={onHot} onFocus={onHot} className="flex border-b" style={{ height: row.height }}>
@@ -458,9 +458,7 @@ function EpicRow({
             <KindBadge kind={kind} className="max-w-full" />
             <span title={period} className="min-w-0 max-w-full shrink truncate">{period}</span>
             {counts.total > 0 && (
-              <Hint text={DEFINITIONS.progress}>
-                <span className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>
-              </Hint>
+              <Strand counts={counts.counts} noun="tracks" maxWidth={label - 100} className="max-w-full shrink-[4]" />
             )}
             {prep !== null && (
               <Hint text={DEFINITIONS.prep}>

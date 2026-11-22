@@ -65,13 +65,13 @@ describe("GanttChart", () => {
   it("REQ-UI-130 the epic row says 3 of 5 done from the child counts of its bead, not from the loaded children", () => {
     const epicBeads = new Map([["e-a", bead("e-a", { child_counts: { total: 5, closed: 3, prep_total: 0, prep_closed: 0 } })]]);
     render(<GanttChart project="alpha" plan={detail([epicPlan("e-a")])} preview={false} zoom="all" onZoom={vi.fn()} childBeads={new Map([["e-a", [track("e-a.4")]]])} epicBeads={epicBeads} />);
-    expect(epicRow("e-a")).toHaveTextContent("3 of 5 done");
+    expect(epicRow("e-a")).toHaveTextContent("3/5");
   });
 
   it("REQ-MILESTONE-UI-015 tracks and prep counted apart; prep rows carry a Prep chip", async () => {
     drawKids({ "e-a": [track("e-a.1", "closed"), track("e-a.2"), prep("e-a.3", "closed"), prep("e-a.4")] }, { total: 2, closed: 1, prep_total: 2, prep_closed: 1 });
-    expect(epicRow("e-a")).toHaveTextContent("1 of 2 done");
-    expect(epicRow("e-a")).toHaveTextContent("Prep 1 of 2 done");
+    expect(within(epicRow("e-a")).getByRole("img", { name: "1 done, 1 ready of 2 tracks" })).toHaveTextContent("1/2");
+    expect(epicRow("e-a")).toHaveTextContent("Prep 1/2");
     await userEvent.click(screen.getByRole("button", { name: /child beads of e-a/ }));
     const rows = [...document.querySelectorAll<HTMLElement>("[data-child]")];
     expect(rows.map((r) => r.dataset.child)).toEqual(["e-a.1", "e-a.2", "e-a.3", "e-a.4"]);
@@ -81,8 +81,8 @@ describe("GanttChart", () => {
   it("REQ-MILESTONE-UI-015 an epic with only prep tasks: expand button, Prep x/y, no closed count", () => {
     drawKids({ "e-a": [prep("e-a.1", "closed"), prep("e-a.2")] }, { total: 0, closed: 0, prep_total: 2, prep_closed: 1 });
     expect(screen.getByRole("button", { name: /child beads of e-a/ })).toBeInTheDocument();
-    expect(epicRow("e-a")).toHaveTextContent("Prep 1 of 2 done");
-    expect(epicRow("e-a")).not.toHaveTextContent(/(?<!Prep )\d+ of \d+ done/);
+    expect(epicRow("e-a")).toHaveTextContent("Prep 1/2");
+    expect(within(epicRow("e-a")).queryByRole("img", { name: /tracks$/ })).toBeNull();
   });
 
   it("REQ-MILESTONE-UI-003 the epic row shows spec readiness: confirmed, missing, or nothing when unknown", () => {
@@ -237,7 +237,7 @@ describe("GanttChart", () => {
     const meta = labelOf("ex-e3").querySelector<HTMLElement>(":scope > div > span:nth-child(2)");
     expect(meta).toHaveClass("min-w-0", "overflow-hidden", "lg:flex-nowrap");
     const parts = [...(meta?.children ?? [])].map((part) => part.textContent);
-    expect(parts).toEqual(["ex-e3", "8 pt · 11d left", "9 Nov – 23 Nov", "1 of 2 done"]);
+    expect(parts).toEqual(["ex-e3", "8 pt · 11d left", "9 Nov – 23 Nov", "1/2"]);
     expect(meta?.children[1]).toHaveClass("shrink-0");
     expect(epicRow("ex-e3")).not.toHaveTextContent("Spec not approved yet");
     expect(epicRow("ex-e3")).toHaveTextContent("Spec not confirmed");

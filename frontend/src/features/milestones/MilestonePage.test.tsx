@@ -408,7 +408,7 @@ describe("MilestonePage", () => {
   it("REQ-MILESTONE-UI-015 expand an epic to list its children; the others stay collapsed", async () => {
     const fetchMock = openWithBeads(epicBeads);
     const toggle = await screen.findByRole("button", { name: "Show 2 child beads of e-a" });
-    expect(await row("e-a")).toHaveTextContent("1 of 2 done");
+    expect(await row("e-a")).toHaveTextContent("1/2");
     expect(fetchMock.mock.calls.some(([input]) => typeof input === "string" && input.startsWith("/api/beads") && input.includes("closed=1"))).toBe(true);
     expect(within(await row("e-c")).queryByRole("button")).toBeNull();
     expect(await row("e-c")).not.toHaveTextContent("closed");
@@ -522,7 +522,7 @@ describe("MilestonePage Gantt merge gates", () => {
     stubMilestones(() => json(detail([epicPlan("e-1")])), kids);
     render(<MilestonePage project="alpha" id="m-1" />);
     await userEvent.click(await screen.findByRole("button", { name: /child bead of e-1/ }));
-    expect(document.querySelector("[data-epic='e-1']")).toHaveTextContent("0 of 1 done");
+    expect(document.querySelector("[data-epic='e-1']")).toHaveTextContent("0/1");
     const rows = [...document.querySelectorAll<HTMLElement>("[data-child]")];
     expect(rows.map((r) => r.dataset.child)).toEqual(["t-1"]);
     expect(within(rows[0]).getByText("be")).toBeInTheDocument();

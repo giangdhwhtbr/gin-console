@@ -66,8 +66,8 @@ describe("plain labels carry a tooltip", () => {
   });
 
   it.each([
-    ["n of m done", /\d of \d done/, DEFINITIONS.progress],
-    ["Prep n of m done", /Prep \d of \d done/, DEFINITIONS.prep],
+    ["d/t strand", /^\d\/\d$/, DEFINITIONS.progress],
+    ["Prep d/t", /^Prep \d\/\d$/, DEFINITIONS.prep],
     ["Spec approved", /^Spec approved$/, DEFINITIONS.specApproved],
     ["Spec not approved yet", /^Spec not approved yet$/, DEFINITIONS.specApproved],
   ])("REQ-UI-134 Gantt row %s", async (_name, pattern, text) => {

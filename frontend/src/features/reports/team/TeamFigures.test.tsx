@@ -55,7 +55,7 @@ describe("TeamFigures", () => {
 
   it("REQ-REPORTS-013 member figures", () => {
     show({}, active, { ...ann, scope: 11, closed: 6, done: 6 / 11, blocked: 1 });
-    expect(screen.getByText("6 / 11")).toBeInTheDocument();
+    expect(screen.getByText("6 of 11")).toBeInTheDocument();
     expect(screen.getByText("55% of assigned")).toBeInTheDocument();
     expect(line("1 blocked")).toBeInTheDocument();
     expect(screen.getByText("Throughput")).toBeInTheDocument();
@@ -84,10 +84,11 @@ describe("TeamFigures", () => {
 
   it("REQ-REPORTS-013 scope bar", () => {
     show({ scope: 64, closed: 27, in_progress: 10, open: 27, blocked: 3 });
-    const bar = screen.getByRole("img", { name: "27 closed, 10 in progress, 24 open, 3 blocked" });
-    expect(bar.children).toHaveLength(4);
+    const bar = screen.getByRole("img", { name: "27 done, 10 in progress, 3 blocked, 24 ready of 64 beads" });
+    expect(bar).toHaveAttribute("data-strand", "27/64");
     expect(screen.getByText("Scope by status")).toBeInTheDocument();
-    for (const name of ["Closed", "In progress", "Open", "Blocked"]) {
+    expect(screen.getByRole("group", { name: "Key figures" })).toHaveTextContent("27 of 64");
+    for (const name of ["Done", "In progress", "Ready", "Blocked"]) {
       expect(screen.getByText(name, { selector: "li" })).toBeInTheDocument();
     }
   });
@@ -97,8 +98,8 @@ describe("TeamFigures", () => {
     const strip = screen.getByRole("group", { name: "Key figures" });
     expect(strip).toHaveTextContent("2 blocked · 1 unassigned");
     expect(line("2 blocked · 1 unassigned").querySelectorAll("b")).toHaveLength(2);
-    expect(screen.getByText("Done")).toHaveClass("text-muted-foreground");
-    expect(screen.getByText("1 / 4")).toHaveClass("font-semibold");
+    expect(screen.getByText("Done", { selector: ":not(li)" })).toHaveClass("text-muted-foreground");
+    expect(screen.getByText("1 of 4")).toHaveClass("font-semibold");
   });
 
   it("REQ-UI-110 Contrast: the milestone aside is not faded with an opacity class", () => {
