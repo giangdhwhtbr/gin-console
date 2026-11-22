@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-093@d350c545
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** ee149c75
 
 **Preconditions:**
 - The answer for "All projects" has `errors` holding `beta` with an error

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-093@d350c545
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** 63f12cc1
 
 **Preconditions:**
 - The report for 30 days is loading (its answer is delayed)

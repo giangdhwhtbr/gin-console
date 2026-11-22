@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-091@6dedf223
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** 204f1d3c
 
 **Preconditions:**
 - The Quality tab of the Reports page for `alpha`

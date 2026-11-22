@@ -1,14 +1,14 @@
-// TC: TC-UI-152@d66a1583
+// TC: TC-UI-152@a67c91d2
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
 test('TC-UI-152: Hidden tabs are hinted (REQ-UI-095)', async ({ page, ev }) => {
-  // Precondition: project alpha exists; the Quality tab does not fit in a 768 px window.
+  // Precondition: project alpha exists; the Quality tab does not fit in a 360 px window.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubReports(page, { projects: ['alpha'] });
 
-  await ev.step('1. Set the window width to 768 px', async () => {
-    await page.setViewportSize({ width: 768, height: 900 });
+  await ev.step('1. Set the window width to 360 px', async () => {
+    await page.setViewportSize({ width: 360, height: 900 });
   });
 
   await ev.step('2. Open `/reports?project=alpha&tab=team`', async () => {

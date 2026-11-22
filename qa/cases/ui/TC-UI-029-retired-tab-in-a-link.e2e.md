@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-095@2f17c833
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** 278ef853
 
 **Preconditions:**
 - The URL `/reports?project=alpha&tab=coverage`

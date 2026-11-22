@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-091@6dedf223
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** 18675dc6
 
 **Preconditions:**
 - A report with no selected closed bead

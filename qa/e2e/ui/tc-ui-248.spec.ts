@@ -12,7 +12,7 @@ test('TC-UI-248: Narrow window (REQ-UI-129)', async ({ page, ev }) => {
   await ev.step('1. Open `/reports?project=a&tab=delivery`', async () => {
     await page.goto('/reports?project=a&tab=delivery');
     await expect(page.getByRole('tablist', { name: 'Report' })).toBeVisible();
-    await expect(page.getByRole('tab')).toHaveCount(6);
+    await expect(page.getByRole('tab')).toHaveCount(4);
     await expect(mainNav(page).getByRole('list', { name: 'Report sections' })).toHaveCount(0);
   });
 });

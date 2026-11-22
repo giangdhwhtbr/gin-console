@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-129@de1adeec
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-56-47
+- **Checked:** c88f2cf3
 
 **Preconditions:**
 - Project `a` is configured with a report
