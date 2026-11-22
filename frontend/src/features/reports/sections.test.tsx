@@ -33,13 +33,16 @@ describe("report sections", () => {
     expect(screen.queryByText("Estimate and actual")).toBeNull();
   });
 
-  it("REQ-UI-090 estimate table with difference chips", () => {
+  it("REQ-UI-090 estimate difference as text", () => {
     const base = report();
     const est = (id: string, actual: number) => ({ project: "alpha", id, title: id, estimate_days: 5, points: null, actual_days: actual, days_per_point: null });
     render(<DeliverySection delivery={{ ...base.delivery, estimates: [est("e-1", 7), est("e-2", 3)] }} />);
     expect(screen.getByText("Estimate and actual")).toBeTruthy();
     expect(screen.getByText("+2 d")).toHaveClass("text-state-blocked");
     expect(screen.getByText("−2 d")).not.toHaveClass("text-state-blocked");
+    // REQ-UI-140 text, not a chip
+    expect(screen.getByText("+2 d").closest('[data-slot="badge"]')).toBeNull();
+    expect(screen.getByText("−2 d").closest('[data-slot="badge"]')).toBeNull();
   });
 
   it("REQ-UI-090 points row shows points and days per point, and no chip", () => {

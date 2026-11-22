@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { Link } from "@/app/Link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS } from "@/lib/definitions";
@@ -101,7 +100,7 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
                     <TableCell>{e.actual_days}</TableCell>
                     <TableCell>
                       {diff !== null ? (
-                        <Badge variant="outline" className={cn(diff.late && "text-state-blocked")}>{diff.text}</Badge>
+                        <span className={cn("text-sm", diff.late ? "text-state-blocked" : "text-muted-foreground")}>{diff.text}</span>
                       ) : (
                         e.days_per_point !== null && (
                           <Hint text={DEFINITIONS.daysPerPoint}>
