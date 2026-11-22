@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 from fake_export import dep
-from report_beads import closed, row, snap, usage
+from report_beads import closed, row, snap
 
 from gin_console.reports.models import TeamReport
 from gin_console.reports.source import read_beads
@@ -31,9 +31,14 @@ def at(day: str) -> str:
     return f"{day}T12:00:00Z"
 
 
-def team(rows: list[Any], milestone: str | None = None) -> TeamReport:
+def team(
+    rows: list[Any], milestone: str | None = None, reopens: dict[str, int] | None = None
+) -> TeamReport:
     return build_team(
-        read_beads(snap(rows), "alpha", {}), now=NOW, project="alpha", milestone=milestone
+        read_beads(snap(rows), "alpha", reopens or {}),
+        now=NOW,
+        project="alpha",
+        milestone=milestone,
     )
 
 
@@ -223,15 +228,16 @@ def test_reports_009_rework_and_age() -> None:
             "m2",
             "e1",
             [
-                closed("t1", at("2026-11-05"), parent="e1", ai=usage(10, reopens=1, bugs=1)),
+                closed("t1", at("2026-11-05"), parent="e1"),
                 closed("t2", at("2026-11-05"), parent="e1"),
                 row("t3", parent="e1", status="in_progress", started_at=at("2026-11-09")),
+                row("b1", issue_type="bug", dependencies=[dep("b1", "t1", "discovered-from")]),
             ],
         ),
     ]
-    by_id = {b.id: b for b in team(rows).beads}
+    by_id = {b.id: b for b in team(rows, reopens={"t1": 1}).beads}
     assert by_id["t1"].rework == 2
-    assert by_id["t2"].rework is None
+    assert by_id["t2"].rework == 0
     assert by_id["t3"].age_days == 3.0
 
 
@@ -269,15 +275,8 @@ def test_reports_010_closed_milestone() -> None:
 
 # REQ-REPORTS-010
 def test_reports_010_rework_rate() -> None:
-    beads = [
-        closed("a1", at("2026-11-04"), parent="e1", assignee="ann", ai=usage(1, reopens=1)),
-        *[
-            closed(f"a{n}", at("2026-11-04"), parent="e1", assignee="ann", ai=usage(1))
-            for n in (2, 3, 4)
-        ],
-        closed("a5", at("2026-11-04"), parent="e1", assignee="ann"),
-    ]
-    r = team([*standard(), *scoped("m2", "e1", beads)])
+    beads = [closed(f"a{n}", at("2026-11-04"), parent="e1", assignee="ann") for n in (1, 2, 3, 4)]
+    r = team([*standard(), *scoped("m2", "e1", beads)], reopens={"a1": 1})
     ann = next(m for m in r.members if m.member == "ann")
     assert ann.rework_rate == 0.25
     assert ann.reopens == 1

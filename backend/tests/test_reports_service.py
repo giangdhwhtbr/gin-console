@@ -1,10 +1,10 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import pytest
-from report_beads import closed, row, snap, usage
+from fake_export import dep
+from report_beads import closed, row, snap
 
-from gin_console.reports.models import CoverageBead, EstimateRow, Point, Report, Stat
+from gin_console.reports.models import EpicQuality, EstimateRow, QualityRow, Report, Stat
 from gin_console.reports.service import build_report
 from gin_console.reports.source import read_beads
 
@@ -15,103 +15,15 @@ def ago(days: float) -> str:
     return (NOW - timedelta(days=days)).isoformat().replace("+00:00", "Z")
 
 
-def report(rows: list[Any], *, days: int = 30, sprint: str | None = None) -> Report:
-    beads = read_beads(snap(rows), "alpha", {})
+def report(
+    rows: list[Any],
+    *,
+    days: int = 30,
+    sprint: str | None = None,
+    reopens: dict[str, int] | None = None,
+) -> Report:
+    beads = read_beads(snap(rows), "alpha", reopens or {})
     return build_report(beads, now=NOW, project="alpha", days=days, sprint=sprint, errors=[])
-
-
-# REQ-REPORTS-002
-def test_reports_002_epic_with_collected_children() -> None:
-    r = report(
-        [
-            closed(
-                "e-1", ago(2), issue_type="epic", ai=usage(stages={"discuss": 1000, "execute": 600})
-            ),
-            closed("e-1.1", ago(2), parent="e-1", ai=usage(600)),
-        ]
-    )
-    assert {s.stage: s.tokens for s in r.usage.stages} == {"discuss": 1000, "execute": 600}
-    assert r.totals.tokens == 1600
-    [epic_row] = [b for b in r.usage.beads if b.id == "e-1"]
-    assert epic_row.tokens == 1000
-
-
-def test_reports_002_child_larger_than_its_share_is_clamped() -> None:
-    r = report(
-        [
-            closed("e-1", ago(2), issue_type="epic", ai=usage(500)),
-            closed("e-1.1", ago(2), parent="e-1", ai=usage(700)),
-        ]
-    )
-    [epic_row] = [b for b in r.usage.beads if b.id == "e-1"]
-    assert epic_row.tokens == 0
-    assert r.totals.tokens == 700
-
-
-def test_reports_002_own_shares_sum_to_the_epic_total() -> None:
-    r = report(
-        [
-            closed(
-                "e-1",
-                ago(2),
-                issue_type="epic",
-                ai=usage(stages={"discuss": 900, "execute": 450, "review": 150}),
-            ),
-            closed("e-1.1", ago(2), parent="e-1", ai=usage(200)),
-            closed("e-1.2", ago(2), parent="e-1", ai=usage(stages={"execute": 250, "review": 150})),
-        ]
-    )
-    assert r.totals.tokens == 1500
-    assert {s.stage: s.tokens for s in r.usage.stages} == {
-        "discuss": 900,
-        "execute": 450,
-        "review": 150,
-    }
-
-
-def test_reports_002_epic_cost_roles_and_quality_are_reduced_by_its_children() -> None:
-    r = report(
-        [
-            closed(
-                "e-1",
-                ago(2),
-                issue_type="epic",
-                assignee="ann",
-                ai=usage(100, cost=1.0, reopens=2),
-            ),
-            closed(
-                "e-1.1", ago(2), parent="e-1", assignee="bob", ai=usage(40, cost=0.4, reopens=1)
-            ),
-        ]
-    )
-    own = {b.id: b for b in r.usage.beads}
-    assert own["e-1"].tokens == 60 and own["e-1"].cost == pytest.approx(0.6)
-    assert own["e-1.1"].cost == pytest.approx(0.4)
-    [model_row] = r.usage.models
-    assert model_row.tokens == 100 and model_row.cost == pytest.approx(1.0)
-    ann, bob = r.quality.members
-    assert (ann.key, ann.reopens, bob.key, bob.reopens) == ("ann", 1, "bob", 1)
-    [epic_quality] = r.quality.epics
-    assert epic_quality.reopens == 2
-
-
-def test_reports_002_unpriced_model_has_no_cost() -> None:
-    unpriced = report([closed("a-1", ago(2), ai=usage(300, cost=None))])
-    assert unpriced.totals.tokens == 300 and unpriced.totals.cost is None
-    priced = report([closed("a-1", ago(2), ai=usage(300, cost=0.5))])
-    assert priced.totals.cost == 0.5
-
-
-def test_reports_002_only_direct_children_are_subtracted() -> None:
-    r = report(
-        [
-            closed("e-1", ago(2), issue_type="epic", ai=usage(1000)),
-            closed("t-1", ago(2), parent="e-1", ai=usage(400)),
-            closed("t-1.1", ago(2), parent="t-1", ai=usage(100)),
-        ]
-    )
-    own = {b.id: b.tokens for b in r.usage.beads}
-    assert own == {"e-1": 600, "t-1": 400, "t-1.1": 100}
 
 
 # REQ-REPORTS-001 (service part)
@@ -124,14 +36,13 @@ def test_reports_001_sprint_takes_the_labelled_epic_tree_whatever_the_date() -> 
     r = report(
         [
             row("a-1", issue_type="epic", labels=["sprint:s7"]),
-            closed("a-1.1", ago(50), parent="a-1", ai=usage(100)),
+            closed("a-1.1", ago(50), parent="a-1"),
             row("a-2", issue_type="epic"),
-            closed("a-2.1", ago(1), parent="a-2", ai=usage(100)),
+            closed("a-2.1", ago(1), parent="a-2"),
         ],
         sprint="s7",
     )
     assert r.totals.closed == 1
-    assert [b.id for b in r.usage.beads] == ["a-1.1"]
 
 
 # REQ-REPORTS-001
@@ -156,92 +67,6 @@ def test_reports_001_merge_gates_left_out() -> None:
         sprint="s7",
     )
     assert sprint.totals.closed == 1
-
-
-# REQ-REPORTS-003
-def test_reports_003_member_rows() -> None:
-    r = report(
-        [
-            closed("a-1", ago(2), assignee="ann", ai=usage(100)),
-            closed("a-2", ago(2), assignee="ann", ai=usage(300)),
-            closed("a-3", ago(2), ai=usage(50)),
-        ]
-    )
-    ann, nobody = r.usage.members
-    assert (ann.member, ann.closed, ann.tokens, ann.tokens_per_bead) == ("ann", 2, 400, 200.0)
-    assert (nobody.member, nobody.closed, nobody.tokens) == ("Unassigned", 1, 50)
-
-
-def test_reports_003_open_epic_with_closed_children() -> None:
-    r = report(
-        [
-            row("a-1", issue_type="epic"),
-            closed("a-1.1", ago(2), parent="a-1", ai=usage(200)),
-            closed("a-1.2", ago(2), parent="a-1", ai=usage(200)),
-        ]
-    )
-    [epic] = r.usage.epics
-    assert (epic.id, epic.tokens, epic.children, epic.closed_children, epic.budget) == (
-        "a-1",
-        400,
-        2,
-        2,
-        None,
-    )
-
-
-def test_reports_003_stage_order_and_cache_ratio() -> None:
-    ai = usage(stages={"zeta": 1, "verify": 1, "quick": 1, "alpha": 1, "discuss": 1})
-    ai["models"]["m"] = {
-        "input": 10,
-        "output": 5,
-        "cache_read": 80,
-        "cache_write": 10,
-        "cost": None,
-    }
-    r = report([closed("a-1", ago(2), assignee="ann", ai=ai)])
-    assert [s.stage for s in r.usage.stages] == ["discuss", "verify", "quick", "alpha", "zeta"]
-    assert r.usage.members[0].cache_ratio == 0.8
-
-
-def test_reports_003_top_ten_epics_and_beads() -> None:
-    r = report(
-        [closed(f"e-{n}", ago(2), issue_type="epic", ai=usage(100 * (n + 1))) for n in range(12)]
-    )
-    assert len(r.usage.epics) == 10 and len(r.usage.beads) == 10
-    assert r.usage.epics[0].id == "e-11" and r.usage.beads[0].tokens == 1200
-
-
-def test_reports_003_nested_epics_roll_up() -> None:
-    r = report(
-        [
-            closed("e-1", ago(2), issue_type="epic", ai=usage(300)),
-            closed("e-2", ago(2), issue_type="epic", parent="e-1", ai=usage(200)),
-            closed("t-1", ago(2), parent="e-2", ai=usage(100)),
-        ]
-    )
-    assert {e.id: e.tokens for e in r.usage.epics} == {"e-1": 300, "e-2": 200}
-    assert {q.key: q.beads for q in r.quality.epics} == {"e-1": 3, "e-2": 2}
-
-
-def test_reports_003_total_cache_ratio() -> None:
-    a = usage(100)
-    a["models"]["m"] = {
-        "input": 100,
-        "output": 0,
-        "cache_read": 300,
-        "cache_write": 0,
-        "cost": None,
-    }
-    b = usage(100)
-    b["models"]["m"] = {"input": 100, "output": 0, "cache_read": 0, "cache_write": 0, "cost": None}
-    r = report([closed("a-1", ago(2), ai=a), closed("a-2", ago(2), ai=b)])
-    assert r.totals.cache_ratio == 0.6
-
-
-def test_reports_003_total_cache_ratio_absent_without_reads() -> None:
-    r = report([closed("a-1", ago(2), ai=usage(100))])
-    assert r.totals.cache_ratio is None
 
 
 # REQ-REPORTS-004
@@ -368,86 +193,99 @@ def test_reports_004_pointed_epic_gives_days_per_point() -> None:
 
 
 # REQ-REPORTS-005
-def test_reports_005_rework_rate_and_findings() -> None:
-    rows = [closed(f"a-{n}", ago(2), assignee="ann", ai=usage(100)) for n in range(3)]
-    rows.append(
-        closed("a-9", ago(2), assignee="ann", ai=usage(100, reopens=1, findings={"critical": 2}))
-    )
+def test_reports_005_rework_rate() -> None:
+    rows = [closed(f"a-{n}", ago(2), assignee="ann") for n in range(1, 5)]
+    r = report(rows, reopens={"a-1": 1})
+    assert r.quality.members == [
+        QualityRow(member="ann", closed=4, reopens=1, bugs=0, rework_rate=0.25)
+    ]
+    assert r.totals.rework_rate == 0.25
+
+
+def test_reports_005_bugs_found_later_count_as_rework() -> None:
+    rows = [
+        closed("a-1", ago(2), assignee="ann"),
+        closed("a-2", ago(2), assignee="ann"),
+        row("a-9", issue_type="bug", dependencies=[dep("a-9", "a-1", "discovered-from")]),
+    ]
     [ann] = report(rows).quality.members
-    assert ann.reopens == 1 and ann.rework_rate == 0.25
-    assert ann.findings.critical == 2 and ann.beads == 4
+    assert (ann.reopens, ann.bugs, ann.rework_rate) == (0, 1, 0.5)
 
 
-def test_reports_005_points_hold_non_epic_beads() -> None:
-    r = report(
-        [
-            closed("t-1", ago(2), ai=usage(900, reopens=1, rejections=2)),
-            closed("e-1", ago(2), issue_type="epic", ai=usage(100)),
-        ]
-    )
-    assert r.quality.points == [
-        Point(project="alpha", id="t-1", title="Title of t-1", tokens=900, rework=3)
+def test_reports_005_rework_rate_absent_when_nothing_closed() -> None:
+    r = report([row("a-1")])
+    assert r.totals.rework_rate is None
+    assert r.quality.members == [] and r.quality.epics == []
+
+
+# REQ-REPORTS-005
+def test_reports_005_epic_rows() -> None:
+    rows = [
+        row("e-1", issue_type="epic"),
+        closed("t-1", ago(2), parent="e-1"),
+        closed("t-2", ago(2), parent="e-1"),
+        row("e-2", issue_type="epic"),
+        closed("t-3", ago(2), parent="e-2"),
+        closed("t-4", ago(2), parent="e-2"),
     ]
-
-
-# REQ-REPORTS-006
-def test_reports_006_not_collected() -> None:
-    r = report([closed("a-9", ago(2))])
-    assert r.coverage.not_collected == [
-        CoverageBead(
+    assert report(rows, reopens={"t-1": 1}).quality.epics == [
+        EpicQuality(
             project="alpha",
-            id="a-9",
-            title="Title of a-9",
-            detail="gin usage collect --bead a-9",
-        )
+            id="e-1",
+            title="Title of e-1",
+            closed=2,
+            reopens=1,
+            bugs=0,
+            rework_rate=0.5,
+        ),
+        EpicQuality(
+            project="alpha",
+            id="e-2",
+            title="Title of e-2",
+            closed=2,
+            reopens=0,
+            bugs=0,
+            rework_rate=0.0,
+        ),
     ]
-    assert r.totals.tokens == 0 and r.totals.tokens_per_bead is None
 
 
-def test_reports_006_unreadable_usage_is_listed() -> None:
-    r = report([closed("a-1", ago(2), ai='{"version": 2}'), closed("a-2", ago(2), ai="nope")])
-    assert [(c.id, c.detail) for c in r.coverage.invalid] == [
-        ("a-1", "version 2"),
-        ("a-2", "unreadable"),
+def test_reports_005_epic_row_is_the_nearest_epic_and_an_epic_counts_itself() -> None:
+    rows = [
+        row("e-1", issue_type="epic"),
+        closed("t-1", ago(2), parent="e-1.1"),
+        closed("e-1.1", ago(2), issue_type="epic", parent="e-1"),
     ]
-    assert r.coverage.not_collected == [] and r.totals.tokens == 0
+    assert [(e.id, e.closed) for e in report(rows).quality.epics] == [("e-1.1", 2)]
 
 
-def test_reports_006_unpriced_unassigned_share_and_sources() -> None:
-    odd = usage(100)
-    odd["sources"] = {"claude_code": "ok", "codex": "missing"}
-    r = report(
-        [closed("a-1", ago(2), assignee="ann", ai=usage(300)), closed("a-2", ago(2), ai=odd)]
-    )
-    assert r.coverage.unpriced == ["m"]
-    assert r.coverage.unassigned_share == 0.25
-    assert [s.id for s in r.coverage.sources] == ["a-2"]
-
-
-def test_reports_006_sprint_lists_open_unreadable_usage() -> None:
-    r = report(
-        [
-            row("a-1", issue_type="epic", labels=["sprint:s7"]),
-            row("a-1.1", parent="a-1", ai="nope"),
-            row("a-1.2", parent="a-1"),
-            row("a-2", ai="nope"),
-        ],
-        sprint="s7",
-    )
-    assert [(c.id, c.detail) for c in r.coverage.invalid] == [("a-1.1", "unreadable")]
-    assert r.coverage.not_collected == []
-
-
-# REQ-REPORTS-003
-def test_reports_003_epic_with_a_prep_task() -> None:
-    r = report(
-        [
-            row("e-1", issue_type="epic"),
-            closed("t-1", ago(2), parent="e-1", ai=usage(200)),
-            row("t-2", parent="e-1"),
-            closed("p-1", ago(2), parent="e-1", labels=["prep", "prep:mockup"], ai=usage(100)),
+def test_reports_005_top_ten_epics_by_rework_then_closed_then_id() -> None:
+    rows: list[Any] = []
+    for n in range(12):
+        rows += [
+            row(f"e-{n:02d}", issue_type="epic"),
+            closed(f"t-{n:02d}", ago(2), parent=f"e-{n:02d}"),
         ]
-    )
-    [epic] = r.usage.epics
-    assert (epic.id, epic.tokens, epic.closed_children, epic.children) == ("e-1", 300, 1, 2)
-    assert (epic.closed_prep_children, epic.prep_children) == (1, 1)
+    reopens = {"t-11": 3, "t-10": 1, "t-05": 1}
+    ids = [e.id for e in report(rows, reopens=reopens).quality.epics]
+    assert ids == ["e-11", "e-05", "e-10", "e-00", "e-01", "e-02", "e-03", "e-04", "e-06", "e-07"]
+
+
+def test_reports_005_members_by_closed_then_name_with_unassigned_last() -> None:
+    rows = [
+        closed("a-1", ago(2)),
+        closed("a-2", ago(2)),
+        closed("a-3", ago(2)),
+        closed("a-4", ago(2), assignee="bao"),
+        closed("a-5", ago(2), assignee="ann"),
+        closed("a-6", ago(2), assignee="cat"),
+        closed("a-7", ago(2), assignee="cat"),
+    ]
+    assert [m.member for m in report(rows).quality.members] == ["cat", "ann", "bao", "Unassigned"]
+
+
+def test_reports_005_ai_usage_in_metadata_is_ignored() -> None:
+    ai = {"version": 1, "quality": {"reopens": 5}}
+    r = report([closed("a-1", ago(2), assignee="ann", metadata={"ai_usage": ai})])
+    [ann] = r.quality.members
+    assert (ann.reopens, ann.rework_rate) == (0, 0.0)

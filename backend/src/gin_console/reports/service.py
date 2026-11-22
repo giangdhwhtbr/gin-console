@@ -1,55 +1,32 @@
-"""Report sections from the beads of one or more projects (spec REQ-REPORTS-002..006)."""
+"""Report sections from the beads of one or more projects (spec REQ-REPORTS-004, 005)."""
 
 import statistics
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
 from datetime import UTC, date, datetime, timedelta
-from typing import NamedTuple
 
 from gin_console.beads.definitions import person_key
-from gin_console.beads.prep import is_prep
 from gin_console.reports.models import (
-    AiUsage,
-    BeadUsage,
-    Coverage,
-    CoverageBead,
     DeliverySection,
-    EpicUsage,
+    EpicQuality,
     EstimateRow,
-    Findings,
-    MemberUsage,
-    ModelRow,
-    Point,
     ProjectError,
-    Quality,
     QualityRow,
     QualitySection,
     Report,
     ReportBead,
-    SourceIssue,
-    StageRow,
-    StageUsage,
     Stat,
     TimeRow,
-    Tokens,
     Totals,
-    UsageSection,
     WeekRow,
 )
 
 UNASSIGNED = "Unassigned"
 TOP = 10
 WORKDAY_MINUTES = 480  # gin-workflow workflow_core/milestone.py WORKDAY_MINUTES
-STAGES = ("discuss", "plan", "orchestrate", "execute", "review", "verify", "ship", "quick")
 DAY = 86400.0
 
 Key = tuple[str, str]  # (project, bead id)
-
-
-class Measured(NamedTuple):
-    bead: ReportBead
-    raw: AiUsage  # the bead's ai_usage as written
-    own: AiUsage  # its own share (REQ-REPORTS-002)
 
 
 def _key(bead: ReportBead) -> Key:
@@ -58,79 +35,6 @@ def _key(bead: ReportBead) -> Key:
 
 def member_of(bead: ReportBead) -> str:
     return person_key(bead.assignee) or UNASSIGNED
-
-
-def tokens_of(usage: AiUsage) -> int:
-    return sum(t.total for t in usage.models.values())
-
-
-def _cost(values: Iterable[float | None]) -> float | None:
-    known = [v for v in values if v is not None]
-    return round(sum(known), 6) if known else None
-
-
-def _left(value: int, subtract: Iterable[int]) -> int:
-    return max(value - sum(subtract), 0)
-
-
-def _left_cost(value: float | None, subtract: Iterable[float | None]) -> float | None:
-    return None if value is None else round(max(value - sum(v or 0.0 for v in subtract), 0.0), 6)
-
-
-def _minus(a: Tokens, subs: list[Tokens]) -> Tokens:
-    return Tokens(
-        input=_left(a.input, (s.input for s in subs)),
-        output=_left(a.output, (s.output for s in subs)),
-        cache_read=_left(a.cache_read, (s.cache_read for s in subs)),
-        cache_write=_left(a.cache_write, (s.cache_write for s in subs)),
-        cost=_left_cost(a.cost, (s.cost for s in subs)),
-    )
-
-
-def _minus_quality(q: Quality, subs: list[Quality]) -> Quality:
-    f = q.findings
-    return Quality(
-        reopens=_left(q.reopens, (s.reopens for s in subs)),
-        bugs=_left(q.bugs, (s.bugs for s in subs)),
-        review_cycles=_left(q.review_cycles, (s.review_cycles for s in subs)),
-        rejections=_left(q.rejections, (s.rejections for s in subs)),
-        waivers=_left(q.waivers, (s.waivers for s in subs)),
-        findings=Findings(
-            critical=_left(f.critical, (s.findings.critical for s in subs)),
-            important=_left(f.important, (s.findings.important for s in subs)),
-            minor=_left(f.minor, (s.findings.minor for s in subs)),
-            suggestion=_left(f.suggestion, (s.findings.suggestion for s in subs)),
-        ),
-    )
-
-
-def own_share(usage: AiUsage, children: list[AiUsage]) -> AiUsage:
-    """An epic's usage minus its direct children's, never below 0 (gin-workflow collects an epic
-    over {epic, *direct children}; `usage.report` counts only top-level summaries)."""
-    if not children:
-        return usage
-    models = {
-        m: _minus(t, [c.models[m] for c in children if m in c.models])
-        for m, t in usage.models.items()
-    }
-    roles = {
-        r: {
-            m: _minus(t, [c.roles[r][m] for c in children if m in c.roles.get(r, {})])
-            for m, t in per.items()
-        }
-        for r, per in usage.roles.items()
-    }
-    stages = {
-        s: StageUsage(
-            tokens=_left(v.tokens, (c.stages[s].tokens for c in children if s in c.stages)),
-            cost=_left_cost(v.cost, (c.stages[s].cost for c in children if s in c.stages)),
-        )
-        for s, v in usage.stages.items()
-    }
-    quality = _minus_quality(usage.quality, [c.quality for c in children])
-    return usage.model_copy(
-        update={"models": models, "roles": roles, "stages": stages, "quality": quality}
-    )
 
 
 class _Tree:
@@ -158,22 +62,20 @@ class _Tree:
     def under(self, bead: ReportBead, roots: set[Key]) -> bool:
         return any(_key(b) in roots for b in self._lineage(bead))
 
-    def own(self, bead: ReportBead) -> AiUsage | None:
-        if bead.usage is None or bead.issue_type != "epic":
-            return bead.usage
-        kids = [c.usage for c in self.children.get(_key(bead), []) if c.usage is not None]
-        return own_share(bead.usage, kids)
-
 
 def _closed_at(bead: ReportBead) -> datetime:
     assert bead.closed_at is not None  # only closed beads with closed_at are selected
     return bead.closed_at
 
 
-def _rate(qualities: list[Quality]) -> float | None:
-    if not qualities:
+def _rework(bead: ReportBead) -> int:
+    return bead.reopens + bead.bugs
+
+
+def _rate(beads: list[ReportBead]) -> float | None:
+    if not beads:
         return None
-    return round(sum(1 for q in qualities if q.reopens > 0 or q.bugs > 0) / len(qualities), 4)
+    return round(sum(1 for b in beads if _rework(b) > 0) / len(beads), 4)
 
 
 def _stat(values: list[float]) -> Stat | None:
@@ -211,126 +113,6 @@ def _weeks(first: date, last: date) -> list[str]:
 def _weekdays(first: date, last: date) -> int:
     return sum(
         1 for n in range((last - first).days + 1) if (first + timedelta(days=n)).weekday() < 5
-    )
-
-
-def _stage_order(stage: str) -> tuple[int, str]:
-    return (STAGES.index(stage), "") if stage in STAGES else (len(STAGES), stage)
-
-
-def _cache_ratio(models: list[Tokens]) -> float | None:
-    read_side = sum(t.input + t.cache_read + t.cache_write for t in models)
-    return round(sum(t.cache_read for t in models) / read_side, 4) if read_side else None
-
-
-def _totals(closed: list[ReportBead], measured: list[Measured]) -> Totals:
-    tokens = sum(tokens_of(m.own) for m in measured)
-    return Totals(
-        tokens=tokens,
-        cost=_cost(t.cost for m in measured for t in m.own.models.values()),
-        closed=len(closed),
-        tokens_per_bead=round(tokens / len(measured), 1) if measured else None,
-        cache_ratio=_cache_ratio([t for m in measured for t in m.own.models.values()]),
-        rework_rate=_rate([m.own.quality for m in measured]),
-    )
-
-
-def _member_usage(name: str, closed: list[ReportBead], rows: list[Measured]) -> MemberUsage:
-    tokens = sum(tokens_of(m.own) for m in rows)
-    models = [t for m in rows for t in m.own.models.values()]
-    stages: dict[str, int] = defaultdict(int)
-    for m in rows:
-        for stage, value in m.own.stages.items():
-            stages[stage] += value.tokens
-    return MemberUsage(
-        member=name,
-        closed=sum(1 for b in closed if member_of(b) == name),
-        tokens=tokens,
-        cost=_cost(t.cost for t in models),
-        tokens_per_bead=round(tokens / len(rows), 1) if rows else None,
-        cache_ratio=_cache_ratio(models),
-        stages=dict(stages),
-    )
-
-
-def _by_epic(tree: _Tree, measured: list[Measured]) -> dict[Key, list[Measured]]:
-    groups: dict[Key, list[Measured]] = defaultdict(list)
-    for m in measured:
-        for epic in tree.epics_of(m.bead):
-            groups[_key(epic)].append(m)
-    return groups
-
-
-def _usage(tree: _Tree, closed: list[ReportBead], measured: list[Measured]) -> UsageSection:
-    members = [
-        _member_usage(name, closed, [m for m in measured if member_of(m.bead) == name])
-        for name in {member_of(b) for b in closed}
-    ]
-    members.sort(key=lambda r: (-r.tokens, r.member))
-    epics: list[EpicUsage] = []
-    for key, rows in _by_epic(tree, measured).items():
-        epic = tree.index[key]
-        kids = [k for k in tree.children.get(key, []) if not is_prep(k.labels)]
-        prep = [k for k in tree.children.get(key, []) if is_prep(k.labels)]
-        epics.append(
-            EpicUsage(
-                project=epic.project,
-                id=epic.id,
-                title=epic.title,
-                status=epic.status,
-                tokens=sum(tokens_of(m.own) for m in rows),
-                cost=_cost(t.cost for m in rows for t in m.own.models.values()),
-                children=len(kids),
-                closed_children=sum(1 for k in kids if k.status == "closed"),
-                prep_children=len(prep),
-                closed_prep_children=sum(1 for k in prep if k.status == "closed"),
-                budget=epic.usage.budget if epic.usage is not None else None,
-            )
-        )
-    epics.sort(key=lambda r: (-r.tokens, r.project, r.id))
-    beads = [
-        BeadUsage(
-            project=m.bead.project,
-            id=m.bead.id,
-            title=m.bead.title,
-            issue_type=m.bead.issue_type,
-            assignee=m.bead.assignee,
-            tokens=tokens_of(m.own),
-            cost=_cost(t.cost for t in m.own.models.values()),
-        )
-        for m in measured
-    ]
-    beads.sort(key=lambda r: (-r.tokens, r.project, r.id))
-    stage_tokens: dict[str, int] = defaultdict(int)
-    stage_costs: dict[str, list[float | None]] = defaultdict(list)
-    model_rows: dict[tuple[str, str], list[Tokens]] = defaultdict(list)
-    for m in measured:
-        for stage, value in m.own.stages.items():
-            stage_tokens[stage] += value.tokens
-            stage_costs[stage].append(value.cost)
-        for role, per in m.own.roles.items():
-            for model, tokens in per.items():
-                model_rows[(role, model)].append(tokens)
-    stages = [
-        StageRow(stage=s, tokens=stage_tokens[s], cost=_cost(stage_costs[s]))
-        for s in sorted(stage_tokens, key=_stage_order)
-    ]
-    models = [
-        ModelRow(
-            model=model,
-            role=role,
-            input=sum(t.input for t in items),
-            output=sum(t.output for t in items),
-            cache_read=sum(t.cache_read for t in items),
-            cache_write=sum(t.cache_write for t in items),
-            tokens=sum(t.total for t in items),
-            cost=_cost(t.cost for t in items),
-        )
-        for (role, model), items in model_rows.items()
-    ]
-    models.sort(key=lambda r: (-r.tokens, r.model, r.role))
-    return UsageSection(
-        members=members, epics=epics[:TOP], beads=beads[:TOP], stages=stages, models=models
     )
 
 
@@ -386,88 +168,43 @@ def _delivery(
     )
 
 
-def _quality_row(
-    key: str, project: str | None, title: str | None, rows: list[Measured]
-) -> QualityRow:
-    qs = [m.own.quality for m in rows]
+def _totals(closed: list[ReportBead]) -> Totals:
+    return Totals(closed=len(closed), rework_rate=_rate(closed))
+
+
+def _member_row(name: str, beads: list[ReportBead]) -> QualityRow:
     return QualityRow(
-        key=key,
-        project=project,
-        title=title,
-        beads=len(qs),
-        reopens=sum(q.reopens for q in qs),
-        bugs=sum(q.bugs for q in qs),
-        review_cycles=sum(q.review_cycles for q in qs),
-        rejections=sum(q.rejections for q in qs),
-        waivers=sum(q.waivers for q in qs),
-        findings=Findings(
-            critical=sum(q.findings.critical for q in qs),
-            important=sum(q.findings.important for q in qs),
-            minor=sum(q.findings.minor for q in qs),
-            suggestion=sum(q.findings.suggestion for q in qs),
-        ),
-        rework_rate=_rate(qs),
+        member=name,
+        closed=len(beads),
+        reopens=sum(b.reopens for b in beads),
+        bugs=sum(b.bugs for b in beads),
+        rework_rate=_rate(beads),
     )
 
 
-def _quality(tree: _Tree, measured: list[Measured]) -> QualitySection:
-    members = [
-        _quality_row(name, None, None, [m for m in measured if member_of(m.bead) == name])
-        for name in sorted({member_of(m.bead) for m in measured})
-    ]
+def _quality(tree: _Tree, closed: list[ReportBead]) -> QualitySection:
+    by_member: dict[str, list[ReportBead]] = defaultdict(list)
+    by_epic: dict[Key, list[ReportBead]] = defaultdict(list)
+    for bead in closed:
+        by_member[member_of(bead)].append(bead)
+        if nearest := tree.epics_of(bead):
+            by_epic[_key(nearest[0])].append(bead)
+    members = [_member_row(name, beads) for name, beads in by_member.items()]
+    members.sort(key=lambda r: (r.member == UNASSIGNED, -r.closed, r.member))
     epics = [
-        _quality_row(key[1], key[0], tree.index[key].title, rows)
-        for key, rows in sorted(_by_epic(tree, measured).items())
-    ]
-    points = [
-        Point(
-            project=m.bead.project,
-            id=m.bead.id,
-            title=m.bead.title,
-            tokens=tokens_of(m.own),
-            rework=m.own.quality.reopens + m.own.quality.bugs + m.own.quality.rejections,
+        EpicQuality(
+            project=key[0],
+            id=key[1],
+            title=tree.index[key].title,
+            closed=len(beads),
+            reopens=sum(b.reopens for b in beads),
+            bugs=sum(b.bugs for b in beads),
+            rework_rate=_rate(beads),
         )
-        for m in measured
-        if m.bead.issue_type != "epic"
+        for key, beads in by_epic.items()
     ]
-    return QualitySection(members=members, epics=epics, points=points)
-
-
-def _coverage(
-    closed: list[ReportBead], selected: list[ReportBead], measured: list[Measured]
-) -> Coverage:
-    total = sum(tokens_of(m.own) for m in measured)
-    unassigned = sum(tokens_of(m.own) for m in measured if member_of(m.bead) == UNASSIGNED)
-    return Coverage(
-        not_collected=[
-            CoverageBead(
-                project=b.project,
-                id=b.id,
-                title=b.title,
-                detail=f"gin usage collect --bead {b.id}",
-            )
-            for b in closed
-            if b.usage is None and b.usage_problem is None
-        ],
-        invalid=[
-            CoverageBead(project=b.project, id=b.id, title=b.title, detail=b.usage_problem)
-            for b in selected
-            if b.usage_problem is not None
-        ],
-        unpriced=sorted({name for m in measured for name in m.raw.unpriced}),
-        unassigned_share=round(unassigned / total, 4) if total else None,
-        sources=[
-            SourceIssue(
-                project=m.bead.project,
-                id=m.bead.id,
-                title=m.bead.title,
-                sources=m.raw.sources,
-                skipped_lines=m.raw.skipped_lines,
-            )
-            for m in measured
-            if m.raw.skipped_lines > 0 or any(v != "ok" for v in m.raw.sources.values())
-        ],
-    )
+    epics.sort(key=lambda r: (-(r.reopens + r.bugs), -r.closed, r.id))
+    return QualitySection(members=members, epics=epics[:TOP])
 
 
 def build_report(
@@ -495,20 +232,13 @@ def build_report(
         scope = [b for b in beads if tree.under(b, roots)]
         closed = [b for b in scope if b.status == "closed" and b.closed_at is not None]
     closed.sort(key=_key)
-    measured = [
-        Measured(b, b.usage, own)
-        for b in closed
-        if b.usage is not None and (own := tree.own(b)) is not None
-    ]
     return Report(
         generated_at=now,
         project=project,
         days=days,
         sprint=sprint,
-        totals=_totals(closed, measured),
-        usage=_usage(tree, closed, measured),
+        totals=_totals(closed),
         delivery=_delivery(closed, now, days, sprint),
-        quality=_quality(tree, measured),
-        coverage=_coverage(closed, scope if sprint is not None else closed, measured),
+        quality=_quality(tree, closed),
         errors=errors,
     )
