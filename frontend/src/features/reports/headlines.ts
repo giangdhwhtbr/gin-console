@@ -21,8 +21,8 @@ export function teamHeadline(report: TeamReport, finish: string | null): Headlin
   const { team } = report;
   if (milestone === null || team === null) return { text: "No milestones", warn: false };
   if (milestone.status === "closed") {
-    const late = lateDays(milestone);
-    return late > 0 ? { text: `Finished ${late} d late`, warn: true } : { text: "Finished on time", warn: false };
+    const late = lateOf({ status: milestone.status, end: milestone.end, closedOn: milestone.closed_on }, report.today);
+    return late ? { text: `Finished ${lateDays(milestone)} d late`, warn: true } : { text: "Finished on time", warn: false };
   }
   if (report.today < milestone.start) return { text: `Starts ${formatDate(milestone.start, report.today)}`, warn: false };
   const progress = `${team.closed} of ${team.scope} done`;

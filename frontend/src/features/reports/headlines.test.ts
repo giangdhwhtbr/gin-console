@@ -60,6 +60,11 @@ describe("report headlines", () => {
     const past = { ...t, today: "2026-11-30", team: { ...team, pace: 3.4, pace_needed: 3.6 } };
     expect(teamHeadline(past, null)).toEqual({ text: "27 of 64 done · late", warn: true });
   });
+  it("REQ-MILESTONE-UI-023 a milestone closed on the weekend after its end is finished on time", () => {
+    const t = teamReport();
+    const weekend = { ...t, milestones: t.milestones.map((m) => (m.id === "m1" ? { ...m, end: "2026-10-30", closed_on: "2026-10-31" } : m)), milestone: "m1" };
+    expect(teamHeadline(weekend, null)).toEqual({ text: "Finished on time", warn: false });
+  });
   it("REQ-UI-089 usage figures", () => {
     expect(figures("usage", base)).toEqual([["Tokens", "51.1M"], ["Estimated cost", "$12.34"], ["Tokens per closed bead", "12.8M"], ["Cache reads", "90%"]]);
   });

@@ -9,7 +9,7 @@ import { Legend } from "@/components/Legend";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
-import { fetchMilestones, type MilestoneList } from "@/features/milestones/api";
+import { fetchMilestones, MilestonesError, type MilestoneList } from "@/features/milestones/api";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -53,8 +53,8 @@ export function ReportsPage() {
   const [attempt, setAttempt] = useState(0);
   const [settledTeam, setSettledTeam] = useState<{ base: string; requested: string; value: SettledTeam } | null>(null);
   const [teamAttempt, setTeamAttempt] = useState(0);
-  // the Milestones list of each project asked for (REQ-UI-095); `null` is a request that failed
-  const [lists, setLists] = useState<ReadonlyMap<string, MilestoneList | null>>(new Map());
+  // the Milestones list of each project asked for (REQ-UI-095), or why the request failed
+  const [lists, setLists] = useState<ReadonlyMap<string, MilestoneList | MilestonesError>>(new Map());
   const { search } = useLocation();
   const filters = parseReportSearch(search);
 
@@ -119,22 +119,32 @@ export function ReportsPage() {
   useEffect(() => {
     if (!teamWanted || listed) return;
     let live = true;
-    const settle = (list: MilestoneList | null) => {
-      if (live) setLists((prev) => new Map(prev).set(selected, list));
+    const settle = (answer: MilestoneList | MilestonesError) => {
+      if (live) setLists((prev) => new Map(prev).set(selected, answer));
     };
-    fetchMilestones(selected).then(settle, () => settle(null));
+    fetchMilestones(selected).then(settle, (error: unknown) => settle(error instanceof MilestonesError ? error : new MilestonesError(messageOf(error))));
     return () => {
       live = false;
     };
   }, [selected, teamWanted, listed]);
-  const list = lists.get(selected) ?? null;
-  const loadedLists = useMemo(() => {
+  const answer = lists.get(selected);
+  const list = answer === undefined || answer instanceof MilestonesError ? null : answer;
+  const { loadedLists, failedLists } = useMemo(() => {
     const ok = new Map<string, MilestoneList>();
+    const failed = new Map<string, MilestonesError>();
     lists.forEach((value, name) => {
-      if (value !== null) ok.set(name, value);
+      if (value instanceof MilestonesError) failed.set(name, value);
+      else ok.set(name, value);
     });
-    return ok;
+    return { loadedLists: ok, failedLists: failed };
   }, [lists]);
+  // Retry forgets the failure; for a single project the effect above then asks again, for All the block asks itself
+  const retryList = (name: string) =>
+    setLists((prev) => {
+      const next = new Map(prev);
+      next.delete(name);
+      return next;
+    });
 
   // the URL follows the answer on the Team tab: the server's default milestone, and no member that is not in the milestone
   const teamReport = team.status === "ok" ? team.report : null;
@@ -285,7 +295,7 @@ export function ReportsPage() {
               selected !== "all" && !listed ? (
                 <p className="text-muted-foreground">Loading velocity…</p>
               ) : (
-                <VelocityTab projects={selected === "all" ? names : [selected]} loaded={loadedLists} />
+                <VelocityTab projects={selected === "all" ? names : [selected]} loaded={loadedLists} failed={failedLists} onRetry={retryList} />
               )
             ) : (
               <>

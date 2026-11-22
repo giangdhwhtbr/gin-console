@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { fetchMilestones, type MilestoneList } from "@/features/milestones/api";
+import { fetchMilestones, type MilestoneList, type MilestonesError } from "@/features/milestones/api";
 import { MilestoneError } from "@/features/milestones/MilestoneError";
 import { useLoad } from "@/features/milestones/useLoad";
 import { VelocityCharts } from "./VelocityCharts";
@@ -37,16 +37,36 @@ function RequestedVelocity({ project }: { project: string }) {
   );
 }
 
-/** REQ-REPORTS-018: one independent block per project; a project in `loaded` (REQ-UI-095) is not requested again. */
-export function VelocityTab({ projects, loaded }: { projects: readonly string[]; loaded: ReadonlyMap<string, MilestoneList> }) {
+/**
+ * REQ-REPORTS-018: one independent block per project. A project in `loaded` (REQ-UI-095) is not requested again; one in `failed`
+ * shows the page's failure, and only the user's Retry asks again, through `onRetry`.
+ */
+export function VelocityTab({
+  projects,
+  loaded,
+  failed,
+  onRetry,
+}: {
+  projects: readonly string[];
+  loaded: ReadonlyMap<string, MilestoneList>;
+  failed: ReadonlyMap<string, MilestonesError>;
+  onRetry: (project: string) => void;
+}) {
   return (
     <>
       {projects.map((project) => {
         const list = loaded.get(project);
+        const error = failed.get(project);
         return (
           <section key={project} className="flex flex-col gap-4">
             {projects.length > 1 && <h2 className="font-semibold">{project}</h2>}
-            {list === undefined ? <RequestedVelocity project={project} /> : <VelocityBody list={list} />}
+            {list !== undefined ? (
+              <VelocityBody list={list} />
+            ) : error !== undefined ? (
+              <MilestoneError error={error} onRetry={() => onRetry(project)} />
+            ) : (
+              <RequestedVelocity project={project} />
+            )}
           </section>
         );
       })}

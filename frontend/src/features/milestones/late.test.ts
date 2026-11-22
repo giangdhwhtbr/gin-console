@@ -24,6 +24,11 @@ describe("lateOf", () => {
     expect(lateOf({ status: "closed", end: "2026-11-10" }, "2026-11-21")).toBe(false);
   });
 
+  it("REQ-MILESTONE-UI-023 closed on the weekend after a Friday end is on time; the next Monday is late", () => {
+    expect(lateOf({ status: "closed", end: "2026-11-27", closedOn: "2026-11-28" }, "2026-12-05")).toBe(false);
+    expect(lateOf({ status: "closed", end: "2026-11-27", closedOn: "2026-11-30" }, "2026-12-05")).toBe(true);
+  });
+
   it("REQ-MILESTONE-UI-023 no end is never late; times compare by their day", () => {
     expect(lateOf({ status: "active", end: null, finish: "2027-01-01" }, "2026-11-21")).toBe(false);
     expect(lateOf({ status: "active", end: "2026-12-01", finish: "2026-12-01T18:00:00Z" }, "2026-11-21")).toBe(false);

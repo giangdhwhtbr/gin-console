@@ -11,10 +11,10 @@ import { lateDays } from "./format";
 /** The chip of the milestone line: how a closed milestone ended, else the milestone status and " · late" by REQ-MILESTONE-UI-023. */
 function Chip({ milestone, finish, today }: { milestone: TeamMilestone; finish: string | null; today: string }) {
   if (milestone.status === "closed") {
-    const late = lateDays(milestone);
+    const late = lateOf({ status: milestone.status, end: milestone.end, closedOn: milestone.closed_on }, today);
     return (
-      <Badge variant="outline" className={cn(late > 0 && "text-state-blocked")}>
-        {late > 0 ? `Closed · ${late} d late` : "Closed · on time"}
+      <Badge variant="outline" className={cn(late && "text-state-blocked")}>
+        {late ? `Closed · ${lateDays(milestone)} d late` : "Closed · on time"}
       </Badge>
     );
   }

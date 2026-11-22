@@ -78,6 +78,12 @@ describe("TeamSection", () => {
     expect(screen.getByText("finished 3 Nov")).toBeInTheDocument();
   });
 
+  it("REQ-MILESTONE-UI-023 a closed milestone closed on the weekend after its end reads on time", () => {
+    const t = teamReport({ milestone: "m1" });
+    show({ ...t, milestones: t.milestones.map((m) => (m.id === "m1" ? { ...m, end: "2026-10-30", closed_on: "2026-10-31" } : m)) });
+    expect(screen.getByText("Closed · on time")).toBeInTheDocument();
+  });
+
   it("REQ-REPORTS-012 milestone line of a planned milestone", () => {
     show(teamReport({ milestone: "m3" }));
     expect(screen.getByText("Planned").closest("[data-slot=badge]")).toHaveTextContent(/^Planned$/);
