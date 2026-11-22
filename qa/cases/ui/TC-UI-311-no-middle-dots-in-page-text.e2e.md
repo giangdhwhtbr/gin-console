@@ -3,15 +3,15 @@
 - **REQ:** REQ-UI-139@4e59801c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 78a2ce25
+- **Run:** qa/evidence/2026-11-22T16-53-53
+- **Checked:** 491c0e99
 
 **Preconditions:**
 - Project `P` reports beads with several facts each, milestone `M1`, a task `ex-t1` and a task assigned to the current user
 - The window is 1440px wide
 
 **Steps:**
-1. Open `/projects`
+1. Open `/`
 2. Read the text of the page
 3. Open `/beads?project=P&view=list`
 4. Read the text of the page and the document title
@@ -21,7 +21,7 @@
 8. Read the text of the page
 9. Open `/milestones?project=P`
 10. Read the text of the page
-11. Open `/milestones/M1?project=P`
+11. Open `/milestones/P/M1`
 12. Read the text of the page
 13. Open `/reports?project=P`
 14. Read the text of the page

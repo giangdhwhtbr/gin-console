@@ -3,7 +3,7 @@
 - **REQ:** REQ-REPORTS-016@274a4232
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Run:** qa/evidence/2026-11-22T16-53-38
 - **Checked:** 2d2ea974
 
 **Preconditions:**

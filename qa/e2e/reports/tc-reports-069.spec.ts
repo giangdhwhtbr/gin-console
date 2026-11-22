@@ -1,5 +1,4 @@
 // TC: TC-REPORTS-069@a34bdeb2
-// TC: TC-REPORTS-069@x
 import { test, expect } from '../evidence';
 import { entry, list } from '../support/api';
 import { stubReports, teamBody } from '../support/reports';

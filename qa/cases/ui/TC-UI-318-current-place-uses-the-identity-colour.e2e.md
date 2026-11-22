@@ -3,17 +3,18 @@
 - **REQ:** REQ-UI-141@008ef200
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** c1b82617
+- **Run:** qa/evidence/2026-11-22T16-53-53
+- **Checked:** c398e594
 
 **Preconditions:**
 - Project `P` reports a bead `ex-e3` (epic) shown in the Beads List
 - The window is 1440px wide
 
 **Steps:**
-1. Open `/beads?project=P&view=list&bead=ex-e3`
-2. Read the sidebar item "Beads"
-3. Read the row of `ex-e3`
+1. Open `/beads?project=P&view=list`
+2. Click the id `ex-e3` in its row to select it
+3. Read the sidebar item "Beads"
+4. Read the row of `ex-e3`
 
 **Expected:**
 - The "Beads" sidebar item has a 3px bar on its left edge in the identity colour (amethyst) and its icon in the identity colour

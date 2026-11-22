@@ -1,5 +1,4 @@
 // TC: TC-MILESTONE-UI-115@bc9cf71f
-// TC: TC-MILESTONE-UI-115@x
 import { test, expect } from '../evidence';
 import { detail, epicPlan, stubApi } from '../support/api';
 

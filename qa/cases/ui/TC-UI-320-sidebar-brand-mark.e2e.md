@@ -3,14 +3,14 @@
 - **REQ:** REQ-UI-141@008ef200
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-49-44
-- **Checked:** bff1fba1
+- **Run:** qa/evidence/2026-11-22T16-53-53
+- **Checked:** 9bb71cc9
 
 **Preconditions:**
 - The window is 1440px wide with the sidebar expanded
 
 **Steps:**
-1. Open `/projects`
+1. Open `/`
 2. Read the sidebar header
 
 **Expected:**

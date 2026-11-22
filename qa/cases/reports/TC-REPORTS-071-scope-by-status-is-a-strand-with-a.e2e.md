@@ -3,11 +3,11 @@
 - **REQ:** REQ-REPORTS-013@5683bbdb
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 7b250bfc
+- **Run:** qa/evidence/2026-11-22T16-53-53
+- **Checked:** bfe425a4
 
 **Preconditions:**
-- The team report of milestone `m2` has scope 64, of which 27 closed, with beads in progress, blocked, ready and deferred
+- The team report of milestone `m2` has scope 64, of which 27 closed, with beads in progress, blocked and ready
 
 **Test data:**
 - None

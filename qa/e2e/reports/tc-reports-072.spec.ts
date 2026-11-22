@@ -1,5 +1,4 @@
 // TC: TC-REPORTS-072@112da1bd
-// TC: TC-REPORTS-072@x
 import { test, expect } from '../evidence';
 import { stubReports, teamBody } from '../support/reports';
 
