@@ -5,6 +5,7 @@ import { forgetConfiguredProjects, rememberProject, resolveProject, setFavorite 
 import { bead, json } from "@/features/beads/beadFixtures";
 import type { BeadSummary } from "@/features/beads/api";
 import type { MilestoneDetail } from "./api";
+import { clearEmail, setEmail } from "@/app/identity";
 import { getOrigin } from "@/app/origin";
 import { detail, epicPlan, stubMilestones } from "./milestoneFixtures";
 import { MilestonePage } from "./MilestonePage";
@@ -214,6 +215,24 @@ describe("MilestonePage", () => {
     expect(screen.getByText("Title e2")).toBeInTheDocument();
     expect(screen.queryByText("Title x")).toBeNull();
     expect(screen.queryByText("Milestone")).toBeNull();
+  });
+
+  it("REQ-BEADS-024 the Beads tab of a milestone offers Me first and filters by it", async () => {
+    setEmail("ann@example.com");
+    openBeads("?tab=beads", "m2", [
+      bead("m2", { issue_type: "milestone" }),
+      bead("e1", { issue_type: "epic", parent: "m2", milestone: "m2", assignee: "ann@example.com" }),
+      bead("e2", { issue_type: "epic", parent: "m2", milestone: "m2", assignee: "bob" }),
+    ]);
+    await screen.findByText("Title e1");
+    await userEvent.click(screen.getByRole("button", { name: "Assignee" }));
+    const me = await screen.findByRole("checkbox", { name: "Me" });
+    expect(screen.getAllByRole("checkbox").filter((box) => box !== screen.queryByRole("checkbox", { name: "Show closed" }))[0]).toBe(me);
+    await userEvent.click(me);
+    await waitFor(() => expect(window.location.search).toContain("assignee=me"));
+    expect(screen.queryByText("Title e2")).toBeNull();
+    expect(screen.getByText("Title e1")).toBeInTheDocument();
+    clearEmail();
   });
 
   it("REQ-MILESTONE-UI-018 the view and the filters are kept in the URL", async () => {

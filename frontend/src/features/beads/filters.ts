@@ -60,7 +60,7 @@ export function parseFilters(search: string): BeadFilters {
     view: VIEWS.find((view) => view === p.get("view")) ?? "list",
     group: p.get("group") === "assignee" ? "assignee" : "",
     finished: p.get("finished") === "1",
-    assignee: parseArray(p.get("assignee")),
+    assignee: parseArray(p.get("assignee")).flatMap((a) => (a === "me" || a === "unassigned" ? [a] : personOf(a) ?? [])),
     sprint: p.get("sprint") ?? "",
     milestone: p.get("milestone") ?? "",
     select: p.get("select") ?? "",
@@ -96,14 +96,11 @@ export function filtersToSearch(filters: BeadFilters): string {
 export const assigneeLabel = (value: string): string =>
   value === "me" ? "Me" : value === "unassigned" ? "Unassigned" : value;
 
-/** Replaces `me` with the person of the email, or drops it when there is no email (REQ-BEADS-024). */
+/** Replaces `me` with the person of the email; with no email `me` stays and matches no bead (REQ-BEADS-024). */
 export function resolveMe(filters: BeadFilters, email: string | null): BeadFilters {
-  if (!filters.assignee.includes("me")) return filters;
   const me = personOf(email);
-  return {
-    ...filters,
-    assignee: filters.assignee.flatMap((a) => (a !== "me" ? [a] : me === null ? [] : [me])),
-  };
+  if (me === null || !filters.assignee.includes("me")) return filters;
+  return { ...filters, assignee: filters.assignee.map((a) => (a === "me" ? me : a)) };
 }
 
 /** The bead itself when it is an epic, else its nearest epic ancestor among `byId`; null when there is none. */
@@ -187,7 +184,9 @@ export function filterBeads(
     // Assignee filter: matches if bead matches ANY selected assignee
     if (filters.assignee.length > 0) {
       const assigned = personOf(bead.assignee);
-      const match = filters.assignee.some((a) => (a === "unassigned" ? assigned === null : assigned === personOf(a)));
+      const match = filters.assignee.some((a) =>
+        a === "me" ? false : a === "unassigned" ? assigned === null : assigned === personOf(a),
+      );
       if (!match) return false;
     }
 

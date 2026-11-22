@@ -1,6 +1,8 @@
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { clearEmail, setEmail } from "@/app/identity";
+import { HintProvider } from "@/components/HintProvider";
 import { rememberProject, resolveProject, setFavorite } from "@/app/project";
 import { navigate } from "@/app/route";
 import type { ProjectBeads } from "@/features/projects/api";
@@ -90,6 +92,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  clearEmail();
   cleanup();
   vi.useRealTimers();
   vi.restoreAllMocks();
@@ -1009,6 +1012,95 @@ describe("BeadsPage", () => {
       expect(window.location.search).toContain("kind=technical");
       await userEvent.click(within(within(dialog).getByRole("group", { name: "Capability" })).getByRole("button", { name: "ui" }));
       expect(window.location.search).toContain("capability=ui");
+    });
+  });
+
+  describe("Me and the assignee", () => {
+    const team = () =>
+      stub(() =>
+        json([
+          bead("m-1", { title: "By handle", assignee: "giangdhwhtbr" }),
+          bead("m-2", { title: "By email", assignee: "GiangDHWHTBR@gmail.com" }),
+          bead("m-3", { title: "Of ann", assignee: "ann" }),
+        ]),
+      );
+
+    it("REQ-BEADS-024 Me by handle or email: selecting Me keeps me in the URL and shows my beads", async () => {
+      setEmail("giangdhwhtbr@gmail.com");
+      team();
+      const user = userEvent.setup();
+      render(<BeadsPage />);
+      await screen.findByText("Of ann");
+      await user.click(screen.getByRole("button", { name: "Assignee" }));
+      const me = await screen.findByRole("checkbox", { name: "Me" });
+      const options = screen.getAllByRole("checkbox").filter((box) => box !== screen.queryByRole("checkbox", { name: "Show closed" }));
+      expect(options[0]).toBe(me);
+      await user.click(me);
+      await waitFor(() => expect(window.location.search).toContain("assignee=me"));
+      expect(screen.getByText("By handle")).toBeInTheDocument();
+      expect(screen.getByText("By email")).toBeInTheDocument();
+      expect(screen.queryByText("Of ann")).toBeNull();
+    });
+
+    it("REQ-BEADS-024 shared link means the viewer", async () => {
+      setEmail("ann@example.com");
+      team();
+      window.history.replaceState(null, "", "/beads?project=alpha&assignee=me");
+      const user = userEvent.setup();
+      render(<BeadsPage />);
+      expect(await screen.findByText("Of ann")).toBeInTheDocument();
+      expect(screen.queryByText("By handle")).toBeNull();
+      await user.click(screen.getByRole("button", { name: "Assignee 1" }));
+      expect(await screen.findByRole("checkbox", { name: "Me" })).toBeChecked();
+    });
+
+    it("REQ-BEADS-024 me survives another change of the filters", async () => {
+      setEmail("ann@example.com");
+      team();
+      window.history.replaceState(null, "", "/beads?project=alpha&assignee=me&view=focus");
+      const user = userEvent.setup();
+      render(<BeadsPage />);
+      await screen.findByLabelText("Group by");
+      await user.selectOptions(screen.getByLabelText("Group by"), "Assignee");
+      await waitFor(() => expect(window.location.search).toContain("group=assignee"));
+      expect(window.location.search).toContain("assignee=me");
+    });
+
+    it("REQ-BEADS-024 me survives selecting a row of the List", async () => {
+      setEmail("ann@example.com");
+      team();
+      window.history.replaceState(null, "", "/beads?project=alpha&assignee=me");
+      const user = userEvent.setup();
+      render(<BeadsPage />);
+      const row = (await screen.findByText("Of ann")).closest("[role=treeitem]");
+      if (row === null) throw new Error("the row is missing");
+      await user.click(row);
+      await waitFor(() => expect(window.location.search).toContain("select=m-3"));
+      expect(window.location.search).toContain("assignee=me");
+    });
+
+    it("REQ-UI-082 old link with an email: its person is selected", async () => {
+      team();
+      window.history.replaceState(null, "", "/beads?project=alpha&assignee=ann%40example.com");
+      const user = userEvent.setup();
+      render(<BeadsPage />);
+      expect(await screen.findByText("Of ann")).toBeInTheDocument();
+      expect(screen.queryByText("By handle")).toBeNull();
+      await user.click(screen.getByRole("button", { name: "Assignee 1" }));
+      expect(await screen.findByRole("checkbox", { name: "ann" })).toBeChecked();
+    });
+
+    it("REQ-UI-135 the List row names the person and its tooltip carries the full email", async () => {
+      stub(() => json([bead("m-1", { title: "Mail", assignee: "alice@example.com" })]));
+      render(
+        <HintProvider>
+          <BeadsPage />
+        </HintProvider>,
+      );
+      await screen.findByText("Mail");
+      const name = screen.getByText("alice");
+      expect(name).toHaveAttribute("data-hint", "alice@example.com");
+      expect(document.getElementById(name.getAttribute("aria-describedby") ?? "")).toHaveTextContent("alice@example.com");
     });
   });
 });

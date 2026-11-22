@@ -139,7 +139,7 @@ describe("filters", () => {
   // REQ-UI-082, REQ-UI-083
   it("REQ-UI-082, REQ-UI-083 parses assignee and sprint from URL", () => {
     const f = parseFilters("?assignee=alice%40example.com&sprint=sprint-1");
-    expect(f.assignee).toEqual(["alice@example.com"]);
+    expect(f.assignee).toEqual(["alice"]);
     expect(f.sprint).toBe("sprint-1");
   });
 
@@ -322,6 +322,7 @@ describe("filters", () => {
   it("REQ-UI-082 old link with an email selects its person", () => {
     const beads = [bead("1", { assignee: "alice" }), bead("2", { assignee: "bob" })];
     const filters = parseFilters("?assignee=alice%40example.com");
+    expect(filters.assignee).toEqual(["alice"]);
     expect(filterBeads(beads, filters).map((b) => b.id)).toEqual(["1"]);
   });
 
@@ -332,9 +333,12 @@ describe("filters", () => {
     expect(filterBeads(beads, resolveMe({ ...empty, assignee: ["me"] }, "bob@x.org")).map((b) => b.id)).toEqual(["2"]);
   });
 
-  it("REQ-BEADS-024 resolveMe drops me when there is no email", () => {
-    expect(resolveMe({ ...empty, assignee: ["me", "carol"] }, null).assignee).toEqual(["carol"]);
-    expect(resolveMe({ ...empty, assignee: ["me"] }, null).assignee).toEqual([]);
+  it("REQ-BEADS-024 with no email me stays selected and matches no bead", () => {
+    const beads = [bead("1", { assignee: "alice" }), bead("2", { assignee: null })];
+    const filters = resolveMe({ ...empty, assignee: ["me"] }, null);
+    expect(filters.assignee).toEqual(["me"]);
+    expect(filterBeads(beads, filters)).toEqual([]);
+    expect(filterBeads(beads, resolveMe({ ...empty, assignee: ["me", "alice"] }, null)).map((b) => b.id)).toEqual(["1"]);
   });
 
   it("optionsOf and filterBeads support ready and blocked state filtering for open beads", () => {

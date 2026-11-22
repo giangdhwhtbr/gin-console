@@ -76,6 +76,14 @@ describe("MyTasksPage", () => {
     for (const row of rows()) expect(within(row).getByText("alpha")).toBeInTheDocument();
   });
 
+  // REQ-UI-100 "Same handle at another domain"
+  it("REQ-UI-100 lists a bead assigned to the same handle at another domain", async () => {
+    stubBeads(() => json([bead("a-1", { assignee: "giangdhwhtbr@other.example" }), bead("a-2", { assignee: "alice" })]));
+    open("/my-tasks");
+    expect(await screen.findByText("1 task")).toBeInTheDocument();
+    expect(rows()).toHaveLength(1);
+  });
+
   it("REQ-UI-100 My Tasks does not request /api/projects", async () => {
     const fetchMock = stubBeads(() => json([bead("a-1", { assignee: "giangdhwhtbr" })]));
     open("/my-tasks");
