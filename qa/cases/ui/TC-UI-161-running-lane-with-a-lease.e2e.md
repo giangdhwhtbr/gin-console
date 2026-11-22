@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-112@5621fb16
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 62f722fd
 
 **Preconditions:**
 - Lane `be` has track 1 closed and track 2 `in_progress`, both assigned to `ann`

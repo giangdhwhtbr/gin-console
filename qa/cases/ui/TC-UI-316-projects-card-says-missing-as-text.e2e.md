@@ -1,7 +1,10 @@
 # TC-UI-316: Projects card says missing as text
 
-- **REQ:** REQ-UI-140@f52fcd4d
+- **REQ:** REQ-UI-140@7e27d5df
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-49-44
+- **Checked:** bad8aa0c
 
 **Preconditions:**
 - A configured project `gone` whose directory is missing (the project list reports it with an error that its directory does not exist)

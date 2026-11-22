@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-139@4e59801c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 78a2ce25
 
 **Preconditions:**
 - Project `P` reports beads with several facts each, milestone `M1`, a task `ex-t1` and a task assigned to the current user

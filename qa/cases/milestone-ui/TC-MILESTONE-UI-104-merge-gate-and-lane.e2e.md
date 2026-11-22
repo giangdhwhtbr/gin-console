@@ -3,8 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-015@b1f5871c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** a3b13abd
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 2027736b
 
 **Preconditions:**
 - Milestone `M1` of project `P` has epic `e-1` with track `t-1` in lane `be` (open) and merge gate `g-1` (open) whose parent is `e-1`

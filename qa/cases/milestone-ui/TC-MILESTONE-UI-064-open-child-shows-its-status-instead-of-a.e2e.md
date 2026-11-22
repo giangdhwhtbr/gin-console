@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-015@b1f5871c
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: f988d464
 
 Preconditions:
 - epic B with child `B.2` in status `in_progress`

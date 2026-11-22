@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-072@b8e02f9d
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** e089c84d
 
 **Preconditions:**
 - Project `a` with milestone `m2` titled "Checkout v2" and bead `a-1` under it

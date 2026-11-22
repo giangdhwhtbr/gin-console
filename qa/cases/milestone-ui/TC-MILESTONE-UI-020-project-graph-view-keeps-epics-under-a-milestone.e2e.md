@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-006@3025db15
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: be24f8ea
 
 Preconditions:
 - epics A and B of project P, B depending on A, both children of milestone M1

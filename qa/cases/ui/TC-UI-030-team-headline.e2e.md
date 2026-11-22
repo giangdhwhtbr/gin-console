@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-095@1912887f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 08ea52fc
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 8610c62d
 
 **Preconditions:**
 - The team report of an open milestone with 27 of 64 beads closed, `pace` 3.6 and `pace_needed` 3.4, whose forecast `finish` is before its `end`

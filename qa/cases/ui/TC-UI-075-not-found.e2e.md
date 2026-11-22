@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-075@b0eb7f1a
 - **Priority:** low
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 4bc9ffbf
 
 **Preconditions:**
 - Project `alpha` has no bead `x-1`

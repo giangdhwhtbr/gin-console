@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-138@b0819958
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 34a691bc
 
 **Preconditions:**
 - Project `P` reports epic `e-3` without children

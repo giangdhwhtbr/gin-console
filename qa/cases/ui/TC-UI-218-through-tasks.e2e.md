@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-079@258f0ac6
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** b555cb5e
 
 **Preconditions:**
 - Epics `e-1` and `e-2` in project `alpha` have no parent

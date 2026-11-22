@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-138@b0819958
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 986ff62f
 
 **Preconditions:**
 - Project `P` reports epic `ex-e12` with 8 tracks: 4 closed, 1 in progress, 1 blocked and 2 ready

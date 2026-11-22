@@ -38,7 +38,7 @@ test('TC-MILESTONE-UI-044: Zoom kept with the preview', async ({ page, ev }) => 
     expect(stub.calls.some((u) => u.pathname === '/api/milestones/P/M1' && u.searchParams.get('start') === '2026-11-16')).toBe(true);
     await expect(page.getByText('Preview from Mon 16 Nov. Nothing changes until you run:')).toBeVisible();
     await expect(schedule).toHaveClass(/border-dashed/);
-    await expect(schedule.locator('[data-bead="2026-11-16"]').first()).toBeVisible();
+    await expect(schedule.locator('[data-bar="A"]')).toBeVisible();
     await expect(zoom.getByRole('button', { name: '1 week' })).toHaveAttribute('aria-pressed', 'true');
     await expect(zoom.getByRole('button', { name: 'Whole milestone' })).toHaveAttribute('aria-pressed', 'false');
     // One week in view (Monday to Sunday); the preview keeps the first day in view (GanttChart.tsx).

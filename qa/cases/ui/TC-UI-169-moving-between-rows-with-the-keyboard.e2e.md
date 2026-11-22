@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-114@6ba1fa63
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** de8e8983
 
 **Preconditions:**
 - Lane `be` has track 2; lane `fe` is the row below with track 3 as its only card

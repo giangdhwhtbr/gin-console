@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-013@d306ea36
 Priority: low
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 9b5e0765
 
 Preconditions:
 - epic Z whose bar ends on the last day of the plan shown as `Whole milestone`

@@ -24,10 +24,10 @@ test('TC-MILESTONE-UI-040: Whole milestone by default fills the width', async ({
     await expect(zoom.getByRole('button', { name: 'Whole milestone' })).toHaveAttribute('aria-pressed', 'true');
     await expect(zoom.getByRole('button', { name: '1 week' })).toHaveAttribute('aria-pressed', 'false');
     await expect(zoom.getByRole('button', { name: '2 weeks' })).toHaveAttribute('aria-pressed', 'false');
-    // Right edge: the chart does not scroll, and the bead of the plan's last day ends at the scroller's
-    // right edge (beads sit 2px inside their day column, GanttChart.tsx).
+    // Right edge: the chart does not scroll, and the bar of the plan's last day ends at the scroller's
+    // right edge (bars span whole day columns, GanttChart.tsx).
     const scroller = chart.locator('[data-scroller]');
-    const lastBead = chart.locator('[data-bead="2026-11-11"]');
+    const lastBead = chart.locator('[data-bar="B"]'); // B ends on 2026-11-11, the plan's last day
     await expect(lastBead).toBeVisible();
     await expect
       .poll(() => scroller.evaluate((el) => el.scrollWidth - el.clientWidth))

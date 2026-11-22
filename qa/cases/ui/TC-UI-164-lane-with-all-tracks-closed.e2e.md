@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-112@5621fb16
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 71a453c1
 
 **Preconditions:**
 - Lane `fe` has one track, closed

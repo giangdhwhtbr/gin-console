@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-088@086b0a47
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** ca27e8c7
 
 **Preconditions:**
 - The Reports page for `alpha`, 30 days and the Delivery tab

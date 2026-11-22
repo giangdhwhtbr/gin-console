@@ -21,7 +21,7 @@ test('TC-MILESTONE-UI-015: Failed preview shows the error and no bars', async ({
   await ev.step('1. Open /milestones/P/M1', async () => {
     await page.goto('/milestones/P/M1');
     await expect(page.getByLabel('Kick-start date')).toHaveValue('2026-11-02');
-    await expect(page.locator('[data-bead]').first()).toBeVisible(); // the current plan is drawn before the preview
+    await expect(page.locator('[data-bar]').first()).toBeVisible(); // the current plan is drawn before the preview
   });
 
   await ev.step('2. Set "Kick-start date" to 2026-11-16', async () => {
@@ -32,7 +32,7 @@ test('TC-MILESTONE-UI-015: Failed preview shows the error and no bars', async ({
     await expect(alert).toContainText(message);
     expect(stub.calls.some((u) => u.pathname === '/api/milestones/P/M1' && u.searchParams.get('start') === '2026-11-16')).toBe(true);
     await expect(page.getByRole('figure', { name: 'Schedule' })).toHaveCount(0);
-    await expect(page.locator('[data-bead]')).toHaveCount(0);
+    await expect(page.locator('[data-bar]')).toHaveCount(0);
     await expect(page.getByText('Preview from')).toHaveCount(0);
   });
 });

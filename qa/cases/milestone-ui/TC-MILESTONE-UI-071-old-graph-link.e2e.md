@@ -3,7 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-018@4d6687be
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-15T14-02-27
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 153e8da5
 
 **Preconditions:**
 - Milestone `m2` of project `p` with epics

@@ -3,8 +3,8 @@
 - **REQ:** REQ-REPORTS-016@274a4232
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-56-47
-- **Checked:** 135db82d
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 2e4a40cf
 
 **Preconditions:**
 - A closed bead `a-3` with cycle 0.9 days, `late_days` 2 and `rework` 0

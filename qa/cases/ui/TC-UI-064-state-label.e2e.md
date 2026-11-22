@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 2817fcfe
 
 **Preconditions:**
 - Epic `e-1` in project `alpha` has a ready task `t-1` and a blocked task `t-2`

@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-065@ca703482
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** d332c87a
 
 **Preconditions:**
 - Project `alpha` has ready P1 task `t-1` of type task, assigned to `alice`, with 2 comments and 1 dependency

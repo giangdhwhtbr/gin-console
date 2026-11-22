@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-004@7f8bfee8
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-18T15-52-57
+Run: qa/evidence/2026-11-22T16-49-44
+Checked: 88568ec5
 
 Preconditions:
 - planned milestone M1 of project P

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-115@ed5e8117
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 091d3358
 
 **Preconditions:**
 - Track 2 has `track` `{"plan": ".planning/plans/2026-11-20-shop.md", "number": 2}`, lane `be` and a `claim` expiring tomorrow at 16:00

@@ -2,10 +2,11 @@
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
+// Wide columns: each cell is one unbreakable word, so the table is wider than a phone whatever the font.
 const DESCRIPTION = [
-  '| Column one heading | Column two heading | Column three heading | Column four heading | Column five heading |',
+  '| Column_one_heading_unbroken | Column_two_heading_unbroken | Column_three_heading_unbroken | Column_four_heading_unbroken | Column_five_heading_unbroken |',
   '| --- | --- | --- | --- | --- |',
-  '| first wide cell value | second wide cell value | third wide cell value | fourth wide cell value | fifth wide cell value |',
+  '| first_wide_cell_value_unbroken | second_wide_cell_value_unbroken | third_wide_cell_value_unbroken | fourth_wide_cell_value_unbroken | fifth_wide_cell_value_unbroken |',
   '',
   '```',
   'const veryLongLine = computeSomethingThatNeverWrapsBecauseItIsOneVeryLongCodeLine(argumentNumberOne, argumentNumberTwo, argumentNumberThree);',

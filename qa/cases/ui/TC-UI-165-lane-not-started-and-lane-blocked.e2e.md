@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-112@5621fb16
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** bf86584d
 
 **Preconditions:**
 - Lane `x` has two open unassigned tracks without blockers

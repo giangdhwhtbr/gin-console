@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-141@008ef200
 - **Priority:** low
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-49-44
+- **Checked:** bff1fba1
 
 **Preconditions:**
 - The window is 1440px wide with the sidebar expanded
@@ -12,5 +15,5 @@
 
 **Expected:**
 - The sidebar header shows a mark of three beads on a thread before the name "gin-console"
-- The beads are Done (full), In progress (half) and Ready (hollow), in that order
+- The beads are Done (filled), In progress (filled) and Ready (hollow), in that order
 - The thread is in the identity colour (amethyst)

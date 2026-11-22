@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-139@4e59801c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 148049c2
 
 **Preconditions:**
 - Project `P` reports a task `p-1` whose description is `See [docs](https://example.com)`

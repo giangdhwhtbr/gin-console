@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-014@d417b46f
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 25636cb7
 
 Preconditions:
 - epic B in M1 with `depends_on: ["X"]` where X is not an epic of M1

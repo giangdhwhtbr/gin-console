@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-014@d417b46f
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: cd0c949d
 
 Preconditions:
 - epic B in M1 depending on A, with A planned to end 2026-11-05 and B planned to start 2026-11-05

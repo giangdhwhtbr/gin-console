@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-005@70130792
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-18T15-52-57
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 690a0a5f
 
 Preconditions:
 - project P whose gin-workflow has no `milestone` command (API responds 502 with `cause: "outdated"`)

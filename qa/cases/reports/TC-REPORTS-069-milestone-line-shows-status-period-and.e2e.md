@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-REPORTS-012@023dc4c5
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c343ea93
 
 **Preconditions:**
 - Project `alpha` has active milestone `m2` of 16 working days, today being its working day 8, with a forecast `finish` in the Milestones list after its `end`

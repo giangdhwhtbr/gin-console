@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-127@8e22a671
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 5672be6b
 
 **Preconditions:**
 - Project `a` has 60 beads, so the List view is longer than the window

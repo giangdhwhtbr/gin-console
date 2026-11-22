@@ -3,8 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-001@6e63a57f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** ee6c7e48
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 5923c786
 
 **Preconditions:**
 - Project `P` whose `milestone list` reports M1 with `lanes: 2`, `end: 2026-11-12`, `finish: 2026-11-23`, and M2 with `lanes: 1`, `end: 2026-12-04`, `finish: 2026-12-01`

@@ -2,8 +2,8 @@
 REQ: REQ-MILESTONE-UI-001@6e63a57f
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-22T04-57-11
-Checked: 82e15ccc
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: b8f3d04d
 
 Preconditions:
 - project P whose `milestone list --all --json` reports M1 (active) with `epics` `{total: 6, closed: 2}` and M2 (planned) with 2 warnings

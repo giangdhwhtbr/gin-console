@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-095@1912887f
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 879cfb9b
 
 **Preconditions:**
 - The Delivery tab is selected and has focus

@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-120@1a27452c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-21T05-35-36
-- **Checked:** 12674604
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 7f313be7
 
 **Preconditions:**
 - Project `example` has epic `ex-e12` with tracks of points 3 (closed), 5 (in progress) and 3 (closed), and tracks without points

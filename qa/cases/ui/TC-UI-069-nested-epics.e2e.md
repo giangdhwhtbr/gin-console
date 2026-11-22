@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-075@b0eb7f1a
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** aa803568
 
 **Preconditions:**
 - Epic `r` in project `alpha` has child epics `e-1` and `e-2`, each with tasks

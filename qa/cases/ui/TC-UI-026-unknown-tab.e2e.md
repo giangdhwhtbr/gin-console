@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-095@1912887f
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 32f65aec
 
 **Preconditions:**
 - The URL `/reports?project=alpha&tab=nope`

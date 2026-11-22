@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-138@b0819958
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 2dbec4ee
 
 **Preconditions:**
 - Project `P` reports epic `e-1` with 7 tracks: 2 closed, 1 in progress, 1 blocked and 3 ready (`child_counts`)

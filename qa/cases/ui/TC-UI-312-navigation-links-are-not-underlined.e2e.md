@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-139@4e59801c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** ef402367
 
 **Preconditions:**
 - Project `P` reports epic `ex-e12` and the Beads List shows it

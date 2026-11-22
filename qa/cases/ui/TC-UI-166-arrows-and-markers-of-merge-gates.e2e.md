@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-113@15c19511
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 00e5728f
 
 **Preconditions:**
 - Track 4 of lane `qa` in `ex-e12` is blocked by an open merge gate waiting for track 2 and a closed merge gate waiting for track 3

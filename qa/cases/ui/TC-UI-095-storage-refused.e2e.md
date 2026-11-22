@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-073@99c2938a
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** bdc842d3
 
 **Preconditions:**
 - Project `a` with bead `a-1`; the browser throws when the place is stored (session storage stubbed to throw)

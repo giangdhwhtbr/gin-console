@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-012@a4f22671
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-49-44
+Checked: ace9b100
 
 Preconditions:
 - milestone M1 zoomed to `2 weeks` with 2026-11-02 to 2026-11-15 in view

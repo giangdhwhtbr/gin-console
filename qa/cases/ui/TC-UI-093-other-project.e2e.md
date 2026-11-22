@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-073@99c2938a
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 3123dfb8
 
 **Preconditions:**
 - Projects `a` and `b`, each with a bead; the Beads page of project `a` was shown last

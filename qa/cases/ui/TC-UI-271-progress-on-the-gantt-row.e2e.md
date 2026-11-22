@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-130@14444aa5
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** fb17c64b
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 66034af9
 
 **Preconditions:**
 - Epic `e-1` has 5 tracks, 3 of them closed, and belongs to milestone `m1` of project `alpha`

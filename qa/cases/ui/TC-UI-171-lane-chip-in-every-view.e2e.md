@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-115@ed5e8117
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** a70fce15
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** f9903b71
 
 **Preconditions:**
 - Track 2 of `ex-e12` is `ex-e12.2`, in lane `be` and labelled `lane:be` and `track:2`

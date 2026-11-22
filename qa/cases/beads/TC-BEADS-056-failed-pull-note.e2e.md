@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-018@3ceab845
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 967f2c4d
 
 **Preconditions:**
 - `GET /api/projects` and `GET /api/projects/beads` are stubbed with project A (path `/tmp/a`, `pull` `{"status": "error", "error": "Merge conflict detected", "at": <1 minute ago>}`) and project B (`pull` `null`)

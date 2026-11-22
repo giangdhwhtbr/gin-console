@@ -3,8 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-023@b9cc99e6
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 488e5820
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** f097accb
 
 **Preconditions:**
 - Project `P` has active milestone `m5` ending on 11 Dec 2026 with a forecast `finish` of 10 Dec 2026, `pace` 2.0 and `pace_needed` 3.4

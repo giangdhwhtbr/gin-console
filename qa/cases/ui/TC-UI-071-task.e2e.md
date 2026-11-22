@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-075@b0eb7f1a
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 754c7e91
 
 **Preconditions:**
 - Project `alpha` has epic `e-1` with task `b` that has no children

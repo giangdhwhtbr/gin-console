@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-053@b16b5ec1
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 9109a593
 
 **Preconditions:**
 - Project `p` has task `t-2` of epic `e-1` with one blocker

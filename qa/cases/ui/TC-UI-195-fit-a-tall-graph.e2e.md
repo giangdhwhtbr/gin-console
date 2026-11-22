@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-077@b6e1715d
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 256e3a61
 
 **Preconditions:**
 - A graph narrower than the canvas and taller than the window, such as `ex-e12` with "Show closed" on and six more tracks without a lane, at 1920x1080 (the Graph of `ex-e12` alone fits that window)

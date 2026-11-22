@@ -2,8 +2,8 @@
 REQ: REQ-MILESTONE-UI-001@6e63a57f
 Priority: low
 Result: passed
-Run: qa/evidence/2026-11-22T04-57-11
-Checked: 685b2dc0
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 306487b5
 
 Preconditions:
 - project P whose `milestone list` reports planned M2 with `kickoff: 2026-11-16`

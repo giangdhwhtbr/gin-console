@@ -1,4 +1,4 @@
-// TC: TC-UI-320@70ab69ca
+// TC: TC-UI-320@2bb1ba36
 import { test, expect } from '../evidence';
 import { stubApi } from '../support/api';
 

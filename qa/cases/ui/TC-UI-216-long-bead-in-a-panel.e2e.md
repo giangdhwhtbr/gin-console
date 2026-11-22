@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-078@ea323dfb
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** f5cba0ef
 
 **Preconditions:**
 - Project `p` has bead `p-1` whose content is taller than the window, among 40 other beads so that the page scrolls

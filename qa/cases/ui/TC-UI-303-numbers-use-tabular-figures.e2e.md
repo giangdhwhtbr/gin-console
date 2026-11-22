@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-137@a7a96dbb
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** a8505edd
 
 **Preconditions:**
 - Project `P` reports milestone `M1` with the forecast finish 1 December and milestone `M2` with the forecast finish 11 November

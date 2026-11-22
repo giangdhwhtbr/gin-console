@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-134@69f0a1c6
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 8fbfdee8
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 853f1de9
 
 **Preconditions:**
 - Epic `ex-e3` has 5 of 11 tracks closed, 1 of 3 prep tasks closed and a confirmed spec, and belongs to a milestone of project `example`

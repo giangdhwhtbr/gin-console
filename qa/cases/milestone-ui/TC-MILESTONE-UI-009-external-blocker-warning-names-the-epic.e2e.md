@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-003@8d87bf55
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: c2c7ef18
 
 Preconditions:
 - epic A in M1 with warning `external_blocker` and `external_depends_on` `[{"id": "E9", "milestone": "M2"}]`

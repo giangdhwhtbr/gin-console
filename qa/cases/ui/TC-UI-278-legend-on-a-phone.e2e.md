@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-133@501caec3
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** aeac30a3
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 1f0002ae
 
 **Preconditions:**
 - The browser window is 390px wide

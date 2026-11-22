@@ -3,7 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-018@4d6687be
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-15T14-02-27
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c51fff2c
 
 **Preconditions:**
 - Project `p` with milestone `m2` that has epics `e1` and `e2`, and a bead `x` under milestone `m3`

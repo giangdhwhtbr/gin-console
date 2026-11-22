@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-023@3c2e03cc
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 81558b80
 
 **Preconditions:**
 - Two projects A and B in `/api/projects/beads`, both existing, each with beads

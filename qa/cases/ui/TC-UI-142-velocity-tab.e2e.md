@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-095@1912887f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** fb3d690d
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** dfec25f9
 
 **Preconditions:**
 - The Reports page for `alpha` on the Delivery tab

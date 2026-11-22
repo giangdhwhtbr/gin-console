@@ -30,8 +30,8 @@ test('TC-MILESTONE-UI-112: Older gin-workflow without lanes', async ({ page, ev 
       await expect(row).not.toContainText('lane');
     }
     await expect(rows.filter({ hasText: 'Alpha launch' })).toContainText('2 Nov – 13 Nov');
-    await expect(rows.filter({ hasText: 'Alpha launch' })).toContainText('1 of 4');
+    await expect(rows.filter({ hasText: 'Alpha launch' }).locator('[data-strand="1/4"]')).toHaveText('1/4');
     await expect(rows.filter({ hasText: 'Beta launch' })).toContainText('16 Nov – 27 Nov');
-    await expect(rows.filter({ hasText: 'Beta launch' })).toContainText('0 of 3');
+    await expect(rows.filter({ hasText: 'Beta launch' }).locator('[data-strand="0/3"]')).toHaveText('0/3');
   });
 });

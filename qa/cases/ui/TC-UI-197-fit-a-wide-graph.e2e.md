@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-077@b6e1715d
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c7edfc22
 
 **Preconditions:**
 - The Graph view of `ex-e12` with "Show closed" on at 390x844; the graph is wider than the canvas

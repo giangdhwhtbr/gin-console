@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-002@3618dd3c
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 12773536
 
 Preconditions:
 - epic A in M1 depending on epic X in M2

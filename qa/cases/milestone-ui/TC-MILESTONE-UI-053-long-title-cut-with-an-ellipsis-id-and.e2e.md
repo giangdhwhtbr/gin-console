@@ -2,8 +2,8 @@
 REQ: REQ-MILESTONE-UI-013@d306ea36
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-22T04-57-11
-Checked: 335e933e
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: ac17f1a7
 
 Preconditions:
 - epic `gin-workflow-rm-process-hygiene` titled "Process hygiene: consistent skills, rules that bind where it matters"

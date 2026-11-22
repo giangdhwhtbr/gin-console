@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-125@dacca938
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** b8e7a4b2
 
 **Preconditions:**
 - Projects are configured

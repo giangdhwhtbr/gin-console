@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-116@f93f8f82
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** f3f1c6b4
 
 **Preconditions:**
 - Track 4 is blocked by an open merge gate waiting for track 2 of lane `be` and a closed merge gate waiting for track 3 of lane `fe`

@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-013@d306ea36
 Priority: low
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 51a7477b
 
 Preconditions:
 - epic A whose bar ends on the first day of a 10-day plan shown as `Whole milestone`

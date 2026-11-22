@@ -1,8 +1,8 @@
-// TC: TC-UI-317@567a69a7
+// TC: TC-UI-317@5543c1f0
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
-test('TC-UI-317: Active filter keeps its chip', async ({ page, ev }) => {
+test('TC-UI-317: Controls keep their pills', async ({ page, ev }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await stubApi(page, { beads: [bead('a-1', { title: 'Open bead' }), bead('a-2', { title: 'Closed bead', status: 'closed', closed_at: '2026-10-09T00:00:00Z' })] });
 
@@ -11,12 +11,11 @@ test('TC-UI-317: Active filter keeps its chip', async ({ page, ev }) => {
     await expect(page.getByRole('link', { name: 'Open bead' })).toBeVisible();
   });
 
-  await ev.step('2. Find the active filter "Open"', async () => {
-    // the active filter is a removable chip: a bordered, tinted element with a control that removes the filter
-    const remove = page.getByRole('button', { name: /remove.*open/i });
-    await expect(remove).toBeVisible();
-    const chip = remove.locator('xpath=..');
-    await expect(chip).toHaveCSS('border-top-width', '1px');
-    await expect(chip).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await ev.step('2. Find the Status filter control', async () => {
+    const status = page.getByRole('button', { name: 'Status 1' });
+    await expect(status).toBeVisible();
+    const pill = status.getByText('1', { exact: true });
+    await expect(pill).toBeVisible();
+    await expect(pill).toHaveCSS('background-color', 'rgb(239, 233, 250)');
   });
 });

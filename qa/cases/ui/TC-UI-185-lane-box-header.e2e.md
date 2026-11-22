@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-118@2b93f058
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 620edaef
 
 **Preconditions:**
 - Epic `ex-e12` has lane be with tracks 1 and 2

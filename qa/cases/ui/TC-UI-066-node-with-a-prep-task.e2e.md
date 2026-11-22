@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** e0152e87
 
 **Preconditions:**
 - Epic `e-1` in project `alpha` has no parent, track `t-1` (closed), track `t-2` (open) and prep task `p-1` (open) labelled `prep` and `prep:mockup`, and epic `e-2` blocked by `e-1`, so Only linked draws `e-1`

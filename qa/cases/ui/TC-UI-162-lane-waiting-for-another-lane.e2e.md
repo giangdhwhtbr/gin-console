@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-112@5621fb16
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 95d0cebd
 
 **Preconditions:**
 - Lane `qa` has one track, open and unassigned, blocked by an open merge gate waiting for track 2 of lane `be` and a closed merge gate waiting for track 3 of lane `fe`

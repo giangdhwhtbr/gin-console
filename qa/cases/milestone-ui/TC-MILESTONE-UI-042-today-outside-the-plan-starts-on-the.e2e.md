@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-011@83b54b5c
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 3f4b4da9
 
 Preconditions:
 - milestone M1 whose plan starts on Wednesday 2026-11-04 and `today: 2026-10-29`

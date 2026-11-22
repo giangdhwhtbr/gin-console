@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-111@c5095b0c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 07fc522e
 
 **Preconditions:**
 - "Show closed" is off

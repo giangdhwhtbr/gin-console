@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 8f7d92e1
 
 **Preconditions:**
 - Project `alpha` has an in-progress epic `e-1` without a parent with 2 of 5 tracks done and a title of 80 characters, and epic `e-2` blocked by `e-1`, so Only linked draws `e-1`

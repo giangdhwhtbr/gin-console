@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-106@aef48e9b
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c6b0171f
 
 **Preconditions:**
 - Project `example` with epic `ex-e12` that has children

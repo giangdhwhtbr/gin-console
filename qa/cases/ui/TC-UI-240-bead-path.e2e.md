@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-126@554192cf
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** cb4d8124
 
 **Preconditions:**
 - Projects `a` and `b` are configured; the current project is `a`

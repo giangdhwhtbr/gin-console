@@ -3,8 +3,8 @@
 - **REQ:** REQ-REPORTS-012@023dc4c5
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-56-47
-- **Checked:** 058bbabf
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 6f2bdbbf
 
 **Preconditions:**
 - Project `alpha` has a milestone titled with 120 characters and a member `nguyen.thi.thanh.huong.payments-team@example-company.com.vn`

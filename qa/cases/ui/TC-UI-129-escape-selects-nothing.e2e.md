@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-052@a3e5921d
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T16-24-46
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 177e8394
 
 **Preconditions:**
 - Project `alpha` with epic `e-1` that has task `t-1`

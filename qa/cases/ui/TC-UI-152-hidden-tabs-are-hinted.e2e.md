@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-095@1912887f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-56-47
-- **Checked:** dfaf38a5
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 3b59e673
 
 **Preconditions:**
 - Project `alpha` exists

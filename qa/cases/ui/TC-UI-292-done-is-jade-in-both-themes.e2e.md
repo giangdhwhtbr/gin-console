@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-059@69731486
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 6a387838
 
 **Preconditions:**
 - Project `P` reports a closed task `p-1` and an open task `p-2`

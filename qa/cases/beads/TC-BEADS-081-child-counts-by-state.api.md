@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-022@5b74cbda
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-49-57-api
+- **Checked:** 85d9e597
 
 **Preconditions:**
 - Project `alpha` whose `bd export` holds epic `e-2` with the tracks `t-1` (closed), `t-2` (in progress), `t-3` (in progress and blocked by the open bead `x`), `t-4` (open and ready) and `t-5` (deferred)

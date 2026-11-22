@@ -3,8 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-023@b9cc99e6
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 001ad796
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 13156c3f
 
 **Preconditions:**
 - Project `P` has active milestone `m2` ending on 20 Nov 2026 with no forecast `finish`

@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-120@1a27452c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 9798df82
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** a2afe161
 
 **Preconditions:**
 - Milestone `ex-m2` "Checkout v2" is active from 10 Nov to 1 Dec 2026 with a forecast finish of 16 Feb 2027

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-141@008ef200
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c13376cb
 
 **Preconditions:**
 - Project `P` reports at least one bead

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-030@0f5a1d68
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** facedb6a
 
 **Preconditions:**
 - "Show closed" is off

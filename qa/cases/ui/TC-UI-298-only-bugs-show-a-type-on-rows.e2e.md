@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-067@e9f2261b
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** d997f0f1
 
 **Preconditions:**
 - Project `P` reports an epic `p-e`, a bug `p-b`, a feature `p-f` and a task `p-t`

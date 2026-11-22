@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-003@8d87bf55
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: e53aa56a
 
 Preconditions:
 - milestone M1 whose `show` output has `today: 2026-11-04`

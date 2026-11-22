@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-107@99b7498f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 75f6d071
 
 **Preconditions:**
 - Project `alpha` has a milestone titled with 120 characters

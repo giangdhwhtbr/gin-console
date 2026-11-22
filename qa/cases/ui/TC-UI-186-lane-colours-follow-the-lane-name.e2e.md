@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-118@2b93f058
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 68874123
 
 **Preconditions:**
 - Epic `ex-e12` has lanes be, fe, infra and qa, and bao is the assignee of the tracks of lane fe only

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-138@b0819958
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c78feddc
 
 **Preconditions:**
 - Project `P` reports epic `e-5` with 12 tracks, 3 closed and 9 ready

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-138@b0819958
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 1a6750a8
 
 **Preconditions:**
 - Project `P` reports epic `e-4` with tracks `t-1` (closed) and `t-2` (open), and the open prep task `p-1` labelled `prep`

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-063@0282add4
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 802ff7ef
 
 **Preconditions:**
 - Project `example` is configured with a report

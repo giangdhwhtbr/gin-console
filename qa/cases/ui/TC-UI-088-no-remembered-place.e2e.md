@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-072@b8e02f9d
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 3b7db59b
 
 **Preconditions:**
 - Project `a` with bead `a-1`; the Beads page was not shown in this browser tab

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-113@15c19511
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** dd7a9ecc
 
 **Preconditions:**
 - Track 2 of lane `be` is blocked by track 1

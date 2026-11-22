@@ -17,7 +17,8 @@ test('TC-MILESTONE-UI-073: Milestone without dates', async ({ page, ev }) => {
     await expect(rows).toHaveCount(2);
     const m1 = rows.filter({ hasText: 'Alpha launch' });
     await expect(m1).toContainText('2 Nov – 13 Nov');
-    await expect(m1).toContainText('1 of 4');
+    await expect(m1.locator('[data-strand="1/4"]')).toHaveText('1/4');
+    await expect(m1.getByRole('img', { name: /of 4 epics$/ })).toBeVisible();
     await expect(m1).toContainText('2 warnings');
     const m4 = rows.filter({ hasText: 'Undated launch' });
     await expect(m4).toContainText('No dates');

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-079@258f0ac6
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** ae4d4a39
 
 **Preconditions:**
 - Project `alpha` has epics `r-1` and `r-2` without a parent, `r-2` blocked by `r-1`

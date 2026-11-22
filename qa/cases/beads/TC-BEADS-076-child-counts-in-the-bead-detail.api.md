@@ -3,8 +3,8 @@
 - **REQ:** REQ-BEADS-022@5b74cbda
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-35-00-api
-- **Checked:** f1718b78
+- **Run:** qa/evidence/2026-11-22T16-49-57-api
+- **Checked:** f95ce654
 
 **Preconditions:**
 - Project `alpha` as in TC-BEADS-074: epic `e-1` with tracks `t-1`, `t-2` (closed) and `t-3` (open), the closed prep task `p-1` and the merge gate `g-1`

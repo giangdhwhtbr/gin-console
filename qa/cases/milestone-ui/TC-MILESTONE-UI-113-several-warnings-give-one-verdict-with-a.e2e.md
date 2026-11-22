@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-MILESTONE-UI-024@3324d5bb
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** d67f4d41
 
 **Preconditions:**
 - Milestone `M1` of project `P` has epic A with the warnings `spec_due`, `open_bugs` with `count: 2` and `overflow` with `days: 2`

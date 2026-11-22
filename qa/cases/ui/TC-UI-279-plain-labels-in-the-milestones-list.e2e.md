@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-134@69f0a1c6
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 60e45620
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** eda8458a
 
 **Preconditions:**
 - Milestone `m1` of project `alpha` has `velocity.say_do: 0.62` and `lanes: 2`

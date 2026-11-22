@@ -3,7 +3,7 @@
 - **REQ:** REQ-MILESTONE-UI-022@e3343c6c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
+- **Run:** qa/evidence/2026-11-22T16-37-01
 - **Checked:** c644c461
 
 **Preconditions:**

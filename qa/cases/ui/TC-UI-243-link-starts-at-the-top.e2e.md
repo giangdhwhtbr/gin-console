@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-127@8e22a671
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 3bcedc91
 
 **Preconditions:**
 - Project `a` has 60 beads

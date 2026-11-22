@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-117@8f9669e9
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 54333fa3
 
 **Preconditions:**
 - Epic `ex-e3` has tracks without a lane

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-077@b6e1715d
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 8205bf67
 
 **Preconditions:**
 - The Graph view of `ex-e12` with "Show closed" on at 1440x900, where the page is taller than the window

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-050@7ac8e70f
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** cf66300e
 
 **Preconditions:**
 - Epic `e-1` in project `alpha` has task `t-1` blocked by `x-9`, a task of another epic

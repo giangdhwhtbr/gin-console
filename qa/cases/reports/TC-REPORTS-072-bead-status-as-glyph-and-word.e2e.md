@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-REPORTS-016@274a4232
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 2d2ea974
 
 **Preconditions:**
 - The team report of milestone `m2` has open beads, some of them blocked

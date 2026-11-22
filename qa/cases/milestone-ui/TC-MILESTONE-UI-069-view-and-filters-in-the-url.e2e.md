@@ -3,7 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-018@4d6687be
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-15T14-02-27
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** ef5febe6
 
 **Preconditions:**
 - The Beads tab of milestone `m2` of project `p` is shown

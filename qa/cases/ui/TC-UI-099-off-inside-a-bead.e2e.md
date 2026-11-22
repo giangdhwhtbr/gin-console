@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-081@e4288672
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** db21761d
 
 **Preconditions:**
 - Project `p` with an epic `e-1` that has an unlinked task

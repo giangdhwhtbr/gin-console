@@ -3,8 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-001@6e63a57f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** f335a890
+- **Run:** qa/evidence/2026-11-22T16-49-44
+- **Checked:** 0f5c4f63
 
 **Preconditions:**
 - Project `P` whose `milestone list` entries have no `lanes` key

@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-132@75ded0c7
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 1eaa4a95
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 86f893f0
 
 **Preconditions:**
 - Project `example` has 4 blocked beads, so its Projects card reads "blocked 4"

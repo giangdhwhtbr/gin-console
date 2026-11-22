@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-015@b1f5871c
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 30e6efae
 
 Preconditions:
 - epic A with no bead whose `parent` is A

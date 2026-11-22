@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-117@8f9669e9
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 2b69e438
 
 **Preconditions:**
 - Epic `ex-e12` has lane be (tracks 1 and 2), lane fe (track 3) and tracks 7 and 8 without a lane

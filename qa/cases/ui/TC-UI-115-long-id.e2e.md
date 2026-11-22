@@ -2,9 +2,10 @@
 
 - **REQ:** REQ-UI-107@99b7498f
 - **Priority:** high
-- **Result:** failed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
 - **Bug:** gin-console-3kd
+- **Checked:** 1e92da9b
 
 **Preconditions:**
 - Project `alpha` has bead `ex-payments-provider-migration-and-reconciliation-2026.2.1`

@@ -3,7 +3,7 @@
 - **REQ:** REQ-UI-119@fcb75f6f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-21T05-35-36
+- **Run:** qa/evidence/2026-11-22T16-37-01
 - **Checked:** 21739b33
 
 **Preconditions:**

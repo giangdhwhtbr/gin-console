@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-059@69731486
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-49-44
+- **Checked:** 165a97fa
 
 **Preconditions:**
 - Project `P` reports one bead of each state (ready, in progress, blocked, done, deferred), one bug and the lane `be`

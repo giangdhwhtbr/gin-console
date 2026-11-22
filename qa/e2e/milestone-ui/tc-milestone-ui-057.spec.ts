@@ -22,11 +22,11 @@ test('TC-MILESTONE-UI-057: Arrow from the end of the dependency to the start of 
     // not in the blocked color: not flagged late and not toned as blocked
     await expect(arrow).not.toHaveAttribute('data-late', /.*/);
     await expect(arrow).not.toHaveClass(/state-blocked/);
-    // bars: A's last day cell and B's first day cell (2026-11-02 and 2026-11-03)
-    const aDay = schedule.locator('li[data-epic="A"] [data-bead="2026-11-02"]');
-    const bDay = schedule.locator('li[data-epic="B"] [data-bead="2026-11-03"]');
+    // bars: A's bar (ends with 2026-11-02) and B's bar (starts on 2026-11-03) (2026-11-02 and 2026-11-03)
+    const aDay = schedule.locator('li[data-epic="A"] [data-bar="A"]');
+    const bDay = schedule.locator('li[data-epic="B"] [data-bar="B"]');
     const [ab, bb, pb] = [await aDay.boundingBox(), await bDay.boundingBox(), await arrow.boundingBox()];
-    // arrow leaves at A's right edge and enters at B's left edge (cells have 2px inset)
+    // arrow leaves at A's right edge and enters at B's left edge
     // the path may detour left of B's start (when the gap is under 16px) but never starts right of A's end
     expect(pb!.x).toBeLessThanOrEqual(ab!.x + ab!.width);
     expect(pb!.x + pb!.width).toBeGreaterThan(ab!.x + ab!.width);

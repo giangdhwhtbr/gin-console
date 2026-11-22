@@ -20,18 +20,17 @@ test('TC-MILESTONE-UI-011: Kick-start preview redraws the Gantt from the picked 
         : plan(start, ['2026-11-16', '2026-11-18'], ['2026-11-19', '2026-11-23'], true);
     },
   });
-  const firstDay = (id: string) =>
-    page
-      .getByRole('list', { name: 'Epics' })
-      .getByRole('listitem')
-      .filter({ has: page.getByRole('link', { name: id, exact: true }) })
-      .locator('[data-bead]')
-      .first();
+  const schedule = page.getByRole('figure', { name: 'Schedule' });
+  // One bar per epic (aria-hidden drawing): compare geometry. The header day label of a working day starts where its column does.
+  const bar = (id: string) => schedule.locator(`li[data-epic="${id}"] [data-bar="${id}"]`);
+  const dayLabel = (day: number) => schedule.locator('[data-scroller] span.tabular-nums').filter({ hasText: new RegExp(`^(\\w{3} )?${day}$`) }).first();
+  const box = async (l: ReturnType<typeof bar>) => (await l.boundingBox())!;
 
   await ev.step('1. Open /milestones/P/M1', async () => {
     await page.goto('/milestones/P/M1');
     await expect(page.getByLabel('Kick-start date')).toHaveValue('2026-11-02');
-    await expect(firstDay('A')).toHaveAttribute('data-bead', '2026-11-02');
+    await expect(bar('A')).toBeVisible();
+    await expect.poll(async () => Math.abs((await box(bar('A'))).x - (await box(dayLabel(2))).x)).toBeLessThan(1.5);
   });
 
   await ev.step('2. Set "Kick-start date" to 2026-11-16', async () => {
@@ -39,8 +38,16 @@ test('TC-MILESTONE-UI-011: Kick-start preview redraws the Gantt from the picked 
     await expect(page).toHaveURL(/[?&]start=2026-11-16(&|$)/);
     expect(stub.calls.some((u) => u.pathname === '/api/milestones/P/M1' && u.searchParams.get('start') === '2026-11-16')).toBe(true);
     await expect(page.getByText('Preview from Mon 16 Nov. Nothing changes until you run:')).toBeVisible();
-    await expect(firstDay('A')).toHaveAttribute('data-bead', '2026-11-16');
-    await expect(firstDay('B')).toHaveAttribute('data-bead', '2026-11-19');
+    // A starts on the first day drawn (Mon 16 Nov) and B on the next day (Thu 19 Nov), right where A ends (Wed 18 Nov).
+    await expect(bar('A')).toBeVisible();
+    await expect.poll(async () => Math.abs((await box(bar('A'))).x - (await box(dayLabel(16))).x)).toBeLessThan(1.5);
+    await expect
+      .poll(async () => {
+        const [a, b] = [await box(bar('A')), await box(bar('B'))];
+        return Math.abs(b.x - (a.x + a.width));
+      })
+      .toBeLessThan(1.5);
+    await expect(schedule.locator('[data-bead]')).toHaveCount(0);
     await expect(page.getByRole('figure', { name: 'Schedule' })).toHaveClass(/border-dashed/);
     await expect(page.getByText('gin milestone kickstart M1 --date 2026-11-16', { exact: true })).toBeVisible();
   });

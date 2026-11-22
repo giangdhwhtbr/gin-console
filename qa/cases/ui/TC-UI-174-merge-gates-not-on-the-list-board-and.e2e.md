@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-116@f93f8f82
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** b28342d3
 
 **Preconditions:**
 - An open merge gate without blockers and an open task without blockers

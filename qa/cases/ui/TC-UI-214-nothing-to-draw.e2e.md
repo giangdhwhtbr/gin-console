@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-053@b16b5ec1
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** d147fd67
 
 **Preconditions:**
 - Project `p` has task `t-9` without blockers that blocks nothing and has no child

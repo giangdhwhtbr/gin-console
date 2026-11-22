@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-114@6ba1fa63
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** dbad68ea
 
 **Preconditions:**
 - Lane `be` is running, held by `ann`, with a lease and 1/2 tracks closed

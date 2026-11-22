@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-116@f93f8f82
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c662dce1
 
 **Preconditions:**
 - The merge gate `ex-g3` is closed, has no parent and waits for track 3 of lane `fe`

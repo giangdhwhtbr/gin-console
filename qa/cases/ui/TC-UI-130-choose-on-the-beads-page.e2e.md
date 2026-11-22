@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-123@96cd57cc
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 70b94cd4
 
 **Preconditions:**
 - Projects `a` and `b` are configured, each with a bead

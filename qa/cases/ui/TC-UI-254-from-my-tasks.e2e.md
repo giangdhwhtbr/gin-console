@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-072@b8e02f9d
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 605e7621
 
 **Preconditions:**
 - Project `a` has bead `a-1` titled "Fix login" assigned to the user

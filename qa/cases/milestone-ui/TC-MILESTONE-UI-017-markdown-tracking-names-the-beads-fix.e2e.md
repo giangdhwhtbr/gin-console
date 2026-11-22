@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-005@70130792
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-18T15-52-57
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: d44f30b2
 
 Preconditions:
 - project P with `providers.task_tracking: markdown` (API responds 502 with `cause: "tracking"`)

@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-120@1a27452c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-21T05-35-36
-- **Checked:** f721a21c
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 5e325a3b
 
 **Preconditions:**
 - The workflow request for `ex-e12` answers stage `execute`, 4 of 6 gates satisfied, no warnings and no waivers

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-137@a7a96dbb
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 49720590
 
 **Preconditions:**
 - Project `P` reports a task `p-1` titled "A row title" last updated on a past date

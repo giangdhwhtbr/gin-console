@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-014@d417b46f
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-49-44
+Checked: 2121f18d
 
 Preconditions:
 - epic B in M1 with `depends_on: ["A"]`, A planned 2026-11-02 and B planned 2026-11-03

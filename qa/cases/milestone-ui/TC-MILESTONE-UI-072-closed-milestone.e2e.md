@@ -3,7 +3,8 @@
 - **REQ:** REQ-MILESTONE-UI-018@4d6687be
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-15T14-02-27
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** d80ff08d
 
 **Preconditions:**
 - Closed milestone `m1` of project `p` whose beads are all closed; "Show closed" off

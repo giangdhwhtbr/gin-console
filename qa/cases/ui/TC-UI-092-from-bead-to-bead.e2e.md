@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-073@99c2938a
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T16-24-46
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** ee288deb
 
 **Preconditions:**
 - Project `a` with bead `a-1` related to bead `a-2`

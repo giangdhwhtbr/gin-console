@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-081@e4288672
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 6d79ad2c
 
 **Preconditions:**
 - Project `p` with `r-1` depending on `r-2`, and 5 other beads without a parent and without arrows

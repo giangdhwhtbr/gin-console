@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-117@8f9669e9
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 4ce38b59
 
 **Preconditions:**
 - Epic `ex-e12` has lane be with tracks 1 and 2, and track 2 is blocked by track 1

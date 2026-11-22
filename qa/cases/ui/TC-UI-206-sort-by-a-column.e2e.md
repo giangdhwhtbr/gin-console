@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-121@12205711
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-21T05-35-36
-- **Checked:** 4cff8d15
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 8c3551a4
 
 **Preconditions:**
 - Epic `ex-e12` has 8 tracks in different states

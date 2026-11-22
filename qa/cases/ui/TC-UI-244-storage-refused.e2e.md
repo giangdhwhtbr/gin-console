@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-127@8e22a671
 - **Priority:** low
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** a1e408a6
 
 **Preconditions:**
 - Project `a` has 60 beads; the browser throws when the position is stored

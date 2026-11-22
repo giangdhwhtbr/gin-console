@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-132@75ded0c7
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 5ce55901
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** df8be679
 
 **Preconditions:**
 - Project `alpha` has task `t-1` with 2 dependencies

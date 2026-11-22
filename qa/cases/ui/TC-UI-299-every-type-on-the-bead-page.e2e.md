@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-067@e9f2261b
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 1245369a
 
 **Preconditions:**
 - Project `P` reports a feature `p-f` titled "A feature"

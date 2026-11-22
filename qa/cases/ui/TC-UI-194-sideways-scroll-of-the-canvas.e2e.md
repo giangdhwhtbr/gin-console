@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-122@b50bc21c
 - **Priority:** low
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 883b1b54
 
 **Preconditions:**
 - The Graph view of `ex-e12` with "Show closed" on at 390x844 is wider than the window

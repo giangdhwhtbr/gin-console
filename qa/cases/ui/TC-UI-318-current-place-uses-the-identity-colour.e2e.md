@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-141@008ef200
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c1b82617
 
 **Preconditions:**
 - Project `P` reports a bead `ex-e3` (epic) shown in the Beads List

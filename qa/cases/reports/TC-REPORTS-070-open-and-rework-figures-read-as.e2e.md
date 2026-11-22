@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-REPORTS-013@5683bbdb
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-49-44
+- **Checked:** 390e7f66
 
 **Preconditions:**
 - The team report of milestone `m2` has `blocked` 3, `unclaimed` 8, `reopens` 2 and `bugs` 1

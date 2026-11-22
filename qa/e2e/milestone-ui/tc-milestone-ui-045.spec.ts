@@ -14,6 +14,8 @@ test('TC-MILESTONE-UI-045: Drag to later dates', async ({ page, ev }) => {
   );
   await stubApi(page, { milestone: { M1: plan } });
   const schedule = page.getByRole('figure', { name: 'Schedule' });
+  // The day labels of the header are aria-hidden: a working day's label starts where its column does.
+  const dayLabel = (day: number) => schedule.locator('[data-scroller] span.tabular-nums').filter({ hasText: new RegExp(`^(\\w{3} )?${day}$`) }).first();
 
   await ev.step('1. Open /milestones/P/M1?zoom=1w', async () => {
     await page.goto('/milestones/P/M1?zoom=1w');
@@ -24,8 +26,8 @@ test('TC-MILESTONE-UI-045: Drag to later dates', async ({ page, ev }) => {
 
   await ev.step('2. Drag the chart to the left by the width of one week', async () => {
     const scroller = schedule.locator('[data-scroller]');
-    const mon = schedule.locator('[data-bead="2026-11-02"]');
-    const nextMon = schedule.locator('[data-bead="2026-11-09"]');
+    const mon = dayLabel(2);
+    const nextMon = dayLabel(9);
     const [a, b, s] = await Promise.all([mon.boundingBox(), nextMon.boundingBox(), scroller.boundingBox()]);
     const week = b!.x - a!.x; // one week's width: Monday to the next Monday
     const y = s!.y + s!.height / 2;
@@ -35,9 +37,9 @@ test('TC-MILESTONE-UI-045: Drag to later dates', async ({ page, ev }) => {
     await page.mouse.move(x - week, y, { steps: 10 });
     await page.mouse.up();
     await expect(schedule.getByText('9 Nov – 15 Nov', { exact: true })).toBeVisible();
-    // 2026-11-09 now sits where 2026-11-02 sat before the drag, and that week's last bead (Friday 13 Nov) is in view.
+    // 2026-11-09 now sits where 2026-11-02 sat before the drag, and that week's last working day (Friday 13 Nov) is in view.
     await expect.poll(async () => Math.round((await nextMon.boundingBox())!.x - a!.x)).toBe(0);
-    const [fri, box] = await Promise.all([schedule.locator('[data-bead="2026-11-13"]').boundingBox(), scroller.boundingBox()]);
+    const [fri, box] = await Promise.all([dayLabel(13).boundingBox(), scroller.boundingBox()]);
     expect(fri!.x + fri!.width).toBeLessThanOrEqual(box!.x + box!.width);
   });
 });

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-124@86ecfe10
 - **Priority:** low
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 57135a6f
 
 **Preconditions:**
 - Projects `a` and `b` are configured; the browser throws when a choice is stored

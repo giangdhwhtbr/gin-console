@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-018@3ceab845
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** b4ebc815
 
 **Preconditions:**
 - `GET /api/projects` is stubbed with project B whose `pull.status` is `no_remote`

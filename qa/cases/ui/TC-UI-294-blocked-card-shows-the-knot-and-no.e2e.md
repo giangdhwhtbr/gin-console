@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-064@2505c50e
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 4f5351b6
 
 **Preconditions:**
 - Project `P` reports a blocked task `p-1` titled "Blocked work" (open, with an open blocker `p-0`)

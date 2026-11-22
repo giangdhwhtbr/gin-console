@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-107@99b7498f
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 380cce1f
 
 **Preconditions:**
 - Project `alpha` has bead `ex-e4.1`

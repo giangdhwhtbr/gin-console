@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-010@870a452a
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 00b12821
 
 Preconditions:
 - project P with open epic A and closed epic E, both without a parent

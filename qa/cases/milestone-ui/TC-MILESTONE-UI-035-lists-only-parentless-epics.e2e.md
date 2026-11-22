@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-010@870a452a
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-15T14-02-27
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 2958f9fd
 
 Preconditions:
 - project P with open epics A (labelled `roadmap`) and B (no labels) without a parent, open epic C whose parent is milestone M1, open epic D whose parent is epic A, and open task T without a parent

@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-120@1a27452c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-21T05-35-36
-- **Checked:** f1faaece
+- **Run:** qa/evidence/2026-11-22T16-49-44
+- **Checked:** 26b91816
 
 **Preconditions:**
 - The workflow request for `ex-e12` answers 502 with an error

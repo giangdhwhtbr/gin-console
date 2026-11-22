@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-044@5e9715e5
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-57-11
-- **Checked:** 1253a8ad
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 86ed12e2
 
 **Preconditions:**
 - Project `alpha` has bead `t-1` with owner `lead@example.com` and no assignee

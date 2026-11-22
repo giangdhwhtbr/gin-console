@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-064@2505c50e
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** a526ce84
 
 **Preconditions:**
 - Project `P` reports an in-progress task `p-1` titled "Working" with a parent epic `p-e1` so that it shows in the Tree and the Graph

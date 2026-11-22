@@ -22,7 +22,7 @@ test('TC-MILESTONE-UI-051: Whole milestone does not pan', async ({ page, ev }) =
 
   await ev.step('2. Drag the chart to the left by 100 px', async () => {
     const scroller = schedule.locator('[data-scroller]');
-    const bead = schedule.locator('[data-bead="2026-11-09"]').first();
+    const bead = schedule.locator('[data-bar="E2"]');
     // The chart width follows a ResizeObserver: take the reference position once it holds between two reads.
     let beadBefore = (await bead.boundingBox())!;
     await expect.poll(async () => {
@@ -42,7 +42,7 @@ test('TC-MILESTONE-UI-051: Whole milestone does not pan', async ({ page, ev }) =
     await expect(schedule.getByRole('button', { name: 'Earlier' })).toHaveCount(0);
     await expect(schedule.getByRole('button', { name: 'Later' })).toHaveCount(0);
     await expect(schedule.locator('[data-range]')).toHaveCount(0);
-    // The chart does not move: nothing to scroll, the scroller stays at 0 and a bead keeps its place.
+    // The chart does not move: nothing to scroll, the scroller stays at 0 and a bar keeps its place.
     expect(await scroller.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
     expect(await scroller.evaluate((el) => el.scrollLeft)).toBe(0);
     const beadAfter = (await bead.boundingBox())!;

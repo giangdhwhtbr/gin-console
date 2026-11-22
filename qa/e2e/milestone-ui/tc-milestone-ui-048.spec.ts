@@ -15,7 +15,8 @@ test('TC-MILESTONE-UI-048: Step by a period', async ({ page, ev }) => {
   await stubApi(page, { milestone: { M1: plan } });
   const schedule = page.getByRole('figure', { name: 'Schedule' });
   const scroller = schedule.locator('[data-scroller]');
-  const bead = (iso: string) => schedule.locator(`[data-bead="${iso}"]`);
+  // The day labels of the header are aria-hidden: a working day's label starts where its column does.
+  const dayLabel = (day: number) => schedule.locator('[data-scroller] span.tabular-nums').filter({ hasText: new RegExp(`^(\\w{3} )?${day}$`) }).first();
   let firstX = 0; // where the first day in view starts on screen
 
   await ev.step('1. Open /milestones/P/M1?zoom=2w', async () => {
@@ -23,17 +24,17 @@ test('TC-MILESTONE-UI-048: Step by a period', async ({ page, ev }) => {
     await expect(schedule.getByRole('group', { name: 'Zoom' }).getByRole('button', { name: '2 weeks' })).toHaveAttribute('aria-pressed', 'true');
     // The range between Earlier and Later names the first and last day in view (GanttChart.tsx).
     await expect(schedule.getByText('2 Nov – 15 Nov', { exact: true })).toBeVisible();
-    firstX = (await bead('2026-11-02').boundingBox())!.x;
+    firstX = (await dayLabel(2).boundingBox())!.x;
   });
 
   await ev.step('2. Click "Later" (›)', async () => {
     await schedule.getByRole('button', { name: 'Later' }).click();
     await expect(schedule.getByText('16 Nov – 29 Nov', { exact: true })).toBeVisible();
     // 2026-11-16 now starts where 2026-11-02 started (the smooth scroll settles first) ...
-    await expect.poll(async () => Math.round((await bead('2026-11-16').boundingBox())!.x - firstX)).toBe(0);
-    // ... the last working day of the period (Friday 27 Nov) ends inside the chart, and 30 Nov starts past its right edge.
-    const [fri, mon, box] = await Promise.all([bead('2026-11-27').boundingBox(), bead('2026-11-30').boundingBox(), scroller.boundingBox()]);
-    expect(fri!.x + fri!.width).toBeLessThanOrEqual(box!.x + box!.width);
-    expect(mon!.x).toBeGreaterThanOrEqual(box!.x + box!.width);
+    await expect.poll(async () => Math.round((await dayLabel(16).boundingBox())!.x - firstX)).toBe(0);
+    // ... and the period ends on Sunday 29 Nov: epic E2 (Mon 23 Nov to Fri 11 Dec) starts inside the chart and runs past its right edge.
+    const [e2, box] = await Promise.all([schedule.locator('[data-bar="E2"]').boundingBox(), scroller.boundingBox()]);
+    expect(e2!.x).toBeLessThan(box!.x + box!.width);
+    expect(e2!.x + e2!.width).toBeGreaterThan(box!.x + box!.width);
   });
 });

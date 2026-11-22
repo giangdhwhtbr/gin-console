@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-MILESTONE-UI-024@3324d5bb
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 31db05ee
 
 **Preconditions:**
 - Milestone `M1` of project `P` has epic B with the warnings `unestimated` and `late`, planned to end on 12 Nov

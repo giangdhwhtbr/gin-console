@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-106@aef48e9b
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 5d64e503
 
 **Preconditions:**
 - Project `p` with beads, none of which matches the search "zzz"

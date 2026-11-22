@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-121@12205711
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-21T05-35-24
-- **Checked:** dcbca910
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 6b88ef49
 
 **Preconditions:**
 - Epic `ex-e12` has lanes be, fe, infra and qa

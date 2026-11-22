@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-005@70130792
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-18T15-52-57
+Run: qa/evidence/2026-11-22T16-37-01
+Checked: 0727ff70
 
 Preconditions:
 - project P whose gin-workflow has no `milestone` command

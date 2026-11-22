@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-018@3ceab845
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 50388fba
 
 **Preconditions:**
 - `GET /api/projects` is stubbed with project A whose `pull` is `{"status": "error", "error": "Merge conflict detected", "at": <1 minute ago>}` and which has beads counts

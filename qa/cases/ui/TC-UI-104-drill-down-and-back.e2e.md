@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-106@aef48e9b
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 555b8f92
 
 **Preconditions:**
 - Milestone `m2` with epic `e1` that has tasks, and epic `e2`

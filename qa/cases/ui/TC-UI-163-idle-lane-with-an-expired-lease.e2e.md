@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-112@5621fb16
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 1e6cda9f
 
 **Preconditions:**
 - Lane `infra` has track 5 closed and track 6 open, assigned to `chi`

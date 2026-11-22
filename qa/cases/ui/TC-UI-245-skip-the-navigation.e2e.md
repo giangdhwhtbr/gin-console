@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-128@3721ff6b
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 5f04a6a5
 
 **Preconditions:**
 - Project `a` is configured

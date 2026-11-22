@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-057@92e2ae1c
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c5224d91
 
 **Preconditions:**
 - Project `alpha` has bead `a-1` assigned to the user, who is shown in My Tasks

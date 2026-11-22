@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** f465d4c2
 
 **Preconditions:**
 - Project `alpha` has epic `e-1` without a parent, with 3 tasks `t-1`, `t-2` and `t-3`, of which `t-1` is closed, and epic `e-2` blocked by `e-1`, so Only linked draws `e-1`

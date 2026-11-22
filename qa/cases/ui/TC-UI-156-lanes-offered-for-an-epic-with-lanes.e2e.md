@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-111@c5095b0c
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 2ec925b9
 
 **Preconditions:**
 - The example project has epic `ex-e12`, whose tracks have lanes, and epic `ex-e3`, whose tracks have none

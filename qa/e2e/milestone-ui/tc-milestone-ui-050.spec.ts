@@ -25,10 +25,10 @@ test('TC-MILESTONE-UI-050: Later disabled at the end of the plan', async ({ page
     await schedule.getByRole('button', { name: 'Later' }).click();
     // The axis is widened to whole weeks at 1 week (gantt.ts axisOf), so the last week, Mon 9 Nov to Sun 15 Nov, is in view ...
     await expect(schedule.locator('[data-range]')).toHaveText('9 Nov – 15 Nov');
-    // ... and the plan's last day, Fri 13 Nov, lies inside the chart once the smooth scroll settles.
+    // ... and the plan's last day, Fri 13 Nov (where E2's bar ends), lies inside the chart once the smooth scroll settles.
     const scroller = schedule.locator('[data-scroller]');
     await expect.poll(async () => {
-      const [last, box] = await Promise.all([schedule.locator('[data-bead="2026-11-13"]').boundingBox(), scroller.boundingBox()]);
+      const [last, box] = await Promise.all([schedule.locator('[data-bar="E2"]').boundingBox(), scroller.boundingBox()]);
       return last!.x + last!.width <= box!.x + box!.width + 0.5 && last!.x >= box!.x;
     }).toBe(true);
     await expect(schedule.getByRole('button', { name: 'Later' })).toBeDisabled();

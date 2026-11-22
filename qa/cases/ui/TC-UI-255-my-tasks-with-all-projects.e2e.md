@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-073@99c2938a
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** aa91fe89
 
 **Preconditions:**
 - Projects `a` and `b` are configured; project `b` has bead `b-1` assigned to the user

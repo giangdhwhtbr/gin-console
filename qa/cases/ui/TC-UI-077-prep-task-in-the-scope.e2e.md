@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** 7c2614d0
 
 **Preconditions:**
 - Epic `e-1` in project `alpha` has tasks `t-1` (closed) and `t-2` (open) and prep task `p-1` (open) labelled `prep` and `prep:mockup`

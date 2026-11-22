@@ -3,7 +3,8 @@
 - **REQ:** REQ-UI-030@0f5a1d68
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-18T15-52-57
+- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Checked:** c968f2c8
 
 **Preconditions:**
 - Project `a` with an epic `e-1` that has tasks, and other open beads

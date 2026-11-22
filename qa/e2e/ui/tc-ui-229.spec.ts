@@ -1,4 +1,4 @@
-// TC: TC-UI-229@3656423e
+// TC: TC-UI-229@2b46c8a2
 import { test, expect } from '../evidence';
 import { stubApi } from '../support/api';
 
@@ -12,6 +12,6 @@ test('TC-UI-229: Icon rail (REQ-UI-123)', async ({ page, ev }) => {
     await page.goto('/beads?project=qwikfone');
     const rail = page.getByRole('button', { name: 'Project: qwikfone' });
     await expect(rail).toBeVisible();
-    await expect(rail).toHaveText('q');
+    await expect(rail).toHaveText('Q');
   });
 });
