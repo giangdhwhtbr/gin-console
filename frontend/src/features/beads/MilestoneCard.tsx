@@ -2,7 +2,8 @@ import { TriangleAlert } from "lucide-react";
 import { useCallback } from "react";
 import { Link } from "@/app/Link";
 import { fetchMilestones, milestonePath } from "@/features/milestones/api";
-import { plural, shortDate } from "@/features/milestones/format";
+import { plural } from "@/features/milestones/format";
+import { formatDate, formatRange } from "@/lib/dates";
 import { useLoad } from "@/features/milestones/useLoad";
 import { cn } from "@/lib/utils";
 import type { BeadDetail } from "./api";
@@ -10,8 +11,6 @@ import { workingDaysLeft } from "./epicOverview";
 import { Fact, Facts, OverviewCard } from "./OverviewCard";
 
 const STATUS: Record<string, string> = { active: "Active", scheduled: "Scheduled", planned: "Planned", closed: "Closed" };
-// the year of `end` is always shown; the year of `start` only when it differs
-const dateOf = (iso: string) => shortDate(iso, "");
 
 function Details({ project, id }: { project: string; id: string }) {
   const fetcher = useCallback(() => fetchMilestones(project), [project]);
@@ -37,7 +36,7 @@ function Details({ project, id }: { project: string; id: string }) {
   if (entry === undefined) return link;
   const { start, end, finish } = entry;
   const late = end !== null && finish !== null && finish > end;
-  const window = start !== null && end !== null ? `${shortDate(start, end)} – ${dateOf(end)}` : null;
+  const window = start !== null && end !== null ? formatRange(start, end, today) : null;
   const left = entry.status === "active" && end !== null ? workingDaysLeft(today, end) : null;
   return (
     <>
@@ -50,7 +49,7 @@ function Details({ project, id }: { project: string; id: string }) {
           <Fact label="Forecast">
             <span className={cn("inline-flex items-baseline gap-1", late && "text-state-blocked")}>
               {late && <TriangleAlert aria-hidden className="size-3.5 shrink-0 self-center" />}
-              <span>{late ? `finish ${dateOf(finish)}, after the end` : `finish ${dateOf(finish)}`}</span>
+              <span>{late ? `finish ${formatDate(finish, today)}, after the end` : `finish ${formatDate(finish, today)}`}</span>
             </span>
           </Fact>
         )}

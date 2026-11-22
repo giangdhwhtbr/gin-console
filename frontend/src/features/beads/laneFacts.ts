@@ -1,4 +1,4 @@
-import { factDate } from "@/lib/dates";
+import { formatDateTime } from "@/lib/dates";
 import type { BeadSummary, Claim, TrackRef } from "./api";
 
 /** Labels worth a chip: `lane:<x>` and `track:<n>` are dropped when the bead's own field shows them. */
@@ -22,5 +22,5 @@ export function leaseOf(claims: readonly (Claim | null)[], now: Date): { text: s
   }
   if (latest === null) return null;
   const expired = new Date(latest) <= now;
-  return { text: `${expired ? "expired" : "until"} ${factDate(latest)}`, expired };
+  return { text: `${expired ? "expired" : "until"} ${formatDateTime(latest)}`, expired };
 }

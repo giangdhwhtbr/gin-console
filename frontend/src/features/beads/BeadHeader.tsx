@@ -4,7 +4,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { FactList, type Fact } from "@/components/FactList";
 import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
-import { factDate } from "@/lib/dates";
+import { formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { BeadDetail } from "./api";
 import { complexityOf } from "./complexity";
@@ -30,8 +30,8 @@ export function BeadHeader({ project, bead }: { project: string; bead: BeadDetai
     { label: "Owner", value: bead.owner },
     { label: "Assignee", value: bead.assignee },
     { label: "Created by", value: bead.created_by },
-    { label: "Created", value: factDate(bead.created_at) },
-    { label: "Updated", value: factDate(bead.updated_at) },
+    { label: "Created", value: formatDateTime(bead.created_at) },
+    { label: "Updated", value: formatDateTime(bead.updated_at) },
     { label: "Comments", value: bead.comment_count },
   ].filter((fact) => fact.value !== null && fact.value !== "");
 

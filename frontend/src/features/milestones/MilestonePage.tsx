@@ -9,9 +9,10 @@ import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
 import { filtersToSearch, parseFilters } from "@/features/beads/filters";
 import { rememberOrigin } from "@/app/origin";
+import { formatDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
-import { awayLine, plural, shortDate } from "./format";
+import { awayLine, plural } from "./format";
 import { dayOf, isoOf, zoomOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
 import { MilestoneError } from "./MilestoneError";
@@ -120,7 +121,7 @@ function Milestone({ project, id }: { project: string; id: string }) {
 
 export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDetail }) {
   const [more, setMore] = useState(false);
-  const date = (iso: string) => shortDate(iso, plan.today);
+  const date = (iso: string) => formatDate(iso, plan.today);
   const late = plan.overflow_days > 0;
   const away = awayLine(plan.away, plan.today);
   const outcome =

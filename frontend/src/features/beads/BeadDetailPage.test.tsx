@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadDetail, Comment } from "./api";
 import { forgetConfiguredProjects, rememberProject, resolveProject } from "@/app/project";
-import { factDate } from "@/lib/dates";
+import { formatDateTime } from "@/lib/dates";
 import { BeadDetailPage } from "./BeadDetailPage";
 
 const json = (body: unknown, status = 200) =>
@@ -205,7 +205,9 @@ describe("BeadDetailPage", () => {
 
   // REQ-UI-028
   it("REQ-UI-028 shows fields and the description as Markdown", async () => {
-    const created_at = "2026-10-01T12:00:00Z";
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
+    const created_at = new Date(2026, 4, 11, 16, 0).toISOString();
     const updated_at = "2026-10-10T12:00:00Z";
     const rawDesc = "**bold** <script>window.hacked = 1</script>\nsecond line";
     const bead = beadDetail("a-5", {
@@ -239,8 +241,8 @@ describe("BeadDetailPage", () => {
     if (facts === null) throw new Error("the facts are missing");
     expect(facts).toHaveTextContent("Owner" + "alice");
     expect(facts).toHaveTextContent("Assignee" + "bob");
-    expect(within(facts).getByText(factDate(created_at))).toBeInTheDocument();
-    expect(within(facts).getByText(factDate(updated_at))).toBeInTheDocument();
+    expect(within(facts).getByText("11 May, 16:00")).toBeInTheDocument();
+    expect(within(facts).getByText(formatDateTime(updated_at, "2026-11-22"))).toBeInTheDocument();
     expect(facts).toHaveTextContent("Comments" + "3");
 
     expect(await screen.findByText("bold", { selector: "strong" })).toBeInTheDocument();
@@ -483,6 +485,9 @@ describe("BeadDetailPage", () => {
     expect(await screen.findByRole("heading", { name: "Title a-5" })).toBeInTheDocument();
     expect(screen.getByText("Loading comments…")).toBeInTheDocument();
 
+
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
     const c1 = note("c-1");
     const c2 = note("c-2", { created_at: "2026-10-06T10:00:00Z" });
 
@@ -495,8 +500,8 @@ describe("BeadDetailPage", () => {
     expect(screen.getByText("Text of c-2")).toBeInTheDocument();
     expect(screen.getByText("Text of c-1")).toBeInTheDocument();
     expect(screen.getAllByText("alice", { selector: ":not(dd)" })).toHaveLength(2);
-    expect(screen.getByText(new Date("2026-10-06T10:00:00Z").toLocaleString())).toBeInTheDocument();
-    expect(screen.getByText(new Date("2026-10-05T10:00:00Z").toLocaleString())).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime("2026-10-06T10:00:00Z", "2026-11-22"))).toBeInTheDocument();
+    expect(screen.getByText(formatDateTime("2026-10-05T10:00:00Z", "2026-11-22"))).toBeInTheDocument();
   });
 
   // REQ-UI-039
@@ -669,6 +674,8 @@ describe("BeadDetailPage", () => {
   });
 
   it("REQ-UI-028 Badges and facts: badge row, reason line and label/value facts", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
     const at = new Date(2026, 4, 11, 16, 0).toISOString();
     stubFetch(
       beadDetail("e-3", {
@@ -697,8 +704,8 @@ describe("BeadDetailPage", () => {
       ["Owner", "lead@example.com"],
       ["Assignee", "bao"],
       ["Created by", "lead"],
-      ["Created", "11 May 2026 16:00"],
-      ["Updated", "11 May 2026 16:00"],
+      ["Created", "11 May, 16:00"],
+      ["Updated", "11 May, 16:00"],
       ["Comments", "0"],
     ]);
     expect(within(facts).getByText("lead@example.com")).toHaveClass("text-foreground", "font-medium");
@@ -744,13 +751,13 @@ describe("BeadDetailPage", () => {
     expect(within(header).queryByText("track:2")).toBeNull();
     expect(within(header).getByText("Lane").nextElementSibling).toHaveTextContent("be");
     expect(within(header).getByText("Track").nextElementSibling).toHaveTextContent("#2 2026-11-17-team-checkout.md");
-    expect(within(header).getByText("Lease").nextElementSibling).toHaveTextContent(`until ${factDate("2999-01-01T00:00:00Z")}`);
+    expect(within(header).getByText("Lease").nextElementSibling).toHaveTextContent(`until ${formatDateTime("2999-01-01T00:00:00Z", "2026-11-22")}`);
   });
 
   it("REQ-UI-115 Facts: an expired lease", async () => {
     stubFetch(beadDetail("a-5", { lane: "be", claim: { holder: "w", expires_at: "2020-01-01T00:00:00Z" } }));
     render(<BeadDetailPage project="alpha" id="a-5" />);
-    expect(await screen.findByText(`expired ${factDate("2020-01-01T00:00:00Z")}`)).toBeInTheDocument();
+    expect(await screen.findByText(`expired ${formatDateTime("2020-01-01T00:00:00Z", "2026-11-22")}`)).toBeInTheDocument();
   });
 
   it("REQ-UI-116 gate bead page", async () => {

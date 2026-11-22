@@ -1,9 +1,10 @@
+import { formatDate } from "@/lib/dates";
 import type { DaysPerPoint } from "@/features/milestones/api";
 import { oneDecimal } from "@/features/milestones/format";
 import type { QualityRow, Report } from "./api";
 import type { ReportTab } from "./filters";
 import { formatCost, formatDays, formatPercent, formatTokens } from "./format";
-import { formatDate, lateDays } from "./team/format";
+import { lateDays } from "./team/format";
 import { selectedMilestone, type TeamReport } from "./teamApi";
 
 export type Headline = { text: string; warn: boolean };
@@ -21,7 +22,7 @@ export function teamHeadline(report: TeamReport): Headline {
     const late = lateDays(milestone);
     return late > 0 ? { text: `Finished ${late} d late`, warn: true } : { text: "Finished on time", warn: false };
   }
-  if (report.today < milestone.start) return { text: `Starts ${formatDate(milestone.start)}`, warn: false };
+  if (report.today < milestone.start) return { text: `Starts ${formatDate(milestone.start, report.today)}`, warn: false };
   const progress = `${team.closed} of ${team.scope} closed`;
   if (team.late_open > 0) return { text: `${progress} · past end`, warn: true };
   if (team.pace_needed !== null && team.pace_needed > team.pace) return { text: `${progress} · behind pace`, warn: true };

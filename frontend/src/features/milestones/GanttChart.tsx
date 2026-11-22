@@ -11,11 +11,12 @@ import { isPrep } from "@/features/beads/prep";
 import { prepLabel } from "@/features/beads/progress";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
+import { formatDate } from "@/lib/dates";
 import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import type { MilestoneDetail } from "./api";
 import { CopyCommand } from "./CopyCommand";
-import { plural, shortDate, weekday } from "./format";
+import { plural, weekday } from "./format";
 import {
   axisOf,
   BAR_TOP,
@@ -190,7 +191,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
   const chain = hot === null ? null : chainOf(epics, hot);
   const faded = (id: string) => chain !== null && !chain.has(id);
   const stops = todayX === null ? [endX] : [todayX, endX];
-  const date = (day: number) => shortDate(isoOf(day), plan.today);
+  const date = (day: number) => formatDate(isoOf(day), plan.today);
 
   return (
     <figure aria-label="Schedule" className={cn("flex flex-col rounded border bg-card", preview && "border-dashed")}>
@@ -326,7 +327,7 @@ function Header({ axis, label, today, todayX, endX, end }: { axis: Axis; label: 
           </span>
         )}
         <span data-chip="end" className="absolute top-[22px]" style={{ left: endX }}>
-          <span className={cn("absolute whitespace-nowrap text-[11px] font-medium text-foreground", chip(sides.end))}>{`End ${shortDate(end, today)}`}</span>
+          <span className={cn("absolute whitespace-nowrap text-[11px] font-medium text-foreground", chip(sides.end))}>{`End ${formatDate(end, today)}`}</span>
         </span>
       </div>
     </div>
@@ -515,7 +516,7 @@ function ChildRow({ project, row, axis, label, today, faded }: { project: string
   const x0 = xOf(axis, days[0]);
   const x1 = endOf(axis, days[days.length - 1]);
   const shortId = bead.id.startsWith(epic.id) ? bead.id.slice(epic.id.length) : bead.id;
-  const state = bead.status === "closed" && bead.closed_at !== null ? `closed ${shortDate(bead.closed_at.slice(0, 10), today)}` : look.label;
+  const state = bead.status === "closed" && bead.closed_at !== null ? `closed ${formatDate(bead.closed_at.slice(0, 10), today)}` : look.label;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
     <li data-child={bead.id} data-faded={faded || undefined} className="flex border-b" style={{ height: row.height }}>

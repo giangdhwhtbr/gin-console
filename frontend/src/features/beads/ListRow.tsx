@@ -13,6 +13,7 @@ import { isPrep } from "./prep";
 import { prepLabel, progressOf } from "./progress";
 import { PrepChip } from "./PrepChip";
 import { StateMark } from "./StateMark";
+import { formatDate } from "@/lib/dates";
 import type { TreeRow } from "./tree";
 import { TypeBadge } from "./TypeBadge";
 
@@ -124,7 +125,7 @@ export function ListRow({
         <span className="hidden truncate text-muted-foreground @4xl:block" title={bead.assignee ?? bead.owner ?? ""}>
           {bead.assignee ?? bead.owner ?? ""}
         </span>
-        <span className="hidden text-xs text-muted-foreground @4xl:block">{new Date(bead.updated_at).toLocaleDateString()}</span>
+        <span className="hidden text-xs text-muted-foreground @4xl:block">{formatDate(bead.updated_at)}</span>
       </div>
     </li>
   );

@@ -10,6 +10,7 @@ import { Tabs } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
 import type { DaysPerPoint } from "@/features/milestones/api";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
+import { formatDateTime } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchReport, type Report } from "./api";
 import { PERIODS, TABS, parseReportSearch, reportSearch, type ReportFilters, type ReportTab } from "./filters";
@@ -172,7 +173,7 @@ export function ReportsPage() {
           <h1 className="text-xl font-semibold">Reports</h1>
           {loaded.status === "ok" && (
             <p className="text-sm text-muted-foreground">
-              Generated <time dateTime={loaded.report.generated_at}>{new Date(loaded.report.generated_at).toLocaleString()}</time>
+              Generated <time dateTime={loaded.report.generated_at}>{formatDateTime(loaded.report.generated_at)}</time>
             </p>
           )}
         </div>

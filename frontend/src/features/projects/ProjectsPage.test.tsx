@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { clearOrigin, getOrigin } from "@/app/origin";
+import { formatDateTime } from "@/lib/dates";
 import type { Beads, Project, Workflow, WorkspaceRepo } from "./api";
 import { ProjectsPage } from "./ProjectsPage";
 
@@ -404,7 +405,7 @@ describe("ProjectsPage", () => {
       const at = pullAt(120);
       await load([project({ name: "A", beads, pull: { at, status: "ok", error: null } })]);
       const line = within(cardOf("A")).getByText("pulled 2 minutes ago");
-      expect(line).toHaveAttribute("title", expect.stringContaining("UTC"));
+      expect(line).toHaveAttribute("title", formatDateTime(at));
     });
 
     it("REQ-BEADS-018 No remote: the card shows no Dolt remote and no error", async () => {

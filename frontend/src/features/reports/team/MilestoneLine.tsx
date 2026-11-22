@@ -1,7 +1,9 @@
 import { Badge } from "@/components/ui/badge";
+import { workdaysAfter } from "@/features/milestones/format";
+import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { TeamMilestone, TeamReport } from "../teamApi";
-import { formatDate, lateDays, workdaysAfter } from "./format";
+import { lateDays } from "./format";
 
 const STATUS_LABEL = { active: "Active", scheduled: "Scheduled", planned: "Planned", closed: "Closed" } as const;
 
@@ -14,7 +16,7 @@ function chipText(m: TeamMilestone): string {
 export function MilestoneLine({ report, milestone }: { report: TeamReport; milestone: TeamMilestone }) {
   const { team, today } = report;
   let progress: string | null = null;
-  if (milestone.status === "closed" && milestone.closed_on !== null) progress = `finished ${formatDate(milestone.closed_on)}`;
+  if (milestone.status === "closed" && milestone.closed_on !== null) progress = `finished ${formatDate(milestone.closed_on, today)}`;
   else if (today < milestone.start) progress = `starts in ${workdaysAfter(today, milestone.start)} working days`;
   else if (today <= milestone.end && team !== null) progress = `working day ${team.elapsed} of ${team.working_days} · ${team.days_left} left`;
   return (
@@ -24,7 +26,7 @@ export function MilestoneLine({ report, milestone }: { report: TeamReport; miles
         {chipText(milestone)}
       </Badge>
       <span className="text-sm text-muted-foreground">
-        {formatDate(milestone.start)} – {formatDate(milestone.end)}
+        {formatRange(milestone.start, milestone.end, today)}
       </span>
       {progress !== null && <span className="text-sm text-muted-foreground">{progress}</span>}
     </div>

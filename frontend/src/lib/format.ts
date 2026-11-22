@@ -7,11 +7,3 @@ export function formatAge(fromIso: string, nowMs: number): string {
   if (seconds < 86_400) return relative.format(-Math.round(seconds / 3600), "hour");
   return relative.format(-Math.round(seconds / 86_400), "day");
 }
-
-/** Local time, then the same instant in UTC, for a reset time. */
-export function formatTimes(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  const utc = `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
-  return `${date.toLocaleString()} (${utc})`;
-}

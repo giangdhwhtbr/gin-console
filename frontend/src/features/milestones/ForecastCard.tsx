@@ -1,13 +1,14 @@
 import { TriangleAlert } from "lucide-react";
 import { FactList, type Fact } from "@/components/FactList";
+import { formatDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import type { DaysPerPoint, Forecast } from "./api";
-import { oneDecimal, plural, shortDate, workdaysAfter } from "./format";
+import { oneDecimal, plural, workdaysAfter } from "./format";
 
 /** The project forecast of `milestone list --json` (REQ-MILESTONE-UI-016); nothing without one. */
 export function ForecastCard({ forecast: f, today, daysPerPoint = null }: { forecast: Forecast | null; today: string; daysPerPoint?: DaysPerPoint | null }) {
   if (f === null) return null;
-  const date = (iso: string) => shortDate(iso, today);
+  const date = (iso: string) => formatDate(iso, today);
   let compare: { text: string; late: boolean } | null = null;
   if (f.finish !== null && f.deadline !== null) {
     if (f.overflow_days > 0) compare = { text: `${plural(f.overflow_days, "working day")} past the deadline`, late: true };

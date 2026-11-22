@@ -2,7 +2,8 @@ import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 import { formatDays, formatPercent } from "../format";
 import type { MemberFigures, TeamFigures as Figures, TeamMilestone, TeamTotals } from "../teamApi";
-import { formatDate, WARN_DAYS } from "./format";
+import { formatDate } from "@/lib/dates";
+import { WARN_DAYS } from "./format";
 
 const WARN = "text-state-blocked";
 

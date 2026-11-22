@@ -7,11 +7,12 @@ import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
+import { formatDate } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
 import { ForecastCard } from "./ForecastCard";
-import { percent, plural, shortDate } from "./format";
+import { percent, plural } from "./format";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
 import { UnassignedEpics } from "./UnassignedEpics";
@@ -108,7 +109,7 @@ function MilestoneTable({ project }: { project: string }) {
 }
 
 function Row({ project, milestone: m, today }: { project: string; milestone: MilestoneEntry; today: string }) {
-  const date = (iso: string) => shortDate(iso, today);
+  const date = (iso: string) => formatDate(iso, today);
   const warnings = m.warnings ?? 0;
   const sayDo = m.velocity?.say_do ?? null;
   const share = m.epics.total === 0 ? 0 : (100 * m.epics.closed) / m.epics.total;

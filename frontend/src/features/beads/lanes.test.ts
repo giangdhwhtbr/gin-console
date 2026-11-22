@@ -1,10 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadSummary } from "./api";
 import { bead } from "./beadFixtures";
 import { hasLanes, LANE, laneState, laneStep, laneSummary, lanesOf, type LaneBoard, type Point } from "./lanes";
 
 const NOW = new Date("2026-11-20T10:00:00Z");
 const E = "ex-e12";
+
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOW);
+});
+afterEach(() => vi.useRealTimers());
 
 const track = (n: number, lane: string | null, over: Partial<BeadSummary> = {}) =>
   bead(`${E}.${n}`, { parent: E, lane, track: { plan: "p/team.md", number: n }, ...over });
@@ -117,7 +123,7 @@ describe("lane header facts and state", () => {
     const r = row(board(), "be");
     expect(r.state).toEqual({ kind: "running", words: "Running" });
     expect(r.holders).toEqual(["ann"]);
-    expect(r.lease?.text).toMatch(/^until 21 Nov 2026/);
+    expect(r.lease?.text).toMatch(/^until 21 Nov, 16:00/);
     expect(r.lease?.expired).toBe(false);
     expect(r.tracks).toEqual({ closed: 1, total: 2 });
   });
@@ -134,7 +140,7 @@ describe("lane header facts and state", () => {
     const r = row(board(), "infra");
     expect(r.state).toEqual({ kind: "idle", words: "Idle" });
     expect(r.holders).toEqual(["chi"]);
-    expect(r.lease?.text).toMatch(/^expired 19 Nov 2026/);
+    expect(r.lease?.text).toMatch(/^expired 19 Nov, 09:00/);
     expect(r.lease?.expired).toBe(true);
   });
 
@@ -380,7 +386,7 @@ describe("laneStep", () => {
 describe("laneSummary", () => {
   it("REQ-UI-114 Screen reader list: lanes with state, holder, lease and tracks, then merge gates", () => {
     const lines = laneSummary(board());
-    expect(lines).toContain("be: Running, held by ann, lease until 21 Nov 2026 16:00, 1/2 closed");
+    expect(lines).toContain("be: Running, held by ann, lease until 21 Nov, 16:00, 1/2 closed");
     expect(lines).toContain("qa: Waiting for be, unclaimed, 0/1 closed");
     expect(lines).toContain("fe: All tracks closed, 1/1 closed");
     expect(lines).toContain("No lane: 1/2 closed");

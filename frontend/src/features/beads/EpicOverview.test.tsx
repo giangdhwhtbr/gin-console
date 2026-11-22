@@ -145,14 +145,14 @@ describe("EpicOverview cards", () => {
     expect(await card("Milestone").findByRole("link", { name: "ex-m2 Checkout v2" })).toBeInTheDocument();
   });
 
-  it("REQ-UI-120 Milestone forecast late: ex-m2 Checkout v2, 10 Nov – 1 Dec 2026, 8 working days and a warned finish on 20 Nov 2026", async () => {
+  it("REQ-UI-120 Milestone forecast late: ex-m2 Checkout v2, 10 Nov – 1 Dec, 8 working days and a warned finish on 16 Feb 2027", async () => {
     stub();
     show();
     const milestone = card("Milestone");
     const link = await milestone.findByRole("link", { name: "ex-m2 Checkout v2" });
     expect(link).toHaveAttribute("href", "/milestones/example/ex-m2");
     expect(milestone.getByText("Active")).toBeInTheDocument();
-    expect(milestone.getByText("10 Nov – 1 Dec 2026")).toBeInTheDocument();
+    expect(milestone.getByText("10 Nov – 1 Dec")).toBeInTheDocument();
     expect(milestone.getByText("8 working days")).toBeInTheDocument();
     const finish = milestone.getByText("finish 16 Feb 2027, after the end");
     expect(finish.parentElement?.querySelector("svg")).not.toBeNull();
@@ -163,7 +163,7 @@ describe("EpicOverview cards", () => {
     stub(WORKFLOW, list([entry("ex-m2", { title: "Checkout v2", status: "closed", start: "2026-11-10", end: "2026-12-01", finish: "2026-12-01" })], { today: "2026-11-20" }));
     show();
     const milestone = card("Milestone");
-    expect(await milestone.findByText("finish 1 Dec 2026")).toBeInTheDocument();
+    expect(await milestone.findByText("finish 1 Dec")).toBeInTheDocument();
     expect(milestone.queryByText(/working day/)).toBeNull();
   });
 

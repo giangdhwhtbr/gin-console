@@ -9,7 +9,8 @@ import type { BeadStatus } from "../filters";
 import { beadPath, formatDays } from "../format";
 import { UNASSIGNED, type TeamBead } from "../teamApi";
 import { ageOf, COLUMNS, DEFAULT_SORT, sortBeads, type Column, type Dir } from "./beadSort";
-import { formatDate, WARN_DAYS } from "./format";
+import { formatDate } from "@/lib/dates";
+import { WARN_DAYS } from "./format";
 
 const PAGE = 15;
 const WARN = "text-state-blocked";
@@ -86,7 +87,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
         <TableCell className={cn("text-right", bead.age_days !== null && bead.age_days > WARN_DAYS && WARN)}>{formatDays(bead.age_days)}</TableCell>
       );
     case "closed":
-      return <TableCell className="text-right text-sm">{bead.closed_at === null ? "—" : formatDate(bead.closed_at)}</TableCell>;
+      return <TableCell className="text-right text-sm">{bead.closed_at === null ? "—" : formatDate(bead.closed_at, today)}</TableCell>;
     case "cycle":
       return <TableCell className="text-right">{formatDays(bead.cycle_days)}</TableCell>;
     case "on_time": {

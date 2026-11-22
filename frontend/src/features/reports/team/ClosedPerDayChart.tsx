@@ -1,7 +1,8 @@
 import { Fragment, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import type { DayRow, TeamMilestone } from "../teamApi";
-import { formatDate, memberColor } from "./format";
+import { formatDate } from "@/lib/dates";
+import { memberColor } from "./format";
 
 const isMonday = (date: string): boolean => new Date(date).getUTCDay() === 1;
 
@@ -28,7 +29,7 @@ export function ClosedPerDayChart({
   const last = days[days.length - 1].date;
   const endMarked = last > milestone.end && days.some((d) => d.date === milestone.end);
   const markerOf = (day: DayRow): string | null =>
-    day.date === today ? "Today" : endMarked && day.date === milestone.end ? `End ${formatDate(day.date)}` : null;
+    day.date === today ? "Today" : endMarked && day.date === milestone.end ? `End ${formatDate(day.date, today)}` : null;
   // a marker within 5 columns of the one before it goes on a second row above the plot, so two labels never overlap
   const markers = days.flatMap((day, index) => {
     const text = markerOf(day);
@@ -65,7 +66,7 @@ export function ClosedPerDayChart({
           {days.map((day) => {
             const parts = members.filter((m) => (day.closed[m] ?? 0) > 0);
             const total = totalOf(day);
-            const date = formatDate(day.date);
+            const date = formatDate(day.date, today);
             const label = `${date}: ${[...parts.map((m) => `${m} ${day.closed[m]}`), `total ${total}`].join(", ")}`;
             const future = day.date > today && milestone.status !== "closed";
             const marker = markerOf(day);
@@ -119,7 +120,7 @@ export function ClosedPerDayChart({
               <Fragment key={day.date}>
                 {(isMonday(day.date) || index === 0) && (
                   <span className="absolute bottom-0 whitespace-nowrap text-xs text-muted-foreground" style={placeOf(index)}>
-                    {formatDate(day.date)}
+                    {formatDate(day.date, today)}
                   </span>
                 )}
               </Fragment>

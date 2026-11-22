@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { leaseOf, trackText, visibleLabels } from "./laneFacts";
-import { factDate } from "@/lib/dates";
+import { formatDateTime } from "@/lib/dates";
 
 describe("laneFacts", () => {
   it("REQ-UI-115 labels drop lane:<x> with a lane and track:<n> with a track", () => {
@@ -18,9 +18,9 @@ describe("laneFacts", () => {
     const now = new Date("2026-11-20T10:00:00Z");
     const a = { holder: "a", expires_at: "2026-11-20T12:00:00Z" };
     const b = { holder: "b", expires_at: "2026-11-21T12:00:00Z" };
-    expect(leaseOf([a, null, b], now)).toEqual({ text: `until ${factDate(b.expires_at)}`, expired: false });
+    expect(leaseOf([a, null, b], now)).toEqual({ text: `until ${formatDateTime(b.expires_at)}`, expired: false });
     const old = { holder: "a", expires_at: "2026-11-18T09:00:00Z" };
-    expect(leaseOf([old], now)).toEqual({ text: `expired ${factDate(old.expires_at)}`, expired: true });
+    expect(leaseOf([old], now)).toEqual({ text: `expired ${formatDateTime(old.expires_at)}`, expired: true });
     expect(leaseOf([null], now)).toBeNull();
     expect(leaseOf([], now)).toBeNull();
   });

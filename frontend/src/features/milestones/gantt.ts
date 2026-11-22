@@ -1,7 +1,8 @@
+import { formatDate } from "@/lib/dates";
 import type { BeadSummary } from "@/features/beads/api";
 import { progressOf } from "@/features/beads/progress";
 import type { EpicPlan, MilestoneDetail } from "./api";
-import { monthName, plural, shortDate, utcOf } from "./format";
+import { monthName, plural, utcOf } from "./format";
 
 const DAY_MS = 86_400_000;
 export const WEEKEND_WIDTH = 8;
@@ -117,7 +118,7 @@ export function warningLines(epic: EpicPlan, today: string, integration: string 
       case "overflow":
         return [`${w.days ?? 0} working ${w.days === 1 ? "day" : "days"} past the end`];
       case "late":
-        return [`Late: should have finished ${shortDate(epic.planned_end, today)}`];
+        return [`Late: should have finished ${formatDate(epic.planned_end, today)}`];
       case "unestimated":
         return ["No estimate"];
       case "spec_not_ready":
@@ -125,7 +126,7 @@ export function warningLines(epic: EpicPlan, today: string, integration: string 
       case "spec_due":
         return ["Spec due before kick-off"];
       case "after_integration":
-        return [integration === null ? "Ends after integration" : `Ends after integration on ${shortDate(integration, today)}`];
+        return [integration === null ? "Ends after integration" : `Ends after integration on ${formatDate(integration, today)}`];
       case "open_bugs":
         return [plural(w.count ?? 0, "open bug")];
       case "oversized":
@@ -141,7 +142,7 @@ export function warningLines(epic: EpicPlan, today: string, integration: string 
 }
 
 export const periodOf = (from: string, to: string, today: string) =>
-  from === to ? shortDate(from, today) : `${shortDate(from, today)} – ${shortDate(to, today)}`;
+  from === to ? formatDate(from, today) : `${formatDate(from, today)} – ${formatDate(to, today)}`;
 
 /** REQ-MILESTONE-UI-011: the zoom modes; any other URL value shows the whole milestone. */
 export type Zoom = "1w" | "2w" | "all";

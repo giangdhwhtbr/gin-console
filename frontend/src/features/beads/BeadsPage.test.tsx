@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { rememberProject, resolveProject, setFavorite } from "@/app/project";
 import { navigate } from "@/app/route";
 import type { ProjectBeads } from "@/features/projects/api";
+import { formatDate } from "@/lib/dates";
 import type { BeadSummary, ProjectMilestones } from "./api";
 import { BeadsPage } from "./BeadsPage";
 
@@ -419,6 +420,8 @@ describe("BeadsPage", () => {
 
   // REQ-UI-024
   it("REQ-UI-024 row content and order", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-11-22T12:00:00Z"));
     const yesterday = "2026-10-19T10:00:00Z";
     const lastWeek = "2026-10-12T10:00:00Z";
     const p2 = bead("alpha-p2", {
@@ -458,7 +461,7 @@ describe("BeadsPage", () => {
     expect(row1.getByText("P1")).toBeInTheDocument();
     expect(row1.getByText("core")).toBeInTheDocument();
     expect(row1.getByText("bob")).toBeInTheDocument();
-    expect(row1.getByText(new Date(lastWeek).toLocaleDateString())).toBeInTheDocument();
+    expect(row1.getByText(formatDate(lastWeek, "2026-11-22"))).toBeInTheDocument();
 
     const row2 = within(rows[1]);
     expect(row2.getByText("alpha-p2")).toBeInTheDocument();
@@ -470,7 +473,7 @@ describe("BeadsPage", () => {
     expect(row2.getByText("ui")).toBeInTheDocument();
     expect(row2.getByText("design")).toBeInTheDocument();
     expect(row2.getByText("alice")).toBeInTheDocument();
-    expect(row2.getByText(new Date(yesterday).toLocaleDateString())).toBeInTheDocument();
+    expect(row2.getByText(formatDate(yesterday, "2026-11-22"))).toBeInTheDocument();
   });
 
   // REQ-UI-024

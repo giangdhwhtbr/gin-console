@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { formatDateTime } from "@/lib/dates";
 import { fetchComments, type Comment } from "./api";
 
 type State =
@@ -46,7 +47,7 @@ export function CommentList({ project, id }: { project: string; id: string }) {
             <li key={comment.id} className="flex flex-col gap-1.5 rounded-lg border bg-card p-3">
               <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
                 <span className="font-semibold">{comment.author}</span>
-                <span className="text-muted-foreground">{new Date(comment.created_at).toLocaleString()}</span>
+                <span className="text-muted-foreground">{formatDateTime(comment.created_at)}</span>
               </div>
               <p className="whitespace-pre-wrap break-words text-sm">{comment.text}</p>
               {comment.truncated && <p className="text-xs text-muted-foreground">Comment truncated</p>}
