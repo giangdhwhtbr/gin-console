@@ -9,7 +9,7 @@ import { Tabs } from "@/components/Tabs";
 import { BeadsView } from "@/features/beads/BeadsView";
 import { filtersToSearch, parseFilters } from "@/features/beads/filters";
 import { rememberOrigin } from "@/app/origin";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } from "./api";
 import { awayLine, plural } from "./format";
@@ -136,7 +136,7 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
         <MilestoneStatus status={plan.status} />
-        <span>{`${date(plan.start)} – ${date(plan.end)}`}</span>
+        <span>{formatRange(plan.start, plan.end, plan.today)}</span>
         {plan.kickoff !== null && <span>{`Kicks off ${date(plan.kickoff)}`}</span>}
         <span className={cn(late && "text-state-blocked")}>{outcome}</span>
         {plan.lanes !== null && <span>{plural(plan.lanes, "lane")}</span>}

@@ -1,4 +1,4 @@
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatRange } from "@/lib/dates";
 import type { BeadSummary } from "@/features/beads/api";
 import { progressOf } from "@/features/beads/progress";
 import type { EpicPlan, MilestoneDetail } from "./api";
@@ -142,7 +142,7 @@ export function warningLines(epic: EpicPlan, today: string, integration: string 
 }
 
 export const periodOf = (from: string, to: string, today: string) =>
-  from === to ? formatDate(from, today) : `${formatDate(from, today)} – ${formatDate(to, today)}`;
+  from === to ? formatDate(from, today) : formatRange(from, to, today);
 
 /** REQ-MILESTONE-UI-011: the zoom modes; any other URL value shows the whole milestone. */
 export type Zoom = "1w" | "2w" | "all";

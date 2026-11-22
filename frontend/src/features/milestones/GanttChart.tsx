@@ -11,7 +11,7 @@ import { isPrep } from "@/features/beads/prep";
 import { prepLabel } from "@/features/beads/progress";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatRange } from "@/lib/dates";
 import { shortId } from "@/lib/shortId";
 import { cn } from "@/lib/utils";
 import type { MilestoneDetail } from "./api";
@@ -191,7 +191,6 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
   const chain = hot === null ? null : chainOf(epics, hot);
   const faded = (id: string) => chain !== null && !chain.has(id);
   const stops = todayX === null ? [endX] : [todayX, endX];
-  const date = (day: number) => formatDate(isoOf(day), plan.today);
 
   return (
     <figure aria-label="Schedule" className={cn("flex flex-col rounded border bg-card", preview && "border-dashed")}>
@@ -209,7 +208,7 @@ function Chart({ project, plan, preview, zoom, onZoom, childBeads, kinds = NO_KI
               <ChevronLeft aria-hidden />
             </Button>
             <span data-range className="min-w-32 text-center tabular-nums">
-              {`${date(dayAt(axis, left + 0.5))} – ${date(dayAt(axis, left + plot - 0.5))}`}
+              {formatRange(isoOf(dayAt(axis, left + 0.5)), isoOf(dayAt(axis, left + plot - 0.5)), plan.today)}
             </span>
             <Button variant="outline" size="icon-sm" aria-label="Later" disabled={left >= maxLeft - 0.5} onClick={() => step(1)}>
               <ChevronRight aria-hidden />

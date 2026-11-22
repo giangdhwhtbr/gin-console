@@ -7,7 +7,7 @@ import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
@@ -133,7 +133,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
       <span className="flex flex-col text-sm">
         {m.kickoff !== null && <span>{`Kicks off ${date(m.kickoff)}`}</span>}
         <span className={cn(m.kickoff !== null && "text-muted-foreground")}>
-          {m.start === null || m.end === null ? "No dates" : `${date(m.start)} – ${date(m.end)}`}
+          {m.start === null || m.end === null ? "No dates" : formatRange(m.start, m.end, today)}
         </span>
         {m.finish !== null && (
           <span className={cn(m.end !== null && m.finish > m.end ? "text-state-blocked" : "text-muted-foreground")}>{`Finishes ${date(m.finish)}`}</span>
