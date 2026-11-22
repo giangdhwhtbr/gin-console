@@ -8,8 +8,8 @@ const bead = (id: string) => ({ project: "alpha", id, title: id, detail: "" });
 
 describe("report headlines", () => {
   it("REQ-UI-095 velocity headline", () => {
-    expect(velocityHeadline({ value: 1.44, measured_epics: 6, assumed: false })).toEqual({ text: "1.4 d/pt", warn: false });
-    expect(velocityHeadline({ value: 1, measured_epics: 0, assumed: true })).toEqual({ text: "1.0 d/pt assumed", warn: false });
+    expect(velocityHeadline({ value: 1.44, measured_epics: 6, assumed: false })).toEqual({ text: "1.4 days per point", warn: false });
+    expect(velocityHeadline({ value: 1, measured_epics: 0, assumed: true })).toEqual({ text: "1.0 days per point assumed", warn: false });
     expect(velocityHeadline(null)).toBeNull();
   });
   it("REQ-UI-095 headlines", () => {

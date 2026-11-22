@@ -33,7 +33,7 @@ export function teamHeadline(report: TeamReport, finish: string | null): Headlin
 
 export function velocityHeadline(daysPerPoint: DaysPerPoint | null): Headline | null {
   if (daysPerPoint === null) return null;
-  return { text: `${oneDecimal(daysPerPoint.value)} d/pt${daysPerPoint.assumed ? " assumed" : ""}`, warn: false };
+  return { text: `${oneDecimal(daysPerPoint.value)} days per point${daysPerPoint.assumed ? " assumed" : ""}`, warn: false };
 }
 
 export function headlines(report: Report): Record<Exclude<ReportTab, "team" | "velocity">, Headline> {

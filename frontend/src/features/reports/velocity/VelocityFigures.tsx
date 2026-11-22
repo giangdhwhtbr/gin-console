@@ -5,8 +5,8 @@ import type { VelocityPoint } from "./velocity";
 /** REQ-REPORTS-018: days per point (with "assumed"), and the say/do and accuracy of the latest milestone that has one. */
 export function VelocityFigures({ daysPerPoint, latest }: { daysPerPoint: DaysPerPoint | null; latest: VelocityPoint | null }) {
   const items: [string, string][] = [
-    ["Days per point", daysPerPoint === null ? "—" : `${oneDecimal(daysPerPoint.value)} d/pt`],
-    ["Say/do", latest?.velocity.say_do == null ? "—" : percent(latest.velocity.say_do)],
+    ["Days per point", daysPerPoint === null ? "—" : `${oneDecimal(daysPerPoint.value)} days per point`],
+    ["Commitment met", latest?.velocity.say_do == null ? "—" : percent(latest.velocity.say_do)],
     ["Accuracy", latest?.velocity.accuracy == null ? "—" : twoDecimals(latest.velocity.accuracy)],
   ];
   return (

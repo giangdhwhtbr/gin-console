@@ -241,7 +241,7 @@ describe("ReportsPage", () => {
     await screen.findByText("Beads closed");
     await userEvent.click(screen.getByRole("tab", { name: /^Velocity/ }));
     expect(window.location.search).toContain("tab=velocity");
-    expect(await screen.findByRole("tab", { name: /^Velocity.*1\.4 d\/pt/ })).toBeTruthy();
+    expect(await screen.findByRole("tab", { name: /^Velocity.*1\.4 days per point/ })).toBeTruthy();
     expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
     expect(screen.queryByLabelText("Sprint")).toBeNull();
   });
@@ -254,7 +254,7 @@ describe("ReportsPage", () => {
     await userEvent.click(screen.getByRole("tab", { name: /^Delivery/ }));
     await screen.findByText("Beads closed");
     await userEvent.click(screen.getByRole("tab", { name: /^Velocity/ }));
-    expect(await screen.findByText("1.4 d/pt", { selector: "dd" })).toBeTruthy();
+    expect(await screen.findByText("1.4 days per point", { selector: "dd" })).toBeTruthy();
     await userEvent.click(screen.getByRole("tab", { name: /^Team/ }));
     await screen.findByText("working day 9 of 20 · 11 left");
     expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
@@ -264,7 +264,7 @@ describe("ReportsPage", () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=velocity");
     const mock = stub();
     render(<ReportsPage />);
-    expect(await screen.findByRole("tab", { name: /^Velocity.*1\.4 d\/pt/ })).toBeTruthy();
+    expect(await screen.findByRole("tab", { name: /^Velocity.*1\.4 days per point/ })).toBeTruthy();
     await screen.findByText("No kicked-off milestones with points yet");
     expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
   });

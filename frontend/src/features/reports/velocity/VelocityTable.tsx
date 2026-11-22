@@ -2,7 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { oneDecimal, percent, twoDecimals } from "@/features/milestones/format";
 import type { VelocityPoint } from "./velocity";
 
-const HEADS = ["Milestone", "Committed", "Completed", "Added", "Say/do", "d/pt", "Planned d/pt", "Accuracy"];
+const HEADS = ["Milestone", "Committed", "Completed", "Added", "Commitment met", "Days per point", "Planned days per point", "Accuracy"];
 const orDash = (value: number | null, show: (n: number) => string) => (value === null ? "—" : show(value));
 
 export function VelocityTable({ points }: { points: readonly VelocityPoint[] }) {

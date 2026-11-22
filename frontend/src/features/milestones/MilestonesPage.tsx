@@ -5,6 +5,8 @@ import { isUnknownProject, projectHref, rememberProject, resolveProject } from "
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
+import { Hint } from "@/components/ui/tooltip";
+import { DEFINITIONS, type DefinitionKey } from "@/lib/definitions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { formatDate, formatRange } from "@/lib/dates";
@@ -94,8 +96,8 @@ function MilestoneTable({ project }: { project: string }) {
             <span>Status</span>
             <span>Milestone</span>
             <span>Period</span>
-            <span>Lanes</span>
-            <span>Say/do</span>
+            <Header label="Parallel lanes" rule="parallelLanes" />
+            <Header label="Commitment met" rule="commitmentMet" />
             <span>Epics</span>
             <span>Warnings</span>
           </li>
@@ -106,6 +108,14 @@ function MilestoneTable({ project }: { project: string }) {
       )}
       <UnassignedEpics project={project} />
     </div>
+  );
+}
+
+function Header({ label, rule }: { label: string; rule: DefinitionKey }) {
+  return (
+    <Hint text={DEFINITIONS[rule]}>
+      <span>{label}</span>
+    </Hint>
   );
 }
 
@@ -141,7 +151,7 @@ function Row({ project, milestone: m, today }: { project: string; milestone: Mil
         )}
       </span>
       <span className="text-sm">{m.lanes === null ? "–" : plural(m.lanes, "lane")}</span>
-      <span className="text-sm tabular-nums">{sayDo === null ? "–" : `Say/do ${percent(sayDo)}`}</span>
+      <span className="text-sm tabular-nums">{sayDo === null ? "–" : `Commitment met ${percent(sayDo)}`}</span>
       {m.error !== null ? (
         <span className="col-span-2 text-sm text-destructive">{m.error}</span>
       ) : (

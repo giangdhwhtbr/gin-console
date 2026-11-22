@@ -14,7 +14,7 @@ describe("ForecastCard", () => {
     expect(card()).toHaveTextContent("6 working days spare");
     expect(card()).toHaveTextContent("2 lanes");
     expect(card()).toHaveTextContent("5 open epics");
-    expect(card()).toHaveTextContent("0 unestimated");
+    expect(card()).toHaveTextContent("0 not estimated");
     expect(screen.queryByRole("img", { name: "Warning" })).toBeNull();
   });
 
@@ -39,8 +39,8 @@ describe("ForecastCard", () => {
 
   it("REQ-MILESTONE-UI-016 every epic unestimated", () => {
     render(<ForecastCard forecast={forecast({ finish: null, open_epics: 2, unestimated: 2 })} today={TODAY} />);
-    expect(card()).toHaveTextContent("No estimate: every open epic is unestimated");
-    expect(card()).toHaveTextContent("2 unestimated");
+    expect(card()).toHaveTextContent("No estimate: no open epic is estimated");
+    expect(card()).toHaveTextContent("2 not estimated");
     expect(screen.getByRole("img", { name: "Warning" })).toBeInTheDocument();
     expect(card()).not.toHaveTextContent(/spare|past the deadline|on the deadline/);
   });
@@ -55,7 +55,7 @@ describe("ForecastCard", () => {
   it("REQ-UI-110 the finish date is prominent; the figures are label/value pairs, label muted, value strong", () => {
     render(<ForecastCard forecast={forecast({ unestimated: 2 })} today={TODAY} />);
     expect(screen.getByText("Finishes 23 Dec")).toHaveClass("text-2xl", "font-bold");
-    for (const [label, value] of [["Default lanes", "2 lanes"], ["Open epics", "5 open epics"], ["Unestimated", "2 unestimated"]]) {
+    for (const [label, value] of [["Parallel lanes", "2 lanes"], ["Open epics", "5 open epics"], ["Not estimated", "2 not estimated"]]) {
       const term = screen.getByText(label);
       expect(term.tagName).toBe("DT");
       expect(term).toHaveClass("text-muted-foreground");
@@ -69,9 +69,9 @@ describe("ForecastCard", () => {
     const pairs = () => [...card().querySelectorAll("dt")].map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]);
     const { rerender } = render(<ForecastCard forecast={forecast({ unestimated: 2 })} today={TODAY} daysPerPoint={{ value: 1.4, measured_epics: 3, assumed: false }} />);
     expect(pairs()).toEqual([
-      ["Default lanes", "2 lanes"],
+      ["Parallel lanes", "2 lanes"],
       ["Open epics", "5 open epics"],
-      ["Unestimated", "2 unestimated"],
+      ["Not estimated", "2 not estimated"],
       ["Days per point", "1.4"],
     ]);
     expect(screen.getByText("Project forecast · open roadmap epics")).toBeInTheDocument();

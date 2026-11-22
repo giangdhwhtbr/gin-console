@@ -408,7 +408,7 @@ describe("MilestonePage", () => {
   it("REQ-MILESTONE-UI-015 expand an epic to list its children; the others stay collapsed", async () => {
     const fetchMock = openWithBeads(epicBeads);
     const toggle = await screen.findByRole("button", { name: "Show 2 child beads of e-a" });
-    expect(await row("e-a")).toHaveTextContent("1/2 closed");
+    expect(await row("e-a")).toHaveTextContent("1 of 2 done");
     expect(fetchMock.mock.calls.some(([input]) => typeof input === "string" && input.startsWith("/api/beads") && input.includes("closed=1"))).toBe(true);
     expect(within(await row("e-c")).queryByRole("button")).toBeNull();
     expect(await row("e-c")).not.toHaveTextContent("closed");
@@ -466,12 +466,12 @@ describe("MilestonePage", () => {
     open({ ...OVERFLOW, velocity: { committed_points: 13, completed_points: 8, added_points: 3, say_do: 0.62, days_per_point: 1.4, planned_days_per_point: 1.2, accuracy: 0.86 } });
     const header = await headerOf();
     const fact = (label: string) => within(header).getByText(label).nextElementSibling;
-    expect(["Committed", "Completed", "Added", "Say/do", "d/pt"].map((label) => `${label} ${fact(label)?.textContent}`)).toEqual([
+    expect(["Committed", "Completed", "Added", "Commitment met", "Days per point"].map((label) => `${label} ${fact(label)?.textContent}`)).toEqual([
       "Committed 13 pt",
       "Completed 8 pt",
       "Added 3 pt",
-      "Say/do 62%",
-      "d/pt 1.4 (planned 1.2, accuracy 0.86)",
+      "Commitment met 62%",
+      "Days per point 1.4 (planned 1.2, accuracy 0.86)",
     ]);
     // REQ-UI-110: labels muted, values strong
     expect(within(header).getByText("Committed")).toHaveClass("text-muted-foreground");
@@ -486,13 +486,13 @@ describe("MilestonePage", () => {
       ["Kick-off", "Not kicked off"],
       ["Completed", "0 pt"],
     ]);
-    expect(header).not.toHaveTextContent("d/pt");
+    expect(header).not.toHaveTextContent("Days per point");
   });
 
   it("REQ-MILESTONE-UI-021 Older gin-workflow: no velocity in the header", async () => {
     open(OVERFLOW);
     const header = await headerOf();
-    expect(header).not.toHaveTextContent(/Committed|Not kicked off|d\/pt|Say\/do/);
+    expect(header).not.toHaveTextContent(/Committed|Not kicked off|Days per point|Commitment met/);
     expect(within(header).getByText("Beta readiness")).toBeInTheDocument();
   });
 
@@ -522,7 +522,7 @@ describe("MilestonePage Gantt merge gates", () => {
     stubMilestones(() => json(detail([epicPlan("e-1")])), kids);
     render(<MilestonePage project="alpha" id="m-1" />);
     await userEvent.click(await screen.findByRole("button", { name: /child bead of e-1/ }));
-    expect(document.querySelector("[data-epic='e-1']")).toHaveTextContent("0/1 closed");
+    expect(document.querySelector("[data-epic='e-1']")).toHaveTextContent("0 of 1 done");
     const rows = [...document.querySelectorAll<HTMLElement>("[data-child]")];
     expect(rows.map((r) => r.dataset.child)).toEqual(["t-1"]);
     expect(within(rows[0]).getByText("be")).toBeInTheDocument();

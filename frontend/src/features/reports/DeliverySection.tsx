@@ -101,7 +101,7 @@ export function DeliverySection({ delivery }: { delivery: Delivery }) {
                       {diff !== null ? (
                         <Badge variant="outline" className={cn(diff.late && "text-state-blocked")}>{diff.text}</Badge>
                       ) : (
-                        e.days_per_point !== null && `${oneDecimal(e.days_per_point)} d/pt`
+                        e.days_per_point !== null && `${oneDecimal(e.days_per_point)} days per point`
                       )}
                     </TableCell>
                   </TableRow>

@@ -125,7 +125,7 @@ describe("report sections", () => {
     const row = { project: "alpha", id: "p-1", title: "p-1", estimate_days: null, points: 5, actual_days: 6, days_per_point: 1.2 };
     render(<DeliverySection delivery={{ ...base.delivery, estimates: [row, { ...row, id: "d-1", title: "d-1", estimate_days: 4, points: null, days_per_point: null }] }} />);
     expect(screen.getByText("5 pt")).toBeTruthy();
-    expect(screen.getByText("1.2 d/pt")).toBeTruthy();
+    expect(screen.getByText("1.2 days per point")).toBeTruthy();
     expect(screen.getByText("4d")).toBeTruthy();
     expect(screen.getByText("+2 d")).toBeTruthy();
     expect(screen.getAllByText(/^(\+|−)\d+ d$|^on estimate$/)).toHaveLength(1);

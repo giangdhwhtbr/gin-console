@@ -41,7 +41,7 @@ function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = fal
       </Hint>
       <span className={cn("flex flex-wrap text-xs text-muted-foreground", warnSub && WARN)}>
         {parts.map((part, i) => {
-          // joined facts ("3 blocked · 8 unclaimed") get a strong number; a single line stays plain text
+          // joined facts ("3 blocked · 8 unassigned") get a strong number; a single line stays plain text
           const [, count = "", rest = part] = (parts.length > 1 ? /^(\d+(?:\.\d+)?)(.*)$/.exec(part) : null) ?? [];
           return (
             <Fragment key={part}>
@@ -102,8 +102,8 @@ function PaceOrThroughput({ team, figures, solo, milestone }: { team: TeamTotals
         label="Pace"
         aside="last 5 days"
         rule={RULE.pace}
-        value={`${team.pace.toFixed(1)} / day`}
-        sub={`needs ${team.pace_needed.toFixed(1)} / day to end on ${formatDate(milestone.end)}`}
+        value={`${team.pace.toFixed(1)} done per day`}
+        sub={`needs ${team.pace_needed.toFixed(1)} done per day to finish by ${formatDate(milestone.end)}`}
         warnValue={behind}
         warnSub={behind}
       />
@@ -113,7 +113,7 @@ function PaceOrThroughput({ team, figures, solo, milestone }: { team: TeamTotals
     <Cell
       label="Throughput"
       rule={RULE.throughput}
-      value={`${figures.throughput.toFixed(1)} / week`}
+      value={`${figures.throughput.toFixed(1)} done per week`}
       sub={milestone.status === "closed" ? "over the milestone" : "last 5 working days"}
     />
   );
@@ -146,7 +146,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
           label="Open"
           rule={`${countHint("open", scope)} ${DEFINITIONS.blocked}`}
           value={String(figures.open)}
-          sub={solo ? `${figures.blocked} blocked` : `${figures.blocked} blocked · ${figures.unclaimed} unclaimed`}
+          sub={solo ? `${figures.blocked} blocked` : `${figures.blocked} blocked · ${figures.unclaimed} unassigned`}
           warnSub={figures.blocked > 0}
         />
         <PaceOrThroughput team={team} figures={figures} solo={solo} milestone={milestone} />
@@ -155,7 +155,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
           label="On time"
           rule={RULE.onTime}
           value={formatPercent(onTime)}
-          sub={lateOpen > 0 ? `${lateOpen} still open after end` : `closed by ${formatDate(milestone.end)}`}
+          sub={lateOpen > 0 ? `${lateOpen} open after the end date` : `closed by ${formatDate(milestone.end)}`}
           warnValue={onTime !== null && onTime < 1}
           warnSub={lateOpen > 0}
         />

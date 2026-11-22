@@ -3,12 +3,14 @@ import { useId, useLayoutEffect, useRef, useState, type RefObject, type UIEvent 
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
 import type { BeadKind, BeadSummary } from "@/features/beads/api";
+import { Hint } from "@/components/ui/tooltip";
+import { DEFINITIONS } from "@/lib/definitions";
 import { Badge } from "@/components/ui/badge";
 import { SizeBadge } from "@/components/SizeBadge";
 import { KindBadge } from "@/features/beads/KindBadge";
 import { LaneChip } from "@/features/beads/LaneChip";
 import { isPrep } from "@/features/beads/prep";
-import { prepLabel } from "@/features/beads/progress";
+import { prepWords } from "@/features/beads/progress";
 import { PrepChip } from "@/features/beads/PrepChip";
 import { useWide } from "@/features/beads/useWide";
 import { formatDate, formatRange } from "@/lib/dates";
@@ -408,12 +410,12 @@ function EpicRow({
   const x1 = endOf(axis, days[days.length - 1]);
   const unestimated = epic.estimate_days === null;
   const counts = epicProgressOf(epicBead);
-  const prep = counts.prepTotal > 0 ? prepLabel(counts) : null;
+  const prep = counts.prepTotal > 0 ? prepWords(counts) : null;
   const left = epic.status === "in_progress" && epic.estimate_days !== null && epic.remaining_days !== null && epic.remaining_days < epic.estimate_days;
   const size = left ? `${epic.remaining_days}d left` : !unestimated ? `${epic.estimate_days}d` : epic.assumed_days !== null ? `assumed ${epic.assumed_days}d` : "no estimate";
   const period = periodOf(epic.planned_start, epic.planned_end, today);
   const tail = tailWidth(x1, stops, axis.width);
-  const closedTracks = `${counts.done}/${counts.total} closed`;
+  const closedTracks = `${counts.done} of ${counts.total} done`;
   const fade = cn("motion-safe:transition-opacity", faded && "opacity-35");
   return (
     <li data-epic={epic.id} data-faded={faded || undefined} onMouseEnter={onHot} onFocus={onHot} className="flex border-b" style={{ height: row.height }}>
@@ -455,16 +457,28 @@ function EpicRow({
             )}
             <KindBadge kind={kind} className="max-w-full" />
             <span title={period} className="min-w-0 max-w-full shrink truncate">{period}</span>
-            {counts.total > 0 && <span title={closedTracks} className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>}
-            {prep !== null && <span title={prep} className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>}
+            {counts.total > 0 && (
+              <Hint text={DEFINITIONS.progress}>
+                <span tabIndex={0} className="min-w-0 max-w-full shrink-[4] truncate">{closedTracks}</span>
+              </Hint>
+            )}
+            {prep !== null && (
+              <Hint text={DEFINITIONS.prep}>
+                <span tabIndex={0} className="min-w-0 max-w-full shrink-[4] truncate">{prep}</span>
+              </Hint>
+            )}
             {showsSpec(epic) && epic.spec_confirmed === true && (
-              <span title="Spec confirmed" className="flex min-w-0 max-w-full shrink-[8] items-center gap-1 truncate text-state-ready">
-                <FileCheck aria-hidden className="size-3 flex-none" />
-                Spec confirmed
-              </span>
+              <Hint text={DEFINITIONS.specApproved}>
+                <span tabIndex={0} className="flex min-w-0 max-w-full shrink-[8] items-center gap-1 truncate text-state-ready">
+                  <FileCheck aria-hidden className="size-3 flex-none" />
+                  Spec approved
+                </span>
+              </Hint>
             )}
             {showsSpec(epic) && epic.spec_confirmed === false && (
-              <span title="No confirmed spec" className="min-w-0 max-w-full shrink-[8] truncate text-muted-foreground">No confirmed spec</span>
+              <Hint text={DEFINITIONS.specApproved}>
+                <span tabIndex={0} className="min-w-0 max-w-full shrink-[8] truncate text-muted-foreground">Spec not approved yet</span>
+              </Hint>
             )}
           </span>
           {warningLines(epic, today, integration).map((text) => (

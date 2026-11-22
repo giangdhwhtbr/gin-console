@@ -37,13 +37,13 @@ describe("TeamFigures", () => {
 
   it("REQ-REPORTS-013 behind pace", () => {
     show({ pace: 2, pace_needed: 3.4 });
-    warn("2.0 / day");
-    warnLine("needs 3.4 / day to end on 27 Nov");
+    warn("2.0 done per day");
+    warnLine("needs 3.4 done per day to finish by 27 Nov");
   });
 
   it("REQ-REPORTS-013 on pace is not a warning", () => {
     show({ pace: 3.6, pace_needed: 3.4 });
-    expect(screen.getByText("3.6 / day")).not.toHaveClass("text-state-blocked");
+    expect(screen.getByText("3.6 done per day")).not.toHaveClass("text-state-blocked");
   });
 
   it("REQ-REPORTS-013 member figures", () => {
@@ -57,15 +57,15 @@ describe("TeamFigures", () => {
 
   it("REQ-REPORTS-013 closed milestone", () => {
     show({ pace_needed: null, throughput: 13.2, on_time: 0.88 }, closed);
-    expect(screen.getByText("13.2 / week")).toBeInTheDocument();
+    expect(screen.getByText("13.2 done per week")).toBeInTheDocument();
     warn("88%");
   });
 
   it("REQ-REPORTS-013 in progress and open", () => {
     show({ oldest_in_progress: 4.9, blocked: 3, unclaimed: 8, late_open: 4 });
     warnLine("oldest 4.9 d");
-    warnLine("3 blocked · 8 unclaimed");
-    warnLine("4 still open after end");
+    warnLine("3 blocked · 8 unassigned");
+    warnLine("4 open after the end date");
   });
 
   it("REQ-REPORTS-013 quiet figures", () => {
@@ -88,8 +88,8 @@ describe("TeamFigures", () => {
   it("REQ-UI-110 Facts as label and value: joined figures keep their text with strong numbers", () => {
     show({ blocked: 2, unclaimed: 1 });
     const strip = screen.getByRole("group", { name: "Key figures" });
-    expect(strip).toHaveTextContent("2 blocked · 1 unclaimed");
-    expect(line("2 blocked · 1 unclaimed").querySelectorAll("b")).toHaveLength(2);
+    expect(strip).toHaveTextContent("2 blocked · 1 unassigned");
+    expect(line("2 blocked · 1 unassigned").querySelectorAll("b")).toHaveLength(2);
     expect(screen.getByText("Done")).toHaveClass("text-muted-foreground");
     expect(screen.getByText("1 / 4")).toHaveClass("font-semibold");
   });

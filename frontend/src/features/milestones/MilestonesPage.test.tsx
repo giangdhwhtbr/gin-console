@@ -249,13 +249,13 @@ describe("MilestonesPage", () => {
         ]),
       ),
     );
-    expect(await rowOf("Beta")).toHaveTextContent("Say/do 62%");
+    expect(await rowOf("Beta")).toHaveTextContent("Commitment met 62%");
     for (const title of ["Hardening", "Launch"]) {
       const row = await rowOf(title);
-      expect(row).not.toHaveTextContent("Say/do");
+      expect(row).not.toHaveTextContent("Commitment met");
       expect(within(row).getByText("–", { selector: "span.tabular-nums" })).toBeInTheDocument();
     }
-    expect(within(screen.getByRole("list", { name: "Milestones" })).getByText("Say/do", { selector: "li[aria-hidden] span" })).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Milestones" })).getByText("Commitment met", { selector: "li[aria-hidden] span" })).toBeInTheDocument();
   });
 
   it("REQ-MILESTONE-UI-001 older gin-workflow: a dash for lanes", async () => {
