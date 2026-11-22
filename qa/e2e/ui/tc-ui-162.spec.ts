@@ -1,4 +1,4 @@
-// TC: TC-UI-162@aa1ba06f
+// TC: TC-UI-162@e5882e41
 import { test, expect } from '../evidence';
 import { factOf, stubExample } from '../support/lanes';
 
@@ -13,6 +13,6 @@ test('TC-UI-162: Lane waiting for another lane', async ({ page, ev }) => {
     await expect(qa).toBeVisible();
     await expect(factOf(qa, 'State')).toHaveText('Waiting for be');
     await expect(factOf(qa, 'Held by')).toHaveText('Unclaimed');
-    await expect(factOf(qa, 'Tracks')).toHaveText('0/1 closed');
+    await expect(factOf(qa, 'Tracks').locator('[data-strand="0/1"]')).toHaveText('0/1');
   });
 });

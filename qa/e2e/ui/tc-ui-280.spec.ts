@@ -1,4 +1,4 @@
-// TC: TC-UI-280@c6215857
+// TC: TC-UI-280@25505e86
 import { test, expect } from '../evidence';
 import { bead, detail, entry, epicPlan, list, stubApi, type EpicPlan } from '../support/api';
 
@@ -17,8 +17,10 @@ test('TC-UI-280: Plain labels in the Gantt row', async ({ page, ev }) => {
     await page.goto('/milestones/example/ex-m2');
     const row = page.locator('[data-epic="ex-e3"]');
     await expect(row).toBeVisible();
-    await expect(row).toContainText('5 of 11 done');
-    await expect(row).toContainText('Prep 1 of 3 done');
+    const strand = row.locator('[data-strand="5/11"]').first();
+    await expect(strand).toBeVisible();
+    await expect(strand).toContainText('5/11');
+    await expect(row).toContainText('Prep 1/3');
     await expect(row).toContainText('Spec approved');
   });
 });

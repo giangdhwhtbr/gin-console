@@ -1,4 +1,4 @@
-// TC: TC-UI-164@4a7e685f
+// TC: TC-UI-164@ae37e39b
 import { test, expect } from '../evidence';
 import { factOf, stubExample } from '../support/lanes';
 
@@ -12,7 +12,7 @@ test('TC-UI-164: Lane with all tracks closed', async ({ page, ev }) => {
     const fe = page.getByRole('region', { name: 'Lane fe' });
     await expect(fe).toBeVisible();
     await expect(factOf(fe, 'State')).toHaveText('All tracks closed');
-    await expect(factOf(fe, 'Tracks')).toHaveText('1/1 closed');
+    await expect(factOf(fe, 'Tracks').locator('[data-strand="1/1"]')).toHaveText('1/1');
     await expect(fe.getByText('Held by', { exact: true })).toHaveCount(0);
     await expect(fe.getByText('Lease', { exact: true })).toHaveCount(0);
   });

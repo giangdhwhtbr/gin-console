@@ -1,4 +1,4 @@
-// TC: TC-UI-271@3e6d4708
+// TC: TC-UI-271@fd0ead7e
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -14,6 +14,8 @@ test('TC-UI-271: Progress on the Gantt row', async ({ page, ev }) => {
 
   await ev.step('1. Open `/milestones/alpha/m1`', async () => {
     await page.goto('/milestones/alpha/m1');
-    await expect(page.locator('[data-epic="e-1"]')).toContainText('3 of 5 done');
+    const strand = page.locator('[data-epic="e-1"]').locator('[data-strand="3/5"]').first();
+    await expect(strand).toBeVisible();
+    await expect(strand).toContainText('3/5');
   });
 });

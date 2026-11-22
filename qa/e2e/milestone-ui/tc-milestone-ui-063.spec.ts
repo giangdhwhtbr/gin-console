@@ -1,9 +1,10 @@
-// TC: TC-MILESTONE-UI-063@2cf44135
+// TC: TC-MILESTONE-UI-063@0cd0ea37
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
 test('TC-MILESTONE-UI-063: Epic without children has no expand button', async ({ page, ev }) => {
   // Epic A has no children; epic B has one, so its button proves the beads had loaded.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, {
     milestone: { M1: detail([epicPlan('A'), epicPlan('B')]) },
     beads: [
@@ -19,6 +20,7 @@ test('TC-MILESTONE-UI-063: Epic without children has no expand button', async ({
     const a = page.locator('[data-epic="A"]');
     await expect(a).toBeVisible();
     await expect(a.getByRole('button', { name: /child bead/ })).toHaveCount(0);
+    await expect(a.locator('[data-strand]')).toHaveCount(0);
     await expect(a).not.toContainText('closed');
   });
 });

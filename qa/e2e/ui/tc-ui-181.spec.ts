@@ -1,8 +1,8 @@
-// TC: TC-UI-181@65fa52f1
+// TC: TC-UI-181@33008d42
 import { test, expect } from '../evidence';
 import { E12, endsOf, graphCollisions, graphGeometry, levelWith, onLeftEdge, openGraph, passesThrough, showClosed, stubExample, within } from '../support/lanes';
 
-test('TC-UI-181: Gate chips on the arrows to a lane box', async ({ page, ev }) => {
+test('TC-UI-181: Gate labels on the arrows to a lane box', async ({ page, ev }) => {
   // Precondition: track 4 of lane qa waits for an open merge gate for track 2 of be and a closed one for track 3 of fe.
   await stubExample(page);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -17,7 +17,7 @@ test('TC-UI-181: Gate chips on the arrows to a lane box', async ({ page, ev }) =
     const qa = g.boxes.qa;
     const tier1Right = Math.max(...['be', 'fe', 'infra'].map((l) => g.boxes[l].x + g.boxes[l].w));
     const inGap = (chip: { x: number; w: number }) => chip.x >= tier1Right - 1 && chip.x + chip.w <= qa.x + 1;
-    // a dashed arrow from track 2 to the left edge of the qa box, level with track 4, carrying "Waiting · be #2"
+    // a dashed arrow from track 2 to the left edge of the qa box, level with track 4, carrying "Waiting for be #2"
     const open = g.arrows[`${E12}.2>${E12}.4`];
     expect(open).toBeDefined();
     expect(within(endsOf(open).start, g.cards[`${E12}.2`])).toBe(true);
@@ -25,15 +25,21 @@ test('TC-UI-181: Gate chips on the arrows to a lane box', async ({ page, ev }) =
     expect(levelWith(endsOf(open).end, g.cards[`${E12}.4`])).toBe(true);
     await expect(page.locator(`path[data-arrow="${E12}.2>${E12}.4"]`)).toHaveAttribute('stroke-dasharray', /\d/);
     const waiting = page.locator(`[data-chip="${E12}.9"]`);
-    await expect(waiting).toHaveText('Waiting · be #2');
+    await expect(waiting).toHaveText('Waiting for be #2');
     expect(passesThrough(open, g.chips[`${E12}.9`], 0)).toBe(true);
-    // an arrow from track 3 to the left edge of the qa box, carrying "Merged · fe #3"
+    // an arrow from track 3 to the left edge of the qa box, carrying "Merged fe #3"
     const merged = g.arrows[`${E12}.3>${E12}.4`];
     expect(merged).toBeDefined();
     expect(within(endsOf(merged).start, g.cards[`${E12}.3`])).toBe(true);
     expect(onLeftEdge(endsOf(merged).end, qa)).toBe(true);
     await expect(page.locator(`path[data-arrow="${E12}.3>${E12}.4"]`)).not.toHaveAttribute('stroke-dasharray', /\d/);
-    await expect(page.locator('[data-chip="ex-g3"]')).toHaveText('Merged · fe #3');
+    await expect(page.locator('[data-chip="ex-g3"]')).toHaveText('Merged fe #3');
+    // the labels have no border and sit on the surface colour
+    for (const id of [`${E12}.9`, 'ex-g3']) {
+      const label = page.locator(`[data-chip="${id}"]`);
+      await expect(label).toHaveCSS('border-top-width', '0px');
+      await expect(label).toHaveClass(/bg-card/);
+    }
     expect(passesThrough(merged, g.chips['ex-g3'], 0)).toBe(true);
     // both chips are in the gap between the first and the second tier
     expect(inGap(g.chips[`${E12}.9`])).toBe(true);

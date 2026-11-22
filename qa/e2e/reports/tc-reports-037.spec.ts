@@ -1,9 +1,10 @@
-// TC: TC-REPORTS-037@d08e3ba6
+// TC: TC-REPORTS-037@1f7801be
 import { test, expect } from '../evidence';
 import { stubReports, teamBody } from '../support/reports';
 
 test('TC-REPORTS-037: Closed row', async ({ page, ev }) => {
   // Precondition: closed bead a-3 with cycle 0.9 days, late_days 2, rework 0.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubReports(page);
   await page.route('**/api/reports/team**', (route) => {
     const project = new URL(route.request().url()).searchParams.get('project') ?? '';

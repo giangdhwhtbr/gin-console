@@ -1,11 +1,12 @@
-// TC: TC-UI-171@0736f1cf
+// TC: TC-UI-171@2e27152a
 import { test, expect } from '../evidence';
+import type { Locator } from '@playwright/test';
 import { detail, epicPlan, stubApi } from '../support/api';
 import { E12, e12, milestoneOptions, stubDetails } from '../support/lanes';
 
 const TRACK = `${E12}.2`;
 
-test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
+test('TC-UI-171: Lane in every view', async ({ page, ev }) => {
   // Precondition: track 2 of ex-e12 is ex-e12.2, in lane be and labelled lane:be and track:2; milestone ex-m2 holds ex-e12.
   const beads = e12();
   await stubApi(page, {
@@ -16,6 +17,10 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
   });
   await stubDetails(page, beads);
   await page.setViewportSize({ width: 1440, height: 900 });
+  // the dot is drawn in the muted colour, not in a lane colour
+  const laneDotIsMuted = async (lane: Locator) => {
+    await expect(lane.locator('span[aria-hidden]').first()).toHaveClass(/bg-muted-foreground/);
+  };
   const noLabelChip = async () => {
     await expect(page.getByText('lane:be')).toHaveCount(0);
     await expect(page.getByText('track:2', { exact: true })).toHaveCount(0);
@@ -28,6 +33,7 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     if (!(await row.isVisible())) await page.getByRole('button', { name: `Expand ${E12}` }).click();
     await expect(row).toBeVisible();
     await expect(row.locator('[data-hint^="Lane be"]')).toHaveText('be');
+    await laneDotIsMuted(row.locator('[data-hint^="Lane be"]'));
     await noLabelChip();
   });
 
@@ -36,6 +42,7 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     const card = page.locator('[data-card]').filter({ hasText: 'Track 2' });
     await expect(card).toHaveCount(1);
     await expect(card.locator('[data-hint^="Lane be"]')).toHaveText('be');
+    await laneDotIsMuted(card.locator('[data-hint^="Lane be"]'));
     await noLabelChip();
   });
 
@@ -49,6 +56,7 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     const child = page.locator(`[data-child="${TRACK}"]`);
     await expect(child).toBeVisible();
     await expect(child.locator('[data-hint^="Lane be"]')).toHaveText('be');
+    await laneDotIsMuted(child.locator('[data-hint^="Lane be"]'));
     await noLabelChip();
   });
 
@@ -56,6 +64,7 @@ test('TC-UI-171: Lane chip in every view', async ({ page, ev }) => {
     await page.goto(`/beads/example/${TRACK}`);
     await expect(page.getByRole('heading', { name: 'Track 2' })).toBeVisible();
     await expect(page.getByRole('main').locator('[data-hint^="Lane be"]').first()).toHaveText('be');
+    await laneDotIsMuted(page.getByRole('main').locator('[data-hint^="Lane be"]').first());
     await noLabelChip();
   });
 });

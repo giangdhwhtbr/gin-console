@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-108@45cb91f5
+// TC: TC-MILESTONE-UI-108@8b0ca046
 import { test, expect } from '../evidence';
 import { entry, list } from '../support/api';
 import { stubReports, teamBody } from '../support/reports';
@@ -24,7 +24,8 @@ test('TC-MILESTONE-UI-108: Past the end without a forecast', async ({ page, ev }
 
   await ev.step('2. Open /reports?project=P&tab=team', async () => {
     await page.goto('/reports?project=P&tab=team');
-    const chip = page.getByRole('heading', { name: 'Second' }).locator('xpath=..');
-    await expect(chip).toContainText('late');
+    const status = page.locator('[data-milestone-status]');
+    await expect(status).toHaveText('Active, late');
+    await expect(status.locator('svg.lucide-triangle-alert')).toBeVisible();
   });
 });

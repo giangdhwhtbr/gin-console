@@ -1,4 +1,4 @@
-// TC: TC-UI-030@2dac89e6
+// TC: TC-UI-030@2f5caac8
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
@@ -11,7 +11,7 @@ test('TC-UI-030: Team headline (REQ-UI-095)', async ({ page, ev }) => {
   await ev.step('1. Open the Delivery tab', async () => {
     await page.goto('/reports?project=alpha&tab=delivery');
     const team = page.getByRole('tab', { name: /^Team/ });
-    await expect(team).toContainText('27 of 64 done · on pace');
+    await expect(team).toContainText('27 of 64 done, on pace');
     await expect(team.locator('svg')).toHaveCount(0);
   });
 });

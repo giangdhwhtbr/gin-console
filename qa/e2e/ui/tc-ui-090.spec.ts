@@ -1,4 +1,4 @@
-// TC: TC-UI-090@0912a2b0
+// TC: TC-UI-090@2959a26f
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, milestoneOption, stubApi } from '../support/api';
 import type { Page } from '@playwright/test';
@@ -42,7 +42,7 @@ test('TC-UI-090: From a milestone page', async ({ page, ev }) => {
     await expect(page).toHaveURL(/\/beads\/a\/a-1$/);
     const crumb = page.getByRole('navigation', { name: 'Breadcrumb' });
     const first = crumb.getByRole('listitem').first();
-    await expect(first).toHaveText('Checkout v2 › Board · 1 filter');
+    await expect(first).toHaveText('Checkout v2 › Board, 1 filter');
     await expect(first.getByRole('link')).toHaveAttribute('href', '/milestones/a/m2?tab=beads&view=board&status=open');
     await expect(crumb.getByRole('listitem').nth(1)).toContainText('Title a-1');
   });

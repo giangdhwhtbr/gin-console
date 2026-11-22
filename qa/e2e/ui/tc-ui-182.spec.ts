@@ -1,8 +1,8 @@
-// TC: TC-UI-182@62b5fd7d
+// TC: TC-UI-182@2c33f764
 import { test, expect } from '../evidence';
 import { external, graphCollisions, graphGeometry, openGraph, stubExample } from '../support/lanes';
 
-test('TC-UI-182: Gate chip for a track that is not drawn', async ({ page, ev }) => {
+test('TC-UI-182: Gate label for a track that is not drawn', async ({ page, ev }) => {
   // Precondition: lane qa has track 4; an open merge gate "external: .planning/plans/other.md#7" blocks it and its track is not in ex-e12.
   await stubExample(page, external());
   await page.setViewportSize({ width: 1440, height: 900 });

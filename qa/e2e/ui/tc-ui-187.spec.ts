@@ -1,4 +1,4 @@
-// TC: TC-UI-187@c50605ed
+// TC: TC-UI-187@505722a7
 import { test, expect } from '../evidence';
 import { e12, E12, graphGeometry, openGraph, showClosed, stubExample } from '../support/lanes';
 
@@ -29,9 +29,10 @@ test('TC-UI-187: No lane box', async ({ page, ev }) => {
       expect(card.y + card.h).toBeLessThanOrEqual(g.boxes[''].y + g.boxes[''].h);
     }
     const header = none.locator('header');
-    await expect(header).toHaveText(/^No lane\s*1\/2 closed$/);
+    await expect(header).toHaveText(/^No lane\s*1\/2$/);
+    await expect(header.locator('[data-strand="1/2"]')).toBeVisible();
     await expect(header.locator('[data-swatch]')).toHaveCount(0);
     await expect(header.locator('> div').getByRole('heading')).toHaveText('No lane');
-    await expect(header.locator('> div > *')).toHaveCount(1);
+    await expect(header.locator('> div').first().locator('> *')).toHaveCount(1);
   });
 });

@@ -1,4 +1,4 @@
-// TC: TC-UI-204@bba4247b
+// TC: TC-UI-204@b9fe82a1
 import { test, expect } from '../evidence';
 import { PROJECT } from '../support/lanes';
 import { openEpicStubs } from '../support/epic';
@@ -14,5 +14,6 @@ test('TC-UI-204: No lanes section (REQ-UI-121)', async ({ page, ev }) => {
     await expect(page.getByRole('region', { name: 'Lanes' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Lanes' })).toHaveCount(0);
     await expect(page.getByRole('region', { name: 'Tracks' }).locator('[data-swatch]')).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Tracks' }).locator('[data-hint^="Lane "]')).toHaveCount(0);
   });
 });

@@ -131,10 +131,10 @@ Source: `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/index.html#beads
 - WHEN the Projects page is shown
 - THEN its card says "missing" in the danger colour as text, without a badge
 
-#### Scenario: Controls keep their chips
+#### Scenario: Controls keep their pills
 - GIVEN the Beads page with the status filter "Open"
 - WHEN it is shown
-- THEN the active filter is a removable chip
+- THEN the Status filter control shows its count "1" in a tinted pill
 
 ### REQ-UI-141: Identity colour in the shell
 The frontend SHALL use the identity colour (REQ-UI-059) for where the user is and what the user can do, and for nothing else: the current sidebar item (a 3px bar on its left edge and its icon), the underline of the selected tab, the selected row, card or node (a pale identity wash with a 3px bar inside its left edge), an active filter chip, the primary button, the focus ring and the today line of a chart; and SHALL show before the name "gin-console" in the sidebar a mark of three beads (Done, In progress and Ready) on a thread in the identity colour.

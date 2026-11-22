@@ -1,4 +1,4 @@
-// TC: TC-UI-064@a3985fd8
+// TC: TC-UI-064@e5195b9d
 import { test, expect } from '../evidence';
 import { epicOf, nodeOf, stubProject, taskOf } from '../support/graph';
 
@@ -12,8 +12,10 @@ test('TC-UI-064: State label (REQ-UI-049)', async ({ page, ev }) => {
     const blocked = nodeOf(page, 't-2');
     await expect(ready).toBeVisible();
     await expect(ready.locator('[data-state="ready"]')).toHaveText('Ready');
-    await expect(ready.locator('[data-state="ready"] svg')).toBeVisible();
+    await expect(ready.locator('[data-state="ready"] svg[data-glyph="ready"]')).toBeVisible();
     await expect(blocked.locator('[data-state="blocked"]')).toHaveText('Blocked');
-    await expect(blocked.locator('[data-state="blocked"] svg')).toBeVisible();
+    await expect(blocked.locator('[data-state="blocked"] svg[data-glyph="blocked"]')).toBeVisible();
+    // no coloured left edge
+    for (const node of [ready, blocked]) await expect(node).toHaveCSS('border-left-width', '1px');
   });
 });

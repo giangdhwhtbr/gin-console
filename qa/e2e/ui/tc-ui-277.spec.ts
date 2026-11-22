@@ -1,4 +1,4 @@
-// TC: TC-UI-277@39078bca
+// TC: TC-UI-277@4419438c
 import { test, expect } from '../evidence';
 import { bead } from '../support/api';
 import { stubProjectPulls } from '../support/pull';
@@ -23,6 +23,10 @@ test('TC-UI-277: Legend open and close', async ({ page, ev }) => {
     for (const word of ['Ready', 'In progress', 'Blocked', 'Done', 'Deferred']) {
       await expect(panel.getByText(word, { exact: true }).first()).toBeVisible();
     }
+    for (const glyph of ['ready', 'in_progress', 'blocked', 'done', 'deferred']) {
+      await expect(panel.locator(`svg[data-glyph="${glyph}"]`).first()).toBeVisible();
+    }
+    await expect(panel.locator('[data-strand]').first()).toBeVisible();
     await expect(panel.locator('dd').nth(2)).not.toBeEmpty();
     await expect(panel).toContainText(/blocked/i);
     await expect(panel).toContainText(/done|closed/i);

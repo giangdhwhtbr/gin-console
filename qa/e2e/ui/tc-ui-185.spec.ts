@@ -1,4 +1,4 @@
-// TC: TC-UI-185@44709406
+// TC: TC-UI-185@7c6b316e
 import { test, expect } from '../evidence';
 import { openGraph, shown, showClosed, stubExample, TOMORROW_16 } from '../support/lanes';
 
@@ -15,9 +15,13 @@ test('TC-UI-185: Lane box header', async ({ page, ev }) => {
     await showClosed(page);
     const header = page.getByRole('region', { name: 'Lane be' }).locator('header');
     await expect(header.locator('[data-swatch]')).toBeVisible();
-    const first = header.locator('> div');
+    const first = header.locator('> div').first();
     await expect(first.getByRole('heading', { name: 'be' })).toBeVisible();
     await expect(first).toContainText('Running');
-    await expect(header.locator('> p')).toHaveText(`ann · lease until ${shown(TOMORROW_16)} · 1/2 closed`);
+    const second = header.locator('> div').nth(1);
+    await expect(second.locator('p')).toHaveText(`ann, lease until ${shown(TOMORROW_16)}`);
+    const strand = second.getByRole('img', { name: /^1 done, .* of 2 tracks$/ });
+    await expect(strand).toBeVisible();
+    await expect(strand).toContainText('1/2');
   });
 });

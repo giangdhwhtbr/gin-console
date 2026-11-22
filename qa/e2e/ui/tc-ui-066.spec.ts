@@ -1,4 +1,4 @@
-// TC: TC-UI-066@b617178a
+// TC: TC-UI-066@309e779b
 import { test, expect } from '../evidence';
 import { closedOn, epicOf, nodeOf, stubProject, taskOf } from '../support/graph';
 
@@ -17,7 +17,10 @@ test('TC-UI-066: Node with a prep task (REQ-UI-049)', async ({ page, ev }) => {
     await page.goto('/beads?project=alpha&milestone=all&view=graph&closed=1');
     const node = nodeOf(page, 'e-1');
     await expect(node).toBeVisible();
-    await expect(node).toContainText('1 of 2 done');
+    const strand = node.locator('[data-strand]');
+    await expect(strand).toHaveAttribute('data-strand', '1/2');
+    await expect(strand.locator('[data-bead]')).toHaveCount(2);
+    await expect(strand).toContainText('1/2');
     await expect(node.locator('svg.lucide-layers')).toBeVisible();
   });
 

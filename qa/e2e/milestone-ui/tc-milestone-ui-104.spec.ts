@@ -1,9 +1,10 @@
-// TC: TC-MILESTONE-UI-104@323d6988
+// TC: TC-MILESTONE-UI-104@57423c50
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
 test('TC-MILESTONE-UI-104: Merge gate and lane', async ({ page, ev }) => {
   // Precondition: milestone M1 of project P has epic e-1 with track t-1 in lane be (open) and merge gate g-1 (open) whose parent is e-1.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, {
     milestone: { M1: detail([epicPlan('e-1')]) },
     beads: [
@@ -20,7 +21,7 @@ test('TC-MILESTONE-UI-104: Merge gate and lane', async ({ page, ev }) => {
   await ev.step('1. Open /milestones/P/M1', async () => {
     await page.goto('/milestones/P/M1');
     await expect(row).toBeVisible();
-    await expect(row).toContainText('0 of 1 done');
+    await expect(row.locator('[data-strand="0/1"]')).toContainText('0/1');
   });
 
   await ev.step('2. Click the expand button of e-1', async () => {

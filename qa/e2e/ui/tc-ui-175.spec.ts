@@ -1,4 +1,4 @@
-// TC: TC-UI-175@b0001800
+// TC: TC-UI-175@17ffbd87
 import { test, expect } from '../evidence';
 import { E12, e12, plain, stubExample } from '../support/lanes';
 
@@ -18,6 +18,10 @@ test('TC-UI-175: Merge gates not counted as children', async ({ page, ev }) => {
     await page.goto('/beads?project=example&milestone=all&view=graph');
     const node = page.locator(`[data-node="${E12}"]`);
     await expect(node).toBeVisible();
-    await expect(node).toContainText('0 of 8 done');
+    const strand = node.locator('[data-strand]');
+    await expect(strand).toHaveAttribute('data-strand', '0/8');
+    await expect(strand).toHaveText('0/8');
+    await expect(strand).toHaveAccessibleName(/of 8 tracks$/);
+    await expect(node).not.toContainText('/9');
   });
 });

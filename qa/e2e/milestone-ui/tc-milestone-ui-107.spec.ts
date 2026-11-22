@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-107@1ba8065e
+// TC: TC-MILESTONE-UI-107@d6d80665
 import { test, expect } from '../evidence';
 import { bead, entry, list, stubApi } from '../support/api';
 import { reportBody, teamBody } from '../support/reports';
@@ -7,6 +7,7 @@ test('TC-MILESTONE-UI-107: Forecast after the end', async ({ page, ev }) => {
   // Preconditions: P has active m1 ending 1 Dec 2026 with forecast finish 16 Feb 2027 and an epic e1 in m1; the clock is 21 Nov 2026.
   await page.clock.setFixedTime(new Date('2026-11-21T09:00:00'));
   const m1 = entry('m1', { title: 'Checkout v2', status: 'active', start: '2026-11-10', end: '2026-12-01', finish: '2027-02-16' });
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, {
     milestones: list([m1], { today: '2026-11-21' }),
     beads: [bead('e1', { title: 'Epic one', issue_type: 'epic', status: 'in_progress', milestone: 'm1' })],
@@ -54,9 +55,9 @@ test('TC-MILESTONE-UI-107: Forecast after the end', async ({ page, ev }) => {
   await ev.step('3. Open /reports?project=P&tab=team', async () => {
     await page.goto('/reports?project=P&tab=team');
     const team = page.getByRole('link', { name: /^Team/ });
-    await expect(team).toContainText('· late');
-    await expect(team.getByText(/· late/)).toHaveClass(/text-state-blocked/);
-    await expect(page.getByText('Active · late', { exact: true })).toBeVisible();
+    await expect(team).toContainText('1 of 4 done, late');
+    await expect(team.getByText('1 of 4 done, late')).toHaveClass(/text-state-blocked/);
+    await expect(page.locator('[data-milestone-status]')).toHaveText('Active, late');
   });
 
   await ev.step('4. Open /beads/P/e1', async () => {

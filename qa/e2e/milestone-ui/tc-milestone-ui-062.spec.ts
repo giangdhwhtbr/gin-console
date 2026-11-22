@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-062@6e45d22a
+// TC: TC-MILESTONE-UI-062@509fce1c
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -7,6 +7,7 @@ test('TC-MILESTONE-UI-062: Expand an epic shows its closed children', async ({ p
   const kids = [4, 2, 1, 3].map((n) =>
     bead(`${epicId}.${n}`, { status: 'closed', parent: epicId, closed_at: '2026-11-01T10:00:00Z' }),
   );
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, {
     milestone: { M1: detail([epicPlan(epicId, { status: 'closed' })]) },
     beads: [bead(epicId, { issue_type: 'epic', status: 'closed', closed_at: '2026-11-01T10:00:00Z' }), ...kids],
@@ -15,7 +16,8 @@ test('TC-MILESTONE-UI-062: Expand an epic shows its closed children', async ({ p
   await ev.step('1. Open /milestones/P/M1', async () => {
     await page.goto('/milestones/P/M1');
     await expect(page.getByRole('button', { name: `Show 4 child beads of ${epicId}` })).toBeVisible();
-    await expect(page.locator(`[data-epic="${epicId}"]`)).toContainText('4 of 4 done');
+    await expect(page.locator(`[data-epic="${epicId}"]`)).toContainText('4/4');
+    await expect(page.locator(`[data-epic="${epicId}"] [data-strand="4/4"]`)).toBeVisible();
     await expect(page.locator('[data-child]')).toHaveCount(0);
   });
 

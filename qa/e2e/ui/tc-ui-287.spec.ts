@@ -1,4 +1,4 @@
-// TC: TC-UI-287@400ba4a4
+// TC: TC-UI-287@c3a1cdc3
 import { test, expect } from '../evidence';
 import { E12, PROJECT } from '../support/lanes';
 import { openEpicStubs, withComments, e12Counted } from '../support/epic';
@@ -7,7 +7,7 @@ import type { BeadSummary } from '../support/api';
 
 test('TC-UI-287: Progress with closed beads hidden', async ({ page, ev }) => {
   // Precondition: ex-e12 has 8 tracks (4 closed, 1 in progress, 2 ready, 1 blocked) and a merge gate child; "Show closed" is off.
-  const counted = (b: BeadSummary): BeadSummary => (b.id === E12 ? { ...b, child_counts: { total: 8, closed: 4, prep_total: 0, prep_closed: 0 } } : b);
+  const counted = (b: BeadSummary): BeadSummary => (b.id === E12 ? { ...b, child_counts: { total: 8, closed: 4, in_progress: 1, blocked: 1, ready: 2, deferred: 0, prep_total: 0, prep_closed: 0 } } : b);
   await openEpicStubs(page, [...withComments(e12Counted()), ...plain()].map(counted));
   await page.setViewportSize({ width: 1440, height: 900 });
 
@@ -19,6 +19,8 @@ test('TC-UI-287: Progress with closed beads hidden', async ({ page, ev }) => {
   await ev.step(`2. Click the title of ${E12}`, async () => {
     await page.getByRole('link', { name: 'Team checkout' }).first().click();
     await expect(page).toHaveURL(new RegExp(`/beads/${PROJECT}/${E12}`));
-    await expect(page.getByRole('region', { name: 'Progress' })).toContainText('4 of 8 tracks closed · 50%');
+    const progress = page.getByRole('region', { name: 'Progress' });
+    await expect(progress).toContainText('4 done, 1 in progress, 1 blocked, 2 ready');
+    await expect(progress.getByRole('img', { name: /of 8 tracks$/ })).toHaveAttribute('data-strand', '4/8');
   });
 });

@@ -1,4 +1,4 @@
-// TC: TC-UI-113@ca4c60a2
+// TC: TC-UI-113@5e82c5d7
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
@@ -17,7 +17,8 @@ test('TC-UI-113: Full card', async ({ page, ev }) => {
     await expect(card).toContainText('P1');
     await expect(card.getByRole('link', { name: 'Wire the thing' })).toBeVisible();
     await expect(card).toContainText('Ready');
-    await expect(card).toContainText('task');
+    await expect(card).not.toContainText('task');
+    await expect(card).toHaveCSS('border-left-width', '1px');
     await expect(card.getByRole('img', { name: '2 comments' })).toHaveText('2');
     await expect(card.getByRole('img', { name: '1 dependency' })).toHaveText('1');
     await expect(card).toContainText('alice');

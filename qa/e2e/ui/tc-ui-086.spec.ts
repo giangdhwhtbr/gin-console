@@ -1,4 +1,4 @@
-// TC: TC-UI-086@ea641009
+// TC: TC-UI-086@fca038c8
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
@@ -21,7 +21,7 @@ test('TC-UI-086: Place and filters', async ({ page, ev }) => {
     await page.getByRole('link', { name: 'Fix login' }).click();
     await expect(page).toHaveURL(/\/beads\/a\/a-1$/);
     const crumb = page.getByRole('navigation', { name: 'Breadcrumb' });
-    const first = crumb.getByRole('link', { name: 'Beads › Board · 2 filters' });
+    const first = crumb.getByRole('link', { name: 'Beads › Board, 2 filters' });
     await expect(first).toBeVisible();
     const href = new URL((await first.getAttribute('href')) ?? '', 'http://x');
     expect(href.pathname).toBe('/beads');

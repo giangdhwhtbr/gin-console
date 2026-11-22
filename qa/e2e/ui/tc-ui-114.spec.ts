@@ -1,4 +1,4 @@
-// TC: TC-UI-114@d51a0730
+// TC: TC-UI-114@c4ded62d
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
@@ -14,7 +14,7 @@ test('TC-UI-114: Bare card', async ({ page, ev }) => {
     const card = page.locator('[data-card]').filter({ hasText: 't-2' });
     await expect(card).toHaveCount(1);
     const last = card.locator('> div').last();
-    await expect(last).toHaveText(/^\s*Ready\s*task\s*Unassigned\s*$/i);
+    await expect(last).toHaveText(/^\s*Ready\s*Unassigned\s*$/i);
     await expect(last.getByText('Unassigned')).toHaveClass(/text-muted-foreground/);
     await expect(last.getByRole('img')).toHaveCount(0);
   });

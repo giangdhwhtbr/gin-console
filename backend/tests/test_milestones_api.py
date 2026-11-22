@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fake_export import bead, dep, write_export
 from fake_gw import LIST, SHOW, FakeGw
 from fastapi.testclient import TestClient
 
@@ -387,10 +388,95 @@ def test_milestone_ui_025_snapshot_unreadable(tmp_path: Path) -> None:
     def unreadable(cwd: Path) -> Any:
         raise BeadsError("no export")
 
-    app = create_app(
-        settings, static_dir=tmp_path / "dist", run_gw=FakeGw(), read_beads=unreadable
-    )
+    app = create_app(settings, static_dir=tmp_path / "dist", run_gw=FakeGw(), read_beads=unreadable)
     response = TestClient(app).get("/api/milestones", params={"project": "proj"})
     assert response.status_code == 200
     epics = response.json()["milestones"][0]["epics"]
     assert epics["ready"] == epics["total"] - epics["closed"]
+
+
+def _list_of(milestone: str) -> dict[str, Any]:
+    entry = {**LIST["milestones"][0], "id": milestone, "epics": {"total": 3, "closed": 1}}
+    return {**LIST, "milestones": [entry]}
+
+
+def _epics_of(tmp_path: Path, fake: Any, **kwargs: Any) -> Any:
+    (tmp_path / "dist").mkdir(exist_ok=True)
+    settings = Settings(projects=[ProjectEntry(name="alpha", path=tmp_path / "alpha")])
+    app = create_app(settings, static_dir=tmp_path / "dist", run_gw=fake, **kwargs)
+    return TestClient(app).get("/api/milestones", params={"project": "alpha"})
+
+
+# REQ-MILESTONE-UI-025
+# TC: TC-MILESTONE-UI-117@fc50a8f6
+def test_tc_milestone_ui_117_list_counts_epics_by_state(tmp_path: Path) -> None:
+    def epic(ident: str, **fields: Any) -> dict[str, Any]:
+        return bead(
+            ident, issue_type="epic", dependencies=[dep(ident, "m1", "parent-child")], **fields
+        )
+
+    rows = [
+        bead("m1", issue_type="milestone"),
+        epic("e-1", status="closed"),
+        epic("e-2", status="in_progress"),
+        {
+            **epic("e-3"),
+            "dependencies": [dep("e-3", "m1", "parent-child"), dep("e-3", "x", "blocks")],
+        },
+        bead("x"),
+        epic("e-4"),
+    ]
+    write_export(tmp_path / "alpha", rows)
+    listing = {
+        **LIST,
+        "milestones": [{**LIST["milestones"][0], "id": "m1", "epics": {"total": 4, "closed": 1}}],
+    }
+    response = _epics_of(tmp_path, FakeGw({"list": listing, "show": SHOW}))
+    assert response.status_code == 200
+    assert response.json()["milestones"][0]["epics"] == {
+        "total": 4,
+        "closed": 1,
+        "in_progress": 1,
+        "blocked": 1,
+        "ready": 1,
+        "deferred": 0,
+    }
+
+
+# REQ-MILESTONE-UI-025
+# TC: TC-MILESTONE-UI-118@02e548ce
+def test_tc_milestone_ui_118_milestone_bead_missing_from_the_export(tmp_path: Path) -> None:
+    write_export(tmp_path / "alpha", [bead("other")])
+    response = _epics_of(tmp_path, FakeGw({"list": _list_of("m2"), "show": SHOW}))
+    assert response.status_code == 200
+    assert response.json()["milestones"][0]["epics"] == {
+        "total": 3,
+        "closed": 1,
+        "in_progress": 0,
+        "blocked": 0,
+        "ready": 2,
+        "deferred": 0,
+    }
+
+
+# REQ-MILESTONE-UI-025
+# TC: TC-MILESTONE-UI-119@bb819130
+def test_tc_milestone_ui_119_unreadable_export_falls_back_to_the_list(tmp_path: Path) -> None:
+    def unreadable(cwd: Path) -> Any:
+        raise BeadsError("no export")
+
+    (tmp_path / "alpha").mkdir()
+    response = _epics_of(
+        tmp_path, FakeGw({"list": _list_of("m2"), "show": SHOW}), read_beads=unreadable
+    )
+    assert response.status_code == 200
+    milestone = response.json()["milestones"][0]
+    assert milestone["id"] == "m2"
+    assert milestone["epics"] == {
+        "total": 3,
+        "closed": 1,
+        "in_progress": 0,
+        "blocked": 0,
+        "ready": 2,
+        "deferred": 0,
+    }

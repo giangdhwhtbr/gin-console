@@ -1,4 +1,4 @@
-// TC: TC-UI-177@9dcae147
+// TC: TC-UI-177@4766a7c0
 import { test, expect } from '../evidence';
 import { E12, stubExample } from '../support/lanes';
 
@@ -11,7 +11,7 @@ test('TC-UI-177: Dependencies of a track show merge gates', async ({ page, ev })
     await page.goto(`/beads/example/${E12}.4`);
     const section = page.getByRole('heading', { name: 'Depends on' }).locator('..');
     await expect(section).toBeVisible();
-    await expect(section.getByRole('listitem').filter({ hasText: 'Waits for be #2 · merge pending' })).toHaveCount(1);
-    await expect(section.getByRole('listitem').filter({ hasText: 'Waits for fe #3 · merged' })).toHaveCount(1);
+    await expect(section.getByRole('listitem').filter({ hasText: 'Waits for be #2, merge pending' })).toHaveCount(1);
+    await expect(section.getByRole('listitem').filter({ hasText: 'Waits for fe #3, merged' })).toHaveCount(1);
   });
 });

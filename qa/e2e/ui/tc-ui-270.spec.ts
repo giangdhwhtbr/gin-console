@@ -1,4 +1,4 @@
-// TC: TC-UI-270@ee2339c8
+// TC: TC-UI-270@7561c716
 import { test, expect } from '../evidence';
 import { closedOn, epicOf, nodeOf, stubProject, taskOf } from '../support/graph';
 
@@ -17,12 +17,15 @@ test('TC-UI-270: Progress with show closed off', async ({ page, ev }) => {
   await ev.step('1. Open `/beads?project=alpha&milestone=all&view=list`', async () => {
     await page.goto('/beads?project=alpha&milestone=all&view=list');
     const row = page.getByRole('treeitem', { name: /e-1/ });
-    await expect(row).toContainText('3/5 closed');
-    await expect(row.locator('span[style*="width: 60%"]')).toBeVisible();
+    const strand = row.getByRole('img', { name: /of 5 tracks$/ });
+    await expect(strand).toHaveAttribute('data-strand', '3/5');
+    await expect(strand).toContainText('3/5');
   });
 
   await ev.step('2. Open `/beads?project=alpha&milestone=all&view=graph`', async () => {
     await page.goto('/beads?project=alpha&milestone=all&view=graph');
-    await expect(nodeOf(page, 'e-1')).toContainText('3 of 5 done');
+    const strand = nodeOf(page, 'e-1').locator('[data-strand="3/5"]');
+    await expect(strand).toBeVisible();
+    await expect(strand).toContainText('3/5');
   });
 });

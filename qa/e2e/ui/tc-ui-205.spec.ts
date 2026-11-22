@@ -1,4 +1,4 @@
-// TC: TC-UI-205@e5603827
+// TC: TC-UI-205@35939101
 import { test, expect } from '../evidence';
 import { E12, PROJECT } from '../support/lanes';
 import { openEpicStubs } from '../support/epic';
@@ -21,6 +21,6 @@ test('TC-UI-205: Tracks table (REQ-UI-121)', async ({ page, ev }) => {
     await expect(cells.nth(2)).toHaveText('Blocked');
     await expect(cells.nth(3)).toHaveText('qa');
     await expect(cells.nth(4)).toHaveText('Unassigned');
-    await expect(cells.nth(6)).toHaveText('be #2 · merge pending');
+    await expect(cells.nth(6)).toHaveText('be #2, merge pending');
   });
 });

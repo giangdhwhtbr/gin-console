@@ -1,4 +1,4 @@
-// TC: TC-UI-122@9f6ffe9e
+// TC: TC-UI-122@76638d0a
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
@@ -43,8 +43,9 @@ test('TC-UI-122: Long state line (REQ-UI-049)', async ({ page, ev }) => {
       expect(b.y).toBeGreaterThanOrEqual(n.y - 0.5);
       expect(b.y + b.height).toBeLessThanOrEqual(n.y + n.height + 0.5);
     }
-    // "2 of 5 done" is shown in full.
-    const done = node.getByText('2 of 5 done');
+    // The strand with "2/5" is shown in full.
+    await expect(node.locator('[data-strand="2/5"]')).toBeVisible();
+    const done = node.locator('[data-strand="2/5"]').getByText('2/5');
     await expect(done).toBeVisible();
     const d = (await done.boundingBox())!;
     expect(d.x + d.width).toBeLessThanOrEqual(n.x + n.width + 0.5);

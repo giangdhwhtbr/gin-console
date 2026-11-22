@@ -1,4 +1,4 @@
-// TC: TC-UI-063@faaf5d63
+// TC: TC-UI-063@8a7365f0
 import { test, expect } from '../evidence';
 import { closedOn, epicOf, nodeOf, stubProject, taskOf } from '../support/graph';
 
@@ -16,7 +16,11 @@ test('TC-UI-063: Node with children (REQ-UI-049)', async ({ page, ev }) => {
     await page.goto('/beads?project=alpha&milestone=all&view=graph&closed=1');
     const node = nodeOf(page, 'e-1');
     await expect(node).toBeVisible();
-    await expect(node).toContainText('1 of 3 done');
+    // the strand of 3 beads followed by "1/3"
+    const strand = node.getByRole('img', { name: /of 3 tracks$/ });
+    await expect(strand).toHaveAttribute('data-strand', '1/3');
+    await expect(strand.locator('[data-bead]')).toHaveCount(3);
+    await expect(strand).toContainText('1/3');
     // the open icon: the layers mark that says the node has children
     await expect(node.locator('svg.lucide-layers')).toBeVisible();
   });
