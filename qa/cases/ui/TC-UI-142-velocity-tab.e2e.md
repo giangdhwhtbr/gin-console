@@ -1,6 +1,6 @@
 # TC-UI-142: Velocity tab
 
-- **REQ:** REQ-UI-095@c32236ad
+- **REQ:** REQ-UI-095@2f17c833
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-22T04-57-11

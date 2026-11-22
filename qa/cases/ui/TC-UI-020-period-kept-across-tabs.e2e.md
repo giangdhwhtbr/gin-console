@@ -1,6 +1,6 @@
 # TC-UI-020: Period kept across tabs
 
-- **REQ:** REQ-UI-088@4bbbd1af
+- **REQ:** REQ-UI-088@086b0a47
 - **Priority:** medium
 
 **Preconditions:**

@@ -15,11 +15,11 @@ test('TC-UI-027: Change tab (REQ-UI-095)', async ({ page, ev }) => {
     await expect.poll(() => reports().length).toBe(1);
   });
 
-  await ev.step('1. Pick the AI usage tab', async () => {
+  await ev.step('1. Pick the Quality tab', async () => {
     await page.evaluate(() => Object.assign(window, { stillHere: true }));
-    await page.getByRole('tab', { name: /^AI usage/ }).click();
-    await expect(page).toHaveURL((url) => url.pathname + url.search === '/reports?project=alpha&days=90&tab=usage');
-    await expect(page.getByRole('tab', { name: /^AI usage/ })).toHaveAttribute('aria-selected', 'true');
+    await page.getByRole('tab', { name: /^Quality/ }).click();
+    await expect(page).toHaveURL((url) => url.pathname + url.search === '/reports?project=alpha&days=90&tab=quality');
+    await expect(page.getByRole('tab', { name: /^Quality/ })).toHaveAttribute('aria-selected', 'true');
     expect(await page.evaluate(() => 'stillHere' in window)).toBe(true);
     expect(reports()).toHaveLength(1);
   });

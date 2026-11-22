@@ -3,7 +3,7 @@ import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
 test('TC-UI-152: Hidden tabs are hinted (REQ-UI-095)', async ({ page, ev }) => {
-  // Precondition: project alpha exists; the Data coverage tab does not fit in a 768 px window.
+  // Precondition: project alpha exists; the Quality tab does not fit in a 768 px window.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubReports(page, { projects: ['alpha'] });
 

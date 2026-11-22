@@ -1,7 +1,10 @@
 # TC-REPORTS-044: Epic not yet split into tasks
 
-- **REQ:** REQ-REPORTS-009@fa920d07
+- **REQ:** REQ-REPORTS-009@b3daf2cc
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-49-45-api
+- **Checked:** a7126f2e
 
 **Preconditions:**
 - Project `alpha` has milestone `m2`

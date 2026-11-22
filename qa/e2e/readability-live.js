@@ -66,7 +66,7 @@ async function pagesOf(project) {
   }
   const closed = list.milestones.find((m) => m.status === 'closed');
   if (closed) add(`milestone ${closed.id} retro`, `/milestones/${enc(project)}/${enc(closed.id)}?tab=retro`);
-  for (const tab of ['team', 'delivery', 'velocity', 'usage', 'quality', 'coverage']) add(`reports ${tab}`, `/reports?project=${enc(project)}&tab=${tab}`);
+  for (const tab of ['team', 'delivery', 'velocity', 'quality']) add(`reports ${tab}`, `/reports?project=${enc(project)}&tab=${tab}`);
   return pages;
 }
 

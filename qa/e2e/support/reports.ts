@@ -3,8 +3,10 @@ import type { Page } from '@playwright/test';
 import { stubApi, type MilestoneList } from './api';
 
 export type ReportOptions = {
-  closed?: number; tokens?: number; cost?: number | null; reworkRate?: number | null;
-  notCollected?: number; invalid?: number; unpriced?: number;
+  closed?: number; reworkRate?: number | null;
+  members?: { member: string; closed: number; reopens: number; bugs: number; rework_rate: number | null }[];
+  epics?: { project: string; id: string; title: string; closed: number; reopens: number; bugs: number; rework_rate: number | null }[];
+  errors?: { project: string; error: string }[];
 };
 
 const figures = {
@@ -12,20 +14,13 @@ const figures = {
   cycle_median: 1.5, oldest_in_progress: 4, on_time: 1, rework_rate: 0, reopens: 0, bugs: 0,
 };
 
-/** `GET /api/reports?project=…`, with the gaps and totals a case states. */
+/** `GET /api/reports?project=…`, with the totals and Quality rows a case states. */
 export const reportBody = (project: string, days = 30, o: ReportOptions = {}) => ({
   generated_at: '2026-11-12T10:00:00Z', project, days, sprint: null,
-  totals: { tokens: o.tokens ?? 0, cost: o.cost ?? null, closed: o.closed ?? 0, tokens_per_bead: null, cache_ratio: null, rework_rate: o.reworkRate ?? null },
-  usage: { members: [], epics: [], beads: [], stages: [], models: [] },
+  totals: { closed: o.closed ?? 0, rework_rate: o.reworkRate ?? null },
   delivery: { weeks: [], by_type: [], by_member: [], overall: { key: 'all', cycle: null, lead: null }, estimates: [] },
-  quality: { members: [], epics: [], points: [] },
-  coverage: {
-    not_collected: Array.from({ length: o.notCollected ?? 0 }, (_, i) => ({ project, id: `${project}-n${i}`, title: `Not collected ${i}`, detail: 'not collected' })),
-    invalid: Array.from({ length: o.invalid ?? 0 }, (_, i) => ({ project, id: `${project}-i${i}`, title: `Unreadable ${i}`, detail: 'unreadable' })),
-    unpriced: Array.from({ length: o.unpriced ?? 0 }, (_, i) => `model-${i}`),
-    unassigned_share: null, sources: [],
-  },
-  errors: [],
+  quality: { members: o.members ?? [], epics: o.epics ?? [] },
+  errors: o.errors ?? [],
 });
 
 /** `GET /api/reports/team?project=…`: an open milestone with `closed` of `scope` beads closed. */

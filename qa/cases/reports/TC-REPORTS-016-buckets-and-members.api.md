@@ -1,7 +1,10 @@
 # TC-REPORTS-016: Buckets and members
 
-- **REQ:** REQ-REPORTS-009@fa920d07
+- **REQ:** REQ-REPORTS-009@b3daf2cc
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-22T08-49-45-api
+- **Checked:** 52e3d6d1
 
 **Preconditions:**
 - Project `alpha` has milestone `m2` with epic `e1`

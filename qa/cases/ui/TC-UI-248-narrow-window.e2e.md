@@ -1,6 +1,6 @@
 # TC-UI-248: Narrow window
 
-- **REQ:** REQ-UI-129@32c4e2b1
+- **REQ:** REQ-UI-129@de1adeec
 - **Priority:** medium
 
 **Preconditions:**

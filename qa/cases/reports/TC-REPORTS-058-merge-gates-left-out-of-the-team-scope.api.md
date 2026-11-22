@@ -1,6 +1,6 @@
 # TC-REPORTS-058: Merge gates left out of the team scope
 
-- **REQ:** REQ-REPORTS-009@fa920d07
+- **REQ:** REQ-REPORTS-009@b3daf2cc
 - **Priority:** high
 
 **Preconditions:**
