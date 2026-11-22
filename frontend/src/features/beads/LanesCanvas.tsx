@@ -12,8 +12,9 @@ import { StateWord } from "./StateMark";
 import { useLaneHeaderWidth } from "./useLaneHeaderWidth";
 
 const KEYS: readonly LaneKey[] = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+/** The header is 168px on a phone, 144px inside; the label "Tracks" takes ~44px, so the drawing keeps 56px for its count (~30px) to stay in line. */
 function factsOf(row: LaneRow): Fact[] {
-  const tracks = { label: "Tracks", value: <Strand counts={row.tracks.counts} noun="tracks" /> };
+  const tracks = { label: "Tracks", value: <Strand counts={row.tracks.counts} noun="tracks" maxWidth={56} /> };
   if (row.state === null) return [tracks];
   const facts: Fact[] = [{ label: "State", value: <StateWord state={GRAPH_STATE_OF[row.state.kind]} words={row.state.words} /> , title: row.state.words }];
   if (row.state.kind !== "closed") {

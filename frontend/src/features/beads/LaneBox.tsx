@@ -37,7 +37,8 @@ export function LaneBox({ box }: { box: LaneBoxLayout }) {
               {box.meta}
             </p>
           )}
-          <Strand counts={box.tracks.counts} noun="tracks" className="shrink-0" />
+          {/* box ~184px inside: 96px of drawing + gap 8 + count ~30 leave ~50px for the holder and lease, which truncate */}
+          <Strand counts={box.tracks.counts} noun="tracks" maxWidth={96} className="shrink-0" />
         </div>
       </header>
     </section>

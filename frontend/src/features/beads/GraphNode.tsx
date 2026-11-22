@@ -78,7 +78,8 @@ export function GraphNodeButton({
         {node.hasKids && (
           <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-muted-foreground">
             <Layers aria-hidden className="size-3.5" />
-            <Strand counts={node.counts} noun="tracks" />
+            {/* node 184px: 8 padding each side, icon 14 + gap 4 + gap 8 + count ~30 leave ~72px for the drawing and ~32px for the state label */}
+            <Strand counts={node.counts} noun="tracks" maxWidth={72} />
           </span>
         )}
       </span>

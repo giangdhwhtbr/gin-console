@@ -35,6 +35,18 @@ describe("LaneBox", () => {
     expect(box.className).toContain("dark:border-[color-mix(in_srgb,var(--box)_60%,transparent)]");
   });
 
+  // REQ-UI-138 Scenario: Narrow node
+  it("REQ-UI-138 REQ-UI-118 a box with 12 tracks draws the segmented thread and the count in full", () => {
+    const tracks = { closed: 3, total: 12, counts: { done: 3, inProgress: 0, blocked: 0, ready: 9, deferred: 0 } };
+    const { container } = render(<LaneBox box={{ ...base, tracks }} />);
+    const strand = container.querySelector("[data-strand]");
+    expect(strand).toHaveAttribute("data-strand", "3/12");
+    expect(strand).toHaveTextContent("3/12");
+    expect(strand?.querySelectorAll("rect[data-segment]").length).toBeGreaterThan(0);
+    expect(strand?.querySelectorAll("g[data-bead]")).toHaveLength(0);
+    expect(Number(strand?.querySelector("svg")?.getAttribute("width"))).toBeLessThanOrEqual(96);
+  });
+
   it("REQ-UI-118 Header: long text ends with an ellipsis and keeps a title", () => {
     render(<LaneBox box={{ ...base, lane: "a-very-long-lane-name" }} />);
     const name = screen.getByRole("heading", { name: "a-very-long-lane-name" });

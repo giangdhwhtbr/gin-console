@@ -50,8 +50,23 @@ export const strandSentence = (c: StrandCounts, noun: StrandNoun): string => `${
 
 const SIZE = { sm: { r: 4.5, gap: 3.5, wide: 120 }, lg: { r: 9, gap: 7, wide: 240 } };
 
-/** REQ-UI-138: a thread carrying one bead per item, or one segment per state above 16 items, followed by the count. */
-export function Strand({ counts, noun, size = "sm", className }: { counts: StrandCounts; noun: StrandNoun; size?: "sm" | "lg"; className?: string }): ReactElement | null {
+/**
+ * REQ-UI-138: a thread carrying one bead per item, or one segment per state above 16 items or when the beads would
+ * be wider than `maxWidth` (px of the drawing, not of the count), followed by the count.
+ */
+export function Strand({
+  counts,
+  noun,
+  size = "sm",
+  maxWidth,
+  className,
+}: {
+  counts: StrandCounts;
+  noun: StrandNoun;
+  size?: "sm" | "lg";
+  maxWidth?: number;
+  className?: string;
+}): ReactElement | null {
   const total = strandTotal(counts);
   if (total === 0) return null;
   const { r, gap, wide } = SIZE[size];
@@ -62,8 +77,8 @@ export function Strand({ counts, noun, size = "sm", className }: { counts: Stran
 
   let drawing: ReactElement;
   let width: number;
-  if (total <= MAX_BEADS) {
-    const step = 2 * r + gap;
+  const step = 2 * r + gap;
+  if (total <= MAX_BEADS && (maxWidth === undefined || total * step + 6 <= maxWidth)) {
     width = total * step + 6;
     const beads = STRAND_ORDER.flatMap((s) => Array.from({ length: counts[s] }, (_, i) => ({ s, i })));
     drawing = (
@@ -77,10 +92,12 @@ export function Strand({ counts, noun, size = "sm", className }: { counts: Stran
       </>
     );
   } else {
-    width = wide;
-    const room = wide - 2 * (present.length - 1);
+    // up to 16 items the beads did not fit `maxWidth`, which then is the width of the thread
+    width = total <= MAX_BEADS ? (maxWidth ?? wide) : Math.min(wide, maxWidth ?? wide);
+    // every present state keeps at least 1px, taken out of the room the others share
+    const room = width - 2 * (present.length - 1) - present.length;
     const h = r * 1.6;
-    const widths = present.map((s) => (room * counts[s]) / total);
+    const widths = present.map((s) => 1 + (room * counts[s]) / total);
     drawing = (
       <>
         {present.map((s, i) => {
@@ -110,7 +127,7 @@ export function Strand({ counts, noun, size = "sm", className }: { counts: Stran
 
   return (
     <Hint text={`${sentence}. ${DEFINITIONS.progress}`}>
-      <span role="img" aria-label={sentence} data-strand={`${counts.done}/${total}`} className={cn("inline-flex items-center gap-2", className)}>
+      <span role="img" aria-label={sentence} data-strand={`${counts.done}/${total}`} className={cn("inline-flex items-center gap-2", size === "lg" && "flex-wrap", className)}>
         <svg aria-hidden width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="shrink-0">
           {drawing}
         </svg>

@@ -23,7 +23,8 @@ export function ProgressCard({ bead, beads }: { bead: BeadDetail; beads: BeadsSt
   const openBugs = bead.bugs.filter((b) => b.status !== "closed").length;
   return (
     <OverviewCard title="Progress">
-      <Strand size="lg" counts={counts} noun="tracks" />
+      {/* 280px of drawing fits the card on a 390px phone; the words wrap under it */}
+      <Strand size="lg" counts={counts} noun="tracks" maxWidth={280} />
       <FactList
         layout="inline"
         facts={[

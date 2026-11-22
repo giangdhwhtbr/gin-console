@@ -31,6 +31,20 @@ describe("GraphNodeButton state label", () => {
   });
 });
 
+describe("GraphNodeButton narrow strand", () => {
+  // REQ-UI-138 Scenario: Narrow node; REQ-UI-049
+  it("REQ-UI-138 REQ-UI-049 a node with 12 tracks draws the segmented thread and the count in full", () => {
+    const node = { bead: bead("e-5", { issue_type: "epic" }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: true, counts: { done: 3, inProgress: 0, blocked: 0, ready: 9, deferred: 0 } };
+    const { container } = render(<GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} />);
+    const strand = container.querySelector("[data-strand]");
+    expect(strand).toHaveAttribute("data-strand", "3/12");
+    expect(strand).toHaveTextContent("3/12");
+    expect(strand?.querySelectorAll("rect[data-segment]").length).toBeGreaterThan(0);
+    expect(strand?.querySelectorAll("g[data-bead]")).toHaveLength(0);
+    expect(Number(strand?.querySelector("svg")?.getAttribute("width"))).toBeLessThanOrEqual(72);
+  });
+});
+
 const place = (b: ReturnType<typeof bead>, showLane?: boolean) => {
   const node = { bead: b, external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, counts: { done: 0, inProgress: 0, blocked: 0, ready: 0, deferred: 0 } };
   render(
