@@ -281,8 +281,9 @@ describe("BoardView", () => {
     // Close popover
     await user.click(screen.getByRole("button", { name: "Assignee" }));
 
-    // REQ-UI-083: Sprint filter offers All, No sprint, and sprint names
-    const sprintSelect = screen.getByLabelText("Sprint");
+    // REQ-UI-083, REQ-UI-145: Sprint filter under More filters offers All, No sprint, and sprint names
+    await user.click(screen.getByRole("button", { name: "More filters" }));
+    const sprintSelect = screen.getByRole("combobox", { name: "Sprint" });
     const sprintOptions = within(sprintSelect).getAllByRole("option").map((o) => o.textContent);
     expect(sprintOptions).toEqual(["All", "No sprint", "sprint-1"]);
 
@@ -313,7 +314,8 @@ describe("BoardView", () => {
     render(<BeadsPage />);
 
     expect(await screen.findByText("Simple task")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Sprint")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "More filters" }));
+    expect(screen.queryByRole("combobox", { name: "Sprint" })).toBeNull();
   });
 });
 

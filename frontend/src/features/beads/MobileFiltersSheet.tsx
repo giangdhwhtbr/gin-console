@@ -1,351 +1,132 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { SlidersHorizontal, X } from "lucide-react";
-import { activeFilters } from "./filterDefs";
+import { COUNT_PILL } from "./FilterChip";
+import { activeFilters, FILTER_DEFS, type FilterContext, type FilterDef } from "./filterDefs";
 import { assigneeLabel, KIND_OPTIONS, type BeadFilters, type BeadOptions } from "./filters";
-import { MilestoneFilter } from "./MilestoneFilter";
-import { milestoneInEffect, type MilestoneInEffect, type MilestonesState } from "./milestoneChoice";
+import { LabelMode } from "./LabelMode";
+import { MilestoneMenu } from "./MilestoneMenu";
+import type { MilestonesState } from "./milestoneChoice";
 
+const toggleArrayItem = (list: string[], item: string): string[] =>
+  list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
+
+function Pill({ selected, label, onClick }: { selected: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={`cursor-pointer rounded border px-2.5 py-1 text-xs font-medium transition-colors ${
+        selected ? "border-primary bg-primary text-primary-foreground" : "bg-background text-foreground hover:bg-muted"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+/** REQ-UI-084: below 768px every filter of `FILTER_DEFS` in one sheet; the Filters button counts the active ones. */
 export function MobileFiltersSheet({
   filters,
   options,
   milestones,
-  milestone,
-  hideMilestone = false,
+  context,
   onChange,
   onClear,
 }: {
   filters: BeadFilters;
   options: BeadOptions;
   milestones: MilestonesState;
-  milestone: MilestoneInEffect;
-  hideMilestone?: boolean;
+  context: FilterContext;
   onChange: (patch: Partial<BeadFilters>) => void;
   onClear: () => void;
 }) {
-  const activeCount = activeFilters(filters, { fixedMilestone: hideMilestone, milestone, byDefault: milestoneInEffect("", milestones) });
+  const activeCount = activeFilters(filters, context);
 
-  const toggleArrayItem = (list: string[], item: string): string[] => {
-    return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
+  const multi = (values: string[], items: readonly { value: string; label: string }[], set: (next: string[]) => void) => (
+    <div className="flex max-h-32 flex-wrap gap-1.5 overflow-y-auto">
+      {items.map((item) => (
+        <Pill key={item.value} selected={values.includes(item.value)} label={item.label} onClick={() => set(toggleArrayItem(values, item.value))} />
+      ))}
+    </div>
+  );
+
+  const single = (value: string, items: readonly { value: string; label: string }[], set: (next: string) => void) => (
+    <div className="flex flex-wrap gap-1.5">
+      {[{ value: "", label: "All" }, ...items].map((item) => (
+        <Pill key={item.value} selected={value === item.value} label={item.label} onClick={() => set(item.value)} />
+      ))}
+    </div>
+  );
+
+  const section = (def: FilterDef) => {
+    switch (def.key) {
+      case "milestone":
+        return <MilestoneMenu state={milestones} value={context.milestone} onChange={(milestone) => onChange({ milestone })} />;
+      case "status":
+        return multi(filters.status, options.statuses.map((v) => ({ value: v, label: v })), (status) => onChange({ status }));
+      case "assignee":
+        return multi(filters.assignee, options.assignees.map((v) => ({ value: v, label: assigneeLabel(v) })), (assignee) => onChange({ assignee }));
+      case "priority":
+        return multi(filters.priority, options.priorities.map((p) => ({ value: String(p), label: `P${p}` })), (priority) => onChange({ priority }));
+      case "label":
+        return (
+          <>
+            <LabelMode mode={filters.labelMode} onChange={(labelMode) => onChange({ labelMode })} />
+            {multi(filters.label, options.labels.map((v) => ({ value: v, label: v })), (label) => onChange({ label }))}
+          </>
+        );
+      case "type":
+        return single(filters.type, options.types.map((v) => ({ value: v, label: v })), (type) => onChange({ type }));
+      case "kind":
+        return single(filters.kind, KIND_OPTIONS, (kind) => onChange({ kind: KIND_OPTIONS.find((o) => o.value === kind)?.value ?? "" }));
+      case "capability":
+        return multi(filters.capability, options.capabilities.map((v) => ({ value: v, label: v })), (capability) => onChange({ capability }));
+      case "sprint":
+        return single(filters.sprint, [{ value: "none", label: "No sprint" }, ...options.sprints.map((v) => ({ value: v, label: v }))], (sprint) => onChange({ sprint }));
+      default:
+        return null;
+    }
   };
 
   return (
     <Dialog.Root>
       <Dialog.Trigger
         aria-label={activeCount > 0 ? `Filters ${activeCount}` : "Filters"}
-        className="inline-flex items-center gap-1.5 rounded border bg-background px-3 py-1 text-sm font-medium hover:bg-muted cursor-pointer transition-colors"
+        className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
       >
         <SlidersHorizontal className="h-4 w-4 opacity-70" aria-hidden="true" />
         <span>Filters</span>
-        {activeCount > 0 && (
-          <span className="rounded bg-primary/15 px-1.5 py-0.5 text-xs font-semibold text-primary">
-            {activeCount}
-          </span>
-        )}
+        {activeCount > 0 && <span className={COUNT_PILL}>{activeCount}</span>}
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 bg-black/50 z-50 transition-opacity" />
-        <Dialog.Popup className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] rounded-t-xl border-t bg-background p-4 shadow-xl overflow-y-auto outline-none">
-          <div className="flex items-center justify-between border-b pb-3 mb-4">
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/50 transition-opacity" />
+        <Dialog.Popup className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-xl border-t bg-background p-4 shadow-xl outline-none">
+          <div className="mb-4 flex items-center justify-between border-b pb-3">
             <Dialog.Title className="text-base font-semibold">Filter Beads</Dialog.Title>
-            <Dialog.Close
-              aria-label="Close"
-              className="rounded p-1 text-muted-foreground hover:text-foreground cursor-pointer"
-            >
+            <Dialog.Close aria-label="Close" className="cursor-pointer rounded p-1 text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" aria-hidden="true" />
             </Dialog.Close>
           </div>
 
           <div className="space-y-4 text-sm">
-            {/* Status */}
-            <div>
-              <div className="font-medium text-13 text-muted-foreground mb-2">Status</div>
-              <div className="flex flex-wrap gap-1.5">
-                {options.statuses.map((status) => {
-                  const selected = filters.status.includes(status);
-                  return (
-                    <button
-                      key={status}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => onChange({ status: toggleArrayItem(filters.status, status) })}
-                      className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                        selected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {status}
-                    </button>
-                  );
-                })}
+            {FILTER_DEFS.filter((def) => def.offered(options) && !(def.key === "milestone" && context.fixedMilestone)).map((def) => (
+              <div key={def.key} data-filter={def.key} role="group" aria-label={def.label}>
+                <div className="mb-2 text-13 font-medium text-muted-foreground">{def.label}</div>
+                {section(def)}
               </div>
-            </div>
-
-            {/* Priority */}
-            <div>
-              <div className="font-medium text-13 text-muted-foreground mb-2">Priority</div>
-              <div className="flex flex-wrap gap-1.5">
-                {options.priorities.map((p) => {
-                  const strP = String(p);
-                  const selected = filters.priority.includes(strP);
-                  return (
-                    <button
-                      key={strP}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => onChange({ priority: toggleArrayItem(filters.priority, strP) })}
-                      className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                        selected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      P{p}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Labels */}
-            {options.labels.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-medium text-13 text-muted-foreground">Labels</div>
-                  <div className="inline-flex rounded border bg-muted p-0.5 text-xs">
-                    <button
-                      type="button"
-                      aria-pressed={filters.labelMode === "any"}
-                      onClick={() => onChange({ labelMode: "any" })}
-                      className={`rounded px-1.5 py-0.5 cursor-pointer font-medium ${
-                        filters.labelMode === "any"
-                          ? "bg-background text-foreground shadow-xs"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      Any
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={filters.labelMode === "all"}
-                      onClick={() => onChange({ labelMode: "all" })}
-                      className={`rounded px-1.5 py-0.5 cursor-pointer font-medium ${
-                        filters.labelMode === "all"
-                          ? "bg-background text-foreground shadow-xs"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      All
-                    </button>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                  {options.labels.map((lbl) => {
-                    const selected = filters.label.includes(lbl);
-                    return (
-                      <button
-                        key={lbl}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => onChange({ label: toggleArrayItem(filters.label, lbl) })}
-                        className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                          selected
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-foreground hover:bg-muted"
-                        }`}
-                      >
-                        {lbl}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Assignee */}
-            <div>
-              <div className="font-medium text-13 text-muted-foreground mb-2">Assignee</div>
-              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                {options.assignees.map((assignee) => {
-                  const selected = filters.assignee.includes(assignee);
-                  const label = assigneeLabel(assignee);
-                  return (
-                    <button
-                      key={assignee}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => onChange({ assignee: toggleArrayItem(filters.assignee, assignee) })}
-                      className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                        selected
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Sprint (hidden if no sprints exist) */}
-            {options.sprints.length > 0 && (
-              <div>
-                <div className="font-medium text-13 text-muted-foreground mb-2">Sprint</div>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    aria-pressed={filters.sprint === ""}
-                    onClick={() => onChange({ sprint: "" })}
-                    className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                      filters.sprint === ""
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={filters.sprint === "none"}
-                    onClick={() => onChange({ sprint: "none" })}
-                    className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                      filters.sprint === "none"
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    No sprint
-                  </button>
-                  {options.sprints.map((sprint) => (
-                    <button
-                      key={sprint}
-                      type="button"
-                      aria-pressed={filters.sprint === sprint}
-                      onClick={() => onChange({ sprint })}
-                      className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                        filters.sprint === sprint
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {sprint}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Milestone */}
-            {!hideMilestone && (
-              <MilestoneFilter state={milestones} value={milestone} onChange={(value) => onChange({ milestone: value })} />
-            )}
-
-            {/* Kind */}
-            <div role="group" aria-label="Kind">
-              <div className="font-medium text-13 text-muted-foreground mb-2">Kind</div>
-              <div className="flex flex-wrap gap-1.5">
-                {[{ value: "" as const, label: "All" }, ...KIND_OPTIONS].map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    aria-pressed={filters.kind === o.value}
-                    onClick={() => onChange({ kind: o.value })}
-                    className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                          filters.kind === o.value
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-foreground hover:bg-muted"
-                        }`}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Capability (hidden if no bead has one) */}
-            {options.capabilities.length > 0 && (
-              <div role="group" aria-label="Capability">
-                <div className="font-medium text-13 text-muted-foreground mb-2">Capability</div>
-                <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                  {options.capabilities.map((cap) => (
-                    <button
-                      key={cap}
-                      type="button"
-                      aria-pressed={filters.capability.includes(cap)}
-                      onClick={() => onChange({ capability: toggleArrayItem(filters.capability, cap) })}
-                      className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                          filters.capability.includes(cap)
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-background text-foreground hover:bg-muted"
-                        }`}
-                    >
-                      {cap}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Type */}
-            {options.types.length > 0 && (
-              <div>
-                <div className="font-medium text-13 text-muted-foreground mb-2">Type</div>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    aria-pressed={filters.type === ""}
-                    onClick={() => onChange({ type: "" })}
-                    className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                      filters.type === ""
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-background text-foreground hover:bg-muted"
-                    }`}
-                  >
-                    All
-                  </button>
-                  {options.types.map((type) => (
-                    <button
-                      key={type}
-                      type="button"
-                      aria-pressed={filters.type === type}
-                      onClick={() => onChange({ type })}
-                      className={`rounded border px-2.5 py-1 text-xs font-medium cursor-pointer transition-colors ${
-                        filters.type === type
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-background text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Show closed */}
-            <div className="pt-2 border-t">
-              <label className="flex items-center gap-2 cursor-pointer font-medium text-sm">
-                <input
-                  type="checkbox"
-                  checked={filters.closed}
-                  onChange={(event) => onChange({ closed: event.target.checked })}
-                  className="rounded border"
-                />
-                Show closed
-              </label>
-            </div>
+            ))}
           </div>
 
-          <div className="flex items-center justify-between gap-3 pt-4 border-t mt-4">
-            <button
-              type="button"
-              onClick={onClear}
-              className="text-sm text-muted-foreground hover:text-foreground font-medium cursor-pointer"
-            >
-              Clear all
-            </button>
-            <Dialog.Close className="rounded bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 cursor-pointer">
+          <div className="mt-4 flex items-center justify-between gap-3 border-t pt-4">
+            {activeCount > 0 ? (
+              <button type="button" onClick={onClear} className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground">
+                Clear filters
+              </button>
+            ) : (
+              <span />
+            )}
+            <Dialog.Close className="cursor-pointer rounded bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90">
               Done
             </Dialog.Close>
           </div>

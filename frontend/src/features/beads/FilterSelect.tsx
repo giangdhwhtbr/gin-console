@@ -13,20 +13,18 @@ export function FilterSelect({
   const shown =
     value !== "" && !options.some((o) => o.value === value) ? [...options, { value, label: value }] : options;
   return (
-    <label className="flex items-center gap-1 text-13">
-      {label}
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="rounded border bg-background px-2 py-1"
-      >
-        <option value="">All</option>
-        {shown.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <select
+      aria-label={label}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      className="h-8 w-full rounded border bg-background px-2 text-13"
+    >
+      <option value="">All</option>
+      {shown.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </select>
   );
 }

@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { BeadFilterBar } from "./BeadFilterBar";
 import { BoardView } from "./BoardView";
+import type { FilterContext } from "./filterDefs";
 import { filterBeads, optionsOf, resolveMe, sortBeads, type BeadFilters } from "./filters";
 import { FocusView } from "./FocusView";
 import { GraphView } from "./GraphView";
@@ -55,6 +56,7 @@ export function BeadsView({
   const milestone = fixedMilestone ?? milestoneInEffect(filters.milestone, milestones);
   const closedMilestone = isClosedMilestone(milestone, milestones);
   const byDefault = milestoneInEffect("", milestones);
+  const context: FilterContext = { fixedMilestone: fixedMilestone !== undefined || fixed !== undefined, milestone, byDefault };
   useEffect(() => {
     onMilestone?.({ inEffect: milestone, byDefault });
   }, [onMilestone, milestone, byDefault]);
@@ -105,11 +107,10 @@ export function BeadsView({
               filters={filters}
               options={optionsOf(beads)}
               milestones={milestones}
-              milestone={milestone}
-              hideMilestone={fixedMilestone !== undefined || fixed !== undefined}
+              context={context}
+              count={fixed === undefined ? `${shown.length} of ${beads.length}` : null}
               onChange={onChange}
             />
-            {fixed === undefined && <p className="text-sm text-muted-foreground">{`${shown.length} of ${beads.length}`}</p>}
             {filters.view === "graph" && (
               <GraphView
                 project={project}

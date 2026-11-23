@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { MilestoneOption } from "./api";
-import { isClosedMilestone, matchesMilestone, milestoneInEffect, type MilestonesState } from "./milestoneChoice";
+import {
+  isClosedMilestone,
+  matchesMilestone,
+  milestoneGroups,
+  milestoneInEffect,
+  milestoneValue,
+  type MilestonesState,
+} from "./milestoneChoice";
 
 const option = (id: string, status: MilestoneOption["status"]): MilestoneOption => ({
   id,
@@ -46,5 +53,15 @@ describe("milestoneChoice", () => {
     expect(matchesMilestone({ milestone: "m1" }, "m1")).toBe(true);
     expect(matchesMilestone({ milestone: "m2" }, "m1")).toBe(false);
     expect(matchesMilestone({ milestone: null }, "all")).toBe(true);
+  });
+  it("REQ-UI-104 groups: Active, Planned by start, Closed by latest end, empty groups left out", () => {
+    const m = (id: string, status: MilestoneOption["status"], start: string, end: string): MilestoneOption => ({ id, title: id, status, start, end });
+    const groups = milestoneGroups([m("c1", "closed", "2026-01-01", "2026-02-01"), m("c2", "closed", "2026-03-01", "2026-04-01"), m("p2", "planned", "2026-08-01", "2026-09-01"), m("p1", "scheduled", "2026-07-01", "2026-08-01")]);
+    expect(groups.map((g) => [g.label, g.items.map((i) => i.id)])).toEqual([["Planned", ["p1", "p2"]], ["Closed", ["c2", "c1"]]]);
+  });
+  it("REQ-UI-144 the Milestone chip value: none for All, No milestone, else the title", () => {
+    expect(milestoneValue("all", ok("m2"))).toBeNull();
+    expect(milestoneValue("none", ok("m2"))).toBe("No milestone");
+    expect(milestoneValue("m2", ok("m2"))).toBe("m2");
   });
 });

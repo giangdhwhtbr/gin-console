@@ -1,8 +1,5 @@
 import type { MilestoneOption } from "./api";
-import type { MilestoneInEffect, MilestonesState } from "./milestoneChoice";
-
-const byStart = (a: MilestoneOption, b: MilestoneOption) => (a.start ?? "").localeCompare(b.start ?? "");
-const byLatestEnd = (a: MilestoneOption, b: MilestoneOption) => (b.end ?? "").localeCompare(a.end ?? "");
+import { milestoneGroups, type MilestoneInEffect, type MilestonesState } from "./milestoneChoice";
 
 function Group({ label, items }: { label: string; items: readonly MilestoneOption[] }) {
   if (items.length === 0) return null;
@@ -47,12 +44,9 @@ export function MilestoneFilter({
           <>
             <option value="all">All</option>
             <option value="none">No milestone</option>
-            <Group label="Active" items={milestones.filter((m) => m.status === "active")} />
-            <Group
-              label="Planned"
-              items={milestones.filter((m) => m.status === "scheduled" || m.status === "planned").sort(byStart)}
-            />
-            <Group label="Closed" items={milestones.filter((m) => m.status === "closed").sort(byLatestEnd)} />
+            {milestoneGroups(milestones).map((g) => (
+              <Group key={g.label} label={g.label} items={g.items} />
+            ))}
           </>
         )}
       </select>

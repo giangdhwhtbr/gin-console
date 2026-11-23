@@ -528,12 +528,12 @@ describe("BeadsPage", () => {
     // Open Status popover and check 'open'
     await userEvent.click(screen.getByRole("button", { name: "Status" }));
     await userEvent.click(screen.getByRole("checkbox", { name: "open" }));
-    await userEvent.click(screen.getByRole("button", { name: "Status 1" }));
+    await userEvent.click(screen.getByRole("button", { name: "Status open" }));
 
-    // Open Priority popover and check 'P1'
-    await userEvent.click(screen.getByRole("button", { name: "Priority" }));
+    // Open More filters and check 'P1'
+    await userEvent.click(screen.getByRole("button", { name: "More filters" }));
     await userEvent.click(screen.getByRole("checkbox", { name: "P1" }));
-    await userEvent.click(screen.getByRole("button", { name: "Priority 1" }));
+    await userEvent.click(screen.getByRole("button", { name: "More filters 1" }));
 
     expect(screen.getByText("Fix login")).toBeInTheDocument();
     expect(screen.queryByText("Login crash")).not.toBeInTheDocument();
@@ -546,7 +546,7 @@ describe("BeadsPage", () => {
     expect(screen.getByText("Login crash")).toBeInTheDocument();
     expect(screen.getByLabelText("Search")).toHaveValue("");
     expect(screen.getByRole("button", { name: "Status" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Priority" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "More filters" })).toBeInTheDocument();
   });
 
   // REQ-UI-025
@@ -562,7 +562,7 @@ describe("BeadsPage", () => {
     expect(screen.queryByText("Fix crash")).not.toBeInTheDocument();
     expect(screen.queryByText("Add auth")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Search")).toHaveValue("fix");
-    expect(screen.getByRole("button", { name: "Status 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Status open" })).toBeInTheDocument();
   });
 
   // REQ-UI-026
@@ -835,7 +835,7 @@ describe("BeadsPage", () => {
       withMilestones("m2");
       render(<BeadsPage />);
       await screen.findByText("Epic two");
-      expect(screen.getByLabelText("Milestone")).toHaveValue("m2");
+      expect(screen.getByRole("button", { name: "Milestone Milestone m2" })).toBeInTheDocument();
       expect(screen.getByText("Task two")).toBeInTheDocument();
       expect(screen.queryByText("Epic three")).toBeNull();
       expect(screen.queryByText("Epic loose")).toBeNull();
@@ -865,12 +865,13 @@ describe("BeadsPage", () => {
       withMilestones("m2");
       render(<BeadsPage />);
       await screen.findByText("Epic two");
-      await userEvent.selectOptions(screen.getByLabelText("Milestone"), "all");
+      await userEvent.click(screen.getByRole("button", { name: /^Milestone/ }));
+      await userEvent.click(await screen.findByRole("radio", { name: "All" }));
       expect(window.location.search).toContain("milestone=all");
       expect(await screen.findByText("Epic loose")).toBeInTheDocument();
       expect(screen.getByText("Epic three")).toBeInTheDocument();
       expect(screen.getByText("Epic two")).toBeInTheDocument();
-      await userEvent.selectOptions(screen.getByLabelText("Milestone"), "none");
+      await userEvent.click(await screen.findByRole("radio", { name: "No milestone" }));
       expect(window.location.search).toContain("milestone=none");
       await waitFor(() => expect(screen.queryByText("Epic two")).toBeNull());
       expect(screen.getByText("Epic loose")).toBeInTheDocument();
@@ -886,18 +887,19 @@ describe("BeadsPage", () => {
       );
       render(<BeadsPage />);
       await screen.findByText("Epic two");
-      await userEvent.selectOptions(screen.getByLabelText("Milestone"), "m1");
+      await userEvent.click(screen.getByRole("button", { name: /^Milestone/ }));
+      await userEvent.click(await screen.findByRole("radio", { name: "Milestone m1" }));
       expect(await screen.findByText("Done task")).toBeInTheDocument();
       const urls = fetchMock.mock.calls.map(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url));
       expect(urls.some((u) => u.startsWith("/api/beads?") && u.includes("closed=1"))).toBe(true);
-      expect(screen.queryByRole("checkbox", { name: "Show closed" })).not.toBeChecked();
+      expect(screen.getByRole("switch", { name: "Show closed" })).not.toBeChecked();
     });
 
     it("REQ-UI-104 no current milestone shows All", async () => {
       withMilestones(null);
       render(<BeadsPage />);
       await screen.findByText("Epic loose");
-      expect(screen.getByLabelText("Milestone")).toHaveValue("all");
+      expect(screen.getByRole("button", { name: "Milestone" })).toBeInTheDocument();
       expect(screen.getByText("Epic three")).toBeInTheDocument();
     });
 
@@ -905,7 +907,8 @@ describe("BeadsPage", () => {
       stub(() => json(all), defaultProjects, () => json({ error: "bd failed" }, 502));
       render(<BeadsPage />);
       await screen.findByText("Epic loose");
-      expect(await screen.findByRole("option", { name: "Milestones unavailable" })).toBeInTheDocument();
+      await userEvent.click(await screen.findByRole("button", { name: "Milestone" }));
+      expect(await screen.findByText("Milestones unavailable")).toBeInTheDocument();
       expect(screen.getByText("Epic three")).toBeInTheDocument();
     });
 
@@ -942,7 +945,7 @@ describe("BeadsPage", () => {
           url.searchParams.get("project") === "alpha" ? alphaAnswer : Promise.resolve(json(answer("o-m"))),
       );
       render(<BeadsPage />);
-      await screen.findByLabelText("Milestone");
+      await screen.findByRole("button", { name: /^Milestone/ });
       act(() => navigate("/beads?project=omega"));
       await screen.findByText("Omega in o-m");
       expect(screen.queryByText("Omega in a-m")).toBeNull();
@@ -952,7 +955,7 @@ describe("BeadsPage", () => {
       });
       expect(screen.getByText("Omega in o-m")).toBeInTheDocument();
       expect(screen.queryByText("Omega in a-m")).toBeNull();
-      expect(screen.getByLabelText("Milestone")).toHaveValue("o-m");
+      expect(screen.getByRole("button", { name: "Milestone Milestone o-m" })).toBeInTheDocument();
     });
 
     it("REQ-UI-104 an unknown milestone id shows All", async () => {
@@ -960,7 +963,7 @@ describe("BeadsPage", () => {
       withMilestones("m2");
       render(<BeadsPage />);
       await screen.findByText("Epic loose");
-      expect(screen.getByLabelText("Milestone")).toHaveValue("all");
+      expect(screen.getByRole("button", { name: "Milestone" })).toBeInTheDocument();
       expect(screen.getByText("Epic three")).toBeInTheDocument();
       expect(screen.getByText("Epic two")).toBeInTheDocument();
       expect(screen.queryByText("Milestone bead")).toBeNull();
@@ -970,10 +973,24 @@ describe("BeadsPage", () => {
       withMilestones("m2");
       render(<BeadsPage />);
       await screen.findByText("Epic two");
-      expect(screen.getAllByLabelText("Milestone")).toHaveLength(1);
       await userEvent.click(screen.getByRole("button", { name: /Filters/ }));
       const dialog = await screen.findByRole("dialog");
-      expect(within(dialog).getByLabelText("Milestone")).toHaveValue("m2");
+      expect(within(within(dialog).getByRole("group", { name: "Milestone" })).getByRole("radio", { name: "Milestone m2" })).toBeChecked();
+    });
+
+    it("REQ-UI-143 Nothing to clear", async () => {
+      withMilestones("m2");
+      render(<BeadsPage />);
+      await screen.findByText("Epic two");
+      expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
+    });
+
+    it("REQ-UI-143 A search is a filter", async () => {
+      withMilestones("m2");
+      render(<BeadsPage />);
+      await screen.findByText("Epic two");
+      await userEvent.type(screen.getByLabelText("Search"), "pay");
+      expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
     });
   });
 
@@ -992,7 +1009,8 @@ describe("BeadsPage", () => {
       stubKinds();
       render(<BeadsPage />);
       await screen.findAllByText("Cap epic");
-      await userEvent.selectOptions(screen.getByLabelText("Kind"), "technical");
+      await userEvent.click(screen.getByRole("button", { name: "More filters" }));
+      await userEvent.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "technical");
       expect(window.location.search).toContain("kind=technical");
       expect(await screen.findByText("Tech track")).toBeInTheDocument();
       await waitFor(() => expect(screen.queryByText("Cap epic")).toBeNull());
@@ -1003,7 +1021,7 @@ describe("BeadsPage", () => {
       stubKinds();
       render(<BeadsPage />);
       await screen.findAllByText("Cap epic");
-      await userEvent.click(screen.getByRole("button", { name: "Capability" }));
+      await userEvent.click(screen.getByRole("button", { name: "More filters" }));
       expect(await screen.findByRole("checkbox", { name: "ui" })).toBeInTheDocument();
       await userEvent.click(screen.getByRole("checkbox", { name: "beads" }));
       expect(window.location.search).toContain("capability=beads");
@@ -1027,8 +1045,9 @@ describe("BeadsPage", () => {
       stub(() => json([bead("a-1")]));
       render(<BeadsPage />);
       await screen.findByText("Title a-1");
-      expect(screen.queryByRole("button", { name: "Capability" })).toBeNull();
-      expect(screen.getByLabelText("Kind")).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "More filters" }));
+      expect(screen.queryByRole("region", { name: "Capability" })).toBeNull();
+      expect(screen.getByRole("combobox", { name: "Kind" })).toBeInTheDocument();
     });
 
     it("REQ-UI-108 the mobile sheet sets kind and capability", async () => {
@@ -1062,7 +1081,7 @@ describe("BeadsPage", () => {
       await screen.findByText("Of ann");
       await user.click(screen.getByRole("button", { name: "Assignee" }));
       const me = await screen.findByRole("checkbox", { name: "Me" });
-      const options = screen.getAllByRole("checkbox").filter((box) => box !== screen.queryByRole("checkbox", { name: "Show closed" }));
+      const options = screen.getAllByRole("checkbox").filter((box) => box !== screen.queryByRole("switch", { name: "Show closed" }));
       expect(options[0]).toBe(me);
       await user.click(me);
       await waitFor(() => expect(window.location.search).toContain("assignee=me"));
@@ -1079,7 +1098,7 @@ describe("BeadsPage", () => {
       render(<BeadsPage />);
       expect(await screen.findByText("Of ann")).toBeInTheDocument();
       expect(screen.queryByText("By handle")).toBeNull();
-      await user.click(screen.getByRole("button", { name: "Assignee 1" }));
+      await user.click(screen.getByRole("button", { name: /^Assignee / }));
       expect(await screen.findByRole("checkbox", { name: "Me" })).toBeChecked();
     });
 
@@ -1115,7 +1134,7 @@ describe("BeadsPage", () => {
       render(<BeadsPage />);
       expect(await screen.findByText("Of ann")).toBeInTheDocument();
       expect(screen.queryByText("By handle")).toBeNull();
-      await user.click(screen.getByRole("button", { name: "Assignee 1" }));
+      await user.click(screen.getByRole("button", { name: /^Assignee / }));
       expect(await screen.findByRole("checkbox", { name: "ann" })).toBeChecked();
     });
 

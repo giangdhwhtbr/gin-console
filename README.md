@@ -6,7 +6,7 @@ A web-based dashboard and observability console for [gin-workflow](https://githu
 
 ## Features
 
-- **Native Beads Explorer**: Interactive Kanban board, hierarchical list, and visual dependency graph with multi-select filtering across status, issue type, priority, assignee, sprint, and labels.
+- **Native Beads Explorer**: Interactive Kanban board, hierarchical list, and visual dependency graph with a one-line filter bar: the milestone, status and assignee as removable chips, and priority, labels, type, kind, capability and sprint under More filters.
 - **Milestones**: Dated milestones per project with a Gantt of the working-day schedule, a dependency graph per milestone, and a read-only kick-start preview (needs a gin-workflow with the `milestone` command and Beads task tracking).
 - **Cross-Platform**: First-class support for Linux, macOS, and native Windows (no WSL required).
 

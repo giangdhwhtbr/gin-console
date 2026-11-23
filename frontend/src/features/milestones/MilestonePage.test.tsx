@@ -238,7 +238,7 @@ describe("MilestonePage", () => {
     await screen.findByText("Title e1");
     await userEvent.click(screen.getByRole("button", { name: "Assignee" }));
     const me = await screen.findByRole("checkbox", { name: "Me" });
-    expect(screen.getAllByRole("checkbox").filter((box) => box !== screen.queryByRole("checkbox", { name: "Show closed" }))[0]).toBe(me);
+    expect(screen.getAllByRole("checkbox").filter((box) => box !== screen.queryByRole("switch", { name: "Show closed" }))[0]).toBe(me);
     await userEvent.click(me);
     await waitFor(() => expect(window.location.search).toContain("assignee=me"));
     expect(screen.queryByText("Title e2")).toBeNull();
@@ -315,6 +315,12 @@ describe("MilestonePage", () => {
     expect(window.location.search).toBe("?tab=beads&view=graph");
     expect(await graphNode("e1")).toHaveAttribute("data-external", "false");
     expect(await graphNode("x")).toHaveAttribute("data-external", "true");
+  });
+
+  it("REQ-MILESTONE-UI-018 REQ-UI-143 Clear filters keeps the milestone", async () => {
+    openBeads("?tab=beads&view=board&status=open");
+    await userEvent.click(await screen.findByRole("button", { name: "Clear filters" }));
+    expect(window.location.pathname + window.location.search).toBe("/milestones/alpha/m2?tab=beads&view=board");
   });
 
   it("REQ-MILESTONE-UI-018 a closed milestone shows its closed beads without Show closed", async () => {
