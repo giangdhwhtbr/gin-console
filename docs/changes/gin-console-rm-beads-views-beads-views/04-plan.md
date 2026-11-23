@@ -1636,7 +1636,7 @@ Steps:
      - P1 in "More filters" gives "More filters 1" with a tinted pill;
      - after a Status choice, "Clear filters" brings back "Milestone Checkout v2" and removes "Clear filters";
      - a `kbd` "/" sits inside the right end of the search box, and `/` from a List row focuses the box with no "/" typed.
-   - **1024**, `?project=example&status=open,in_progress&assignee=alice&priority=1`: the searchbox, the three chips, "More filters" and "Clear filters" share one line (vertical centres within 4px), no two of their boxes overlap, and a chip whose value span has `scrollWidth > clientWidth` has a `title`.
+   - **1024**, `?project=example&status=open,in_progress&assignee=alice&priority=1`: the searchbox, the three chips and "More filters" share one line (vertical centres within 4px) while "Clear filters", the count and "Show closed" sit below it, no two of their boxes overlap, each chip name and "×" is whole, and a chip whose value span has `scrollWidth > clientWidth` has a `title`.
    - **390:**
      - with `status=open`, there is "Filters 1", no chip and no visible `kbd`;
      - the sheet lists Milestone, Status, Assignee, Priority, Labels, Type, Kind (plus Capability and Sprint when offered) in that order, with "Clear filters" last;
