@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DefinitionKey } from "@/lib/definitions";
 import type { BeadSummary } from "./api";
@@ -13,6 +12,8 @@ export function ClosedColumn({
   limit,
   allLabel,
   empty,
+  all,
+  onAll,
   choice,
 }: {
   title: string;
@@ -22,13 +23,15 @@ export function ClosedColumn({
   limit: number;
   allLabel: (total: number) => string;
   empty: string;
+  /** "Show all" is on; the view holds it, so its tab stop knows the drawn cards (REQ-UI-147). */
+  all: boolean;
+  onAll: (all: boolean) => void;
   choice: CardChoice;
 }) {
-  const [all, setAll] = useState(false);
   const shown = all ? beads : beads.slice(0, limit);
   const toggle =
     beads.length > limit ? (
-      <Button variant="outline" size="sm" onClick={() => setAll(!all)}>
+      <Button variant="outline" size="sm" onClick={() => onAll(!all)}>
         {all ? `Show latest ${limit}` : allLabel(beads.length)}
       </Button>
     ) : null;

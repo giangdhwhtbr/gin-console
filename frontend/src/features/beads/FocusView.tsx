@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { BeadSummary } from "./api";
 import { BoardColumn } from "./BoardColumn";
 import { ClosedColumn } from "./ClosedColumn";
@@ -19,9 +20,10 @@ export function FocusView({
 }) {
   const rows = focusRows(beads, filters.group);
   const finished = filters.finished ? closedNewestFirst(beads) : [];
+  const [allFinished, setAllFinished] = useState(false);
   const drawn = [
     ...rows.flatMap((row) => FOCUS_COLUMNS.flatMap(({ key }) => row.columns[key].map((b) => b.id))),
-    ...finished.slice(0, FINISHED_LIMIT).map((b) => b.id),
+    ...(allFinished ? finished : finished.slice(0, FINISHED_LIMIT)).map((b) => b.id),
   ];
   const { choice } = useCardChoice({ project, filters, drawn, onChange });
   return (
@@ -57,6 +59,8 @@ export function FocusView({
               ? "No beads"
               : "Turn on Show closed to see closed beads"
           }
+          all={allFinished}
+          onAll={setAllFinished}
           choice={choice}
         />
       )}

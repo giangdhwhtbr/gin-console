@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { BeadSummary } from "./api";
 import { BoardColumn } from "./BoardColumn";
 import { BOARD_COLUMNS, boardColumns, DONE_LIMIT } from "./columns";
@@ -17,7 +18,10 @@ export function BoardView({
   onChange: (next: BeadFilters) => void;
 }) {
   const columns = boardColumns(beads);
-  const drawn = BOARD_COLUMNS.flatMap(({ key }) => (key === "done" ? columns.done.slice(0, DONE_LIMIT) : columns[key]).map((b) => b.id));
+  const [allDone, setAllDone] = useState(false);
+  const drawn = BOARD_COLUMNS.flatMap(({ key }) =>
+    (key === "done" && !allDone ? columns.done.slice(0, DONE_LIMIT) : columns[key]).map((b) => b.id),
+  );
   const { choice } = useCardChoice({ project, filters, drawn, onChange });
   return (
     <div className="flex flex-wrap items-start gap-3">
@@ -36,6 +40,8 @@ export function BoardView({
                 ? "No beads"
                 : "Turn on Show closed to see closed beads"
             }
+            all={allDone}
+            onAll={setAllDone}
             choice={choice}
           />
         ) : (

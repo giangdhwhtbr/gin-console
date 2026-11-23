@@ -432,4 +432,25 @@ describe("REQ-UI-147 click rule on the Board", () => {
     await userEvent.dblClick(within(await cardOf("Card 1")).getByText("P2"));
     expect(window.location.pathname).toBe("/beads/alpha/t-1");
   });
+
+  it("REQ-UI-147 a selected closed card shown by Show all is the tab stop", async () => {
+    const closed = Array.from({ length: 25 }, (_, i) => {
+      const num = String(i + 1).padStart(2, "0");
+      return bead(`c-${num}`, { title: `Closed ${num}`, status: "closed", closed_at: new Date(Date.UTC(2026, 9, 1, 0, i, 0)).toISOString() });
+    });
+    for (const [view, column, show] of [
+      ["board", "Done", "Show all 25"],
+      ["focus", "Recently finished", "Show all 25 completed"],
+    ]) {
+      window.history.replaceState(null, "", `/beads?project=alpha&view=${view}&closed=1&finished=1&select=c-01`);
+      stubBeads(() => json(closed));
+      render(<BeadsPage />);
+      const region = await screen.findByRole("region", { name: column });
+      await userEvent.click(within(region).getByRole("button", { name: show }));
+      const oldest = await cardOf("Closed 01");
+      expect(oldest).toHaveAttribute("tabIndex", "0");
+      expect(Array.from(document.querySelectorAll("[data-card]")).filter((card) => card.getAttribute("tabIndex") === "0")).toEqual([oldest]);
+      cleanup();
+    }
+  });
 });
