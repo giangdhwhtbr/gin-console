@@ -86,13 +86,13 @@ describe("GraphView", () => {
 
   it("REQ-UI-147 Enter twice on a node: the first selects, on the selected node it opens", async () => {
     const onChange = view({ milestone: "m2" });
-    node("e1")!.focus();
+    screen.getByRole("button", { name: /^e1/ }).focus();
     await userEvent.keyboard("{Enter}");
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "e1" }));
     expect(window.location.pathname).toBe("/beads");
     cleanup();
     view({ milestone: "m2", filters: { select: "e1" } });
-    node("e1")!.focus();
+    screen.getByRole("button", { name: /^e1/ }).focus();
     await userEvent.keyboard("{Enter}");
     expect(window.location.pathname).toBe("/beads/p/e1");
   });

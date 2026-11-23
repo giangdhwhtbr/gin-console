@@ -473,6 +473,24 @@ describe("ListView", () => {
     expect(window.location.pathname).toBe("/beads/alpha/t-1");
   });
 
+  it("REQ-UI-147 Double click when the layout moved: the second click on another row is dropped and the first row opens", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() => json([bead("t-1", { title: "Task One" }), bead("t-2", { title: "Task Two" })]));
+    render(<BeadsPage />);
+    const row1 = await screen.findByRole("treeitem", { name: /t-1/ });
+    const row2 = screen.getByRole("treeitem", { name: /t-2/ });
+    const selects: string[] = [];
+    const record = () => selects.push(new URLSearchParams(window.location.search).get("select") ?? "");
+    window.addEventListener("popstate", record);
+    fireEvent.click(within(row1).getByText("t-1"), { detail: 1 });
+    expect(window.location.search).toContain("select=t-1");
+    fireEvent.click(within(row2).getByText("t-2"), { detail: 2 });
+    fireEvent.dblClick(within(row2).getByText("t-2"));
+    window.removeEventListener("popstate", record);
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+    expect(selects).not.toContain("t-2");
+  });
+
   it("REQ-UI-147 Open/close control: it opens the branch with no select and no navigation", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha");
     stubBeads(() =>

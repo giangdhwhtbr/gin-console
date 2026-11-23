@@ -49,9 +49,38 @@ describe("useChoose", () => {
     const { result } = renderHook(() => useChoose({ project: "p", selected: "", select }));
     act(() => result.current.click("t-1"));
     expect(select).toHaveBeenCalledWith("t-1");
-    // the second click lands on another element, here the body
+    // the second click lands on another element, here the body, then the browser fires dblclick
+    act(() => void document.body.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, detail: 2 })));
     act(() => void document.body.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })));
     expect(window.location.pathname).toBe("/beads/p/t-1");
+  });
+
+  it("REQ-UI-147 Double click: the second click never acts on the element it lands on", () => {
+    const { result } = renderHook(() => useChoose({ project: "p", selected: "", select: vi.fn() }));
+    const other = document.body.appendChild(document.createElement("button"));
+    const link = document.body.appendChild(document.createElement("a"));
+    link.href = "/beads/p/t-2";
+    const onOther = vi.fn();
+    const onLink = vi.fn();
+    other.addEventListener("click", onOther);
+    link.addEventListener("click", onLink);
+    act(() => result.current.click("t-1"));
+    const second = new MouseEvent("click", { bubbles: true, cancelable: true, detail: 2 });
+    act(() => void other.dispatchEvent(second));
+    expect(onOther).not.toHaveBeenCalled();
+    expect(second.defaultPrevented).toBe(true);
+    const onLinkSecond = new MouseEvent("click", { bubbles: true, cancelable: true, detail: 2 });
+    act(() => void link.dispatchEvent(onLinkSecond));
+    expect(onLink).not.toHaveBeenCalled();
+    expect(onLinkSecond.defaultPrevented).toBe(true);
+    act(() => void document.body.dispatchEvent(new MouseEvent("dblclick", { bubbles: true })));
+    expect(window.location.pathname).toBe("/beads/p/t-1");
+    // a single click (detail 1) and a keyboard click (detail 0) still reach the element
+    act(() => void other.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 })));
+    act(() => void other.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 0 })));
+    expect(onOther).toHaveBeenCalledTimes(2);
+    other.remove();
+    link.remove();
   });
 
   it("REQ-UI-147 Double click: a late or lone dblclick opens nothing", () => {

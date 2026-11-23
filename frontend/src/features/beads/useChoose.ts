@@ -34,8 +34,20 @@ export function useChoose({ project, selected, select }: { project: string; sele
       event.stopPropagation();
       open(first.id);
     };
+    // the second click of that double click lands first: it must not select, or follow the link of, what it landed on
+    // (keyboard clicks have `detail` 0 and pass)
+    const onSecond = (event: MouseEvent) => {
+      const first = last.current;
+      if (event.detail < 2 || first === null || Date.now() - first.at > DOUBLE_CLICK_MS) return;
+      event.stopPropagation();
+      event.preventDefault();
+    };
+    document.addEventListener("click", onSecond, true);
     document.addEventListener("dblclick", onDouble, true);
-    return () => document.removeEventListener("dblclick", onDouble, true);
+    return () => {
+      document.removeEventListener("click", onSecond, true);
+      document.removeEventListener("dblclick", onDouble, true);
+    };
   }, [open]);
   const enter = (id: string) => {
     if (wide && id !== selected) select(id);
