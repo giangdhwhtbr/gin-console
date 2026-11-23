@@ -30,7 +30,7 @@ export function FilterChip({
   return (
     <span
       style={chosen ? { minWidth: `calc(${label.length}ch + 4rem)` } : undefined}
-      className={cn("inline-flex h-8 min-w-0 shrink items-center rounded-md border text-13", chosen ? "border-identity/45 bg-identity-wash" : "shrink-0 bg-background")}
+      className={cn("inline-flex h-8 min-w-0 shrink items-center rounded-md border text-13", chosen ? "border-identity bg-identity-wash" : "shrink-0 border-input bg-background")}
     >
       <Popover.Root>
         <Popover.Trigger

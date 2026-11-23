@@ -67,4 +67,23 @@ describe("FilterChip", () => {
     );
     expect(screen.getByRole("button", { name: "Milestone…" })).toBeInTheDocument();
   });
+
+  it("REQ-UI-059 the plain button is outlined with the input token and a chosen chip with the full identity colour", () => {
+    render(
+      <>
+        <FilterChip label="Status" values={[]} onRemove={vi.fn()}>
+          <p>menu</p>
+        </FilterChip>
+        <FilterChip label="Assignee" values={["ann"]} onRemove={vi.fn()}>
+          <p>menu</p>
+        </FilterChip>
+      </>,
+    );
+    const plain = screen.getByRole("button", { name: "Status" }).parentElement;
+    expect(plain).toHaveClass("border-input");
+    expect(plain).not.toHaveClass("border-identity/45");
+    const chosen = screen.getByRole("button", { name: "Assignee ann" }).parentElement;
+    expect(chosen).toHaveClass("border-identity", "bg-identity-wash");
+    expect(chosen).not.toHaveClass("border-identity/45");
+  });
 });

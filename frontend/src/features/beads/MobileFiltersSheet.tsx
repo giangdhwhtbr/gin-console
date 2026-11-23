@@ -17,7 +17,7 @@ function Pill({ selected, label, onClick }: { selected: boolean; label: string; 
       aria-pressed={selected}
       onClick={onClick}
       className={`cursor-pointer rounded border px-2.5 py-1 text-xs font-medium transition-colors ${
-        selected ? "border-primary bg-primary text-primary-foreground" : "bg-background text-foreground hover:bg-muted"
+        selected ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background text-foreground hover:bg-muted"
       }`}
     >
       {label}
@@ -93,7 +93,7 @@ export function MobileFiltersSheet({
     <Dialog.Root>
       <Dialog.Trigger
         aria-label={activeCount > 0 ? `Filters ${activeCount}` : "Filters"}
-        className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded border bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
+        className="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded border border-input bg-background px-3 text-sm font-medium transition-colors hover:bg-muted"
       >
         <SlidersHorizontal className="h-4 w-4 opacity-70" aria-hidden="true" />
         <span>Filters</span>

@@ -73,4 +73,11 @@ describe("MobileFiltersSheet", () => {
     expect(document.querySelector('[data-filter="milestone"]')).toBeNull();
     expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
   });
+
+  it("REQ-UI-059 the Filters button and the unselected options are outlined with the input token", async () => {
+    sheet("?status=open", current, optionsOf([bead("a", { status: "open" }), bead("b", { status: "closed" })]));
+    expect(screen.getByRole("button", { name: "Filters 1" })).toHaveClass("border-input");
+    await userEvent.click(screen.getByRole("button", { name: "Filters 1" }));
+    expect(screen.getByRole("button", { name: "closed" })).toHaveClass("border-input");
+  });
 });

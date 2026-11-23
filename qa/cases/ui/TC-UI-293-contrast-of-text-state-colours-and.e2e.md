@@ -14,11 +14,12 @@
 1. Set the light theme
 2. Open `/beads?project=P&view=list`
 3. Measure the contrast of the text colours, the state colours, the identity colour and carnelian against page, paper and sunk with `getComputedStyle`
-4. Measure the contrast of the state glyph strokes and the outline of the search input and a select against their surface
+4. Measure the contrast of the state glyph strokes against their surface, and the outline of the search input, a plain filter button (Status), a chosen chip (Status with a value) and "More filters" against the page
 5. Set the dark theme
 6. Repeat steps 2 to 4
 
 **Expected:**
 - In both themes text, the state colours, the identity colour and carnelian reach at least 4.5:1 against page, paper and sunk
-- In both themes glyph strokes and the outline of inputs and selects reach at least 3:1 against their surface
+- In both themes glyph strokes reach at least 3:1 against their surface
+- In both themes the outline of the search input, of a plain filter button, of a chosen chip and of "More filters" reaches at least 3:1 against the page
 - Priority is told by weight only: the text colour of `P0` and `P1` equals that of their row text, with no hue of its own

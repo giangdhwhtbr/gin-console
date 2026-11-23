@@ -1,4 +1,4 @@
-// TC: TC-UI-293@7d5a5062
+// TC: TC-UI-293@7da38339
 import type { Page } from '@playwright/test';
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
@@ -86,18 +86,32 @@ test('TC-UI-293: Contrast of text, state colours and control outlines', async ({
     expect(glyphs.length).toBeGreaterThanOrEqual(5);
     const low = glyphs.filter((g) => contrast(parse(g.color), parse(g.surface)) < 3).map((g) => `${theme}: glyph ${g.state} ${g.color} on ${g.surface}`);
     expect(low, 'glyph strokes below 3:1').toEqual([]);
-    // the outline of the search input and of a select against their surface
-    const controls = await page.evaluate(() => {
-      const outline = (el: Element) => {
-        const s = getComputedStyle(el);
-        let surface: Element | null = el;
-        while (surface && getComputedStyle(surface).backgroundColor === 'rgba(0, 0, 0, 0)') surface = surface.parentElement;
-        return { color: s.borderTopColor, width: s.borderTopWidth, surface: surface ? getComputedStyle(surface).backgroundColor : 'rgb(255, 255, 255)' };
-      };
-      return { search: outline(document.querySelector('#bead-search')!), select: outline(document.querySelector('select')!) };
-    });
+    // the outline of the search input, a plain filter button, a chosen chip and "More filters" against the page: at least 3:1
+    const outline = (sel: string) =>
+      page.evaluate((selector) => {
+        const el = document.querySelector(selector)!;
+        const box = el.closest('[class*="rounded-md border"]') ?? el;
+        const alpha = (c: string) => { const m = /rgba?\(([^)]+)\)/.exec(c)!; const v = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return { rgb: v.slice(0, 3), a: v[3] ?? 1 }; };
+        const page = alpha(getComputedStyle(document.body).backgroundColor).rgb;
+        const border = alpha(getComputedStyle(box).borderTopColor);
+        const over = border.rgb.map((c, i) => Math.round(c * border.a + page[i] * (1 - border.a)));
+        return { color: `rgb(${over.join(', ')})`, page: `rgb(${page.join(', ')})`, width: getComputedStyle(box).borderTopWidth };
+      }, sel);
+    const plain = page.getByRole('button', { name: 'Status', exact: true });
+    await expect(plain).toBeVisible();
+    await plain.evaluate((el) => el.setAttribute('data-tc293', 'plain'));
+    const more = page.getByRole('button', { name: 'More filters' });
+    await more.evaluate((el) => el.setAttribute('data-tc293', 'more'));
+    const controls = { 'search input': await outline('#bead-search'), 'plain filter button': await outline('[data-tc293="plain"]'), 'More filters': await outline('[data-tc293="more"]') };
+    // a chosen chip: the same Status filter with a value
+    await page.goto('/beads?project=P&view=list&closed=1&status=open');
+    const chosen = page.getByRole('button', { name: /^Status open/ });
+    await expect(chosen).toBeVisible();
+    await chosen.evaluate((el) => el.setAttribute('data-tc293', 'chosen'));
+    Object.assign(controls, { 'chosen chip': await outline('[data-tc293="chosen"]') });
     for (const [name, c] of Object.entries(controls)) {
-      expect(contrast(parse(c.color), parse(c.surface)), `${theme}: outline of the ${name} (${c.color} on ${c.surface})`).toBeGreaterThanOrEqual(3);
+      expect(c.width, `${theme}: outline of the ${name} is drawn`).not.toBe('0px');
+      expect(contrast(parse(c.color), parse(c.page)), `${theme}: outline of the ${name} (${c.color} on ${c.page})`).toBeGreaterThanOrEqual(3);
     }
   };
 
@@ -127,7 +141,7 @@ test('TC-UI-293: Contrast of text, state colours and control outlines', async ({
     await priority();
   });
 
-  await ev.step('4. Measure the contrast of the state glyph strokes and the outline of the search input and a select against their surface', async () => {
+  await ev.step('4. Measure the contrast of the state glyph strokes against their surface, and the outline of the search input, a plain filter button (Status), a chosen chip (Status with a value) and "More filters" against the page', async () => {
     await strokes('light');
   });
 

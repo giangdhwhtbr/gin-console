@@ -57,4 +57,9 @@ describe("MoreFilters", () => {
     await userEvent.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "technical");
     expect(onChange).toHaveBeenCalledWith({ kind: "technical" });
   });
+
+  it("REQ-UI-059 the trigger is outlined with the input token", () => {
+    more("");
+    expect(screen.getByRole("button", { name: "More filters" })).toHaveClass("border-input");
+  });
 });
