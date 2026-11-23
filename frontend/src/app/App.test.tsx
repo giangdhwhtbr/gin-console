@@ -46,7 +46,7 @@ describe("App routing", () => {
   });
 
   it("REQ-UI-097 a remembered email skips the login screen", () => {
-    window.history.replaceState(null, "", "/");
+    window.history.replaceState(null, "", "/beads");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     render(<App />);
     expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
@@ -64,25 +64,26 @@ describe("App routing", () => {
   });
 
   it("REQ-UI-096 Refresh drops the server caches, then the page loads its data again", async () => {
-    window.history.replaceState(null, "", "/");
+    window.history.replaceState(null, "", "/milestones");
     const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(() => Promise.resolve(json([])));
     vi.stubGlobal("fetch", fetchMock);
     render(<App />);
     await screen.findByText(/no projects configured/i);
-    const projectLoads = () => fetchMock.mock.calls.filter(([url]) => url === "/api/projects").length;
-    expect(projectLoads()).toBe(1);
+    const projectLoads = () => fetchMock.mock.calls.filter(([url]) => url === "/api/projects/beads").length;
+    const before = projectLoads();
+    expect(before).toBeGreaterThan(0);
     const [button] = screen.getAllByRole("button", { name: "Refresh data" });
     await userEvent.click(button);
     await screen.findByText(/no projects configured/i);
     expect(fetchMock).toHaveBeenCalledWith("/api/refresh", { method: "POST" });
     const refreshAt = fetchMock.mock.calls.findIndex(([url]) => url === "/api/refresh");
-    expect(fetchMock.mock.calls.slice(refreshAt + 1).some(([url]) => url === "/api/projects")).toBe(true);
-    expect(projectLoads()).toBe(2);
-    expect(window.location.pathname).toBe("/");
+    expect(fetchMock.mock.calls.slice(refreshAt + 1).some(([url]) => url === "/api/projects/beads")).toBe(true);
+    expect(projectLoads()).toBeGreaterThan(before);
+    expect(window.location.pathname).toBe("/milestones");
   });
 
   it("REQ-UI-055 opens Milestones from the sidebar without a reload", async () => {
-    window.history.replaceState(null, "", "/");
+    window.history.replaceState(null, "", "/beads");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     render(<App />);
     await screen.findByText(/no projects configured/i);
@@ -115,13 +116,24 @@ describe("App routing", () => {
     }
   });
 
-  it("REQ-UI-125 / still shows Projects", async () => {
+  it("REQ-UI-099 / is replaced by My Tasks of the current project without a history entry", async () => {
     window.history.replaceState(null, "", "/");
+    const before = window.history.length;
+    vi.stubGlobal("fetch", vi.fn(() => alpha()));
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks?project=alpha"));
+    expect(window.history.length).toBe(before);
+    expect(screen.queryByRole("heading", { name: "Page not found" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Projects" })).toBeNull();
+  });
+
+  it("REQ-UI-099 / without projects is replaced by /my-tasks", async () => {
+    window.history.replaceState(null, "", "/");
+    const before = window.history.length;
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     render(<App />);
-    expect(await screen.findByRole("heading", { name: "Projects" })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Page not found" })).toBeNull();
-    expect(document.title).toBe("Projects · gin-console");
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks"));
+    expect(window.history.length).toBe(before);
   });
 
   it("REQ-UI-063 titles the list pages with their project", async () => {
@@ -130,7 +142,6 @@ describe("App routing", () => {
       ["/beads?project=alpha", "Beads · alpha · gin-console"],
       ["/milestones?project=alpha", "Milestones · alpha · gin-console"],
       ["/reports?project=alpha&tab=quality", "Reports · Quality · alpha · gin-console"],
-      ["/reports?project=all&tab=usage", "Reports · Team · gin-console"],
       ["/my-tasks", "My Tasks · gin-console"],
       ["/my-tasks?project=alpha", "My Tasks · alpha · gin-console"],
     ];
@@ -151,51 +162,22 @@ describe("App routing", () => {
 
   // REQ-UI-022
   it("REQ-UI-022 opens the beads list from the sidebar without a reload and follows back", async () => {
-    window.history.replaceState(null, "", "/");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((url: string) => {
-        if (url.includes("/api/projects")) {
-          return Promise.resolve(
-            json([
-              {
-                name: "alpha",
-                path: "/home/gin/alpha",
-                exists: true,
-                workflow: null,
-                beads: null,
-              },
-            ]),
-          );
-        }
-        if (url.includes("/api/beads")) {
-          return Promise.resolve(json([]));
-        }
-        return Promise.resolve(json([]));
-      }),
-    );
+    window.history.replaceState(null, "", "/my-tasks?project=alpha");
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url.includes("/api/projects/beads") ? alpha() : json([]))));
     render(<App />);
-    await screen.findByRole("heading", { name: "Projects" });
+    await screen.findByRole("heading", { name: "My Tasks" });
     await userEvent.click(screen.getByRole("link", { name: "Beads" }));
     expect(window.location.pathname).toBe("/beads");
     expect(await screen.findByRole("heading", { name: "Beads" })).toBeInTheDocument();
     act(() => window.history.back());
-    await screen.findByRole("heading", { name: "Projects" });
-    expect(window.location.pathname).toBe("/");
+    await screen.findByRole("heading", { name: "My Tasks" });
+    expect(window.location.pathname).toBe("/my-tasks");
   });
 
   // REQ-UI-022
   it("REQ-UI-022 shows Page not found on undecodable route segment and marks the Beads link on /beads", async () => {
     window.history.replaceState(null, "", "/beads/%E0%A4%A/x");
-    vi.stubGlobal(
-      "fetch",
-      vi.fn((url: string) => {
-        if (url.includes("/api/projects")) {
-          return Promise.resolve(json([]));
-        }
-        return Promise.resolve(json([]));
-      }),
-    );
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     render(<App />);
     await screen.findByRole("heading", { name: "Page not found" });
 

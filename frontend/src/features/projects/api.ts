@@ -2,27 +2,6 @@ export type BlockError = { error: string };
 
 export type ReviewWaiver = { task_id: string; reason: string; actor: string };
 
-export type WorkspaceRepo = {
-  path: string;
-  branch: string | null;
-  shape: string | null;
-  frozen: boolean;
-  present: boolean;
-};
-
-// Every field after `gates` is optional: an older backend does not send it
-export type Workflow = {
-  stage: string;
-  layout: string;
-  gates: Record<string, string>;
-  workspace?: { root: string; repos: WorkspaceRepo[] } | null;
-  team?: { enabled: boolean; host: string | null; me: string | null } | null;
-  decision?: string | null;
-  warnings?: string[];
-  remedies?: string[];
-  review_waivers?: ReviewWaiver[];
-};
-
 export type EpicWorkflow = {
   stage: string;
   gates: Record<string, string>;
@@ -50,17 +29,14 @@ export type Beads = {
 
 export type PullResult = { at: string; status: "ok" | "no_remote" | "error"; error: string | null };
 
-export type Project = {
+export type ProjectBeads = {
   name: string;
   path: string;
   exists: boolean;
-  workflow: Workflow | BlockError | null;
   beads: Beads | BlockError | null;
   /** absent from an older backend; read it with `pullOf` */
   pull?: PullResult | null;
 };
-
-export type ProjectBeads = Pick<Project, "name" | "path" | "exists" | "beads" | "pull">;
 
 export function isBlockError(value: unknown): value is BlockError {
   return (
@@ -89,11 +65,7 @@ function isProjectBeads(value: unknown): value is ProjectBeads {
   );
 }
 
-function isProject(value: unknown): value is Project {
-  return isProjectBeads(value) && "workflow" in value && Boolean(isNullOrObject(value.workflow));
-}
-
-export const isStale = (project: Pick<Project, "beads">): boolean =>
+export const isStale = (project: Pick<ProjectBeads, "beads">): boolean =>
   project.beads !== null && !isBlockError(project.beads) && project.beads.stale === true;
 
 /** The pull of a project when it is well formed; a missing, null or malformed one is null. */
@@ -109,18 +81,6 @@ export function pullOf(project: { pull?: unknown }): PullResult | null {
 
 /** The error of a pull, with one wording when the backend sent none. */
 export const pullError = (pull: PullResult): string => pull.error ?? "unknown error";
-
-export async function fetchProjects(): Promise<Project[]> {
-  const response = await fetch("/api/projects");
-  if (!response.ok) {
-    throw new Error(`Could not load projects (HTTP ${response.status})`);
-  }
-  const body: unknown = await response.json();
-  if (!Array.isArray(body) || !body.every(isProject)) {
-    throw new Error("Could not load projects (unexpected response)");
-  }
-  return body;
-}
 
 export async function fetchProjectBeads(): Promise<ProjectBeads[]> {
   const response = await fetch("/api/projects/beads");

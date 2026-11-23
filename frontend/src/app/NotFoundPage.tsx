@@ -6,7 +6,7 @@ import { usePageTitle } from "./usePageTitle";
 export function NotFoundPage({ path }: { path: string }) {
   const projects = useConfiguredProjects();
   usePageTitle("Page not found");
-  const beads = projectHref("/beads", resolveProject("", projects.status === "ok" ? projects.names : []));
+  const project = resolveProject("", projects.status === "ok" ? projects.names : []);
   return (
     <section className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">Page not found</h1>
@@ -15,13 +15,13 @@ export function NotFoundPage({ path }: { path: string }) {
       </p>
       <ul className="flex gap-4">
         <li>
-          <Link to="/" className="prose-link">
-            Projects
+          <Link to={projectHref("/beads", project)} className="prose-link">
+            Beads
           </Link>
         </li>
         <li>
-          <Link to={beads} className="prose-link">
-            Beads
+          <Link to={projectHref("/my-tasks", project)} className="prose-link">
+            My Tasks
           </Link>
         </li>
       </ul>

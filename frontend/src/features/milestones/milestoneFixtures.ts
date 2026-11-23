@@ -89,7 +89,7 @@ const projectMilestones_ = projectMilestones(
   "m2",
 );
 
-/** Stub `fetch`: `/api/beads/<p>/<id>/comments` returns `comments`, `/api/projects` lists "alpha", `/api/beads/milestones` lists m1 (closed), m2 (active, current) and m3, `/api/milestones…` goes to `handler`, `/api/beads` returns `beads` (or what `beads(url)` answers). */
+/** Stub `fetch`: `/api/beads/<p>/<id>/comments` returns `comments`, `/api/projects/beads` lists "alpha", `/api/beads/milestones` lists m1 (closed), m2 (active, current) and m3, `/api/milestones…` goes to `handler`, `/api/beads` returns `beads` (or what `beads(url)` answers). */
 export function stubMilestones(handler: (url: URL) => Response | Promise<Response>, beads: BeadSummary[] | ((url: URL) => Response) = [], comments: Comment[] | ((url: URL) => Response) = []) {
   const fetchMock = vi.fn((input: RequestInfo | URL) => {
     const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;

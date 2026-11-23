@@ -58,7 +58,7 @@ export const project = (name: string, exists = true): ProjectBeads => ({
   beads: null,
 });
 
-/** Stub `fetch` for `/api/projects` (the given names exist) and `/api/beads` (the handler decides). */
+/** Stub `fetch` for `/api/projects/beads` (the given names exist) and `/api/beads` (the handler decides). */
 export function stubBeads(
   handler: (url: URL) => Response | Promise<Response>,
   names: string[] = ["alpha"],

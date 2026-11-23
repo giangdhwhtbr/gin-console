@@ -169,9 +169,13 @@ describe("switchProject", () => {
     expect(p.switchProject("/milestones/a/m1", "?tab=beads", "b")).toBe("/milestones?project=b");
   });
 
-  it("REQ-UI-123 leaves My Tasks, Projects and others unchanged", async () => {
+  it("REQ-UI-123 keeps closed and drops milestone on the My Tasks page", async () => {
     const p = await load();
-    expect(p.switchProject("/my-tasks", "?project=a", "b")).toBe("/my-tasks?project=a");
+    expect(p.switchProject("/my-tasks", "?project=a&closed=1&milestone=m1", "b")).toBe("/my-tasks?project=b&closed=1");
+  });
+
+  it("REQ-UI-123 leaves other addresses unchanged", async () => {
+    const p = await load();
     expect(p.switchProject("/", "", "b")).toBe("/");
   });
 });
@@ -181,5 +185,7 @@ describe("projectHref", () => {
     const p = await load();
     expect(p.projectHref("/beads", "")).toBe("/beads");
     expect(p.projectHref("/reports", "my app")).toBe("/reports?project=my+app");
+    expect(p.projectHref("/my-tasks", "alpha")).toBe("/my-tasks?project=alpha");
+    expect(p.projectHref("/my-tasks", "")).toBe("/my-tasks");
   });
 });

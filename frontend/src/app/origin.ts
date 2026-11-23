@@ -1,10 +1,10 @@
 import { useMemo, useSyncExternalStore } from "react";
 
 export const RETURN_KEY = "gin-console-beads-return";
-const KINDS = ["beads", "milestone", "my-tasks", "reports", "projects"] as const;
+const KINDS = ["beads", "milestone", "my-tasks", "reports"] as const;
 export type OriginKind = (typeof KINDS)[number];
 /** The page a bead was opened from, which the breadcrumb and the navigation of a bead page return to.
- *  `project` is null when the page fits any project: Projects, My Tasks and Reports with "All projects". `label` is a milestone's title. */
+ *  `project` is null when the page fits any project: My Tasks and Reports with "All projects". `label` is a milestone's title. */
 export type Origin = { kind: OriginKind; path: string; search: string; project: string | null; label: string | null; open: Record<string, string[]> };
 
 const empty = (): Origin => ({ kind: "beads", path: "/beads", search: "", project: null, label: null, open: {} }); // a fresh object each time: callers may not share it

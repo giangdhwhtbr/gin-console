@@ -98,6 +98,11 @@ describe("origin", () => {
     }
   });
 
+  it("REQ-UI-073 a place stored with the retired projects kind reads as a Beads place", () => {
+    window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ kind: "projects", path: "/", search: "", project: null, open: {} }));
+    expect(getOrigin().kind).toBe("beads");
+  });
+
   describe("originFor", () => {
     const at = (kind: Origin["kind"], project: string | null): Origin => ({ ...EMPTY, kind, project });
 
@@ -109,8 +114,8 @@ describe("origin", () => {
       for (const kind of ["beads", "milestone", "my-tasks", "reports"] as const) expect(originFor("b", at(kind, "a"))).toBeNull();
     });
 
-    it("REQ-UI-073 Projects, My Tasks and Reports with all projects fit any project", () => {
-      for (const kind of ["projects", "my-tasks", "reports"] as const) expect(originFor("b", at(kind, null))).toEqual(at(kind, null));
+    it("REQ-UI-073 My Tasks and Reports with all projects fit any project", () => {
+      for (const kind of ["my-tasks", "reports"] as const) expect(originFor("b", at(kind, null))).toEqual(at(kind, null));
     });
 
     it("REQ-UI-073 nothing remembered, or a Beads place with no project, is not used", () => {

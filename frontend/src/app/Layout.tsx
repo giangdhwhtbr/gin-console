@@ -1,4 +1,4 @@
-import { ChartColumn, Flag, LayoutGrid, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
+import { ChartColumn, Flag, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { useSections } from "@/features/reports/sectionStore";
 import { cn } from "@/lib/utils";
@@ -25,9 +25,8 @@ function beadOrigin(pathname: string, origin: Origin): OriginKind | null {
 
 type Place = { path: string; from: OriginKind | null };
 const NAV = [
-  { to: () => "/", label: "Projects", icon: LayoutGrid, current: ({ path, from }: Place) => path === "/" || from === "projects" },
   { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: ({ path, from }: Place) => path === "/beads" || (path.startsWith("/beads/") && from === null) },
-  { to: () => "/my-tasks", label: "My Tasks", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
+  { to: (project: string) => projectHref("/my-tasks", project), label: "My Tasks", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
   { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
   { to: (project: string) => projectHref("/reports", project), label: "Reports", icon: ChartColumn, current: ({ path, from }: Place) => path === "/reports" || from === "reports" },
 ] as const;

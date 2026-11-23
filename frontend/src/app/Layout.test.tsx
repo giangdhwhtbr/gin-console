@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EMAIL_KEY, getEmail, resetIdentity, setEmail } from "./identity";
 import { Layout, SIDEBAR_KEY } from "./Layout";
-import { clearOrigin, rememberOrigin } from "./origin";
+import { clearOrigin, rememberOrigin, RETURN_KEY } from "./origin";
 import { clearSections, publishSections, type SectionLink } from "@/features/reports/sectionStore";
 import { forgetConfiguredProjects, setFavorite } from "./project";
 
@@ -45,16 +45,15 @@ const marked = () =>
 
 describe("Layout", () => {
   it.each(["/", "/beads", "/sessions", "/reports"])(
-    "REQ-UI-055 REQ-UI-099 has one Main navigation with the five links on %s",
+    "REQ-UI-055 REQ-UI-099 has one Main navigation with the four links and none to / on %s",
     async (path) => {
       open(path);
       await screen.findByRole("button", { name: "Project: alpha" });
       expect(screen.getAllByRole("navigation")).toHaveLength(1);
       expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
       expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
-        ["Projects", "/"],
         ["Beads", "/beads?project=alpha"],
-        ["My Tasks", "/my-tasks"],
+        ["My Tasks", "/my-tasks?project=alpha"],
         ["Milestones", "/milestones?project=alpha"],
         ["Reports", "/reports?project=alpha"],
       ]);
@@ -65,7 +64,7 @@ describe("Layout", () => {
     open("/beads?project=beta");
     await screen.findByRole("button", { name: "Project: beta" });
     const hrefs = within(nav()).getAllByRole("link").map((link) => link.getAttribute("href"));
-    expect(hrefs).toEqual(["/", "/beads?project=beta", "/my-tasks", "/milestones?project=beta", "/reports?project=beta"]);
+    expect(hrefs).toEqual(["/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/reports?project=beta"]);
   });
 
   it("REQ-UI-124 the links follow the favorite when the URL names no project", async () => {
@@ -101,7 +100,7 @@ describe("Layout", () => {
   });
 
   it.each([
-    ["/", ["Projects"]],
+    ["/", []],
     ["/beads", ["Beads"]],
     ["/beads/alpha/a-1", ["Beads"]],
     ["/my-tasks", ["My Tasks"]],
@@ -124,16 +123,20 @@ describe("Layout", () => {
   it.each<[string, Parameters<typeof rememberOrigin> | null, string[]]>([
     ["Bead page by address", null, ["Beads"]],
     ["Bead page from My Tasks", ["my-tasks", "/my-tasks", "?project=alpha", "alpha"], ["My Tasks"]],
-    ["My Tasks with all projects", ["my-tasks", "/my-tasks", "", null], ["My Tasks"]],
     ["a milestone page", ["milestone", "/milestones/alpha/m-1", "?tab=beads", "alpha"], ["Milestones"]],
     ["Reports", ["reports", "/reports", "?project=alpha", "alpha"], ["Reports"]],
-    ["Projects", ["projects", "/", "", null], ["Projects"]],
     ["the Beads page", ["beads", "/beads", "?project=alpha", "alpha"], ["Beads"]],
     ["My Tasks of another project", ["my-tasks", "/my-tasks", "?project=beta", "beta"], ["Beads"]],
   ])("REQ-UI-057 a bead page of alpha opened from %s marks %j", (_name, from, expected) => {
     if (from !== null) rememberOrigin(...from);
     open("/beads/alpha/a-1");
     expect(marked()).toEqual(expected);
+  });
+
+  it("REQ-UI-057 REQ-UI-073 a bead page whose remembered place is the retired Projects page marks Beads", () => {
+    window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ kind: "projects", path: "/", search: "", project: null, open: {} }));
+    open("/beads/alpha/a-1");
+    expect(marked()).toEqual(["Beads"]);
   });
 
   it("REQ-UI-057 a retired page marks nothing whatever was remembered", () => {
@@ -143,7 +146,7 @@ describe("Layout", () => {
   });
 
   it("REQ-UI-057 follows a click", async () => {
-    open("/");
+    open("/beads");
     await userEvent.click(within(nav()).getByRole("link", { name: "Reports" }));
     expect(marked()).toEqual(["Reports"]);
   });
@@ -204,11 +207,11 @@ describe("Layout", () => {
     }
   });
 
-  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the five links when collapsed", () => {
+  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the four links when collapsed", () => {
     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
     open("/beads");
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
-    expect(within(nav()).getAllByRole("link")).toHaveLength(5);
+    expect(within(nav()).getAllByRole("link")).toHaveLength(4);
     expect(marked()).toEqual(["Beads"]);
   });
 

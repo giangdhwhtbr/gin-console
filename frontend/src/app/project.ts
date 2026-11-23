@@ -66,14 +66,14 @@ function withQuery(path: string, params: URLSearchParams): string {
   return query === "" ? path : `${path}?${query}`;
 }
 
-export function projectHref(path: "/beads" | "/milestones" | "/reports", project: string): string {
+export function projectHref(path: "/beads" | "/milestones" | "/my-tasks" | "/reports", project: string): string {
   return project === "" ? path : withQuery(path, new URLSearchParams({ project }));
 }
 
 const KEPT = ["view", "closed", "tab", "days", "q"];
 
 export function switchProject(pathname: string, search: string, name: string): string {
-  if (pathname === "/beads" || pathname === "/milestones" || pathname === "/reports") {
+  if (pathname === "/beads" || pathname === "/milestones" || pathname === "/my-tasks" || pathname === "/reports") {
     const old = new URLSearchParams(search);
     const next = new URLSearchParams({ project: name });
     for (const key of KEPT) {
