@@ -38,7 +38,7 @@ The UX review of 2026-11-21 found that every page picked its own project, breadc
 **References**
 - Change: `docs/changes/archive/*-gin-console-rm-nav-shell-navigation/`; diagrams `docs/specs/ui/diagrams/current-project-activity.md`, `back-to-place-activity.md`; use cases `docs/specs/ui/use-cases/switch-project.md`, `return-to-place.md`.
 - Evidence: `qa/evidence/2026-11-21-nav-shell-tc1/`.
-- Beads: gin-console-rm-nav-shell (tracks .1 to .9, bug .10); next: gin-console-rm-beads-views (filter bar, click rule).
+- Beads: gin-console-rm-nav-shell (tracks .1 to .9, bug .10); followed by gin-console-rm-beads-views (filter bar, click rule, [beads-views-interaction](beads-views-interaction.md)).
 - Related: [epic-page](epic-page.md), [beads-filters-and-epic-kind](beads-filters-and-epic-kind.md), [retired-sessions-quota](retired-sessions-quota.md), [retired-projects-page](retired-projects-page.md).
 
 **Scope**

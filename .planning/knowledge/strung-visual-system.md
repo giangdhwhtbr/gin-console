@@ -18,7 +18,7 @@ The UX review of 2026-11-21 found no identity colour, a flat 12/14/20 type scale
 - e2e specs can depend on UI details their cases never mention, so `gin-qa e2e plan` does not mark them stale; a full `gin-qa e2e run` over the touched capabilities found 14 such specs (per-day pills, "1 of 4", the old Progress card).
 - The wider Recursive face made chart day labels collide; `team/axisLabels.ts` `placeAxisLabels` drops labels that would overlap (7.5 px per character estimate).
 - In zsh, an unquoted `grep --include=*.tsx` fails the glob and prints nothing; quote it in acceptance checks.
-- The removable filter chips and the one-line filter bar belong to gin-console-rm-beads-views; REQ-UI-140's scenario checks the filter count pill instead.
+- The removable filter chips and the one-line filter bar shipped with gin-console-rm-beads-views ([beads-views-interaction](beads-views-interaction.md)); REQ-UI-140's scenario checks the Status chip and the "More filters" count pill.
 
 **References**
 - Change: `docs/changes/archive/2026-11-22-gin-console-rm-strung-strung/`; diagrams `docs/specs/ui/diagrams/strand-activity.md`, `docs/specs/milestone-ui/diagrams/gantt-verdict-activity.md`; use case `docs/specs/milestone-ui/use-cases/read-gantt-verdict.md`.
