@@ -8,16 +8,16 @@ The UX review of 2026-11-21 found that every page picked its own project, breadc
   - Resolution order: the URL `project`, then the browser tab's last choice (`sessionStorage` `gin-console-project`), then the starred favorite (`localStorage` `gin-console-favorite-project`), then the first configured project. Names no longer configured are skipped.
   - `useConfiguredProjects` caches one `/api/projects/beads` load per page load. `forgetConfiguredProjects` (called on Refresh) bumps a version, so a mounted hook refetches.
   - `switchProject` keeps only `view`, `closed`, `tab`, `days` and `q` when the project changes.
-  - "All projects" stays inside My Tasks (default) and Reports (`project=all`) and never becomes current.
+  - Since epic gin-console-k4l (2026-11-23) no page offers "All projects": Reports and My Tasks follow the current project, and the retired `project=all` resolves to it ([retired-projects-page](retired-projects-page.md)).
 - **Switcher:** `ProjectSwitcher.tsx` has three variants: sidebar from 1024px, a letter button in the rail, and the phone top bar. The Beads and Milestones pages have no project select of their own.
 - **Unknown project:** `UnknownProject.tsx` shows "No project <name> is configured" and makes no data request. `ProjectGuard` wraps the bead and milestone pages and shows "Loading projects…" while the list loads.
 - **Origin:** `frontend/src/app/origin.ts`, moved from `features/beads/returnState.ts`.
-  - Fields: `kind` (`beads`, `milestone`, `my-tasks`, `reports`, `projects`), `project` (null for Projects, My Tasks with All and Reports with `all`), `label` (the milestone title) and `open`. The storage key `gin-console-beads-return` is unchanged.
+  - Fields: `kind` (`beads`, `milestone`, `my-tasks`, `reports`; `projects` was removed with the Projects page), `project` (always a project name since gin-console-k4l), `label` (the milestone title) and `open`. The storage key `gin-console-beads-return` is unchanged.
   - `originFor` decides whether the breadcrumb's first link and the marked nav link use the origin.
   - The parent title in the breadcrumb comes from the loaded bead's `parent-child` dependency, with no extra request.
 - **Titles and Not found:**
   - `usePageTitle(name, project)` joins the parts with ` · ` and resets to `gin-console`. Document titles are the one place that keeps ` · ` (REQ-UI-139, style guard).
-  - `NotFoundPage` is the router fallback; `/` matches Projects explicitly.
+  - `NotFoundPage` is the router fallback and links to Beads and My Tasks; `/` renders `HomeRedirect`, which replaces it with My Tasks of the current project.
   - The details panel (an embedded `BeadDetailPage`) never retitles the page.
 - **Back:** `route.ts` gives every history entry a `{key}` in `history.state`.
   - A push saves `{y, opened}` for the leaving entry in `sessionStorage` `gin-console-scroll` (50 entries) and scrolls to the top.
@@ -39,7 +39,7 @@ The UX review of 2026-11-21 found that every page picked its own project, breadc
 - Change: `docs/changes/archive/*-gin-console-rm-nav-shell-navigation/`; diagrams `docs/specs/ui/diagrams/current-project-activity.md`, `back-to-place-activity.md`; use cases `docs/specs/ui/use-cases/switch-project.md`, `return-to-place.md`.
 - Evidence: `qa/evidence/2026-11-21-nav-shell-tc1/`.
 - Beads: gin-console-rm-nav-shell (tracks .1 to .9, bug .10); next: gin-console-rm-beads-views (filter bar, click rule).
-- Related: [epic-page](epic-page.md), [beads-filters-and-epic-kind](beads-filters-and-epic-kind.md), [retired-sessions-quota](retired-sessions-quota.md).
+- Related: [epic-page](epic-page.md), [beads-filters-and-epic-kind](beads-filters-and-epic-kind.md), [retired-sessions-quota](retired-sessions-quota.md), [retired-projects-page](retired-projects-page.md).
 
 **Scope**
 Anything that reads or changes the current project, links between pages, breadcrumbs, browser titles, unknown paths, Back behaviour and the sidebar.

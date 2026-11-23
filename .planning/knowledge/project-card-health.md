@@ -3,6 +3,8 @@
 **Context**
 Epic gin-console-5ox (2026-11-15) replaced the project card's default-workflow stage and gate chips with health from `gin state`: workspace repos, team, `decision`, `warnings`, `remedies` and `review_waivers`, plus the stage of each in-progress epic from `gin state --workflow-id <epic>`.
 
+**Retired:** epic gin-console-k4l (2026-11-23) removed the Projects page, `ProjectCard`, `Collector`, `collect_workflow` and `GET /api/projects` ([retired-projects-page](retired-projects-page.md)). `collect_epic_workflow` and the null `Epic.workflow` of `/api/projects/beads` remain; the rest of this record is history.
+
 **Decision/Solution**
 - `collect_workflow` maps the new keys leniently: a missing or malformed optional key becomes `None` or `[]` and never fails the workflow block, so an older gin still works (`backend/src/gin_console/projects/collect.py`).
 - Per-epic `gin state` runs only for `in_progress` epics, through `ThreadPoolExecutor(max_workers=4)` inside `Collector.get`, with `json_on_failure=True` (a finished workflow exits 1). One failing or timed-out epic gets `{error}` alone. The result shares the 5 s project cache.
