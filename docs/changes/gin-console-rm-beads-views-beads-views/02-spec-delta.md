@@ -18,7 +18,7 @@
 ## ADDED
 
 ### REQ-UI-142: One-line filter bar
-WHILE the window is 768px wide or more, the bead filter bar of the Beads views SHALL show, in this order, the search box with the key hint of REQ-UI-146 at its right end, the filters Milestone, Status and Assignee as REQ-UI-144 describes, the button "More filters" of REQ-UI-145, "Clear filters" while REQ-UI-143 offers it, then the count "N of M" of REQ-UI-024 and the switch "Show closed" of REQ-UI-026. WHILE the window is 1024px wide or more, the search box, those three filters, "More filters" and "Clear filters" SHALL stay on one line, the search box narrowing to its minimum width and a chip cutting its values short as REQ-UI-107 describes, and the count and "Show closed" SHALL move to the line below only when they do not fit; WHILE it is 1440px wide or more, the whole bar SHALL fit on one line. WHERE the milestone is fixed, on the Beads tab of a milestone page (REQ-MILESTONE-UI-018) and on the Graph and Lanes tabs of an epic page (REQ-UI-119), the bar SHALL show no Milestone filter, and the tabs of an epic page SHALL show no count. Below 768px the bar SHALL follow REQ-UI-084.
+WHILE the window is 768px wide or more, the bead filter bar of the Beads views SHALL show, in this order, the search box with the key hint of REQ-UI-146 at its right end, the filters Milestone, Status and Assignee as REQ-UI-144 describes, the button "More filters" of REQ-UI-145, "Clear filters" while REQ-UI-143 offers it, then the count "N of M" of REQ-UI-024 and the switch "Show closed" of REQ-UI-026. WHILE the window is 1024px wide or more, the search box, those three filters and "More filters" SHALL stay on one line, the search box narrowing to its minimum width of 8rem and a chip cutting its values short as REQ-UI-107 describes, and "Clear filters", the count and "Show closed" SHALL move together to the line below only when they do not fit; WHILE it is 1440px wide or more and no filter is active (REQ-UI-143), the whole bar SHALL fit on one line. A chip SHALL keep its name and its "×" whole and cut only its values short. WHERE the milestone is fixed, on the Beads tab of a milestone page (REQ-MILESTONE-UI-018) and on the Graph and Lanes tabs of an epic page (REQ-UI-119), the bar SHALL show no Milestone filter, and the tabs of an epic page SHALL show no count. Below 768px the bar SHALL follow REQ-UI-084.
 Source: `assets/2026-11-22/index.html#beads`, `assets/2026-11-22/beads-light.png`
 
 #### Scenario: Order on a wide window
@@ -29,7 +29,7 @@ Source: `assets/2026-11-22/index.html#beads`, `assets/2026-11-22/beads-light.png
 #### Scenario: One line at 1024px
 - GIVEN the Beads page at 1024px with the current milestone "Checkout v2" in effect and `status=open,in_progress&assignee=alice&priority=1`
 - WHEN it is shown
-- THEN the search box, the chips Milestone, Status and Assignee, "More filters" and "Clear filters" share one line, a chip whose values do not fit ends with "…" and has its full text as `title`, and no text overlaps another
+- THEN the search box, at least 8rem wide, the chips Milestone, Status and Assignee and "More filters" share one line, "Clear filters", the count and "Show closed" are on the line below, a chip whose values do not fit ends with "…" and has its full text as `title` while its name and "×" stay whole, and no text overlaps another
 
 #### Scenario: Fixed milestone
 - GIVEN the Beads tab of milestone `m2` at 1440px
