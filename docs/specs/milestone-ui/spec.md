@@ -447,17 +447,22 @@ Source: `assets/2026-11-08/mockup/index.html#milestone`
 - THEN the header shows no lane count and the rest of the header is unchanged
 
 ### REQ-MILESTONE-UI-018: Beads tab on the milestone page
-The milestone page SHALL offer the tabs Gantt, Beads and Retro (REQ-MILESTONE-UI-019), kept in the URL as `tab` (`gantt` when absent or unknown, `beads`, `retro`), and SHALL treat `tab=graph` as `tab=beads` with `view=graph`. WHILE the Beads tab is shown, the page SHALL show the Beads views (REQ-UI-030) of the milestone's project with the Milestone filter fixed to this milestone and no Milestone select, SHALL keep their search, filters, view, selection and graph scope in the milestone page's URL with the names the Beads page uses, and SHALL fetch closed beads without "Show closed" WHILE the milestone is closed. WHEN the user changes tab, the page SHALL keep only `start` and `zoom` of the query besides `tab`.
+The milestone page SHALL offer the tabs Gantt, Beads and Retro (REQ-MILESTONE-UI-019), kept in the URL as `tab` (`gantt` when absent or unknown, `beads`, `retro`), and SHALL treat `tab=graph` as `tab=beads` with `view=graph`. WHILE the Beads tab is shown, the page SHALL show the Beads views (REQ-UI-030) of the milestone's project with the milestone fixed to this one, no Milestone filter in the filter bar or its sheet (REQ-UI-142) and "Clear filters" leaving the milestone as it is (REQ-UI-143), SHALL keep their search, filters, view, selection and graph scope in the milestone page's URL with the names the Beads page uses, and SHALL fetch closed beads without "Show closed" WHILE the milestone is closed. WHEN the user changes tab, the page SHALL keep only `start` and `zoom` of the query besides `tab`.
 
 #### Scenario: Beads tab
 - GIVEN milestone `m2` of project `p` with epics `e1` and `e2` and a bead `x` under milestone `m3`
 - WHEN the user opens `/milestones/p/m2?tab=beads`
-- THEN the List view shows `e1` and `e2` and not `x`, and there is no Milestone select
+- THEN the List view shows `e1` and `e2` and not `x`, and there is no Milestone filter
 
 #### Scenario: View and filters in the URL
 - GIVEN the Beads tab of `m2`
 - WHEN the user chooses Board and the status "open"
 - THEN the URL is `/milestones/p/m2?tab=beads&view=board&status=open` and reloading it shows the same Board and filter
+
+#### Scenario: Clear filters keeps the milestone
+- GIVEN the Beads tab of `m2` at `/milestones/p/m2?tab=beads&view=board&status=open`
+- WHEN the user chooses "Clear filters"
+- THEN the URL is `/milestones/p/m2?tab=beads&view=board` and the Board shows the beads of `m2`
 
 #### Scenario: Changing tab
 - GIVEN `/milestones/p/m2?tab=beads&view=board&status=open&start=2026-11-10&zoom=2w`
