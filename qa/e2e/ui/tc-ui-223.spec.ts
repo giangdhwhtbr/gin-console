@@ -23,6 +23,6 @@ test('TC-UI-223: Tab in the URL (REQ-UI-119)', async ({ page, ev }) => {
     await expect(page.locator(`[data-node="${E12}"]`)).toHaveCount(0);
     // the search and the filters of the Beads views
     await expect(page.getByRole('searchbox', { name: 'Search' })).toBeVisible();
-    await expect(page.getByRole('checkbox', { name: 'Show closed' })).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Show closed' })).toBeVisible();
   });
 });

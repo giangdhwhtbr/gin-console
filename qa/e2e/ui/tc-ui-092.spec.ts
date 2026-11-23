@@ -55,7 +55,7 @@ test('TC-UI-092: From bead to bead', async ({ page, ev }) => {
     expect(params.get('view')).toBe('board');
     expect(params.get('status')).toBe('open');
     await expect(page.getByRole('button', { name: 'Board' })).toHaveAttribute('aria-pressed', 'true');
-    await page.getByRole('button', { name: 'Status 1' }).click();
+    await page.getByRole('button', { name: 'Status open' }).click();
     await expect(page.getByRole('checkbox', { name: 'open' })).toBeChecked();
   });
 });

@@ -1,10 +1,10 @@
 # TC-UI-102: Filters apply to the nodes
 
-- **REQ:** REQ-UI-106@aef48e9b
+- **REQ:** REQ-UI-106@9683653c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 33e16b6b
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** 2d118186
 
 **Preconditions:**
 - Epic `e1` with a task assigned to `bao`, and epic `e2` with no bead assigned to `bao`

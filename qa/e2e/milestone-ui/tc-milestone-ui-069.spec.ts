@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-069@7888e2ec
+// TC: TC-MILESTONE-UI-069@8735e752
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -30,11 +30,11 @@ test('TC-MILESTONE-UI-069: View and filters in the URL', async ({ page, ev }) =>
     await expect.poll(where).toBe('/milestones/p/m2?tab=beads&view=board');
   });
 
-  await ev.step('3. Choose the status "open"', async () => {
+  await ev.step('3. Open `button "Status"` and choose the status "open"', async () => {
     await page.getByRole('button', { name: 'Status', exact: true }).click();
     await page.getByRole('checkbox', { name: 'open', exact: true }).check();
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('button', { name: 'Status 1' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Status open', exact: true })).toBeVisible();
     await expect.poll(where).toBe('/milestones/p/m2?status=open&tab=beads&view=board');
   });
 
@@ -42,7 +42,7 @@ test('TC-MILESTONE-UI-069: View and filters in the URL', async ({ page, ev }) =>
     await page.reload();
     await expect.poll(where).toBe('/milestones/p/m2?status=open&tab=beads&view=board');
     await expect(views.getByRole('button', { name: 'Board' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('button', { name: 'Status 1' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Status open', exact: true })).toBeVisible();
     await expect(page.getByText('1 of 2', { exact: true })).toBeVisible();
   });
 });

@@ -1,4 +1,4 @@
-// TC: TC-UI-216@4658b5be
+// TC: TC-UI-216@ebef50d0
 import { test, expect } from '../evidence';
 import { bead } from '../support/api';
 import { panelOf, stubProject } from '../support/graph';
@@ -22,7 +22,7 @@ test('TC-UI-216: Long bead in a panel (REQ-UI-078)', async ({ page, ev }) => {
     expect(await page.evaluate(() => document.documentElement.scrollHeight > window.innerHeight)).toBe(true);
   });
 
-  await ev.step('2. Select `p-1`', async () => {
+  await ev.step('2. Click the row of `p-1` outside its title', async () => {
     const row = page.getByRole('treeitem', { name: /p-1/ });
     const box = (await row.boundingBox())!;
     await row.click({ position: { x: box.width - 12, y: box.height / 2 } });

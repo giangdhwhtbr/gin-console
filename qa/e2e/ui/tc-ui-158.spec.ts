@@ -10,7 +10,7 @@ test('TC-UI-158: Lanes draw closed tracks without Show closed', async ({ page, e
   await ev.step('1. Open /beads?project=example&view=lanes&scope=ex-e12', async () => {
     await page.goto('/beads?project=example&view=lanes&scope=ex-e12');
     await expect(page).not.toHaveURL(/closed=1/);
-    await expect(page.getByRole('checkbox', { name: /Show closed/ })).not.toBeChecked();
+    await expect(page.getByRole('switch', { name: /Show closed/ })).not.toBeChecked();
     await expect(page.locator(`[data-node="${E12}.1"]`)).toBeVisible();
   });
 });

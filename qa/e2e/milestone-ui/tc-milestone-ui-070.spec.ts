@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-070@f0f1986c
+// TC: TC-MILESTONE-UI-070@a4879bd9
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -31,7 +31,9 @@ test('TC-MILESTONE-UI-070: Changing tab', async ({ page, ev }) => {
     await expect(page.getByRole('tab', { name: 'Beads' })).toHaveAttribute('aria-selected', 'true');
     await expect.poll(where).toBe('/milestones/p/m2?tab=beads&start=2026-11-10&zoom=2w');
     await expect(page.getByRole('navigation', { name: 'View' }).getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('button', { name: 'Status', exact: true })).toBeVisible(); // no count: no status filter
+    await expect(page.getByRole('button', { name: 'Status', exact: true })).toBeVisible(); // a button without a value: no status filter
+    await expect(page.getByRole('button', { name: /^Status ./ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Clear filters' })).toHaveCount(0);
     await expect(page.getByRole('tree', { name: 'Beads of p' }).getByRole('treeitem')).toHaveCount(1);
   });
 });

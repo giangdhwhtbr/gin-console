@@ -1,4 +1,4 @@
-// TC: TC-UI-105@cd65b371
+// TC: TC-UI-105@2c9e3a9a
 import { test, expect } from '../evidence';
 import { bead, milestoneOption, stubApi } from '../support/api';
 
@@ -25,7 +25,7 @@ test('TC-UI-105: Open a leaf', async ({ page, ev }) => {
     await expect(node('e1.1')).toBeVisible();
   });
 
-  await ev.step('2. Open task e1.1', async () => {
+  await ev.step('2. Double-click the node of task `e1.1`', async () => {
     await node('e1.1').dblclick();
     await expect(page).toHaveURL(/\/beads\/p\/e1\.1/);
     await expect(page.getByRole('heading', { name: /Title e1\.1/ })).toBeVisible();

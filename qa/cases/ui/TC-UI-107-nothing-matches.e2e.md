@@ -1,10 +1,10 @@
 # TC-UI-107: Nothing matches
 
-- **REQ:** REQ-UI-106@aef48e9b
+- **REQ:** REQ-UI-106@9683653c
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 5d64e503
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** f9830c7f
 
 **Preconditions:**
 - Project `p` with beads, none of which matches the search "zzz"

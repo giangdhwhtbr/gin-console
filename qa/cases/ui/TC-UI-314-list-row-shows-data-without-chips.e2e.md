@@ -1,10 +1,10 @@
 # TC-UI-314: List row shows data without chips
 
-- **REQ:** REQ-UI-140@aa5bbea9
+- **REQ:** REQ-UI-140@50e14546
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 8f329cb1
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** bfd5ac37
 
 **Preconditions:**
 - Project `P` reports a blocked P1 bug `b-1` assigned to alice with the labels `area:backend` and `ui`, the lane `be` and 2 comments

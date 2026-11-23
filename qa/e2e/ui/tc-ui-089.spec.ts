@@ -1,4 +1,4 @@
-// TC: TC-UI-089@87caed29
+// TC: TC-UI-089@660275b2
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 import type { Page } from '@playwright/test';
@@ -27,12 +27,16 @@ test('TC-UI-089: Details panel', async ({ page, ev }) => {
   await stubApi(page, { projects: ['a'], beads: [a1] });
   await stubDetails(page, { 'a-1': detailOf(a1) });
 
-  await ev.step('1. Open /beads?project=a', async () => {
+  await ev.step('1. Set the window width to 1280px', async () => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+  });
+
+  await ev.step('2. Open `/beads?project=a`', async () => {
     await page.goto('/beads?project=a');
     await expect(page.getByText('Title a-1')).toBeVisible();
   });
 
-  await ev.step('2. Select a-1 in the List view', async () => {
+  await ev.step('3. Click the row of `a-1` outside its title in the List view', async () => {
     const row = page.getByRole('treeitem', { name: /a-1/ });
     const box = await row.boundingBox();
     await row.click({ position: { x: box!.width - 12, y: box!.height / 2 } });

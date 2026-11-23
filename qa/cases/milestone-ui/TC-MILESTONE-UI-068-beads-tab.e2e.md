@@ -1,10 +1,10 @@
 # TC-MILESTONE-UI-068: Beads tab
 
-- **REQ:** REQ-MILESTONE-UI-018@4d6687be
+- **REQ:** REQ-MILESTONE-UI-018@3dbf80c2
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** c51fff2c
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** 90d8c35c
 
 **Preconditions:**
 - Project `p` with milestone `m2` that has epics `e1` and `e2`, and a bead `x` under milestone `m3`
@@ -14,4 +14,4 @@
 
 **Expected:**
 - The List view shows `e1` and `e2` and not `x`
-- There is no Milestone select
+- There is no Milestone filter: the filter bar has no `button "Milestone"` and no chip `Milestone <title>`, and starts with the search box, `Status`, `Assignee` and `More filters`

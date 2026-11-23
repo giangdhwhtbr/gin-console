@@ -17,8 +17,9 @@ test('TC-UI-302: Type sizes on the Beads page', async ({ page, ev }) => {
     await expect(page.getByRole('heading', { name: 'Beads', level: 1 })).toHaveCSS('font-size', '28px');
     await expect(row.getByRole('link', { name: 'A row title' })).toHaveCSS('font-size', '14px');
     await expect(row.getByText(/^15 Jan/)).toHaveCSS('font-size', '12px');
-    const labels = page.locator('label:has(select)');
-    expect(await labels.count()).toBeGreaterThan(0);
-    for (const label of await labels.all()) await expect(label).toHaveCSS('font-size', '13px');
+    // the filter labels are now the names of the chips in the filter bar
+    for (const name of ['Milestone', 'Status', 'Assignee', 'More filters']) {
+      await expect(page.getByRole('button', { name, exact: true })).toHaveCSS('font-size', '13px');
+    }
   });
 });

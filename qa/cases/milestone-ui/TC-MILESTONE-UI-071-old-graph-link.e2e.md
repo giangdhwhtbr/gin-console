@@ -1,10 +1,10 @@
 # TC-MILESTONE-UI-071: Old Graph link
 
-- **REQ:** REQ-MILESTONE-UI-018@4d6687be
+- **REQ:** REQ-MILESTONE-UI-018@3dbf80c2
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 153e8da5
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** d0e6b5ea
 
 **Preconditions:**
 - Milestone `m2` of project `p` with epics

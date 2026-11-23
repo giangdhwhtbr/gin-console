@@ -1,10 +1,10 @@
 # TC-UI-101: Project scope
 
-- **REQ:** REQ-UI-106@aef48e9b
+- **REQ:** REQ-UI-106@9683653c
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 0ac2e743
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** faa817c6
 
 **Preconditions:**
 - Project `p` with beads without a parent, among them epics under a milestone

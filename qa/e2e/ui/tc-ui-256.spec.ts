@@ -26,7 +26,7 @@ test('TC-UI-256: Board placement', async ({ page, ev }) => {
   });
 
   await ev.step('2. Turn on "Show closed"', async () => {
-    await page.getByRole('checkbox', { name: /Show closed/ }).check();
+    await page.getByRole('switch', { name: /Show closed/ }).check();
     for (const [name, id] of columns) {
       const column = page.getByRole('region', { name });
       await expect(column.getByText(`Title ${id}`)).toBeVisible();

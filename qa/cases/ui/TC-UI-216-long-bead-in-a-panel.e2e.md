@@ -1,10 +1,10 @@
 # TC-UI-216: Long bead in a panel
 
-- **REQ:** REQ-UI-078@ea323dfb
+- **REQ:** REQ-UI-078@aea03286
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** f5cba0ef
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** 635d7774
 
 **Preconditions:**
 - Project `p` has bead `p-1` whose content is taller than the window, among 40 other beads so that the page scrolls
@@ -12,7 +12,7 @@
 
 **Steps:**
 1. Open `/beads?project=p&view=list`
-2. Select `p-1`
+2. Click the row of `p-1` outside its title
 3. Turn the wheel down over the details panel
 
 **Expected:**

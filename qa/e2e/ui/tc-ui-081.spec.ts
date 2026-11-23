@@ -22,7 +22,7 @@ test('TC-UI-081: Switch keeps filters', async ({ page, ev }) => {
     await expect(page).toHaveURL(/[?&]status=open(&|$)/);
     await expect(page).toHaveURL(/[?&]q=fix(&|$)/);
     await expect(page.getByRole('searchbox', { name: 'Search' })).toHaveValue('fix');
-    await expect(page.getByRole('button', { name: 'Status 1' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Status open' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'fix login' })).toBeVisible();
     expect(stub.calls.filter((u) => u.pathname === '/api/beads').length).toBe(before);
   });

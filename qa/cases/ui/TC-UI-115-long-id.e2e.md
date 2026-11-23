@@ -3,7 +3,7 @@
 - **REQ:** REQ-UI-107@99b7498f
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Run:** qa/evidence/2026-11-23T10-34-33
 - **Bug:** gin-console-3kd
 - **Checked:** 1e92da9b
 

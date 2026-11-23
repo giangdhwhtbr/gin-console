@@ -296,6 +296,6 @@ export async function openGraph(page: Page, query = ''): Promise<void> {
 }
 /** Turns "Show closed" on and waits for the URL to say so. */
 export async function showClosed(page: Page): Promise<void> {
-  await page.getByRole('checkbox', { name: 'Show closed' }).check();
+  await page.getByRole('switch', { name: 'Show closed' }).check();
   await page.waitForURL(/closed=1/);
 }

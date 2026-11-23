@@ -3,9 +3,9 @@ import { test, expect } from '../evidence';
 import { E12, PROJECT, scrolled, stubExample } from '../support/lanes';
 
 test('TC-UI-193: Wheel over the Graph view (REQ-UI-122)', async ({ page, ev }) => {
-  // Precondition: ex-e12 has lanes be, fe, infra, qa and two tracks without a lane; the window is 1440x900 and the page is taller than it.
+  // Precondition: ex-e12 has lanes be, fe, infra, qa and two tracks without a lane; the window is 1440x800 (the page no longer overflows 900) and the page is taller than it.
   await stubExample(page);
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setViewportSize({ width: 1440, height: 800 });
 
   await ev.step(`1. Open /beads?project=${PROJECT}&milestone=all&view=graph&scope=${E12}&closed=1`, async () => {
     await page.goto(`/beads?project=${PROJECT}&milestone=all&view=graph&scope=${E12}&closed=1`);

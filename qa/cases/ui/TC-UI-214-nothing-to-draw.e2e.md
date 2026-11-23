@@ -1,10 +1,10 @@
 # TC-UI-214: Nothing to draw
 
-- **REQ:** REQ-UI-053@b16b5ec1
+- **REQ:** REQ-UI-053@54371a3e
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** d147fd67
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** 7317b5d8
 
 **Preconditions:**
 - Project `p` has task `t-9` without blockers that blocks nothing and has no child

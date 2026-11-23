@@ -1,10 +1,10 @@
 # TC-UI-087: Parent
 
-- **REQ:** REQ-UI-072@6a1a0b98
+- **REQ:** REQ-UI-072@1fd8a2f3
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 819620fc
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** 200e417a
 
 **Preconditions:**
 - Project `a` with bead `a-1` titled "Checkout" and its child `a-2`

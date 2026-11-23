@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-068@32e42bf8
+// TC: TC-MILESTONE-UI-068@a18ea23f
 import { test, expect } from '../evidence';
 import { bead, detail, epicPlan, stubApi } from '../support/api';
 
@@ -27,5 +27,12 @@ test('TC-MILESTONE-UI-068: Beads tab', async ({ page, ev }) => {
     await expect(tree.getByRole('treeitem').filter({ hasText: 'Title x' })).toHaveCount(0);
     await expect(page.getByLabel('Milestone', { exact: true })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Milestone', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Milestone / })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Remove Milestone filter' })).toHaveCount(0);
+    // the bar starts with the search box, then Status, Assignee and More filters
+    const search = page.getByRole('searchbox', { name: 'Search' });
+    await expect(search).toBeVisible();
+    const row = search.locator('xpath=ancestor::div[2]');
+    await expect.poll(() => row.locator('input, button').evaluateAll((els) => els.filter((el) => (el as HTMLElement).offsetParent !== null).map((el) => el.getAttribute('aria-label')))).toEqual(['Search', 'Status', 'Assignee', 'More filters']);
   });
 });

@@ -18,7 +18,7 @@ test('TC-MILESTONE-UI-072: Closed milestone', async ({ page, ev }) => {
 
   await ev.step('1. Open /milestones/p/m1?tab=beads', async () => {
     await page.goto('/milestones/p/m1?tab=beads');
-    await expect(page.getByRole('checkbox', { name: 'Show closed' })).not.toBeChecked();
+    await expect(page.getByRole('switch', { name: 'Show closed' })).not.toBeChecked();
     const tree = page.getByRole('tree', { name: 'Beads of p' });
     await expect(tree.getByRole('treeitem').filter({ hasText: 'Title e1' })).toBeVisible();
     await expect(tree.getByRole('treeitem').filter({ hasText: 'Title t1' })).toBeVisible();

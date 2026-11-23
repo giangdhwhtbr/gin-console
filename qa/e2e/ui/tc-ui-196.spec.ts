@@ -1,4 +1,4 @@
-// TC: TC-UI-196@bac84da5
+// TC: TC-UI-196@a9c5f0e3
 import { test, expect } from '../evidence';
 import { E12, PROJECT, stubExample } from '../support/lanes';
 
@@ -18,5 +18,12 @@ test('TC-UI-196: No panel on opening an epic (REQ-UI-106)', async ({ page, ev })
     const main = (await page.getByRole('main').boundingBox())!;
     const box = (await canvas.boundingBox())!;
     expect(box.x + box.width).toBeGreaterThan(main.x + main.width - 40);
+  });
+
+  await ev.step(`2. Click the card of \`${E12}.2\``, async () => {
+    await page.locator(`[data-node="${E12}.2"]`).click();
+    await expect(page).toHaveURL(new RegExp(`[?&]select=${E12}\\.2(&|$)`));
+    const panel = page.getByRole('complementary', { name: 'Bead details' });
+    await expect(panel.getByRole('heading', { name: 'Track 2' })).toBeVisible();
   });
 });

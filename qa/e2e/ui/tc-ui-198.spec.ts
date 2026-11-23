@@ -3,9 +3,9 @@ import { test, expect } from '../evidence';
 import { E12, PROJECT, scaleOf, scrolled, settled, stubExample } from '../support/lanes';
 
 test('TC-UI-198: Wheel zooms only with Ctrl (REQ-UI-077)', async ({ page, ev }) => {
-  // Precondition: the Graph view of ex-e12 with "Show closed" on at 1440x900, where the page is taller than the window.
+  // Precondition: the Graph view of ex-e12 with "Show closed" on at 1440x800 (the page no longer overflows 900), where the page is taller than the window.
   await stubExample(page);
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setViewportSize({ width: 1440, height: 800 });
   let before = 1;
 
   await ev.step(`1. Open /beads?project=${PROJECT}&milestone=all&view=graph&scope=${E12}&closed=1`, async () => {

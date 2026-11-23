@@ -1,4 +1,4 @@
-// TC: TC-UI-106@ede8dd88
+// TC: TC-UI-106@ab88d027
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
@@ -11,6 +11,8 @@ test('TC-UI-106: Details panel', async ({ page, ev }) => {
   await page.route('**/api/beads/p/e1/comments', (route) => route.fulfill({ json: [] }));
   const node = (id: string) => page.getByRole('button', { name: new RegExp(`^${id}`) });
 
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   await ev.step('1. Open /beads?project=p&milestone=all&view=graph', async () => {
     await page.goto('/beads?project=p&milestone=all&view=graph');
     await expect(node('e1')).toBeVisible();
@@ -21,7 +23,7 @@ test('TC-UI-106: Details panel', async ({ page, ev }) => {
     await expect(page.getByRole('complementary', { name: 'Bead details' })).toHaveCount(0);
   });
 
-  await ev.step('3. Select e1', async () => {
+  await ev.step('3. Click the node of `e1`', async () => {
     await node('e1').click();
     await expect(page).toHaveURL(/[?&]select=e1(&|$)/);
     const panel = page.getByRole('complementary', { name: 'Bead details' });

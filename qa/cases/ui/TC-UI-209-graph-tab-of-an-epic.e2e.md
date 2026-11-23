@@ -1,10 +1,10 @@
 # TC-UI-209: Graph tab of an epic
 
-- **REQ:** REQ-UI-106@aef48e9b
+- **REQ:** REQ-UI-106@9683653c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 6d4895f3
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** e534d276
 
 **Preconditions:**
 - Project `p` has epic `e-1` with tasks `a` and `b`

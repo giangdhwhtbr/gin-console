@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-014@d417b46f
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-23T03-27-52
+Run: qa/evidence/2026-11-23T10-34-33
 Checked: 2121f18d
 
 Preconditions:

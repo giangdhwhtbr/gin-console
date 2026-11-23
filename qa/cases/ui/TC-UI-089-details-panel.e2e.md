@@ -1,17 +1,18 @@
 # TC-UI-089: Details panel
 
-- **REQ:** REQ-UI-072@6a1a0b98
+- **REQ:** REQ-UI-072@1fd8a2f3
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 3bd25360
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** 5b59f090
 
 **Preconditions:**
 - Project `a` with bead `a-1`
 
 **Steps:**
-1. Open `/beads?project=a`
-2. Select `a-1` in the List view
+1. Set the window width to 1280px
+2. Open `/beads?project=a`
+3. Click the row of `a-1` outside its title in the List view
 
 **Expected:**
 - The details panel of `a-1` has no breadcrumb

@@ -8,7 +8,7 @@ test('TC-UI-065: Closed bead (REQ-UI-049)', async ({ page, ev }) => {
 
   await ev.step('1. Open `/beads?project=alpha&milestone=all&view=graph&scope=e-1&closed=1`', async () => {
     await page.goto('/beads?project=alpha&milestone=all&view=graph&scope=e-1&closed=1');
-    await expect(page.getByRole('checkbox', { name: 'Show closed' })).toBeChecked();
+    await expect(page.getByRole('switch', { name: 'Show closed' })).toBeChecked();
     const node = nodeOf(page, 't-1');
     await expect(node).toBeVisible();
     await expect(node.locator('[data-state="done"]')).toHaveText('Done');

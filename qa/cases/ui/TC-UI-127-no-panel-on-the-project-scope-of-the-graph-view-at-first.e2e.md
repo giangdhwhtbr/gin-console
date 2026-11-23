@@ -1,10 +1,10 @@
 # TC-UI-127: No panel on the project scope of the Graph view at first
 
-- **REQ:** REQ-UI-051@7122e048
+- **REQ:** REQ-UI-051@6fa41797
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 1614fa02
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** b959e8ef
 
 **Preconditions:**
 - Project `alpha` with beads that have dependencies

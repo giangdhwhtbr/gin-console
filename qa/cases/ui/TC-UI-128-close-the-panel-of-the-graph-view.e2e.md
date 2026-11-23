@@ -1,10 +1,10 @@
 # TC-UI-128: Close the panel of the Graph view
 
-- **REQ:** REQ-UI-051@7122e048
+- **REQ:** REQ-UI-051@6fa41797
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** fdd028a1
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** 46696197
 
 **Preconditions:**
 - Project `alpha` with epic `e-1` that has task `t-1`

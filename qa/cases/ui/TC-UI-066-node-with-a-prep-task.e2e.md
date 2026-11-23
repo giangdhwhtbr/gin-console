@@ -3,7 +3,7 @@
 - **REQ:** REQ-UI-049@73f03f4c
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Run:** qa/evidence/2026-11-23T10-34-33
 - **Checked:** e0152e87
 
 **Preconditions:**

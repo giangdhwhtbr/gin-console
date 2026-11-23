@@ -1,10 +1,10 @@
 # TC-UI-316: My Tasks row shows the state as text
 
-- **REQ:** REQ-UI-140@aa5bbea9
+- **REQ:** REQ-UI-140@50e14546
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 66129a12
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** b2a62ed9
 
 **Preconditions:**
 - Project `P` reports a blocked bead assigned to the signed-in email

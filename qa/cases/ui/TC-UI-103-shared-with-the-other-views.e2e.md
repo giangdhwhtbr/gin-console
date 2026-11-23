@@ -1,10 +1,10 @@
 # TC-UI-103: Shared with the other views
 
-- **REQ:** REQ-UI-106@aef48e9b
+- **REQ:** REQ-UI-106@9683653c
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-27-52
-- **Checked:** 11dfbd76
+- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Checked:** becfee63
 
 **Preconditions:**
 - Project `p` with beads, some of whose titles contain "pay"

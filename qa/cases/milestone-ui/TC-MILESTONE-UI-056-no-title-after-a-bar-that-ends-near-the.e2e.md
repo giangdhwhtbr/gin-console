@@ -2,7 +2,7 @@
 REQ: REQ-MILESTONE-UI-013@d306ea36
 Priority: low
 Result: passed
-Run: qa/evidence/2026-11-23T03-27-52
+Run: qa/evidence/2026-11-23T10-34-33
 Checked: 9b5e0765
 
 Preconditions:
