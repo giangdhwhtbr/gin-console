@@ -22,4 +22,12 @@ describe("ViewTabs", () => {
     await userEvent.click(screen.getByRole("button", { name: "Lanes" }));
     expect(onChange).toHaveBeenCalledWith({ ...filters, view: "lanes" });
   });
+
+  it("REQ-UI-110 pressed segment: the selected view keeps the primary-foreground text, the others do not", () => {
+    render(<ViewTabs filters={parseFilters("?view=board")} lanes={false} onChange={vi.fn()} />);
+    const pressed = screen.getByRole("button", { name: "Board" });
+    expect(pressed).toHaveAttribute("aria-pressed", "true");
+    expect(pressed).toHaveClass("bg-primary", "text-primary-foreground");
+    expect(screen.getByRole("button", { name: "List" })).not.toHaveClass("text-primary-foreground");
+  });
 });

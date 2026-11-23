@@ -29,7 +29,7 @@ const SURFACES = ["background", "card", "muted"] as const;
 const EXACT = {
   light: {
     background: "#F4F5F8", card: "#FFFFFF", muted: "#ECEEF3", border: "#DDE0E7", foreground: "#1B1D26",
-    "muted-foreground": "#596072", primary: "#6A3DB8", identity: "#6A3DB8", "identity-wash": "#EFE9FA", input: "#7D8695",
+    "muted-foreground": "#596072", primary: "#6A3DB8", identity: "#6A3DB8", "identity-wash": "#F4F0FC", input: "#7D8695",
     "state-ready": "#0E7A5C", "state-progress": "#2557D6", "state-blocked": "#AE500A", "state-deferred": "#646A78", destructive: "#B42318",
   },
   dark: {
@@ -92,6 +92,16 @@ describe.each([
         expect(ratio(get(text), get(surface)), `${text} on ${surface}`).toBeGreaterThanOrEqual(4.5);
       }
     }
+    expect(ratio(get("primary-foreground"), get("primary"))).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it(`REQ-UI-059 ${name}: text and state colours reach 4.5:1 on the selection wash`, () => {
+    for (const text of ["foreground", "muted-foreground", "destructive", ...STATUS, ...TYPES]) {
+      expect(ratio(get(text), get("identity-wash")), `${text} on identity-wash`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it(`REQ-UI-110 ${name}: a pressed segment reads primary-foreground on primary`, () => {
     expect(ratio(get("primary-foreground"), get("primary"))).toBeGreaterThanOrEqual(4.5);
   });
 
