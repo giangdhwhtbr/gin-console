@@ -9,7 +9,7 @@ test('TC-UI-379: Show closed and the milestone', async ({ page, ev }) => {
   const a1 = { ...bead('a-1', { title: 'Fix login', ready: true }), kind: 'technical' };
   await stubApi(page, {
     projects: ['a'],
-    beads: [a1] as ReturnType<typeof bead>[],
+    beads: [a1],
     milestoneOptions: { milestones: [milestoneOption('m1', { status: 'active' })], current: 'm1' },
   });
   const detail = { ...a1, description: null, design: null, notes: null, acceptance_criteria: null, close_reason: null, dependencies: [], dependents: [], children: [], bugs: [] };

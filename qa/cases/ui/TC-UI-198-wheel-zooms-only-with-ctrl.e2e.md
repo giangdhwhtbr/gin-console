@@ -7,7 +7,7 @@
 - **Checked:** 8205bf67
 
 **Preconditions:**
-- The Graph view of `ex-e12` with "Show closed" on at 1440x900, where the page is taller than the window
+- The Graph view of `ex-e12` with "Show closed" on at 1440x800, where the page is taller than the window
 
 **Steps:**
 1. Open `/beads?project=example&milestone=all&view=graph&scope=ex-e12&closed=1`

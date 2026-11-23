@@ -3,6 +3,8 @@ import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 import { stubDetails } from '../support/lanes';
 
+test.use({ hasTouch: true });
+
 test('TC-UI-360: Tap a card on a phone', async ({ page, ev }) => {
   // Precondition: the Focus view of project example at 390px wide with bead t-1.
   const beads = [bead('t-1', { title: 'Pay invoices', ready: true, priority: 1 })];
@@ -14,7 +16,7 @@ test('TC-UI-360: Tap a card on a phone', async ({ page, ev }) => {
   await expect(card).toBeVisible();
 
   await ev.step('1. Tap the card of t-1', async () => {
-    await card.click({ position: { x: 6, y: 6 } });
+    await card.tap({ position: { x: 6, y: 6 } });
     await expect(page).toHaveURL(/\/beads\/example\/t-1/);
     await expect(page.getByRole('heading', { name: 'Pay invoices' })).toBeVisible();
   });

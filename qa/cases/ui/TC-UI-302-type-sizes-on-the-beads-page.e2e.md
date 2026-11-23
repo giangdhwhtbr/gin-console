@@ -12,10 +12,10 @@
 
 **Steps:**
 1. Open `/beads?project=P&view=list`
-2. Read the computed `font-size` of the page title, of the title of `p-1`, of the date of its row and of the filter labels
+2. Read the computed `font-size` of the page title, of the title of `p-1`, of the date of its row and of the filter chips (Milestone, Status, Assignee, More filters)
 
 **Expected:**
 - The page title "Beads" is 28px
 - The title of the row is 14px
 - The date of the row is 12px
-- The filter labels are 13px
+- The filter chips (Milestone, Status, Assignee, More filters) are 13px

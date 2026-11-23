@@ -38,7 +38,8 @@ test('TC-UI-325: Move, select and open on the Board with the keyboard (REQ-UI-03
     await expect(card).toBeFocused();
     await expect(page).toHaveURL(new RegExp(`select=${second}`));
     const panel = page.getByRole('complementary', { name: 'Bead details' });
-    await expect(panel.getByRole('heading', { name: new RegExp(second) }).or(panel.getByText(second).first())).toBeVisible();
+    await expect(panel.getByRole('heading', { name: 'Second card' })).toBeVisible();
+    await expect(panel.getByRole('link', { name: 'Open page' })).toHaveAttribute('href', `/beads/example/${second}`);
   });
 
   await ev.step('4. Press `Enter` again', async () => {

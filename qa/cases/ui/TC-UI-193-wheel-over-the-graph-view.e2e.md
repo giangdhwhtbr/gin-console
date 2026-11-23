@@ -8,7 +8,7 @@
 
 **Preconditions:**
 - Epic `ex-e12` has lanes be (tracks 1 and 2), fe (track 3), infra (tracks 5 and 6) and qa (track 4), and two tracks without a lane
-- The window is 1440x900, and the page is taller than the window
+- The window is 1440x800, and the page is taller than the window
 
 **Steps:**
 1. Open `/beads?project=example&milestone=all&view=graph&scope=ex-e12&closed=1`
