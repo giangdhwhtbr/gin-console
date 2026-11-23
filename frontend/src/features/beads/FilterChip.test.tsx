@@ -32,6 +32,21 @@ describe("FilterChip", () => {
     expect(screen.getByText("menu body")).toBeInTheDocument();
   });
 
+  it("REQ-UI-142 REQ-UI-144 a narrow chip cuts only its values: name and × stay whole", () => {
+    render(
+      <FilterChip label="Assignee" values={["alice", "bob"]} onRemove={vi.fn()}>
+        <p>menu body</p>
+      </FilterChip>,
+    );
+    const trigger = screen.getByRole("button", { name: "Assignee alice, bob" });
+    expect(screen.getByText("Assignee")).toHaveClass("shrink-0");
+    expect(screen.getByText("alice, bob")).toHaveClass("truncate", "min-w-0");
+    const remove = screen.getByRole("button", { name: "Remove Assignee filter" });
+    expect(remove).toHaveClass("shrink-0");
+    expect(trigger.contains(remove)).toBe(false);
+    expect(trigger.parentElement?.getAttribute("style")).toContain("8ch");
+  });
+
   it("REQ-UI-144 Remove one filter", async () => {
     const onRemove = vi.fn();
     render(

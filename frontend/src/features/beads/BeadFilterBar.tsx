@@ -61,7 +61,7 @@ export function BeadFilterBar({
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <div className="flex min-w-0 basis-full items-center gap-2 md:basis-auto md:flex-auto md:flex-wrap lg:flex-nowrap">
-        <div className="relative min-w-40 flex-1 md:max-w-64">
+        <div className="relative min-w-40 flex-1 md:min-w-16 md:max-w-64">
           <input
             id="bead-search"
             aria-label="Search"

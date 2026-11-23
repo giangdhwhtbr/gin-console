@@ -28,7 +28,10 @@ export function FilterChip({
   const chosen = values.length > 0;
   const name = chosen ? `${label} ${text}` : loading ? `${label}…` : label;
   return (
-    <span className={cn("inline-flex h-8 min-w-0 shrink items-center rounded-md border text-13", chosen ? "border-identity/45 bg-identity-wash" : "shrink-0 bg-background")}>
+    <span
+      style={chosen ? { minWidth: `calc(${label.length}ch + 4rem)` } : undefined}
+      className={cn("inline-flex h-8 min-w-0 shrink items-center rounded-md border text-13", chosen ? "border-identity/45 bg-identity-wash" : "shrink-0 bg-background")}
+    >
       <Popover.Root>
         <Popover.Trigger
           aria-label={name}

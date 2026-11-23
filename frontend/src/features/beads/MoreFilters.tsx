@@ -37,7 +37,7 @@ export function MoreFilters({ filters, options, context, onChange }: { filters: 
   };
   return (
     <Popover.Root>
-      <Popover.Trigger aria-label={count > 0 ? `More filters ${count}` : "More filters"} className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2.5 text-13 font-medium hover:bg-muted/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+      <Popover.Trigger aria-label={count > 0 ? `More filters ${count}` : "More filters"} className="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md border bg-background px-2 text-13 font-medium hover:bg-muted/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-ring">
         <span>More filters</span>
         {count > 0 && <span className={COUNT_PILL}>{count}</span>}
         <ChevronDown aria-hidden className="size-3.5 opacity-60" />
