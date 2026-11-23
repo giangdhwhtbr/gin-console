@@ -87,6 +87,14 @@ describe("BeadFilterBar", () => {
     expect(onChange).toHaveBeenCalledWith(parseFilters("?project=example&closed=1&view=board&select=ex-e3"));
   });
 
+  it("REQ-UI-142 Clear filters sits with the count and Show closed; the search keeps 8rem", () => {
+    bar("?project=example&status=open");
+    const clear = screen.getByRole("button", { name: "Clear filters" });
+    const show = screen.getByRole("switch", { name: "Show closed" });
+    expect(clear.parentElement).toBe(show.closest("label")?.parentElement);
+    expect(screen.getByRole("searchbox", { name: "Search" }).parentElement).toHaveClass("md:min-w-32");
+  });
+
   it("REQ-UI-144 Remove one filter", async () => {
     const { onChange } = bar("?status=open&assignee=alice");
     await userEvent.click(screen.getByRole("button", { name: "Remove Status filter" }));

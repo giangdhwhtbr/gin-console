@@ -61,7 +61,7 @@ export function BeadFilterBar({
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <div className="flex min-w-0 basis-full items-center gap-2 md:basis-auto md:flex-auto md:flex-wrap lg:flex-nowrap">
-        <div className="relative min-w-40 flex-1 md:min-w-16 md:max-w-64">
+        <div className="relative min-w-40 flex-1 md:min-w-32 md:max-w-64">
           <input
             id="bead-search"
             aria-label="Search"
@@ -82,14 +82,14 @@ export function BeadFilterBar({
         <div className="hidden min-w-0 items-center gap-2 md:flex md:flex-wrap lg:flex-nowrap">
           {FILTER_DEFS.filter((def) => def.place === "bar" && !(def.key === "milestone" && context.fixedMilestone)).map(chip)}
           <MoreFilters filters={filters} options={options} context={context} onChange={set} />
-          {active && (
-            <Button variant="ghost" size="sm" className="h-8 shrink-0" onClick={clear}>
-              Clear filters
-            </Button>
-          )}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-3 text-sm">
+        {active && (
+          <Button variant="ghost" size="sm" className="hidden h-8 shrink-0 md:inline-flex" onClick={clear}>
+            Clear filters
+          </Button>
+        )}
         {count !== null && <span className="text-muted-foreground">{count}</span>}
         <label className="flex cursor-pointer select-none items-center gap-1.5 text-13">
           <input type="checkbox" role="switch" checked={filters.closed} onChange={(event) => set({ closed: event.target.checked })} />
