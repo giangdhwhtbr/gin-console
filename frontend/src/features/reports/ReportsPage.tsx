@@ -1,7 +1,7 @@
 import { TriangleAlert } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { rememberOrigin } from "@/app/origin";
-import { isUnknownProject, projectHref, rememberProject, resolveProject } from "@/app/project";
+import { isUnknownProject, projectHref, resolveProject } from "@/app/project";
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
@@ -19,7 +19,6 @@ import { DeliverySection } from "./DeliverySection";
 import { Figures } from "./Figures";
 import { figures, headlines, teamHeadline, velocityHeadline, type Headline } from "./headlines";
 import { QualitySection } from "./QualitySection";
-import { ReportErrors } from "./ReportErrors";
 import { TeamSection } from "./team/TeamSection";
 import { fetchTeam, selectedMilestone, type TeamReport } from "./teamApi";
 import { clearSections, publishSections } from "./sectionStore";
@@ -65,18 +64,18 @@ export function ReportsPage() {
   }, []);
 
   const names = projects.status === "ok" ? projects.names : [];
-  // REQ-UI-088: `all` is a choice of its own, not the current project
+  // REQ-UI-088: the project is the current one; an old link for all projects resolves like a link without a project
   const unknown = projects.status === "ok" && isUnknownProject(filters.project, names);
-  const selected = filters.project === "all" ? "all" : projects.status === "ok" && !unknown ? resolveProject(filters.project, names) : "";
+  const selected = projects.status === "ok" && !unknown ? resolveProject(filters.project, names) : "";
   const { days, sprint, tab } = filters;
-  usePageTitle(`Reports · ${LABELS[tab]}`, selected === "all" ? null : selected);
-  // REQ-UI-073: the place the breadcrumb of a bead page returns to; "All projects" fits any project
+  usePageTitle(`Reports · ${LABELS[tab]}`, selected);
+  // REQ-UI-073: the place the breadcrumb of a bead page returns to
   useEffect(() => {
-    if (selected !== "") rememberOrigin("reports", "/reports", reportSearch({ ...parseReportSearch(search), project: selected }), selected === "all" ? null : selected);
+    if (selected !== "") rememberOrigin("reports", "/reports", reportSearch({ ...parseReportSearch(search), project: selected }), selected);
   }, [selected, search]);
-  // the URL says which project is shown, when it was left out
+  // the URL says which project is shown, when it was left out or was the retired `all`
   useEffect(() => {
-    if (selected !== "" && filters.project === "" && window.location.pathname === "/reports") {
+    if (selected !== "" && selected !== filters.project && window.location.pathname === "/reports") {
       navigate(`/reports${reportSearch({ ...parseReportSearch(window.location.search), project: selected })}`, { replace: true });
     }
   }, [selected, filters.project]);
@@ -95,10 +94,9 @@ export function ReportsPage() {
     (settledTeam.requested === milestone ||
       (settledTeam.requested === "" && settledTeam.value.status === "ok" && settledTeam.value.report.milestone === milestone));
   const team: LoadedTeam = settledTeam !== null && teamCurrent ? settledTeam.value : { status: "loading" };
-  const teamWanted = selected !== "" && selected !== "all";
 
   useEffect(() => {
-    if (!teamWanted || teamCurrent) return;
+    if (selected === "" || teamCurrent) return;
     let live = true;
     fetchTeam(selected, milestone).then(
       (report) => {
@@ -111,12 +109,12 @@ export function ReportsPage() {
     return () => {
       live = false;
     };
-  }, [selected, milestone, teamBase, teamWanted, teamCurrent]);
+  }, [selected, milestone, teamBase, teamCurrent]);
 
   // REQ-UI-095: the Milestones list of a single project is asked for once, whatever the tab; the page reloads it on Refresh
   const listed = lists.has(selected);
   useEffect(() => {
-    if (!teamWanted || listed) return;
+    if (selected === "" || listed) return;
     let live = true;
     const settle = (answer: MilestoneList | MilestonesError) => {
       if (live) setLists((prev) => new Map(prev).set(selected, answer));
@@ -125,23 +123,14 @@ export function ReportsPage() {
     return () => {
       live = false;
     };
-  }, [selected, teamWanted, listed]);
+  }, [selected, listed]);
   const answer = lists.get(selected);
   const list = answer === undefined || answer instanceof MilestonesError ? null : answer;
-  const { loadedLists, failedLists } = useMemo(() => {
-    const ok = new Map<string, MilestoneList>();
-    const failed = new Map<string, MilestonesError>();
-    lists.forEach((value, name) => {
-      if (value instanceof MilestonesError) failed.set(name, value);
-      else ok.set(name, value);
-    });
-    return { loadedLists: ok, failedLists: failed };
-  }, [lists]);
-  // Retry forgets the failure; for a single project the effect above then asks again, for All the block asks itself
-  const retryList = (name: string) =>
+  // Retry forgets the failure; the effect above then asks again
+  const retryList = () =>
     setLists((prev) => {
       const next = new Map(prev);
-      next.delete(name);
+      next.delete(selected);
       return next;
     });
 
@@ -177,7 +166,7 @@ export function ReportsPage() {
   }, [selected, days, sprint, key]);
 
   const headlineFor = (value: ReportTab): Headline | null => {
-    if (value === "velocity") return selected === "all" || list === null ? null : velocityHeadline(list.days_per_point);
+    if (value === "velocity") return list === null ? null : velocityHeadline(list.days_per_point);
     if (value === "team") return teamReport === null ? null : teamHeadline(teamReport, finish);
     return loaded.status === "ok" ? headlines(loaded.report)[value] : null;
   };
@@ -213,27 +202,6 @@ export function ReportsPage() {
             </p>
           )}
         </div>
-        {selected !== "" && (
-          <label className="flex min-w-0 max-w-full items-center gap-2 text-sm text-muted-foreground">
-            Project
-            <select
-              aria-label="Project"
-              value={selected}
-              onChange={(event) => {
-                if (event.target.value !== "all") rememberProject(event.target.value);
-                change({ ...filters, project: event.target.value });
-              }}
-              className="min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm"
-            >
-              <option value="all">All projects</option>
-              {names.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
       </div>
       {projects.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}
       {projects.status === "error" && (
@@ -246,7 +214,6 @@ export function ReportsPage() {
       {unknown && <UnknownProject name={filters.project} names={names} hrefOf={(name) => projectHref("/reports", name)} />}
       {selected !== "" && (
         <>
-          {loaded.status === "ok" && <ReportErrors errors={loaded.report.errors} />}
           <div className="lg:group-data-[sidebar=expanded]/shell:hidden">
             <TabStrip>
               <Tabs
@@ -264,9 +231,8 @@ export function ReportsPage() {
           <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex flex-col gap-6">
             {tab === "team" ? (
               <>
-                {selected === "all" && <p className="text-muted-foreground">Pick a project to see its team</p>}
-                {teamWanted && team.status === "loading" && <p className="text-muted-foreground">Loading team…</p>}
-                {teamWanted && team.status === "error" && (
+                {team.status === "loading" && <p className="text-muted-foreground">Loading team…</p>}
+                {team.status === "error" && (
                   <Alert variant="destructive">
                     <AlertTitle>The team report could not be loaded</AlertTitle>
                     <AlertDescription>{team.message}</AlertDescription>
@@ -278,10 +244,10 @@ export function ReportsPage() {
                 {teamReport !== null && <TeamSection project={selected} report={teamReport} filters={filters} finish={finish} onChange={change} />}
               </>
             ) : tab === "velocity" ? (
-              selected !== "all" && !listed ? (
+              answer === undefined ? (
                 <p className="text-muted-foreground">Loading velocity…</p>
               ) : (
-                <VelocityTab projects={selected === "all" ? names : [selected]} loaded={loadedLists} failed={failedLists} onRetry={retryList} />
+                <VelocityTab answer={answer} onRetry={retryList} />
               )
             ) : (
               <>

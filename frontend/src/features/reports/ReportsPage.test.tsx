@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rememberProject, resolveProject, setFavorite } from "@/app/project";
+import { rememberProject, setFavorite } from "@/app/project";
 import { clearOrigin, getOrigin } from "@/app/origin";
 import { navigate } from "@/app/route";
 import type { Report } from "./api";
@@ -61,25 +61,26 @@ describe("ReportsPage", () => {
     expect(getOrigin().search).toContain("project=alpha");
   });
 
-  it("REQ-UI-073 Reports with all projects is remembered for any project", async () => {
-    clearOrigin();
-    window.history.replaceState(null, "", "/reports?project=all&tab=delivery");
-    stub();
+  it("REQ-UI-088 opens a shared link", async () => {
+    window.history.replaceState(null, "", "/reports?project=alpha&days=7&tab=delivery");
+    const mock = stub();
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
-    expect(getOrigin()).toMatchObject({ kind: "reports", path: "/reports", project: null });
-    expect(getOrigin().search).toContain("project=all");
+    expect(screen.queryByLabelText("Project")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "7 days" })).toHaveAttribute("aria-pressed", "true");
+    expect(requested(mock)).toContain("/api/reports?project=alpha&days=7");
   });
 
-  it("REQ-UI-088 opens a shared link", async () => {
+  it("REQ-UI-088 Old link for all projects is rewritten to the current project", async () => {
+    rememberProject("beta");
     window.history.replaceState(null, "", "/reports?project=all&days=7&tab=delivery");
     const mock = stub();
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
-    expect(screen.getByLabelText("Project")).toHaveValue("all");
-    expect(screen.getByRole("option", { name: "All projects" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "7 days" })).toHaveAttribute("aria-pressed", "true");
-    expect(requested(mock)).toContain("/api/reports?project=all&days=7");
+    expect(requested(mock)).toContain("/api/reports?project=beta&days=7");
+    expect(requested(mock).some((u) => u.includes("project=all"))).toBe(false);
+    expect(window.location.search).toBe("?project=beta&days=7&tab=delivery");
+    expect(screen.queryByText(/No project all/)).not.toBeInTheDocument();
   });
 
   it("REQ-UI-088 the current project beats the first one when the URL has none", async () => {
@@ -89,17 +90,6 @@ describe("ReportsPage", () => {
     render(<ReportsPage />);
     await screen.findByText("Beads closed");
     expect(requested(mock)).toContain("/api/reports?project=beta&days=30");
-  });
-
-  it("REQ-UI-088 choosing a single project makes it current, choosing All does not", async () => {
-    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
-    stub();
-    render(<ReportsPage />);
-    await screen.findByText("Beads closed");
-    await userEvent.selectOptions(screen.getByLabelText("Project"), "beta");
-    expect(resolveProject("", ["alpha", "beta"])).toBe("beta");
-    await userEvent.selectOptions(screen.getByLabelText("Project"), "all");
-    expect(resolveProject("", ["alpha", "beta"])).toBe("beta");
   });
 
   it("REQ-UI-126 an unknown project gets a notice and no report request", async () => {
@@ -246,19 +236,6 @@ describe("ReportsPage", () => {
     expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toEqual(["/api/milestones?project=alpha"]);
   });
 
-  it("REQ-UI-095 All projects on Velocity asks for the projects not yet loaded only", async () => {
-    window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
-    const mock = stub();
-    render(<ReportsPage />);
-    await screen.findByText("Beads closed");
-    await vi.waitFor(() => expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toHaveLength(1));
-    await userEvent.selectOptions(screen.getByLabelText("Project"), "all");
-    await userEvent.click(screen.getByRole("tab", { name: /^Velocity/ }));
-    await screen.findByRole("heading", { name: "beta" });
-    await vi.waitFor(() => expect(requested(mock).filter((u) => u.startsWith("/api/milestones"))).toHaveLength(2));
-    expect(requested(mock).filter((u) => u.startsWith("/api/milestones")).sort()).toEqual(["/api/milestones?project=alpha", "/api/milestones?project=beta"]);
-  });
-
   it("REQ-UI-095 late milestone headline: the forecast of the selected milestone, with a warning icon", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
     stub(
@@ -366,26 +343,12 @@ describe("ReportsPage", () => {
     expect(reportCalls(mock)).toHaveLength(2);
   });
 
-  it("REQ-UI-093 warns about a partial failure and still shows the figures", async () => {
-    window.history.replaceState(null, "", "/reports?tab=delivery");
-    stub(() => json(report({ errors: [{ project: "beta", error: "bd failed" }] })));
-    render(<ReportsPage />);
-    expect((await screen.findAllByText(/beta: bd failed/)).length).toBeGreaterThan(0);
-    expect(screen.getByText("Some projects could not be read")).toBeInTheDocument();
-    expect(screen.getByText("Beads closed")).toBeInTheDocument();
-  });
-
-  it("REQ-UI-093 the warning sits above the tabs and stays when the user picks another tab", async () => {
+  it("REQ-UI-093 a report answer without errors shows the figures and no warning", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
-    stub(() => json(report({ errors: [{ project: "beta", error: "bd failed" }] })));
+    stub();
     render(<ReportsPage />);
-    const warning = await screen.findByText("Some projects could not be read");
-    const list = screen.getByRole("tablist", { name: "Report" });
-    expect(warning.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    for (const name of [/^Quality/, /^Velocity/, /^Team/]) {
-      await userEvent.click(screen.getByRole("tab", { name }));
-      expect(screen.getByText("beta: bd failed")).toBeInTheDocument();
-    }
+    expect(await screen.findByText("Beads closed")).toBeInTheDocument();
+    expect(screen.queryByText("Some projects could not be read")).not.toBeInTheDocument();
   });
 
   it("REQ-UI-095 a retired tab link selects Team", async () => {
@@ -461,14 +424,6 @@ describe("ReportsPage", () => {
     expect(teamCalls(mock)).toEqual(["/api/reports/team?project=alpha"]);
   });
 
-  it("REQ-UI-095 requests no team report for all projects", async () => {
-    window.history.replaceState(null, "", "/reports?project=all&tab=delivery");
-    const mock = stub();
-    render(<ReportsPage />);
-    await screen.findByText("Beads closed");
-    expect(teamCalls(mock)).toHaveLength(0);
-  });
-
   it("REQ-REPORTS-012 opens a shared link", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=team&milestone=m1&member=ann&status=closed");
     const mock = stub(undefined, () => json(teamFixture({ milestone: "m1" })));
@@ -479,11 +434,11 @@ describe("ReportsPage", () => {
     expect(screen.getByLabelText("Member")).toHaveValue("ann");
   });
 
-  it("REQ-REPORTS-012 long options on a phone: the Project, Milestone and Member selects are capped to their row", async () => {
+  it("REQ-REPORTS-012 long options on a phone: the Milestone and Member selects are capped to their row", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=team&milestone=m1");
     stub(undefined, () => json(teamFixture({ milestone: "m1" })));
     render(<ReportsPage />);
-    for (const name of ["Project", "Milestone", "Member"]) {
+    for (const name of ["Milestone", "Member"]) {
       const select = await screen.findByLabelText(name);
       expect(select).toHaveClass("max-w-full", "min-w-0");
       expect(select.closest("label")).toHaveClass("max-w-full", "min-w-0");
@@ -519,14 +474,6 @@ describe("ReportsPage", () => {
     expect(window.location.search).toBe("?project=alpha&days=30&tab=team&milestone=m1");
   });
 
-  it("REQ-UI-095 no Team headline while All projects is selected", async () => {
-    window.history.replaceState(null, "", "/reports?project=all&tab=delivery");
-    stub();
-    render(<ReportsPage />);
-    await screen.findByText("Beads closed");
-    expect(screen.getByRole("tab", { name: "Team" })).toBeInTheDocument();
-  });
-
   it("REQ-REPORTS-012 leaves the milestone out of the URL on other tabs", async () => {
     window.history.replaceState(null, "", "/reports?project=alpha&tab=delivery");
     stub();
@@ -542,14 +489,6 @@ describe("ReportsPage", () => {
     await screen.findByLabelText("Milestone");
     await vi.waitFor(() => expect(window.location.search).not.toContain("member"));
     expect(screen.getByLabelText("Member")).toHaveValue("");
-  });
-
-  it("REQ-REPORTS-017 asks for a project when all projects are selected", async () => {
-    window.history.replaceState(null, "", "/reports?project=all&tab=team");
-    const mock = stub();
-    render(<ReportsPage />);
-    expect(await screen.findByText("Pick a project to see its team")).toBeInTheDocument();
-    expect(teamCalls(mock)).toHaveLength(0);
   });
 
   it("REQ-REPORTS-017 shows a failure and retries", async () => {

@@ -16,7 +16,6 @@ export type DeliverySection = {
 export type MemberQuality = { member: string; closed: number; reopens: number; bugs: number; rework_rate: number | null };
 export type EpicQuality = { project: string; id: string; title: string; closed: number; reopens: number; bugs: number; rework_rate: number | null };
 export type QualitySection = { members: MemberQuality[]; epics: EpicQuality[] };
-export type ProjectError = { project: string; error: string };
 export type Report = {
   generated_at: string;
   project: string;
@@ -25,7 +24,6 @@ export type Report = {
   totals: Totals;
   delivery: DeliverySection;
   quality: QualitySection;
-  errors: ProjectError[];
 };
 
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
@@ -56,7 +54,6 @@ function isReport(value: unknown): value is Report {
   const rate = field(totals, "rework_rate");
   if (!isRate(rate)) return false;
   return (
-    Array.isArray(field(value, "errors")) &&
     Object.entries(ARRAYS).every(([section, keys]) => {
       const body = field(value, section);
       return isObject(body) && keys.every((key) => Array.isArray(field(body, key)));
