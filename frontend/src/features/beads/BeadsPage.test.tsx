@@ -4,12 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearEmail, setEmail } from "@/app/identity";
 import { HintProvider } from "@/components/HintProvider";
 import { rememberProject, resolveProject, setFavorite } from "@/app/project";
-import { getOrigin } from "@/app/origin";
+import { getOrigin, RETURN_KEY } from "@/app/origin";
 import { navigate } from "@/app/route";
 import type { ProjectBeads } from "@/features/projects/api";
 import { formatDate } from "@/lib/dates";
 import type { BeadSummary, ProjectMilestones } from "./api";
 import { BeadsPage } from "./BeadsPage";
+
+const getOriginFrom = (text: string): { project: string | null; milestone: { inEffect: string; byDefault: string } | null } =>
+  JSON.parse(text) as { project: string | null; milestone: { inEffect: string; byDefault: string } | null };
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -809,6 +812,23 @@ describe("BeadsPage", () => {
       render(<BeadsPage />);
       await screen.findByText("Epic loose");
       await waitFor(() => expect(getOrigin().milestone).toEqual({ inEffect: "all", byDefault: "m2" }));
+    });
+
+    it("REQ-UI-072 another project's milestone never goes with the remembered place of this one", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&milestone=all");
+      stub(
+        () => json(all),
+        defaultProjects,
+        (url) => (url.searchParams.get("project") === "omega" ? new Promise<Response>(() => undefined) : json(milestones("m2"))),
+      );
+      render(<BeadsPage />);
+      await screen.findByText("Epic loose");
+      await waitFor(() => expect(getOrigin().milestone).toEqual({ inEffect: "all", byDefault: "m2" }));
+      const setItem = vi.spyOn(Storage.prototype, "setItem");
+      act(() => navigate("/beads?project=omega&milestone=all"));
+      await waitFor(() => expect(getOrigin().project).toBe("omega"));
+      const saved = setItem.mock.calls.filter(([key]) => key === RETURN_KEY).map(([, value]) => getOriginFrom(value));
+      expect(saved.filter((origin) => origin.project === "omega" && origin.milestone?.byDefault === "m2")).toEqual([]);
     });
 
     it("REQ-UI-104 defaults to the current milestone", async () => {

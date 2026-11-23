@@ -20,6 +20,7 @@ type Projects =
 export function BeadsPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
   const [milestone, setMilestone] = useState<OriginMilestone | null>(null);
+  const [milestoneProject, setMilestoneProject] = useState("");
   const { search } = useLocation();
   const filters = parseFilters(search);
 
@@ -46,6 +47,11 @@ export function BeadsPage() {
   const unknown = projects.status === "ok" && isUnknownProject(filters.project, names);
   const selected = projects.status === "ok" && !unknown ? resolveProject(filters.project, names) : "";
   usePageTitle("Beads", selected);
+
+  if (milestoneProject !== selected) {
+    setMilestoneProject(selected);
+    setMilestone(null); // REQ-UI-072: another project's milestone never goes with this place
+  }
 
   // REQ-UI-124: the project shown is the current one, and the URL says which it is
   useEffect(() => {
