@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearEmail, setEmail } from "@/app/identity";
 import { HintProvider } from "@/components/HintProvider";
 import { rememberProject, resolveProject, setFavorite } from "@/app/project";
+import { getOrigin } from "@/app/origin";
 import { navigate } from "@/app/route";
 import type { ProjectBeads } from "@/features/projects/api";
 import { formatDate } from "@/lib/dates";
@@ -801,6 +802,14 @@ describe("BeadsPage", () => {
     ];
     const withMilestones = (current: string | null, beadsHandler: (url: URL) => Response = () => json(all)) =>
       stub(beadsHandler, defaultProjects, () => json(milestones(current)));
+
+    it("REQ-UI-072 the remembered Beads place carries the milestone in effect and the current one", async () => {
+      window.history.replaceState(null, "", "/beads?project=alpha&milestone=all");
+      withMilestones("m2");
+      render(<BeadsPage />);
+      await screen.findByText("Epic loose");
+      await waitFor(() => expect(getOrigin().milestone).toEqual({ inEffect: "all", byDefault: "m2" }));
+    });
 
     it("REQ-UI-104 defaults to the current milestone", async () => {
       withMilestones("m2");

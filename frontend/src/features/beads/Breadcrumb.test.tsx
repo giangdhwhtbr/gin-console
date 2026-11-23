@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Breadcrumb } from "./Breadcrumb";
-import { RETURN_KEY, clearOrigin, rememberOrigin } from "@/app/origin";
+import { RETURN_KEY, clearOrigin, rememberOrigin, type OriginMilestone } from "@/app/origin";
 
 beforeEach(() => clearOrigin());
 afterEach(cleanup);
@@ -140,10 +140,36 @@ describe("Breadcrumb", () => {
     expect(crumb().getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=b");
   });
 
-  it("REQ-UI-072 counts Show closed as a filter and says one filter in the singular", () => {
-    rememberSearch("?project=a&view=list&closed=1");
+  const rememberBeads = (search: string, milestone: OriginMilestone) => rememberOrigin("beads", "/beads", search, "a", null, milestone);
+
+  it("REQ-UI-072 Show closed and the milestone: Show closed is not counted, a milestone other than the current one is", () => {
+    rememberBeads("?project=a&view=list&closed=1&milestone=all&kind=technical", { inEffect: "all", byDefault: "m2" });
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads › List, 2 filters" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-072 one filter in the singular, Show closed left out", () => {
+    rememberSearch("?project=a&view=list&closed=1&status=open");
     render(<Breadcrumb project="a" id="a-1" parent={null} />);
     expect(crumb().getByRole("link", { name: "Beads › List, 1 filter" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-072 REQ-UI-143 the current milestone named in the URL is not a filter", () => {
+    rememberBeads("?project=a&milestone=m2", { inEffect: "m2", byDefault: "m2" });
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads › List" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-072 a Beads place remembered without its milestone counts no milestone", () => {
+    rememberSearch("?project=a&milestone=all");
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads › List" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-072 the Lanes view is named Lanes", () => {
+    rememberSearch("?project=a&view=lanes&scope=e-1");
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads › Lanes" })).toBeInTheDocument();
   });
 
   it("REQ-UI-072 counts assignee and sprint in active filters", () => {

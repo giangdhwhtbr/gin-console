@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, isStale, pullError, pullOf, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
-import { rememberOrigin } from "@/app/origin";
+import { rememberOrigin, type OriginMilestone } from "@/app/origin";
 import { PullNote, type PullFailure } from "./PullNote";
 import { StaleNote } from "./StaleNote";
 
@@ -19,6 +19,7 @@ type Projects =
 
 export function BeadsPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
+  const [milestone, setMilestone] = useState<OriginMilestone | null>(null);
   const { search } = useLocation();
   const filters = parseFilters(search);
 
@@ -55,8 +56,8 @@ export function BeadsPage() {
 
   // the place the breadcrumb of a bead page returns to; the project is always in it, even when it is the default one
   useEffect(() => {
-    if (selected !== "") rememberOrigin("beads", "/beads", filtersToSearch({ ...parseFilters(search), project: selected }), selected);
-  }, [search, selected]);
+    if (selected !== "") rememberOrigin("beads", "/beads", filtersToSearch({ ...parseFilters(search), project: selected }), selected, null, milestone);
+  }, [search, selected, milestone]);
 
   return (
     <section className="flex flex-col gap-4">
@@ -79,7 +80,7 @@ export function BeadsPage() {
         <>
           <StaleNote projects={stale.includes(selected) ? [selected] : []} />
           <PullNote failures={pullFailures.filter((failure) => failure.project === selected)} />
-          <BeadsView key={selected} project={selected} filters={filters} onChange={change} />
+          <BeadsView key={selected} project={selected} filters={filters} onChange={change} onMilestone={setMilestone} />
         </>
       )}
     </section>

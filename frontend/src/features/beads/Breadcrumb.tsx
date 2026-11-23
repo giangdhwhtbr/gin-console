@@ -1,27 +1,10 @@
 import { Link } from "@/app/Link";
-import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
+import { activeFilters, type FilterContext } from "./filterDefs";
+import { filtersToSearch, parseFilters, VIEW_TITLES, type BeadFilters } from "./filters";
 import { originFor, useOrigin, type Origin } from "@/app/origin";
 import { cn } from "@/lib/utils";
 
-const VIEW_NAME: Record<string, string> = { list: "List", board: "Board", focus: "Focus", graph: "Graph" };
 const enc = encodeURIComponent;
-
-/** How many of the search, the status, priority, label, type, kind, capability, assignee and sprint filters and "Show closed" are on. */
-export function activeFilters(filters: BeadFilters): number {
-  const set = [
-    filters.q.trim() !== "",
-    filters.status.length > 0,
-    filters.priority.length > 0,
-    filters.label.length > 0,
-    filters.type !== "",
-    filters.kind !== "",
-    filters.capability.length > 0,
-    filters.assignee.length > 0,
-    filters.sprint !== "",
-    filters.closed,
-  ];
-  return set.filter(Boolean).length;
-}
 
 /** The milestone id of a remembered milestone path (/milestones/<project>/<id>). */
 function milestoneId(path: string): string {
@@ -33,8 +16,17 @@ function milestoneId(path: string): string {
   }
 }
 
-const viewAndFilters = (filters: BeadFilters): string =>
-  `${VIEW_NAME[filters.view] ?? "List"}${activeFilters(filters) > 0 ? `, ${activeFilters(filters)} filter${activeFilters(filters) === 1 ? "" : "s"}` : ""}`;
+/** A milestone page fixes its milestone; a Beads place counts its milestone as its page saw it, and none when it was not told (REQ-UI-072, REQ-UI-143). */
+function contextOf(origin: Origin): FilterContext {
+  return origin.kind === "beads" && origin.milestone !== null
+    ? { fixedMilestone: false, milestone: origin.milestone.inEffect, byDefault: origin.milestone.byDefault }
+    : { fixedMilestone: true, milestone: "all", byDefault: "all" };
+}
+
+const viewAndFilters = (filters: BeadFilters, context: FilterContext): string => {
+  const count = activeFilters(filters, context);
+  return `${VIEW_TITLES[filters.view]}${count > 0 ? `, ${count} filter${count === 1 ? "" : "s"}` : ""}`;
+};
 
 /** The first link: where the bead was opened from when that fits its project, else the project's Beads page. */
 function firstLink(project: string, origin: Origin | null): { to: string; label: string } {
@@ -42,12 +34,12 @@ function firstLink(project: string, origin: Origin | null): { to: string; label:
   switch (origin.kind) {
     case "beads": {
       const filters = parseFilters(origin.search);
-      return { to: `/beads${filtersToSearch(filters)}`, label: `Beads › ${viewAndFilters(filters)}` };
+      return { to: `/beads${filtersToSearch(filters)}`, label: `Beads › ${viewAndFilters(filters, contextOf(origin))}` };
     }
     case "milestone": {
       const name = origin.label ?? milestoneId(origin.path);
       const tab = new URLSearchParams(origin.search).get("tab");
-      return { to: origin.path + origin.search, label: tab === "beads" ? `${name} › ${viewAndFilters(parseFilters(origin.search))}` : name };
+      return { to: origin.path + origin.search, label: tab === "beads" ? `${name} › ${viewAndFilters(parseFilters(origin.search), contextOf(origin))}` : name };
     }
     case "my-tasks":
       return { to: origin.path + origin.search, label: "My Tasks" };

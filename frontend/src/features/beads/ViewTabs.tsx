@@ -1,7 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { VIEWS, type BeadFilters } from "./filters";
-
-const TITLES = { list: "List", board: "Board", focus: "Focus", graph: "Graph", lanes: "Lanes" } as const;
+import { VIEW_TITLES, VIEWS, type BeadFilters } from "./filters";
 
 /** `lanes`: the scope has tracks with lanes, so the Lanes tab is offered (REQ-UI-111). */
 export function ViewTabs({ filters, lanes, onChange }: { filters: BeadFilters; lanes: boolean; onChange: (next: BeadFilters) => void }) {
@@ -15,7 +13,7 @@ export function ViewTabs({ filters, lanes, onChange }: { filters: BeadFilters; l
           aria-pressed={filters.view === view}
           onClick={() => onChange({ ...filters, view, select: filters.select === "none" ? "" : filters.select })}
         >
-          {TITLES[view]}
+          {VIEW_TITLES[view]}
         </Button>
       ))}
     </nav>

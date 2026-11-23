@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearOrigin, getOrigin, originFor, RETURN_KEY, rememberOpen, rememberOrigin, type Origin } from "@/app/origin";
 
-const EMPTY: Origin = { kind: "beads", path: "/beads", search: "", project: null, label: null, open: {} };
+const EMPTY: Origin = { kind: "beads", path: "/beads", search: "", project: null, label: null, milestone: null, open: {} };
 const remembered = (search: string, project = "a") => rememberOrigin("beads", "/beads", search, project);
 
 beforeEach(() => {
@@ -52,7 +52,7 @@ describe("origin", () => {
 
   it("REQ-UI-073 an old value without a kind reads as a Beads place of the project in its query", () => {
     window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ path: "/beads", search: "?project=b&view=board", open: { b: ["x-1"] } }));
-    expect(getOrigin()).toEqual({ kind: "beads", path: "/beads", search: "?project=b&view=board", project: "b", label: null, open: { b: ["x-1"] } });
+    expect(getOrigin()).toEqual({ kind: "beads", path: "/beads", search: "?project=b&view=board", project: "b", label: null, milestone: null, open: { b: ["x-1"] } });
   });
 
   it("REQ-UI-073 a stored value with a kind keeps its project and label", () => {
@@ -60,7 +60,7 @@ describe("origin", () => {
       RETURN_KEY,
       JSON.stringify({ kind: "milestone", path: "/milestones/a/m2", search: "?tab=beads", project: "a", label: "Checkout v2", open: {} }),
     );
-    expect(getOrigin()).toEqual({ kind: "milestone", path: "/milestones/a/m2", search: "?tab=beads", project: "a", label: "Checkout v2", open: {} });
+    expect(getOrigin()).toEqual({ kind: "milestone", path: "/milestones/a/m2", search: "?tab=beads", project: "a", label: "Checkout v2", milestone: null, open: {} });
   });
 
   it("REQ-UI-073 the pages replace each other as the place", () => {
@@ -118,5 +118,17 @@ describe("origin", () => {
       expect(originFor("a", EMPTY)).toBeNull();
       for (const kind of ["beads", "milestone", "my-tasks", "reports"] as const) expect(originFor("a", at(kind, null))).toBeNull();
     });
+  });
+
+  it("REQ-UI-072 a Beads place keeps the milestone its page had in effect; another place has none", () => {
+    rememberOrigin("beads", "/beads", "?project=a&milestone=all", "a", null, { inEffect: "all", byDefault: "m2" });
+    expect(getOrigin().milestone).toEqual({ inEffect: "all", byDefault: "m2" });
+    rememberOrigin("my-tasks", "/my-tasks", "?project=a", "a");
+    expect(getOrigin().milestone).toBeNull();
+  });
+
+  it("REQ-UI-072 a damaged stored milestone reads as none", () => {
+    window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ kind: "beads", path: "/beads", search: "?project=a", project: "a", label: null, milestone: { inEffect: 3 }, open: {} }));
+    expect(getOrigin().milestone).toBeNull();
   });
 });

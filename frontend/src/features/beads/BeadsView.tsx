@@ -1,5 +1,6 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { useEmail } from "@/app/identity";
+import type { OriginMilestone } from "@/app/origin";
 import { useRestoreOnBack } from "@/app/route";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export function BeadsView({
   fixedMilestone,
   fixed,
   onChange,
+  onMilestone,
 }: {
   project: string;
   filters: BeadFilters;
@@ -35,6 +37,8 @@ export function BeadsView({
   /** An epic page's Graph or Lanes tab: the view and its scope are fixed, so there are no view tabs, milestone filter or scope trail (REQ-UI-119). */
   fixed?: { view: "graph" | "lanes"; scope: string };
   onChange: (next: BeadFilters) => void;
+  /** The Beads page remembers the milestone in effect with its place (REQ-UI-072). */
+  onMilestone?: (milestone: OriginMilestone) => void;
 }) {
   const fixedView = fixed?.view;
   const fixedScope = fixed?.scope;
@@ -50,6 +54,10 @@ export function BeadsView({
   const statuses = useMemo(() => statusesOf(milestones), [milestones]);
   const milestone = fixedMilestone ?? milestoneInEffect(filters.milestone, milestones);
   const closedMilestone = isClosedMilestone(milestone, milestones);
+  const byDefault = milestoneInEffect("", milestones);
+  useEffect(() => {
+    onMilestone?.({ inEffect: milestone, byDefault });
+  }, [onMilestone, milestone, byDefault]);
   const { state, retry } = useBeads(
     project,
     filters.closed || fixed !== undefined || filters.view === "lanes" || (filters.sprint !== "" && filters.sprint !== "none") || closedMilestone,

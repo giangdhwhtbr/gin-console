@@ -5,9 +5,18 @@ const KINDS = ["beads", "milestone", "my-tasks", "reports"] as const;
 export type OriginKind = (typeof KINDS)[number];
 /** The page a bead was opened from, which the breadcrumb and the navigation of a bead page return to.
  *  `project` is null only for nothing remembered yet. `label` is a milestone's title. */
-export type Origin = { kind: OriginKind; path: string; search: string; project: string | null; label: string | null; open: Record<string, string[]> };
+/** The milestone in effect on a remembered Beads place, and the one in effect without `milestone` in its URL (REQ-UI-072, REQ-UI-143). */
+export type OriginMilestone = { inEffect: string; byDefault: string };
+export type Origin = { kind: OriginKind; path: string; search: string; project: string | null; label: string | null; milestone: OriginMilestone | null; open: Record<string, string[]> };
 
-const empty = (): Origin => ({ kind: "beads", path: "/beads", search: "", project: null, label: null, open: {} }); // a fresh object each time: callers may not share it
+const empty = (): Origin => ({ kind: "beads", path: "/beads", search: "", project: null, label: null, milestone: null, open: {} });
+
+function milestoneOf(value: unknown): OriginMilestone | null {
+  if (typeof value !== "object" || value === null) return null;
+  const inEffect: unknown = Reflect.get(value, "inEffect");
+  const byDefault: unknown = Reflect.get(value, "byDefault");
+  return typeof inEffect === "string" && typeof byDefault === "string" ? { inEffect, byDefault } : null;
+} // a fresh object each time: callers may not share it
 const listeners = new Set<() => void>();
 let memory: string | null = null; // what was set in this visit: wins over storage, which may refuse writes
 
@@ -52,6 +61,7 @@ function parse(text: string): Origin {
       search,
       project: kind === null ? old : typeof project === "string" ? project : null,
       label: typeof label === "string" ? label : null,
+      milestone: milestoneOf(Reflect.get(value, "milestone")),
       open,
     };
   } catch {
@@ -73,10 +83,11 @@ function save(next: Origin): void {
 }
 
 /** The page the breadcrumb and the navigation of a bead page return to. */
-export function rememberOrigin(kind: OriginKind, path: string, search: string, project: string, label: string | null = null): void {
+export function rememberOrigin(kind: OriginKind, path: string, search: string, project: string, label: string | null = null, milestone: OriginMilestone | null = null): void {
   const now = getOrigin();
-  if (now.kind !== kind || now.path !== path || now.search !== search || now.project !== project || now.label !== label) {
-    save({ ...now, kind, path, search, project, label });
+  const sameMilestone = now.milestone?.inEffect === milestone?.inEffect && now.milestone?.byDefault === milestone?.byDefault;
+  if (now.kind !== kind || now.path !== path || now.search !== search || now.project !== project || now.label !== label || !sameMilestone) {
+    save({ ...now, kind, path, search, project, label, milestone });
   }
 }
 

@@ -1,9 +1,9 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { SlidersHorizontal, X } from "lucide-react";
-import { activeFilters } from "./Breadcrumb";
+import { activeFilters } from "./filterDefs";
 import { assigneeLabel, KIND_OPTIONS, type BeadFilters, type BeadOptions } from "./filters";
 import { MilestoneFilter } from "./MilestoneFilter";
-import type { MilestoneInEffect, MilestonesState } from "./milestoneChoice";
+import { milestoneInEffect, type MilestoneInEffect, type MilestonesState } from "./milestoneChoice";
 
 export function MobileFiltersSheet({
   filters,
@@ -22,7 +22,7 @@ export function MobileFiltersSheet({
   onChange: (patch: Partial<BeadFilters>) => void;
   onClear: () => void;
 }) {
-  const activeCount = activeFilters(filters);
+  const activeCount = activeFilters(filters, { fixedMilestone: hideMilestone, milestone, byDefault: milestoneInEffect("", milestones) });
 
   const toggleArrayItem = (list: string[], item: string): string[] => {
     return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];

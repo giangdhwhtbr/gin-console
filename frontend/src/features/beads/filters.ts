@@ -5,6 +5,9 @@ import { matchesMilestone, type MilestoneInEffect } from "./milestoneChoice";
 export const VIEWS = ["list", "board", "focus", "graph", "lanes"] as const;
 export type View = (typeof VIEWS)[number];
 
+/** The name of each view on its tab and in the breadcrumb (REQ-UI-030, REQ-UI-072). */
+export const VIEW_TITLES: Record<View, string> = { list: "List", board: "Board", focus: "Focus", graph: "Graph", lanes: "Lanes" };
+
 export type BeadFilters = {
   project: string;
   q: string;
