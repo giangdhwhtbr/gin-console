@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-REPORTS-001: Report request
-WHEN a client requests `GET /api/reports` with `project` (a configured project name or `all`), `days` (7, 30 or 90, default 30) and optionally `sprint`, the server SHALL read every bead of each selected project from its `bd export` snapshot (REQ-BEADS-012), SHALL select the beads closed in the last `days` days or, when `sprint` is given, the epics labelled `sprint:<sprint>` and their descendants whatever their close date, leaving out merge gates (REQ-BEADS-019) in both cases, SHALL return `totals` (`closed`, the number of selected closed beads, and the `rework_rate` of REQ-REPORTS-005), the Delivery section of REQ-REPORTS-004, the Quality section of REQ-REPORTS-005 and `errors` (REQ-REPORTS-007) together with `generated_at`, and SHALL read no `ai_usage` metadata, SHALL serve the same answer for the same `project`, `days` and `sprint` for 60 seconds without running `bd` again unless `POST /api/refresh` dropped it, SHALL respond 404 when `project` is neither `all` nor configured, and SHALL respond 422 when `days` is another value or `sprint` holds a character outside letters, digits, `.`, `_` and `-`.
+WHEN a client requests `GET /api/reports` with `project` (a configured project name), `days` (7, 30 or 90, default 30) and optionally `sprint`, the server SHALL read every bead of the project from its `bd export` snapshot (REQ-BEADS-012), SHALL select the beads closed in the last `days` days or, when `sprint` is given, the epics labelled `sprint:<sprint>` and their descendants whatever their close date, leaving out merge gates (REQ-BEADS-019) in both cases, SHALL return `totals` (`closed`, the number of selected closed beads, and the `rework_rate` of REQ-REPORTS-005), the Delivery section of REQ-REPORTS-004 and the Quality section of REQ-REPORTS-005 together with `generated_at`, and SHALL read no `ai_usage` metadata, SHALL serve the same answer for the same `project`, `days` and `sprint` for 60 seconds without running `bd` again unless `POST /api/refresh` dropped it, SHALL respond 404 when `project` is not configured, `all` included, and SHALL respond 422 when `days` is another value or `sprint` holds a character outside letters, digits, `.`, `_` and `-`.
 
 #### Scenario: default period
 - GIVEN project `alpha` with beads closed 3, 20 and 40 days ago
@@ -29,8 +29,8 @@ WHEN a client requests `GET /api/reports` with `project` (a configured project n
 
 #### Scenario: bad input
 - GIVEN no project `nope`
-- WHEN a client requests `project=nope`, `days=14` or `sprint=a b`
-- THEN the responses are 404, 422 and 422, and no `bd` command ran
+- WHEN a client requests `project=nope`, `project=all`, `days=14` or `sprint=a b`
+- THEN the responses are 404, 404, 422 and 422, and no `bd` command ran
 
 #### Scenario: no AI usage in the answer
 - GIVEN project `alpha` with a closed task whose metadata still holds an `ai_usage` object
@@ -99,22 +99,12 @@ The report SHALL hold `quality` with `members`, one row per member (the person, 
 - THEN the task counts 0 reopens
 
 ### REQ-REPORTS-007: Failures
-IF `bd` fails in the selected project as in REQ-BEADS-005, THEN the server SHALL respond 502 with an `error`; WHILE `project` is `all`, the server SHALL instead build the report from the projects that answered, list each failed project with its error under `errors`, and respond 502 only when every project failed; and the server SHALL NOT keep a failed answer in the cache.
-
-#### Scenario: one project fails in all
-- GIVEN projects `alpha` and `beta`, and `bd` exits non-zero in `beta`
-- WHEN a client requests `/api/reports?project=all`
-- THEN the response is 200 with `alpha`'s beads and `errors` holding `beta`
+IF `bd` fails in the project as in REQ-BEADS-005, THEN the server SHALL respond 502 with an `error`, and SHALL NOT keep a failed answer in the cache.
 
 #### Scenario: single project fails
 - GIVEN `bd` exits non-zero in `alpha`
 - WHEN a client requests `/api/reports?project=alpha` twice
 - THEN both responses are 502 and `bd` ran twice
-
-#### Scenario: all members merged
-- GIVEN `ann` closed a bead in `alpha` that was reopened once and a bead in `beta`
-- WHEN a client requests `/api/reports?project=all`
-- THEN one Quality member row `ann` holds 2 closed beads and 1 reopen
 
 ### REQ-REPORTS-008: Team report request
 WHEN a client requests `GET /api/reports/team` with `project` (a configured project name) and optionally `milestone` (a bead id), the server SHALL read every bead of the project from its `bd export` snapshot (REQ-BEADS-012) without starting a process, and SHALL return:
@@ -462,17 +452,11 @@ Source: `assets/2026-11-12/mockup/index.html`, `assets/2026-11-12/team-closed.pn
 
 ### REQ-REPORTS-017: Team tab states
 The Team tab SHALL handle these states:
-- WHILE "All projects" is selected, it SHALL show "Pick a project to see its team" and SHALL NOT request the team report.
 - WHEN `milestones` is empty, it SHALL show "<project> has no milestones yet", one sentence on what a milestone is, and the command `gin milestone create` with a copy button.
 - WHILE the team report loads, it SHALL show a loading state.
 - IF the request fails, THEN it SHALL show the error with a Retry button.
 - It SHALL NOT show a late answer for a project or milestone that is no longer selected.
 Source: `assets/2026-11-12/mockup/index.html`
-
-#### Scenario: all projects
-- GIVEN "All projects" is selected
-- WHEN the Team tab is shown
-- THEN it says "Pick a project to see its team" and no request goes to `/api/reports/team`
 
 #### Scenario: no milestones
 - GIVEN the team report of `beta` has no milestones
@@ -500,14 +484,14 @@ Source: `assets/2026-11-12/mockup/index.html`
 - [Review rework](use-cases/review-rework.md)
 
 ### REQ-REPORTS-018: Velocity tab
-WHEN the Velocity tab is selected, the frontend SHALL request `GET /api/milestones?project=<p>` (REQ-MILESTONE-UI-008) for the selected project, unless REQ-UI-095 has already loaded it, or for every configured project when "All projects" is selected, and SHALL show for each project (under the project's name when all are selected):
+WHEN the Velocity tab is selected, the frontend SHALL request `GET /api/milestones?project=<p>` (REQ-MILESTONE-UI-008) for the selected project, unless REQ-UI-095 has already loaded it, and SHALL show:
 - a row of figures: the project's `days_per_point.value` to one decimal as "<x> days per point", with "assumed" when `days_per_point.assumed` is true and "—" when `days_per_point` is `null` or missing; and the commitment met (say/do, whole percent) and accuracy (two decimals) of the milestone with the latest `start` among those whose `velocity.say_do` is not `null`, or "—";
 - for the milestones whose `velocity` has a `committed_points` that is not `null` or a `completed_points` above 0, oldest `start` first:
   - a column chart of `committed_points` and `completed_points` per milestone;
   - a line chart of `days_per_point` and `planned_days_per_point` per milestone, leaving out `null` points;
   - a table with committed, completed and added points, commitment met, days per point, planned days per point and accuracy, "—" for `null`;
 - "No kicked-off milestones with points yet" when no milestone qualifies;
-- the error and cause of a project whose request failed (REQ-MILESTONE-UI-005), with the other projects still shown.
+- the error and cause of the request when it failed (REQ-MILESTONE-UI-005).
 The tab SHALL hold no period or sprint choice, SHALL show nothing per member, and the Reports backend SHALL NOT run `gin` for it.
 
 #### Scenario: Milestones with velocity
@@ -525,10 +509,10 @@ The tab SHALL hold no period or sprint choice, SHALL show nothing per member, an
 - WHEN the Velocity tab is shown
 - THEN it shows "No kicked-off milestones with points yet" and no chart
 
-#### Scenario: All projects with one failing
-- GIVEN projects `alpha` with velocity and `beta` whose `GET /api/milestones?project=beta` answers 502 with `cause: "outdated"`
-- WHEN the user opens `/reports?project=all&tab=velocity`
-- THEN `alpha` shows its figures, charts and table, and `beta` shows the outdated error
+#### Scenario: Milestones request fails
+- GIVEN project `alpha` whose `GET /api/milestones?project=alpha` answers 502 with `cause: "outdated"`
+- WHEN the user opens `/reports?project=alpha&tab=velocity`
+- THEN the tab shows the outdated error and no figures
 
 ### REQ-REPORTS-019: Rework from Beads
 Type: business-rule
@@ -546,8 +530,8 @@ The server SHALL count, for each bead of a report (REQ-REPORTS-001, REQ-REPORTS-
 
 #### Scenario: Missing or broken log
 - GIVEN project `alpha` without `.beads/interactions.jsonl`, and project `beta` whose log holds a line that is not JSON, a line without `extra`, and one reopen of `b-1`
-- WHEN a report of all projects is built
-- THEN the response is 200, every bead of `alpha` has `reopens` 0, and `b-1` has `reopens` 1
+- WHEN a report of `alpha` and a report of `beta` are built
+- THEN both responses are 200, every bead of `alpha` has `reopens` 0, and `b-1` has `reopens` 1
 
 #### Scenario: Read again only on change
 - GIVEN the log of `alpha` was read for a report and has not changed since

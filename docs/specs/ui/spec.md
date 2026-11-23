@@ -4,117 +4,11 @@
 
 ## Requirements
 
-### REQ-UI-001: Projects page
-WHEN the Projects page loads, the frontend SHALL list every project from `/api/projects` with its name and path, and SHALL mark each project whose `exists` is false with a "missing" badge.
-
-#### Scenario: List with a missing project
-- GIVEN `/api/projects` returns one existing and one missing project
-- WHEN the Projects page loads
-- THEN both rows show name and path, and only the missing one shows a "missing" badge
-
-#### Scenario: No projects
-- GIVEN `/api/projects` returns an empty list
-- WHEN the Projects page loads
-- THEN the page says no projects are configured and names the config file
-
-### REQ-UI-002: API error with retry
-IF the request to `/api/projects` fails, THEN the Projects page SHALL show an error message and a retry button that repeats the request.
-
-#### Scenario: Failure then retry
-- GIVEN the first request to `/api/projects` fails and the second succeeds
-- WHEN the user clicks retry
-- THEN the error disappears and the project list is shown
-
-### REQ-UI-003: Workflow state display
-The Projects page SHALL show, for each project with `workflow` data, "Workspace of <n> repos" with a "Show repos" control that lists each repo's path, branch and shape and marks a repo that is frozen or not present, "Team mode on <host>" while team mode is on, an alert listing the `decision` when it is `hold` together with the `warnings` and `remedies`, and "<n> review waiver(s)" with each waiver's task, reason and actor, showing none of them when it is absent or empty; it SHALL NOT show the default workflow's stage and gates.
-
-#### Scenario: Workspace and team
-- GIVEN a project with a workspace of 8 repos, one of them frozen, and team mode on with host `github`
-- WHEN the Projects page loads and the user chooses "Show repos"
-- THEN the card shows "Workspace of 8 repos" and "Team mode on github", then the 8 repos with the frozen one marked
-
-#### Scenario: Health alert
-- GIVEN a project with `decision` `hold`, the warning "event log unreadable" and one review waiver for `t-1`
-- WHEN the Projects page loads
-- THEN the card shows an alert with "hold" and the warning, and "1 review waiver" naming `t-1`
-
-#### Scenario: Plain project
-- GIVEN a project without workspace, team, warnings or waivers and the default workflow at stage `discuss`
-- WHEN the Projects page loads
-- THEN the card shows none of these and no default-workflow stage or gate chips
-
-### REQ-UI-004: Beads summary display
-The Projects page SHALL show, for each project with `beads` data, the counts open, in progress, blocked and ready, the blocked count in the warning color with a warning icon when it is above 0, the count `prep` as "prep <n>" when it is above 0, and the active epics as `id` and `title`, each epic in progress with its `workflow.stage` and, when its `warnings` or `review_waivers` are not empty, a warning mark with their count whose details show on hover and focus, an epic whose `workflow` is an error with "stage unknown" and the error as its details, and a ready epic with "ready", or a "no active epics" note when the list is empty.
-
-#### Scenario: Counts and epics
-- GIVEN a project with the counts 3, 1, 0, 2 and one active epic
-- WHEN the Projects page loads
-- THEN the card shows all four counts and the epic id and title
-
-#### Scenario: Prep count
-- GIVEN a project with the counts 3, 1, 0, 2 and `prep` 2, and a project with `prep` 0
-- WHEN the Projects page loads
-- THEN the first card shows the four counts and "prep 2", and the second card shows no prep count
-
-#### Scenario: Stage per epic
-- GIVEN in_progress epic `e-1` at stage `execute` with one review waiver, and ready epic `e-2`
-- WHEN the Projects page loads
-- THEN `e-1` shows `execute` and a warning mark "1", and `e-2` shows "ready"
-
-#### Scenario: Blocked work stands out
-- GIVEN a project with 19 blocked beads and a project with none
-- WHEN the Projects page loads
-- THEN the first card shows "blocked 19" in the warning color with a warning icon, and the second shows "blocked 0" in the normal color without it
-
-### REQ-UI-005: Project links
-The Projects page SHALL link each project name to that project's Beads page `/beads?project=<name>` inside the console, in the same tab and without an external address, and SHALL link each active epic to the bead page `/beads/<project>/<id>`.
-
-#### Scenario: Project name opens its beads
-- GIVEN a project named `qwikfone`
-- WHEN the Projects page loads
-- THEN the name links to `/beads?project=qwikfone`, without `target` and without an external address
-
-#### Scenario: Name needing encoding
-- GIVEN a project named `a b`
-- WHEN the Projects page loads
-- THEN the name links to `/beads?project=a%20b`
-
-#### Scenario: Epics open the console's bead page
-- GIVEN a project named `scotty` with active epic `scotty-1`
-- WHEN the Projects page loads
-- THEN the epic links to `/beads/scotty/scotty-1` inside the console
-
-### REQ-UI-006: Automatic refresh
-WHILE the page is visible, the Projects page SHALL reload `/api/projects` every 10 seconds without replacing the list by a loading state, and WHILE the page is hidden it SHALL not poll and SHALL reload when it becomes visible; IF a refresh fails, THEN it SHALL keep the last data and show the error with a retry button.
-
-#### Scenario: Silent refresh
-- GIVEN the list is shown and 10 seconds pass
-- WHEN the page reloads the data
-- THEN the list stays on screen and shows the new values
-
-#### Scenario: Hidden tab
-- GIVEN the tab becomes hidden
-- WHEN 10 seconds pass
-- THEN no request is made, and one request is made when the tab becomes visible
-
-#### Scenario: Refresh failure
-- GIVEN the list is shown and the next refresh fails
-- WHEN the failure is received
-- THEN the old list stays visible with an error message and a retry button
-
-### REQ-UI-007: Per-block error display
-IF a project's `workflow` or `beads` is an object with `error`, THEN the Projects page SHALL show that message in place of that block and SHALL still show the other block.
-
-#### Scenario: Beads error
-- GIVEN a project whose `beads` is `{"error": "bd not found"}` and whose `workflow` has data
-- WHEN the Projects page loads
-- THEN the card shows `bd not found` and the workflow stage
-
 ### REQ-UI-022: Beads navigation
-The "Main" navigation SHALL contain a "Beads" link, and the frontend SHALL show the bead list at `/beads` and a bead at `/beads/<project>/<id>` without a full reload, following the browser back and forward buttons, and a route segment that cannot be decoded SHALL show the Projects page.
+The "Main" navigation SHALL contain a "Beads" link, and the frontend SHALL show the bead list at `/beads` and a bead at `/beads/<project>/<id>` without a full reload, following the browser back and forward buttons, and a route segment that cannot be decoded SHALL show the page of REQ-UI-125.
 
 #### Scenario: Open the list
-- GIVEN the Projects page is shown
+- GIVEN the My Tasks page is shown
 - WHEN the user clicks "Beads"
 - THEN the URL is `/beads` and the bead list is shown without a reload
 
@@ -122,6 +16,11 @@ The "Main" navigation SHALL contain a "Beads" link, and the frontend SHALL show 
 - GIVEN the user opened a bead from the list
 - WHEN the user presses back
 - THEN the list is shown with the same filters
+
+#### Scenario: Undecodable segment
+- GIVEN the URL `/beads/%E0%A4%A/a-1`
+- WHEN the page loads
+- THEN the page shows "Page not found"
 
 ### REQ-UI-023: Project choice
 The bead list SHALL show the beads of the current project (REQ-UI-124), kept in the `?project=` query, SHALL NOT show a project select of its own (the switcher of REQ-UI-123 changes the project), and WHEN no project exists SHALL say that no projects are configured.
@@ -823,12 +722,12 @@ The Graph view (REQ-UI-106) SHALL expose the graph to assistive technology with 
 - THEN the highlight changes without a transition
 
 ### REQ-UI-055: Main navigation
-The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Projects (`/`), Beads, My Tasks (`/my-tasks`), Milestones and Reports, in that order, where Beads, Milestones and Reports go to `/beads`, `/milestones` and `/reports` with `?project=<current project>` (REQ-UI-124).
+The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Beads, My Tasks, Milestones and Reports, in that order, going to `/beads`, `/my-tasks`, `/milestones` and `/reports` with `?project=<current project>` (REQ-UI-124), and no link to `/`.
 
-#### Scenario: Five links
+#### Scenario: Four links
 - GIVEN any page is shown and the current project is `a`
 - WHEN the page loads
-- THEN the "Main" navigation holds the links Projects, Beads, My Tasks, Milestones and Reports, one each, going to `/`, `/beads?project=a`, `/my-tasks`, `/milestones?project=a` and `/reports?project=a`
+- THEN the "Main" navigation holds the links Beads, My Tasks, Milestones and Reports, one each, going to `/beads?project=a`, `/my-tasks?project=a`, `/milestones?project=a` and `/reports?project=a`, and no link goes to `/`
 
 ### REQ-UI-056: Responsive navigation
 The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with an icon and a label per link while the window is narrower than 768px, an icon rail with a label under each icon from 768px up to 1023px, and from 1024px a sidebar with an icon and a label per link, or the icon rail while the sidebar is collapsed (REQ-UI-094), and SHALL be the same element in every case.
@@ -854,7 +753,7 @@ The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with 
 - THEN the navigation is a narrow column at the left with the label under each icon
 
 ### REQ-UI-057: Current destination
-The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight: Projects on `/`, Beads on `/beads`, My Tasks on `/my-tasks`, Milestones on `/milestones` and `/milestones/<project>/<id>`, Reports on `/reports`. On a bead page it SHALL mark the link of the page the user opened the bead from in this browser tab (REQ-UI-073: My Tasks, Milestones, Reports or Projects), and Beads when the bead was opened from the Beads page, another bead page, or by its address. It SHALL mark no link on the page of REQ-UI-125 and SHALL mark no other link.
+The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight: Beads on `/beads`, My Tasks on `/my-tasks`, Milestones on `/milestones` and `/milestones/<project>/<id>`, Reports on `/reports`. On a bead page it SHALL mark the link of the page the user opened the bead from in this browser tab (REQ-UI-073: My Tasks, Milestones or Reports), and Beads when the bead was opened from the Beads page, another bead page, or by its address. It SHALL mark no link on the page of REQ-UI-125 and SHALL mark no other link.
 
 #### Scenario: Bead page by address
 - GIVEN the URL `/beads/alpha/a-1` opened in a new tab
@@ -882,7 +781,7 @@ The "Main" navigation SHALL mark the link of the page being shown with `aria-cur
 - THEN the page of REQ-UI-125 is shown and no link has `aria-current="page"`
 
 #### Scenario: Change page
-- GIVEN the Projects page is shown
+- GIVEN the My Tasks page is shown
 - WHEN the user clicks "Reports"
 - THEN only the Reports link has `aria-current="page"`
 
@@ -949,10 +848,10 @@ WHILE the window is 360px wide or wider, no page of the frontend SHALL scroll ho
 - WHEN the page is shown
 - THEN the page itself does not scroll sideways and the table scrolls inside its box
 
-#### Scenario: Long path
-- GIVEN a project with a long directory name on the Projects page
-- WHEN the page is shown at 360px
-- THEN the name wraps or is cut and the page does not scroll sideways
+#### Scenario: Long project name
+- GIVEN a project with a name of 60 characters
+- WHEN any page is shown at 360px
+- THEN the project switcher cuts the name short and the page does not scroll sideways
 
 ### REQ-UI-062: Touch, focus and motion
 On screens narrower than 768px the links and buttons of the navigation and the theme control SHALL be at least 44px high and wide, every interactive element SHALL show a visible focus indicator when reached by keyboard, and the frontend SHALL not run non-essential animation or transitions while the user prefers reduced motion.
@@ -968,7 +867,7 @@ On screens narrower than 768px the links and buttons of the navigation and the t
 - THEN a focus indicator is visible
 
 ### REQ-UI-063: Page title
-The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Projects · gin-console`, `Beads · <project> · gin-console`, `My Tasks · gin-console` (with the project when one is selected), `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console` (without the project while "All projects" is selected), `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
+The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Beads · <project> · gin-console`, `My Tasks · <project> · gin-console`, `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console`, `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
 
 #### Scenario: Bead page
 - GIVEN the bead `a-1` titled "Team checkout" in project `example`
@@ -979,6 +878,11 @@ The frontend SHALL set the document title to the name of what the page shows, th
 - GIVEN `/reports?project=example&tab=quality`
 - WHEN the page loads
 - THEN the document title is `Reports · Quality · example · gin-console`
+
+#### Scenario: My Tasks
+- GIVEN `/my-tasks?project=example`
+- WHEN the page loads
+- THEN the document title is `My Tasks · example · gin-console`
 
 #### Scenario: Loading
 - GIVEN a milestone page whose milestone is still loading
@@ -1121,7 +1025,7 @@ The discussion SHALL show each comment as a block of its own with a border, with
 - THEN the text wraps inside its block and the page does not scroll sideways
 
 ### REQ-UI-072: Breadcrumb
-WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of: one link to the remembered place (REQ-UI-073) named for it, which is "Beads" followed by the name of its view and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, ", N filters" where N counts them, the title of the milestone with the same view and filter count for the Beads tab of a milestone page, the title of the milestone for its other tabs, or "My Tasks", "Reports" or "Projects"; then the title of the bead's parent as a link to its page when it has one; then the title of the bead marked `aria-current="page"`. Each title SHALL be cut short to one line with the full title and the id as its `title`. Under 640px the breadcrumb SHALL show only the first link.
+WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of: one link to the remembered place (REQ-UI-073) named for it, which is "Beads" followed by the name of its view and, when a search, a status, priority, label, type, assignee or sprint filter or "Show closed" is active, ", N filters" where N counts them, the title of the milestone with the same view and filter count for the Beads tab of a milestone page, the title of the milestone for its other tabs, or "My Tasks" or "Reports"; then the title of the bead's parent as a link to its page when it has one; then the title of the bead marked `aria-current="page"`. Each title SHALL be cut short to one line with the full title and the id as its `title`. Under 640px the breadcrumb SHALL show only the first link.
 
 #### Scenario: Place and filters
 - GIVEN the Beads page was last at `?project=a&view=board&status=open&q=fix`
@@ -1154,7 +1058,7 @@ WHEN a bead is shown as a page, not as the details panel of another view, the be
 - THEN the breadcrumb reads "My Tasks" then the title of `a-1`, and "My Tasks" goes to `/my-tasks?project=a`
 
 ### REQ-UI-073: Remembered place
-The Projects page, the Beads page, the My Tasks page, the Reports page and the milestone page (any tab) SHALL remember their path and URL query for the current browser tab, the one shown last replacing the others, SHALL use it for the first link of the breadcrumb (REQ-UI-072) and the marked navigation link (REQ-UI-057) when it is not tied to another project than the bead's (Projects, My Tasks and Reports with "All projects" fit any project) and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
+The Beads page, the My Tasks page, the Reports page and the milestone page (any tab) SHALL remember their path and URL query for the current browser tab, the one shown last replacing the others, SHALL use it for the first link of the breadcrumb (REQ-UI-072) and the marked navigation link (REQ-UI-057) when it is of the bead's project and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
 
 #### Scenario: Back to the Board with its filters
 - GIVEN the Board with the filter status "open" is shown
@@ -1186,10 +1090,10 @@ The Projects page, the Beads page, the My Tasks page, the Reports page and the m
 - WHEN the user opens a node's bead page and uses the first link of the breadcrumb
 - THEN the Graph view of the Beads tab of `m2` is shown
 
-#### Scenario: My Tasks with all projects
-- GIVEN My Tasks was last shown with "All projects"
-- WHEN the user opens a bead of project `b` from it
-- THEN the first link reads "My Tasks" and goes back to My Tasks with "All projects"
+#### Scenario: My Tasks of another project
+- GIVEN My Tasks was last at `/my-tasks?project=a`
+- WHEN the bead page of a bead of project `b` is opened by its address
+- THEN the first link reads "Beads" and goes to `/beads?project=b`
 
 ### REQ-UI-074: Remembered branches
 The List view SHALL remember for the current browser tab which branches of each project are open, SHALL open them again when the List is shown after another page, and SHALL ignore remembered ids that are not among the loaded beads.
@@ -1433,12 +1337,17 @@ The "Bugs found" heading of REQ-UI-086 SHALL be shown in the bug color (the `typ
 - THEN the "Bugs found" heading uses the `type-bug` color and the bug rows do not
 
 ### REQ-UI-088: Reports page
-The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page header SHALL hold the project choice: each configured project and "All projects", with the current project (REQ-UI-124) as the default; choosing a project there makes it the current project. The panels of the Delivery and Quality tabs (REQ-UI-095) SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to those two tabs. The Team tab has its own choices (REQ-REPORTS-012). The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-090, REQ-UI-091, REQ-REPORTS-013, REQ-REPORTS-018). The page SHALL show no tokens, cost, budget or `gin usage` command.
+The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page SHALL show the report of the current project (REQ-UI-124), SHALL hold no project choice of its own (the switcher of REQ-UI-123 changes the project), and WHEN the URL has `project=all` (the retired choice "All projects"), SHALL replace it with the current project without adding a history entry. The panels of the Delivery and Quality tabs (REQ-UI-095) SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to those two tabs. The Team tab has its own choices (REQ-REPORTS-012). The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-090, REQ-UI-091, REQ-REPORTS-013, REQ-REPORTS-018). The page SHALL show no tokens, cost, budget or `gin usage` command.
 
 #### Scenario: shared link
-- GIVEN the URL `/reports?project=all&days=7&tab=delivery`
+- GIVEN the URL `/reports?project=alpha&days=7&tab=delivery`
 - WHEN the page loads
-- THEN "All projects" and 7 days are selected and the report for them is requested
+- THEN 7 days is selected and the report for `alpha` and 7 days is requested
+
+#### Scenario: Old link for all projects
+- GIVEN the current project is `alpha` and the URL `/reports?project=all&days=7&tab=delivery`
+- WHEN the page loads
+- THEN the URL becomes `/reports?project=alpha&days=7&tab=delivery`, 7 days is selected, and only the report for `alpha` is requested
 
 #### Scenario: change period
 - GIVEN the Reports page for `alpha`, 30 days and the Delivery tab
@@ -1516,17 +1425,17 @@ The tab SHALL show no tokens, review cycles, rejections, findings or waivers.
 - THEN the rework rate reads "—" and each table says "No data in this period"
 
 ### REQ-UI-093: Report states
-The Reports page SHALL show a loading state while the report loads, SHALL show "No data in this period" in a section that has no rows instead of an empty chart, IF the report request fails, THEN SHALL show the error with a Retry button, SHALL show, above the tabs and whatever tab is selected, a warning naming each project under `errors` with its error while showing the rest, and SHALL NOT show a late answer for filters that are no longer selected.
-
-#### Scenario: partial failure
-- GIVEN the answer for "All projects" has `errors` holding `beta`
-- WHEN the page is shown
-- THEN a warning above the tabs names `beta` and its error, it stays when the user picks another tab, and the sections show the other projects
+The Reports page SHALL show a loading state while the report loads, SHALL show "No data in this period" in a section that has no rows instead of an empty chart, IF the report request fails, THEN SHALL show the error with a Retry button, and SHALL NOT show a late answer for filters that are no longer selected.
 
 #### Scenario: late answer
 - GIVEN the report for 30 days is loading and the user picks 7 days
 - WHEN the answer for 30 days arrives
 - THEN the page does not show it
+
+#### Scenario: failure
+- GIVEN the report request answers 502 with an `error`
+- WHEN the page is shown
+- THEN the page shows the error with a Retry button
 
 ### REQ-UI-094: Collapsible sidebar
 From 1024px the frontend SHALL show, at the top of the "Main" navigation's sidebar next to the theme control, a control that collapses the sidebar and expands it again, with an accessible name saying which it does ("Collapse sidebar" or "Expand sidebar") and `aria-expanded` telling whether the sidebar is expanded, and SHALL NOT show the control below 1024px. From 768px the frontend SHALL show the refresh control (REQ-UI-096), the theme control and the collapse control as icons at the top of the navigation column, on one row with the brand mark while the sidebar is expanded and under the brand mark on the icon rail, so that both are visible without scrolling the page. WHILE the sidebar is collapsed, the frontend SHALL draw it as the icon rail of REQ-UI-056 with the brand mark without its word. The frontend SHALL start with the sidebar expanded, SHALL keep the choice in the browser and use it on the next visit, and IF the browser refuses to store the choice, THEN SHALL still collapse and expand the sidebar for the current visit without an error.
@@ -1573,13 +1482,12 @@ WHILE the report sections are not listed in the sidebar (REQ-UI-129), the Report
   - "Starts <start>" before its start;
   - "<closed> of <scope> done, late" with a warning icon when the milestone is late (REQ-MILESTONE-UI-023);
   - otherwise "<closed> of <scope> done, on pace", or ", behind pace" with a warning icon when `pace_needed` is above `pace`;
-  - "No milestones" when the project has none;
-  - no headline while "All projects" is selected.
+  - "No milestones" when the project has none.
 - Delivery: "<closed> beads closed", where `<closed>` is `totals.closed`.
-- Velocity: "<x> days per point" from the selected project's `days_per_point` (REQ-REPORTS-018), with "assumed" when it is assumed, once the Milestones list has loaded; no headline while "All projects" is selected or when `days_per_point` is `null`.
+- Velocity: "<x> days per point" from the selected project's `days_per_point` (REQ-REPORTS-018), with "assumed" when it is assumed, once the Milestones list has loaded; no headline when `days_per_point` is `null`.
 - Quality: "<rate> rework", with "—" in place of `<rate>` when `totals.rework_rate` is absent.
 
-The page SHALL request the team report and the Milestones list (REQ-MILESTONE-UI-008, for the forecast `finish` of REQ-MILESTONE-UI-023 and for the Velocity tab) whenever a single project is selected, whatever the tab, and SHALL request the Milestones list at most once per project and refresh. WHILE the Milestones list is loading or after it failed, the Team headline SHALL apply REQ-MILESTONE-UI-023 without the forecast. It SHALL show no headline for a tab while its report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`team`, `delivery`, `velocity` or `quality`), SHALL select Team when `tab` is missing or holds another value, including the retired `usage` and `coverage`, and SHALL keep the project, period, sprint, milestone and member when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page and SHALL fade its edge on each side that has hidden tabs.
+The page SHALL request the team report and the Milestones list (REQ-MILESTONE-UI-008, for the forecast `finish` of REQ-MILESTONE-UI-023 and for the Velocity tab) whatever the tab, and SHALL request the Milestones list at most once per project and refresh. WHILE the Milestones list is loading or after it failed, the Team headline SHALL apply REQ-MILESTONE-UI-023 without the forecast. It SHALL show no headline for a tab while its report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`team`, `delivery`, `velocity` or `quality`), SHALL select Team when `tab` is missing or holds another value, including the retired `usage` and `coverage`, and SHALL keep the project, period, sprint, milestone and member when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page and SHALL fade its edge on each side that has hidden tabs.
 Source: `assets/2026-11-12/mockup/index.html`
 
 #### Scenario: shared link
@@ -1636,9 +1544,9 @@ Source: `assets/2026-11-12/mockup/index.html`
 The frontend SHALL show on every page a "Refresh data" control, in the top bar below 768px and with the theme control at the top of the navigation column from 768px, and WHEN the user activates it, SHALL send `POST /api/refresh` (REQ-BEADS-012) and then load the current page's data again without a full reload and without changing the URL, showing the control as busy and disabled until the request ends; IF the request fails, THEN the page SHALL still load its data again and show its own error.
 
 #### Scenario: Refresh the page
-- GIVEN the Projects page is shown
+- GIVEN the Beads page is shown
 - WHEN the user activates "Refresh data"
-- THEN `POST /api/refresh` is sent, then the projects are requested again, and the URL is unchanged
+- THEN `POST /api/refresh` is sent, then the beads are requested again, and the URL is unchanged
 
 #### Scenario: Placement
 - GIVEN a window 1280px wide
@@ -1702,15 +1610,25 @@ WHILE an email is held, the frontend SHALL show it in the "Main" navigation's si
 - THEN localStorage has no `gin-console.email`, the URL is `/my-tasks` and the login screen is shown
 
 ### REQ-UI-099: My Tasks navigation
-The "Main" navigation SHALL contain a "My Tasks" link after "Beads", and the frontend SHALL show the My Tasks page at `/my-tasks` without a full reload, marking the link as current there.
+The "Main" navigation SHALL contain a "My Tasks" link after "Beads", and the frontend SHALL show the My Tasks page at `/my-tasks` without a full reload, marking the link as current there, and SHALL replace the address `/` with `/my-tasks?project=<current project>` (REQ-UI-124), or with `/my-tasks` while no project is configured, without adding a history entry.
 
 #### Scenario: Open My Tasks
-- GIVEN the Projects page is shown
+- GIVEN the Beads page of project `a` is shown
 - WHEN the user clicks "My Tasks"
-- THEN the URL is `/my-tasks`, the My Tasks page is shown without a reload and "My Tasks" is the current link
+- THEN the URL is `/my-tasks?project=a`, the My Tasks page is shown without a reload and "My Tasks" is the current link
+
+#### Scenario: Home address
+- GIVEN the current project is `a`
+- WHEN the user opens `/`
+- THEN the URL becomes `/my-tasks?project=a`, the My Tasks page of `a` is shown, and the browser Back button does not return to `/`
+
+#### Scenario: Home address without projects
+- GIVEN no project is configured
+- WHEN the user opens `/`
+- THEN the URL becomes `/my-tasks` and the page says no projects are configured
 
 ### REQ-UI-100: My Tasks list
-WHEN the My Tasks page opens, the frontend SHALL request `GET /api/projects/beads`, then `GET /api/beads?project=<name>` for each project whose directory exists, and SHALL list in one table the beads whose `assignee` is the same person (REQ-BEADS-023) as the signed-in email, leaving out beads matched only by `owner`. Each row SHALL show the project, the id, the title, the state, the type, `P<n>` and the updated time, and SHALL link to `/beads/<project>/<id>`. Rows SHALL be ordered by priority ascending, then by `updated_at` newest first, then by project and id. The page SHALL show how many beads it lists, and WHEN none matches, SHALL say "No tasks assigned to <email>". The Refresh control (REQ-UI-096) SHALL load the list again.
+WHEN the My Tasks page opens, the frontend SHALL request `GET /api/projects/beads`, then `GET /api/beads?project=<name>` for the current project (REQ-UI-124) only, and SHALL list in one table the beads of that project whose `assignee` is the same person (REQ-BEADS-023) as the signed-in email, leaving out beads matched only by `owner`. Each row SHALL show the id, the title, the state, the type, `P<n>` and the updated time, and SHALL link to `/beads/<project>/<id>`. Rows SHALL be ordered by priority ascending, then by `updated_at` newest first, then by id. The page SHALL show how many beads it lists, and WHEN none matches, SHALL say "No tasks assigned to <email>" and offer a link "Open the Beads page" to `/beads?project=<current project>`, and WHEN no project exists, SHALL say that no projects are configured. The Refresh control (REQ-UI-096) SHALL load the list again.
 
 #### Scenario: Match by email or name
 - GIVEN the signed-in email `giangdhwhtbr@gmail.com`, project A with open beads assigned to `giangdhwhtbr`, `GiangDHWHTBR@gmail.com` and `alice`, and one unassigned open bead owned by `giangdhwhtbr@gmail.com`
@@ -1722,20 +1640,30 @@ WHEN the My Tasks page opens, the frontend SHALL request `GET /api/projects/bead
 - WHEN My Tasks opens
 - THEN that bead is listed
 
-#### Scenario: Across projects in order
-- GIVEN project A has a P2 bead assigned to me updated today and project B has a P1 bead assigned to me updated last week
+#### Scenario: Order
+- GIVEN the current project is A, which has a P2 bead assigned to me updated today and a P1 bead assigned to me updated last week
 - WHEN My Tasks opens
-- THEN the B bead is first, each row shows its project, and clicking the A bead opens `/beads/A/<id>`
+- THEN the P1 bead is first, no row has a project column, and clicking the P2 bead opens `/beads/A/<id>`
+
+#### Scenario: Other projects left out
+- GIVEN projects A and B, the current project is A, and a bead assigned to me in each
+- WHEN My Tasks opens
+- THEN only the bead of A is listed and no beads request goes to B
 
 #### Scenario: Nothing assigned
-- GIVEN no bead in any project is assigned to `giangdhwhtbr@gmail.com` or `giangdhwhtbr`
+- GIVEN the current project is `a` and none of its beads is assigned to `giangdhwhtbr@gmail.com` or `giangdhwhtbr`
 - WHEN My Tasks opens
-- THEN the page says "No tasks assigned to giangdhwhtbr@gmail.com"
+- THEN the page says "No tasks assigned to giangdhwhtbr@gmail.com" and a link "Open the Beads page" goes to `/beads?project=a`
 
 #### Scenario: Missing project directory
 - GIVEN project C is configured but its directory does not exist
 - WHEN My Tasks opens
 - THEN no beads request is sent for C
+
+#### Scenario: No projects
+- GIVEN `GET /api/projects/beads` returns an empty list
+- WHEN My Tasks opens
+- THEN the page says no projects are configured
 
 #### Scenario: Not the full projects list
 - GIVEN two projects
@@ -1743,7 +1671,7 @@ WHEN the My Tasks page opens, the frontend SHALL request `GET /api/projects/bead
 - THEN no request goes to `/api/projects`
 
 ### REQ-UI-101: My Tasks closed beads
-The My Tasks page SHALL leave closed beads out by default, and SHALL offer a "Show closed" control kept in the URL as `closed=1` that requests each project's beads with `closed=1` and lists the matching closed beads too.
+The My Tasks page SHALL leave closed beads out by default, and SHALL offer a "Show closed" control kept in the URL as `closed=1` that requests the beads with `closed=1` and lists the matching closed beads too.
 
 #### Scenario: Closed hidden
 - GIVEN 3 open and 2 closed beads assigned to me
@@ -1751,17 +1679,17 @@ The My Tasks page SHALL leave closed beads out by default, and SHALL offer a "Sh
 - THEN 3 beads are listed and every beads request lacks `closed=1`
 
 #### Scenario: Show closed
-- GIVEN the same beads
+- GIVEN the same beads in project A
 - WHEN the user turns on "Show closed"
-- THEN the URL is `/my-tasks?closed=1`, the beads are requested with `closed=1` and 5 beads are listed
+- THEN the URL is `/my-tasks?project=A&closed=1`, the beads are requested with `closed=1` and 5 beads are listed
 
 ### REQ-UI-102: My Tasks failures
-IF `GET /api/projects/beads` fails, THEN the My Tasks page SHALL show that the projects could not be loaded; IF the beads request of a project fails, THEN the page SHALL show an error naming that project and its message and SHALL still list the matching beads of the other projects; WHILE requests are pending, the page SHALL say it is loading.
+IF `GET /api/projects/beads` fails, THEN the My Tasks page SHALL show that the projects could not be loaded; IF the beads request of the project fails, THEN the page SHALL show an error naming that project and its message; WHILE requests are pending, the page SHALL say it is loading.
 
-#### Scenario: One project fails
-- GIVEN projects A and B, where the beads request of B responds 500 and A has 2 beads assigned to me
+#### Scenario: Beads request fails
+- GIVEN the current project is A and its beads request responds 500
 - WHEN My Tasks opens
-- THEN an error names B and the 2 beads of A are listed
+- THEN an error names A and its message
 
 #### Scenario: Projects fail
 - GIVEN `GET /api/projects/beads` responds 500
@@ -1769,7 +1697,7 @@ IF `GET /api/projects/beads` fails, THEN the My Tasks page SHALL show that the p
 - THEN the page says the projects could not be loaded and lists nothing
 
 ### REQ-UI-103: Stale beads note
-WHERE the `beads` object of a project in `GET /api/projects/beads` has `stale: true`, the Beads page with that project selected and the My Tasks page SHALL show, above their list, the note "Beads of <project> may be out of date. Run `bd export -o .beads/issues.jsonl` in <project>." once per stale project, and SHALL show no note for a project whose `stale` is `false` or missing.
+WHERE the `beads` object of a project in `GET /api/projects/beads` has `stale: true`, the Beads page and the My Tasks page SHALL show, above their list and while that project is the current project (REQ-UI-124), the note "Beads of <project> may be out of date. Run `bd export -o .beads/issues.jsonl` in <project>." once, and SHALL show no note for another project or for a project whose `stale` is `false` or missing.
 
 #### Scenario: Beads page
 - GIVEN project A has `beads.stale: true`
@@ -1777,9 +1705,9 @@ WHERE the `beads` object of a project in `GET /api/projects/beads` has `stale: t
 - THEN the note names A and the command, and the list is shown below it
 
 #### Scenario: My Tasks
-- GIVEN projects A with `beads.stale: true` and B with `beads.stale: false`
+- GIVEN projects A and B with `beads.stale: true` and A is the current project
 - WHEN My Tasks opens
-- THEN one note names A, none names B, and the tasks of both are listed
+- THEN one note names A, none names B, and the tasks of A are listed
 
 #### Scenario: Not stale
 - GIVEN project A whose `beads` has no `stale` key, or `stale: false`
@@ -1814,22 +1742,22 @@ WHEN the Beads page loads a project, the frontend SHALL request `GET /api/beads/
 - WHEN the Beads page loads
 - THEN the Milestone select says "Milestones unavailable" and every bead is shown
 
-### REQ-UI-105: My Tasks project and milestone filters
-The My Tasks page SHALL offer a "Project" select with "All projects" (the default) and each project whose directory exists, kept in the URL as `project`, and a "Milestone" select kept in the URL as `milestone`. WHILE "All projects" is selected, the Milestone select SHALL be disabled and every matching bead of every project SHALL be listed. WHEN a project is selected, the page SHALL list only that project's matching beads, SHALL request `GET /api/beads/milestones?project=<name>`, and SHALL offer the choices of REQ-UI-104, selecting `current` (or "All" when `current` is `null`) WHILE the URL has no `milestone`; the milestone choice SHALL filter the beads as in REQ-UI-104, and a closed milestone SHALL list its closed beads without "Show closed". A change of project SHALL clear `milestone`.
+### REQ-UI-105: My Tasks milestone filter
+The My Tasks page SHALL list only the beads of the current project (REQ-UI-124), kept in the URL as `project`, SHALL NOT show a project select of its own (the switcher of REQ-UI-123 changes the project), and SHALL offer a "Milestone" select, always enabled, kept in the URL as `milestone`. The page SHALL request `GET /api/beads/milestones?project=<name>` and SHALL offer the choices of REQ-UI-104, selecting `current` (or "All" when `current` is `null`) WHILE the URL has no `milestone`; the milestone choice SHALL filter the beads as in REQ-UI-104, and a closed milestone SHALL list its closed beads without "Show closed". A change of project SHALL clear `milestone`.
 
-#### Scenario: All projects
-- GIVEN tasks assigned to me in projects A and B
+#### Scenario: Current project
+- GIVEN the current project is A
 - WHEN My Tasks opens at `/my-tasks`
-- THEN "All projects" is selected, the Milestone select is disabled, and the tasks of A and B are listed
+- THEN the URL becomes `/my-tasks?project=A`, there is no Project select, and the Milestone select is enabled
 
 #### Scenario: Project with a current milestone
 - GIVEN project A whose current milestone is `m2`, with my tasks under `m2` and `m3`
-- WHEN the user chooses project A
-- THEN the URL is `/my-tasks?project=A`, the Milestone select shows `m2`, and only my tasks under `m2` are listed
+- WHEN My Tasks opens at `/my-tasks?project=A`
+- THEN the Milestone select shows `m2`, and only my tasks under `m2` are listed
 
 #### Scenario: Change project clears the milestone
 - GIVEN My Tasks at `/my-tasks?project=A&milestone=m3`
-- WHEN the user chooses project B
+- WHEN the user chooses project B in the switcher
 - THEN the URL is `/my-tasks?project=B` and B's current milestone is selected
 
 ## Use Cases
@@ -1980,7 +1908,7 @@ On every page, at every window width from 360px and in the light and the dark th
 
 #### Scenario: No overlapping text
 - GIVEN the example project
-- WHEN the Projects, Beads (List, Board, Focus, Graph, and Lanes of the epic `ex-e12`), bead, My Tasks, Milestones, milestone (Gantt at each zoom, Beads, Retro) and Reports (each tab) pages are shown at 390, 1024, 1440 and 1920px in both themes
+- WHEN the Beads (List, Board, Focus, Graph, and Lanes of the epic `ex-e12`), bead, My Tasks, Milestones, milestone (Gantt at each zoom, Beads, Retro) and Reports (each tab) pages are shown at 390, 1024, 1440 and 1920px in both themes
 - THEN no text overlaps other text or a bar, line or arrow it does not belong to, and no text spills out of its box without an ellipsis
 
 #### Scenario: Facts as label and value
@@ -2329,14 +2257,18 @@ Source: `assets/2026-11-21/epic-page/mockup/index.html`
 
 ### REQ-UI-123: Project switcher
 The frontend SHALL show a project switcher labelled "Project" that names the current project (REQ-UI-124): at the top of the sidebar from 1024px while the sidebar is expanded, as a button holding the first letter of the project in the icon rail (from 768px up to 1023px, or while the sidebar is collapsed), and in the top bar below 768px. Opening it SHALL list every configured project whose directory exists, from `GET /api/projects/beads`, with the favorite first, each with a star button labelled "Make <name> the favorite" or, on the favorite, "Remove <name> as favorite", marked with `aria-pressed`. WHEN the user chooses a project, the frontend SHALL make it the current project and SHALL then:
-- on the Beads, Milestones or Reports page, stay on that page with `project` replaced, keeping `view`, `closed`, `tab`, `days` and `q`, and dropping `milestone`, `select`, `scope`, `member`, `status`, `sprint` and the other filters;
-- on a bead page, open the Beads page of the chosen project; on a milestone page, open the Milestones page of the chosen project;
-- on the Projects or My Tasks page, stay on the page unchanged.
+- on the Beads, My Tasks, Milestones or Reports page, stay on that page with `project` replaced, keeping `view`, `closed`, `tab`, `days` and `q`, and dropping `milestone`, `select`, `scope`, `member`, `status`, `sprint` and the other filters;
+- on a bead page, open the Beads page of the chosen project; on a milestone page, open the Milestones page of the chosen project.
 
 #### Scenario: Choose on the Beads page
 - GIVEN the Beads page at `/beads?project=a&view=board&milestone=m1&status=open`
 - WHEN the user chooses project `b` in the switcher
 - THEN the URL becomes `/beads?project=b&view=board` and the Board of `b` is shown
+
+#### Scenario: Choose on My Tasks
+- GIVEN the My Tasks page at `/my-tasks?project=a&closed=1&milestone=m1`
+- WHEN the user chooses project `b` in the switcher
+- THEN the URL becomes `/my-tasks?project=b&closed=1` and the tasks of `b` are shown
 
 #### Scenario: Choose on a bead page
 - GIVEN the bead page `/beads/a/a-1`
@@ -2359,12 +2291,12 @@ The frontend SHALL show a project switcher labelled "Project" that names the cur
 - THEN the switcher is in the top bar
 
 ### REQ-UI-124: Current project
-The frontend SHALL take the current project, in this order: from the `project` query of the URL when it names a configured project whose directory exists; else the project last chosen in this browser tab; else the favorite project; else the first configured project. It SHALL remember as last chosen, for the browser tab, the project the Beads, Milestones, Reports, bead or milestone page shows and a single project chosen in the switcher or in the project select of the Reports or My Tasks page ("All projects" changes nothing), and SHALL remember the favorite across tabs and visits. The Main navigation links Beads, Milestones and Reports SHALL carry `?project=<current project>`, and the links Projects and My Tasks SHALL NOT. WHEN the Beads, Milestones or Reports page opens without `project`, it SHALL show the current project and write it into the URL without adding a history entry. A remembered or favorite project that is no longer configured SHALL be skipped. IF the browser refuses to store a choice, THEN the choice SHALL last for the visit without an error.
+The frontend SHALL take the current project, in this order: from the `project` query of the URL when it names a configured project whose directory exists; else the project last chosen in this browser tab; else the favorite project; else the first configured project. It SHALL remember as last chosen, for the browser tab, the project the Beads, My Tasks, Milestones, Reports, bead or milestone page shows and a project chosen in the switcher, and SHALL remember the favorite across tabs and visits. The Main navigation links Beads, My Tasks, Milestones and Reports SHALL carry `?project=<current project>`. WHEN the Beads, My Tasks, Milestones or Reports page opens without `project`, it SHALL show the current project and write it into the URL without adding a history entry. A remembered or favorite project that is no longer configured SHALL be skipped. IF the browser refuses to store a choice, THEN the choice SHALL last for the visit without an error.
 
 #### Scenario: Links carry the project
 - GIVEN the current project is `b`
 - WHEN any page is shown
-- THEN the Beads link goes to `/beads?project=b`, Milestones to `/milestones?project=b`, Reports to `/reports?project=b`, and My Tasks to `/my-tasks`
+- THEN the Beads link goes to `/beads?project=b`, Milestones to `/milestones?project=b`, My Tasks to `/my-tasks?project=b`, and Reports to `/reports?project=b`
 
 #### Scenario: Last chosen beats the favorite
 - GIVEN the favorite is `a` and the user chose `b` earlier in this tab
@@ -2381,10 +2313,10 @@ The frontend SHALL take the current project, in this order: from the `project` q
 - WHEN the user opens `/beads`
 - THEN the first configured project is shown
 
-#### Scenario: My Tasks keeps all projects
+#### Scenario: My Tasks of the current project
 - GIVEN the current project is `b`
-- WHEN the user opens My Tasks from the navigation
-- THEN My Tasks shows "All projects"
+- WHEN the user opens `/my-tasks`
+- THEN the My Tasks page of `b` is shown and the URL becomes `/my-tasks?project=b`
 
 #### Scenario: Storage refused
 - GIVEN the browser throws when a choice is stored
@@ -2392,12 +2324,12 @@ The frontend SHALL take the current project, in this order: from the `project` q
 - THEN the Milestones page of `b` is shown and no error is shown
 
 ### REQ-UI-125: Page not found
-WHEN the path matches no page of the console, including the retired `/sessions`, `/sessions/<project>/<id>` and `/quota`, the frontend SHALL show the heading "Page not found", the path, and links to Projects and to the Beads page of the current project, SHALL set the document title to `Page not found · gin-console`, and SHALL mark no link of the Main navigation.
+WHEN the path matches no page of the console, including the retired `/sessions`, `/sessions/<project>/<id>` and `/quota`, the frontend SHALL show the heading "Page not found", the path, and links to the Beads page of the current project and to My Tasks, SHALL set the document title to `Page not found · gin-console`, and SHALL mark no link of the Main navigation.
 
 #### Scenario: Unknown path
 - GIVEN the current project is `a`
 - WHEN the user opens `/nope`
-- THEN the page shows "Page not found", `/nope`, a link to `/` and a link to `/beads?project=a`
+- THEN the page shows "Page not found", `/nope`, a link to `/beads?project=a` and a link to `/my-tasks?project=a`
 
 #### Scenario: Retired address
 - GIVEN any configured projects
@@ -2405,12 +2337,17 @@ WHEN the path matches no page of the console, including the retired `/sessions`,
 - THEN the page shows "Page not found" and no navigation link has `aria-current="page"`
 
 ### REQ-UI-126: Unknown project
-WHEN the URL names a project that is not configured, in the `project` query of the Beads, Milestones or Reports page or in the path of a bead or milestone page, the frontend SHALL show "No project <name> is configured" with one link per configured project to the same page for that project, instead of another project's data, and SHALL NOT remember the name as the current project. The Reports value `all` is not a project name.
+WHEN the URL names a project that is not configured, in the `project` query of the Beads, My Tasks, Milestones or Reports page or in the path of a bead or milestone page, the frontend SHALL show "No project <name> is configured" with one link per configured project to the same page for that project, instead of another project's data, and SHALL NOT remember the name as the current project. The Reports value `all` is not a project name.
 
 #### Scenario: Beads query
 - GIVEN projects `a` and `b`
 - WHEN the user opens `/beads?project=zzz`
 - THEN the page says "No project zzz is configured" with links to `/beads?project=a` and `/beads?project=b`, and shows no beads
+
+#### Scenario: My Tasks query
+- GIVEN projects `a` and `b`
+- WHEN the user opens `/my-tasks?project=zzz`
+- THEN the page says "No project zzz is configured" with links to `/my-tasks?project=a` and `/my-tasks?project=b`, and lists no tasks
 
 #### Scenario: Bead path
 - GIVEN projects `a` and `b`
@@ -2418,7 +2355,7 @@ WHEN the URL names a project that is not configured, in the `project` query of t
 - THEN the page says "No project zzz is configured" and the current project is unchanged
 
 ### REQ-UI-127: Back to your place
-WHEN the user comes back with the browser Back or Forward button to the Projects, Beads, My Tasks, Milestones, milestone or Reports page, the frontend SHALL scroll the page to where it was when the user left it, once the page shows its data, and WHEN the user left it by opening a bead, SHALL move the keyboard focus to that bead's row, card or node and mark it as last opened for 2 seconds, without motion WHILE the user asks for reduced motion. A page opened by a link or by its address SHALL start at the top. IF the browser refuses to store the position, THEN the page SHALL start at the top without an error.
+WHEN the user comes back with the browser Back or Forward button to the Beads, My Tasks, Milestones, milestone or Reports page, the frontend SHALL scroll the page to where it was when the user left it, once the page shows its data, and WHEN the user left it by opening a bead, SHALL move the keyboard focus to that bead's row, card or node and mark it as last opened for 2 seconds, without motion WHILE the user asks for reduced motion. A page opened by a link or by its address SHALL start at the top. IF the browser refuses to store the position, THEN the page SHALL start at the top without an error.
 
 #### Scenario: Back to a long list
 - GIVEN the List view of the Beads page scrolled 1,200px down
@@ -2503,9 +2440,9 @@ The frontend SHALL write every date as "<d> <Mon>" when it falls in the current 
 WHEN the pointer rests on a state mark (REQ-UI-064), a size or points value, the word Prep or a Prep count, a lane or lane count, a strand (REQ-UI-138), a Gantt verdict (REQ-MILESTONE-UI-024), a comment or dependency indicator (REQ-UI-066), or a count of blocked, done or in-progress beads, and WHEN keyboard focus reaches one of them that takes focus, the frontend SHALL show within 500 ms a tooltip with one sentence that says what it means, and for a count the rule it counts by and the scope it counts in, SHALL tie the tooltip to the element with `aria-describedby`, and SHALL close it on Escape, on blur and when the pointer leaves; the native `title` SHALL remain only for text cut short (REQ-UI-107).
 
 #### Scenario: Blocked count
-- GIVEN the Projects card of `example` with "blocked 4"
-- WHEN the user moves the keyboard focus to it
-- THEN a tooltip reads "Blocked: status blocked, or waiting on an open blocker of its own or of a parent. Prep tasks are counted apart." and Escape closes it
+- GIVEN the Board of `example` whose Blocked column holds 4 beads
+- WHEN the pointer rests on the count of that column
+- THEN a tooltip reads "Blocked: status blocked, or waiting on an open blocker of its own or of a parent. Prep tasks are counted apart. Counted in this column." and Escape closes it
 
 #### Scenario: Dependency indicator
 - GIVEN a bead card with the dependency indicator 2
@@ -2635,7 +2572,7 @@ Source: `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/index.html#beads
 - THEN its section labels read "Status", "Priority" and "Labels", each in sentence case
 
 #### Scenario: No middle dots
-- GIVEN the Projects, Beads, bead, My Tasks, Milestones, milestone and Reports pages of the `example` project
+- GIVEN the Beads, bead, My Tasks, Milestones, milestone and Reports pages of the `example` project
 - WHEN they are shown
 - THEN no text on them contains " · ", and the browser tab of the Beads page still reads "Beads · example · gin-console"
 
@@ -2650,7 +2587,7 @@ Source: `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/index.html#beads
 - THEN "docs" is underlined with a thin line in the identity colour
 
 ### REQ-UI-140: Data as text
-Pills and chips SHALL be used only for controls (a filter chip, a toggle, a segmented control); on a List or Tree row, a Board or Focus card, a Graph node, a Gantt row, a table row, the line of facts of the bead page and a Projects card, the frontend SHALL show data as text without a border or a tint: the priority as `P<n>`, bold in the text colour for P0 and P1 and in the muted colour otherwise; the type as REQ-UI-067 describes; the kind, size, labels, capabilities and Prep, and a status or an "On time" figure, as plain words in the muted colour, or in the warning colour where a requirement gives them that colour; the comment and dependency indicators as an icon and a number; and a lane as a dot followed by its name (REQ-UI-115).
+Pills and chips SHALL be used only for controls (a filter chip, a toggle, a segmented control); on a List or Tree row, a Board or Focus card, a Graph node, a Gantt row, a table row and the line of facts of the bead page, the frontend SHALL show data as text without a border or a tint: the priority as `P<n>`, bold in the text colour for P0 and P1 and in the muted colour otherwise; the type as REQ-UI-067 describes; the kind, size, labels, capabilities and Prep, and a status or an "On time" figure, as plain words in the muted colour, or in the warning colour where a requirement gives them that colour; the comment and dependency indicators as an icon and a number; and a lane as a dot followed by its name (REQ-UI-115).
 Source: `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/index.html#beads`
 
 #### Scenario: List row without chips
@@ -2663,10 +2600,10 @@ Source: `assets/2026-11-22/beads-light.png`, `assets/2026-11-22/index.html#beads
 - WHEN its Board card is shown
 - THEN it shows "P2" in the muted colour, "Technical" and "8 pt" as text, and no pill
 
-#### Scenario: Projects card
-- GIVEN a configured project whose directory is missing
-- WHEN the Projects page is shown
-- THEN its card says "missing" in the danger colour as text, without a badge
+#### Scenario: Table row
+- GIVEN a blocked bead assigned to me
+- WHEN the My Tasks page is shown
+- THEN its row shows its state "Blocked" as text, without a border or a tint
 
 #### Scenario: Controls keep their pills
 - GIVEN the Beads page with the status filter "Open"

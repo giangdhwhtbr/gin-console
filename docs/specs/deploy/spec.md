@@ -23,7 +23,7 @@ The deployment SHALL expose the console through `tailscale serve` on HTTPS port 
 #### Scenario: Reachable from the tailnet
 - GIVEN the service is running and the serve rule is applied
 - WHEN another tailnet device opens `https://<host>.ts.net:8443`
-- THEN the Projects page loads
+- THEN the My Tasks page of the current project loads
 
 #### Scenario: Serve rule listed
 - GIVEN the serve rule is applied

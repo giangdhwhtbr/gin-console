@@ -41,7 +41,7 @@ The container SHALL run as the host user with `HOME=/home/gin`, and the compose 
 #### Scenario: Shared config
 - GIVEN the config lists `/home/gin/qwikfone`
 - WHEN the container starts
-- THEN `/home/gin/qwikfone` exists inside the container and the Projects page lists it without a "missing" badge
+- THEN `/home/gin/qwikfone` exists inside the container and the project switcher lists it
 
 #### Scenario: Same config in both modes
 - GIVEN the systemd service uses `~/.config/gin-console/config.yaml`
@@ -72,7 +72,7 @@ The compose file SHALL publish the console port only on `127.0.0.1`, and the con
 #### Scenario: Reachable through tailscale serve
 - GIVEN `tailscale serve --https=8443` points at `http://127.0.0.1:8700`
 - WHEN a tailnet device opens the `:8443` URL
-- THEN it shows the Projects page
+- THEN it shows the My Tasks page of the current project
 
 ### REQ-DOCKER-006: Pinned and secret-safe build
 The Dockerfile SHALL set the versions of `bd` and the `gin-workflow` git ref through build args with defaults, and SHALL accept git credentials only through BuildKit secrets.

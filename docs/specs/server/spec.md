@@ -30,24 +30,6 @@ WHEN a client requests `GET /api/health`, the server SHALL respond 200 with `sta
 - WHEN a client requests `GET /api/health`
 - THEN the response is 200 with `{"status": "ok", "version": "<app version>"}`
 
-### REQ-SERVER-003: Projects endpoint
-WHEN a client requests `GET /api/projects`, the server SHALL return the configured projects in config order, each with `name`, `path`, `exists` reflecting whether `path` is a directory at request time, `workflow` and `beads`.
-
-#### Scenario: Existing and missing paths
-- GIVEN two configured projects, one whose path is a directory and one whose path does not exist
-- WHEN a client requests `GET /api/projects`
-- THEN the response lists both with `exists` true and false respectively
-
-#### Scenario: Path appears later
-- GIVEN a configured project whose path did not exist at startup
-- WHEN the directory is created and a client requests `GET /api/projects`
-- THEN that project has `exists` true
-
-#### Scenario: No Scotty fields
-- GIVEN any configured project
-- WHEN a client requests `GET /api/projects`
-- THEN its entry has no `scotty_id` and no `scotty_url`
-
 ### REQ-SERVER-004: Frontend serving
 The server SHALL serve the built frontend from `frontend/dist` for non-API paths, falling back to `index.html`; unknown `/api/*` paths SHALL return 404, and IF `frontend/dist` has no `index.html`, THEN non-API paths SHALL return 503 with instructions to run `pnpm -C frontend build`.
 
@@ -61,107 +43,53 @@ The server SHALL serve the built frontend from `frontend/dist` for non-API paths
 - WHEN a client requests `/api/unknown`
 - THEN the response is 404, not `index.html`
 
+#### Scenario: Retired projects endpoint
+- GIVEN the server is running
+- WHEN a client requests `GET /api/projects`
+- THEN the response is 404, not `index.html`, and `GET /api/projects/beads` still answers 200
+
 #### Scenario: Frontend not built
 - GIVEN `frontend/dist/index.html` does not exist
 - WHEN a client requests `/`
 - THEN the response is 503 and names the build command
 
-### REQ-SERVER-005: Workflow state per project
-WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `workflow` object with `stage`, `layout` and `gates` (gate name to state), `workspace` (`null`, or `root` and `repos`, each repo with `path`, `branch`, `shape`, `frozen` and `present`), `team` (`enabled`, `host`, `me`), `decision`, `warnings`, `remedies` and `review_waivers` (each with `task_id`, `reason` and `actor`), taken from `gin state --format json` run read-only in the project directory, with `null` or an empty list for each of them that the output lacks.
-
-#### Scenario: Workflow state present
-- GIVEN a project whose `gin state --format json` reports stage `discuss` and five gates
-- WHEN a client requests `GET /api/projects`
-- THEN that project's `workflow` has `stage` `discuss` and the five gates with their states
-
-#### Scenario: Workspace, team and health
-- GIVEN a project whose `gin state --format json` reports a workspace with 8 repos, `team.enabled` true with host `github`, `decision` `hold`, the warning "event log unreadable" and one review waiver
-- WHEN a client requests `GET /api/projects`
-- THEN that project's `workflow` carries the 8 repos, the team, `decision` `hold`, the warning and the waiver
-
-#### Scenario: Older gin
-- GIVEN a project whose `gin state --format json` has no `workspace`, `team`, `decision`, `warnings`, `remedies` or `review_waivers`
-- WHEN a client requests `GET /api/projects`
-- THEN `workflow.workspace` is `null`, `team` is `null`, `decision` is `null`, and the three lists are empty
-
 ### REQ-SERVER-006: Beads summary per project
-WHEN a client requests `GET /api/projects`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id`, `title`, `status` and, for an `in_progress` epic in `GET /api/projects` only (never in `GET /api/projects/beads`, which starts no process, REQ-SERVER-010), `workflow`: the `stage`, `gates`, `warnings` and `review_waivers` of `gin state --workflow-id <id> --format json`, or `{"error": <message>}` when that command fails, the commands for one project running at most four at a time, taken from the project's `bd export` snapshot (REQ-BEADS-012) with readiness worked out as in REQ-BEADS-007, where `blocked` counts the beads that are not closed and blocked whatever their status, `in_progress` counts the in-progress beads that are not blocked (REQ-BEADS-021), and `ready` never counts a bead of type `milestone`. The counts `open`, `in_progress`, `blocked` and `ready` SHALL leave out prep tasks (REQ-BEADS-002) and merge gates (REQ-BEADS-019). The `beads` object SHALL add `prep`, the number of prep tasks that are not closed.
+WHEN a client requests `GET /api/projects/beads`, the server SHALL include for each existing project a `beads` object with the counts `open`, `in_progress`, `blocked` and `ready`, and an `epics` list of the epics that are `in_progress` or that are `open` and ready, each with `id`, `title` and `status` and no `workflow` (the endpoint starts no process, REQ-SERVER-010), taken from the project's `bd export` snapshot (REQ-BEADS-012) with readiness worked out as in REQ-BEADS-007, where `blocked` counts the beads that are not closed and blocked whatever their status, `in_progress` counts the in-progress beads that are not blocked (REQ-BEADS-021), and `ready` never counts a bead of type `milestone`. The counts `open`, `in_progress`, `blocked` and `ready` SHALL leave out prep tasks (REQ-BEADS-002) and merge gates (REQ-BEADS-019). The `beads` object SHALL add `prep`, the number of prep tasks that are not closed.
 
 #### Scenario: Counts and active epics
 - GIVEN a project with 3 open, 1 in_progress and 2 ready issues, one in_progress epic and one ready open epic
-- WHEN a client requests `GET /api/projects`
+- WHEN a client requests `GET /api/projects/beads`
 - THEN `beads` has those counts and `epics` lists both epics
 
 #### Scenario: No active epics
 - GIVEN a project with no in_progress epic and no ready open epic
-- WHEN a client requests `GET /api/projects`
+- WHEN a client requests `GET /api/projects/beads`
 - THEN `beads.epics` is an empty list
 
 #### Scenario: Milestone not counted as ready
 - GIVEN a project with 2 ready issues and an open milestone without blockers
-- WHEN a client requests `GET /api/projects`
+- WHEN a client requests `GET /api/projects/beads`
 - THEN `beads.ready` is 2
 
 #### Scenario: Merge gates not counted
 - GIVEN a project with 2 open ready tasks and an open merge gate without blockers titled `external: .planning/plans/p.md#1`
-- WHEN a client requests `GET /api/projects`
+- WHEN a client requests `GET /api/projects/beads`
 - THEN `beads.open` is 2 and `beads.ready` is 2
 
 #### Scenario: Prep tasks counted apart
 - GIVEN a project whose only beads are the in_progress epic `e-1`, its open ready tracks `t-1` and `t-2`, its open prep task `p-1` labelled `prep` and `prep:mockup` without blockers, and its closed prep task `p-2` labelled `prep`
-- WHEN a client requests `GET /api/projects`
+- WHEN a client requests `GET /api/projects/beads`
 - THEN `beads.open` is 2, `beads.in_progress` is 1, `beads.ready` is 2, `beads.blocked` is 0 and `beads.prep` is 1
 
 #### Scenario: Blocked whatever the status
 - GIVEN a bead with status `blocked` and no blocker, an in-progress bead with an open blocker, and an in-progress bead without blockers
-- WHEN a client requests `GET /api/projects`
+- WHEN a client requests `GET /api/projects/beads`
 - THEN `beads.blocked` counts the first two and `beads.in_progress` is 1
 
-#### Scenario: Stage of an epic in progress
-- GIVEN in_progress epic `e-1` whose `gin state --workflow-id e-1` reports stage `execute`, and ready epic `e-2`
-- WHEN a client requests `GET /api/projects`
-- THEN `e-1` has `status` `in_progress` and `workflow.stage` `execute`, `e-2` has `status` `open` and no `workflow`, and no `gin state` ran for `e-2`
-
-#### Scenario: One epic fails
-- GIVEN in_progress epics `e-1` and `e-3`, and `gin state --workflow-id e-3` exiting non-zero
-- WHEN a client requests `GET /api/projects`
-- THEN `e-1` has its `workflow`, `e-3` has `workflow` `{"error": …}`, and the rest of the project is unchanged
-
-#### Scenario: Project beads endpoint unchanged
-- GIVEN the same in_progress epic `e-1`
+#### Scenario: No workflow on epics
+- GIVEN in_progress epic `e-1` and ready epic `e-2`
 - WHEN a client requests `GET /api/projects/beads`
-- THEN `e-1` has `id`, `title` and `status` and no `workflow`, and no `gin state` ran
-
-### REQ-SERVER-007: Per-block errors
-IF a `gin` or `bd` command for a project is missing, times out, exits non-zero, or prints invalid JSON, THEN the server SHALL set that block (`workflow` or `beads`) to an object whose only content is an `error` message, and SHALL leave the other block and the other projects unaffected; for a project whose `exists` is false the server SHALL run no command and return both blocks as `null`.
-
-#### Scenario: One block fails
-- GIVEN `bd` fails for a project while `gin state` succeeds
-- WHEN a client requests `GET /api/projects`
-- THEN that project's `beads` is `{"error": "<message>"}` and its `workflow` has data
-
-#### Scenario: Missing project path
-- GIVEN a configured project whose path does not exist
-- WHEN a client requests `GET /api/projects`
-- THEN its `workflow` and `beads` are `null` and no command was run for it
-
-### REQ-SERVER-008: Short-lived cache
-The server SHALL reuse a project's collected `workflow` and `beads` data for 5 seconds, SHALL drop it on `POST /api/refresh` (REQ-BEADS-012), and SHALL run the commands for one project at most once at a time when requests overlap.
-
-#### Scenario: Cache hit
-- GIVEN a project's data was collected 2 seconds ago
-- WHEN a client requests `GET /api/projects`
-- THEN no command is run for that project
-
-#### Scenario: Cache expired
-- GIVEN a project's data was collected 6 seconds ago
-- WHEN a client requests `GET /api/projects`
-- THEN the commands run again
-
-#### Scenario: Overlapping requests
-- GIVEN two requests arrive while the commands for a project are running
-- WHEN both complete
-- THEN the commands ran once for that project
+- THEN `e-1` has `id`, `title` and `status` `in_progress` and no `workflow`, `e-2` has `status` `open`, and no `gin state` ran
 
 ### REQ-SERVER-009: Windows script execution and environment
 WHERE the server runs on Windows, the server SHALL sanitize `PATH` in `_child_env` by stripping `Scripts` under `VIRTUAL_ENV` rather than `bin`, and SHALL invoke `gin` through the `gin.cmd` (or `.bat`/`.exe`) found on `PATH`, else via `bash` (locating `bash.exe` via `PATH` or the standard Git for Windows installation path).

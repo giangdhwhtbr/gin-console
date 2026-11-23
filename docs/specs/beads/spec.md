@@ -90,7 +90,7 @@ The server SHALL NOT run any `bd` command other than `bd dolt pull` in a project
 
 #### Scenario: No bd process
 - GIVEN a project with `.beads/issues.jsonl`
-- WHEN a client requests its list, a bead, its comments, `GET /api/projects`, `GET /api/projects/beads` and a report
+- WHEN a client requests its list, a bead, its comments, `GET /api/projects/beads` and a report
 - THEN no `bd` process was started
 
 #### Scenario: Only pull
@@ -117,7 +117,7 @@ The server SHALL answer the bead list, the bead detail, the comments, the projec
 - THEN the file is read again
 
 ### REQ-BEADS-005: Failures
-IF a project's `.beads/issues.jsonl` does not exist, THEN the server SHALL respond 502 with an `error` that names the file and says to run `bd config set export.auto true` and `bd config set export.interval 1s` in the project, then any bd write or `bd export -o .beads/issues.jsonl`; IF the file cannot be read or a non-empty line is not a JSON object, THEN the server SHALL respond 502 with an `error` that says which; and the server SHALL leave out of a list any bead whose fields have the wrong types instead of failing the list. The `beads` block of `GET /api/projects` SHALL carry the same message as its `error` (REQ-SERVER-007).
+IF a project's `.beads/issues.jsonl` does not exist, THEN the server SHALL respond 502 with an `error` that names the file and says to run `bd config set export.auto true` and `bd config set export.interval 1s` in the project, then any bd write or `bd export -o .beads/issues.jsonl`; IF the file cannot be read or a non-empty line is not a JSON object, THEN the server SHALL respond 502 with an `error` that says which; and the server SHALL leave out of a list any bead whose fields have the wrong types instead of failing the list. The `beads` block of `GET /api/projects/beads` SHALL carry the same message as its `error` (REQ-SERVER-010).
 
 #### Scenario: Missing file
 - GIVEN a project whose `.beads` has no `issues.jsonl`
@@ -136,8 +136,8 @@ IF a project's `.beads/issues.jsonl` does not exist, THEN the server SHALL respo
 
 #### Scenario: Projects block
 - GIVEN a project whose `.beads` has no `issues.jsonl`
-- WHEN a client requests `GET /api/projects`
-- THEN that project's `beads` is `{"error": "<the same message>"}` and its `workflow` has data
+- WHEN a client requests `GET /api/projects/beads`
+- THEN that project's `beads` is `{"error": "<the same message>"}`
 
 ### REQ-BEADS-006: Clean strings
 The server SHALL replace lone surrogate characters in every string it returns.
@@ -260,7 +260,7 @@ The server SHALL return with every bead of the list `blocked_by`, the ids of the
 - THEN its `blocked_by` is empty
 
 ### REQ-BEADS-012: Export snapshot and refresh
-The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (with their labels, dependencies and comments) and SHALL take a bead's `parent` from its `parent-child` dependency. It SHALL read the file again WHEN its modification time or size differs from when the snapshot was taken, and SHALL NOT read it again while both are unchanged. WHEN a client sends `POST /api/refresh`, the server SHALL pull the projects (REQ-BEADS-016) and wait for those pulls to end, then drop every snapshot and every cached answer (projects, milestones, reports) and respond 204, whether or not a pull failed, so that the next request reads its sources again.
+The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (with their labels, dependencies and comments) and SHALL take a bead's `parent` from its `parent-child` dependency. It SHALL read the file again WHEN its modification time or size differs from when the snapshot was taken, and SHALL NOT read it again while both are unchanged. WHEN a client sends `POST /api/refresh`, the server SHALL pull the projects (REQ-BEADS-016) and wait for those pulls to end, then drop every snapshot and every cached answer (milestones, reports) and respond 204, whether or not a pull failed, so that the next request reads its sources again.
 
 #### Scenario: Unchanged file
 - GIVEN a snapshot taken from a file of 2000 bytes modified at `t1`
@@ -302,26 +302,21 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 - [Filter my beads](use-cases/filter-my-beads.md)
 
 ### REQ-BEADS-013: Stale export
-The server SHALL record, each time it reads a project's `.beads/issues.jsonl`, the content of the project's embedded Dolt manifests (`.beads/embeddeddolt/*/.dolt/noms/manifest`), and SHALL report the project's export as stale WHILE that content differs from the recorded content and the file has not changed since; WHERE a project has no such manifest, its export SHALL never be stale. `GET /api/projects` and `GET /api/projects/beads` SHALL include `stale` (a boolean) in the `beads` object of each project whose beads were read.
+The server SHALL record, each time it reads a project's `.beads/issues.jsonl`, the content of the project's embedded Dolt manifests (`.beads/embeddeddolt/*/.dolt/noms/manifest`), and SHALL report the project's export as stale WHILE that content differs from the recorded content and the file has not changed since; WHERE a project has no such manifest, its export SHALL never be stale. `GET /api/projects/beads` SHALL include `stale` (a boolean) in the `beads` object of each project whose beads were read.
 
 #### Scenario: Fresh export
 - GIVEN the file was read when the manifest held `root-1`, and the manifest still holds `root-1`
-- WHEN a client requests `GET /api/projects`
+- WHEN a client requests `GET /api/projects/beads`
 - THEN that project's `beads.stale` is `false`
-
-#### Scenario: Write not exported
-- GIVEN the file was read when the manifest held `root-1`
-- WHEN a bead is written, the manifest now holds `root-2`, the file is unchanged, and a client requests `GET /api/projects` after its 5-second reuse (REQ-SERVER-008)
-- THEN that project's `beads.stale` is `true` and its counts are those of the file
 
 #### Scenario: Export catches up
 - GIVEN a project whose export is stale
-- WHEN the file is written again and a client requests `GET /api/projects` after its 5-second reuse
+- WHEN the file is written again and a client requests `GET /api/projects/beads` at once
 - THEN the file is read again and `beads.stale` is `false`
 
 #### Scenario: No manifest
 - GIVEN a project without an embedded Dolt manifest
-- WHEN a client requests `GET /api/projects`
+- WHEN a client requests `GET /api/projects/beads`
 - THEN its `beads.stale` is `false`
 
 #### Scenario: Project beads without reuse
@@ -386,7 +381,7 @@ WHEN a client requests `GET /api/beads/milestones?project=<name>`, the server SH
 - THEN the response is 404
 
 ### REQ-BEADS-016: Pull Beads from the Dolt remote
-WHEN the server pulls (on `POST /api/refresh`, REQ-BEADS-012, or on schedule, REQ-BEADS-017), it SHALL run `bd dolt pull` in the directory of each configured project that exists and does not set `pull: false` (REQ-CONFIG-006), at most four projects at a time and for at most 30 seconds each, SHALL NOT run two pulls of one project at the same time (a pull that finds one running for its project waits for it and takes its result), and SHALL keep for each project the result of its last pull: `at` (the time the pull ended, ISO 8601), `status` `ok` when the command exits 0, `no_remote` when it exits non-zero saying the project has no remote, or `error` otherwise, and `error` (the last non-empty line of the command's output, "bd dolt pull timed out" after 30 seconds, or "bd not found") or `null`. `GET /api/projects` and `GET /api/projects/beads` SHALL include for each project `pull`: that result, or `null` when the project has not been pulled since the server started or sets `pull: false`. A failed pull SHALL NOT fail the request that caused it.
+WHEN the server pulls (on `POST /api/refresh`, REQ-BEADS-012, or on schedule, REQ-BEADS-017), it SHALL run `bd dolt pull` in the directory of each configured project that exists and does not set `pull: false` (REQ-CONFIG-006), at most four projects at a time and for at most 30 seconds each, SHALL NOT run two pulls of one project at the same time (a pull that finds one running for its project waits for it and takes its result), and SHALL keep for each project the result of its last pull: `at` (the time the pull ended, ISO 8601), `status` `ok` when the command exits 0, `no_remote` when it exits non-zero saying the project has no remote, or `error` otherwise, and `error` (the last non-empty line of the command's output, "bd dolt pull timed out" after 30 seconds, or "bd not found") or `null`. `GET /api/projects/beads` SHALL include for each project `pull`: that result, or `null` when the project has not been pulled since the server started or sets `pull: false`. A failed pull SHALL NOT fail the request that caused it.
 
 #### Scenario: Pull each project
 - GIVEN projects A and B with Dolt remotes and `bd dolt pull` exiting 0 in both
@@ -442,37 +437,17 @@ WHERE the config sets `beads.pull_interval` (REQ-CONFIG-006), the server SHALL p
 - THEN the server log names A and the error, and A has `pull.status` `error`
 
 ### REQ-BEADS-018: Pull status display
-The Projects page SHALL show on each project card whose `pull` is not `null`: "pulled " and the age of `pull.at` as a relative time ("just now" under 45 seconds, else the nearest whole number of minutes under an hour, of hours under a day, or of days, for example "pulled 2 minutes ago") when `pull.status` is `ok`, "no Dolt remote" when it is `no_remote`, and "pull failed: <error>" marked as an error when it is `error`, with the full `at` time as its `title`; and WHERE the `pull` of a project in `GET /api/projects/beads` has `status` `error`, the Beads page with that project selected and the My Tasks page SHALL show, above their list, the note "Pulling Beads of <project> failed: <error>. Run `bd dolt pull` in <path>." once per such project, and SHALL show no such note for a project whose `pull` is `null`, missing, or not `error`.
-
-#### Scenario: Pulled
-- GIVEN project A with `pull` `{"status": "ok", "at": <2 minutes ago>, "error": null}`
-- WHEN the Projects page loads
-- THEN A's card shows "pulled 2 minutes ago"
-
-#### Scenario: Pulled just now
-- GIVEN project A with `pull.status` `ok` and `pull.at` 10 seconds ago
-- WHEN the Projects page loads
-- THEN A's card shows "pulled just now"
-
-#### Scenario: No remote
-- GIVEN project B with `pull.status` `no_remote`
-- WHEN the Projects page loads
-- THEN B's card shows "no Dolt remote" and no error
-
-#### Scenario: Failed pull on the card
-- GIVEN project A with `pull` `{"status": "error", "error": "Merge conflict detected", …}`
-- WHEN the Projects page loads
-- THEN A's card shows "pull failed: Merge conflict detected" as an error and its beads counts as before
+WHERE the `pull` of a project in `GET /api/projects/beads` has `status` `error`, the Beads page and the My Tasks page SHALL show, above their list and while that project is the current project (REQ-UI-124), the note "Pulling Beads of <project> failed: <error>. Run `bd dolt pull` in <path>." once, and SHALL show no such note for another project or for a project whose `pull` is `null`, missing, or not `error`.
 
 #### Scenario: Failed pull note
 - GIVEN projects A whose `pull.status` is `error` and B whose `pull` is `null`
-- WHEN My Tasks opens, and then the Beads page opens with A selected
+- WHEN My Tasks opens with A as the current project, and then the Beads page opens with A selected
 - THEN each page shows one note naming A, its error, `bd dolt pull` and A's path, none names B, and the lists are shown below it
 
 #### Scenario: Older backend
 - GIVEN projects without a `pull` key
-- WHEN the Projects, Beads and My Tasks pages load
-- THEN no pull line and no pull note is shown
+- WHEN the Beads and My Tasks pages load
+- THEN no pull note is shown
 
 ### REQ-BEADS-019: Lane fields and merge gates
 WHEN a client requests the bead list or a bead detail, the server SHALL add to each bead `lane`, `track`, `claim` and `waits_for`, read from the export without running a command:
@@ -518,7 +493,7 @@ A bead whose `waits_for` is not `null` is a merge gate: the placeholder that gin
 - THEN its dependency on the gate carries the gate's `waits_for`
 
 ### REQ-BEADS-020: Workflow of an epic
-WHEN a client requests `GET /api/beads/{project}/{id}/workflow`, the server SHALL run `gin state --workflow-id <id> --format json` in the project's directory, as REQ-SERVER-006 does for an epic in progress, and SHALL answer the `stage`, `gates`, `warnings` and `review_waivers` it reports; IF the command fails or its output cannot be read, THEN the server SHALL answer 502 with `{"error": <message>}`; the server SHALL answer 404 when the project is not configured or the bead is not in its export, and SHALL serve the same answer for the same project and id for 60 seconds unless `POST /api/refresh` dropped it.
+WHEN a client requests `GET /api/beads/{project}/{id}/workflow`, the server SHALL run `gin state --workflow-id <id> --format json` in the project's directory, and SHALL answer the `stage`, `gates`, `warnings` and `review_waivers` it reports; IF the command fails or its output cannot be read, THEN the server SHALL answer 502 with `{"error": <message>}`; the server SHALL answer 404 when the project is not configured or the bead is not in its export, and SHALL serve the same answer for the same project and id for 60 seconds unless `POST /api/refresh` dropped it.
 
 #### Scenario: Stage of an epic
 - GIVEN epic `e-1` whose `gin state --workflow-id e-1` reports stage `execute`, gates `{"plan_approved": "satisfied", "shipped": "unmet"}`, one warning and no waiver
@@ -537,17 +512,17 @@ WHEN a client requests `GET /api/beads/{project}/{id}/workflow`, the server SHAL
 
 ### REQ-BEADS-021: One rule for blocked and in-progress counts
 Type: business-rule
-Every count of blocked beads in the console (the Projects page, REQ-SERVER-006; the Board and Focus columns, REQ-UI-031 and REQ-UI-033; the Team figures, REQ-REPORTS-010) SHALL count the beads whose `blocked` is true by REQ-BEADS-007, whatever their status, and every count of beads in progress SHALL leave those beads out, so that a bead is counted once. These counts SHALL leave out merge gates (REQ-BEADS-019) and milestones, and SHALL count prep tasks (REQ-BEADS-002) apart. The row of an epic on the Gantt (REQ-MILESTONE-UI-013) SHALL show the state Blocked WHEN that epic's `blocked` is true, whatever its status.
+Every count of blocked beads in the console (the `blocked` counts of `GET /api/projects/beads`, REQ-SERVER-006; the Board and Focus columns, REQ-UI-031 and REQ-UI-033; the Team figures, REQ-REPORTS-010) SHALL count the beads whose `blocked` is true by REQ-BEADS-007, whatever their status, and every count of beads in progress SHALL leave those beads out, so that a bead is counted once. These counts SHALL leave out merge gates (REQ-BEADS-019) and milestones, and SHALL count prep tasks (REQ-BEADS-002) apart. The row of an epic on the Gantt (REQ-MILESTONE-UI-013) SHALL show the state Blocked WHEN that epic's `blocked` is true, whatever its status.
 
 #### Scenario: Blocked whatever the status
 - GIVEN open bead `a`, epic `e` blocked by `a` with the open child `e.1`, bead `b` with status `blocked` and no blocker, in-progress bead `c` blocked by `a`, and in-progress bead `d` without blockers
-- WHEN the Projects page counts are built
+- WHEN a client requests `GET /api/projects/beads`
 - THEN `blocked` is 4 (`e`, `e.1`, `b` and `c`) and `in_progress` is 1 (`d`)
 
-#### Scenario: Same number on Projects and in the Beads views
+#### Scenario: Same number in the summary and in the Beads views
 - GIVEN the same project
-- WHEN the Projects page, the Board and the Focus view are shown
-- THEN the Projects card reads "blocked 4", and the Blocked columns of the Board and of the Focus view each say 4
+- WHEN `GET /api/projects/beads` is requested and the Board and the Focus view are shown
+- THEN `beads.blocked` is 4, and the Blocked columns of the Board and of the Focus view each say 4
 
 #### Scenario: Blocked epic on the Gantt
 - GIVEN epic `e` with status `open` blocked by the open bead `a`, in a milestone shown on the Gantt
