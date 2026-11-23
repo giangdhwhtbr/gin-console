@@ -24,7 +24,7 @@ type State =
   | { status: "notfound" }
   | { status: "ok"; bead: BeadDetail };
 
-type Props = { project: string; id: string; embedded?: boolean };
+type Props = { project: string; id: string; embedded?: boolean; graphLink?: boolean; onShowChildren?: () => void };
 
 export function BeadDetailPage(props: Props) {
   const page = <BeadDetail {...props} />;
@@ -38,7 +38,7 @@ function BeadTitle({ title, project }: { title: string | null; project: string }
   return null;
 }
 
-function BeadDetail({ project, id, embedded = false }: Props) {
+function BeadDetail({ project, id, embedded = false, graphLink = true, onShowChildren }: Props) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [tab, setTab] = useState<DetailTab>("details");
@@ -69,9 +69,16 @@ function BeadDetail({ project, id, embedded = false }: Props) {
   const parentTitle =
     state.status === "ok" ? (state.bead.dependencies.find((d) => d.type === "parent-child" && d.id === state.bead.parent)?.title ?? null) : null;
   const back = embedded ? (
-    <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`} className="text-sm prose-link">
-      Open page
-    </Link>
+    <div className="flex flex-wrap items-center gap-3">
+      <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`} className="text-sm prose-link">
+        Open page
+      </Link>
+      {onShowChildren !== undefined && (
+        <Button variant="outline" size="sm" onClick={onShowChildren}>
+          Show children
+        </Button>
+      )}
+    </div>
   ) : (
     <Breadcrumb project={project} id={id} title={state.status === "ok" ? state.bead.title : null} parent={parent === null ? null : { id: parent, title: parentTitle }} />
   );
@@ -139,7 +146,7 @@ function BeadDetail({ project, id, embedded = false }: Props) {
                     {`Show discussion (${bead.comment_count})`}
                   </Button>
                 )}
-                <BeadHeader project={project} bead={bead} />
+                <BeadHeader project={project} bead={bead} graphLink={graphLink} />
                 <BeadBody project={project} bead={bead} />
               </div>
             </div>

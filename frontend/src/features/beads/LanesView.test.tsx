@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BeadSummary } from "./api";
-import { json, stubBeads } from "./beadFixtures";
+import { bead, json, stubBeads } from "./beadFixtures";
 import { parseFilters, type BeadFilters } from "./filters";
 import { e12, E12, epic, t1, t2, t3, t4, t7, tracks } from "./laneFixtures";
 import { LanesView } from "./LanesView";
@@ -10,7 +10,7 @@ import { LanesView } from "./LanesView";
 function view(over: { beads?: BeadSummary[]; matched?: BeadSummary[]; filters?: Partial<BeadFilters> } = {}) {
   const onChange = vi.fn();
   const filters = { ...parseFilters(`?view=lanes&scope=${E12}`), ...over.filters };
-  stubBeads(() => json([]));
+  stubDetails(over.beads ?? e12);
   render(<LanesView project="p" beads={over.beads ?? e12} matched={over.matched ?? tracks} milestone="all" filters={filters} onChange={onChange} />);
   return onChange;
 }
@@ -20,6 +20,23 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
+
+/** Answer a bead page request (`/api/beads/p/<id>`) with the bead itself, so the panel settles. */
+function stubDetails(list: readonly BeadSummary[]) {
+  const fetchMock = stubBeads(() => json([]));
+  const base = fetchMock.getMockImplementation();
+  if (base === undefined) throw new Error("no stub");
+  fetchMock.mockImplementation((input) => {
+    const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const found = /^\/api\/beads\/p\/([^/]+)$/.exec(new URL(text, "http://localhost").pathname);
+    const id = decodeURIComponent(found?.[1] ?? "");
+    const one = list.find((b) => b.id === id);
+    if (one === undefined) return base(input);
+    return Promise.resolve(
+      json({ ...one, description: null, design: null, notes: null, acceptance_criteria: null, close_reason: null, dependencies: [], dependents: [], children: [], bugs: [] }),
+    );
+  });
+}
 
 describe("LanesView", () => {
   it("REQ-UI-111 a scope without lanes says so, with a link to the Graph view", () => {
@@ -168,5 +185,45 @@ describe("LanesView", () => {
   it("REQ-UI-111 only one card is a tab stop", () => {
     view();
     expect(screen.getAllByRole("button").filter((b) => b.tabIndex === 0 && b.hasAttribute("data-node"))).toHaveLength(1);
+  });
+
+  describe("REQ-UI-149 Show children and REQ-UI-148 panel", () => {
+    const sub = bead(`${t2.id}.1`, { parent: t2.id });
+    const panel = () => screen.getByRole("complementary", { name: "Bead details" });
+
+    it("REQ-UI-149 REQ-UI-106 Show children sets the scope and clears the selection", async () => {
+      const onChange = view({ beads: [...e12, sub], filters: { select: t2.id } });
+      await userEvent.click(await screen.findByRole("button", { name: "Show children" }));
+      expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: t2.id, select: "" }));
+    });
+
+    it("REQ-UI-149 Bead without children: no Show children", async () => {
+      view({ beads: [...e12, sub], filters: { select: t1.id } });
+      expect(await screen.findByRole("link", { name: "Open page" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Show children" })).toBeNull();
+    });
+
+    it("REQ-UI-149 Tab of an epic page: no Show children without the trail", async () => {
+      const props = {
+        project: "p",
+        beads: [...e12, sub],
+        matched: tracks,
+        milestone: "all",
+        filters: { ...parseFilters(`?view=lanes&scope=${E12}`), select: t2.id },
+        onChange: vi.fn(),
+      };
+      stubDetails(props.beads);
+      render(<LanesView {...props} trail={false} />);
+      expect(await screen.findByRole("link", { name: "Open page" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Show children" })).toBeNull();
+      cleanup();
+      render(<LanesView {...props} />);
+      expect(await screen.findByRole("button", { name: "Show children" })).toBeInTheDocument();
+    });
+
+    it("REQ-UI-148 a select the view does not draw keeps the panel with the note", () => {
+      view({ filters: { select: "ex-e12.99" } });
+      expect(within(panel()).getByText("Not in the current list")).toBeInTheDocument();
+    });
   });
 });

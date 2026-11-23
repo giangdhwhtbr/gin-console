@@ -17,7 +17,7 @@ import { gateState, gateWords } from "./mergeGates";
 import { StateMark } from "./StateMark";
 
 /** The title, fact line and facts of a bead (REQ-UI-028, REQ-UI-110), shared by the bead page and the epic page. */
-export function BeadHeader({ project, bead }: { project: string; bead: BeadDetail }) {
+export function BeadHeader({ project, bead, graphLink = true }: { project: string; bead: BeadDetail; graphLink?: boolean }) {
   const complexity = bead.issue_type === "epic" ? complexityOf(bead.description) : null;
   const gate = bead.waits_for;
   const lease = leaseOf([bead.claim], new Date());
@@ -65,7 +65,8 @@ export function BeadHeader({ project, bead }: { project: string; bead: BeadDetai
         <p className="text-sm text-muted-foreground wrap-anywhere">{bead.points_reason}</p>
       )}
       <FactList facts={facts} />
-      {bead.issue_type !== "epic" &&
+      {graphLink &&
+        bead.issue_type !== "epic" &&
         (bead.children.length > 0 ||
           [...bead.dependencies, ...bead.dependents].some((r) => r.type === "blocks")) && (
         <Link

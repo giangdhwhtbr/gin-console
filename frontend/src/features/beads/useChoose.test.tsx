@@ -83,6 +83,23 @@ describe("useChoose", () => {
     link.remove();
   });
 
+  it("REQ-UI-147 Double click: a single or keyboard click right after a click still reaches its element", () => {
+    const { result } = renderHook(() => useChoose({ project: "p", selected: "", select: vi.fn() }));
+    const other = document.body.appendChild(document.createElement("button"));
+    const onOther = vi.fn();
+    other.addEventListener("click", onOther);
+    act(() => result.current.click("t-1"));
+    // before any dblclick: detail 1 and detail 0 are not the second click of a double click
+    const single = new MouseEvent("click", { bubbles: true, cancelable: true, detail: 1 });
+    const keyboard = new MouseEvent("click", { bubbles: true, cancelable: true, detail: 0 });
+    act(() => void other.dispatchEvent(single));
+    act(() => void other.dispatchEvent(keyboard));
+    expect(onOther).toHaveBeenCalledTimes(2);
+    expect(single.defaultPrevented).toBe(false);
+    expect(keyboard.defaultPrevented).toBe(false);
+    other.remove();
+  });
+
   it("REQ-UI-147 Double click: a late or lone dblclick opens nothing", () => {
     const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
     const { result } = renderHook(() => useChoose({ project: "p", selected: "", select: vi.fn() }));

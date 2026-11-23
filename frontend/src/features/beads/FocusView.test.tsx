@@ -1,8 +1,36 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { BeadSummary } from "./api";
 import { bead, json, stubBeads } from "./beadFixtures";
 import { BeadsPage } from "./BeadsPage";
+
+const detailOf = (id: string, over: Partial<BeadSummary> = {}) => ({
+  ...bead(id, over),
+  description: null,
+  design: null,
+  notes: null,
+  acceptance_criteria: null,
+  close_reason: null,
+  dependencies: [],
+  dependents: [],
+  children: [],
+  bugs: [],
+});
+
+/** The list handler answers `/api/beads`; a bead page request answers the detail, or fails with 502 when `fail` is set. */
+function stubPanel(list: BeadSummary[], fail = false) {
+  const fetchMock = stubBeads(() => json(list));
+  const base = fetchMock.getMockImplementation();
+  if (base === undefined) throw new Error("no stub");
+  fetchMock.mockImplementation((input) => {
+    const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const found = /\/api\/beads\/alpha\/([^/?]+)$/.exec(new URL(text, "http://localhost").pathname);
+    if (found === null) return base(input);
+    if (fail) return Promise.resolve(json({ detail: "bd failed" }, 502));
+    return Promise.resolve(json(detailOf(decodeURIComponent(found[1] ?? ""), list.find((b) => b.id === found[1]) ?? {})));
+  });
+}
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/beads");
@@ -296,4 +324,46 @@ describe("FocusView", () => {
     }
   });
 
+});
+
+describe("REQ-UI-148 details panel on the Focus view", () => {
+  it("REQ-UI-148 Close on the Focus view: focus is back on the card", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=focus&select=t-1");
+    stubPanel([bead("t-1", { title: "Card 1", status: "in_progress" })]);
+    render(<BeadsPage />);
+    const panel = await screen.findByRole("complementary", { name: "Bead details" });
+    expect(panel.closest(".grid")).toHaveClass("lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]");
+    await userEvent.click(within(panel).getByRole("button", { name: "Close details" }));
+    expect(window.location.search).not.toContain("select=");
+    expect(screen.queryByRole("complementary", { name: "Bead details" })).toBeNull();
+    expect((await screen.findByRole("link", { name: "Card 1" })).closest("[data-card]")).toHaveFocus();
+  });
+
+  it("REQ-UI-148 Selection kept across views: Focus keeps select and notes it is not listed", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=x-1");
+    stubPanel([bead("x-1", { ready: true, priority: 3 })]);
+    render(<BeadsPage />);
+    await userEvent.click(await screen.findByRole("button", { name: "Focus" }));
+    expect(window.location.search).toContain("select=x-1");
+    const panel = await screen.findByRole("complementary", { name: "Bead details" });
+    expect(within(panel).getByText("Not in the current list")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-148 Bead fails to load: Retry is in the panel and the columns are still shown", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=focus&select=t-1");
+    stubPanel([bead("t-1", { title: "Card 1", status: "in_progress" })], true);
+    render(<BeadsPage />);
+    const panel = await screen.findByRole("complementary", { name: "Bead details" });
+    expect(await within(panel).findByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "In flight" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-149 Not in Focus: no Show children", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=focus&select=e-1");
+    stubPanel([bead("e-1", { issue_type: "epic", status: "in_progress" }), bead("e-1.1", { parent: "e-1", status: "in_progress" })]);
+    render(<BeadsPage />);
+    const panel = await screen.findByRole("complementary", { name: "Bead details" });
+    expect(await within(panel).findByRole("link", { name: "Open page" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show children" })).toBeNull();
+  });
 });

@@ -73,4 +73,38 @@ describe("DetailsPanel", () => {
       "/beads?project=alpha&view=graph&scope=e-1&select=t-1",
     );
   });
+
+  it("REQ-UI-149 Show children sits next to Open page and calls back", async () => {
+    stub();
+    const onShowChildren = vi.fn();
+    render(<DetailsPanel project="alpha" id="t-1" onShowChildren={onShowChildren} onClose={vi.fn()} />);
+    const button = screen.getByRole("button", { name: "Show children" });
+    expect(screen.getByRole("link", { name: "Open page" }).parentElement).toContainElement(button);
+    await userEvent.click(button);
+    expect(onShowChildren).toHaveBeenCalledTimes(1);
+  });
+
+  it("REQ-UI-149 Not in the List: no Show children without the callback", () => {
+    stub();
+    render(<DetailsPanel project="alpha" id="t-1" onClose={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Show children" })).toBeNull();
+  });
+
+  it("REQ-UI-053 Graph view panel: no View in graph, and the List panel keeps it", async () => {
+    const children = [{ id: "c", title: "C", status: "open", type: "parent-child", prep: false }];
+    stub({}, { children });
+    render(<DetailsPanel project="alpha" id="t-1" graphLink={false} onClose={vi.fn()} />);
+    await screen.findByRole("heading", { name: "Task One" });
+    expect(screen.queryByRole("link", { name: "View in graph" })).toBeNull();
+    cleanup();
+    stub({}, { children });
+    render(<DetailsPanel project="alpha" id="t-1" onClose={vi.fn()} />);
+    expect(await screen.findByRole("link", { name: "View in graph" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-148 No panel under 1024px", () => {
+    stub();
+    render(<DetailsPanel project="alpha" id="t-1" onClose={vi.fn()} />);
+    expect(screen.getByRole("complementary", { name: "Bead details" })).toHaveClass("hidden", "lg:block");
+  });
 });

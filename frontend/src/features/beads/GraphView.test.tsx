@@ -20,7 +20,7 @@ function view(
 ) {
   const onChange = vi.fn();
   const filters = { ...parseFilters("?view=graph"), ...over.filters };
-  stubBeads(() => json([]));
+  stubDetails(over.beads ?? all);
   render(
     <GraphView
       project="p"
@@ -47,6 +47,23 @@ afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
 });
+
+/** Answer a bead page request (`/api/beads/p/<id>`) with the bead itself, so the panel settles. */
+function stubDetails(list: readonly BeadSummary[]) {
+  const fetchMock = stubBeads(() => json([]));
+  const base = fetchMock.getMockImplementation();
+  if (base === undefined) throw new Error("no stub");
+  fetchMock.mockImplementation((input) => {
+    const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const found = /^\/api\/beads\/p\/([^/]+)$/.exec(new URL(text, "http://localhost").pathname);
+    const id = decodeURIComponent(found?.[1] ?? "");
+    const one = list.find((b) => b.id === id);
+    if (one === undefined) return base(input);
+    return Promise.resolve(
+      json({ ...one, description: null, design: null, notes: null, acceptance_criteria: null, close_reason: null, dependencies: [], dependents: [], children: [], bugs: [] }),
+    );
+  });
+}
 
 describe("GraphView", () => {
   it("REQ-UI-106 milestone scope: its epics, and an outside blocker dashed with an arrow", () => {
@@ -373,5 +390,51 @@ describe("GraphView merge gates", () => {
     expect(document.querySelector(`[data-arrow="${n.id}>${qa.id}"]`)).not.toBeNull();
     expect(screen.queryByRole("status")).toBeNull();
     expect(left("be")).toBeGreaterThanOrEqual(0);
+  });
+
+  describe("REQ-UI-149 Show children and REQ-UI-148 panel", () => {
+    const g = bead("e1.1.1", { parent: "e1.1" });
+    const panel = () => screen.getByRole("complementary", { name: "Bead details" });
+
+    it("REQ-UI-149 REQ-UI-106 Show children sets the scope and clears the selection", async () => {
+      const onChange = view({ milestone: "m2", filters: { select: "e1" } });
+      await userEvent.click(await screen.findByRole("button", { name: "Show children" }));
+      expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "e1", select: "" }));
+    });
+
+    it("REQ-UI-149 Bead without children: no Show children", async () => {
+      view({ milestone: "m2", filters: { scope: "e1", select: "e1.1" } });
+      expect(await screen.findByRole("link", { name: "Open page" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Show children" })).toBeNull();
+    });
+
+    it("REQ-UI-149 Tab of an epic page: no Show children without the trail", async () => {
+      const props = {
+        project: "p",
+        beads: [...all, g],
+        matched: [...noMilestones, g],
+        milestone: "all",
+        filters: { ...parseFilters("?view=graph"), scope: "e1", select: "e1.1" },
+        onChange: vi.fn(),
+      };
+      stubDetails(props.beads);
+      render(<GraphView {...props} trail={false} />);
+      expect(await screen.findByRole("link", { name: "Open page" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Show children" })).toBeNull();
+      cleanup();
+      render(<GraphView {...props} />);
+      expect(await screen.findByRole("button", { name: "Show children" })).toBeInTheDocument();
+    });
+
+    it("REQ-UI-148 REQ-UI-051 Narrow window: the panel is hidden under 1024px and the node stays pressed", () => {
+      view({ milestone: "m2", filters: { select: "e1" } });
+      expect(panel()).toHaveClass("hidden", "lg:block");
+      expect(node("e1")).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it("REQ-UI-148 a select the view does not draw keeps the panel with the note", () => {
+      view({ milestone: "m2", filters: { select: "e1.1" } });
+      expect(within(panel()).getByText("Not in the current list")).toBeInTheDocument();
+    });
   });
 });

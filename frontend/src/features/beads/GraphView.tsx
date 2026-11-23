@@ -4,7 +4,7 @@ import type { BeadSummary } from "./api";
 import { DetailsPanel } from "./DetailsPanel";
 import type { BeadFilters } from "./filters";
 import { GraphCanvas } from "./GraphCanvas";
-import { ancestorsOf, keepWithAncestors, scopeGraph } from "./graph";
+import { ancestorsOf, hasChildren, keepWithAncestors, scopeGraph } from "./graph";
 import { laneGraph } from "./laneGraph";
 import { LaneGraphCanvas } from "./LaneGraphCanvas";
 import { hasLanes } from "./lanes";
@@ -43,20 +43,22 @@ function GraphBody({ project, beads, matched, milestone, filters, trail = true, 
   const ids = graph !== null ? graph.nodes.map((n) => n.bead.id) : (lanes?.cards.map((c) => c.bead.id) ?? []);
   const known = new Set(ids);
   const asked = filters.select;
-  const selected = asked !== "" && asked !== "none" && (known.has(asked) || asked === scopeId) ? asked : "";
+  // REQ-UI-148: the panel keeps a selection the view does not draw, with a note
+  const panel = asked !== "" && asked !== "none" ? asked : "";
+  const selected = panel !== "" && (known.has(panel) || panel === scopeId) ? panel : "";
   const tabStop = known.has(selected) ? selected : (ids[0] ?? "");
   // REQ-UI-147: a double click opens the bead page and never changes the scope
   const choose = useChoose({ project, selected, select: (id) => onChange({ ...filters, select: id }) });
   // closing returns focus to the node that was selected, or to the canvas tab stop when it is gone
   const closed = useRef<string | null>(null);
   useEffect(() => {
-    if (selected !== "" || closed.current === null) return;
+    if (panel !== "" || closed.current === null) return;
     const nodes = Array.from(document.querySelectorAll<HTMLElement>("[data-node]"));
     (nodes.find((el) => el.dataset.node === closed.current) ?? nodes.find((el) => el.tabIndex === 0))?.focus();
     closed.current = null;
-  }, [selected]);
+  }, [panel]);
   const close = () => {
-    closed.current = selected;
+    closed.current = panel;
     onChange({ ...filters, select: "none" });
   };
   const to = (scope: string) => onChange({ ...filters, scope, select: "" });
@@ -69,7 +71,7 @@ function GraphBody({ project, beads, matched, milestone, filters, trail = true, 
   const handlers = { choose, onEscape: () => onChange({ ...filters, select: "none" }) };
 
   return (
-    <div className={cn("grid gap-4", selected !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
+    <div className={cn("grid gap-4", panel !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>
       <div className="flex min-w-0 flex-col gap-3">
         {trail && <ScopeTrail label="Graph scope" top={top} rest={rest} onScope={to} />}
         <div className="flex flex-wrap items-center gap-4 text-sm">
@@ -91,7 +93,16 @@ function GraphBody({ project, beads, matched, milestone, filters, trail = true, 
           <GraphCanvas graph={graph} selected={selected} tabStop={tabStop} {...handlers} />
         ) : null}
       </div>
-      {selected !== "" && <DetailsPanel project={project} id={selected} onClose={close} />}
+      {panel !== "" && (
+        <DetailsPanel
+          project={project}
+          id={panel}
+          note={selected === panel ? undefined : "Not in the current list"}
+          graphLink={false}
+          onShowChildren={trail && hasChildren(beads, panel) ? () => onChange({ ...filters, scope: panel, select: "" }) : undefined}
+          onClose={close}
+        />
+      )}
     </div>
   );
 }

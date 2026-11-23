@@ -137,7 +137,6 @@ export function ListView({
           project={project}
           id={filters.select}
           note={rows.some((r) => r.bead.id === filters.select) ? undefined : "Not in the current list"}
-          className="hidden lg:block"
           onClose={close}
         />
       )}
