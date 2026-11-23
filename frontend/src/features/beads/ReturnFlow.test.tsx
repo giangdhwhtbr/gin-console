@@ -95,7 +95,7 @@ describe("return to the same place", () => {
     expect(window.location.search).toBe("?project=alpha");
   });
 
-  it("REQ-UI-073 My Tasks with all projects: the first link reads My Tasks and goes back to My Tasks with all projects", async () => {
+  it("REQ-UI-073 My Tasks without ?project= goes back to My Tasks of the current project", async () => {
     stub();
     window.history.replaceState(null, "", "/my-tasks");
     render(<App />);
@@ -103,7 +103,7 @@ describe("return to the same place", () => {
     const nav = await screen.findByRole("navigation", { name: "Breadcrumb" });
     await userEvent.click(within(nav).getByRole("link", { name: "My Tasks" }));
     expect(window.location.pathname).toBe("/my-tasks");
-    expect(window.location.search).toBe("");
+    expect(window.location.search).toBe("?project=alpha");
   });
 
   it("REQ-UI-073 going from bead to bead keeps the place", async () => {
@@ -114,7 +114,7 @@ describe("return to the same place", () => {
     await screen.findByRole("navigation", { name: "Breadcrumb" });
     act(() => navigate("/beads/alpha/a-2"));
     const nav = await screen.findByRole("navigation", { name: "Breadcrumb" });
-    expect(within(nav).getByRole("link", { name: "My Tasks" })).toHaveAttribute("href", "/my-tasks");
+    expect(within(nav).getByRole("link", { name: "My Tasks" })).toHaveAttribute("href", "/my-tasks?project=alpha");
     expect(marked()).toEqual(["My Tasks"]);
   });
 

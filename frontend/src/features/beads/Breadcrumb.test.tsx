@@ -6,7 +6,7 @@ import { RETURN_KEY, clearOrigin, rememberOrigin } from "@/app/origin";
 beforeEach(() => clearOrigin());
 afterEach(cleanup);
 
-const rememberSearch = (search: string) => rememberOrigin("beads", "/beads", search, new URLSearchParams(search).get("project"));
+const rememberSearch = (search: string) => rememberOrigin("beads", "/beads", search, new URLSearchParams(search).get("project") ?? "");
 const rememberMilestone = (path: string, search: string, project = "a", label: string | null = "Checkout v2") =>
   rememberOrigin("milestone", path, search, project, label);
 
@@ -103,12 +103,6 @@ describe("Breadcrumb", () => {
     render(<Breadcrumb project="a" id="a-1" title="Fix login" parent={null} />);
     expect(crumb().getByRole("link", { name: "My Tasks" })).toHaveAttribute("href", "/my-tasks?project=a");
     expect(crumb().getByText("Fix login")).toHaveAttribute("aria-current", "page");
-  });
-
-  it("REQ-UI-073 My Tasks with all projects serves a bead of any project", () => {
-    rememberOrigin("my-tasks", "/my-tasks", "", null);
-    render(<Breadcrumb project="b" id="b-1" title="Pay" parent={null} />);
-    expect(crumb().getByRole("link", { name: "My Tasks" })).toHaveAttribute("href", "/my-tasks");
   });
 
   it("REQ-UI-073 My Tasks of another project is not used", () => {

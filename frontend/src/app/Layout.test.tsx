@@ -140,7 +140,7 @@ describe("Layout", () => {
   });
 
   it("REQ-UI-057 a retired page marks nothing whatever was remembered", () => {
-    rememberOrigin("my-tasks", "/my-tasks", "", null);
+    rememberOrigin("my-tasks", "/my-tasks", "?project=alpha", "alpha");
     open("/sessions/alpha/11111111-1111-4111-8111-111111111111");
     expect(marked()).toEqual([]);
   });

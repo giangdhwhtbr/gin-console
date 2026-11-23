@@ -11,39 +11,30 @@ export type MyTasks = {
   failures: ProjectFailure[];
   stale: string[];
   pullFailures: PullFailure[];
-  projects: string[];
 };
 
 export function compareTasks(a: MyTask, b: MyTask): number {
   return (
     a.bead.priority - b.bead.priority ||
     b.bead.updated_at.localeCompare(a.bead.updated_at) ||
-    a.project.localeCompare(b.project) ||
     a.bead.id.localeCompare(b.bead.id)
   );
 }
 
-export async function loadMyTasks(email: string, closed: boolean, project = ""): Promise<MyTasks> {
-  const existing = (await fetchProjectBeads()).filter((p) => p.exists);
-  const projects = existing.map((p) => p.name);
-  const names = project === "" ? projects : projects.filter((name) => name === project);
-  const stale = existing.filter((p) => names.includes(p.name)).filter(isStale).map((p) => p.name);
-  const pullFailures = existing
-    .filter((p) => names.includes(p.name))
-    .flatMap((p) => {
-      const pull = pullOf(p);
-      return pull?.status === "error" ? [{ project: p.name, path: p.path, error: pullError(pull) }] : [];
-    });
-  const results = await Promise.allSettled(names.map((name) => fetchBeads(name, closed)));
+/** The beads of `project` (a configured name) assigned to `email`. */
+export async function loadMyTasks(email: string, closed: boolean, project: string): Promise<MyTasks> {
+  const current = (await fetchProjectBeads()).filter((p) => p.exists && p.name === project);
+  const stale = current.filter(isStale).map((p) => p.name);
+  const pullFailures = current.flatMap((p) => {
+    const pull = pullOf(p);
+    return pull?.status === "error" ? [{ project: p.name, path: p.path, error: pullError(pull) }] : [];
+  });
   const tasks: MyTask[] = [];
   const failures: ProjectFailure[] = [];
-  results.forEach((result, i) => {
-    const project = names[i];
-    if (result.status === "rejected") {
-      failures.push({ project, message: result.reason instanceof Error ? result.reason.message : String(result.reason) });
-    } else {
-      for (const bead of withoutMergeGates(result.value)) if (isMine(bead, email)) tasks.push({ project, bead });
-    }
-  });
-  return { tasks: tasks.sort(compareTasks), failures, stale, pullFailures, projects };
+  try {
+    for (const bead of withoutMergeGates(await fetchBeads(project, closed))) if (isMine(bead, email)) tasks.push({ project, bead });
+  } catch (error) {
+    failures.push({ project, message: error instanceof Error ? error.message : String(error) });
+  }
+  return { tasks: tasks.sort(compareTasks), failures, stale, pullFailures };
 }

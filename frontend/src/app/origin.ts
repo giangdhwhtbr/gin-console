@@ -4,7 +4,7 @@ export const RETURN_KEY = "gin-console-beads-return";
 const KINDS = ["beads", "milestone", "my-tasks", "reports"] as const;
 export type OriginKind = (typeof KINDS)[number];
 /** The page a bead was opened from, which the breadcrumb and the navigation of a bead page return to.
- *  `project` is null when the page fits any project: My Tasks and Reports with "All projects". `label` is a milestone's title. */
+ *  `project` is null only for nothing remembered yet. `label` is a milestone's title. */
 export type Origin = { kind: OriginKind; path: string; search: string; project: string | null; label: string | null; open: Record<string, string[]> };
 
 const empty = (): Origin => ({ kind: "beads", path: "/beads", search: "", project: null, label: null, open: {} }); // a fresh object each time: callers may not share it
@@ -73,16 +73,15 @@ function save(next: Origin): void {
 }
 
 /** The page the breadcrumb and the navigation of a bead page return to. */
-export function rememberOrigin(kind: OriginKind, path: string, search: string, project: string | null, label: string | null = null): void {
+export function rememberOrigin(kind: OriginKind, path: string, search: string, project: string, label: string | null = null): void {
   const now = getOrigin();
   if (now.kind !== kind || now.path !== path || now.search !== search || now.project !== project || now.label !== label) {
     save({ ...now, kind, path, search, project, label });
   }
 }
 
-/** The origin when it fits the project of the bead (a Beads or milestone place belongs to one project), else null. */
+/** The origin when it is a place of the project of the bead, else null. */
 export function originFor(beadProject: string, origin: Origin): Origin | null {
-  if (origin.project === null) return origin.kind === "beads" || origin.kind === "milestone" ? null : origin;
   return origin.project === beadProject ? origin : null;
 }
 

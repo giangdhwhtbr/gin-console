@@ -58,6 +58,7 @@ export function resolveProject(asked: string, names: readonly string[]): string 
   return names[0] ?? "";
 }
 
+// "all" is the retired Reports value: it resolves to the current project quietly
 export const isUnknownProject = (asked: string, names: readonly string[]): boolean =>
   asked !== "" && asked !== "all" && !names.includes(asked);
 

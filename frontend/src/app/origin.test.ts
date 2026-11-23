@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearOrigin, getOrigin, originFor, RETURN_KEY, rememberOpen, rememberOrigin, type Origin } from "@/app/origin";
 
 const EMPTY: Origin = { kind: "beads", path: "/beads", search: "", project: null, label: null, open: {} };
-const remembered = (search: string, project: string | null = "a") => rememberOrigin("beads", "/beads", search, project);
+const remembered = (search: string, project = "a") => rememberOrigin("beads", "/beads", search, project);
 
 beforeEach(() => {
   window.sessionStorage.clear();
@@ -68,8 +68,8 @@ describe("origin", () => {
     expect(getOrigin()).toMatchObject({ kind: "milestone", path: "/milestones/a/m2", project: "a", label: "Checkout v2" });
     remembered("?project=a&view=list");
     expect(getOrigin()).toMatchObject({ kind: "beads", path: "/beads", search: "?project=a&view=list", label: null });
-    rememberOrigin("my-tasks", "/my-tasks", "", null);
-    expect(getOrigin()).toMatchObject({ kind: "my-tasks", path: "/my-tasks", search: "", project: null });
+    rememberOrigin("my-tasks", "/my-tasks", "?project=a", "a");
+    expect(getOrigin()).toMatchObject({ kind: "my-tasks", path: "/my-tasks", search: "?project=a", project: "a" });
   });
 
   it("REQ-UI-073 clearOrigin forgets the place and the branches", () => {
@@ -114,13 +114,9 @@ describe("origin", () => {
       for (const kind of ["beads", "milestone", "my-tasks", "reports"] as const) expect(originFor("b", at(kind, "a"))).toBeNull();
     });
 
-    it("REQ-UI-073 My Tasks and Reports with all projects fit any project", () => {
-      for (const kind of ["my-tasks", "reports"] as const) expect(originFor("b", at(kind, null))).toEqual(at(kind, null));
-    });
-
-    it("REQ-UI-073 nothing remembered, or a Beads place with no project, is not used", () => {
+    it("REQ-UI-073 nothing remembered, or a place stored with no project, is not used", () => {
       expect(originFor("a", EMPTY)).toBeNull();
-      expect(originFor("a", at("milestone", null))).toBeNull();
+      for (const kind of ["beads", "milestone", "my-tasks", "reports"] as const) expect(originFor("a", at(kind, null))).toBeNull();
     });
   });
 });

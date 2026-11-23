@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useEmail } from "@/app/identity";
 import { Link } from "@/app/Link";
 import { rememberOrigin } from "@/app/origin";
-import { rememberProject } from "@/app/project";
+import { isUnknownProject, projectHref, rememberProject, resolveProject, useConfiguredProjects } from "@/app/project";
 import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
+import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -29,18 +30,45 @@ export function MyTasksPage() {
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const closed = params.get("closed") === "1";
-  const project = params.get("project") ?? "";
+  const asked = params.get("project") ?? "";
+  const configured = useConfiguredProjects();
+  const names = configured.status === "ok" ? configured.names : [];
+  const unknown = configured.status === "ok" && isUnknownProject(asked, names);
+  const project = configured.status === "ok" && !unknown ? resolveProject(asked, names) : "";
   usePageTitle("My Tasks", project);
-  // REQ-UI-073: the place the breadcrumb of a bead page returns to; "All projects" fits any project
-  useEffect(() => rememberOrigin("my-tasks", "/my-tasks", search, project === "" ? null : project), [search, project]);
+
+  // REQ-UI-124: the project shown is the current one, and the URL says which it is
+  useEffect(() => {
+    if (project === "") return;
+    rememberProject(project);
+    const now = new URLSearchParams(window.location.search);
+    if (now.get("project") !== project && window.location.pathname === "/my-tasks") {
+      now.set("project", project);
+      navigate(`/my-tasks?${now.toString()}`, { replace: true });
+    }
+  }, [project, asked]);
+  // REQ-UI-073: the place the breadcrumb of a bead page returns to
+  useEffect(() => {
+    if (project === "") return;
+    const place = new URLSearchParams(search);
+    place.set("project", project);
+    rememberOrigin("my-tasks", "/my-tasks", `?${place.toString()}`, project);
+  }, [search, project]);
+
   const milestones = useMilestones(project);
-  const milestone = project === "" ? "all" : milestoneInEffect(params.get("milestone") ?? "", milestones);
+  const milestone = milestoneInEffect(params.get("milestone") ?? "", milestones);
   const fetchClosed = closed || isClosedMilestone(milestone, milestones);
   const [settled, setSettled] = useState<Settled | null>(null);
   const request = `${email}|${fetchClosed}|${project}`;
-  const state: State = settled !== null && settled.request === request ? settled.outcome : { status: "loading" };
+  const state: State =
+    configured.status === "error"
+      ? { status: "error", message: configured.message }
+      : project === "" || settled === null || settled.request !== request
+        ? { status: "loading" }
+        : settled.outcome;
 
   useEffect(() => {
+    if (project === "") return;
     let live = true;
     loadMyTasks(email, fetchClosed, project).then(
       (data) => {
@@ -58,63 +86,41 @@ export function MyTasksPage() {
   useRestoreOnBack(state.status === "ok");
   const tasks = state.status === "ok" ? state.data.tasks.filter((task) => matchesMilestone(task.bead, milestone)) : [];
   const count = state.status === "ok" ? tasks.length : null;
-  const projects = state.status === "ok" ? state.data.projects : project === "" ? [] : [project];
-  const go = (next: { project: string; milestone?: string }) => {
-    const query = new URLSearchParams();
-    if (next.project !== "") query.set("project", next.project);
-    if (next.milestone !== undefined) query.set("milestone", next.milestone);
+  const noProjects = configured.status === "ok" && names.length === 0;
+  const waiting = state.status === "loading" && !noProjects && !unknown;
+  const change = (next: string) => {
+    const query = new URLSearchParams({ project });
+    if (next !== "") query.set("milestone", next);
     if (closed) query.set("closed", "1");
-    const text = query.toString();
-    navigate(text === "" ? "/my-tasks" : `/my-tasks?${text}`, { replace: true });
+    navigate(`/my-tasks?${query.toString()}`, { replace: true });
   };
 
   return (
     <section className="flex flex-col gap-4">
       <h1 className="text-2xl font-semibold">My Tasks</h1>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {count !== null && <span className="text-sm text-muted-foreground">{count} {count === 1 ? "task" : "tasks"}</span>}
-        <label className="flex min-w-0 max-w-full items-center gap-1 text-sm">
-          Project
-          <select
-            aria-label="Project"
-            value={project}
-            onChange={(event) => {
-              if (event.target.value !== "") rememberProject(event.target.value);
-              go({ project: event.target.value });
-            }}
-            className="min-w-0 max-w-full truncate rounded border bg-background px-2 py-1"
-          >
-            <option value="">All projects</option>
-            {projects.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <MilestoneFilter
-          state={milestones}
-          value={milestone}
-          disabled={project === ""}
-          onChange={(value) => go({ project, milestone: value })}
-        />
-        <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={closed}
-            onChange={(event) => {
-              const query = new URLSearchParams(search);
-              if (event.target.checked) query.set("closed", "1");
-              else query.delete("closed");
-              const text = query.toString();
-              navigate(text === "" ? "/my-tasks" : `/my-tasks?${text}`, { replace: true });
-            }}
-            className="rounded border"
-          />
-          <span>Show closed</span>
-        </label>
-      </div>
-      {state.status === "loading" && <p className="text-muted-foreground">Loading tasks…</p>}
+      {project !== "" && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          {count !== null && <span className="text-sm text-muted-foreground">{count} {count === 1 ? "task" : "tasks"}</span>}
+          <MilestoneFilter state={milestones} value={milestone} onChange={change} />
+          <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={closed}
+              onChange={(event) => {
+                const query = new URLSearchParams(search);
+                if (event.target.checked) query.set("closed", "1");
+                else query.delete("closed");
+                navigate(`/my-tasks?${query.toString()}`, { replace: true });
+              }}
+              className="rounded border"
+            />
+            <span>Show closed</span>
+          </label>
+        </div>
+      )}
+      {unknown && <UnknownProject name={asked} names={names} hrefOf={(name) => projectHref("/my-tasks", name)} />}
+      {noProjects && <p className="text-muted-foreground">No projects configured.</p>}
+      {waiting && <p className="text-muted-foreground">Loading tasks…</p>}
       {state.status === "error" && (
         <Alert variant="destructive">
           <AlertTitle>Projects could not be loaded</AlertTitle>
@@ -132,12 +138,16 @@ export function MyTasksPage() {
             </Alert>
           ))}
           {tasks.length === 0 ? (
-            <p className="text-muted-foreground">No tasks assigned to {email}</p>
+            <p className="text-muted-foreground">
+              <span>No tasks assigned to {email}</span>{" "}
+              <Link to={projectHref("/beads", project)} className="prose-link">
+                Open the Beads page
+              </Link>
+            </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Project</TableHead>
                   <TableHead>Task</TableHead>
                   <TableHead>State</TableHead>
                   <TableHead className="hidden md:table-cell">Type</TableHead>
@@ -147,8 +157,7 @@ export function MyTasksPage() {
               </TableHeader>
               <TableBody>
                 {tasks.map(({ project, bead }) => (
-                  <TableRow key={`${project}/${bead.id}`} data-id={bead.id} tabIndex={-1}>
-                    <TableCell>{project}</TableCell>
+                  <TableRow key={bead.id} data-id={bead.id} tabIndex={-1}>
                     <TableCell className="whitespace-normal">
                       <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>
                         <span className="font-mono text-13 text-muted-foreground">{bead.id}</span> {bead.title}
