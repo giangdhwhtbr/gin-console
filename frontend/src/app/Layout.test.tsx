@@ -87,7 +87,7 @@ describe("Layout", () => {
     open("/");
     const bar = await screen.findByRole("banner");
     expect(within(bar).getByRole("button", { name: "alpha" })).toHaveClass("min-w-0", "shrink");
-    expect(within(bar).getByText("gin-console")).toHaveClass("max-sm:hidden");
+    expect(within(bar).getByText("gin-console")).toHaveClass("max-sm:sr-only");
   });
 
   it("REQ-UI-123 REQ-UI-094 the collapsed sidebar keeps only the rail switcher", async () => {

@@ -99,7 +99,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
         Skip to content
       </a>
       <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card pl-4 pr-1 md:hidden">
-        <Brand wordClass="max-sm:hidden" />
+        <Brand wordClass="max-sm:sr-only" />
         <ProjectSwitcher variant="bar" />
         <div className="flex shrink-0">
           <RefreshButton onRefreshed={refreshed} />
