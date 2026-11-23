@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-102@366e8139
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** 0ce452e0
 
 **Preconditions:**
 - `GET /api/projects/beads` responds 500

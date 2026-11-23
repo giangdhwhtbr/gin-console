@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-100@14d1209a
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** 7d49c2b4
 
 **Preconditions:**
 - Any signed-in email; projects A and B in `/api/projects/beads`; the current project is A

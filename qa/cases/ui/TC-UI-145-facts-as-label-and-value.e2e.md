@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-110@6bf5889e
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** 9a4917a6
 
 **Preconditions:**
 - Epic `e-3` of project `alpha` has owner `lead@example.com`, assignee `bao` and 0 comments
@@ -14,6 +17,6 @@
 3. Open `/beads?project=example&view=lanes&scope=ex-e12`
 
 **Expected:**
-- After step 1, each fact of the bead page (Owner, Assignee, Created by, Created, Updated, Comments) shows its label in the muted color and its value in the text color with a heavier weight
+- After step 1, each fact of the bead page (Assignee, Created by, Created, Updated, Comments) shows its label in the muted color and its value in the text color with a heavier weight, and the page has no Owner fact
 - After step 2, each fact of the velocity line shows its label in the muted color and its value in the text color with a heavier weight
 - After step 3, each fact of the `be` lane header (State, Held by, Lease, Tracks) shows its label in the muted color and its value in the text color with a heavier weight

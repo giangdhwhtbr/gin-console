@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-103@e6e5851a
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** 024392ab
 
 **Preconditions:**
 - Project A whose `GET /api/projects/beads` entry has `beads.stale: true` and which has beads

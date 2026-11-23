@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-100@14d1209a
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** 3b9db449
 
 **Preconditions:**
 - Signed-in email `giangdhwhtbr@gmail.com` (localStorage `gin-console.email`)

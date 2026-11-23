@@ -2,12 +2,15 @@
 export and the pull of each project (REQ-BEADS-005, 012, 013, 016). Beads are read from real
 `.beads/issues.jsonl` files; `bd dolt pull` goes to a `FakeBd`."""
 
+import logging
 import os
 import threading
+import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import pytest
 from fake_bd import FakeBd
 from fake_export import bead, write_export
 from fastapi.testclient import TestClient
@@ -15,7 +18,7 @@ from fastapi.testclient import TestClient
 from gin_console.app import create_app
 from gin_console.beads.pull import PullRun
 from gin_console.beads.source import read_export
-from gin_console.config import ProjectEntry, Settings
+from gin_console.config import BeadsSettings, ProjectEntry, Settings
 from gin_console.projects.collect import CollectError
 
 NO_REMOTE = "Error: fetch from origin/main: Error 1105: no remote"
@@ -309,3 +312,30 @@ def test_tc_beads_049_one_pull_at_a_time_per_project(tmp_path: Path) -> None:
     assert codes == [204, 204]
     assert bd.calls == [tmp_path / "A"]
     assert pulls(api)["A"]["status"] == "ok"
+
+
+# REQ-BEADS-017 (Failed scheduled pull logged)
+# TC: TC-BEADS-052@eaf0a86b
+def test_tc_beads_052_failed_scheduled_pull_is_logged(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    bd = FakeBd({tmp_path / "A": PullRun(1, f"Fetching origin\n{CONFLICT}\n")})
+    write_export(tmp_path / "A", [bead("A-1")])
+    (tmp_path / "dist").mkdir(exist_ok=True)
+    # 50 ms stands for the 5 minutes of the case: only the config file enforces the minimum
+    settings = Settings(
+        beads=BeadsSettings.model_construct(pull_interval=0.05),
+        projects=[ProjectEntry(name="A", path=tmp_path / "A")],
+    )
+    app = create_app(settings, static_dir=tmp_path / "dist", run_bd=bd)
+    with caplog.at_level(logging.WARNING, logger="gin_console.beads.pull"):
+        with TestClient(app) as api:  # starts the server
+            deadline = time.monotonic() + 2
+            while not bd.calls and time.monotonic() < deadline:  # the interval passes
+                time.sleep(0.005)
+            assert tmp_path / "A" in bd.calls  # the scheduled pull ran
+            while not caplog.records and time.monotonic() < deadline:
+                time.sleep(0.005)
+            assert [r.getMessage() for r in caplog.records][0] == f"pull of A failed: {CONFLICT}"
+            result = pulls(api)["A"]
+    assert result["status"] == "error"

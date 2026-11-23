@@ -1,8 +1,6 @@
 // TC: TC-UI-151@a6743b13
-// TC: TC-UI-151@x
 import { test, expect } from '../evidence';
-import { bead, stubApi } from '../support/api';
-import { mainNav } from '../support/shell';
+import { stubApi } from '../support/api';
 
 test('TC-UI-151: Home address without projects (REQ-UI-099)', async ({ page, ev }) => {
   // Precondition: no project is configured.

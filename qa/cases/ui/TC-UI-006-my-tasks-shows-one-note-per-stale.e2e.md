@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-103@e6e5851a
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** e3fbc337
 
 **Preconditions:**
 - Projects A and B, both with `beads.stale: true`; A is the current project; both have tasks for the signed-in email

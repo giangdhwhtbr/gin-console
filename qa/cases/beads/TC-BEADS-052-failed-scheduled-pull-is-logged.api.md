@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-017@a551ebcb
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-46-49-api
+- **Checked:** b71a43c5
 
 **Preconditions:**
 - The config holds `beads.pull_interval: 5m`

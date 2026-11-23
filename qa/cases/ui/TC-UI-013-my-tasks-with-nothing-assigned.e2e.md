@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-100@14d1209a
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** db3b96b7
 
 **Preconditions:**
 - Signed-in email `giangdhwhtbr@gmail.com`

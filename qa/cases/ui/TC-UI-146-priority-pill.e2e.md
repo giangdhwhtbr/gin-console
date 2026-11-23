@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-110@6bf5889e
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** cc00e043
 
 **Preconditions:**
 - Project `alpha` has beads at P0, P1 and P2

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-110@6bf5889e
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** e2dc3533
 
 **Preconditions:**
 - Project `example` has kicked-off milestones `ex-m1` and `ex-m2`, each shown with its id and label

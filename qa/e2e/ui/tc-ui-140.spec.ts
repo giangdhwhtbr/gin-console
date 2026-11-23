@@ -1,8 +1,6 @@
 // TC: TC-UI-140@947ce215
-// TC: TC-UI-140@x
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
-import { mainNav } from '../support/shell';
 
 test('TC-UI-140: Home address (REQ-UI-099)', async ({ page, ev }) => {
   // Precondition: projects a and b are configured and the current project is a.

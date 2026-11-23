@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-100@14d1209a
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** c6c83ca1
 
 **Preconditions:**
 - Two projects in `/api/projects/beads`

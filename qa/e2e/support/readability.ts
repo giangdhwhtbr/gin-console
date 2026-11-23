@@ -37,3 +37,6 @@ export async function readabilityFindings(page: Page, opts: { tall?: boolean } =
     if (original) await page.setViewportSize(original);
   }
 }
+
+/** The findings as lines for an assertion message. */
+export const show = (findings: Finding[]) => findings.map((f) => `${f.kind}: "${f.text}"${f.other ? ` x "${f.other}"` : ''}\n    ${f.selector}\n    ${f.detail}`).join('\n');

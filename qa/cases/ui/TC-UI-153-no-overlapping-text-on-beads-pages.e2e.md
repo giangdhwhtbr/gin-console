@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-110@6bf5889e
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-45-40
+- **Checked:** c57115a2
 
 **Preconditions:**
 - The example project is shown
