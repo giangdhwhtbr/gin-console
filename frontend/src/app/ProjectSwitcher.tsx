@@ -34,7 +34,7 @@ export function ProjectSwitcher({ variant }: { variant: SwitcherVariant }) {
           TRIGGER,
           variant === "rail" && "size-10 justify-center bg-muted font-semibold",
           variant === "sidebar" && "w-full justify-between gap-2 px-3 py-2",
-          variant === "bar" && "max-w-40 gap-1.5 px-2 py-1.5",
+          variant === "bar" && "min-w-0 shrink gap-1.5 px-2 py-1.5",
         )}
       >
         {variant === "rail" ? (

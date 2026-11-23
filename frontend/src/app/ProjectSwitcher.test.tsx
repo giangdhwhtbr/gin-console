@@ -39,7 +39,7 @@ describe("ProjectSwitcher", () => {
     expect(button).toHaveTextContent("3 projects");
   });
 
-  it.each<[SwitcherVariant, string]>([["sidebar", "w-full"], ["bar", "max-w-40"]])(
+  it.each<[SwitcherVariant, string]>([["sidebar", "w-full"], ["bar", "min-w-0"]])(
     "REQ-UI-061 a 60-character project name is cut short in the switcher (%s)",
     async (variant, bound) => {
       const long = "p".repeat(60);

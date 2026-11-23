@@ -83,6 +83,13 @@ describe("Layout", () => {
     expect(sidebar.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("REQ-UI-061 the phone top bar lets the switcher shrink and drops the brand word on a narrow window", async () => {
+    open("/");
+    const bar = await screen.findByRole("banner");
+    expect(within(bar).getByRole("button", { name: "alpha" })).toHaveClass("min-w-0", "shrink");
+    expect(within(bar).getByText("gin-console")).toHaveClass("max-sm:hidden");
+  });
+
   it("REQ-UI-123 REQ-UI-094 the collapsed sidebar keeps only the rail switcher", async () => {
     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
     open("/");

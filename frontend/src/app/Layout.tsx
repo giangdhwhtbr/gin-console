@@ -52,7 +52,7 @@ function storedCollapsed(): boolean {
 /** Three beads on a thread, in the status colours: the only brand mark. */
 function Brand({ wordClass }: { wordClass?: string }) {
   return (
-    <span className="flex items-center gap-2.5">
+    <span className="flex shrink-0 items-center gap-2.5">
       <svg width="30" height="12" viewBox="0 0 30 12" aria-hidden="true">
         <path d="M5 6h20" className="stroke-identity" strokeWidth="2" />
         <circle cx="5" cy="6" r="4.5" className="fill-state-done" />
@@ -99,9 +99,9 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
         Skip to content
       </a>
       <header className="flex h-14 shrink-0 items-center justify-between border-b bg-card pl-4 pr-1 md:hidden">
-        <Brand />
+        <Brand wordClass="max-sm:hidden" />
         <ProjectSwitcher variant="bar" />
-        <div className="flex">
+        <div className="flex shrink-0">
           <RefreshButton onRefreshed={refreshed} />
           <ThemeToggle />
           {email !== null && (
