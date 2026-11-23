@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-142@7bd8f166
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 15aa4051
+- **Run:** qa/evidence/2026-11-23T10-44-27
+- **Checked:** 357d396d
 
 **Preconditions:**
 - Project `example` is stubbed with current milestone `ex-m2` titled "Checkout v2"

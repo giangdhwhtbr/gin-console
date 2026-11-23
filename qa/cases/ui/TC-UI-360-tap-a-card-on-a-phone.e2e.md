@@ -3,7 +3,7 @@
 - **REQ:** REQ-UI-147@a7576fab
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
+- **Run:** qa/evidence/2026-11-23T10-44-27
 - **Checked:** 667043bb
 
 **Preconditions:**
