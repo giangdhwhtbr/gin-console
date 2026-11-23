@@ -14,8 +14,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
-    // vmThreads reuses one jsdom per worker instead of building it for every file (97 s -> about 36 s);
-    // each file still runs in its own context.
+    // vmThreads keeps jsdom and the compiled dependencies loaded in each worker instead of reloading them for
+    // every file (97 s -> about 36 s); each file still gets its own jsdom window and context.
     projects: [
       { extends: true, test: { name: "unit", pool: "vmThreads", exclude: [...configDefaults.exclude, TZ_TESTS] } },
       { extends: true, test: { name: "time-zone", pool: "forks", include: [TZ_TESTS] } },
