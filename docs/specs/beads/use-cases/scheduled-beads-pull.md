@@ -17,7 +17,7 @@ Keep the console close to each project's Dolt remote while nobody presses "Refre
 1. The scheduler wakes when the interval has passed.
 2. The system pulls every project as in steps 2–4 of refresh-pulls-beads.
 3. The system drops every snapshot and cached answer.
-4. The next page load or Projects poll shows the pulled beads and each project's pull line.
+4. The next page load or Beads poll shows the pulled beads and each project's pull line.
 5. The scheduler waits the interval again. Resume at step 1.
 
 ## Exception flows

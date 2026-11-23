@@ -19,17 +19,13 @@ See whether the team does what it commits to and whether its days per point, and
 4. The team lead reads the trend.
 
 ## Alternative flows
-### 1a. The team lead picks All projects
-1. The system shows steps 2 and 3 once per project, under the project's name.
-2. Resume at step 4.
-
 ### 2a. No milestone has a commitment or completed points
 1. The system shows "No kicked-off milestones with points yet".
 2. Use case ends.
 
 ## Exception flows
-### 2e. The milestones list of a project cannot be loaded
-1. The system shows that project's error and cause and goes on with the other projects.
+### 2e. The milestones list cannot be loaded
+1. The system shows the project's error and cause.
 2. Resume at step 4.
 
 ## Business rules

@@ -178,7 +178,6 @@ WHERE the server runs on Windows, the server SHALL sanitize `PATH` in `_child_en
 
 ## Diagrams
 - [Project beads](diagrams/project-beads-activity.md)
-- [Project health](diagrams/project-health-activity.md)
 
 ### REQ-SERVER-010: Project beads without workflow
 WHEN a client requests `GET /api/projects/beads`, the server SHALL return the configured projects in config order, each with `name`, `path`, `exists` reflecting whether `path` is a directory at request time, and `beads`: for an existing project the summary of REQ-SERVER-006 with `stale` (REQ-BEADS-013), or an object whose only content is an `error` message when its beads cannot be read (REQ-BEADS-005); for a missing project `null`. It SHALL NOT include `workflow` and SHALL NOT start any process.

@@ -31,7 +31,7 @@ Source: Product brief from the UX review of 2026-11-21 (team lead, PM, member an
 
 | Milestone | Period | Outcome | Demo | Epics |
 |---|---|---|---|---|
-| Trust and wayfinding | 2026-11-23 to 2026-12-17 | The console keeps your project and place across pages, numbers mean the same everywhere, Sessions and Quota are gone, and the new look is in place. | Pick a project once and move through Beads, Milestones and Reports without losing it; open an epic from a milestone and return by its breadcrumb; the blocked count matches on Projects, Beads and Reports. | Retire Sessions and Quota; Navigation shell; One set of definitions; Strung visual system; Beads views interaction |
+| Trust and wayfinding | 2026-11-23 to 2026-12-17 | The console keeps your project and place across pages, numbers mean the same everywhere, Sessions and Quota are gone, and the new look is in place. | Pick a project once and move through Beads, Milestones and Reports without losing it; open an epic from a milestone and return by its breadcrumb; the blocked count matches on Beads and Reports. | Retire Sessions and Quota; Navigation shell; One set of definitions; Strung visual system; Beads views interaction |
 | PM reporting | 2026-12-18 to 2026-12-29 | A PM reports a milestone's status and hands over a WBS from the console. | Open the Checkout v2 status report, read its verdict and risks, copy the summary, download the WBS in Excel. | Reports status and one scope; WBS export and summary |
 | Lead and Dev daily work | 2026-12-30 to 2027-01-12 | A lead starts the day on one overview across projects; a developer sees what to do next and copies the command to start it. | The overview lists blocked work with its owner across projects; My work shows next up; a bead page copies its claim command; an epic shows its review findings and gate history. | Overview for leads; My work and the next step; Reviews and gate audit |
 | QA and BA | 2027-01-13 to 2027-01-28 | BA and QA see requirements, sign-off, test coverage, bugs and bug screenshots. | The requirements matrix of one capability; a milestone's release readiness checklist; a bug's screenshots in the lightbox. | Requirements and traceability; Test coverage and release readiness; Bugs view; Evidence images from local files |
@@ -90,7 +90,7 @@ flowchart LR
 ## Milestone: Trust and wayfinding
 
 Outcome: The console keeps your project and place across pages, numbers mean the same everywhere, Sessions and Quota are gone, and the new look is in place.
-Demo: Pick a project once and move through Beads, Milestones and Reports without losing it; open an epic from a milestone and return by its breadcrumb; the blocked count matches on Projects, Beads and Reports.
+Demo: Pick a project once and move through Beads, Milestones and Reports without losing it; open an epic from a milestone and return by its breadcrumb; the blocked count matches on Beads and Reports.
 Result:
 Spec ready by: 2026-11-23
 Integration point: 2026-12-10
@@ -250,7 +250,7 @@ Estimate: 4 (assumed)
 Kind: capability
 Complexity: medium (cross-project load time)
 Goal: One morning page across every project: what needs me now.
-Scope: Needs attention (blocked work with blocker and owner, work in progress longer than a set number of days, failing gates, open waivers, unassigned ready work); one milestone verdict per project; work in progress per member across projects. Whether it replaces Projects as the home page is decided in discuss.
+Scope: Needs attention (blocked work with blocker and owner, work in progress longer than a set number of days, failing gates, open waivers, unassigned ready work); one milestone verdict per project; work in progress per member across projects. The Projects page was retired by gin-console-k4l; `/` opens My Tasks until the Overview takes it.
 Out of scope: Notifications.
 Features: Morning overview across projects; workload per member
 Capabilities: ui, beads

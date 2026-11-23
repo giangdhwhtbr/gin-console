@@ -3,7 +3,7 @@
 
 The project gets a real Beads database (`bd init` + `bd import`) and a minimal
 gin-workflow config, so every page works on it: Beads, My Tasks, Milestones (Gantt,
-forecast), Reports (Team, Delivery, Velocity, Quality) and Projects. Dates are relative
+forecast), Reports (Team, Delivery, Velocity, Quality). Dates are relative
 to today, so the charts always show recent work. Running it again rebuilds the project.
 
     python3 scripts/make_example_project.py            # writes examples/example-project

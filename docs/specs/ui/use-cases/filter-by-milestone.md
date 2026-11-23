@@ -24,9 +24,6 @@ See only the beads of the milestone the team is working in, on the Beads page an
 ### 2b. The team member chooses a closed milestone
 1. The system requests the closed beads and shows the milestone's beads, closed ones included.
 
-### 3a. The team member keeps All projects
-1. The system disables the Milestone select and lists the tasks of every project.
-
 ## Postconditions
 
 - The URL holds the project and milestone, so a shared link shows the same view.

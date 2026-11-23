@@ -10,7 +10,7 @@ Come back to the same place of the list the bead was opened from.
 
 ## Preconditions
 
-- A list page (Projects, Beads, My Tasks, Milestones, a milestone page or Reports) is shown.
+- A list page (Beads, My Tasks, Milestones, a milestone page or Reports) is shown.
 
 ## Main flow
 1. The user scrolls the list page and opens a bead.

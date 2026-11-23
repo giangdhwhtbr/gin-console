@@ -11,7 +11,7 @@ Learn what a state mark, badge or count means, and by which rule a number is cou
 
 ## Preconditions
 
-- The Beads page, the Milestones list, a milestone page, the Reports page or the Projects page is shown.
+- The Beads page, the Milestones list, a milestone page, or the Reports page is shown.
 
 ## Main flow
 1. The team member rests the pointer on a mark or count, or moves the keyboard focus to it.

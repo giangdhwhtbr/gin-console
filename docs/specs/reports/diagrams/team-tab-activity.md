@@ -4,9 +4,7 @@ How the Team tab of the Reports page turns one project's `bd export` snapshot in
 
 ```mermaid
 flowchart TD
-  open([User opens /reports, tab team]) --> all{All projects selected?}
-  all -- yes --> pick([Pick a project to see its team; no request])
-  all -- no --> req[GET /api/reports/team?project=P&milestone=M]
+  open([User opens /reports, tab team]) --> req[GET /api/reports/team?project=P&milestone=M]
   req --> cache{Answer for P and M cached under 60 s?}
   cache -- yes --> answer
   cache -- no --> snap{Snapshot readable?}

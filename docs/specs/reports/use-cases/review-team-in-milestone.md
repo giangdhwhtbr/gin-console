@@ -21,9 +21,6 @@ Judge whether a milestone will finish by its end date and see what each member h
 7. The system lists the member's in-progress beads, longest first, with the ones above 3 days in the warning color.
 
 ## Alternative flows
-### 1a. All projects is selected
-1. The system asks the team lead to pick a project and requests nothing.
-
 ### 2a. The project has no milestones
 1. The system says the project has no milestones yet and offers to copy `gin-workflow milestone create`.
 

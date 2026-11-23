@@ -29,9 +29,9 @@ See the share of closed beads that were reopened or had a bug found later, and w
 2. Use case ends.
 
 ## Exception flows
-### 2e. One project of "All projects" fails
-1. The system builds the report from the other projects and shows, above the tabs, a warning naming the failed project and its error.
-2. Resume at step 3.
+### 2e. The project's report cannot be built
+1. The system shows the error above the tabs.
+2. Use case ends.
 
 ## Business rules
 
