@@ -1,6 +1,6 @@
 # Graph view
 
-How the Graph view of the Beads views picks its scope, applies the filters, and handles selecting and opening a node (REQ-UI-106, REQ-UI-081).
+How the Graph view of the Beads views picks its scope, applies the filters, and handles selecting and opening a node (REQ-UI-106, REQ-UI-081, REQ-UI-147, REQ-UI-149).
 
 ```mermaid
 flowchart TD
@@ -17,8 +17,8 @@ flowchart TD
   any -- no --> empty([Say No beads match these filters])
   any -- yes --> draw[Draw the nodes, the arrows between them, outside beads and cycles]
   draw --> act{User action}
-  act -- select --> panel([Set select and show the details panel])
-  act -- open a node with children --> drill([Set scope to it and show the breadcrumb])
-  act -- open a node without children --> page([Open its bead page])
+  act -- "select: a click from 1024px, or Enter" --> panel([Set select and show the details panel from 1024px])
+  act -- "open: a double click, Enter on the selected node, or a click under 1024px" --> page([Open its bead page])
+  act -- "Show children in the panel of a node with children" --> drill([Set scope to it and show the breadcrumb])
   act -- breadcrumb item --> up([Set scope to that item])
 ```

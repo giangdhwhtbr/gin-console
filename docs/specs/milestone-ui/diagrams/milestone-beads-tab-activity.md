@@ -7,7 +7,7 @@ flowchart TD
   open([User opens /milestones/<project>/<id>]) --> tab{tab in the URL?}
   tab -- graph --> redirect[Replace with tab=beads and view=graph]
   redirect --> beads
-  tab -- beads --> beads[Show the Beads views with the milestone fixed and no Milestone select]
+  tab -- beads --> beads[Show the Beads views with the milestone fixed and no Milestone filter]
   tab -- absent or other --> gantt([Show the Gantt tab])
   beads --> closed{Milestone closed?}
   closed -- yes --> fetchc[GET /api/beads with closed=1]

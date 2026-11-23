@@ -1,0 +1,7 @@
+# Tests: Beads views
+
+Automated tests carry the REQ-ID in the test name or a comment. List here only manual or QE cases.
+
+| TC | REQ | type | evidence |
+|---|---|---|---|
+| TC-1 | REQ-UI-142, REQ-UI-143, REQ-UI-144, REQ-UI-145, REQ-UI-146, REQ-UI-147, REQ-UI-148, REQ-UI-149, REQ-UI-084, REQ-UI-104, REQ-UI-106, REQ-UI-037, REQ-UI-046, REQ-UI-140, REQ-MILESTONE-UI-018 | manual (Playwright by claude) | Not run yet. On the Tailscale build with the `example` project, at 1440, 1024 and 390px in the light and the dark theme: the bar is one line at 1440px, and at 1024px the search, chips, "More filters" and "Clear filters" share one line; the current milestone shows as a chip, its "×" sets `milestone=all`, a Status chip reads "Status <values> ×" and its "×" removes it, "More filters" counts its active filters, and "Clear filters" shows only while a filter is active and brings back the current milestone chip; at 390px "Filters" counts the active filters and its sheet follows the bar's order; the search box shows `/` from 768px and `/` focuses it; in List, Board, Focus, Graph and Lanes (Beads page, a milestone page's Beads tab, the Graph and Lanes tabs of `ex-e12`) a click selects and shows the panel from 1024px and opens the bead page at 390px, a double click and a second `Enter` open the bead page, and Escape returns the focus to the item; Board and Focus show the panel in a third of the width; "Show children" in the Graph panel of an epic draws its tasks; no page error in the browser console. |
