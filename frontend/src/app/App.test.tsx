@@ -127,6 +127,27 @@ describe("App routing", () => {
     expect(screen.queryByRole("heading", { name: "Projects" })).toBeNull();
   });
 
+  it("REQ-UI-099 / when the project list cannot be loaded is replaced by /my-tasks", async () => {
+    window.history.replaceState(null, "", "/");
+    const before = window.history.length;
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("offline"))));
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks"));
+    expect(window.history.length).toBe(before);
+  });
+
+  it("REQ-UI-099 /?project=beta is replaced by My Tasks of beta", async () => {
+    window.history.replaceState(null, "", "/?project=beta");
+    const before = window.history.length;
+    vi.stubGlobal("fetch", vi.fn(() => json([
+      { name: "alpha", path: "/a", exists: true, beads: null },
+      { name: "beta", path: "/b", exists: true, beads: null },
+    ])));
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks?project=beta"));
+    expect(window.history.length).toBe(before);
+  });
+
   it("REQ-UI-099 / without projects is replaced by /my-tasks", async () => {
     window.history.replaceState(null, "", "/");
     const before = window.history.length;
@@ -136,21 +157,17 @@ describe("App routing", () => {
     expect(window.history.length).toBe(before);
   });
 
-  it("REQ-UI-063 titles the list pages with their project", async () => {
+  it.each<[string, string]>([
+    ["/beads?project=alpha", "Beads · alpha · gin-console"],
+    ["/milestones?project=alpha", "Milestones · alpha · gin-console"],
+    ["/reports?project=alpha&tab=quality", "Reports · Quality · alpha · gin-console"],
+    ["/my-tasks", "My Tasks · gin-console"],
+    ["/my-tasks?project=alpha", "My Tasks · alpha · gin-console"],
+  ])("REQ-UI-063 titles %s", async (path, title) => {
     vi.stubGlobal("fetch", vi.fn(() => alpha()));
-    const cases: [string, string][] = [
-      ["/beads?project=alpha", "Beads · alpha · gin-console"],
-      ["/milestones?project=alpha", "Milestones · alpha · gin-console"],
-      ["/reports?project=alpha&tab=quality", "Reports · Quality · alpha · gin-console"],
-      ["/my-tasks", "My Tasks · gin-console"],
-      ["/my-tasks?project=alpha", "My Tasks · alpha · gin-console"],
-    ];
-    for (const [path, title] of cases) {
-      window.history.replaceState(null, "", path);
-      render(<App />);
-      await waitFor(() => expect(document.title).toBe(title));
-      cleanup();
-    }
+    window.history.replaceState(null, "", path);
+    render(<App />);
+    await waitFor(() => expect(document.title).toBe(title), { timeout: 3000 });
   });
 
   it("REQ-UI-063 the login page keeps the loading title", () => {

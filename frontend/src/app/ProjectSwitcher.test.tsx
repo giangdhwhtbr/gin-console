@@ -39,6 +39,20 @@ describe("ProjectSwitcher", () => {
     expect(button).toHaveTextContent("3 projects");
   });
 
+  it.each<[SwitcherVariant, string]>([["sidebar", "w-full"], ["bar", "max-w-40"]])(
+    "REQ-UI-061 a 60-character project name is cut short in the switcher (%s)",
+    async (variant, bound) => {
+      const long = "p".repeat(60);
+      vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([entry(long)]))));
+      open(variant, `/beads?project=${long}`);
+      const button = await trigger(new RegExp(long));
+      const name = within(button).getByTitle(long); // REQ-UI-107: the full name is the title
+      expect(name).toHaveClass("truncate");
+      expect(name.parentElement).toHaveClass("min-w-0");
+      expect(button).toHaveClass(bound); // the trigger stays within its container
+    },
+  );
+
   it("REQ-UI-123 the rail variant is a capital letter button named Project: <name>", async () => {
     open("rail");
     const button = await trigger("Project: beta");

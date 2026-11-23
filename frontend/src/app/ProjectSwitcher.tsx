@@ -42,7 +42,7 @@ export function ProjectSwitcher({ variant }: { variant: SwitcherVariant }) {
         ) : (
           <>
             <span className="flex min-w-0 flex-col text-left">
-              <span className="truncate">{label}</span>
+              <span className="truncate" title={label}>{label}</span>
               {variant === "sidebar" && <span className="text-xs font-normal text-muted-foreground">{names.length} projects</span>}
             </span>
             <ChevronsUpDown aria-hidden className="size-4 shrink-0 opacity-60" />
