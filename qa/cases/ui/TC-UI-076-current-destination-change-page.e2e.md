@@ -1,16 +1,16 @@
 # TC-UI-076: Current destination: Change page
 
-- **REQ:** REQ-UI-057@92e2ae1c
+- **REQ:** REQ-UI-057@e16f2d59
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 0cab7e6f
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 333a24fb
 
 **Preconditions:**
 - Project `alpha` is stubbed
 
 **Steps:**
-1. Open `/`
+1. Open `/beads?project=alpha`
 2. Click the "Reports" link in the main navigation
 
 **Expected:**

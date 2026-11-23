@@ -1,10 +1,10 @@
 # TC-UI-030: Team headline
 
-- **REQ:** REQ-UI-095@1912887f
+- **REQ:** REQ-UI-095@78603446
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 8610c62d
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 06926132
 
 **Preconditions:**
 - The team report of an open milestone with 27 of 64 beads closed, `pace` 3.6 and `pace_needed` 3.4, whose forecast `finish` is before its `end`

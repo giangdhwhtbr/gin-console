@@ -1,10 +1,10 @@
 # TC-BEADS-042: Stage of an epic
 
-- **REQ:** REQ-BEADS-020@fa401781
+- **REQ:** REQ-BEADS-020@b0eb251f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-21T05-29-13-api
-- **Checked:** c5ae995a
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 3eca30dc
 
 **Preconditions:**
 - Project `p` has epic `e-1`

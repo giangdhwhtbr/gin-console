@@ -1,7 +1,10 @@
 # TC-BEADS-058: Only pull
 
-- **REQ:** REQ-BEADS-003@f92fbf6c
+- **REQ:** REQ-BEADS-003@1b0ec299
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 5587d3d0
 
 **Preconditions:**
 - Projects A and B are configured, each with a Dolt remote

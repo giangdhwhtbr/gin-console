@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-019@afe14198
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** b5b1bc24
 
 **Preconditions:**
 - Project `alpha` has bead `a-1` whose `metadata.claim` is the string `{"holder": "bao@x.io", "expires_at": "2026-11-21T09:00:00Z"}`

@@ -1,6 +1,6 @@
 # TC-UI-011: My Tasks matches by email or name
 
-- **REQ:** REQ-UI-100@906b78b7
+- **REQ:** REQ-UI-100@14d1209a
 - **Priority:** high
 
 **Preconditions:**
@@ -8,7 +8,7 @@
 - Project A in `/api/projects/beads`; `GET /api/beads?project=A` returns open beads assigned to `giangdhwhtbr`, `GiangDHWHTBR@gmail.com` and `alice`, and one unassigned open bead owned by `giangdhwhtbr@gmail.com`
 
 **Steps:**
-1. Open /my-tasks
+1. Open /my-tasks?project=A
 
 **Expected:**
 - Only the beads assigned to `giangdhwhtbr` and `GiangDHWHTBR@gmail.com` are listed

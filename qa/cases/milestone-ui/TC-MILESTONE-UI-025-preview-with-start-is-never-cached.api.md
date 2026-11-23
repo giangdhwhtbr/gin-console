@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-008@3fdbaeb8
 Priority: medium
 Result: passed
-Run: qa/evidence/2026-11-06T04-03-21-api
+Run: qa/evidence/2026-11-23T03-32-23-api
+Checked: 0f2a2937
 
 Preconditions:
 - a request for M1 with `start=2026-11-16` answered less than 5 seconds ago

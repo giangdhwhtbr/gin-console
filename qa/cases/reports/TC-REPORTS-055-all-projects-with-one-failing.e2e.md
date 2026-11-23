@@ -1,19 +1,21 @@
-# TC-REPORTS-055: All projects with one failing
+# TC-REPORTS-055: Milestones request fails
 
-- **REQ:** REQ-REPORTS-018@2d3d5d2a
+- **REQ:** REQ-REPORTS-018@76e8618c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** b7e6242c
 
 **Preconditions:**
-- Project `alpha` whose milestones list has velocity, a kicked-off milestone and `days_per_point`
-- Project `beta` whose `GET /api/milestones?project=beta` answers 502 with `cause: "outdated"`
+- Project `alpha` whose `GET /api/milestones?project=alpha` answers 502 with `cause: "outdated"`
 
 **Test data:**
 - None
 
 **Steps:**
 1. Set the window width to 1280 px
-2. Open `/reports?project=all&tab=velocity`
+2. Open `/reports?project=alpha&tab=velocity`
 
 **Expected:**
-- `alpha` shows its figures, charts and table
-- `beta` shows the outdated error
+- The tab shows the outdated error
+- No figures are shown

@@ -1,7 +1,10 @@
 # TC-SERVER-008: Counts and active epics
 
-- **REQ:** REQ-SERVER-006@ea632040
+- **REQ:** REQ-SERVER-006@ec9c5c6d
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** ce7bc2ac
 
 **Preconditions:**
 - Project `alpha` has 3 open, 1 in_progress and 2 ready issues
@@ -11,7 +14,7 @@
 - None
 
 **Steps:**
-1. Send `GET /api/projects`
+1. Send `GET /api/projects/beads`
 
 **Expected:**
 - `alpha` has a `beads` object with those counts

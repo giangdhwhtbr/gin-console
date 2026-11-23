@@ -1,23 +1,22 @@
-# TC-UI-288: Partial failure
+# TC-UI-288: Failure shows the error with Retry
 
-- **REQ:** REQ-UI-093@d350c545
+- **REQ:** REQ-UI-093@e7ea75ab
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** ee149c75
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 1998e8f3
 
 **Preconditions:**
-- The answer for "All projects" has `errors` holding `beta` with an error
+- The report request answers 502 with an `error`
 - The window is 900px wide, so the page shows its tab list
 
 **Test data:**
 - None
 
 **Steps:**
-1. Open `/reports?project=all&tab=delivery`
-2. Pick the Quality tab
+1. Open `/reports?project=alpha&tab=delivery`
+2. Press Retry
 
 **Expected:**
-- A warning above the tabs names `beta` and its error
-- The warning stays after picking the Quality tab
-- The sections show the other projects
+- After step 1 the page shows the error with a Retry button
+- After step 2 the report is requested again

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-007@d68de99d
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 2d0a0f3e
 
 **Preconditions:**
 - Project `alpha` has an open bead `g-1` titled `external: .planning/plans/p.md#2` without blockers

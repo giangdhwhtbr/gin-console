@@ -1,7 +1,10 @@
 # TC-BEADS-013: Changed file is read again
 
-- **REQ:** REQ-BEADS-012@1a1b7a68
+- **REQ:** REQ-BEADS-012@49e4c74a
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** b6f78f3b
 
 **Preconditions:**
 - Project P with a snapshot taken from a file modified at t1

@@ -161,7 +161,7 @@ def test_tc_beads_067_merge_gate_is_never_ready(tmp_path: Path) -> None:
 
 
 # REQ-SERVER-006
-# TC: TC-SERVER-018@d3670478
+# TC: TC-SERVER-018@9ab56737
 def test_tc_server_018_merge_gates_not_counted(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

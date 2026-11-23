@@ -11,7 +11,7 @@
 1. Start the server
 2. Advance the clock by 5 minutes
 3. Read the server log
-4. Request `GET /api/projects`
+4. Request `GET /api/projects/beads`
 
 **Expected:**
 - The server log names A and the error

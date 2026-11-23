@@ -1,10 +1,10 @@
 # TC-UI-313: Link in a sentence is underlined in the identity colour
 
-- **REQ:** REQ-UI-139@4e59801c
+- **REQ:** REQ-UI-139@fbddf5e1
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 148049c2
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** ec5e1e24
 
 **Preconditions:**
 - Project `P` reports a task `p-1` whose description is `See [docs](https://example.com)`

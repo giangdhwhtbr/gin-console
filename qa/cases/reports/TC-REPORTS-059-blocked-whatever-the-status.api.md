@@ -3,8 +3,8 @@
 - **REQ:** REQ-REPORTS-010@5a79bc07
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-35-00-api
-- **Checked:** 04d50aea
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 0f1ea635
 
 **Preconditions:**
 - Project `alpha` has milestone `m2` with epic `e1`

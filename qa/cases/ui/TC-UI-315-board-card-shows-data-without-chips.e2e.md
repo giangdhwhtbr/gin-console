@@ -1,10 +1,10 @@
 # TC-UI-315: Board card shows data without chips
 
-- **REQ:** REQ-UI-140@7e27d5df
+- **REQ:** REQ-UI-140@aa5bbea9
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-49-44
-- **Checked:** 389e31bb
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** fd871d37
 
 **Preconditions:**
 - Project `P` reports an in-progress P2 epic `e-6` with `points: 8` and the kind `technical`

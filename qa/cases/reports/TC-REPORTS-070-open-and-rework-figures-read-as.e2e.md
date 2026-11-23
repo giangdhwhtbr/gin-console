@@ -3,7 +3,7 @@
 - **REQ:** REQ-REPORTS-013@5683bbdb
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-53-38
+- **Run:** qa/evidence/2026-11-23T03-27-52
 - **Checked:** 390e7f66
 
 **Preconditions:**

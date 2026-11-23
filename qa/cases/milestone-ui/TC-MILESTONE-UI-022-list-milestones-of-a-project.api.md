@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-008@3fdbaeb8
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-03-21-api
+Run: qa/evidence/2026-11-23T03-32-23-api
+Checked: e1ba808b
 
 Preconditions:
 - project P whose `milestone list --all --json` prints schema 1 with M1

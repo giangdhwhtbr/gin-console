@@ -49,7 +49,7 @@ def project_beads(api: TestClient, name: str) -> dict[str, Any]:
     return result
 
 
-# TC: TC-BEADS-071@d89f42bf
+# TC: TC-BEADS-071@a9594f5f
 def test_tc_beads_071_blocked_whatever_the_status(tmp_path: Path) -> None:
     rows = [
         bead("a"),
@@ -167,7 +167,7 @@ def test_tc_reports_059_blocked_whatever_the_status(tmp_path: Path) -> None:
     assert team["open"] == 3
 
 
-# TC: TC-SERVER-019@0f512e28
+# TC: TC-SERVER-019@e1f4dffa
 def test_tc_server_019_blocked_whatever_the_status(tmp_path: Path) -> None:
     rows = [
         bead("x"),

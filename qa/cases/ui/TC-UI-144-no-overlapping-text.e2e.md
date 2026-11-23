@@ -1,6 +1,6 @@
-# TC-UI-144: No overlapping text on Projects and My Tasks
+# TC-UI-144: No overlapping text on My Tasks
 
-- **REQ:** REQ-UI-110@adc61666
+- **REQ:** REQ-UI-110@6bf5889e
 - **Priority:** high
 
 **Preconditions:**
@@ -9,30 +9,22 @@
 **Steps:**
 1. Set the theme to light
 2. Set the window width to 390 px
-3. Open `/`
-4. Open `/my-tasks`
-5. Set the window width to 1024 px
-6. Open `/`
+3. Open `/my-tasks`
+4. Set the window width to 1024 px
+5. Open `/my-tasks`
+6. Set the window width to 1440 px
 7. Open `/my-tasks`
-8. Set the window width to 1440 px
-9. Open `/`
-10. Open `/my-tasks`
-11. Set the window width to 1920 px
-12. Open `/`
-13. Open `/my-tasks`
-14. Set the theme to dark
-15. Set the window width to 390 px
-16. Open `/`
-17. Open `/my-tasks`
-18. Set the window width to 1024 px
-19. Open `/`
-20. Open `/my-tasks`
-21. Set the window width to 1440 px
-22. Open `/`
-23. Open `/my-tasks`
-24. Set the window width to 1920 px
-25. Open `/`
-26. Open `/my-tasks`
+8. Set the window width to 1920 px
+9. Open `/my-tasks`
+10. Set the theme to dark
+11. Set the window width to 390 px
+12. Open `/my-tasks`
+13. Set the window width to 1024 px
+14. Open `/my-tasks`
+15. Set the window width to 1440 px
+16. Open `/my-tasks`
+17. Set the window width to 1920 px
+18. Open `/my-tasks`
 
 **Expected:**
 - At every width and in both themes, no text overlaps other text or a bar, line or arrow it does not belong to

@@ -1,10 +1,10 @@
 # TC-UI-029: Retired tab in a link
 
-- **REQ:** REQ-UI-095@1912887f
+- **REQ:** REQ-UI-095@78603446
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 3be35373
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** b6b40867
 
 **Preconditions:**
 - The URL `/reports?project=alpha&tab=coverage`

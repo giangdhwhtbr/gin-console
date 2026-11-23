@@ -1,10 +1,10 @@
 # TC-UI-093: Other project
 
-- **REQ:** REQ-UI-073@99c2938a
+- **REQ:** REQ-UI-073@3fe05bd7
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 3123dfb8
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 52cda7cd
 
 **Preconditions:**
 - Projects `a` and `b`, each with a bead; the Beads page of project `a` was shown last

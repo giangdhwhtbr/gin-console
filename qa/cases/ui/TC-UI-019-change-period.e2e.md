@@ -1,10 +1,10 @@
 # TC-UI-019: Change period
 
-- **REQ:** REQ-UI-088@086b0a47
+- **REQ:** REQ-UI-088@ed9bddcf
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** ca27e8c7
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** a27bbc06
 
 **Preconditions:**
 - The Reports page for `alpha`, 30 days and the Delivery tab

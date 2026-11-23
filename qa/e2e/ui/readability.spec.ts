@@ -131,7 +131,7 @@ async function stub(page: Page): Promise<string[]> {
     let status = 404;
     const ok = (value: unknown) => { body = value; status = 200; };
     const p = url.pathname;
-    if (p === '/api/projects' || p === '/api/projects/beads') {
+    if (p === '/api/projects/beads') {
       const beadsOf = { open: 5, in_progress: 2, blocked: 1, ready: 2, prep: 0, epics: [{ id: LONG_ID, title: LONG_TITLE }, { id: 'ex-e2', title: 'Search relevance' }] };
       ok(['example', 'qwikfone'].map((name) => ({ name, path: `/home/gin/${name}`, exists: true, workflow: null, beads: beadsOf })));
     } else if (p === '/api/beads/milestones') ok({ milestones: options, current: 'ex-m2' });
@@ -167,7 +167,6 @@ const report_ = (tab: string): Visit => ({ name: `reports ${tab}`, url: `/report
 const gantt = (zoom: string): Visit => ({ name: `gantt ${zoom}`, url: `/milestones/example/ex-m2?tab=gantt&zoom=${zoom}`, ready: async (page) => { await expect(page.locator('[data-scroller]').first()).toBeVisible(); await expect(page.getByText(/^Loading/)).toHaveCount(0); } });
 
 const groups: Record<string, Visit[]> = {
-  projects: [{ name: 'projects', url: '/', ready: async (page) => { await expect(page.getByText('qwikfone', { exact: true }).first()).toBeVisible(); } }],
   'beads views': ['list', 'board', 'focus', 'graph'].map(beadsView),
   'beads lanes': [
     { name: 'beads lanes', url: '/beads?project=example&milestone=all&view=lanes&scope=ex-e12', ready: async (page) => { await expect(page.getByTestId('lanes-canvas')).toBeVisible(); await expect(page.locator('[data-marker]').first()).toBeVisible(); } },
@@ -189,7 +188,7 @@ const groups: Record<string, Visit[]> = {
     { name: 'epic graph', url: '/beads/example/ex-e12?tab=graph&closed=1', ready: async (page) => { await expect(page.locator('section[data-lane]').first()).toBeVisible(); await expect(page.locator('[data-chip]').first()).toBeVisible(); } },
     { name: 'epic lanes', url: '/beads/example/ex-e12?tab=lanes', ready: async (page) => { await expect(page.getByTestId('lanes-canvas')).toBeVisible(); await expect(page.locator('[data-marker]').first()).toBeVisible(); } },
   ],
-  'my tasks': [{ name: 'my tasks', url: '/my-tasks', ready: text('Export CSV with every ledger column') }],
+  'my tasks': [{ name: 'my tasks', url: '/my-tasks?project=example', ready: async (page) => { await expect(page.getByRole('link', { name: /Search relevance/ }).first()).toBeVisible(); } }],
   milestones: [{ name: 'milestones', url: '/milestones?project=example', ready: text('General availability') }],
   'gantt 1w and 2w': ['1w', '2w'].map(gantt),
   'gantt all and scrolled': [

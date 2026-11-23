@@ -3,7 +3,7 @@
 - **REQ:** REQ-UI-065@ca703482
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
+- **Run:** qa/evidence/2026-11-23T03-27-52
 - **Checked:** b95e4e5a
 
 **Preconditions:**

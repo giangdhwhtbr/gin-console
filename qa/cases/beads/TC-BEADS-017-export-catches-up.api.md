@@ -1,15 +1,17 @@
 # TC-BEADS-017: Export catches up
 
-- **REQ:** REQ-BEADS-013@a896831f
+- **REQ:** REQ-BEADS-013@c0cfe2a2
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 68958957
 
 **Preconditions:**
 - Project P whose export is stale (manifest changed, file not)
 
 **Steps:**
 1. Write `issues.jsonl` again
-2. Wait for the 5-second reuse of `GET /api/projects` to pass
-3. Request `GET /api/projects`
+2. Request `GET /api/projects/beads` at once
 
 **Expected:**
 - The file was read again

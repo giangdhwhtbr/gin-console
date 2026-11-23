@@ -3,7 +3,7 @@
 - **REQ:** REQ-BEADS-023@7ee5b152
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T04-35-00-api
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
 - **Checked:** 8e26c146
 
 **Preconditions:**

@@ -1,7 +1,10 @@
 # TC-REPORTS-052: Milestones with velocity
 
-- **REQ:** REQ-REPORTS-018@2d3d5d2a
+- **REQ:** REQ-REPORTS-018@76e8618c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 7ef61a28
 
 **Preconditions:**
 - Project `alpha` whose milestones list has `days_per_point` `{value: 1.4, measured_epics: 6, assumed: false}`

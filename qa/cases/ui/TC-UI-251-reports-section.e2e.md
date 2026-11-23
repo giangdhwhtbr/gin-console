@@ -1,10 +1,10 @@
 # TC-UI-251: Reports section
 
-- **REQ:** REQ-UI-063@0282add4
+- **REQ:** REQ-UI-063@2442ed2a
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 802ff7ef
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** c3d4a17b
 
 **Preconditions:**
 - Project `example` is configured with a report

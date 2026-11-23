@@ -1,10 +1,10 @@
 # TC-UI-240: Bead path
 
-- **REQ:** REQ-UI-126@554192cf
+- **REQ:** REQ-UI-126@a9ca80b7
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** cb4d8124
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** d9ece0e9
 
 **Preconditions:**
 - Projects `a` and `b` are configured; the current project is `a`

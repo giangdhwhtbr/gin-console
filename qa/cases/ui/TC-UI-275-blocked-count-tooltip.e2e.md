@@ -1,19 +1,19 @@
 # TC-UI-275: Blocked count tooltip
 
-- **REQ:** REQ-UI-132@75ded0c7
+- **REQ:** REQ-UI-132@cb96c267
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 86f893f0
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** b58dd319
 
 **Preconditions:**
-- Project `example` has 4 blocked beads, so its Projects card reads "blocked 4"
+- Project `example` has 4 blocked beads, so the Blocked column of its Board holds 4
 
 **Steps:**
-1. Open `/`
-2. Move the keyboard focus to "blocked 4" with Tab
+1. Open `/beads?project=example&view=board`
+2. Rest the pointer on the count of the Blocked column
 3. Press Escape
 
 **Expected:**
-- After step 2 a tooltip reads "Blocked: status blocked, or waiting on an open blocker of its own or of a parent. Prep tasks are counted apart." within 500 ms
+- After step 2 a tooltip reads "Blocked: status blocked, or waiting on an open blocker of its own or of a parent. Prep tasks are counted apart. Counted in this column." within 500 ms
 - After step 3 the tooltip is closed

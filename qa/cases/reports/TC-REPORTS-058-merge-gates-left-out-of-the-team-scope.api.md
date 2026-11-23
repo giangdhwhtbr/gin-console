@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-REPORTS-009@b3daf2cc
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 9d5410dd
 
 **Preconditions:**
 - Project `alpha` has milestone `m2`

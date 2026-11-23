@@ -1,4 +1,4 @@
-// TC: TC-BEADS-056@103eb4bf
+// TC: TC-BEADS-056@3f40220f
 import { test, expect } from '../evidence';
 import { bead } from '../support/api';
 import { pulled, stubProjectPulls } from '../support/pull';
@@ -19,8 +19,8 @@ test('TC-BEADS-056: Failed pull note (REQ-BEADS-018)', async ({ page, ev }) => {
   };
   const note = 'Pulling Beads of A failed: Merge conflict detected. Run bd dolt pull in /tmp/a.';
 
-  await ev.step('1. Open /my-tasks', async () => {
-    await page.goto('/my-tasks');
+  await ev.step('1. Open /my-tasks?project=A', async () => {
+    await page.goto('/my-tasks?project=A');
     await expect(page.getByText(note)).toHaveCount(1);
     await expect(page.getByText(/Pulling Beads of B/)).toHaveCount(0);
     await expectBelowNote();

@@ -1,7 +1,10 @@
 # TC-BEADS-045: Opted out or missing
 
-- **REQ:** REQ-BEADS-016@64da543e
+- **REQ:** REQ-BEADS-016@ea0e7f1e
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 5b5ac079
 
 **Preconditions:**
 - Project A is configured with `pull: false`
@@ -10,7 +13,7 @@
 
 **Steps:**
 1. Send `POST /api/refresh`
-2. Request `GET /api/projects`
+2. Request `GET /api/projects/beads`
 
 **Expected:**
 - The fake recorded no `bd` call for A or B

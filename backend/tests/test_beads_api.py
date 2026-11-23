@@ -133,23 +133,26 @@ def test_beads_002_unknown_bead_project_or_directory_is_404(tmp_path: Path, path
 
 
 # REQ-BEADS-003 (Option-like id: 404, and no file outside issues.jsonl is read)
-@pytest.mark.parametrize("ident", ["--help", "-x", "..", "a%2Fb", "a%00b", ".a", "a%20b"])
-def test_beads_003_option_like_ids_are_404_and_read_nothing(tmp_path: Path, ident: str) -> None:
+# TC: TC-BEADS-001@6288a8a0
+@pytest.mark.parametrize("ident", ["--help", "-x", "..", "..%2Fx", "a%2Fb", "a%00b", ".a", "a%20b"])
+def test_tc_beads_001_option_like_ids_are_404_and_read_nothing(tmp_path: Path, ident: str) -> None:
     fake = FakeExport(shown={"a-5": bead("a-5")})
     assert make(tmp_path, fake).get(f"/api/beads/proj/{ident}").status_code == 404
     assert fake.calls == []
 
 
 # REQ-BEADS-003 (Odd closed value)
+# TC: TC-BEADS-002@b98cf8a8
 @pytest.mark.parametrize("closed", ["../x", "true", "", "0", "11", "1&closed=0"])
-def test_beads_003_odd_closed_values_mean_not_closed(tmp_path: Path, closed: str) -> None:
+def test_tc_beads_002_odd_closed_values_mean_not_closed(tmp_path: Path, closed: str) -> None:
     api = make(tmp_path, FakeExport(FOUR + CLOSED))
     response = api.get("/api/beads", params={"project": "proj", "closed": closed})
     assert response.status_code == 200 and len(response.json()) == 4
 
 
 # REQ-BEADS-003 (No bd process): reading routes start no bd, even with the real bd runner
-def test_beads_003_no_bd_process(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+# TC: TC-BEADS-004@ff272254
+def test_tc_beads_004_no_bd_process(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     started: list[list[str]] = []
 
     def run(cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
@@ -210,7 +213,8 @@ def test_beads_012_a_changed_file_is_read_again(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-003 (Only pull)
-def test_beads_003_refresh_only_runs_bd_dolt_pull(
+# TC: TC-BEADS-058@ca3bb958
+def test_tc_beads_058_refresh_only_runs_bd_dolt_pull(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     started: list[tuple[list[str], Path]] = []
@@ -273,7 +277,8 @@ def test_beads_012_refresh_survives_a_runner_error(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-012 (Refresh after a failed pull), REQ-BEADS-016: `/api/projects/beads` shows `pull`
-def test_beads_012_refresh_after_a_failed_pull(
+# TC: TC-BEADS-059@b3371fbb
+def test_tc_beads_059_refresh_after_a_failed_pull(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     fake = FakeExport(FOUR)
@@ -313,10 +318,12 @@ def test_beads_005_failures_are_502_with_an_error(tmp_path: Path, message: str) 
 
 
 # REQ-BEADS-005 (One malformed bead)
-def test_beads_005_one_malformed_bead_does_not_fail_the_list(tmp_path: Path) -> None:
+# TC: TC-BEADS-010@630bceae
+def test_tc_beads_010_one_malformed_bead_does_not_fail_the_list(tmp_path: Path) -> None:
     fake = FakeExport([bead("a-1"), bead("a-2", title=7), bead("a-3")])
-    body = make(tmp_path, fake).get("/api/beads", params={"project": "proj"}).json()
-    assert [b["id"] for b in body] == ["a-1", "a-3"]
+    response = make(tmp_path, fake).get("/api/beads", params={"project": "proj"})
+    assert response.status_code == 200
+    assert [b["id"] for b in response.json()] == ["a-1", "a-3"]
 
 
 # REQ-BEADS-005
@@ -368,17 +375,20 @@ def test_tc_milestone_ui_021_open_milestone_without_blockers_is_not_ready_work(
 
 
 # REQ-BEADS-005 (Missing file)
-def test_beads_005_missing_file_502(tmp_path: Path) -> None:
+# TC: TC-BEADS-008@4a2d405b
+def test_tc_beads_008_missing_file_502(tmp_path: Path) -> None:
     api = make(tmp_path)  # the default reader; proj has no .beads/issues.jsonl
     for path in ("/api/beads?project=proj", "/api/beads/proj/a-1", "/api/beads/proj/a-1/comments"):
         response = api.get(path)
         assert response.status_code == 502
         error = response.json()["error"]
         assert ".beads/issues.jsonl" in error and "bd config set export.auto true" in error
+        assert "bd config set export.interval 1s" in error
 
 
 # REQ-BEADS-005 (Malformed line)
-def test_beads_005_malformed_line_502(tmp_path: Path) -> None:
+# TC: TC-BEADS-009@5cbfd87c
+def test_tc_beads_009_malformed_line_502(tmp_path: Path) -> None:
     path = write_export(tmp_path / "proj", [bead("a-1")])
     path.write_text(path.read_text() + "[1, 2]\n")
     response = make(tmp_path).get("/api/beads", params={"project": "proj"})

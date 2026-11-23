@@ -1,10 +1,10 @@
 # TC-UI-091: Back to the Board with its filters
 
-- **REQ:** REQ-UI-073@99c2938a
+- **REQ:** REQ-UI-073@3fe05bd7
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** c40224df
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** c292a2c3
 
 **Preconditions:**
 - Project `a` with open beads

@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-008@3fdbaeb8
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-03-21-api
+Run: qa/evidence/2026-11-23T03-32-23-api
+Checked: 2aa45c65
 
 Preconditions:
 - project P whose `milestone list` exits 1 with `milestone error: milestones need providers.task_tracking: beads`

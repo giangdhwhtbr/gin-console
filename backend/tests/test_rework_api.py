@@ -347,6 +347,31 @@ def test_tc_reports_062_single_project_fails(tmp_path: Path) -> None:
     assert len(fake.calls) == 2
 
 
+# REQ-REPORTS-007
+# TC: TC-REPORTS-049@dce5703a
+def test_tc_reports_049_one_project_fails_the_other_is_served(tmp_path: Path) -> None:
+    fake = FakeExport(failure=BeadsError("boom"))
+    api = make(tmp_path, {"alpha": [done("a-1", assignee="ann")], "beta": []}, {"beta": fake})
+    failed = api.get("/api/reports", params={"project": "beta"})
+    assert failed.status_code == 502 and failed.json()["error"]
+    served = api.get("/api/reports", params={"project": "alpha"})
+    assert served.status_code == 200 and served.json()["totals"]["closed"] == 1
+    assert "errors" not in served.json() and "errors" not in failed.json()
+
+
+# REQ-REPORTS-007
+# TC: TC-REPORTS-063@abe91f18
+def test_tc_reports_063_members_of_one_project(tmp_path: Path) -> None:
+    api = make(
+        tmp_path,
+        {"alpha": [done("a-1", assignee="ann"), done("a-2", assignee="ann")]},
+    )
+    write_log(tmp_path / "alpha", [status_change("a-1", "closed", "open")])
+    rows = report(api)["quality"]["members"]
+    assert [m["member"] for m in rows] == ["ann"]
+    assert (rows[0]["closed"], rows[0]["reopens"]) == (2, 1)
+
+
 # REQ-REPORTS-019
 # TC: TC-REPORTS-064@339d7077
 def test_tc_reports_064_reopens_counted(tmp_path: Path) -> None:
@@ -389,7 +414,7 @@ def test_tc_reports_065_bugs_found_later(tmp_path: Path) -> None:
 
 
 # REQ-REPORTS-019
-# TC: TC-REPORTS-066@f9b9172e
+# TC: TC-REPORTS-066@45f2784c
 def test_tc_reports_066_missing_or_broken_log(tmp_path: Path) -> None:
     api = make(
         tmp_path,

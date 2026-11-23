@@ -1,7 +1,10 @@
 # TC-REPORTS-043: Late answer
 
-- **REQ:** REQ-REPORTS-017@54eed1f9
+- **REQ:** REQ-REPORTS-017@94b4aefa
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 75ce7839
 
 **Preconditions:**
 - The team report for `m1` and `m2` of project `alpha` exists
@@ -11,10 +14,11 @@
 - None
 
 **Steps:**
-1. Open `/reports?project=alpha&tab=team&milestone=m2`
-2. Pick `m1` in the Milestone select
-3. Release the delayed answer for `m2`
+1. Open `/reports?project=alpha&tab=team&milestone=m1`
+2. Pick `m2` in the Milestone select
+3. Open "Reports" in the Main navigation
+4. Release the delayed answer for `m2`
 
 **Expected:**
 - The page does not show the answer for `m2`
-- The `m1` milestone line stays
+- The Team tab shows the default milestone `m1`, and its milestone line stays

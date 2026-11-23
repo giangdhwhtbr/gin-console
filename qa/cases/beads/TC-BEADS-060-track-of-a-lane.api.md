@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-019@afe14198
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 270b5e7e
 
 **Preconditions:**
 - Project `alpha` has a bead with the description lines `Plan: .planning/plans/2026-11-20-shop.md, Track 2` and `Lane: be`, the labels `lane:be` and `track:2`, and `metadata.claim` `{"holder": "ann@x.io", "expires_at": "2026-11-20T16:00:00Z"}`

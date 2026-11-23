@@ -1,6 +1,6 @@
 # TC-UI-147: Contrast
 
-- **REQ:** REQ-UI-110@adc61666
+- **REQ:** REQ-UI-110@6bf5889e
 - **Priority:** high
 
 **Preconditions:**

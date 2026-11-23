@@ -1,7 +1,10 @@
 # TC-BEADS-043: Pull each project
 
-- **REQ:** REQ-BEADS-016@64da543e
+- **REQ:** REQ-BEADS-016@ea0e7f1e
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 210b2ee1
 
 **Preconditions:**
 - Projects A and B are configured, each with a Dolt remote
@@ -9,7 +12,7 @@
 
 **Steps:**
 1. Send `POST /api/refresh`
-2. Request `GET /api/projects`
+2. Request `GET /api/projects/beads`
 
 **Expected:**
 - The fake recorded one `bd dolt pull` in A's directory and one in B's

@@ -1,10 +1,10 @@
 # TC-UI-028: Headlines
 
-- **REQ:** REQ-UI-095@1912887f
+- **REQ:** REQ-UI-095@78603446
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 67b12c22
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** b01a5dd0
 
 **Preconditions:**
 - A report with 41 closed beads and rework rate 0.09

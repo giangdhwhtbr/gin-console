@@ -1,10 +1,10 @@
 # TC-UI-243: Link starts at the top
 
-- **REQ:** REQ-UI-127@8e22a671
+- **REQ:** REQ-UI-127@d0db8887
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 3bcedc91
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** d91e8171
 
 **Preconditions:**
 - Project `a` has 60 beads

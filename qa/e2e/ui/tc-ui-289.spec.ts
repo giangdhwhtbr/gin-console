@@ -15,9 +15,9 @@ test('TC-UI-289: Late answer', async ({ page, ev }) => {
     if (days === 30) {
       await gate;
       late = true;
-      return route.fulfill({ json: reportBody('alpha', 30, { errors: [{ project: 'alpha', error: 'answer for 30 days' }] }) }).catch(() => {});
+      return route.fulfill({ json: reportBody('alpha', 30, { closed: 30 }) }).catch(() => {});
     }
-    return route.fulfill({ json: reportBody('alpha', days, { errors: [{ project: 'alpha', error: 'answer for 7 days' }] }) });
+    return route.fulfill({ json: reportBody('alpha', days, { closed: 7 }) });
   });
 
   await ev.step('1. Open `/reports?project=alpha&days=30&tab=delivery`', async () => {
@@ -28,14 +28,14 @@ test('TC-UI-289: Late answer', async ({ page, ev }) => {
   await ev.step('2. Pick 7 days', async () => {
     await page.getByRole('button', { name: '7 days' }).click();
     await expect(page.getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByText('answer for 7 days')).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Delivery 7 beads closed' })).toBeVisible();
   });
 
   await ev.step('3. Let the answer for 30 days arrive', async () => {
     release();
     await expect.poll(() => late).toBe(true);
-    await expect(page.getByText('answer for 7 days')).toBeVisible();
-    await expect(page.getByText('answer for 30 days')).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'Delivery 7 beads closed' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'Delivery 30 beads closed' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

@@ -1,10 +1,10 @@
 # TC-UI-026: Unknown tab
 
-- **REQ:** REQ-UI-095@1912887f
+- **REQ:** REQ-UI-095@78603446
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 32f65aec
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 710f7dcb
 
 **Preconditions:**
 - The URL `/reports?project=alpha&tab=nope`

@@ -1,13 +1,14 @@
-# TC-UI-018: Shared link
+# TC-UI-018: Old link for all projects
 
-- **REQ:** REQ-UI-088@086b0a47
+- **REQ:** REQ-UI-088@ed9bddcf
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 06b772c4
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** c0b254a9
 
 **Preconditions:**
-- The URL `/reports?project=all&days=7&tab=delivery`
+- The current project is `alpha`
+- The URL `/reports?project=all&days=7&tab=delivery` (the retired choice "All projects")
 
 **Test data:**
 - None
@@ -16,4 +17,6 @@
 1. Open `/reports?project=all&days=7&tab=delivery`
 
 **Expected:**
-- "All projects" and 7 days are selected and the report for them is requested
+- The URL becomes `/reports?project=alpha&days=7&tab=delivery` without a new history entry
+- 7 days is selected
+- Only the report for `alpha` is requested, and the page has no project select

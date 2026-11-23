@@ -1,4 +1,4 @@
-// TC: TC-BEADS-057@7ed072b3
+// TC: TC-BEADS-057@d7433ea4
 import { test, expect } from '../evidence';
 import { stubProjectPulls } from '../support/pull';
 
@@ -7,7 +7,7 @@ test('TC-BEADS-057: Older backend without pull (REQ-BEADS-018)', async ({ page, 
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubProjectPulls(page, [{ name: 'a', path: '/tmp/a' }]);
 
-  for (const [n, url] of [['1', '/'], ['2', '/beads?project=a'], ['3', '/my-tasks']] as const) {
+  for (const [n, url] of [['1', '/beads?project=a'], ['2', '/my-tasks?project=a']] as const) {
     await ev.step(`${n}. Open ${url}`, async () => {
       await page.goto(url);
       await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();

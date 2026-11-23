@@ -1,6 +1,6 @@
 # TC-UI-046: Change project clears the milestone
 
-- **REQ:** REQ-UI-105@23e31689
+- **REQ:** REQ-UI-105@d5fc34b7
 - **Priority:** medium
 
 **Preconditions:**
@@ -8,7 +8,8 @@
 
 **Steps:**
 1. Open `/my-tasks?project=alpha&milestone=m3`
-2. Choose `beta` in the Project select
+2. Open the project switcher
+3. Choose `beta`
 
 **Expected:**
 - The URL is `/my-tasks?project=beta`

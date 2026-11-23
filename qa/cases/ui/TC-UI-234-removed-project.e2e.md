@@ -1,10 +1,10 @@
 # TC-UI-234: Removed project
 
-- **REQ:** REQ-UI-124@86ecfe10
+- **REQ:** REQ-UI-124@e7f9eed5
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 68594368
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 23c18354
 
 **Preconditions:**
 - Projects `a` and `b` are configured; the favorite `old` is not configured and nothing was chosen in this tab

@@ -1,10 +1,10 @@
 # TC-REPORTS-062: Single project fails
 
-- **REQ:** REQ-REPORTS-007@f51b674f
+- **REQ:** REQ-REPORTS-007@deeb89a4
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-49-45-api
-- **Checked:** c1d2368a
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 46276420
 
 **Preconditions:**
 - `bd` exits non-zero in `alpha`

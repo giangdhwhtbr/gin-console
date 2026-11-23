@@ -1,7 +1,10 @@
 # TC-SERVER-018: Merge gates not counted
 
-- **REQ:** REQ-SERVER-006@ea632040
+- **REQ:** REQ-SERVER-006@ec9c5c6d
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** a44426d3
 
 **Preconditions:**
 - Project `alpha` has 2 open ready tasks
@@ -11,7 +14,7 @@
 - None
 
 **Steps:**
-1. Send `GET /api/projects`
+1. Send `GET /api/projects/beads`
 
 **Expected:**
 - `alpha` has `beads.open` 2 and `beads.ready` 2

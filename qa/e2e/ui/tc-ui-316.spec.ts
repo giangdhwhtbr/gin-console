@@ -1,27 +1,29 @@
-// TC: TC-UI-316@a7559843
+// TC: TC-UI-316@74adac9e
 import { test, expect } from '../evidence';
+import { bead, stubApi } from '../support/api';
 
-test('TC-UI-316: Projects card says missing as text', async ({ page, ev }) => {
+test('TC-UI-316: My Tasks row shows the state as text', async ({ page, ev }) => {
+  // Preconditions: project P reports a blocked bead assigned to the signed-in email; the window is 1440px wide.
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.route('**/api/projects**', (route) =>
-    route.fulfill({
-      json: [{ name: 'gone', path: '/home/gin/gone', exists: false, workflow: { error: 'directory does not exist' }, beads: { error: 'directory does not exist' } }],
-    }),
-  );
-  await page.route('**/api/**', (route) => (route.request().url().includes('/api/projects') ? route.fallback() : route.fulfill({ status: 404, json: { error: 'not stubbed' } })));
+  await stubApi(page, { beads: [bead('p-1', { title: 'Stuck on a review', status: 'blocked', blocked: true, assignee: 'qa@example.com' })] });
 
-  await ev.step('1. Open `/projects`', async () => {
-    await page.goto('/'); // the Projects page is the root of the console
-    await expect(page.getByRole('article', { name: 'gone' })).toBeVisible();
+  await ev.step('1. Open `/my-tasks?project=P`', async () => {
+    await page.goto('/my-tasks?project=P');
+    await expect(page.getByRole('link', { name: 'Stuck on a review' })).toBeVisible();
   });
 
-  await ev.step('2. Find the card of `gone`', async () => {
-    const word = page.getByRole('article', { name: 'gone' }).getByText('missing', { exact: true });
-    await expect(word).toBeVisible();
-    await expect(word).toHaveCSS('color', 'rgb(180, 35, 24)'); // --destructive of the light theme
-    for (const side of ['top', 'right', 'bottom', 'left']) await expect(word).toHaveCSS(`border-${side}-width`, '0px');
-    await expect(word).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-    await expect(page.getByRole('article', { name: 'gone' }).locator('[data-slot="badge"]')).toHaveCount(0);
+  const row = () => page.getByRole('row').filter({ hasText: 'Stuck on a review' });
+  await ev.step('2. Find the row of the blocked bead', async () => {
+    await expect(row()).toBeVisible();
+    await expect(row().getByText('Blocked', { exact: true })).toBeVisible();
+  });
+
+  await ev.step('3. Read the computed border and background of its state', async () => {
+    const state = row().getByText('Blocked', { exact: true });
+    for (const side of ['top', 'right', 'bottom', 'left']) await expect(state).toHaveCSS(`border-${side}-width`, '0px');
+    await expect(state).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expect(row().locator('[data-slot="badge"]')).toHaveCount(0);
   });
 });

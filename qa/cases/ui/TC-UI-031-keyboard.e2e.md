@@ -1,10 +1,10 @@
 # TC-UI-031: Keyboard
 
-- **REQ:** REQ-UI-095@1912887f
+- **REQ:** REQ-UI-095@78603446
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 879cfb9b
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 909c819f
 
 **Preconditions:**
 - The Delivery tab is selected and has focus

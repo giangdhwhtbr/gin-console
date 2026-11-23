@@ -1,4 +1,4 @@
-// TC: TC-UI-076@5cd4266a
+// TC: TC-UI-076@3a6e5879
 import { test, expect } from '../evidence';
 import { stubApi } from '../support/api';
 
@@ -8,9 +8,9 @@ test('TC-UI-076: Current destination: Change page (REQ-UI-057)', async ({ page, 
   await stubApi(page, { projects: ['alpha'] });
   const nav = page.getByRole('navigation', { name: 'Main' });
 
-  await ev.step('1. Open /', async () => {
-    await page.goto('/');
-    await expect(nav.getByRole('link', { name: 'Projects' })).toHaveAttribute('aria-current', 'page');
+  await ev.step('1. Open /beads?project=alpha', async () => {
+    await page.goto('/beads?project=alpha');
+    await expect(nav.getByRole('link', { name: 'Beads' })).toHaveAttribute('aria-current', 'page');
   });
 
   await ev.step('2. Click "Reports" in the main navigation', async () => {

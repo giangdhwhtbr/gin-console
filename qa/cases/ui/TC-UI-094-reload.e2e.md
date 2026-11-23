@@ -1,10 +1,10 @@
 # TC-UI-094: Reload
 
-- **REQ:** REQ-UI-073@99c2938a
+- **REQ:** REQ-UI-073@3fe05bd7
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 21f36862
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 40e752fc
 
 **Preconditions:**
 - Project `a` with bead `a-1`

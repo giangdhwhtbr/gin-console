@@ -1,10 +1,10 @@
 # TC-UI-089: Details panel
 
-- **REQ:** REQ-UI-072@b8e02f9d
+- **REQ:** REQ-UI-072@6a1a0b98
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 5809b8e9
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 3bd25360
 
 **Preconditions:**
 - Project `a` with bead `a-1`

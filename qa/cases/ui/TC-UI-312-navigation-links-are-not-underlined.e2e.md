@@ -1,10 +1,10 @@
 # TC-UI-312: Navigation links are not underlined
 
-- **REQ:** REQ-UI-139@4e59801c
+- **REQ:** REQ-UI-139@fbddf5e1
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** ef402367
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 7c8f8d0c
 
 **Preconditions:**
 - Project `P` reports epic `ex-e12` and the Beads List shows it

@@ -1,19 +1,22 @@
-# TC-SERVER-015: Stage of an epic in progress
+# TC-SERVER-015: No workflow on epics
 
-- **REQ:** REQ-SERVER-006@ea632040
+- **REQ:** REQ-SERVER-006@ec9c5c6d
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 3ac0984c
 
 **Preconditions:**
 - Project `alpha` has in_progress epic `e-1` and ready epic `e-2`
-- `gin state --workflow-id e-1 --format json` reports stage `execute`
+- The `gin` command is replaced by a fake that records every call
 
 **Test data:**
 - None
 
 **Steps:**
-1. Send `GET /api/projects`
+1. Send `GET /api/projects/beads`
 
 **Expected:**
-- `e-1` has `status` `in_progress` and `workflow.stage` `execute`
+- `e-1` has `id`, `title` and `status` `in_progress` and no `workflow`
 - `e-2` has `status` `open` and no `workflow`
-- No `gin state` ran for `e-2`
+- The fake `gin` recorded no call

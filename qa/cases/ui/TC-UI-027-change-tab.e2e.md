@@ -1,10 +1,10 @@
 # TC-UI-027: Change tab
 
-- **REQ:** REQ-UI-095@1912887f
+- **REQ:** REQ-UI-095@78603446
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 93aeab4c
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** e51f2027
 
 **Preconditions:**
 - The Reports page for `alpha`, 90 days and the Delivery tab

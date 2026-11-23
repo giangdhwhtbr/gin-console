@@ -1,4 +1,4 @@
-// TC: TC-UI-283@d5c19e2e
+// TC: TC-UI-283@bd002973
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 import { beadsOf, stubBeadPages } from '../support/shell';
@@ -10,8 +10,8 @@ test('TC-UI-283: My Tasks same handle at another domain', async ({ page, ev }) =
   await stubApi(page, { projects: ['A'], beads: beadsOf(byProject) });
   await stubBeadPages(page, byProject);
 
-  await ev.step('1. Open /my-tasks', async () => {
-    await page.goto('/my-tasks');
+  await ev.step('1. Open /my-tasks?project=A', async () => {
+    await page.goto('/my-tasks?project=A');
     await expect(page.getByRole('link', { name: 'Other domain task' })).toBeVisible();
   });
 });

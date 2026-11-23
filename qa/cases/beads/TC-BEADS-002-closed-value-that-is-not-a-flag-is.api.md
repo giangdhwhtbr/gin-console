@@ -1,7 +1,10 @@
 # TC-BEADS-002: Closed value that is not a flag is ignored
 
-- **REQ:** REQ-BEADS-003@f92fbf6c
+- **REQ:** REQ-BEADS-003@1b0ec299
 - **Priority:** low
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 5cde571c
 
 **Preconditions:**
 - Project P with `.beads/issues.jsonl` holding one open and one closed bead

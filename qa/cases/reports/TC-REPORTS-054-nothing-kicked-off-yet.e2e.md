@@ -1,7 +1,10 @@
 # TC-REPORTS-054: Nothing kicked off yet
 
-- **REQ:** REQ-REPORTS-018@2d3d5d2a
+- **REQ:** REQ-REPORTS-018@76e8618c
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** e6cc9828
 
 **Preconditions:**
 - Project `alpha` whose milestones all have `committed_points: null` and `completed_points: 0`, or no `velocity` key

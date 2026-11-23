@@ -1,7 +1,10 @@
 # TC-BEADS-049: One pull at a time per project
 
-- **REQ:** REQ-BEADS-016@64da543e
+- **REQ:** REQ-BEADS-016@ea0e7f1e
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 3bf611bb
 
 **Preconditions:**
 - Project A is configured; the fake `bd dolt pull` in A takes 2 seconds and exits 0

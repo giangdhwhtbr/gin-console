@@ -1,10 +1,10 @@
 # TC-REPORTS-068: No AI usage in the answer
 
-- **REQ:** REQ-REPORTS-001@bfa65820
+- **REQ:** REQ-REPORTS-001@256e3c2c
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-49-45-api
-- **Checked:** f813889b
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 42594b95
 
 **Preconditions:**
 - Project `alpha` with a closed task whose metadata still holds an `ai_usage` object

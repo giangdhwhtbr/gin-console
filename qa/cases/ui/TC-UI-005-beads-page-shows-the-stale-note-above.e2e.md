@@ -1,6 +1,6 @@
 # TC-UI-005: Beads page shows the stale note above the list
 
-- **REQ:** REQ-UI-103@5ebe1b9b
+- **REQ:** REQ-UI-103@e6e5851a
 - **Priority:** high
 
 **Preconditions:**

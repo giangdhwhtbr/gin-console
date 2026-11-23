@@ -1,10 +1,10 @@
 # TC-UI-229: Icon rail
 
-- **REQ:** REQ-UI-123@96cd57cc
+- **REQ:** REQ-UI-123@4e5e7ee4
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-49-44
-- **Checked:** 2890e451
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 5bbd295e
 
 **Preconditions:**
 - Project `qwikfone` is configured

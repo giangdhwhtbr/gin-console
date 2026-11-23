@@ -1,10 +1,10 @@
 # TC-REPORTS-066: Missing or broken log
 
-- **REQ:** REQ-REPORTS-019@3228f7dd
+- **REQ:** REQ-REPORTS-019@4dd40cfb
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-49-45-api
-- **Checked:** 7a0d1e93
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 29277971
 
 **Preconditions:**
 - Project `alpha` without `.beads/interactions.jsonl`
@@ -14,9 +14,10 @@
 - None
 
 **Steps:**
-1. Send `GET /api/reports?project=all`
+1. Send `GET /api/reports?project=alpha`
+2. Send `GET /api/reports?project=beta`
 
 **Expected:**
-- The response is 200
+- Both responses are 200
 - Every bead of `alpha` has `reopens` 0
 - `b-1` has `reopens` 1

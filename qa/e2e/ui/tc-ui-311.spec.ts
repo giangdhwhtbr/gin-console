@@ -1,4 +1,4 @@
-// TC: TC-UI-311@1dc68372
+// TC: TC-UI-311@68bff344
 import { test, expect } from '../evidence';
 import { bead, detail, entry, epicPlan, list, stubApi } from '../support/api';
 import { stubDetails } from '../support/lanes';
@@ -25,49 +25,43 @@ test('TC-UI-311: No middle dots in page text', async ({ page, ev }) => {
   const pageText = () => page.evaluate(() => document.body.innerText);
   const noDots = async () => expect(await pageText()).not.toContain(' · ');
 
-  await ev.step('1. Open `/projects`', async () => {
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Projects', level: 1 })).toBeVisible();
-  });
-  await ev.step('2. Read the text of the page', noDots);
-
-  await ev.step('3. Open `/beads?project=P&view=list`', async () => {
+  await ev.step('1. Open `/beads?project=P&view=list`', async () => {
     await page.goto('/beads?project=P&view=list');
     await expect(page.getByRole('link', { name: 'Search relevance' })).toBeVisible();
   });
-  await ev.step('4. Read the text of the page and the document title', async () => {
+  await ev.step('2. Read the text of the page and the document title', async () => {
     await noDots();
     await expect(page).toHaveTitle('Beads · P · gin-console');
   });
 
-  await ev.step('5. Open `/beads/P/ex-t1`', async () => {
+  await ev.step('3. Open `/beads/P/ex-t1`', async () => {
     await page.goto('/beads/P/ex-t1');
     await expect(page.getByRole('heading', { name: 'Tune ranking weights', level: 1 })).toBeVisible();
   });
-  await ev.step('6. Read the text of the page', noDots);
+  await ev.step('4. Read the text of the page', noDots);
 
-  await ev.step('7. Open `/my-tasks?project=P`', async () => {
+  await ev.step('5. Open `/my-tasks?project=P`', async () => {
     await page.goto('/my-tasks?project=P');
     await expect(page.getByRole('heading', { name: 'My Tasks', level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Tune ranking weights' })).toBeVisible();
   });
-  await ev.step('8. Read the text of the page', noDots);
+  await ev.step('6. Read the text of the page', noDots);
 
-  await ev.step('9. Open `/milestones?project=P`', async () => {
+  await ev.step('7. Open `/milestones?project=P`', async () => {
     await page.goto('/milestones?project=P');
     await expect(page.getByRole('link', { name: /Beta readiness/ }).first()).toBeVisible();
   });
-  await ev.step('10. Read the text of the page', noDots);
+  await ev.step('8. Read the text of the page', noDots);
 
-  await ev.step('11. Open `/milestones/P/M1`', async () => {
+  await ev.step('9. Open `/milestones/P/M1`', async () => {
     await page.goto('/milestones/P/M1');
     await expect(page.getByRole('heading', { name: 'Beta readiness' }).first()).toBeVisible();
   });
-  await ev.step('12. Read the text of the page', noDots);
+  await ev.step('10. Read the text of the page', noDots);
 
-  await ev.step('13. Open `/reports?project=P`', async () => {
+  await ev.step('11. Open `/reports?project=P`', async () => {
     await page.goto('/reports?project=P');
     await expect(page.getByRole('heading', { name: 'Reports', level: 1 })).toBeVisible();
   });
-  await ev.step('14. Read the text of the page', noDots);
+  await ev.step('12. Read the text of the page', noDots);
 });

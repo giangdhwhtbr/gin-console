@@ -1,17 +1,19 @@
-# TC-BEADS-055: Failed pull on the card
+# TC-BEADS-055: Failed pull note follows the project switcher
 
-- **REQ:** REQ-BEADS-018@3ceab845
+- **REQ:** REQ-BEADS-018@472f1f19
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 50388fba
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 68917155
 
 **Preconditions:**
-- `GET /api/projects` is stubbed with project A whose `pull` is `{"status": "error", "error": "Merge conflict detected", "at": <1 minute ago>}` and which has beads counts
+- `GET /api/projects/beads` is stubbed with project A (path `/tmp/a`, `pull` `{"status": "error", "error": "Merge conflict detected", "at": <1 minute ago>}`) and project B (`pull` `null`)
+- Beads lists for A and B are stubbed
 
 **Steps:**
-1. Open `/`
+1. Open `/my-tasks?project=A`
+2. Choose project B in the project switcher
 
 **Expected:**
-- A's card shows "pull failed: Merge conflict detected" as an error
-- A's beads counts are shown as before
+- After step 1, the page shows one note naming A
+- After step 2, the URL is `/my-tasks?project=B` and no note is shown

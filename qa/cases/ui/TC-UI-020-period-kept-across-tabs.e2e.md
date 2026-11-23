@@ -1,10 +1,10 @@
 # TC-UI-020: Period kept across tabs
 
-- **REQ:** REQ-UI-088@086b0a47
+- **REQ:** REQ-UI-088@ed9bddcf
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 61848b8a
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 2034ff7f
 
 **Preconditions:**
 - The Reports page for `alpha` with 7 days picked on the Delivery tab

@@ -1,10 +1,10 @@
 # TC-UI-276: Dependency indicator tooltip
 
-- **REQ:** REQ-UI-132@75ded0c7
+- **REQ:** REQ-UI-132@cb96c267
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** df8be679
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** af71a798
 
 **Preconditions:**
 - Project `alpha` has task `t-1` with 2 dependencies

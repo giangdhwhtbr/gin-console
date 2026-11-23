@@ -1,10 +1,10 @@
 # TC-UI-310: Filter sheet labels are not in capitals
 
-- **REQ:** REQ-UI-139@4e59801c
+- **REQ:** REQ-UI-139@fbddf5e1
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 52438508
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 2032ffb2
 
 **Preconditions:**
 - Project `P` reports at least one bead

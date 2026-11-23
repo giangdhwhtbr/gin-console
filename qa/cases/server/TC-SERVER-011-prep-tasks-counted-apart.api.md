@@ -1,7 +1,10 @@
 # TC-SERVER-011: Prep tasks counted apart
 
-- **REQ:** REQ-SERVER-006@ea632040
+- **REQ:** REQ-SERVER-006@ec9c5c6d
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 8cd4cccc
 
 **Preconditions:**
 - Project `alpha` has only these beads
@@ -14,7 +17,7 @@
 - None
 
 **Steps:**
-1. Send `GET /api/projects`
+1. Send `GET /api/projects/beads`
 
 **Expected:**
 - `beads.open` of `alpha` is 2

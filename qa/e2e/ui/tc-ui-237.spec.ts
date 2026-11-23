@@ -1,4 +1,4 @@
-// TC: TC-UI-237@8b65da1e
+// TC: TC-UI-237@24d5b5e1
 import { test, expect } from '../evidence';
 import { stubApi } from '../support/api';
 import { mainNav } from '../support/shell';
@@ -18,8 +18,8 @@ test('TC-UI-237: Unknown path (REQ-UI-125)', async ({ page, ev }) => {
     await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible();
     const main = page.getByRole('main');
     await expect(main.getByText('/nope')).toBeVisible();
-    await expect(main.getByRole('link', { name: 'Projects' })).toHaveAttribute('href', '/');
     await expect(main.getByRole('link', { name: 'Beads' })).toHaveAttribute('href', '/beads?project=a');
+    await expect(main.getByRole('link', { name: 'My Tasks' })).toHaveAttribute('href', '/my-tasks?project=a');
     await expect(page).toHaveTitle('Page not found · gin-console');
     await expect(mainNav(page).locator('[aria-current="page"]')).toHaveCount(0);
   });

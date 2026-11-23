@@ -1,10 +1,10 @@
 # TC-UI-130: Choose on the Beads page
 
-- **REQ:** REQ-UI-123@96cd57cc
+- **REQ:** REQ-UI-123@4e5e7ee4
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 70b94cd4
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 6d462903
 
 **Preconditions:**
 - Projects `a` and `b` are configured, each with a bead

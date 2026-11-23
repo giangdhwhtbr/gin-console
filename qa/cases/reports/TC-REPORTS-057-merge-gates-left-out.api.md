@@ -1,10 +1,10 @@
 # TC-REPORTS-057: Merge gates left out
 
-- **REQ:** REQ-REPORTS-001@bfa65820
+- **REQ:** REQ-REPORTS-001@256e3c2c
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-49-39-api
-- **Checked:** f9ea7b91
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** a375f5b5
 
 **Preconditions:**
 - Project `alpha` has a task and a merge gate titled `external: .planning/plans/p.md#2`, both closed 3 days ago

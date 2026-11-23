@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-BEADS-019@afe14198
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 1753a71a
 
 **Preconditions:**
 - Project `alpha` has track `e-1.4` blocked by gate `g-1` titled `external: .planning/plans/2026-11-20-shop.md#2` waiting for track `e-1.2` of lane `be`

@@ -1,10 +1,10 @@
 # TC-UI-152: Hidden tabs are hinted
 
-- **REQ:** REQ-UI-095@1912887f
+- **REQ:** REQ-UI-095@78603446
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 3b59e673
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 48715ae4
 
 **Preconditions:**
 - Project `alpha` exists

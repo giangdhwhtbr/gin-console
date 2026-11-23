@@ -1,10 +1,10 @@
 # TC-REPORTS-067: Read again only on change
 
-- **REQ:** REQ-REPORTS-019@3228f7dd
+- **REQ:** REQ-REPORTS-019@4dd40cfb
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-49-45-api
-- **Checked:** a87b55d0
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** e5361121
 
 **Preconditions:**
 - The log of `alpha` was read for a report and has not changed since

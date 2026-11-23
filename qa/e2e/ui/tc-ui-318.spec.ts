@@ -3,7 +3,7 @@ import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
 const BAR = /rgb\(106, 61, 184\) 3px 0px 0px 0px inset/; // 3px inside the left edge, --identity of the light theme
-const WASH = 'rgb(239, 233, 250)'; // --identity-wash of the light theme
+const WASH = 'rgb(244, 240, 252)'; // --identity-wash of the light theme
 
 test('TC-UI-318: Current place uses the identity colour', async ({ page, ev }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -26,7 +26,7 @@ test('TC-UI-318: Current place uses the identity colour', async ({ page, ev }) =
     await expect(current).toHaveAttribute('aria-current', 'page');
     await expect(current).toHaveCSS('box-shadow', BAR);
     await expect(current.locator('svg').first()).toHaveCSS('color', 'rgb(106, 61, 184)');
-    for (const name of ['Projects', 'My Tasks', 'Milestones', 'Reports']) {
+    for (const name of ['My Tasks', 'Milestones', 'Reports']) {
       const other = nav().getByRole('link', { name });
       await expect(other).toHaveCSS('box-shadow', 'none');
       await expect(other.locator('svg').first()).not.toHaveCSS('color', 'rgb(106, 61, 184)');

@@ -1,10 +1,10 @@
 # TC-UI-095: Storage refused
 
-- **REQ:** REQ-UI-073@99c2938a
+- **REQ:** REQ-UI-073@3fe05bd7
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** bdc842d3
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** abd32a55
 
 **Preconditions:**
 - Project `a` with bead `a-1`; the browser throws when the place is stored (session storage stubbed to throw)

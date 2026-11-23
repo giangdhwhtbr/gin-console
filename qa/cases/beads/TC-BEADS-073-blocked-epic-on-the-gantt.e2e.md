@@ -1,10 +1,10 @@
 # TC-BEADS-073: Blocked epic on the Gantt
 
-- **REQ:** REQ-BEADS-021@6fc8f7d7
+- **REQ:** REQ-BEADS-021@23b392e1
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** a5b507ba
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 797747f2
 
 **Preconditions:**
 - Project `alpha` has milestone `m1` shown on the Gantt, with epic `e` of status `open` blocked by the open bead `a`

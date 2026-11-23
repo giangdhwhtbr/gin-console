@@ -16,6 +16,6 @@ test('TC-UI-317: Controls keep their pills', async ({ page, ev }) => {
     await expect(status).toBeVisible();
     const pill = status.getByText('1', { exact: true });
     await expect(pill).toBeVisible();
-    await expect(pill).toHaveCSS('background-color', 'rgb(239, 233, 250)');
+    await expect(pill).toHaveCSS('background-color', 'rgb(244, 240, 252)');
   });
 });

@@ -1,7 +1,10 @@
 # TC-BEADS-010: One malformed bead is skipped
 
-- **REQ:** REQ-BEADS-005@b68c592c
+- **REQ:** REQ-BEADS-005@82adf461
 - **Priority:** medium
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** 8645dc32
 
 **Preconditions:**
 - Project P whose `issues.jsonl` has 3 beads, one of which has a numeric `title`

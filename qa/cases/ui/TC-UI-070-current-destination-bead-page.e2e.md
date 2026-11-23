@@ -1,10 +1,10 @@
 # TC-UI-070: Current destination: Bead page
 
-- **REQ:** REQ-UI-057@92e2ae1c
+- **REQ:** REQ-UI-057@e16f2d59
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 3d374c6a
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** ccfc64dc
 
 **Preconditions:**
 - Project `alpha` is stubbed with bead `a-1`

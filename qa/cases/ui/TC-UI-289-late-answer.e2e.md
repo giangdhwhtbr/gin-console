@@ -1,10 +1,10 @@
 # TC-UI-289: Late answer
 
-- **REQ:** REQ-UI-093@d350c545
+- **REQ:** REQ-UI-093@e7ea75ab
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 63f12cc1
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 23fc8cc2
 
 **Preconditions:**
 - The report for 30 days is loading (its answer is delayed)

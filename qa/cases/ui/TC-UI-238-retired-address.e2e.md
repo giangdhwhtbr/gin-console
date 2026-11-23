@@ -1,10 +1,10 @@
 # TC-UI-238: Retired address
 
-- **REQ:** REQ-UI-125@dacca938
+- **REQ:** REQ-UI-125@504d809e
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** b8e7a4b2
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 9593db2f
 
 **Preconditions:**
 - Projects are configured

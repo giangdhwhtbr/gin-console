@@ -1,10 +1,10 @@
 # TC-UI-233: Favorite in a new tab
 
-- **REQ:** REQ-UI-124@86ecfe10
+- **REQ:** REQ-UI-124@e7f9eed5
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 0375bc78
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** fbc28159
 
 **Preconditions:**
 - Projects `a`, `b` and `c` are configured and `c` is the favorite; nothing was chosen in this tab

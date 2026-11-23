@@ -1,10 +1,10 @@
 # TC-UI-236: Storage refused
 
-- **REQ:** REQ-UI-124@86ecfe10
+- **REQ:** REQ-UI-124@e7f9eed5
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-37-01
-- **Checked:** 57135a6f
+- **Run:** qa/evidence/2026-11-23T03-27-52
+- **Checked:** 54942e08
 
 **Preconditions:**
 - Projects `a` and `b` are configured; the browser throws when a choice is stored

@@ -1,10 +1,10 @@
 # TC-REPORTS-065: Bugs found later
 
-- **REQ:** REQ-REPORTS-019@3228f7dd
+- **REQ:** REQ-REPORTS-019@4dd40cfb
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T08-49-45-api
-- **Checked:** 010ad877
+- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Checked:** f36576ad
 
 **Preconditions:**
 - Bead `a-1`, a closed bug `a-9` and an open bug `a-10` with `discovered-from` dependencies on `a-1`, and a task `a-11` with one too

@@ -1,10 +1,10 @@
 # TC-UI-317: Controls keep their pills
 
-- **REQ:** REQ-UI-140@7e27d5df
+- **REQ:** REQ-UI-140@aa5bbea9
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-22T16-49-44
-- **Checked:** f9fd5b2f
+- **Run:** qa/evidence/2026-11-23T03-31-58
+- **Checked:** 320820c6
 
 **Preconditions:**
 - Project `P` reports open and closed beads

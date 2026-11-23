@@ -2,7 +2,8 @@
 REQ: REQ-MILESTONE-UI-008@3fdbaeb8
 Priority: high
 Result: passed
-Run: qa/evidence/2026-11-06T04-03-21-api
+Run: qa/evidence/2026-11-23T03-32-23-api
+Checked: a45f562d
 
 Preconditions:
 - project P whose `gin-workflow milestone` exits 2 with `invalid choice: 'milestone'`
