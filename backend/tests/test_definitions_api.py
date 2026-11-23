@@ -44,7 +44,7 @@ def epic_with_tracks() -> list[Any]:
 
 
 def project_beads(api: TestClient, name: str) -> dict[str, Any]:
-    body = next(p for p in api.get("/api/projects").json() if p["name"] == name)
+    body = next(p for p in api.get("/api/projects/beads").json() if p["name"] == name)
     result: dict[str, Any] = body["beads"]
     return result
 

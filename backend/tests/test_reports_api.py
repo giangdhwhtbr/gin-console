@@ -67,7 +67,6 @@ def test_reports_001_no_ai_usage_in_the_answer(tmp_path: Path) -> None:
         "totals",
         "delivery",
         "quality",
-        "errors",
     }
     assert set(body["totals"]) == {"closed", "rework_rate"}
     assert body["delivery"]["overall"]["key"] == "all"
@@ -114,28 +113,12 @@ def test_reports_001_bad_input_reads_nothing(tmp_path: Path) -> None:
     assert fake.calls == []
 
 
-# REQ-REPORTS-007
-def test_reports_007_one_project_failing_in_all_is_listed(tmp_path: Path) -> None:
-    runners = {
-        "alpha": FakeExport([closed("a-1", 3)]),
-        "beta": FakeExport(failure=BeadsError("boom")),
-    }
-    r = make(tmp_path, runners).get("/api/reports", params={"project": "all"})
-    assert r.status_code == 200
-    body = r.json()
-    assert body["errors"] == [{"project": "beta", "error": "boom"}]
-    assert body["totals"]["closed"] == 1
-
-
-# REQ-REPORTS-007
-def test_reports_007_every_project_failing_in_all_is_502(tmp_path: Path) -> None:
-    runners = {
-        "alpha": FakeExport(failure=BeadsError("boom")),
-        "beta": FakeExport(failure=BeadsError("bang")),
-    }
-    r = make(tmp_path, runners).get("/api/reports", params={"project": "all"})
-    assert r.status_code == 502
-    assert "alpha" in r.json()["error"] and "beta" in r.json()["error"]
+# REQ-REPORTS-001
+def test_reports_001_all_is_not_a_project(tmp_path: Path) -> None:
+    fake = FakeExport([closed("a-1", 3)])
+    api = make(tmp_path, {"alpha": fake})
+    assert api.get("/api/reports", params={"project": "all"}).status_code == 404
+    assert fake.calls == []
 
 
 # REQ-REPORTS-007
@@ -146,18 +129,6 @@ def test_reports_007_single_project_failure_is_502_and_not_cached(tmp_path: Path
         r = api.get("/api/reports", params={"project": "alpha"})
         assert r.status_code == 502 and r.json() == {"error": "boom"}
     assert len(fake.calls) == 2
-
-
-# REQ-REPORTS-007
-def test_reports_007_members_are_merged_across_projects(tmp_path: Path) -> None:
-    runners = {
-        "alpha": FakeExport([closed("a-1", 3, assignee="ann")]),
-        "beta": FakeExport([closed("b-1", 3, assignee="ann")]),
-    }
-    body = make(tmp_path, runners).get("/api/reports", params={"project": "all"}).json()
-    ann = [m for m in body["quality"]["members"] if m["member"] == "ann"]
-    assert len(ann) == 1
-    assert ann[0]["closed"] == 2
 
 
 # REQ-REPORTS-001
@@ -187,9 +158,9 @@ def test_reports_019_missing_or_broken_log_does_not_fail_the_report(tmp_path: Pa
     log.write_text(
         'not json\n{"kind": "field_change", "issue_id": "b-1"}\n' + json.dumps(reopen) + "\n"
     )
-    response = client.get("/api/reports", params={"project": "all"})
+    response = client.get("/api/reports", params={"project": "beta"})
     assert response.status_code == 200
     body = response.json()
-    assert body["totals"]["closed"] == 2
+    assert body["totals"]["closed"] == 1
     beta = next(m for m in body["quality"]["members"] if m["member"] == "Unassigned")
-    assert (beta["closed"], beta["reopens"]) == (2, 1)
+    assert (beta["closed"], beta["reopens"]) == (1, 1)

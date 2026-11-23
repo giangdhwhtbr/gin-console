@@ -8,8 +8,7 @@ from gin_console.beads.lanes import is_merge_gate
 from gin_console.beads.prep import row_is_prep
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.config import ProjectEntry
-from gin_console.projects.collect import Collector
-from gin_console.projects.models import Beads, BlockError, Epic, Project, ProjectBeads, PullResult
+from gin_console.projects.models import Beads, BlockError, Epic, ProjectBeads, PullResult
 
 
 def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
@@ -51,19 +50,6 @@ def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
         )
     except (KeyError, TypeError, ValueError) as exc:
         return BlockError(error=f"issues.jsonl: unexpected content ({exc!r})")
-
-
-def build_project(entry: ProjectEntry, collector: Collector, pull: PullResult | None) -> Project:
-    exists = entry.path.is_dir()
-    workflow, beads = collector.get(entry.name, entry.path) if exists else (None, None)
-    return Project(
-        name=entry.name,
-        path=str(entry.path),
-        exists=exists,
-        workflow=workflow,
-        beads=beads,
-        pull=pull,
-    )
 
 
 def build_project_beads(

@@ -1,6 +1,5 @@
 import subprocess
 from pathlib import Path
-from typing import Any
 
 import pytest
 from fake_export import write_export
@@ -11,23 +10,6 @@ from gin_console.app import create_app
 from gin_console.beads.source import MISSING
 from gin_console.config import ProjectEntry, Settings
 
-WORKFLOW: dict[str, Any] = {
-    "stage": "plan",
-    "layout": "sdd",
-    "gates": {"requirement_confirmed": "satisfied"},
-    "workspace": None,
-    "team": None,
-    "decision": None,
-    "warnings": [],
-    "remedies": [],
-    "review_waivers": [],
-}
-EPIC_WORKFLOW: dict[str, Any] = {
-    "stage": "plan",
-    "gates": {"requirement_confirmed": "satisfied"},
-    "warnings": [],
-    "review_waivers": [],
-}
 BEADS = {
     "open": 3,
     "in_progress": 1,
@@ -35,7 +17,7 @@ BEADS = {
     "ready": 2,
     "prep": 0,
     "epics": [
-        {"id": "e1", "title": "Epic one", "status": "in_progress", "workflow": EPIC_WORKFLOW},
+        {"id": "e1", "title": "Epic one", "status": "in_progress", "workflow": None},
         {"id": "e2", "title": "Epic two", "status": "open", "workflow": None},
     ],
     "stale": False,
@@ -77,9 +59,17 @@ def test_server_002_health(tmp_path: Path) -> None:
     assert response.json() == {"status": "ok", "version": "0.2.0"}
 
 
-# REQ-SERVER-003
-# REQ-BEADS-016: `pull` is null until the project is pulled
-def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
+# REQ-SERVER-004 (Retired projects endpoint)
+def test_server_004_projects_endpoint_retired(tmp_path: Path, fake: Fake) -> None:
+    client = make_client(tmp_path, [ProjectEntry(name="p", path=tmp_path)])
+    response = client.get("/api/projects")
+    assert response.status_code == 404
+    assert "console" not in response.text
+    assert fake.calls == []
+
+
+# REQ-SERVER-006 (No workflow on epics), REQ-SERVER-010, REQ-BEADS-016: `pull` is null until pulled
+def test_server_010_projects_beads_answer(tmp_path: Path, fake: Fake) -> None:
     present = tmp_path / "present"
     write_export(present, ISSUES)
     client = make_client(
@@ -89,12 +79,11 @@ def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
             ProjectEntry(name="absent", path=tmp_path / "absent"),
         ],
     )
-    assert client.get("/api/projects").json() == [
+    assert client.get("/api/projects/beads").json() == [
         {
             "name": "present",
             "path": str(present),
             "exists": True,
-            "workflow": WORKFLOW,
             "beads": BEADS,
             "pull": None,
         },
@@ -102,48 +91,28 @@ def test_server_003_projects_exists_flags(tmp_path: Path, fake: Fake) -> None:
             "name": "absent",
             "path": str(tmp_path / "absent"),
             "exists": False,
-            "workflow": None,
             "beads": None,
             "pull": None,
         },
     ]
+    assert fake.calls == []  # the endpoint starts no process
 
 
-# REQ-SERVER-003
-def test_server_003_path_appears_later(tmp_path: Path, fake: Fake) -> None:
+# REQ-SERVER-010
+def test_server_010_path_appears_later(tmp_path: Path, fake: Fake) -> None:
     later = tmp_path / "later"
     client = make_client(tmp_path, [ProjectEntry(name="later", path=later)])
-    assert client.get("/api/projects").json()[0]["exists"] is False
+    assert client.get("/api/projects/beads").json()[0]["exists"] is False
     later.mkdir()
-    assert client.get("/api/projects").json()[0]["exists"] is True
+    assert client.get("/api/projects/beads").json()[0]["exists"] is True
 
 
-# REQ-SERVER-003
-def test_server_003_no_scotty_fields(tmp_path: Path, fake: Fake) -> None:
-    (tmp_path / "s").mkdir()
-    client = make_client(tmp_path, [ProjectEntry(name="s", path=tmp_path / "s")])
-    entry = client.get("/api/projects").json()[0]
-    assert set(entry) == {"name", "path", "exists", "workflow", "beads", "pull"}
-
-
-# REQ-SERVER-007
-def test_server_007_missing_path_runs_nothing(tmp_path: Path, fake: Fake) -> None:
-    client = make_client(tmp_path, [ProjectEntry(name="gone", path=tmp_path / "gone")])
-    body = client.get("/api/projects").json()[0]
-    assert (body["workflow"], body["beads"]) == (None, None)
-    assert fake.calls == []
-
-
-# REQ-SERVER-007
-def test_server_007_block_error_in_response(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(subprocess, "run", Fake())
+# REQ-SERVER-010
+def test_server_010_block_error_in_response(tmp_path: Path, fake: Fake) -> None:
     (tmp_path / "s").mkdir()  # no .beads/issues.jsonl
     client = make_client(tmp_path, [ProjectEntry(name="s", path=tmp_path / "s")])
-    body = client.get("/api/projects").json()[0]
+    body = client.get("/api/projects/beads").json()[0]
     assert body["beads"] == {"error": MISSING.format(path=".beads/issues.jsonl")}
-    assert body["workflow"] == WORKFLOW
 
 
 # REQ-SERVER-004

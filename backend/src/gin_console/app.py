@@ -83,7 +83,7 @@ def create_app(
         pulls.pull_all()
         drop_caches()
 
-    api.include_router(build_projects_router(settings, snapshots, pulls, on_refresh))
+    api.include_router(build_projects_router(settings, snapshots, pulls))
     api.include_router(
         build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh)
     )

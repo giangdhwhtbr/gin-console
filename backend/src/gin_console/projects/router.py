@@ -1,37 +1,18 @@
-from collections.abc import Callable
-from concurrent.futures import ThreadPoolExecutor
-
 from fastapi import APIRouter
 
 from gin_console.beads.pull import PullService
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.config import Settings
-from gin_console.projects.collect import Collector
-from gin_console.projects.models import Project, ProjectBeads
-from gin_console.projects.source import build_project, build_project_beads, count_beads
+from gin_console.projects.models import ProjectBeads
+from gin_console.projects.source import build_project_beads
 
 
 def build_router(
     settings: Settings,
     snapshots: SnapshotStore,
     pulls: PullService,
-    on_refresh: list[Callable[[], None]],
 ) -> APIRouter:
     router = APIRouter()
-    collector = Collector(lambda path: count_beads(snapshots, path))
-    on_refresh.append(collector.clear)
-
-    @router.get("/projects")
-    def get_projects() -> list[Project]:
-        if not settings.projects:
-            return []
-        with ThreadPoolExecutor(max_workers=len(settings.projects)) as pool:
-            return list(
-                pool.map(
-                    lambda entry: build_project(entry, collector, pulls.result(entry.name)),
-                    settings.projects,
-                )
-            )
 
     @router.get("/projects/beads")
     def get_project_beads() -> list[ProjectBeads]:

@@ -318,21 +318,6 @@ def test_tc_reports_048_old_ai_usage_ignored(tmp_path: Path) -> None:
     assert body["totals"]["rework_rate"] == 0
 
 
-# REQ-REPORTS-007
-# TC: TC-REPORTS-049@d4627619
-def test_tc_reports_049_one_project_fails_in_all(tmp_path: Path) -> None:
-    api = make(
-        tmp_path,
-        {"alpha": [done("a-1")], "beta": []},
-        failing={"beta": FakeExport(failure=BeadsError("boom"))},
-    )
-    response = api.get("/api/reports", params={"project": "all"})
-    assert response.status_code == 200
-    body = response.json()
-    assert body["errors"] == [{"project": "beta", "error": "boom"}]
-    assert body["totals"]["closed"] == 1
-
-
 # REQ-REPORTS-009
 # TC: TC-REPORTS-050@3e06e028
 def test_tc_reports_050_prep_tasks_left_out(tmp_path: Path) -> None:
@@ -360,19 +345,6 @@ def test_tc_reports_062_single_project_fails(tmp_path: Path) -> None:
         response = api.get("/api/reports", params={"project": "alpha"})
         assert response.status_code == 502
     assert len(fake.calls) == 2
-
-
-# REQ-REPORTS-007
-# TC: TC-REPORTS-063@5d2e8b7d
-def test_tc_reports_063_all_members_merged(tmp_path: Path) -> None:
-    api = make(
-        tmp_path,
-        {"alpha": [done("a-1", assignee="ann")], "beta": [done("b-1", assignee="ann")]},
-    )
-    write_log(tmp_path / "alpha", [status_change("a-1", "closed", "open")])
-    members = [m for m in report(api, "all")["quality"]["members"] if m["member"] == "ann"]
-    assert len(members) == 1
-    assert (members[0]["closed"], members[0]["reopens"]) == (2, 1)
 
 
 # REQ-REPORTS-019
@@ -431,11 +403,11 @@ def test_tc_reports_066_missing_or_broken_log(tmp_path: Path) -> None:
             status_change("b-1", "closed", "open"),
         ],
     )
-    response = api.get("/api/reports", params={"project": "all"})
+    response = api.get("/api/reports", params={"project": "beta"})
     assert response.status_code == 200
     body = response.json()
-    assert member(body, "ann")["reopens"] == 0
     assert member(body, "bao")["reopens"] == 1
+    assert member(report(api, "alpha"), "ann")["reopens"] == 0
 
 
 # REQ-REPORTS-019

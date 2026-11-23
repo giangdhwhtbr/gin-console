@@ -93,11 +93,6 @@ class QualitySection(BaseModel):
     epics: list[EpicQuality]
 
 
-class ProjectError(BaseModel):
-    project: str
-    error: str
-
-
 class Report(BaseModel):
     generated_at: datetime
     project: str
@@ -106,7 +101,6 @@ class Report(BaseModel):
     totals: Totals
     delivery: DeliverySection
     quality: QualitySection
-    errors: list[ProjectError]
 
 
 BeadBucket = Literal["open", "in_progress", "closed"]

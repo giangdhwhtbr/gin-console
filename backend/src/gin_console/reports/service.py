@@ -10,7 +10,6 @@ from gin_console.reports.models import (
     DeliverySection,
     EpicQuality,
     EstimateRow,
-    ProjectError,
     QualityRow,
     QualitySection,
     Report,
@@ -214,7 +213,6 @@ def build_report(
     project: str,
     days: int,
     sprint: str | None,
-    errors: list[ProjectError],
 ) -> Report:
     tree = _Tree(beads)
     if sprint is None:
@@ -240,5 +238,4 @@ def build_report(
         totals=_totals(closed),
         delivery=_delivery(closed, now, days, sprint),
         quality=_quality(tree, closed),
-        errors=errors,
     )

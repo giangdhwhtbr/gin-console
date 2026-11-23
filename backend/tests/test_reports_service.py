@@ -23,7 +23,7 @@ def report(
     reopens: dict[str, int] | None = None,
 ) -> Report:
     beads = read_beads(snap(rows), "alpha", reopens or {})
-    return build_report(beads, now=NOW, project="alpha", days=days, sprint=sprint, errors=[])
+    return build_report(beads, now=NOW, project="alpha", days=days, sprint=sprint)
 
 
 # REQ-REPORTS-001 (service part)
@@ -118,7 +118,7 @@ def test_reports_004_weeks_use_utc_dates() -> None:
     # 05:00+07:00 on 2 Nov is still 1 Nov in UTC, the day "now" is on
     now = datetime(2026, 11, 1, 23, 0, tzinfo=UTC)
     beads = read_beads(snap([closed("a-1", "2026-11-02T05:00:00+07:00")]), "alpha", {})
-    r = build_report(beads, now=now, project="alpha", days=7, sprint=None, errors=[])
+    r = build_report(beads, now=now, project="alpha", days=7, sprint=None)
     weeks = {w.week: w.counts for w in r.delivery.weeks}
     assert weeks["2026-W44"] == {"task": 1}
     assert "2026-W45" not in weeks

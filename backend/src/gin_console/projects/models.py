@@ -8,41 +8,10 @@ class BlockError(BaseModel):
     error: str
 
 
-class WorkspaceRepo(BaseModel):
-    path: str
-    branch: str | None = None
-    shape: str | None = None
-    frozen: bool = False
-    present: bool = True
-
-
-class Workspace(BaseModel):
-    root: str
-    repos: list[WorkspaceRepo] = []
-
-
-class Team(BaseModel):
-    enabled: bool = False
-    host: str | None = None
-    me: str | None = None
-
-
 class ReviewWaiver(BaseModel):
     task_id: str
     reason: str = ""
     actor: str = ""
-
-
-class Workflow(BaseModel):
-    stage: str
-    layout: str
-    gates: dict[str, str]
-    workspace: Workspace | None = None
-    team: Team | None = None
-    decision: str | None = None
-    warnings: list[str] = []
-    remedies: list[str] = []
-    review_waivers: list[ReviewWaiver] = []
 
 
 class EpicWorkflow(BaseModel):
@@ -75,15 +44,6 @@ class PullResult(BaseModel):
     at: datetime
     status: Literal["ok", "no_remote", "error"]
     error: str | None = None
-
-
-class Project(BaseModel):
-    name: str
-    path: str
-    exists: bool
-    workflow: Workflow | BlockError | None
-    beads: Beads | BlockError | None
-    pull: PullResult | None = None
 
 
 class ProjectBeads(BaseModel):

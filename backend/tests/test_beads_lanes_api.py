@@ -2,7 +2,6 @@
 places that leave merge gates out (REQ-SERVER-006, REQ-REPORTS-001, REQ-REPORTS-009)."""
 
 import json
-import subprocess
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -10,7 +9,6 @@ from typing import Any
 import pytest
 from fake_bd import FakeBd
 from fake_export import FakeExport, bead, dep, write_export
-from fakes import Fake
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -167,10 +165,9 @@ def test_tc_beads_067_merge_gate_is_never_ready(tmp_path: Path) -> None:
 def test_tc_server_018_merge_gates_not_counted(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(subprocess, "run", Fake())  # gin state
     rows = [bead("t-1"), bead("t-2"), gate("g-1", ".planning/plans/p.md", 1)]
     api = make(tmp_path, rows)
-    project = next(p for p in api.get("/api/projects").json() if p["name"] == "alpha")
+    project = next(p for p in api.get("/api/projects/beads").json() if p["name"] == "alpha")
     assert project["beads"]["open"] == 2
     assert project["beads"]["ready"] == 2
 

@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 from fake_bd import FakeBd
 from fake_export import FakeExport, bead, comment, dep, related, write_export
-from fakes import Fake
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -151,14 +150,13 @@ def test_beads_003_odd_closed_values_mean_not_closed(tmp_path: Path, closed: str
 
 # REQ-BEADS-003 (No bd process): reading routes start no bd, even with the real bd runner
 def test_beads_003_no_bd_process(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    gin = Fake()  # `gin state` for /api/projects
     started: list[list[str]] = []
 
     def run(cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
         started.append(cmd)
         if Path(cmd[0]).stem == "bd":
             raise AssertionError(f"bd started: {cmd}")
-        return gin(cmd, **kwargs)
+        return subprocess.CompletedProcess(cmd, 0, "", "")
 
     def popen(cmd: list[str], *args: Any, **kwargs: Any) -> None:
         raise AssertionError(f"process started: {cmd}")
@@ -171,13 +169,12 @@ def test_beads_003_no_bd_process(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
         "/api/beads?project=proj",
         "/api/beads/proj/a-5",
         "/api/beads/proj/a-5/comments",
-        "/api/projects",
         "/api/projects/beads",
         "/api/reports?project=proj",
     ):
         assert api.get(path).status_code == 200, path
-    assert started and all(Path(cmd[0]).stem != "bd" for cmd in started)  # gin state only
-    project = next(p for p in api.get("/api/projects").json() if p["name"] == "proj")
+    assert started == []  # no process at all
+    project = next(p for p in api.get("/api/projects/beads").json() if p["name"] == "proj")
     assert project["beads"]["open"] == 4
 
 
@@ -275,11 +272,10 @@ def test_beads_012_refresh_survives_a_runner_error(tmp_path: Path) -> None:
     assert (pull["status"], pull["error"]) == ("error", "bd dolt pull failed")
 
 
-# REQ-BEADS-012 (Refresh after a failed pull), REQ-BEADS-016: both project routes show `pull`
+# REQ-BEADS-012 (Refresh after a failed pull), REQ-BEADS-016: `/api/projects/beads` shows `pull`
 def test_beads_012_refresh_after_a_failed_pull(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(subprocess, "run", Fake())  # `gin state` for /api/projects
     fake = FakeExport(FOUR)
     api = make(tmp_path, fake, FakeBd({tmp_path / "proj": PullRun(1, f"{CONFLICT}\n")}))
     api.get("/api/beads", params={"project": "proj"})
@@ -288,9 +284,8 @@ def test_beads_012_refresh_after_a_failed_pull(
     api.get("/api/beads", params={"project": "proj"})
     assert len(fake.calls) == 2  # the caches were dropped
     failed = {"at": "2026-10-20T03:00:00Z", "status": "error", "error": CONFLICT}
-    for path in ("/api/projects/beads", "/api/projects"):
-        pulls = {p["name"]: p["pull"] for p in api.get(path).json()}
-        assert pulls == {"proj": failed, "gone": None}, path
+    pulls = {p["name"]: p["pull"] for p in api.get("/api/projects/beads").json()}
+    assert pulls == {"proj": failed, "gone": None}
 
 
 # REQ-BEADS-004 (Errors are not kept)
@@ -365,9 +360,8 @@ def test_beads_007_milestone_is_never_ready_over_http(tmp_path: Path) -> None:
 def test_tc_milestone_ui_021_open_milestone_without_blockers_is_not_ready_work(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(subprocess, "run", Fake())  # gin state
     api = make(tmp_path, FakeExport([bead("m1", issue_type="milestone"), bead("t1")]))
-    project = next(p for p in api.get("/api/projects").json() if p["name"] == "proj")
+    project = next(p for p in api.get("/api/projects/beads").json() if p["name"] == "proj")
     assert project["beads"]["ready"] == 1
     rows = api.get("/api/beads", params={"project": "proj"}).json()
     assert {b["id"]: b["ready"] for b in rows} == {"m1": False, "t1": True}
@@ -393,15 +387,12 @@ def test_beads_005_malformed_line_502(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-005
-def test_beads_005_bad_utf8_in_an_epic_title_answers_200(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setattr(subprocess, "run", Fake())  # gin state
+def test_beads_005_bad_utf8_in_an_epic_title_answers_200(tmp_path: Path) -> None:
     epic = bead("e-1", title="x@y", issue_type="epic", status="in_progress")
     path = write_export(tmp_path / "proj", [epic])
     path.write_bytes(path.read_bytes().replace(b"x@y", b"x\xffy"))
     api = make(tmp_path)  # the default reader
-    projects = api.get("/api/projects")
+    projects = api.get("/api/projects/beads")
     assert projects.status_code == 200
     proj = next(p for p in projects.json() if p["name"] == "proj")
     assert proj["beads"]["epics"] == [
@@ -409,12 +400,7 @@ def test_beads_005_bad_utf8_in_an_epic_title_answers_200(
             "id": "e-1",
             "title": "x\ufffdy",
             "status": "in_progress",
-            "workflow": {
-                "stage": "plan",
-                "gates": {"requirement_confirmed": "satisfied"},
-                "warnings": [],
-                "review_waivers": [],
-            },
+            "workflow": None,
         }
     ]
     assert api.get("/api/reports", params={"project": "proj"}).status_code == 200
