@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { fakeChoose } from "./beadFixtures";
 import { laneGraph } from "./laneGraph";
 import { E12, e12, g2 } from "./laneFixtures";
 import { LaneGraphCanvas } from "./LaneGraphCanvas";
@@ -9,8 +10,8 @@ const NOW = new Date("2026-11-20T10:00:00Z");
 const graph = laneGraph(e12, E12, new Set(e12.map((b) => b.id)), NOW);
 
 function show(selected = "") {
-  const fns = { onSelect: vi.fn(), onOpen: vi.fn(), onEscape: vi.fn() };
-  render(<LaneGraphCanvas graph={graph} beads={e12} selected={selected} tabStop={`${E12}.1`} {...fns} />);
+  const fns = { ...fakeChoose(), onEscape: vi.fn() };
+  render(<LaneGraphCanvas graph={graph} beads={e12} selected={selected} tabStop={`${E12}.1`} choose={fns} onEscape={fns.onEscape} />);
   return fns;
 }
 const node = (n: number) => document.querySelector<HTMLElement>(`[data-node="${E12}.${n}"]`);
@@ -40,17 +41,18 @@ describe("LaneGraphCanvas", () => {
   it("REQ-UI-117 Track not drawn: a chip on the box and no arrow for it", () => {
     const matched = new Set(e12.map((b) => b.id).filter((id) => id !== `${E12}.2`));
     const g = laneGraph(e12, E12, matched, NOW);
-    render(<LaneGraphCanvas graph={g} beads={e12} selected="" tabStop={`${E12}.1`} onSelect={vi.fn()} onOpen={vi.fn()} onEscape={vi.fn()} />);
+    render(<LaneGraphCanvas graph={g} beads={e12} selected="" tabStop={`${E12}.1`} choose={fakeChoose()} onEscape={vi.fn()} />);
     expect(document.querySelector(`[data-chip="${g2.id}"]`)).toHaveTextContent("Waiting for track 2");
     expect(document.querySelector(`[data-arrow="${E12}.2>${E12}.4"]`)).toBeNull();
   });
 
-  it("REQ-UI-117 selecting a card and opening it", async () => {
+  it("REQ-UI-117 REQ-UI-147 a click on a card goes to the click rule", async () => {
     const fns = show();
     await userEvent.click(node(2)!);
-    expect(fns.onSelect).toHaveBeenCalledWith(`${E12}.2`);
+    expect(fns.click).toHaveBeenCalledWith(`${E12}.2`);
+    // the double click belongs to useChoose (its document listener), not to the card
     await userEvent.dblClick(node(2)!);
-    expect(fns.onOpen).toHaveBeenCalledWith(`${E12}.2`);
+    expect(fns.open).not.toHaveBeenCalled();
   });
 
   it("REQ-UI-117 Keys between boxes: Right stays in the box, then crosses to track 4 in qa, Enter selects it, Escape escapes", async () => {
@@ -61,7 +63,7 @@ describe("LaneGraphCanvas", () => {
     await userEvent.keyboard("{ArrowRight}");
     expect(node(4)).toHaveFocus();
     await userEvent.keyboard("{Enter}");
-    expect(fns.onSelect).toHaveBeenCalledWith(`${E12}.4`);
+    expect(fns.enter).toHaveBeenCalledWith(`${E12}.4`); // REQ-UI-147
     await userEvent.keyboard("{ArrowDown}");
     expect(node(7)).toHaveFocus();
     await userEvent.keyboard("{Escape}");

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { bead } from "./beadFixtures";
+import { bead, fakeChoose } from "./beadFixtures";
 import { fitWidth, GraphCanvas } from "./GraphCanvas";
 import { NODE, place, scopeGraph } from "./graph";
 
@@ -16,18 +16,18 @@ function box(width: number, height: number) {
 }
 
 function show(graph = scopeGraph([epic("e"), task("a", "e"), task("b", "e", ["a"]), task("c", "e")], "e", OFF), selected = "") {
-  const calls = { select: vi.fn(), open: vi.fn(), escape: vi.fn() };
+  const choose = fakeChoose();
+  const escape = vi.fn();
   render(
     <GraphCanvas
       graph={graph}
       selected={selected}
       tabStop={selected || (graph.nodes[0]?.bead.id ?? "")}
-      onSelect={calls.select}
-      onOpen={calls.open}
-      onEscape={calls.escape}
+      choose={choose}
+      onEscape={escape}
     />,
   );
-  return calls;
+  return { ...choose, escape };
 }
 const zoom = () => within(screen.getByRole("group", { name: "Zoom" }));
 const node = (id: string) => screen.getByRole("button", { name: new RegExp(`^${id}`) });
@@ -146,14 +146,23 @@ describe("GraphCanvas", () => {
     expect(zoom().getByText("100%")).toBeInTheDocument();
   });
 
-  it("REQ-UI-049 a node with children shows the strand with n/m; a click selects and a double click opens", async () => {
+  it("REQ-UI-049 REQ-UI-147 a node with children shows the strand with n/m; a click goes to the click rule", async () => {
     const g = scopeGraph([epic("e-1", { child_counts: { total: 3, closed: 1, prep_total: 0, prep_closed: 0 } }), task("a", "e-1", [], { status: "closed" }), task("b", "e-1"), task("c", "e-1")], null, OFF);
     const calls = show(g);
     expect(within(node("e-1")).getByRole("img")).toHaveTextContent("1/3");
     await userEvent.click(node("e-1"));
-    expect(calls.select).toHaveBeenCalledWith("e-1");
+    expect(calls.click).toHaveBeenCalledWith("e-1");
+    // the double click belongs to useChoose (its document listener), not to the node
     await userEvent.dblClick(node("e-1"));
-    expect(calls.open).toHaveBeenCalledWith("e-1");
+    expect(calls.open).not.toHaveBeenCalled();
+  });
+
+  it("REQ-UI-147 Enter on a node goes to enter and not to a click", async () => {
+    const calls = show(scopeGraph([epic("e-1"), task("a", "e-1")], null, OFF));
+    node("e-1").focus();
+    await userEvent.keyboard("{Enter}");
+    expect(calls.enter).toHaveBeenCalledWith("e-1");
+    expect(calls.click).not.toHaveBeenCalled();
   });
 
   it("REQ-UI-049 node with a prep task: strand 1/2, open icon, chip on p-1 only", () => {

@@ -133,7 +133,7 @@ export function BeadsView({
                 onChange={onChange}
               />
             )}
-            {filters.view === "board" && <BoardView project={project} beads={shown} filters={filters} />}
+            {filters.view === "board" && <BoardView project={project} beads={shown} filters={filters} onChange={onChange} />}
             {filters.view === "focus" && (
               <FocusView project={project} beads={shown} filters={filters} onChange={onChange} />
             )}

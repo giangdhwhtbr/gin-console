@@ -2,7 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HintProvider } from "@/components/HintProvider";
 import { DEFINITIONS } from "@/lib/definitions";
-import { bead, json, stubBeads } from "./beadFixtures";
+import { bead, cardChoice, json, stubBeads } from "./beadFixtures";
 import { BeadsPage } from "./BeadsPage";
 import { BoardColumn } from "./BoardColumn";
 
@@ -22,7 +22,7 @@ describe("BoardColumn", () => {
   it("REQ-UI-132 the count of a column with a rule carries it", () => {
     render(
       <HintProvider>
-        <BoardColumn title="Anything" rule="blocked" project="alpha" beads={[]} />
+        <BoardColumn title="Anything" rule="blocked" project="alpha" beads={[]} choice={cardChoice()} />
       </HintProvider>,
     );
     expect(describedBy(screen.getByText("0"))).toHaveTextContent(DEFINITIONS.blocked);
@@ -31,7 +31,7 @@ describe("BoardColumn", () => {
   it("REQ-UI-132 the count of a column without a rule has no hint", () => {
     render(
       <HintProvider>
-        <BoardColumn title="Backlog" project="alpha" beads={[]} />
+        <BoardColumn title="Backlog" project="alpha" beads={[]} choice={cardChoice()} />
       </HintProvider>,
     );
     expect(screen.getByText("0")).not.toHaveAttribute("aria-describedby");

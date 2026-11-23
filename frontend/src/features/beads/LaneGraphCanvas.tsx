@@ -6,6 +6,7 @@ import { progressOf } from "./progress";
 import { GraphNodeButton } from "./GraphNode";
 import { LaneBox } from "./LaneBox";
 import { LANE_CHIP, laneGraphChain, laneGraphLines, laneGraphStep, type LaneGraph } from "./laneGraph";
+import type { Choose } from "./useChoose";
 import { useZoom } from "./useZoom";
 import { ZoomBar } from "./ZoomBar";
 
@@ -17,8 +18,7 @@ export function LaneGraphCanvas({
   beads,
   selected,
   tabStop,
-  onSelect,
-  onOpen,
+  choose,
   onEscape,
 }: {
   graph: LaneGraph;
@@ -26,8 +26,7 @@ export function LaneGraphCanvas({
   beads: readonly BeadSummary[];
   selected: string;
   tabStop: string;
-  onSelect: (id: string) => void;
-  onOpen: (id: string) => void;
+  choose: Choose;
   onEscape: () => void;
 }) {
   const { box, scale, fit, zoomIn, zoomOut } = useZoom(graph.width);
@@ -102,8 +101,7 @@ export function LaneGraphCanvas({
                 dimmed={chain !== null && !chain.nodes.has(c.bead.id)}
                 tabStop={c.bead.id === tabStop}
                 showLane={false}
-                onSelect={onSelect}
-                onOpen={onOpen}
+                choose={choose}
               />
             ))}
             {graph.chips.map((chip) => (

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { useEmail } from "@/app/identity";
-import { navigate } from "@/app/route";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
@@ -11,7 +10,7 @@ import type { MilestoneInEffect } from "./milestoneChoice";
 import { getOrigin, rememberOpen } from "@/app/origin";
 import { allBranches, ancestorsOf, keepSet, treeIndex, treeRows } from "./tree";
 import { treeKeyDown } from "./treeKeys";
-import { useWide } from "./useWide";
+import { useChoose } from "./useChoose";
 
 export function ListView({
   project,
@@ -28,7 +27,6 @@ export function ListView({
   closedMilestone?: boolean;
   onChange: (next: BeadFilters) => void;
 }) {
-  const wide = useWide();
   const email = useEmail();
   const [open, setOpen] = useState<ReadonlySet<string>>(() => new Set(getOrigin().open[project] ?? []));
   const base = beads.filter(
@@ -68,11 +66,7 @@ export function ListView({
     else next.delete(id);
     remember(next);
   };
-  // from 1024px a click selects the row and fills the panel; narrower, it opens the bead page
-  const choose = (id: string) =>
-    wide
-      ? onChange({ ...filters, select: id })
-      : navigate(`/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`);
+  const choose = useChoose({ project, selected: filters.select, select: (id) => onChange({ ...filters, select: id }) });
 
   // closing returns focus to the row that was selected, or to the first row when it is gone
   const closed = useRef<string | null>(null);
@@ -117,7 +111,7 @@ export function ListView({
             <ul
               role="tree"
               aria-label={`Beads of ${project}`}
-              onKeyDown={(event) => treeKeyDown(event, { toggle, select: choose, clear: filters.select === "" ? undefined : close })}
+              onKeyDown={(event) => treeKeyDown(event, { toggle, enter: choose.enter, clear: filters.select === "" ? undefined : close })}
               className="flex flex-col gap-1"
             >
               {rows.map((row) => (
@@ -128,7 +122,7 @@ export function ListView({
                   selected={row.bead.id === filters.select}
                   tabStop={row.key === tabStop}
                   onToggle={toggle}
-                  onSelect={choose}
+                  onClick={choose.click}
                 />
               ))}
             </ul>

@@ -3,19 +3,19 @@ import { useEffect } from "react";
 const typing = (target: EventTarget | null) =>
   target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
 
-const cards = () => Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-card] a"));
+const cards = () => Array.from(document.querySelectorAll<HTMLElement>("[data-card]"));
 
 /** Focus the next or previous card; false (and nothing done) when there is no card. */
 function move(step: 1 | -1): boolean {
   const list = cards();
-  const at = list.findIndex((link) => link === document.activeElement);
+  const at = list.findIndex((card) => card.contains(document.activeElement));
   const next = at === -1 ? (step === 1 ? 0 : list.length - 1) : (at + step + list.length) % list.length;
   const card = list.at(next);
   card?.focus();
   return card !== undefined;
 }
 
-/** `/` search, `Esc` leave search, arrows between cards; Enter opens the focused card link natively. */
+/** `/` search, `Esc` leave search, arrows between the cards themselves; the card handles Enter (REQ-UI-037, REQ-UI-147). */
 export function useCardKeys(enabled: boolean, clearSearch: () => void, arrows = true): void {
   useEffect(() => {
     if (!enabled) return;
@@ -31,9 +31,12 @@ export function useCardKeys(enabled: boolean, clearSearch: () => void, arrows = 
       if (event.key === "/") {
         event.preventDefault();
         document.getElementById("bead-search")?.focus();
-      } else if (arrows && (event.key === "ArrowDown" || event.key === "ArrowRight")) {
+        return;
+      }
+      if (!arrows || (target instanceof Element && target.closest("aside") !== null)) return; // REQ-UI-078: the arrow keys scroll the details panel
+      if (event.key === "ArrowDown" || event.key === "ArrowRight") {
         if (move(1)) event.preventDefault();
-      } else if (arrows && (event.key === "ArrowUp" || event.key === "ArrowLeft")) {
+      } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
         if (move(-1)) event.preventDefault();
       }
     };

@@ -3,9 +3,22 @@ import { BoardColumn } from "./BoardColumn";
 import { BOARD_COLUMNS, boardColumns, DONE_LIMIT } from "./columns";
 import { ClosedColumn } from "./ClosedColumn";
 import type { BeadFilters } from "./filters";
+import { useCardChoice } from "./useCardChoice";
 
-export function BoardView({ project, beads, filters }: { project: string; beads: readonly BeadSummary[]; filters: BeadFilters }) {
+export function BoardView({
+  project,
+  beads,
+  filters,
+  onChange,
+}: {
+  project: string;
+  beads: readonly BeadSummary[];
+  filters: BeadFilters;
+  onChange: (next: BeadFilters) => void;
+}) {
   const columns = boardColumns(beads);
+  const drawn = BOARD_COLUMNS.flatMap(({ key }) => (key === "done" ? columns.done.slice(0, DONE_LIMIT) : columns[key]).map((b) => b.id));
+  const { choice } = useCardChoice({ project, filters, drawn, onChange });
   return (
     <div className="flex flex-wrap items-start gap-3">
       {BOARD_COLUMNS.map(({ key, title, rule }) =>
@@ -23,9 +36,10 @@ export function BoardView({ project, beads, filters }: { project: string; beads:
                 ? "No beads"
                 : "Turn on Show closed to see closed beads"
             }
+            choice={choice}
           />
         ) : (
-          <BoardColumn key={key} title={title} rule={rule} project={project} beads={columns[key]} />
+          <BoardColumn key={key} title={title} rule={rule} project={project} beads={columns[key]} choice={choice} />
         ),
       )}
     </div>

@@ -32,14 +32,15 @@ export function ListRow({
   selected,
   tabStop,
   onToggle,
-  onSelect,
+  onClick,
 }: {
   project: string;
   row: TreeRow;
   selected: boolean;
   tabStop: boolean;
   onToggle: (id: string, open: boolean) => void;
-  onSelect: (id: string) => void;
+  /** REQ-UI-147: the click rule of useChoose; the open/close control and the title link stop their clicks. */
+  onClick: (id: string) => void;
 }) {
   const { bead } = row;
   const progress = progressOf(bead);
@@ -52,7 +53,7 @@ export function ListRow({
       aria-expanded={row.hasKids ? row.open : undefined}
       data-id={bead.id}
       tabIndex={tabStop ? 0 : -1}
-      onClick={() => onSelect(bead.id)}
+      onClick={() => onClick(bead.id)}
       className={cn(
         "grid cursor-pointer items-center gap-x-3 gap-y-1 rounded-md px-2 py-1.5 text-sm",
         COLUMNS,

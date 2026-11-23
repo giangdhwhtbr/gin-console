@@ -2,6 +2,7 @@ import { type KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
 import { GraphNodeButton } from "./GraphNode";
 import { chainOf, edgeKey, edgePath, linkLabels, NODE, place, step, type Graph, type StepKey } from "./graph";
+import type { Choose } from "./useChoose";
 import { useZoom } from "./useZoom";
 import { ZoomBar } from "./ZoomBar";
 
@@ -15,15 +16,13 @@ export function GraphCanvas({
   graph,
   selected,
   tabStop,
-  onSelect,
-  onOpen,
+  choose,
   onEscape,
 }: {
   graph: Graph;
   selected: string;
   tabStop: string;
-  onSelect: (id: string) => void;
-  onOpen: (id: string) => void;
+  choose: Choose;
   onEscape: () => void;
 }) {
   const { at, width, height } = place(graph);
@@ -104,8 +103,7 @@ export function GraphCanvas({
                   selected={node.bead.id === selected}
                   dimmed={chain !== null && !chain.nodes.has(node.bead.id)}
                   tabStop={node.bead.id === tabStop}
-                  onSelect={onSelect}
-                  onOpen={onOpen}
+                  choose={choose}
                 />
               );
             })}

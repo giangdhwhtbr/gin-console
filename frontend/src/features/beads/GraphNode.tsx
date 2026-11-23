@@ -8,6 +8,7 @@ import { PrepChip } from "./PrepChip";
 import { isPrep } from "./prep";
 import { NODE, type GraphNode as Node, type Placed } from "./graph";
 import { StateMark } from "./StateMark";
+import type { Choose } from "./useChoose";
 
 export function GraphNodeButton({
   node,
@@ -15,8 +16,7 @@ export function GraphNodeButton({
   selected,
   dimmed,
   tabStop,
-  onSelect,
-  onOpen,
+  choose,
   showLane = true,
 }: {
   node: Node;
@@ -24,8 +24,8 @@ export function GraphNodeButton({
   selected: boolean;
   dimmed: boolean;
   tabStop: boolean;
-  onSelect: (id: string) => void;
-  onOpen: (id: string) => void;
+  /** REQ-UI-147: a click and Enter follow the click rule; useChoose opens on a double click. */
+  choose: Choose;
   showLane?: boolean;
 }) {
   const short = shortId(node.bead.id);
@@ -41,15 +41,15 @@ export function GraphNodeButton({
       aria-pressed={selected}
       tabIndex={tabStop ? 0 : -1}
       title={words}
-      onClick={() => onSelect(node.bead.id)}
-      onDoubleClick={() => onOpen(node.bead.id)}
+      onClick={() => choose.click(node.bead.id)}
+      onKeyDown={(event) => choose.onKey(event, node.bead.id)}
       style={{ left: at.x, top: at.y, width: NODE.w, height: NODE.h }}
       className={cn(
         "absolute flex flex-col justify-center overflow-hidden gap-0.5 rounded border px-2 text-left text-xs transition-opacity motion-reduce:transition-none",
         (node.external || gate !== null) && "border-dashed",
         node.external && "opacity-60",
         dimmed && "opacity-30",
-        selected ? "bg-identity-wash ring-2 ring-identity" : "bg-card",
+        selected ? "bg-identity-wash shadow-[inset_3px_0_0_var(--identity)]" : "bg-card",
       )}
     >
       <span className="flex items-center justify-between gap-1 font-mono text-muted-foreground">

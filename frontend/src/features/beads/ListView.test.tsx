@@ -465,6 +465,27 @@ describe("ListView", () => {
     expect(window.location.pathname).toBe("/beads/alpha/t-1");
   });
 
+  it("REQ-UI-147 Double click on a row opens the bead page", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() => json([bead("t-1", { title: "Task One" })]));
+    render(<BeadsPage />);
+    await userEvent.dblClick(within(await screen.findByRole("treeitem", { name: /t-1/ })).getByText("t-1"));
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+  });
+
+  it("REQ-UI-147 Open/close control: it opens the branch with no select and no navigation", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    stubBeads(() =>
+      json([bead("e-1", { issue_type: "epic", title: "Epic" }), bead("t-1", { parent: "e-1", title: "Child" })]),
+    );
+    render(<BeadsPage />);
+    const epic = await screen.findByRole("treeitem", { name: /e-1/ });
+    await userEvent.click(screen.getByRole("button", { name: "Expand e-1" }));
+    expect(epic).toHaveAttribute("aria-expanded", "true");
+    expect(window.location.search).not.toContain("select=");
+    expect(window.location.pathname).toBe("/beads");
+  });
+
   it("REQ-UI-074 the open branches come back", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha");
     stubBeads(() =>

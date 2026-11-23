@@ -9,6 +9,7 @@ import { progressOf } from "./progress";
 import { GraphNodeButton } from "./GraphNode";
 import { GRAPH_STATE_OF, LANE, laneLines, laneStep, MARKER, type LaneBoard, type LaneKey, type LaneRow } from "./lanes";
 import { StateWord } from "./StateMark";
+import type { Choose } from "./useChoose";
 import { useLaneHeaderWidth } from "./useLaneHeaderWidth";
 
 const KEYS: readonly LaneKey[] = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
@@ -30,8 +31,8 @@ export function LanesCanvas({
   beads,
   selected,
   tabStop,
+  choose,
   onSelect,
-  onOpen,
   onEscape,
 }: {
   board: LaneBoard;
@@ -39,8 +40,9 @@ export function LanesCanvas({
   beads: readonly BeadSummary[];
   selected: string;
   tabStop: string;
+  choose: Choose;
+  /** The arrow keys move the focus and the selection together (REQ-UI-114). */
   onSelect: (id: string) => void;
-  onOpen: (id: string) => void;
   onEscape: () => void;
 }) {
   const headerW = useLaneHeaderWidth();
@@ -138,8 +140,7 @@ export function LanesCanvas({
                   dimmed={false}
                   tabStop={c.bead.id === tabStop}
                   showLane={false}
-                  onSelect={onSelect}
-                  onOpen={onOpen}
+                  choose={choose}
                 />
               )),
             )}

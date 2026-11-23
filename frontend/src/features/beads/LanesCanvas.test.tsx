@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { bead } from "./beadFixtures";
+import { bead, fakeChoose } from "./beadFixtures";
 import { e12, E12, g2, tracks, t4 } from "./laneFixtures";
 import { lanesOf } from "./lanes";
 import { LanesCanvas } from "./LanesCanvas";
@@ -11,7 +11,7 @@ afterEach(() => {
 });
 
 const board = lanesOf(e12, E12, new Set(tracks.map((t) => t.id)), new Date("2026-11-20T10:00:00Z"));
-const props = { board, beads: e12, selected: "", tabStop: t4.id, onSelect: vi.fn(), onOpen: vi.fn(), onEscape: vi.fn() };
+const props = { board, beads: e12, selected: "", tabStop: t4.id, choose: fakeChoose(), onSelect: vi.fn(), onEscape: vi.fn() }; // REQ-UI-147
 
 describe("LanesCanvas", () => {
   it("REQ-UI-111 the header column is opaque and sticky, the cards sit at the board's positions", () => {

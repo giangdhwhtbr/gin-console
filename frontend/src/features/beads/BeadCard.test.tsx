@@ -1,14 +1,15 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
-import { bead } from "./beadFixtures";
-import { BeadCard } from "./BeadCard";
+import { bead, cardChoice } from "./beadFixtures";
+import { BeadCard, type CardChoice } from "./BeadCard";
 
 afterEach(cleanup);
 
-const card = (item: ReturnType<typeof bead>) => {
+const card = (item: ReturnType<typeof bead>, choice: CardChoice = cardChoice()) => {
   render(
     <ul>
-      <BeadCard project="alpha" bead={item} />
+      <BeadCard project="alpha" bead={item} choice={choice} />
     </ul>,
   );
   return screen.getByRole("listitem");
@@ -86,5 +87,48 @@ describe("BeadCard", () => {
     expect(li.lastElementChild).toHaveTextContent("In progress");
     cleanup();
     expect(card(bead("a-9"))).not.toHaveTextContent(" pt");
+  });
+
+  it("REQ-UI-147 a click outside the title calls click, and the title link does not", async () => {
+    const choice = cardChoice();
+    const li = card(bead("a-1", { title: "Fix it" }), choice);
+    await userEvent.click(screen.getByText("P2"));
+    expect(choice.choose.click).toHaveBeenCalledWith("a-1");
+    const link = screen.getByRole("link", { name: "Fix it" });
+    link.addEventListener("click", (event) => event.preventDefault());
+    await userEvent.click(link);
+    expect(choice.choose.click).toHaveBeenCalledTimes(1);
+    expect(li).toHaveAttribute("data-id", "a-1");
+  });
+
+  it("REQ-UI-147 Enter on the card goes to enter", async () => {
+    const choice = cardChoice({ tabStop: "a-1" });
+    card(bead("a-1"), choice).focus();
+    await userEvent.keyboard("{Enter}");
+    expect(choice.choose.enter).toHaveBeenCalledWith("a-1");
+  });
+
+  it("REQ-UI-147 Escape on a selected card calls onEscape", async () => {
+    const choice = cardChoice({ selected: "a-1", tabStop: "a-1" });
+    card(bead("a-1"), choice).focus();
+    await userEvent.keyboard("{Escape}");
+    expect(choice.onEscape).toHaveBeenCalled();
+    expect(choice.choose.enter).not.toHaveBeenCalled();
+  });
+
+  it("REQ-UI-148 the selected card has the identity wash and bar and aria-current", () => {
+    const li = card(bead("a-1"), cardChoice({ selected: "a-1" }));
+    expect(li).toHaveAttribute("aria-current", "true");
+    expect(li).toHaveClass("bg-identity-wash", "shadow-[inset_3px_0_0_var(--identity)]");
+    cleanup();
+    const other = card(bead("a-2"), cardChoice({ selected: "a-1" }));
+    expect(other).not.toHaveAttribute("aria-current");
+    expect(other).not.toHaveClass("bg-identity-wash");
+  });
+
+  it("REQ-UI-147 only the tab stop is in the tab order", () => {
+    expect(card(bead("a-1"), cardChoice({ tabStop: "a-1" }))).toHaveAttribute("tabIndex", "0");
+    cleanup();
+    expect(card(bead("a-2"), cardChoice({ tabStop: "a-1" }))).toHaveAttribute("tabIndex", "-1");
   });
 });

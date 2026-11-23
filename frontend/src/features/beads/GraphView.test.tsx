@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { BeadSummary } from "./api";
 import { bead, json, stubBeads } from "./beadFixtures";
 import { parseFilters, type BeadFilters } from "./filters";
@@ -41,6 +41,8 @@ function rerenderable(over: { milestone: string }) {
 }
 const node = (id: string) => screen.queryByRole("button", { name: new RegExp(`^${id}`) });
 
+beforeEach(() => window.history.replaceState(null, "", "/beads?project=p&view=graph"));
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -75,11 +77,27 @@ describe("GraphView", () => {
     expect(screen.getByText("No beads match these filters")).toBeInTheDocument();
   });
 
-  it("REQ-UI-106 drill down to an epic and back to the milestone", async () => {
+  it("REQ-UI-106 REQ-UI-147 Open a node with children: a double click opens its page and never changes the scope", async () => {
     const onChange = view({ milestone: "m2" });
     await userEvent.dblClick(node("e1")!);
-    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ scope: "e1", select: "" }));
+    expect(window.location.pathname).toBe("/beads/p/e1");
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ scope: "e1" }));
+  });
+
+  it("REQ-UI-147 Enter twice on a node: the first selects, on the selected node it opens", async () => {
+    const onChange = view({ milestone: "m2" });
+    node("e1")!.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "e1" }));
+    expect(window.location.pathname).toBe("/beads");
     cleanup();
+    view({ milestone: "m2", filters: { select: "e1" } });
+    node("e1")!.focus();
+    await userEvent.keyboard("{Enter}");
+    expect(window.location.pathname).toBe("/beads/p/e1");
+  });
+
+  it("REQ-UI-106 the trail returns from an epic to the milestone", async () => {
     const back = view({ milestone: "m2", filters: { scope: "e1" } });
     const trail = screen.getByRole("navigation", { name: "Graph scope" });
     expect(within(trail).getAllByRole("button").map((b) => b.textContent)).toEqual(["m2", "e1"]);

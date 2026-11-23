@@ -132,19 +132,59 @@ describe("ListKeys", () => {
     expect(within(tree).queryByRole("treeitem", { name: /t-1/ })).toBeNull();
   });
 
-  it("REQ-UI-046 select with Enter: puts select in URL", async () => {
+  it("REQ-UI-046 REQ-UI-147 Enter twice: the first selects the row, the second opens its bead page", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() => json([bead("t-1", { title: "Task One" }), bead("t-2", { title: "Task Two" })]));
+    const user = userEvent.setup();
+    render(<BeadsPage />);
+
+    const tree = await screen.findByRole("tree");
+    within(tree).getByRole("treeitem", { name: /t-2/ }).focus();
+    await user.keyboard("{Enter}");
+    expect(window.location.search).toContain("select=t-2");
+    expect(window.location.pathname).toBe("/beads");
+
+    await user.keyboard("{Enter}");
+    expect(window.location.pathname).toBe("/beads/alpha/t-2");
+  });
+
+  it("REQ-UI-046 REQ-UI-147 Open with Enter: Enter on the selected row opens its bead page", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list&select=t-1");
+    stubBeads(() => json([bead("t-1", { title: "Task One" })]));
+    const user = userEvent.setup();
+    render(<BeadsPage />);
+
+    const tree = await screen.findByRole("tree");
+    within(tree).getByRole("treeitem", { name: /t-1/ }).focus();
+    await user.keyboard("{Enter}");
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+  });
+
+  it("REQ-UI-046 REQ-UI-147 Enter on a phone opens the bead page", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     window.history.replaceState(null, "", "/beads?project=alpha&view=list");
     stubBeads(() => json([bead("t-1", { title: "Task One" })]));
     const user = userEvent.setup();
     render(<BeadsPage />);
 
     const tree = await screen.findByRole("tree");
-    const item = within(tree).getByRole("treeitem", { name: /t-1/ });
-
-    item.focus();
+    within(tree).getByRole("treeitem", { name: /t-1/ }).focus();
     await user.keyboard("{Enter}");
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+  });
 
-    expect(window.location.search).toContain("select=t-1");
+  it("REQ-UI-037 Search shortcut in the List: / on a focused row focuses the search box", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=list");
+    stubBeads(() => json([bead("t-1", { title: "Task One" })]));
+    const user = userEvent.setup();
+    render(<BeadsPage />);
+
+    const tree = await screen.findByRole("tree");
+    within(tree).getByRole("treeitem", { name: /t-1/ }).focus();
+    await user.keyboard("/");
+    const search = screen.getByRole("searchbox", { name: "Search" });
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue("");
   });
 
   it("REQ-UI-046 keys are the tree's own: tree does not take over arrows, / and Esc still work", async () => {

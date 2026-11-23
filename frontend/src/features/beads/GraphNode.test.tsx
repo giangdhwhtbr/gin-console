@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { bead } from "./beadFixtures";
+import { afterEach, describe, expect, it } from "vitest";
+import { bead, fakeChoose } from "./beadFixtures";
 import { GraphNodeButton } from "./GraphNode";
 import { MilestoneStatusProvider } from "./milestoneStatus";
 
@@ -16,8 +16,7 @@ describe("GraphNodeButton state label", () => {
         selected={false}
         dimmed={false}
         tabStop
-        onSelect={vi.fn()}
-        onOpen={vi.fn()}
+        choose={fakeChoose()}
       />,
     );
     const label = screen.getByText("In progress");
@@ -35,7 +34,7 @@ describe("GraphNodeButton narrow strand", () => {
   // REQ-UI-138 Scenario: Narrow node; REQ-UI-049
   it("REQ-UI-138 REQ-UI-049 a node with 12 tracks draws the segmented thread and the count in full", () => {
     const node = { bead: bead("e-5", { issue_type: "epic" }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: true, counts: { done: 3, inProgress: 0, blocked: 0, ready: 9, deferred: 0 } };
-    const { container } = render(<GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} />);
+    const { container } = render(<GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop choose={fakeChoose()} />);
     const strand = container.querySelector("[data-strand]");
     expect(strand).toHaveAttribute("data-strand", "3/12");
     expect(strand).toHaveTextContent("3/12");
@@ -48,7 +47,7 @@ describe("GraphNodeButton narrow strand", () => {
 const place = (b: ReturnType<typeof bead>, showLane?: boolean) => {
   const node = { bead: b, external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, counts: { done: 0, inProgress: 0, blocked: 0, ready: 0, deferred: 0 } };
   render(
-    <GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} showLane={showLane} />,
+    <GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop choose={fakeChoose()} showLane={showLane} />,
   );
 };
 
@@ -86,7 +85,7 @@ describe("GraphNodeButton milestone status", () => {
     const node = { bead: bead("ex-m2", { issue_type: "milestone", status: "open", ready: true }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, counts: { done: 0, inProgress: 0, blocked: 0, ready: 0, deferred: 0 } };
     render(
       <MilestoneStatusProvider statuses={new Map([["ex-m2", "active" as const]])}>
-        <GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} />
+        <GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected={false} dimmed={false} tabStop choose={fakeChoose()} />
       </MilestoneStatusProvider>,
     );
     expect(screen.getByText("Active").closest("[data-status]")).toHaveAttribute("data-status", "active");
@@ -95,9 +94,11 @@ describe("GraphNodeButton milestone status", () => {
 });
 
 describe("GraphNodeButton selection", () => {
-  it("REQ-UI-141 a selected node has the identity wash and ring", () => {
+  it("REQ-UI-148 Selected node: the identity wash and a 3px bar inside its left edge", () => {
     const node = { bead: bead("e-1", { status: "open" }), external: false, layer: 0, order: 0, group: "layer" as const, hasKids: false, counts: { done: 0, inProgress: 0, blocked: 0, ready: 0, deferred: 0 } };
-    render(<GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected dimmed={false} tabStop onSelect={vi.fn()} onOpen={vi.fn()} />);
-    expect(screen.getByRole("button", { pressed: true })).toHaveClass("bg-identity-wash", "ring-identity");
+    render(<GraphNodeButton node={node} at={{ x: 0, y: 0 }} selected dimmed={false} tabStop choose={fakeChoose()} />);
+    const selected = screen.getByRole("button", { pressed: true });
+    expect(selected).toHaveClass("bg-identity-wash", "shadow-[inset_3px_0_0_var(--identity)]");
+    expect(selected).not.toHaveClass("ring-2");
   });
 });

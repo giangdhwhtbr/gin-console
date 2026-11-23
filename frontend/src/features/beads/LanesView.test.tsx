@@ -100,6 +100,16 @@ describe("LanesView", () => {
     expect(card(t2.id)).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("REQ-UI-147 Tab of an epic page: a click selects the card, a double click opens its page", async () => {
+    const onChange = vi.fn();
+    stubBeads(() => json([]));
+    render(<LanesView project="p" beads={e12} matched={tracks} milestone="all" filters={parseFilters(`?view=lanes&scope=${E12}`)} trail={false} onChange={onChange} />);
+    await userEvent.click(card(t2.id));
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: t2.id }));
+    await userEvent.dblClick(card(t2.id));
+    expect(window.location.pathname).toBe(`/beads/p/${t2.id}`);
+  });
+
   it("REQ-UI-111 opening a card goes to its page", async () => {
     view();
     await userEvent.dblClick(card(t3.id));
@@ -134,7 +144,7 @@ describe("LanesView", () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: t2.id }));
     await userEvent.keyboard("{Escape}");
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ select: "none" }));
-    await userEvent.keyboard("{Enter}"); // a button: Enter clicks it
+    await userEvent.keyboard("{Enter}"); // Enter on a card that is not selected selects it (REQ-UI-147)
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ select: t2.id }));
   });
 

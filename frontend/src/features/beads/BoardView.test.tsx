@@ -336,3 +336,100 @@ describe("BoardView lanes", () => {
     expect(screen.queryByText("external: p#2")).toBeNull();
   });
 });
+
+describe("REQ-UI-147 click rule on the Board", () => {
+  const stub = () => stubBeads(() => json([bead("t-1", { title: "Card 1", ready: true }), bead("t-2", { title: "Card 2", ready: true })]));
+  const cardOf = async (title: string) => {
+    const card = (await screen.findByRole("link", { name: title })).closest<HTMLElement>("[data-card]");
+    if (card === null) throw new Error(`no card for ${title}`);
+    return card;
+  };
+  const phone = () => vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+
+  it("REQ-UI-147 REQ-UI-148 Select a card and click it again: it is selected with no history entry and stays selected", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stub();
+    render(<BeadsPage />);
+    const card = await cardOf("Card 1");
+    const before = window.history.length;
+    await userEvent.click(within(card).getByText("P2"));
+    expect(window.location.search).toContain("select=t-1");
+    expect(window.location.pathname).toBe("/beads");
+    expect(window.history.length).toBe(before);
+    expect(card).toHaveAttribute("aria-current", "true");
+    expect(card).toHaveClass("bg-identity-wash", "shadow-[inset_3px_0_0_var(--identity)]");
+    await userEvent.click(within(card).getByText("P2"));
+    expect(window.location.search).toContain("select=t-1");
+    expect(window.location.pathname).toBe("/beads");
+  });
+
+  it("REQ-UI-037 REQ-UI-147 Move, select and open: arrows focus the cards themselves, Enter selects, then opens", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stub();
+    const user = userEvent.setup();
+    render(<BeadsPage />);
+    const card1 = await cardOf("Card 1");
+    const card2 = await cardOf("Card 2");
+    // one tab stop among the cards
+    expect([card1, card2].map((card) => card.tabIndex)).toEqual([0, -1]);
+    document.body.focus();
+    await user.keyboard("{ArrowDown}");
+    expect(card1).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(card2).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(window.location.search).toContain("select=t-2");
+    expect(window.location.pathname).toBe("/beads");
+    await user.keyboard("{Enter}");
+    expect(window.location.pathname).toBe("/beads/alpha/t-2");
+  });
+
+  it("REQ-UI-147 Escape: the selection is removed and the card keeps the focus", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board&select=t-1");
+    stub();
+    const user = userEvent.setup();
+    render(<BeadsPage />);
+    const card = await cardOf("Card 1");
+    card.focus();
+    await user.keyboard("{Escape}");
+    expect(window.location.search).not.toContain("select=");
+    expect(card).toHaveFocus();
+  });
+
+  it("REQ-UI-147 Enter on a phone opens the bead page", async () => {
+    phone();
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stub();
+    const user = userEvent.setup();
+    render(<BeadsPage />);
+    (await cardOf("Card 1")).focus();
+    await user.keyboard("{Enter}");
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+  });
+
+  it("REQ-UI-147 Phone: a click on a card opens the bead page", async () => {
+    phone();
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stub();
+    render(<BeadsPage />);
+    await userEvent.click(within(await cardOf("Card 1")).getByText("P2"));
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+  });
+
+  it("REQ-UI-147 Title link: a click on the title opens the bead page", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stub();
+    render(<BeadsPage />);
+    await userEvent.click(await screen.findByRole("link", { name: "Card 1" }));
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+    expect(window.location.search).not.toContain("select=");
+  });
+
+  it("REQ-UI-147 Double click on a card opens the bead page", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+    stub();
+    render(<BeadsPage />);
+    await userEvent.dblClick(within(await cardOf("Card 1")).getByText("P2"));
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
+  });
+});

@@ -1,7 +1,9 @@
+import type { KeyboardEvent } from "react";
 import { shortId } from "@/lib/shortId";
 import { Link } from "@/app/Link";
 import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
+import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { AssigneeName } from "./AssigneeName";
 import { CountBadge } from "./CountBadge";
@@ -9,11 +11,45 @@ import { KindBadge } from "./KindBadge";
 import { LaneChip } from "./LaneChip";
 import { StateMark } from "./StateMark";
 import { TypeBadge } from "./TypeBadge";
+import type { Choose } from "./useChoose";
 
-export function BeadCard({ project, bead }: { project: string; bead: BeadSummary }) {
+/** What the cards of a Board or Focus view share to follow the click rule (REQ-UI-147). */
+export type CardChoice = {
+  /** The selected bead's id, `` for none. */
+  selected: string;
+  /** The one card in the tab order: the selected one when drawn, else the first. */
+  tabStop: string;
+  choose: Choose;
+  /** Escape while a card is selected: clear the selection and focus that card. */
+  onEscape: () => void;
+};
+
+const stop = (event: { stopPropagation: () => void }) => event.stopPropagation();
+
+export function BeadCard({ project, bead, choice }: { project: string; bead: BeadSummary; choice: CardChoice }) {
   const short = shortId(bead.id);
+  const selected = choice.selected === bead.id;
+  const onKeyDown = (event: KeyboardEvent<HTMLLIElement>) => {
+    if (event.key === "Escape" && choice.selected !== "" && event.target === event.currentTarget) {
+      event.preventDefault();
+      choice.onEscape();
+    } else {
+      choice.choose.onKey(event, bead.id);
+    }
+  };
   return (
-    <li data-card data-id={bead.id} tabIndex={-1} className="flex flex-col gap-1.5 rounded border bg-card p-2.5 text-sm">
+    <li
+      data-card
+      data-id={bead.id}
+      tabIndex={choice.tabStop === bead.id ? 0 : -1}
+      aria-current={selected ? "true" : undefined}
+      onClick={() => choice.choose.click(bead.id)}
+      onKeyDown={onKeyDown}
+      className={cn(
+        "flex cursor-pointer flex-col gap-1.5 rounded border p-2.5 text-sm",
+        selected ? "bg-identity-wash shadow-[inset_3px_0_0_var(--identity)]" : "bg-card hover:bg-muted/60",
+      )}
+    >
       <div className="flex items-center justify-between font-mono text-13 text-muted-foreground">
         <span title={bead.id} aria-hidden={short !== bead.id || undefined}>
           {short}
@@ -21,9 +57,11 @@ export function BeadCard({ project, bead }: { project: string; bead: BeadSummary
         {short !== bead.id && <span className="sr-only">{bead.id}</span>}
         <PriorityPill priority={bead.priority} />
       </div>
-      <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`} className="font-medium wrap-anywhere">
-        {bead.title}
-      </Link>
+      <span onClick={stop}>
+        <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`} className="font-medium wrap-anywhere">
+          {bead.title}
+        </Link>
+      </span>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <StateMark bead={bead} />
         <TypeBadge type={bead.issue_type} />

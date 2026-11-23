@@ -1,19 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { navigate } from "@/app/route";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { DetailsPanel } from "./DetailsPanel";
 import type { BeadFilters } from "./filters";
 import { GraphCanvas } from "./GraphCanvas";
-import { ancestorsOf, hasChildren, keepWithAncestors, scopeGraph } from "./graph";
+import { ancestorsOf, keepWithAncestors, scopeGraph } from "./graph";
 import { laneGraph } from "./laneGraph";
 import { LaneGraphCanvas } from "./LaneGraphCanvas";
 import { hasLanes } from "./lanes";
 import { scopeOf } from "./scope";
 import { ScopeTrail } from "./ScopeTrail";
 import type { MilestoneInEffect } from "./milestoneChoice";
-
-const enc = encodeURIComponent;
+import { useChoose } from "./useChoose";
 
 type Props = {
   project: string;
@@ -47,6 +45,8 @@ function GraphBody({ project, beads, matched, milestone, filters, trail = true, 
   const asked = filters.select;
   const selected = asked !== "" && asked !== "none" && (known.has(asked) || asked === scopeId) ? asked : "";
   const tabStop = known.has(selected) ? selected : (ids[0] ?? "");
+  // REQ-UI-147: a double click opens the bead page and never changes the scope
+  const choose = useChoose({ project, selected, select: (id) => onChange({ ...filters, select: id }) });
   // closing returns focus to the node that was selected, or to the canvas tab stop when it is gone
   const closed = useRef<string | null>(null);
   useEffect(() => {
@@ -66,12 +66,7 @@ function GraphBody({ project, beads, matched, milestone, filters, trail = true, 
   const top = milestone !== "all" && milestone !== "none" ? milestone : project;
 
   const cycle = graph !== null ? graph.cycle : (lanes?.cycle ?? []);
-  const handlers = {
-    onSelect: (id: string) => onChange({ ...filters, select: id }),
-    onOpen: (id: string) =>
-      hasChildren(beads, id) ? onChange({ ...filters, scope: id, select: "" }) : navigate(`/beads/${enc(project)}/${enc(id)}`),
-    onEscape: () => onChange({ ...filters, select: "none" }),
-  };
+  const handlers = { choose, onEscape: () => onChange({ ...filters, select: "none" }) };
 
   return (
     <div className={cn("grid gap-4", selected !== "" && "lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]")}>

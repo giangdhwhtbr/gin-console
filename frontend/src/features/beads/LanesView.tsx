@@ -1,18 +1,16 @@
 import { useEffect, useRef } from "react";
 import { Link } from "@/app/Link";
-import { navigate } from "@/app/route";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { DetailsPanel } from "./DetailsPanel";
 import { filtersToSearch, type BeadFilters } from "./filters";
-import { ancestorsOf, hasChildren } from "./graph";
+import { ancestorsOf } from "./graph";
 import { hasLanes, lanesOf } from "./lanes";
 import { LanesCanvas } from "./LanesCanvas";
 import type { MilestoneInEffect } from "./milestoneChoice";
 import { scopeOf } from "./scope";
 import { ScopeTrail } from "./ScopeTrail";
-
-const enc = encodeURIComponent;
+import { useChoose } from "./useChoose";
 
 type Props = {
   project: string;
@@ -50,6 +48,8 @@ function LanesBody({ project, beads, matched, milestone, filters, trail = true, 
   const asked = filters.select;
   const selected = asked !== "" && asked !== "none" && (cards.includes(asked) || asked === scopeId) ? asked : "";
   const tabStop = cards.includes(selected) ? selected : (cards[0] ?? "");
+  // REQ-UI-147: a double click opens the bead page and never changes the scope
+  const choose = useChoose({ project, selected, select: (id) => onChange({ ...filters, select: id }) });
   // closing returns focus to the card that was selected, or to the tab stop when it is gone
   const closed = useRef<string | null>(null);
   useEffect(() => {
@@ -81,12 +81,8 @@ function LanesBody({ project, beads, matched, milestone, filters, trail = true, 
             beads={beads}
             selected={selected}
             tabStop={tabStop}
+            choose={choose}
             onSelect={(id) => onChange({ ...filters, select: id })}
-            onOpen={(id) =>
-              hasChildren(beads, id)
-                ? onChange({ ...filters, scope: id, select: "" })
-                : navigate(`/beads/${enc(project)}/${enc(id)}`)
-            }
             onEscape={() => onChange({ ...filters, select: "none" })}
           />
         )}

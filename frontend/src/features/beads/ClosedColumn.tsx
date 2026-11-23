@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import type { DefinitionKey } from "@/lib/definitions";
 import type { BeadSummary } from "./api";
+import type { CardChoice } from "./BeadCard";
 import { BoardColumn } from "./BoardColumn";
 
 export function ClosedColumn({
@@ -12,6 +13,7 @@ export function ClosedColumn({
   limit,
   allLabel,
   empty,
+  choice,
 }: {
   title: string;
   rule?: DefinitionKey;
@@ -20,6 +22,7 @@ export function ClosedColumn({
   limit: number;
   allLabel: (total: number) => string;
   empty: string;
+  choice: CardChoice;
 }) {
   const [all, setAll] = useState(false);
   const shown = all ? beads : beads.slice(0, limit);
@@ -30,6 +33,6 @@ export function ClosedColumn({
       </Button>
     ) : null;
   return (
-    <BoardColumn title={title} rule={rule} project={project} beads={shown} total={beads.length} empty={empty} footer={toggle} />
+    <BoardColumn title={title} rule={rule} project={project} beads={shown} total={beads.length} empty={empty} footer={toggle} choice={choice} />
   );
 }

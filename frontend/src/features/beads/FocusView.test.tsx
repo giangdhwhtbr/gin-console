@@ -199,8 +199,7 @@ describe("FocusView", () => {
     expect(searchInput).toHaveValue("/");
   });
 
-  it("REQ-UI-037 move and open on Board and Focus", async () => {
-    window.history.replaceState(null, "", "/beads?project=alpha&view=board");
+  it("REQ-UI-037 REQ-UI-147 move, select and open on Board and Focus: the cards take the focus", async () => {
     stubBeads(() =>
       json([
         bead("c-1", { ready: true, priority: 0, title: "Card 1" }),
@@ -209,47 +208,44 @@ describe("FocusView", () => {
       ]),
     );
     const user = userEvent.setup();
-    const { unmount } = render(<BeadsPage />);
+    const cardOf = (title: string) => screen.getByRole("link", { name: title }).closest("[data-card]");
 
-    await screen.findByRole("region", { name: "Ready" });
+    for (const [view, column] of [
+      ["board", "Ready"],
+      ["focus", "Next up"],
+    ]) {
+      window.history.replaceState(null, "", `/beads?project=alpha&view=${view}`);
+      const { unmount } = render(<BeadsPage />);
+      await screen.findByRole("region", { name: column });
+      const card1 = cardOf("Card 1");
+      const card2 = cardOf("Card 2");
 
-    const link1 = screen.getByRole("link", { name: "Card 1" });
-    const link2 = screen.getByRole("link", { name: "Card 2" });
+      document.body.focus();
+      await user.keyboard("{ArrowDown}");
+      expect(card1).toHaveFocus();
+      await user.keyboard("{ArrowDown}");
+      expect(card2).toHaveFocus();
+      await user.keyboard("{ArrowUp}");
+      expect(card1).toHaveFocus();
 
-    document.body.focus();
-    await user.keyboard("{ArrowDown}");
-    expect(link1).toHaveFocus();
+      await user.keyboard("{Enter}");
+      expect(window.location.search).toContain("select=c-1");
+      expect(window.location.pathname).toBe("/beads");
+      await user.keyboard("{Enter}");
+      expect(window.location.pathname).toBe("/beads/alpha/c-1");
+      unmount();
+    }
+  });
 
-    await user.keyboard("{ArrowDown}");
-    expect(link2).toHaveFocus();
-
-    await user.keyboard("{ArrowUp}");
-    expect(link1).toHaveFocus();
-
-    await user.keyboard("{Enter}");
-    expect(window.location.pathname).toBe("/beads/alpha/c-1");
-
-    unmount();
-
+  it("REQ-UI-147 Phone: a tap on a Focus card opens its bead page, and the card has data-id for Back (REQ-UI-127)", async () => {
+    vi.stubGlobal("matchMedia", () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
     window.history.replaceState(null, "", "/beads?project=alpha&view=focus");
+    stubBeads(() => json([bead("t-1", { status: "in_progress", title: "Working" })]));
     render(<BeadsPage />);
-
-    await screen.findByRole("region", { name: "Next up" });
-    const focusLink1 = screen.getByRole("link", { name: "Card 1" });
-    const focusLink2 = screen.getByRole("link", { name: "Card 2" });
-
-    document.body.focus();
-    await user.keyboard("{ArrowDown}");
-    expect(focusLink1).toHaveFocus();
-
-    await user.keyboard("{ArrowDown}");
-    expect(focusLink2).toHaveFocus();
-
-    await user.keyboard("{ArrowUp}");
-    expect(focusLink1).toHaveFocus();
-
-    await user.keyboard("{Enter}");
-    expect(window.location.pathname).toBe("/beads/alpha/c-1");
+    const card = (await screen.findByRole("link", { name: "Working" })).closest("[data-card]");
+    expect(card).toHaveAttribute("data-id", "t-1");
+    await userEvent.click(within(await screen.findByRole("region", { name: "In flight" })).getByText("P2"));
+    expect(window.location.pathname).toBe("/beads/alpha/t-1");
   });
 
   it("REQ-UI-037 escape clears search and leaves search box", async () => {

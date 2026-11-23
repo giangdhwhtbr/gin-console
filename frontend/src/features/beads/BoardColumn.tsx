@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Hint } from "@/components/ui/tooltip";
 import { countHint, type DefinitionKey } from "@/lib/definitions";
 import type { BeadSummary } from "./api";
-import { BeadCard } from "./BeadCard";
+import { BeadCard, type CardChoice } from "./BeadCard";
 import { isPrep } from "./prep";
 
 export function BoardColumn({
@@ -13,6 +13,7 @@ export function BoardColumn({
   total,
   empty = "No beads",
   footer = null,
+  choice,
 }: {
   title: string;
   rule?: DefinitionKey;
@@ -21,6 +22,7 @@ export function BoardColumn({
   total?: number;
   empty?: string;
   footer?: ReactNode;
+  choice: CardChoice;
 }) {
   const prep = beads.filter((b) => isPrep(b.labels)).length;
   const own = beads.length - prep;
@@ -43,7 +45,7 @@ export function BoardColumn({
       ) : (
         <ul className="flex flex-col gap-2">
           {beads.map((bead) => (
-            <BeadCard key={bead.id} project={project} bead={bead} />
+            <BeadCard key={bead.id} project={project} bead={bead} choice={choice} />
           ))}
         </ul>
       )}
