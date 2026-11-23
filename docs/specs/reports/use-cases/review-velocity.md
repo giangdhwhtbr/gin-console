@@ -25,7 +25,7 @@ See whether the team does what it commits to and whether its days per point, and
 
 ## Exception flows
 ### 2e. The milestones list cannot be loaded
-1. The system shows the project's error and cause.
+1. The system shows the project's error and cause, with a Retry button.
 2. Resume at step 4.
 
 ## Business rules

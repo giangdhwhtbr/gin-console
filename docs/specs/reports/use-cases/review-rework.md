@@ -30,8 +30,9 @@ See the share of closed beads that were reopened or had a bug found later, and w
 
 ## Exception flows
 ### 2e. The project's report cannot be built
-1. The system shows the error above the tabs.
-2. Use case ends.
+1. The system shows the error with a Retry button in place of the report.
+2. The team lead presses Retry.
+3. Resume at step 2.
 
 ## Business rules
 
