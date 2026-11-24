@@ -16,6 +16,7 @@ Epic gin-console-5ws (2026-11-19) made "Refresh data" run `bd dolt pull` in ever
 - Shutdown waits for a scheduled pull in progress (no join timeout).
 - Tests: FastAPI's `TestClient` runs the lifespan only inside `with TestClient(app)`; `BeadsSettings.model_construct(pull_interval=0.05)` gets past the one-minute minimum. Every test that posts `/api/refresh` injects `run_bd` (`backend/tests/fake_bd.py`). PyYAML reads an unquoted `pull: no` as `false`.
 - The gin pre-commit hook runs frontend lint and `tsc` even for backend-only commits, so a fresh worktree needs `pnpm -C frontend install --frozen-lockfile` before its first commit.
+- bd 1.3.4 refuses writes on a remote-backed database still on an older schema (v49 to v66, 17 migrations) and only reads; the one designated migrator runs `bd migrate --force` then `bd dolt push`, and every other clone runs `bd bootstrap`. The gin-console database was migrated this way on 2026-11-24 (epic gin-console-rm-wbs-export); gin-workflow was already on 1.3.4 and gin-harness was not yet migrated.
 
 **References**
 - `backend/src/gin_console/{beads/pull.py,config.py,app.py,projects/models.py}`, `frontend/src/features/projects/PullLine.tsx` (ages from `frontend/src/lib/format.ts` since gin-console-rm-retire-sessions-quota), `frontend/src/features/beads/PullNote.tsx`, `docs/adr/0003-console-pulls-beads.md`
