@@ -111,10 +111,10 @@ describe("Breadcrumb", () => {
     expect(crumb().getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=b");
   });
 
-  it("REQ-UI-072 From Reports it names the page", () => {
-    rememberOrigin("reports", "/reports", "?project=a&tab=quality", "a");
+  it("REQ-UI-072 From Reports it names the page and returns to the section", () => {
+    rememberOrigin("reports", "/reports/rework", "?project=a&days=7", "a");
     render(<Breadcrumb project="a" id="a-1" title="Fix login" parent={null} />);
-    expect(crumb().getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/reports?project=a&tab=quality");
+    expect(crumb().getByRole("link", { name: "Reports" })).toHaveAttribute("href", "/reports/rework?project=a&days=7");
   });
 
   it("REQ-UI-072 other tabs of a milestone page are named by the milestone title alone", () => {

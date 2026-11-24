@@ -73,8 +73,9 @@ export function projectHref(path: "/beads" | "/milestones" | "/my-tasks" | "/rep
 
 const KEPT = ["view", "closed", "tab", "days", "q"];
 
+/** The place of another project: a list page or a report section keeps its path and the kept keys (never a milestone of the old project). */
 export function switchProject(pathname: string, search: string, name: string): string {
-  if (pathname === "/beads" || pathname === "/milestones" || pathname === "/my-tasks" || pathname === "/reports") {
+  if (pathname === "/beads" || pathname === "/milestones" || pathname === "/my-tasks" || pathname === "/reports" || pathname.startsWith("/reports/")) {
     const old = new URLSearchParams(search);
     const next = new URLSearchParams({ project: name });
     for (const key of KEPT) {

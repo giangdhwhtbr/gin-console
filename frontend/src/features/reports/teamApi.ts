@@ -1,5 +1,6 @@
 import { field } from "@/lib/guards";
 import { failure } from "./api";
+import { scopeQuery, type Scope } from "./filters";
 
 export type MilestoneStatus = "active" | "scheduled" | "planned" | "closed";
 export type TeamMilestone = { id: string; title: string; status: MilestoneStatus; start: string; end: string; closed_on: string | null };
@@ -40,9 +41,10 @@ export type TeamFigures = {
 };
 export type MemberFigures = TeamFigures & { member: string };
 export type TeamTotals = TeamFigures & {
-  working_days: number;
-  elapsed: number;
-  days_left: number;
+  /** null for a period, like `pace_needed` */
+  working_days: number | null;
+  elapsed: number | null;
+  days_left: number | null;
   pace: number;
   pace_needed: number | null;
   late_open: number;
@@ -55,6 +57,8 @@ export type TeamReport = {
   milestones: TeamMilestone[];
   undated: number;
   milestone: string | null;
+  /** the period of the scope, or null for a milestone */
+  period_days: number | null;
   team: TeamTotals | null;
   members: MemberFigures[];
   days: DayRow[];
@@ -75,9 +79,10 @@ function isTeamReport(value: unknown): value is TeamReport {
   );
 }
 
-export async function fetchTeam(project: string, milestone: string): Promise<TeamReport> {
+/** REQ-REPORTS-033: the default scope asks for the server's default milestone. */
+export async function fetchTeam(project: string, scope: Scope): Promise<TeamReport> {
   const params = new URLSearchParams({ project });
-  if (milestone !== "") params.set("milestone", milestone);
+  if (scope.kind !== "default") for (const [key, value] of scopeQuery(scope)) params.set(key, value);
   const response = await fetch(`/api/reports/team?${params.toString()}`);
   if (!response.ok) throw await failure(response);
   const body: unknown = await response.json();

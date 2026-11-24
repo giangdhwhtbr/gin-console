@@ -9,7 +9,7 @@ const DEFAULT_PLOT_WIDTH = 640; // until the first measure, and in tests, which 
 
 const isMonday = (date: string): boolean => new Date(date).getUTCDay() === 1;
 
-/** Beads closed per working day as an HTML column chart stacked by member; nothing before the milestone has begun. */
+/** Beads closed per working day as an HTML column chart stacked by member; nothing before the milestone has begun. `milestone` is null for a period. */
 export function ClosedPerDayChart({
   days,
   members,
@@ -21,7 +21,7 @@ export function ClosedPerDayChart({
   members: string[];
   selected: string;
   today: string;
-  milestone: TeamMilestone;
+  milestone: TeamMilestone | null;
 }) {
   const empty = days.length === 0;
   const layer = useRef<HTMLDivElement>(null);
@@ -35,16 +35,17 @@ export function ClosedPerDayChart({
     observer.observe(el);
     return () => observer.disconnect();
   }, [empty]);
-  if (days.length === 0 || days[0].date > today || milestone.start > today) return null;
+  if (days.length === 0 || days[0].date > today || (milestone !== null && milestone.start > today)) return null;
   const totalOf = (day: DayRow): number => members.reduce((sum, m) => sum + (day.closed[m] ?? 0), 0);
   const max = Math.max(4, ...days.map(totalOf));
   const step = Math.ceil(max / 4);
   const ticks = Array.from({ length: Math.floor(max / step) + 1 }, (_, i) => i * step);
   const withClosed = members.filter((m) => days.some((d) => (d.closed[m] ?? 0) > 0));
   const last = days[days.length - 1].date;
-  const endMarked = last > milestone.end && days.some((d) => d.date === milestone.end);
+  const end = milestone?.end ?? null;
+  const endMarked = end !== null && last > end && days.some((d) => d.date === end);
   const markerOf = (day: DayRow): string | null =>
-    day.date === today ? "Today" : endMarked && day.date === milestone.end ? `End ${formatDate(day.date, today)}` : null;
+    day.date === today ? "Today" : endMarked && day.date === end ? `End ${formatDate(day.date, today)}` : null;
   // a marker within 5 columns of the one before it goes on a second row above the plot, so two labels never overlap
   const markers = days.flatMap((day, index) => {
     const text = markerOf(day);
@@ -83,7 +84,7 @@ export function ClosedPerDayChart({
             const total = totalOf(day);
             const date = formatDate(day.date, today);
             const label = `${date}: ${[...parts.map((m) => `${m} ${day.closed[m]}`), `total ${total}`].join(", ")}`;
-            const future = day.date > today && milestone.status !== "closed";
+            const future = day.date > today && milestone?.status !== "closed";
             const marker = markerOf(day);
             return (
               <li

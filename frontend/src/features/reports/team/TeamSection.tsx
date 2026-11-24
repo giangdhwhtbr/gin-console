@@ -1,9 +1,8 @@
 import { Link } from "@/app/Link";
 import { Button } from "@/components/ui/button";
 import { milestonePath } from "@/features/milestones/api";
-import { CopyCommand } from "@/features/milestones/CopyCommand";
 import type { ReportFilters } from "../filters";
-import { selectedMilestone, UNASSIGNED, type TeamMilestone, type TeamReport } from "../teamApi";
+import { selectedMilestone, UNASSIGNED, type TeamReport } from "../teamApi";
 import { BeadTable } from "./BeadTable";
 import { ClosedPerDayChart } from "./ClosedPerDayChart";
 import { MemberTable } from "./MemberTable";
@@ -12,9 +11,6 @@ import { TeamFigures } from "./TeamFigures";
 
 const selectClass = "min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm";
 const labelClass = "flex min-w-0 max-w-full items-center gap-2 text-sm text-muted-foreground";
-
-const byStart = (a: TeamMilestone, b: TeamMilestone) => a.start.localeCompare(b.start);
-const byEndDesc = (a: TeamMilestone, b: TeamMilestone) => b.end.localeCompare(a.end);
 
 export function TeamSection({
   project,
@@ -30,45 +26,11 @@ export function TeamSection({
   finish: string | null;
   onChange: (next: ReportFilters) => void;
 }) {
-  if (report.milestones.length === 0) {
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="font-semibold">{project} has no milestones yet</p>
-        <p className="text-sm text-muted-foreground">A milestone groups epics under a start and end date, so the team can follow its pace.</p>
-        <CopyCommand command="gin milestone create" />
-      </div>
-    );
-  }
+  // the scope comes from the page's scope select (REQ-REPORTS-033): a milestone, or a period with no milestone
   const milestone = selectedMilestone(report);
-  const groups: [string, TeamMilestone[]][] = [
-    ["Active", report.milestones.filter((m) => m.status === "active")],
-    ["Planned", report.milestones.filter((m) => m.status === "scheduled" || m.status === "planned").sort(byStart)],
-    ["Closed", report.milestones.filter((m) => m.status === "closed").sort(byEndDesc)],
-  ];
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center gap-3">
-        <label className={labelClass}>
-          Milestone
-          <select
-            aria-label="Milestone"
-            value={report.milestone ?? ""}
-            onChange={(event) => onChange({ ...filters, milestone: event.target.value, member: "", status: "" })}
-            className={selectClass}
-          >
-            {groups
-              .filter(([, list]) => list.length > 0)
-              .map(([label, list]) => (
-                <optgroup key={label} label={label}>
-                  {list.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.title}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-          </select>
-        </label>
         <label className={labelClass}>
           Member
           <select
@@ -96,11 +58,11 @@ export function TeamSection({
           </Link>
         )}
       </div>
-      {milestone !== null && <MilestoneLine report={report} milestone={milestone} finish={finish} />}
+      <MilestoneLine report={report} milestone={milestone} finish={finish} />
       {report.undated > 0 && (
         <p className="text-sm text-muted-foreground">{report.undated} milestones without start and end dates are not listed</p>
       )}
-      {report.team !== null && milestone !== null && (
+      {report.team !== null && (
         <div data-slot="team-body" className="flex flex-col gap-8">
           <TeamFigures team={report.team} member={report.members.find((m) => m.member === filters.member) ?? null} milestone={milestone} />
           <ClosedPerDayChart
@@ -115,7 +77,7 @@ export function TeamSection({
             project={project}
             beads={filters.member === "" ? report.beads : report.beads.filter((b) => (b.assignee ?? UNASSIGNED) === filters.member)}
             member={filters.member}
-            status={filters.status || (milestone.status === "closed" ? "closed" : "open")}
+            status={filters.status || (milestone === null || milestone.status === "closed" ? "closed" : "open")}
             onStatus={(status) => onChange({ ...filters, status })}
             today={report.today}
           />

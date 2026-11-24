@@ -103,6 +103,11 @@ describe("origin", () => {
     expect(getOrigin().kind).toBe("beads");
   });
 
+  it("REQ-UI-073 a report section is a Reports place with its path", () => {
+    rememberOrigin("reports", "/reports/rework", "?project=a&days=7", "a");
+    expect(getOrigin()).toMatchObject({ kind: "reports", path: "/reports/rework", search: "?project=a&days=7", project: "a" });
+  });
+
   describe("originFor", () => {
     const at = (kind: Origin["kind"], project: string | null): Origin => ({ ...EMPTY, kind, project });
 

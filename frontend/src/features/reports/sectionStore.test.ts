@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { clearSections, publishSections, useSections, type SectionLink } from "./sectionStore";
 
-const link = (tab: SectionLink["tab"]): SectionLink => ({ tab, label: tab, headline: "h", warn: false, href: `/reports?tab=${tab}` });
+const link = (section: SectionLink["section"]): SectionLink => ({ section, label: section, headline: "h", warn: false, href: `/reports/${section}` });
 afterEach(() => act(() => clearSections()));
 
 describe("sectionStore", () => {
@@ -10,7 +10,7 @@ describe("sectionStore", () => {
     const { result } = renderHook(() => useSections());
     expect(result.current).toEqual({ sections: [], selected: null });
     act(() => publishSections([link("team"), link("delivery")], "delivery"));
-    expect(result.current.sections.map((s) => s.tab)).toEqual(["team", "delivery"]);
+    expect(result.current.sections.map((s) => s.section)).toEqual(["team", "delivery"]);
     expect(result.current.selected).toBe("delivery");
     act(() => clearSections());
     expect(result.current).toEqual({ sections: [], selected: null });

@@ -1,5 +1,5 @@
 import { TriangleAlert } from "lucide-react";
-import { workdaysAfter } from "@/features/milestones/format";
+import { utcOf, workdaysAfter } from "@/features/milestones/format";
 import { lateOf } from "@/features/milestones/late";
 import { MilestoneStatus } from "@/features/milestones/MilestoneStatus";
 import { formatDate, formatRange } from "@/lib/dates";
@@ -31,12 +31,21 @@ function Chip({ milestone, finish, today }: { milestone: TeamMilestone; finish: 
   );
 }
 
-export function MilestoneLine({ report, milestone, finish }: { report: TeamReport; milestone: TeamMilestone; finish: string | null }) {
+const DAY_MS = 86_400_000;
+const daysBefore = (day: string, days: number): string => new Date(utcOf(day).getTime() - days * DAY_MS).toISOString().slice(0, 10);
+
+/** REQ-REPORTS-012: the scope line, of the selected milestone or of the period; nothing for a report with neither. */
+export function MilestoneLine({ report, milestone, finish }: { report: TeamReport; milestone: TeamMilestone | null; finish: string | null }) {
   const { team, today } = report;
+  if (milestone === null) {
+    if (report.period_days === null) return null;
+    return <h2 className="font-semibold">{`Last ${report.period_days} days, ${formatRange(daysBefore(today, report.period_days), today, today)}`}</h2>;
+  }
   let progress: string | null = null;
   if (milestone.status === "closed" && milestone.closed_on !== null) progress = `finished ${formatDate(milestone.closed_on, today)}`;
   else if (today < milestone.start) progress = `starts in ${workdaysAfter(today, milestone.start)} working days`;
-  else if (today <= milestone.end && team !== null) progress = `working day ${team.elapsed} of ${team.working_days}, ${team.days_left} left`;
+  else if (today <= milestone.end && team !== null && team.working_days !== null)
+    progress = `working day ${team.elapsed} of ${team.working_days}, ${team.days_left} left`;
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
       <h2 className="font-semibold">{milestone.title}</h2>

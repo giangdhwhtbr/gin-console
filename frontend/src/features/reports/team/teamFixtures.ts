@@ -51,6 +51,7 @@ export function teamReport(overrides: Partial<TeamReport> = {}): TeamReport {
     ],
     undated: 0,
     milestone: "m2",
+    period_days: null,
     team: teamTotals,
     members: [
       { ...figures, member: "ann" },

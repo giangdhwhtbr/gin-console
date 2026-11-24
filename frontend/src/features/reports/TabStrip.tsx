@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 const FADE = "pointer-events-none absolute inset-y-0 w-8 from-background to-transparent";
 
-/** Wraps a tab list and fades its edge on each side that has hidden tabs; the fades are overlays, so nothing shifts. */
+/** Wraps a row that scrolls sideways (its first element) and fades its edge on each side that has hidden items; the fades are overlays, so nothing shifts. */
 export function TabStrip({ children }: { children: ReactNode }) {
   const box = useRef<HTMLDivElement>(null);
   const [hidden, setHidden] = useState({ left: false, right: false });
 
   useEffect(() => {
-    const list = box.current?.querySelector<HTMLElement>('[role="tablist"]');
-    if (!list) return;
+    const list = box.current?.firstElementChild;
+    if (!(list instanceof HTMLElement)) return;
     const update = () => {
       const left = list.scrollLeft > 1;
       const right = list.scrollLeft + list.clientWidth < list.scrollWidth - 1;

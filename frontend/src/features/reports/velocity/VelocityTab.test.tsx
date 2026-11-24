@@ -17,7 +17,8 @@ const alpha = (dpp = { value: 1.4, measured_epics: 6, assumed: false }) =>
     ],
     { days_per_point: dpp },
   );
-const show = (answer: MilestoneList | MilestonesError, onRetry: () => void = () => undefined) => render(<VelocityTab answer={answer} onRetry={onRetry} />);
+const show = (answer: MilestoneList | MilestonesError, onRetry: () => void = () => undefined, selected: string | null = null) =>
+  render(<VelocityTab answer={answer} onRetry={onRetry} selected={selected} />);
 
 describe("VelocityTab", () => {
   it("REQ-REPORTS-018 milestones with velocity: figures, charts and table", () => {
@@ -34,6 +35,30 @@ describe("VelocityTab", () => {
     ]);
     expect(screen.queryByText("m3")).toBeNull();
     expect(screen.queryByText("assumed")).toBeNull();
+  });
+
+  it("REQ-REPORTS-018 Milestones with velocity: the milestone of the scope is marked in both charts and the table", () => {
+    const { container } = show(alpha(), undefined, "m2");
+    expect(screen.getByRole("img", { name: "Committed and completed points per milestone, as grouped columns, m2 marked" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Days per point and planned days per point per milestone, as lines, m2 marked" })).toBeTruthy();
+    const rows = screen.getAllByRole("row").slice(1);
+    expect(rows[1]).toHaveAttribute("aria-current", "true");
+    expect(rows[1]).toHaveClass("bg-muted");
+    expect(rows[0]).not.toHaveAttribute("aria-current");
+    expect(rows[0]).not.toHaveClass("bg-muted");
+    // the marked columns are outlined in the identity colour, the others are not
+    const outlined = Array.from(container.querySelectorAll(".recharts-bar-rectangle path")).filter((p) => p.getAttribute("stroke") === "var(--color-identity)");
+    expect(outlined).toHaveLength(2);
+  });
+
+  it("REQ-REPORTS-018 Period scope: no milestone is marked", () => {
+    show(alpha(), undefined, null);
+    expect(screen.getByRole("img", { name: "Committed and completed points per milestone, as grouped columns" })).toBeTruthy();
+    expect(screen.getAllByRole("row").filter((r) => r.hasAttribute("aria-current"))).toHaveLength(0);
+    cleanup();
+    show(alpha(), undefined, "m3"); // a milestone the charts do not hold
+    expect(screen.getByRole("img", { name: "Days per point and planned days per point per milestone, as lines" })).toBeTruthy();
+    expect(screen.getAllByRole("row").filter((r) => r.hasAttribute("aria-current"))).toHaveLength(0);
   });
 
   it("REQ-REPORTS-018 assumed days per point", () => {

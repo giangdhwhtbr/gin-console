@@ -1,29 +1,25 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { milestonePath } from "@/features/milestones/api";
 import { parseReportSearch, type ReportFilters } from "../filters";
 import { TeamSection } from "./TeamSection";
-import { teamReport } from "./teamFixtures";
+import { teamReport, teamTotals } from "./teamFixtures";
 import type { TeamReport } from "../teamApi";
 
 afterEach(cleanup);
 
-const filters = (over: Partial<ReportFilters> = {}): ReportFilters => ({ ...parseReportSearch("?project=alpha&tab=team"), ...over });
+const filters = (over: Partial<ReportFilters> = {}): ReportFilters => ({ ...parseReportSearch("?project=alpha&milestone=m2"), ...over });
 function show(report: TeamReport, over: Partial<ReportFilters> = {}, finish: string | null = null) {
   const onChange = vi.fn();
   render(<TeamSection project="alpha" report={report} filters={filters(over)} finish={finish} onChange={onChange} />);
   return onChange;
 }
-const optionsOf = (group: string) => within(screen.getByRole("group", { name: group })).getAllByRole("option").map((o) => o.getAttribute("value"));
 
 describe("TeamSection", () => {
-  it("REQ-REPORTS-012 milestone select groups Active, Planned and Closed", () => {
+  it("REQ-REPORTS-012 REQ-REPORTS-033 holds no milestone select: the page's scope select replaces it", () => {
     show(teamReport());
-    expect(optionsOf("Active")).toEqual(["m2"]);
-    expect(optionsOf("Planned")).toEqual(["m3"]);
-    expect(optionsOf("Closed")).toEqual(["m1"]);
-    expect(screen.getByLabelText("Milestone")).toHaveValue("m2");
+    expect(screen.queryByLabelText("Milestone")).toBeNull();
   });
 
   it("REQ-REPORTS-012 member select, pick and clear", async () => {
@@ -40,12 +36,6 @@ describe("TeamSection", () => {
     const onChange = show(teamReport(), { member: "ann" });
     await userEvent.click(screen.getByRole("button", { name: "Clear member" }));
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ member: "" }));
-  });
-
-  it("REQ-REPORTS-012 a new milestone clears member and status", async () => {
-    const onChange = show(teamReport(), { member: "ann", status: "closed" });
-    await userEvent.selectOptions(screen.getByLabelText("Milestone"), "m1");
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ milestone: "m1", member: "", status: "" }));
   });
 
   it("REQ-REPORTS-012 milestone line of an active milestone", () => {
@@ -101,20 +91,28 @@ describe("TeamSection", () => {
     expect(screen.queryByRole("textbox", { name: "Sprint" })).toBeNull();
   });
 
-  it("REQ-REPORTS-012 change milestone resets the list", async () => {
-    const onChange = show(teamReport(), { status: "open" });
+  it("REQ-REPORTS-012 the bead list defaults to Open for an open milestone and Closed for a closed one", () => {
+    show(teamReport(), { status: "" });
     expect(screen.getByRole("tab", { name: /^Open/ })).toHaveAttribute("aria-selected", "true");
-    await userEvent.selectOptions(screen.getByLabelText("Milestone"), "m1");
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ milestone: "m1", status: "" }));
     cleanup();
-    show(teamReport({ milestone: "m1" }), { milestone: "m1", status: "" });
+    show(teamReport({ milestone: "m1" }), { scope: { kind: "milestone", id: "m1" }, status: "" });
     expect(screen.getByRole("tab", { name: /^Closed/ })).toHaveAttribute("aria-selected", "true");
   });
 
-  it("REQ-REPORTS-017 no milestones", () => {
-    show(teamReport({ milestones: [], milestone: null, team: null, members: [], days: [], beads: [] }));
-    expect(screen.getByText("alpha has no milestones yet")).toBeInTheDocument();
-    expect(screen.getByText("gin milestone create")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
+  const period = (over: Partial<TeamReport> = {}) => teamReport({ milestone: null, period_days: 30, team: { ...teamTotals, working_days: null, elapsed: null, days_left: null, pace_needed: null, on_time: null }, ...over });
+
+  it("REQ-REPORTS-012 period: the scope line names the days, and no Open Gantt link", () => {
+    show(period(), { scope: { kind: "period", days: 30 } });
+    expect(screen.getByRole("heading", { name: "Last 30 days, 13 Oct – 12 Nov" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Open Gantt" })).toBeNull();
+    expect(screen.getByRole("group", { name: "Key figures" })).toHaveTextContent("Throughput");
+    expect(screen.getByRole("tab", { name: /^Closed/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("REQ-REPORTS-017 no milestones: shows the last 30 days, not a milestone", () => {
+    show(period({ milestones: [] }), { scope: { kind: "period", days: 30 } });
+    expect(screen.getByRole("heading", { name: "Last 30 days, 13 Oct – 12 Nov" })).toBeInTheDocument();
+    expect(screen.queryByText(/has no milestones yet/)).toBeNull();
+    expect(screen.queryByText("gin milestone create")).toBeNull();
   });
 });

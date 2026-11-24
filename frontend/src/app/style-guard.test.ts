@@ -66,7 +66,7 @@ describe("plain text style", () => {
       .map((line, i) => ({ name, at: `${name}:${i + 1}`, line }));
   });
   // the document title of REQ-UI-063 is the one place that joins with a middle dot
-  const TITLE_FILES = ["app/usePageTitle.ts", "features/reports/ReportsPage.tsx"];
+  const TITLE_FILES = ["app/usePageTitle.ts", "features/reports/ReportsView.tsx"];
 
   it("REQ-UI-139: no class sets text in capitals", () => {
     expect(lines.filter(({ line }) => /\buppercase\b/.test(line)).map(({ at }) => at)).toEqual([]);

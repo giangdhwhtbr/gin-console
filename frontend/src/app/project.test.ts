@@ -151,11 +151,10 @@ describe("switchProject", () => {
     );
   });
 
-  it("REQ-UI-123 drops member on the Reports page", async () => {
+  it("REQ-UI-123 REQ-REPORTS-033 a report section keeps its path and the period, and drops the milestone and the member", async () => {
     const p = await load();
-    expect(p.switchProject("/reports", "?project=a&tab=quality&days=7&member=ann", "b")).toBe(
-      "/reports?project=b&tab=quality&days=7",
-    );
+    expect(p.switchProject("/reports/rework", "?project=a&days=7&member=ann&status=closed", "b")).toBe("/reports/rework?project=b&days=7");
+    expect(p.switchProject("/reports/team", "?project=a&milestone=m1&member=ann", "b")).toBe("/reports/team?project=b");
   });
 
   it("REQ-UI-123 opens the Beads page from a bead page", async () => {

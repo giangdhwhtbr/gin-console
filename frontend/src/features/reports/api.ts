@@ -1,5 +1,5 @@
 import { field } from "@/lib/guards";
-import type { ReportFilters } from "./filters";
+import { scopeQuery, type Scope } from "./filters";
 
 export type Totals = { closed: number; rework_rate: number | null };
 export type WeekRow = { week: string; counts: Record<string, number> };
@@ -19,8 +19,9 @@ export type QualitySection = { members: MemberQuality[]; epics: EpicQuality[] };
 export type Report = {
   generated_at: string;
   project: string;
-  days: number;
-  sprint: string | null;
+  /** the period, or null for a milestone */
+  days: number | null;
+  milestone: string | null;
   totals: Totals;
   delivery: DeliverySection;
   quality: QualitySection;
@@ -63,9 +64,9 @@ function isReport(value: unknown): value is Report {
   );
 }
 
+/** The `error` of the answer; a 404 without one is an unknown project. */
 export async function failure(response: Response): Promise<Error> {
-  if (response.status === 404) return new Error("Project not found");
-  let detail = `HTTP ${response.status}`;
+  let detail = response.status === 404 ? "Project not found" : `HTTP ${response.status}`;
   try {
     const body: unknown = await response.json();
     const message = isObject(body) ? field(body, "error") : undefined;
@@ -76,9 +77,9 @@ export async function failure(response: Response): Promise<Error> {
   return new Error(detail);
 }
 
-export async function fetchReport(filters: Pick<ReportFilters, "project" | "days" | "sprint">): Promise<Report> {
-  const params = new URLSearchParams({ project: filters.project, days: String(filters.days) });
-  if (filters.sprint !== "") params.set("sprint", filters.sprint);
+export async function fetchReport(project: string, scope: Exclude<Scope, { kind: "default" }>): Promise<Report> {
+  const params = new URLSearchParams({ project });
+  for (const [key, value] of scopeQuery(scope)) params.set(key, value);
   const response = await fetch(`/api/reports?${params.toString()}`);
   if (!response.ok) throw await failure(response);
   const body: unknown = await response.json();

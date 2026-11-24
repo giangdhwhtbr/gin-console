@@ -2,6 +2,7 @@ import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS } from "@/lib/definitions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { oneDecimal, percent, twoDecimals } from "@/features/milestones/format";
+import { cn } from "@/lib/utils";
 import type { VelocityPoint } from "./velocity";
 
 const HEADS: readonly (readonly [string, string?])[] = [
@@ -16,7 +17,7 @@ const HEADS: readonly (readonly [string, string?])[] = [
 ];
 const orDash = (value: number | null, show: (n: number) => string) => (value === null ? "—" : show(value));
 
-export function VelocityTable({ points }: { points: readonly VelocityPoint[] }) {
+export function VelocityTable({ points, selected }: { points: readonly VelocityPoint[]; selected: string | null }) {
   return (
     <Table>
       <TableHeader>
@@ -28,7 +29,7 @@ export function VelocityTable({ points }: { points: readonly VelocityPoint[] }) 
       </TableHeader>
       <TableBody>
         {points.map(({ id, title, velocity: v }) => (
-          <TableRow key={id}>
+          <TableRow key={id} aria-current={id === selected ? "true" : undefined} className={cn(id === selected && "bg-muted")}>
             <TableCell title={title}>{id}</TableCell>
             <TableCell>{orDash(v.committed_points, String)}</TableCell>
             <TableCell>{v.completed_points}</TableCell>

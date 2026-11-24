@@ -12,17 +12,19 @@ const stub = (response: Response) => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("team api", () => {
-  it("REQ-REPORTS-012 omits the milestone when empty and adds it otherwise", async () => {
+  it("REQ-REPORTS-012 REQ-REPORTS-033 asks for the default scope without keys, else for the milestone or the period", async () => {
     const mock = stub(json(teamReport()));
-    await fetchTeam("alpha", "");
+    await fetchTeam("alpha", { kind: "default" });
     expect(mock).toHaveBeenLastCalledWith("/api/reports/team?project=alpha");
-    await fetchTeam("alpha", "m1");
+    await fetchTeam("alpha", { kind: "milestone", id: "m1" });
     expect(mock).toHaveBeenLastCalledWith("/api/reports/team?project=alpha&milestone=m1");
+    await fetchTeam("alpha", { kind: "period", days: 7 });
+    expect(mock).toHaveBeenLastCalledWith("/api/reports/team?project=alpha&days=7");
   });
 
   it("REQ-REPORTS-012 parses a report and selects its milestone", async () => {
     stub(json(teamReport()));
-    const report = await fetchTeam("alpha", "");
+    const report = await fetchTeam("alpha", { kind: "default" });
     expect(report.beads).toHaveLength(4);
     expect(selectedMilestone(report)?.id).toBe("m2");
     expect(selectedMilestone({ ...report, milestone: null })).toBeNull();
@@ -30,13 +32,13 @@ describe("team api", () => {
 
   it.each(["milestones", "beads", "members"])("REQ-REPORTS-017 rejects a body without %s", async (key) => {
     stub(json({ ...teamReport(), [key]: undefined }));
-    await expect(fetchTeam("alpha", "")).rejects.toThrow("Could not load the team report (unexpected response)");
+    await expect(fetchTeam("alpha", { kind: "default" })).rejects.toThrow("Could not load the team report (unexpected response)");
   });
 
   it("REQ-REPORTS-017 maps 404 and 502", async () => {
     stub(json({}, 404));
-    await expect(fetchTeam("alpha", "")).rejects.toThrow("Project not found");
+    await expect(fetchTeam("alpha", { kind: "default" })).rejects.toThrow("Project not found");
     stub(json({ error: "boom" }, 502));
-    await expect(fetchTeam("alpha", "")).rejects.toThrow("boom");
+    await expect(fetchTeam("alpha", { kind: "default" })).rejects.toThrow("boom");
   });
 });

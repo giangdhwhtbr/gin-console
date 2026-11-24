@@ -116,6 +116,27 @@ describe("App routing", () => {
     }
   });
 
+  it("REQ-UI-088 REQ-UI-095 every path under /reports is the Reports page: a section, /reports, or the not-found page", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    window.history.replaceState(null, "", "/reports/delivery");
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Reports" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
+    cleanup();
+    const before = window.history.length;
+    window.history.replaceState(null, "", "/reports?tab=quality");
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/reports/rework"));
+    expect(window.history.length).toBe(before);
+    expect(await screen.findByRole("heading", { name: "Reports" })).toBeInTheDocument();
+    cleanup();
+    window.history.replaceState(null, "", "/reports/nope");
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    expect(screen.getByText("/reports/nope")).toBeInTheDocument();
+    await waitFor(() => expect(document.title).toBe("Page not found · gin-console"));
+  });
+
   it("REQ-UI-099 / is replaced by My Tasks of the current project without a history entry", async () => {
     window.history.replaceState(null, "", "/");
     const before = window.history.length;
@@ -160,7 +181,11 @@ describe("App routing", () => {
   it.each<[string, string]>([
     ["/beads?project=alpha", "Beads · alpha · gin-console"],
     ["/milestones?project=alpha", "Milestones · alpha · gin-console"],
-    ["/reports?project=alpha&tab=quality", "Reports · Quality · alpha · gin-console"],
+    ["/reports/rework?project=alpha", "Reports · Rework · alpha · gin-console"],
+    ["/reports/status?project=alpha", "Reports · Status · alpha · gin-console"],
+    ["/reports/team?project=alpha", "Reports · Team · alpha · gin-console"],
+    ["/reports/delivery?project=alpha", "Reports · Delivery · alpha · gin-console"],
+    ["/reports/velocity?project=alpha", "Reports · Velocity · alpha · gin-console"],
     ["/my-tasks", "My Tasks · gin-console"],
     ["/my-tasks?project=alpha", "My Tasks · alpha · gin-console"],
   ])("REQ-UI-063 titles %s", async (path, title) => {

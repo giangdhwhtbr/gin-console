@@ -24,11 +24,12 @@ function beadOrigin(pathname: string, origin: Origin): OriginKind | null {
 }
 
 type Place = { path: string; from: OriginKind | null };
+const isReports = (path: string) => path === "/reports" || path.startsWith("/reports/");
 const NAV = [
   { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: ({ path, from }: Place) => path === "/beads" || (path.startsWith("/beads/") && from === null) },
   { to: (project: string) => projectHref("/my-tasks", project), label: "My Tasks", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
   { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
-  { to: (project: string) => projectHref("/reports", project), label: "Reports", icon: ChartColumn, current: ({ path, from }: Place) => path === "/reports" || from === "reports" },
+  { to: (project: string) => projectHref("/reports", project), label: "Reports", icon: ChartColumn, current: ({ path, from }: Place) => isReports(path) || from === "reports" },
 ] as const;
 
 const LINK = cn(
@@ -160,13 +161,13 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
                 <Icon aria-hidden className="size-5" />
                 {label}
               </Link>
-              {label === "Reports" && wide && pathname === "/reports" && sections.length > 0 && (
+              {label === "Reports" && wide && isReports(pathname) && sections.length > 0 && (
                 <ul aria-label="Report sections" className="ml-4 hidden flex-col gap-0.5 border-l pl-2 lg:flex">
                   {sections.map((section) => (
-                    <li key={section.tab}>
+                    <li key={section.section}>
                       <Link
                         to={section.href}
-                        aria-current={section.tab === selected ? "page" : undefined}
+                        aria-current={section.section === selected ? "page" : undefined}
                         className="flex flex-col rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted aria-[current=page]:bg-muted aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
                       >
                         {section.label}

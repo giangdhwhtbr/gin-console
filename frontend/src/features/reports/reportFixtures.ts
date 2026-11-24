@@ -5,7 +5,7 @@ export function report(overrides: Partial<Report> = {}): Report {
     generated_at: "2026-11-01T10:00:00Z",
     project: "alpha",
     days: 30,
-    sprint: null,
+    milestone: null,
     totals: { closed: 4, rework_rate: 0.25 },
     delivery: { weeks: [{ week: "2026-W44", counts: { task: 3 } }], by_type: [], by_member: [], overall: { key: "all", cycle: null, lead: null }, estimates: [] },
     quality: {

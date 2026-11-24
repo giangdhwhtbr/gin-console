@@ -69,7 +69,7 @@ function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = fal
   );
 }
 
-function ScopeBar({ figures, member }: { figures: Figures; member: string | null }) {
+function ScopeBar({ figures, member, period }: { figures: Figures; member: string | null; period: boolean }) {
   const counts = { done: figures.closed, inProgress: figures.in_progress, blocked: figures.blocked, ready: figures.open - figures.blocked, deferred: 0 };
   const legend = [
     { name: "Done", state: "done", n: counts.done },
@@ -82,7 +82,7 @@ function ScopeBar({ figures, member }: { figures: Figures; member: string | null
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="font-semibold">Scope by status</h2>
         <span className="text-sm text-muted-foreground">
-          {figures.scope} beads {member === null ? "under the milestone's epics" : `assigned to ${member}`}
+          {figures.scope} beads {member !== null ? `assigned to ${member}` : period ? "closed or in progress in the period" : "under the milestone's epics"}
         </span>
       </div>
       <Strand counts={counts} noun="beads" />
@@ -98,8 +98,8 @@ function ScopeBar({ figures, member }: { figures: Figures; member: string | null
   );
 }
 
-function PaceOrThroughput({ team, figures, solo, milestone }: { team: TeamTotals; figures: Figures; solo: boolean; milestone: TeamMilestone }) {
-  if (!solo && team.pace_needed !== null) {
+function PaceOrThroughput({ team, figures, solo, milestone }: { team: TeamTotals; figures: Figures; solo: boolean; milestone: TeamMilestone | null }) {
+  if (!solo && team.pace_needed !== null && milestone !== null) {
     const behind = team.pace_needed > team.pace;
     return (
       <Cell
@@ -118,18 +118,19 @@ function PaceOrThroughput({ team, figures, solo, milestone }: { team: TeamTotals
       label="Throughput"
       rule={RULE.throughput}
       value={`${figures.throughput.toFixed(1)} done per week`}
-      sub={milestone.status === "closed" ? "over the milestone" : "last 5 working days"}
+      sub={milestone?.status === "closed" ? "over the milestone" : "last 5 working days"}
     />
   );
 }
 
-export function TeamFigures({ team, member, milestone }: { team: TeamTotals; member: MemberFigures | null; milestone: TeamMilestone }) {
+/** `milestone` is null for a period (REQ-REPORTS-033), which has no end date to count against. */
+export function TeamFigures({ team, member, milestone }: { team: TeamTotals; member: MemberFigures | null; milestone: TeamMilestone | null }) {
   const figures: Figures = member ?? team;
   const solo = member !== null;
   const lateOpen = solo ? 0 : team.late_open;
   const slow = figures.oldest_in_progress !== null && figures.oldest_in_progress > WARN_DAYS;
   const onTime = figures.on_time;
-  const scope = solo ? `beads assigned to ${member.member}` : "the milestone's epics";
+  const scope = solo ? `beads assigned to ${member.member}` : milestone === null ? "the period" : "the milestone's epics";
   return (
     <div className="flex flex-col gap-6">
       <div
@@ -159,13 +160,13 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
           label="On time"
           rule={RULE.onTime}
           value={formatPercent(onTime)}
-          sub={lateOpen > 0 ? `${lateOpen} open after the end date` : `closed by ${formatDate(milestone.end)}`}
+          sub={lateOpen > 0 ? `${lateOpen} open after the end date` : milestone === null ? "for a milestone" : `closed by ${formatDate(milestone.end)}`}
           warnValue={onTime !== null && onTime < 1}
           warnSub={lateOpen > 0}
         />
         <Cell label="Rework" rule={DEFINITIONS.rework} value={formatPercent(figures.rework_rate)} sub={[plural(figures.reopens, "reopen"), `${plural(figures.bugs, "bug")} later`]} />
       </div>
-      <ScopeBar figures={figures} member={member === null ? null : member.member} />
+      <ScopeBar figures={figures} member={member === null ? null : member.member} period={milestone === null} />
     </div>
   );
 }

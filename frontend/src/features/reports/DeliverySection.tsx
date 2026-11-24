@@ -7,6 +7,7 @@ import { DEFINITIONS } from "@/lib/definitions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import type { DeliverySection as Delivery, Stat, TimeRow } from "./api";
+import type { Period } from "./filters";
 import { oneDecimal } from "@/features/milestones/format";
 import { ChartBox, legendText } from "./ChartBox";
 import { TYPES, present, typeColor } from "./colors";
@@ -31,15 +32,28 @@ const rangesOf = (rows: TimeRow[], pick: (r: TimeRow) => Stat | null): Range[] =
     return s === null ? [] : [{ key: r.key, ...s }];
   });
 
-export function DeliverySection({ delivery }: { delivery: Delivery }) {
+/** The scope the delivery report counts, by name (REQ-REPORTS-033). */
+export type DeliveryScope = { kind: "period"; days: Period } | { kind: "milestone"; title: string };
+
+const sentenceOf = (scope: DeliveryScope): string =>
+  scope.kind === "period" ? `Beads closed in the last ${scope.days} days` : `Beads of ${scope.title} closed`;
+
+export function DeliverySection({ delivery, scope }: { delivery: Delivery; scope: DeliveryScope }) {
   const [by, setBy] = useState<"type" | "member">("type");
   const types = present(TYPES, delivery.weeks.flatMap((w) => Object.keys(w.counts)));
+  const sentence = <p className="text-sm text-muted-foreground">{sentenceOf(scope)}</p>;
   if (!delivery.weeks.some((w) => Object.values(w.counts).some((n) => n > 0))) {
-    return <p className="text-muted-foreground">No data in this period</p>;
+    return (
+      <div className="flex flex-col gap-3">
+        {sentence}
+        <p className="text-muted-foreground">No data in this scope</p>
+      </div>
+    );
   }
   const times = by === "type" ? delivery.by_type : delivery.by_member;
   return (
     <div className="flex flex-col gap-8">
+      {sentence}
       <section className="flex flex-col gap-3">
         <h2 className="font-semibold">Closed per week</h2>
         <ChartBox height={240}>

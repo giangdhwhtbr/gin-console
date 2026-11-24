@@ -94,7 +94,7 @@ describe("plain labels carry a tooltip", () => {
     ["Days per point", DEFINITIONS.daysPerPoint],
     ["Planned days per point", DEFINITIONS.daysPerPoint],
   ])("REQ-UI-134 Velocity table head %s", async (label, text) => {
-    withHints(<VelocityTable points={[{ id: "m1", title: "M1", start: "2026-10-01", velocity: vel() }]} />);
+    withHints(<VelocityTable points={[{ id: "m1", title: "M1", start: "2026-10-01", velocity: vel() }]} selected={null} />);
     await hoverShows(screen.getByText(label), text);
   });
 
@@ -109,7 +109,7 @@ describe("plain labels carry a tooltip", () => {
   it("REQ-UI-134 Delivery days per point", async () => {
     const base = report();
     const row = { project: "alpha", id: "p-1", title: "p-1", estimate_days: null, points: 5, actual_days: 6, days_per_point: 1.2 };
-    withHints(<DeliverySection delivery={{ ...base.delivery, estimates: [row] }} />);
+    withHints(<DeliverySection delivery={{ ...base.delivery, estimates: [row] }} scope={{ kind: "period", days: 30 }} />);
     await hoverShows(screen.getByText("1.2 days per point"), DEFINITIONS.daysPerPoint);
   });
 

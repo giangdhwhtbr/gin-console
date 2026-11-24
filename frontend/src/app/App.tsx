@@ -70,7 +70,7 @@ export function App() {
         <MyTasksPage />
       ) : pathname === "/milestones" ? (
         <MilestonesPage />
-      ) : pathname === "/reports" ? (
+      ) : pathname === "/reports" || pathname.startsWith("/reports/") ? (
         <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
           <ReportsPage />
         </Suspense>

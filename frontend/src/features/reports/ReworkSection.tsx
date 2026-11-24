@@ -19,10 +19,10 @@ function Heads({ first }: { first: string }) {
   );
 }
 
-const Empty = () => <p className="text-sm text-muted-foreground">No data in this period</p>;
+const Empty = () => <p className="text-sm text-muted-foreground">No data in this scope</p>;
 
 /** REQ-UI-091: rework from the Beads interaction log and discovered-from links, by member and by epic. */
-export function QualitySection({ report }: { report: Report }) {
+export function ReworkSection({ report }: { report: Report }) {
   const { totals, quality } = report;
   const sum = (pick: (row: { reopens: number; bugs: number }) => number) => quality.members.reduce((n, row) => n + pick(row), 0);
   return (
@@ -35,8 +35,8 @@ export function QualitySection({ report }: { report: Report }) {
           ["Bugs found later", String(sum((r) => r.bugs))],
         ]}
       />
-      <section aria-labelledby="quality-members" className="flex min-w-0 flex-col gap-3">
-        <h2 id="quality-members" className="font-semibold">Rework by member</h2>
+      <section aria-labelledby="rework-members" className="flex min-w-0 flex-col gap-3">
+        <h2 id="rework-members" className="font-semibold">Rework by member</h2>
         {quality.members.length === 0 ? (
           <Empty />
         ) : (
@@ -56,8 +56,8 @@ export function QualitySection({ report }: { report: Report }) {
           </Table>
         )}
       </section>
-      <section aria-labelledby="quality-epics" className="flex min-w-0 flex-col gap-3">
-        <h2 id="quality-epics" className="font-semibold">Rework by epic</h2>
+      <section aria-labelledby="rework-epics" className="flex min-w-0 flex-col gap-3">
+        <h2 id="rework-epics" className="font-semibold">Rework by epic</h2>
         {quality.epics.length === 0 ? (
           <Empty />
         ) : (

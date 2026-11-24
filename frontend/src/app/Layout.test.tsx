@@ -118,6 +118,8 @@ describe("Layout", () => {
     ["/sessionsx", []],
     ["/sessions/alpha/11111111-1111-4111-8111-111111111111", []],
     ["/reports", ["Reports"]],
+    ["/reports/delivery", ["Reports"]],
+    ["/reports/nope", ["Reports"]],
     ["/reportsx", []],
     ["/quota", []],
     ["/nowhere", []],
@@ -131,7 +133,7 @@ describe("Layout", () => {
     ["Bead page by address", null, ["Beads"]],
     ["Bead page from My Tasks", ["my-tasks", "/my-tasks", "?project=alpha", "alpha"], ["My Tasks"]],
     ["a milestone page", ["milestone", "/milestones/alpha/m-1", "?tab=beads", "alpha"], ["Milestones"]],
-    ["Reports", ["reports", "/reports", "?project=alpha", "alpha"], ["Reports"]],
+    ["Reports", ["reports", "/reports/rework", "?project=alpha&days=7", "alpha"], ["Reports"]],
     ["the Beads page", ["beads", "/beads", "?project=alpha", "alpha"], ["Beads"]],
     ["My Tasks of another project", ["my-tasks", "/my-tasks", "?project=beta", "beta"], ["Beads"]],
   ])("REQ-UI-057 a bead page of alpha opened from %s marks %j", (_name, from, expected) => {
@@ -252,34 +254,35 @@ describe("Layout", () => {
   });
 
   describe("report sections in the sidebar", () => {
-    const TABS = ["team", "delivery", "velocity", "quality"] as const;
-    const sections: SectionLink[] = TABS.map((tab) => ({
-      tab,
-      label: tab === "quality" ? "Quality" : tab[0].toUpperCase() + tab.slice(1),
-      headline: tab === "quality" ? "25% rework" : `${tab} headline`,
-      warn: tab === "quality",
-      href: `/reports?project=a&tab=${tab}`,
+    const SECTIONS = ["status", "team", "delivery", "velocity", "rework"] as const;
+    const sections: SectionLink[] = SECTIONS.map((section) => ({
+      section,
+      label: section[0].toUpperCase() + section.slice(1),
+      headline: section === "rework" ? "25% rework" : `${section} headline`,
+      warn: section === "rework",
+      href: `/reports/${section}?project=a&milestone=m2`,
     }));
     const list = () => screen.queryByRole("list", { name: "Report sections" });
 
-    it("REQ-UI-129 lists the four sections with headlines and marks the selected one on /reports when expanded", () => {
+    it("REQ-UI-129 Sections in the sidebar: the five sections with headlines under Reports, the selected one marked, when expanded", () => {
       publishSections(sections, "delivery");
-      open("/reports?project=a&tab=delivery");
+      open("/reports/delivery?project=a&milestone=m2");
       expect(document.querySelector('[data-sidebar="expanded"]')).not.toBeNull();
       const links = within(list()!).getAllByRole("link");
-      expect(links).toHaveLength(4);
-      expect(links[1]).toHaveAccessibleName("Delivery delivery headline");
-      expect(links[1]).toHaveAttribute("aria-current", "page");
+      expect(links.map((l) => l.textContent?.split(" ")[0])).toEqual(["Status", "Team", "Delivery", "Velocity", "Rework"]);
+      expect(links[2]).toHaveAccessibleName("Delivery delivery headline");
+      expect(links[2]).toHaveAttribute("aria-current", "page");
       expect(links.filter((l) => l.getAttribute("aria-current") === "page")).toHaveLength(1);
-      expect(links[3]).toHaveAttribute("href", "/reports?project=a&tab=quality");
+      expect(links[4]).toHaveAttribute("href", "/reports/rework?project=a&milestone=m2");
       expect(list()).toHaveClass("hidden", "lg:flex");
+      expect(within(nav()).getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
     });
 
-    it("REQ-UI-129 clicking a section navigates without a reload", async () => {
-      publishSections(sections, "delivery");
-      open("/reports?project=a&tab=delivery");
-      await userEvent.click(within(list()!).getByRole("link", { name: /^Quality/ }));
-      expect(window.location.search).toBe("?project=a&tab=quality");
+    it("REQ-UI-129 Change section: clicking a section goes to its path without a reload", async () => {
+      publishSections(sections.map((s) => ({ ...s, href: `/reports/${s.section}?project=a&days=7` })), "delivery");
+      open("/reports/delivery?project=a&days=7");
+      await userEvent.click(within(list()!).getByRole("link", { name: /^Rework/ }));
+      expect(window.location.pathname + window.location.search).toBe("/reports/rework?project=a&days=7");
     });
 
     it("REQ-UI-129 lists nothing on other pages", () => {
@@ -288,10 +291,10 @@ describe("Layout", () => {
       expect(list()).toBeNull();
     });
 
-    it("REQ-UI-129 lists nothing while the sidebar is collapsed", () => {
+    it("REQ-UI-129 Narrow window: lists nothing while the sidebar is collapsed", () => {
       window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
       publishSections(sections, "delivery");
-      open("/reports?project=a&tab=delivery");
+      open("/reports/delivery?project=a&milestone=m2");
       expect(document.querySelector('[data-sidebar="collapsed"]')).not.toBeNull();
       expect(list()).toBeNull();
     });

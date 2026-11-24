@@ -15,12 +15,12 @@ describe("report headlines", () => {
     const r = report({ totals: { closed: 41, rework_rate: 0.09 } });
     expect(headlines(r)).toEqual({
       delivery: { text: "41 beads closed", warn: false },
-      quality: { text: "9% rework", warn: false },
+      rework: { text: "9% rework", warn: false },
     });
   });
   it("REQ-UI-095 no rate reads a dash", () => {
     const r = report({ totals: { closed: 0, rework_rate: null } });
-    expect(headlines(r).quality.text).toBe("— rework");
+    expect(headlines(r).rework.text).toBe("— rework");
   });
   it("REQ-UI-090 delivery figures", () => {
     const r = report({
@@ -39,7 +39,14 @@ describe("report headlines", () => {
     expect(teamHeadline({ ...t, team: { ...team, closed: 27, scope: 64, pace: 3.4, pace_needed: 3.6 } }, null)).toEqual({ text: "27 of 64 done, behind pace", warn: true });
     expect(teamHeadline({ ...t, milestones: [], milestone: null, team: null }, null)).toEqual({ text: "No milestones", warn: false });
     expect(figures("team", base)).toEqual([]);
-    expect(figures("quality", base)).toEqual([]);
+    expect(figures("rework", base)).toEqual([]);
+    expect(figures("status", base)).toEqual([]);
+  });
+  it("REQ-UI-095 period headlines: Team counts the members without Unassigned", () => {
+    const t = teamReport({ milestone: null, period_days: 30 });
+    const bao = { ...t.members[0], member: "bao" };
+    expect(teamHeadline({ ...t, members: [t.members[0], bao, t.members[1]] }, null)).toEqual({ text: "2 members", warn: false });
+    expect(teamHeadline(t, null)).toEqual({ text: "1 member", warn: false });
   });
   // REQ-MILESTONE-UI-023: late is by the end and the forecast, and behind pace never says late
   it("REQ-UI-095 late milestone headline: by the forecast, or by today after the end", () => {

@@ -1,17 +1,18 @@
 import { lateOf } from "@/features/milestones/late";
 import { formatDate } from "@/lib/dates";
 import type { DaysPerPoint } from "@/features/milestones/api";
-import { oneDecimal } from "@/features/milestones/format";
+import { oneDecimal, plural } from "@/features/milestones/format";
 import type { Report } from "./api";
-import type { ReportTab } from "./filters";
 import { formatDays, formatPercent } from "./format";
+import type { ReportSection } from "./sections";
 import { lateDays } from "./team/format";
-import { selectedMilestone, type TeamReport } from "./teamApi";
+import { selectedMilestone, UNASSIGNED, type TeamReport } from "./teamApi";
 
 export type Headline = { text: string; warn: boolean };
 
 /** `finish` is the forecast of the selected milestone from the Milestones list, `null` while that has not loaded. */
 export function teamHeadline(report: TeamReport, finish: string | null): Headline {
+  if (report.period_days !== null) return { text: plural(report.members.filter((m) => m.member !== UNASSIGNED).length, "member"), warn: false };
   const milestone = selectedMilestone(report);
   const { team } = report;
   if (milestone === null || team === null) return { text: "No milestones", warn: false };
@@ -31,28 +32,20 @@ export function velocityHeadline(daysPerPoint: DaysPerPoint | null): Headline | 
   return { text: `${oneDecimal(daysPerPoint.value)} days per point${daysPerPoint.assumed ? " assumed" : ""}`, warn: false };
 }
 
-export function headlines(report: Report): Record<Exclude<ReportTab, "team" | "velocity">, Headline> {
+export function headlines(report: Report): Record<"delivery" | "rework", Headline> {
   const { totals } = report;
   return {
     delivery: { text: `${totals.closed} beads closed`, warn: false },
-    quality: { text: `${formatPercent(totals.rework_rate)} rework`, warn: false },
+    rework: { text: `${formatPercent(totals.rework_rate)} rework`, warn: false },
   };
 }
 
-export function figures(tab: ReportTab, report: Report): [string, string][] {
+export function figures(section: ReportSection, report: Report): [string, string][] {
   const { totals, delivery } = report;
-  switch (tab) {
-    case "team":
-      return [];
-    case "delivery":
-      return [
-        ["Beads closed", String(totals.closed)],
-        ["Median cycle time", formatDays(delivery.overall.cycle?.median ?? null)],
-        ["Median lead time", formatDays(delivery.overall.lead?.median ?? null)],
-      ];
-    case "velocity":
-      return [];
-    case "quality":
-      return [];
-  }
+  if (section !== "delivery") return [];
+  return [
+    ["Beads closed", String(totals.closed)],
+    ["Median cycle time", formatDays(delivery.overall.cycle?.median ?? null)],
+    ["Median lead time", formatDays(delivery.overall.lead?.median ?? null)],
+  ];
 }
