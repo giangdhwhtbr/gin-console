@@ -277,9 +277,62 @@ def test_milestone_ui_008_forecast_and_lanes(tmp_path: Path) -> None:
     listed = {**LIST, "forecast": FORECAST, "milestones": [{**LIST["milestones"][0], "lanes": 2}]}
     api = make(tmp_path, FakeGw({"list": listed, "show": {**SHOW, "lanes": 2}}))
     body = api.get("/api/milestones", params={"project": "proj"}).json()
-    assert body["forecast"] == FORECAST
+    assert body["forecast"] == {**FORECAST, "epics": []}
     assert body["milestones"][0]["lanes"] == 2
     assert api.get("/api/milestones/proj/gw-ab1").json()["lanes"] == 2
+
+
+# REQ-MILESTONE-UI-008 forecast epics
+def test_milestone_ui_008_forecast_epics(tmp_path: Path) -> None:
+    epics = [
+        {
+            "id": "e-1",
+            "milestone": "M1",
+            "lane": 1,
+            "planned_start": "2026-11-23",
+            "planned_end": "2026-11-25",
+            "remaining_days": 3,
+            "estimate_source": "points",
+            "warnings": [],
+        },
+        {
+            "id": "e-5",
+            "milestone": "M1",
+            "lane": 1,
+            "planned_start": "2026-12-23",
+            "planned_end": "2027-01-01",
+            "remaining_days": None,
+            "estimate_source": "assumed",
+            "warnings": [],
+        },
+    ]
+    listed = {**LIST, "forecast": {**FORECAST, "epics": epics}}
+    api = make(tmp_path, FakeGw({"list": listed, "show": SHOW}))
+    body = api.get("/api/milestones", params={"project": "proj"}).json()
+    keys = ["id", "milestone", "planned_start", "planned_end", "estimate_source"]
+    assert [{k: e[k] for k in keys} for e in body["forecast"]["epics"]] == [
+        {
+            "id": "e-1",
+            "milestone": "M1",
+            "planned_start": "2026-11-23",
+            "planned_end": "2026-11-25",
+            "estimate_source": "points",
+        },
+        {
+            "id": "e-5",
+            "milestone": "M1",
+            "planned_start": "2026-12-23",
+            "planned_end": "2027-01-01",
+            "estimate_source": "assumed",
+        },
+    ]
+
+
+# REQ-MILESTONE-UI-008 a forecast without epics answers an empty list
+def test_milestone_ui_008_forecast_without_epics_is_empty(tmp_path: Path) -> None:
+    api = make(tmp_path, FakeGw({"list": {**LIST, "forecast": FORECAST}, "show": SHOW}))
+    body = api.get("/api/milestones", params={"project": "proj"}).json()
+    assert body["forecast"]["epics"] == []
 
 
 # REQ-MILESTONE-UI-008 output from an older gin-workflow

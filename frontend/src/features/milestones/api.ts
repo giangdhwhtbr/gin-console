@@ -34,6 +34,7 @@ export type MilestoneEntry = {
   lanes: number | null;
   velocity: Velocity | null;
 };
+export type ForecastEpic = { id: string; milestone: string | null; planned_start: string; planned_end: string; estimate_source: EstimateSource | null };
 export type Forecast = {
   deadline: string | null;
   lanes: number;
@@ -43,6 +44,7 @@ export type Forecast = {
   open_epics: number;
   unestimated: number;
   error: string | null;
+  epics: ForecastEpic[];
 };
 export type MilestoneList = { milestones: MilestoneEntry[]; unassigned_epics: number; today: string; forecast: Forecast | null; days_per_point: DaysPerPoint | null };
 export type EpicWarning = { code: string; days: number | null; count: number | null };
@@ -141,13 +143,32 @@ export function daysPerPointOf(value: unknown): DaysPerPoint | null {
 
 const sourceOf = (value: unknown): EstimateSource | null => (value === "points" || value === "days" || value === "assumed" ? value : null);
 
+const isForecastEpic = (value: unknown) =>
+  isObject(value) &&
+  strings(value, ["id", "planned_start", "planned_end"]) &&
+  isStringOrNull(field(value, "milestone")) &&
+  (field(value, "estimate_source") === undefined || field(value, "estimate_source") === null || sourceOf(field(value, "estimate_source")) !== null);
+
 function isForecast(value: unknown): value is Forecast {
   return (
     isObject(value) &&
     isString(field(value, "start")) &&
     stringsOrNull(value, ["deadline", "finish", "error"]) &&
-    ["lanes", "overflow_days", "open_epics", "unestimated"].every((k) => isFiniteNumber(field(value, k)))
+    ["lanes", "overflow_days", "open_epics", "unestimated"].every((k) => isFiniteNumber(field(value, k))) &&
+    (field(value, "epics") === undefined || every(field(value, "epics"), isForecastEpic))
   );
+}
+
+/** REQ-MILESTONE-UI-008: an older gin has no `epics` in its forecast, and an epic may lack `estimate_source`; both read as empty or null. */
+function withEpics(forecast: Forecast | null): Forecast | null {
+  if (forecast === null) return null;
+  const epics = field(forecast, "epics");
+  return {
+    ...forecast,
+    epics: Array.isArray(epics)
+      ? epics.map((e: ForecastEpic) => ({ ...e, milestone: e.milestone ?? null, estimate_source: sourceOf(field(e, "estimate_source")) }))
+      : [],
+  };
 }
 
 function isEntry(value: unknown): value is MilestoneEntry {
@@ -237,7 +258,7 @@ export async function fetchMilestones(project: string): Promise<MilestoneList> {
   if (!isList(body)) throw new MilestonesError("Could not load milestones (unexpected response)");
   return {
     ...body,
-    forecast: body.forecast ?? null,
+    forecast: withEpics(body.forecast ?? null),
     days_per_point: daysPerPointOf(field(body, "days_per_point")),
     milestones: body.milestones.map((m) => ({ ...m, lanes: m.lanes ?? null, velocity: velocityOf(field(m, "velocity")) })),
   };

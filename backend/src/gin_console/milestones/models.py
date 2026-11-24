@@ -6,7 +6,7 @@ milestone-forecast.
 
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints
 
 from gin_console.beads.models import Text
 
@@ -54,6 +54,14 @@ class MilestoneEntry(BaseModel):
     velocity: Velocity | None = None
 
 
+class ForecastEpic(BaseModel):
+    id: Text
+    milestone: Text | None
+    planned_start: IsoDate
+    planned_end: IsoDate
+    estimate_source: Literal["points", "days", "assumed"] | None = None
+
+
 class Forecast(BaseModel):
     deadline: IsoDate | None
     lanes: int
@@ -63,6 +71,7 @@ class Forecast(BaseModel):
     open_epics: int
     unestimated: int
     error: Text | None
+    epics: list[ForecastEpic] = Field(default_factory=list)
 
 
 class MilestoneList(BaseModel):

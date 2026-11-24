@@ -37,6 +37,7 @@ export const forecast = (overrides: Partial<Forecast> = {}): Forecast => ({
   open_epics: 5,
   unestimated: 0,
   error: null,
+  epics: [],
   ...overrides,
 });
 

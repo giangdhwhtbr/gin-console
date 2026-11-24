@@ -95,6 +95,24 @@ describe("milestones api", () => {
     await expect(fetchMilestone("alpha", "m-1", null)).rejects.toBeInstanceOf(MilestonesError);
   });
 
+  it("REQ-MILESTONE-UI-008 keeps the epics of the forecast, an epic without estimate_source reads as null", async () => {
+    const epics = [
+      { id: "e-1", milestone: "M1", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" },
+      { id: "e-5", milestone: null, planned_start: "2026-12-23", planned_end: "2027-01-01" },
+    ] as unknown as Forecast["epics"];
+    stubMilestones(() => json(list([entry("m-1")], { forecast: { ...forecast(), epics } })));
+    const got = (await fetchMilestones("alpha")).forecast?.epics;
+    expect(got).toEqual([
+      { id: "e-1", milestone: "M1", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" },
+      { id: "e-5", milestone: null, planned_start: "2026-12-23", planned_end: "2027-01-01", estimate_source: null },
+    ]);
+  });
+
+  it("REQ-MILESTONE-UI-008 a forecast without epics reads as an empty list", async () => {
+    stubMilestones(() => json(list([entry("m-1")], { forecast: forecast() })));
+    expect((await fetchMilestones("alpha")).forecast?.epics).toEqual([]);
+  });
+
   it("REQ-MILESTONE-UI-008 refuses a malformed forecast", async () => {
     stubMilestones(() => json(list([], { forecast: { ...forecast(), lanes: "two" } as unknown as Forecast })));
     await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");
