@@ -7,17 +7,19 @@ import { cn } from "@/lib/utils";
 import { formatDays, formatPercent } from "../format";
 import type { MemberFigures, TeamFigures as Figures, TeamMilestone, TeamTotals } from "../teamApi";
 import { formatDate } from "@/lib/dates";
-import { plural } from "@/features/milestones/format";
-import { WARN_DAYS } from "./format";
+import { plural, twoDecimals } from "@/features/milestones/format";
+import { formatPoints, WARN_DAYS } from "./format";
 
 const WARN = "text-state-blocked";
 
 // REQ-REPORTS-013: the rules of the figures that DEFINITIONS does not state
 const RULE = {
+  points: "Points delivered: story points of closed epics in the scope, shared across members by closed tracks.",
   pace: "Pace: beads closed per working day over the last 5 working days, up to today.",
   throughput: "Throughput: beads closed per 5 working days; for a closed milestone, over the milestone.",
   cycle: "Median cycle: the median days from start to close of the closed beads.",
   onTime: "On time: the share of closed beads closed by the end of the milestone.",
+  accuracy: "Estimate accuracy: planned days per point divided by actual days per point across closed epics with points; above 1 is faster than planned.",
 } as const;
 
 function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = false }: {
@@ -25,11 +27,11 @@ function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = fal
   aside?: string;
   rule: string;
   value: string;
-  sub: string | readonly string[];
+  sub?: string | readonly string[];
   warnValue?: boolean;
   warnSub?: boolean;
 }) {
-  const parts = typeof sub === "string" ? [sub] : sub;
+  const parts = sub === undefined || sub === "" ? [] : typeof sub === "string" ? [sub] : sub;
   return (
     <div className="flex flex-col gap-1 p-3">
       <span className="text-xs text-muted-foreground">
@@ -41,30 +43,32 @@ function Cell({ label, aside, rule, value, sub, warnValue = false, warnSub = fal
           {value}
         </span>
       </Hint>
-      <span className={cn("flex flex-wrap text-xs text-muted-foreground", warnSub && WARN)}>
-        {parts.map((part, i) => {
-          // joined facts ("3 blocked, 8 unassigned") get a strong number; a single line stays plain text
-          const [, count = "", rest = part] = (parts.length > 1 ? /^(\d+(?:\.\d+)?)(.*)$/.exec(part) : null) ?? [];
-          return (
-            <Fragment key={part}>
-              {i > 0 && <span className="whitespace-pre">, </span>}
-              {part.endsWith(" unassigned") ? (
-                <Hint text={DEFINITIONS.unassigned}>
+      {parts.length > 0 && (
+        <span className={cn("flex flex-wrap text-xs text-muted-foreground", warnSub && WARN)}>
+          {parts.map((part, i) => {
+            // joined facts ("3 blocked, 8 unassigned") get a strong number; a single line stays plain text
+            const [, count = "", rest = part] = (parts.length > 1 ? /^(\d+(?:\.\d+)?)(.*)$/.exec(part) : null) ?? [];
+            return (
+              <Fragment key={part}>
+                {i > 0 && <span className="whitespace-pre">, </span>}
+                {part.endsWith(" unassigned") ? (
+                  <Hint text={DEFINITIONS.unassigned}>
+                    <span>
+                      {count !== "" && <b className="font-semibold">{count}</b>}
+                      {rest}
+                    </span>
+                  </Hint>
+                ) : (
                   <span>
                     {count !== "" && <b className="font-semibold">{count}</b>}
                     {rest}
                   </span>
-                </Hint>
-              ) : (
-                <span>
-                  {count !== "" && <b className="font-semibold">{count}</b>}
-                  {rest}
-                </span>
-              )}
-            </Fragment>
-          );
-        })}
-      </span>
+                )}
+              </Fragment>
+            );
+          })}
+        </span>
+      )}
     </div>
   );
 }
@@ -123,6 +127,12 @@ function PaceOrThroughput({ team, figures, solo, milestone }: { team: TeamTotals
   );
 }
 
+function accuracySub(accuracy: number | null): string {
+  if (accuracy === null) return "needs a kickoff and a closed epic with points";
+  if (accuracy > 1) return "faster than planned";
+  return accuracy === 1 ? "as planned" : "slower than planned";
+}
+
 /** `milestone` is null for a period (REQ-REPORTS-033), which has no end date to count against. */
 export function TeamFigures({ team, member, milestone }: { team: TeamTotals; member: MemberFigures | null; milestone: TeamMilestone | null }) {
   const figures: Figures = member ?? team;
@@ -130,6 +140,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
   const lateOpen = solo ? 0 : team.late_open;
   const slow = figures.oldest_in_progress !== null && figures.oldest_in_progress > WARN_DAYS;
   const onTime = figures.on_time;
+  const accuracy = figures.accuracy;
   const scope = solo ? `beads assigned to ${member.member}` : milestone === null ? "the period" : "the milestone's epics";
   return (
     <div className="flex flex-col gap-6">
@@ -140,6 +151,7 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
         style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}
       >
         <Cell label="Done" rule={countHint("done", scope)} value={`${figures.closed} of ${figures.scope}`} sub={`${formatPercent(figures.done)} of ${solo ? "assigned" : "scope"}`} />
+        <Cell label="Points delivered" rule={RULE.points} value={`${formatPoints(figures.points_delivered)} points`} />
         <Cell
           label="In progress"
           rule={countHint("inProgress", scope)}
@@ -160,9 +172,16 @@ export function TeamFigures({ team, member, milestone }: { team: TeamTotals; mem
           label="On time"
           rule={RULE.onTime}
           value={formatPercent(onTime)}
-          sub={lateOpen > 0 ? `${lateOpen} open after the end date` : milestone === null ? "for a milestone" : `closed by ${formatDate(milestone.end)}`}
+          sub={lateOpen > 0 ? `${lateOpen} open after the end date` : milestone === null ? "" : `closed by ${formatDate(milestone.end)}`}
           warnValue={onTime !== null && onTime < 1}
           warnSub={lateOpen > 0}
+        />
+        <Cell
+          label="Estimate accuracy"
+          rule={RULE.accuracy}
+          value={accuracy === null ? "—" : twoDecimals(accuracy)}
+          sub={accuracySub(accuracy)}
+          warnSub={accuracy !== null && accuracy < 1}
         />
         <Cell label="Rework" rule={DEFINITIONS.rework} value={formatPercent(figures.rework_rate)} sub={[plural(figures.reopens, "reopen"), `${plural(figures.bugs, "bug")} later`]} />
       </div>

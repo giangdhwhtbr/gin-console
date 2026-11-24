@@ -14,3 +14,6 @@ export function memberColor(members: readonly string[], member: string): string 
 
 /** Working days a closed milestone finished after its end; 0 when on time or not closed. */
 export const lateDays = (m: TeamMilestone): number => (m.closed_on === null ? 0 : workdaysAfter(m.end, m.closed_on));
+
+/** Story points as an integer when whole, else to one decimal. */
+export const formatPoints = (points: number): string => (Number.isInteger(points) ? String(points) : points.toFixed(1));

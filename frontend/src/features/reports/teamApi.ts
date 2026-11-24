@@ -38,6 +38,8 @@ export type TeamFigures = {
   rework_rate: number | null;
   reopens: number;
   bugs: number;
+  points_delivered: number;
+  accuracy: number | null;
 };
 export type MemberFigures = TeamFigures & { member: string };
 export type TeamTotals = TeamFigures & {
@@ -50,6 +52,18 @@ export type TeamTotals = TeamFigures & {
   late_open: number;
 };
 export type DayRow = { date: string; closed: Record<string, number> };
+export type TrendRow = {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  closed: number;
+  points_delivered: number;
+  on_time: number | null;
+  rework_rate: number | null;
+  accuracy: number | null;
+};
+export type Unassigned = { closed: number; total: number };
 export type TeamReport = {
   generated_at: string;
   project: string;
@@ -63,11 +77,22 @@ export type TeamReport = {
   members: MemberFigures[];
   days: DayRow[];
   beads: TeamBead[];
+  trend: TrendRow[];
+  unassigned: Unassigned;
 };
 
 export const UNASSIGNED = "Unassigned";
 
-const ARRAYS = ["milestones", "members", "days", "beads"];
+const ARRAYS = ["milestones", "members", "days", "beads", "trend"];
+
+function isUnassigned(value: unknown): value is Unassigned {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof field(value, "closed") === "number" &&
+    typeof field(value, "total") === "number"
+  );
+}
 
 // simplified: checks the shape down to the arrays, not every row; the backend's pydantic model owns the rows.
 function isTeamReport(value: unknown): value is TeamReport {
@@ -75,7 +100,8 @@ function isTeamReport(value: unknown): value is TeamReport {
     typeof value === "object" &&
     value !== null &&
     typeof field(value, "generated_at") === "string" &&
-    ARRAYS.every((key) => Array.isArray(field(value, key)))
+    ARRAYS.every((key) => Array.isArray(field(value, key))) &&
+    isUnassigned(field(value, "unassigned"))
   );
 }
 

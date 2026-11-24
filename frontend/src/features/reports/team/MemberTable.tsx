@@ -1,15 +1,16 @@
 import type { KeyboardEvent } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { twoDecimals } from "@/features/milestones/format";
 import { formatDays, formatPercent } from "../format";
 import { UNASSIGNED, type MemberFigures } from "../teamApi";
-import { memberColor, WARN_DAYS } from "./format";
+import { formatPoints, memberColor, WARN_DAYS } from "./format";
 
-const HEADS = ["Member", "Assigned", "Closed", "In progress", "Open", "Done", "Per week", "Median cycle", "Oldest in progress", "On time", "Rework"];
+const HEADS = ["Member", "Assigned", "Closed", "In progress", "Open", "Done", "Points", "Per week", "Median cycle", "Oldest in progress", "On time", "Accuracy", "Rework"];
 const share = (n: number, scope: number): string => `${scope === 0 ? 0 : (n / scope) * 100}%`;
 
 /** One row per member; pressing a row selects that member, pressing the selected row selects All members. */
-export function MemberTable({ members, selected, onSelect }: { members: MemberFigures[]; selected: string; onSelect: (member: string) => void }) {
+export function MemberTable({ members, selected, onSelect }: { members: readonly MemberFigures[]; selected: string; onSelect: (member: string) => void }) {
   const names = members.map((m) => m.member);
   return (
     <section className="flex flex-col gap-3">
@@ -67,6 +68,7 @@ export function MemberTable({ members, selected, onSelect }: { members: MemberFi
                     <span className="text-xs">{formatPercent(m.done)}</span>
                   </span>
                 </TableCell>
+                <TableCell className="text-right">{formatPoints(m.points_delivered)}</TableCell>
                 <TableCell className="text-right">{m.throughput.toFixed(1)}</TableCell>
                 <TableCell className="text-right">{formatDays(m.cycle_median)}</TableCell>
                 <TableCell
@@ -75,6 +77,7 @@ export function MemberTable({ members, selected, onSelect }: { members: MemberFi
                   {formatDays(m.oldest_in_progress)}
                 </TableCell>
                 <TableCell className="text-right">{formatPercent(m.on_time)}</TableCell>
+                <TableCell className="text-right">{m.accuracy === null ? "—" : twoDecimals(m.accuracy)}</TableCell>
                 <TableCell className="text-right">{m.member === UNASSIGNED ? "—" : formatPercent(m.rework_rate)}</TableCell>
               </TableRow>
             );

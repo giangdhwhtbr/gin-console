@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { milestonePath } from "@/features/milestones/api";
 import type { ReportFilters } from "../filters";
 import { selectedMilestone, UNASSIGNED, type TeamReport } from "../teamApi";
+import { AcrossMilestones } from "./AcrossMilestones";
 import { BeadTable } from "./BeadTable";
 import { ClosedPerDayChart } from "./ClosedPerDayChart";
 import { MemberTable } from "./MemberTable";
 import { MilestoneLine } from "./MilestoneLine";
 import { TeamFigures } from "./TeamFigures";
+import { UnassignedNote } from "./UnassignedNote";
 
 const selectClass = "min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm";
 const labelClass = "flex min-w-0 max-w-full items-center gap-2 text-sm text-muted-foreground";
@@ -72,7 +74,11 @@ export function TeamSection({
             today={report.today}
             milestone={milestone}
           />
-          <MemberTable members={report.members} selected={filters.member} onSelect={(member) => onChange({ ...filters, member })} />
+          <AcrossMilestones project={project} trend={report.trend} selected={report.milestone} />
+          <div className="flex flex-col gap-3">
+            <UnassignedNote unassigned={report.unassigned} />
+            <MemberTable members={report.members} selected={filters.member} onSelect={(member) => onChange({ ...filters, member })} />
+          </div>
           <BeadTable
             project={project}
             beads={filters.member === "" ? report.beads : report.beads.filter((b) => (b.assignee ?? UNASSIGNED) === filters.member)}

@@ -30,8 +30,15 @@ describe("team api", () => {
     expect(selectedMilestone({ ...report, milestone: null })).toBeNull();
   });
 
-  it.each(["milestones", "beads", "members"])("REQ-REPORTS-017 rejects a body without %s", async (key) => {
+  it.each(["milestones", "beads", "members", "trend"])("REQ-REPORTS-017 rejects a body without %s", async (key) => {
     stub(json({ ...teamReport(), [key]: undefined }));
+    await expect(fetchTeam("alpha", { kind: "default" })).rejects.toThrow("Could not load the team report (unexpected response)");
+  });
+
+  it("REQ-REPORTS-017 rejects a body without a valid unassigned count", async () => {
+    stub(json({ ...teamReport(), unassigned: undefined }));
+    await expect(fetchTeam("alpha", { kind: "default" })).rejects.toThrow("Could not load the team report (unexpected response)");
+    stub(json({ ...teamReport(), unassigned: { closed: "8", total: 30 } }));
     await expect(fetchTeam("alpha", { kind: "default" })).rejects.toThrow("Could not load the team report (unexpected response)");
   });
 

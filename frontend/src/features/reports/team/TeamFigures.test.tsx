@@ -14,7 +14,7 @@ const active: TeamMilestone = report.milestones[1];
 const closed: TeamMilestone = report.milestones[0];
 const ann: MemberFigures = report.members[0];
 
-function show(team: Partial<TeamTotals>, milestone = active, member: MemberFigures | null = null) {
+function show(team: Partial<TeamTotals>, milestone: TeamMilestone | null = active, member: MemberFigures | null = null) {
   render(<HintProvider><TeamFigures team={{ ...teamTotals, ...team }} member={member} milestone={milestone} /></HintProvider>);
 }
 const warn = (text: string) => expect(screen.getByText(text)).toHaveClass("text-state-blocked");
@@ -28,6 +28,7 @@ describe("TeamFigures", () => {
     show({ open: 5, blocked: 2 });
     const open = screen.getByText("5", { selector: "span.text-2xl" });
     expect(open).toHaveAttribute("tabindex", "0");
+    await user.tab();
     await user.tab();
     await user.tab();
     await user.tab();
@@ -68,7 +69,7 @@ describe("TeamFigures", () => {
     warn("88%");
   });
 
-  it("REQ-REPORTS-013 in progress and open", () => {
+  it("REQ-REPORTS-013 open after the end date", () => {
     show({ oldest_in_progress: 4.9, blocked: 3, unclaimed: 8, late_open: 4 });
     warnLine("oldest 4.9 d");
     warnLine("3 blocked, 8 unassigned");
@@ -80,6 +81,42 @@ describe("TeamFigures", () => {
     expect(screen.getByText("nothing started")).toBeInTheDocument();
     expect(line("closed by 27 Nov")).not.toHaveClass("text-state-blocked");
     expect(screen.getAllByText("—")).toHaveLength(2);
+  });
+
+  it("REQ-REPORTS-013 points and accuracy", () => {
+    show({ points_delivered: 13, accuracy: 1.08 });
+    expect(screen.getByText("13 points")).toBeInTheDocument();
+    expect(screen.getByText("1.08")).toBeInTheDocument();
+    expect(line("faster than planned")).not.toHaveClass("text-state-blocked");
+    const hint = screen.getByText("Estimate accuracy").parentElement?.querySelector("[data-hint]");
+    expect(hint?.getAttribute("data-hint")).toMatch(/planned days per point.*actual days per point/i);
+  });
+
+  it("REQ-REPORTS-013 accuracy as planned, slower than planned, and null", () => {
+    show({ accuracy: 1 });
+    expect(screen.getByText("1.00")).toBeInTheDocument();
+    expect(line("as planned")).not.toHaveClass("text-state-blocked");
+    cleanup();
+    show({ accuracy: 0.85 });
+    expect(screen.getByText("0.85")).toBeInTheDocument();
+    warnLine("slower than planned");
+    cleanup();
+    show({ accuracy: null });
+    expect(screen.getByText("Estimate accuracy").parentElement).toHaveTextContent("—");
+    expect(line("needs a kickoff and a closed epic with points")).not.toHaveClass("text-state-blocked");
+  });
+
+  it("REQ-REPORTS-013 period: Throughput, On time dash with no sub-line, and Estimate accuracy dash", () => {
+    show({ pace_needed: null, working_days: null, elapsed: null, days_left: null, on_time: null, accuracy: null }, null);
+    expect(screen.getByText("Throughput")).toBeInTheDocument();
+    expect(screen.queryByText("Pace")).toBeNull();
+    const onTimeCell = screen.getByText("On time").parentElement;
+    expect(onTimeCell).toHaveTextContent("—");
+    expect(screen.queryByText("for a milestone")).toBeNull();
+    expect(onTimeCell?.querySelectorAll("span.text-xs")).toHaveLength(1);
+    const accuracyCell = screen.getByText("Estimate accuracy").parentElement;
+    expect(accuracyCell).toHaveTextContent("—");
+    expect(line("needs a kickoff and a closed epic with points")).toBeInTheDocument();
   });
 
   it("REQ-REPORTS-013 scope bar", () => {

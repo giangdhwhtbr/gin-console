@@ -15,6 +15,8 @@ const figures: TeamFigures = {
   rework_rate: 0,
   reopens: 0,
   bugs: 0,
+  points_delivered: 5,
+  accuracy: 1,
 };
 
 export const teamTotals: TeamTotals = { ...figures, working_days: 20, elapsed: 9, days_left: 11, pace: 3.6, pace_needed: 3.4, late_open: 0 };
@@ -68,6 +70,8 @@ export function teamReport(overrides: Partial<TeamReport> = {}): TeamReport {
       bead({ id: "a-3", status: "closed", bucket: "closed", started_at: "2026-11-09T09:00:00Z", closed_at: "2026-11-10T09:00:00Z", cycle_days: 1, late_days: 0 }),
       bead({ id: "a-4", status: "blocked", bucket: "open" }),
     ],
+    trend: [],
+    unassigned: { closed: 0, total: 1 },
     ...overrides,
   };
 }

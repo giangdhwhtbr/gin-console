@@ -137,4 +137,32 @@ describe("TeamSection", () => {
     expect(screen.queryByText(/has no milestones yet/)).toBeNull();
     expect(screen.queryByText("gin milestone create")).toBeNull();
   });
+
+  it("REQ-REPORTS-036 Unassigned note above the member table and hidden below a fifth", () => {
+    show(teamReport({ unassigned: { closed: 8, total: 30 } }));
+    const note = screen.getByText("8 of 30 closed beads have no assignee, so member numbers undercount.");
+    const kpiHeading = screen.getByRole("heading", { name: "Team KPI" });
+    expect(note.compareDocumentPosition(kpiHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    cleanup();
+    show(teamReport({ unassigned: { closed: 2, total: 30 } }));
+    expect(screen.queryByText(/closed beads have no assignee/)).toBeNull();
+  });
+
+  it("REQ-REPORTS-036 Across milestones panel sits after the closed-per-day chart", () => {
+    show(
+      teamReport({
+        milestone: "m2",
+        trend: [
+          { id: "m0", title: "Milestone zero", start: "2026-09-01", end: "2026-09-30", closed: 10, points_delivered: 5, on_time: 0.8, rework_rate: 0.1, accuracy: null },
+          { id: "m1", title: "Milestone one", start: "2026-10-12", end: "2026-10-30", closed: 14, points_delivered: 8, on_time: 0.9, rework_rate: 0, accuracy: 0.95 },
+          { id: "m2", title: "Milestone two", start: "2026-11-02", end: "2026-11-27", closed: 9, points_delivered: 6, on_time: 1, rework_rate: 0, accuracy: 1.05 },
+        ],
+      }),
+    );
+    const chartHeading = screen.getByRole("heading", { name: "Closed per working day" });
+    const trendHeading = screen.getByRole("heading", { name: "Across milestones" });
+    expect(chartHeading.compareDocumentPosition(trendHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const selectedRow = screen.getAllByRole("row").find((r) => r.getAttribute("aria-current") === "true");
+    expect(selectedRow).toHaveTextContent("Milestone two");
+  });
 });
