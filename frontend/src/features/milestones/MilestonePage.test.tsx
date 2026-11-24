@@ -73,6 +73,12 @@ describe("MilestonePage", () => {
     expect(resolveProject("", ["alpha", "first"])).toBe("first");
   });
 
+  it("REQ-MILESTONE-UI-032 the header exports the WBS of this milestone", async () => {
+    open(OVERFLOW);
+    await userEvent.click(await screen.findByRole("button", { name: "Export WBS" }));
+    expect(await screen.findByRole("menuitem", { name: "Excel (.xlsx)" })).toHaveAttribute("href", "/api/milestones/alpha/wbs?milestone=m-1&format=xlsx");
+  });
+
   it("REQ-MILESTONE-UI-003 header states the outcome", async () => {
     open(OVERFLOW);
     expect(await screen.findByRole("heading", { name: "Beta readiness" })).toBeInTheDocument();

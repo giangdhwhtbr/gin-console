@@ -33,6 +33,12 @@ describe("MilestonesPage", () => {
     expect(screen.queryByLabelText("Project")).not.toBeInTheDocument();
   });
 
+  it("REQ-MILESTONE-UI-032 the header exports the WBS of the project, without a milestone", async () => {
+    open(json(list([entry("m-1", { title: "Beta" })])));
+    await userEvent.click(await screen.findByRole("button", { name: "Export WBS" }));
+    expect(await screen.findByRole("menuitem", { name: "Markdown (.md)" })).toHaveAttribute("href", "/api/milestones/alpha/wbs?format=md");
+  });
+
   it("REQ-UI-126 an unknown project gets a notice and no milestones request", async () => {
     window.history.replaceState(null, "", "/milestones?project=zzz");
     const mock = stubMilestones(() => json(list([])));
