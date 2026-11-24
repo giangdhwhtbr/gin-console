@@ -8,6 +8,7 @@ from fake_export import dep
 from report_beads import closed, row, snap
 
 from gin_console.reports.models import TeamReport
+from gin_console.reports.scope import MilestoneScope, PeriodScope, Scope
 from gin_console.reports.source import read_beads
 from gin_console.reports.team import build_team
 
@@ -32,13 +33,13 @@ def at(day: str) -> str:
 
 
 def team(
-    rows: list[Any], milestone: str | None = None, reopens: dict[str, int] | None = None
+    rows: list[Any], scope: Scope | None = None, reopens: dict[str, int] | None = None
 ) -> TeamReport:
     return build_team(
         read_beads(snap(rows), "alpha", {k: [date.min] * n for k, n in (reopens or {}).items()}),
         now=NOW,
         project="alpha",
-        milestone=milestone,
+        scope=scope,
     )
 
 
@@ -90,8 +91,8 @@ def test_reports_008_default_order() -> None:
 
 # REQ-REPORTS-008
 def test_reports_008_named_and_unknown() -> None:
-    assert team(standard(), "m1").milestone == "m1"
-    assert team(standard(), "gone").milestone == "m2"
+    assert team(standard(), MilestoneScope("m1")).milestone == "m1"
+    assert team(standard(), MilestoneScope("gone")).milestone == "m2"
 
 
 # REQ-REPORTS-008
@@ -415,3 +416,53 @@ def test_reports_009_prep_tasks_left_out() -> None:
     r = team(rows)
     assert [b.id for b in r.beads] == ["e-2", "t-1", "t-2", "t-3"]
     assert {b.id: b.epic.id for b in r.beads}["e-2"] == "e-2"
+
+
+def period_rows() -> list[Any]:
+    return [
+        *standard(),
+        closed("c10", at("2026-11-02"), assignee="ann"),  # 10 days ago
+        closed("c40", at("2026-10-03")),
+        row("ip", status="in_progress"),
+        row("op"),
+    ]
+
+
+# REQ-REPORTS-008
+def test_reports_008_period() -> None:
+    r = team(period_rows(), PeriodScope(30))
+    assert r.milestone is None
+    assert r.period_days == 30
+    assert [m.id for m in r.milestones] == ["m1", "m2", "m3"]
+    assert team(standard()).period_days is None
+
+
+# REQ-REPORTS-008
+def test_reports_008_period_without_milestones() -> None:
+    r = team([closed("c1", at("2026-11-10"))], PeriodScope(7))
+    assert r.milestones == [] and r.milestone is None and r.period_days == 7
+    assert [b.id for b in r.beads] == ["c1"]
+
+
+# REQ-REPORTS-009
+def test_reports_009_period_scope() -> None:
+    r = team(period_rows(), PeriodScope(30))
+    assert [b.id for b in r.beads] == ["c10", "ip"]
+    assert all(b.late_days is None for b in r.beads)
+    assert {b.id: b.epic.id for b in r.beads} == {"c10": "c10", "ip": "ip"}
+
+
+# REQ-REPORTS-010
+def test_reports_010_period() -> None:
+    days = ["2026-11-06", "2026-11-09", "2026-11-10", "2026-11-11"]
+    beads = [closed(f"c{n}", at(days[n % 4])) for n in range(4)]
+    beads += [closed(f"d{n}", at("2026-11-02")) for n in range(8)]
+    r = team([*standard(), *beads], PeriodScope(30))
+    t = r.team
+    assert t is not None
+    assert (t.closed, t.throughput, t.pace) == (12, 4, 0.8)
+    assert t.on_time is None
+    assert (t.working_days, t.elapsed, t.days_left, t.pace_needed) == (None, None, None, None)
+    assert t.late_open == 0
+    # REQ-REPORTS-011: the calendar covers the working days of the period up to today
+    assert r.days[0].date == date(2026, 10, 13) and r.days[-1].date == date(2026, 11, 12)

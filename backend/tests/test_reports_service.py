@@ -5,6 +5,7 @@ from fake_export import dep
 from report_beads import closed, row, snap
 
 from gin_console.reports.models import EpicQuality, EstimateRow, QualityRow, Report, Stat
+from gin_console.reports.scope import MilestoneScope, PeriodScope, Scope
 from gin_console.reports.service import build_report
 from gin_console.reports.source import read_beads
 
@@ -18,12 +19,11 @@ def ago(days: float) -> str:
 def report(
     rows: list[Any],
     *,
-    days: int = 30,
-    sprint: str | None = None,
+    scope: Scope | None = None,
     reopens: dict[str, int] | None = None,
 ) -> Report:
     beads = read_beads(snap(rows), "alpha", {k: [date.min] * n for k, n in (reopens or {}).items()})
-    return build_report(beads, now=NOW, project="alpha", days=days, sprint=sprint)
+    return build_report(beads, now=NOW, project="alpha", scope=scope or PeriodScope(30))
 
 
 # REQ-REPORTS-001 (service part)
@@ -32,41 +32,39 @@ def test_reports_001_period_counts_beads_closed_in_the_last_days() -> None:
     assert r.totals.closed == 2
 
 
-def test_reports_001_sprint_takes_the_labelled_epic_tree_whatever_the_date() -> None:
+# REQ-REPORTS-001
+def test_reports_001_milestone_takes_its_scope_whatever_the_date() -> None:
     r = report(
         [
-            row("a-1", issue_type="epic", labels=["sprint:s7"]),
-            closed("a-1.1", ago(50), parent="a-1"),
-            row("a-2", issue_type="epic"),
-            closed("a-2.1", ago(1), parent="a-2"),
+            row("m2", issue_type="milestone"),
+            row("e-1", issue_type="epic", parent="m2"),
+            closed("t-1", ago(50), parent="e-1"),
+            row("m3", issue_type="milestone"),
+            row("e-9", issue_type="epic", parent="m3"),
+            closed("t-9", ago(3), parent="e-9"),
         ],
-        sprint="s7",
+        scope=MilestoneScope("m2"),
     )
     assert r.totals.closed == 1
+    assert (r.milestone, r.days) == ("m2", None)
+    assert sum(sum(w.counts.values()) for w in r.delivery.weeks) == 1
 
 
 # REQ-REPORTS-001
 def test_reports_001_merge_gates_left_out() -> None:
     gate = "external: .planning/plans/x.md#2"
-    r = report(
-        [
-            closed("a-1", ago(3)),
-            closed("g-1", ago(3), title=gate),
-            row("e-1", issue_type="epic", labels=["sprint:s7"]),
-            closed("g-2", ago(50), parent="e-1", title=gate),
-            closed("a-2", ago(50), parent="e-1"),
-        ]
-    )
+    r = report([closed("a-1", ago(3)), closed("g-1", ago(3), title=gate)])
     assert r.totals.closed == 1
-    sprint = report(
+    in_milestone = report(
         [
-            row("e-1", issue_type="epic", labels=["sprint:s7"]),
+            row("m2", issue_type="milestone"),
+            row("e-1", issue_type="epic", parent="m2"),
             closed("g-2", ago(50), parent="e-1", title=gate),
             closed("a-2", ago(50), parent="e-1"),
         ],
-        sprint="s7",
+        scope=MilestoneScope("m2"),
     )
-    assert sprint.totals.closed == 1
+    assert in_milestone.totals.closed == 1
 
 
 # REQ-REPORTS-004
@@ -109,7 +107,7 @@ def test_reports_004_overall_absent_when_nothing_closed() -> None:
 
 
 def test_reports_004_weeks() -> None:
-    r = report([closed("a-1", "2026-10-30T10:00:00Z", issue_type="bug")], days=7)
+    r = report([closed("a-1", "2026-10-30T10:00:00Z", issue_type="bug")], scope=PeriodScope(7))
     assert [w.week for w in r.delivery.weeks] == ["2026-W44", "2026-W45"]
     assert r.delivery.weeks[0].counts == {"bug": 1}
 
@@ -118,7 +116,7 @@ def test_reports_004_weeks_use_utc_dates() -> None:
     # 05:00+07:00 on 2 Nov is still 1 Nov in UTC, the day "now" is on
     now = datetime(2026, 11, 1, 23, 0, tzinfo=UTC)
     beads = read_beads(snap([closed("a-1", "2026-11-02T05:00:00+07:00")]), "alpha", {})
-    r = build_report(beads, now=now, project="alpha", days=7, sprint=None)
+    r = build_report(beads, now=now, project="alpha", scope=PeriodScope(7))
     weeks = {w.week: w.counts for w in r.delivery.weeks}
     assert weeks["2026-W44"] == {"task": 1}
     assert "2026-W45" not in weeks
@@ -177,7 +175,7 @@ def test_reports_004_pointed_epic_gives_days_per_point() -> None:
             ),
             closed("e-2", "2026-11-10T17:00:00Z", issue_type="epic", metadata={"points": 4}),
         ],
-        days=60,
+        scope=PeriodScope(60),
     )
     assert r.delivery.estimates == [
         EstimateRow(

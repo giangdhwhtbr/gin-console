@@ -7,8 +7,6 @@ from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
 
 from gin_console.beads.definitions import person_key
-from gin_console.beads.milestones import current_milestone, milestone_status, parse_date
-from gin_console.beads.prep import is_prep
 from gin_console.reports.models import (
     BeadBucket,
     DayRow,
@@ -17,84 +15,29 @@ from gin_console.reports.models import (
     TeamBead,
     TeamEpic,
     TeamFigures,
-    TeamMilestone,
     TeamReport,
     TeamTotals,
 )
-from gin_console.reports.service import DAY, UNASSIGNED, _key, _rework, _span, _Tree
+from gin_console.reports.scope import (
+    MilestoneScope,
+    PeriodScope,
+    Scope,
+    _Tree,
+    day_of,
+    list_milestones,
+    milestone_scope,
+    period_scope,
+    select_milestone,
+    workday,
+    workdays,
+)
+from gin_console.reports.service import DAY, UNASSIGNED, _rework, _span
 
 PACE_WINDOW = 5  # working days behind `throughput`
 
 
-def _day(moment: datetime) -> date:
-    return moment.astimezone().date()
-
-
-def _workday(day: date) -> date:
-    """A weekend day counts on the Friday before it."""
-    return day - timedelta(days=max(day.weekday() - 4, 0))
-
-
-def _workdays(first: date, last: date) -> list[date]:
-    days = (first + timedelta(days=n) for n in range((last - first).days + 1))
-    return [d for d in days if d.weekday() < 5]
-
-
 def _member(row: TeamBead) -> str:
     return person_key(row.assignee) or UNASSIGNED
-
-
-def _milestones(beads: list[ReportBead], today: date) -> tuple[list[TeamMilestone], int]:
-    found: list[TeamMilestone] = []
-    undated = 0
-    for m in beads:
-        if m.issue_type != "milestone":
-            continue
-        start, end = parse_date(m.start), parse_date(m.end)
-        if start is None or end is None:
-            undated += 1
-            continue
-        closed_on = _day(m.closed_at) if m.status == "closed" and m.closed_at else None
-        found.append(
-            TeamMilestone(
-                id=m.id,
-                title=m.title,
-                status=milestone_status(m.status == "closed", m.kickoff, today),
-                start=start,
-                end=end,
-                closed_on=closed_on,
-            )
-        )
-    found.sort(key=lambda m: (m.start, m.id))
-    return found, undated
-
-
-def _default(milestones: list[TeamMilestone], today: date) -> TeamMilestone:
-    found = current_milestone(milestones, today)
-    if found is not None:
-        return found
-    pool = [m for m in milestones if m.status == "closed"] or milestones
-    return min(pool, key=lambda m: (-m.end.toordinal(), m.id))
-
-
-def _scope(
-    tree: _Tree, beads: list[ReportBead], milestone_id: str
-) -> list[tuple[ReportBead, ReportBead]]:
-    """(bead, nearest epic) of beads under an epic of the milestone; an epic while childless."""
-    rows: list[tuple[ReportBead, ReportBead]] = []
-    for bead in beads:
-        if bead.issue_type == "milestone":
-            continue
-        if is_prep(bead.labels):
-            continue  # prep tasks are not tracked work (REQ-BEADS-002)
-        tracks = [c for c in tree.children.get(_key(bead), []) if not is_prep(c.labels)]
-        if bead.issue_type == "epic" and tracks:
-            continue  # split into tasks: its children carry the work
-        epics = tree.epics_of(bead)
-        if any(e.parent == milestone_id for e in epics):
-            rows.append((bead, epics[0]))
-    rows.sort(key=lambda r: r[0].id)
-    return rows
 
 
 def _figures(
@@ -110,7 +53,7 @@ def _figures(
     ages = [r.age_days for r in active if r.age_days is not None]
     if closed_span is None:
         throughput = float(
-            sum(1 for r in done if r.closed_at is not None and _workday(_day(r.closed_at)) in last)
+            sum(1 for r in done if r.closed_at is not None and workday(day_of(r.closed_at)) in last)
         )
     else:
         throughput = round(len(done) / closed_span * PACE_WINDOW, 1)
@@ -125,77 +68,100 @@ def _figures(
         throughput=throughput,
         cycle_median=round(statistics.median(cycles), 2) if cycles else None,
         oldest_in_progress=max(ages) if ages else None,
-        on_time=round(sum(1 for r in done if r.late_days == 0) / len(done), 4) if done else None,
+        on_time=(
+            round(sum(1 for r in done if r.late_days == 0) / len(done), 4)
+            if done and all(r.late_days is not None for r in done)
+            else None
+        ),
         rework_rate=(round(sum(1 for r in done if r.rework > 0) / len(done), 4) if done else None),
         reopens=sum(reworks[r.id][0] for r in done),
         bugs=sum(reworks[r.id][1] for r in done),
     )
 
 
+def _empty(now: datetime, project: str, today: date, undated: int, days: int | None) -> TeamReport:
+    return TeamReport(
+        generated_at=now,
+        project=project,
+        today=today,
+        milestones=[],
+        undated=undated,
+        milestone=None,
+        period_days=days,
+        team=None,
+        members=[],
+        days=[],
+        beads=[],
+    )
+
+
+def _row(
+    bead: ReportBead,
+    epic: ReportBead,
+    now: datetime,
+    end: date | None,
+) -> TeamBead:
+    """One scope bead; `end` is the milestone's end, None for a period (no `late_days`)."""
+    bucket: BeadBucket = (
+        "closed"
+        if bead.status == "closed"
+        else "in_progress"
+        if bead.status == "in_progress" and not bead.blocked
+        else "open"
+    )
+    cycle = _span(bead.started_at, bead.closed_at) if bucket == "closed" else None
+    return TeamBead(
+        id=bead.id,
+        title=bead.title,
+        issue_type=bead.issue_type,
+        status=bead.status,
+        bucket=bucket,
+        blocked=bead.blocked,
+        assignee=bead.assignee,
+        priority=bead.priority,
+        created_at=bead.created_at,
+        epic=TeamEpic(id=epic.id, title=epic.title),
+        started_at=bead.started_at,
+        closed_at=bead.closed_at if bucket == "closed" else None,
+        cycle_days=round(cycle, 1) if cycle is not None else None,
+        age_days=(
+            round((now - (bead.started_at or bead.updated_at)).total_seconds() / DAY, 1)
+            if bucket == "in_progress"
+            else None
+        ),
+        late_days=(
+            len(workdays(end + timedelta(days=1), day_of(bead.closed_at)))
+            if end is not None and bucket == "closed" and bead.closed_at is not None
+            else None
+        ),
+        rework=_rework(bead),
+    )
+
+
 def build_team(
-    beads: list[ReportBead], *, now: datetime, project: str, milestone: str | None
+    beads: list[ReportBead], *, now: datetime, project: str, scope: Scope | None
 ) -> TeamReport:
-    today = _day(now)
-    milestones, undated = _milestones(beads, today)
-    if not milestones:
-        return TeamReport(
-            generated_at=now,
-            project=project,
-            today=today,
-            milestones=[],
-            undated=undated,
-            milestone=None,
-            team=None,
-            members=[],
-            days=[],
-            beads=[],
-        )
-    chosen = next((m for m in milestones if m.id == milestone), None) or _default(milestones, today)
+    today = day_of(now)
+    milestones, undated = list_milestones(beads, today)
+    period = scope.days if isinstance(scope, PeriodScope) else None
+    wanted = scope.id if isinstance(scope, MilestoneScope) else None
+    chosen = None if period is not None else select_milestone(milestones, wanted, today)
+    if chosen is None and period is None:
+        return _empty(now, project, today, undated, None)
     tree = _Tree(beads)
-    rows: list[TeamBead] = []
-    reworks: dict[str, tuple[int, int]] = {}  # bead id -> (reopens, bugs)
-    for bead, epic in _scope(tree, beads, chosen.id):
-        bucket: BeadBucket = (
-            "closed"
-            if bead.status == "closed"
-            else "in_progress"
-            if bead.status == "in_progress" and not bead.blocked
-            else "open"
-        )
-        cycle = _span(bead.started_at, bead.closed_at) if bucket == "closed" else None
-        reworks[bead.id] = (bead.reopens, bead.bugs)
-        rows.append(
-            TeamBead(
-                id=bead.id,
-                title=bead.title,
-                issue_type=bead.issue_type,
-                status=bead.status,
-                bucket=bucket,
-                blocked=bead.blocked,
-                assignee=bead.assignee,
-                priority=bead.priority,
-                created_at=bead.created_at,
-                epic=TeamEpic(id=epic.id, title=epic.title),
-                started_at=bead.started_at,
-                closed_at=bead.closed_at if bucket == "closed" else None,
-                cycle_days=round(cycle, 1) if cycle is not None else None,
-                age_days=(
-                    round((now - (bead.started_at or bead.updated_at)).total_seconds() / DAY, 1)
-                    if bucket == "in_progress"
-                    else None
-                ),
-                late_days=(
-                    len(_workdays(chosen.end + timedelta(days=1), _day(bead.closed_at)))
-                    if bucket == "closed" and bead.closed_at is not None
-                    else None
-                ),
-                rework=_rework(bead),
-            )
-        )
-    last = set(_workdays(today - timedelta(days=14), today)[-PACE_WINDOW:])
-    is_closed = chosen.status == "closed"
+    if chosen is not None:
+        pairs = milestone_scope(tree, beads, chosen.id)
+    else:
+        assert period is not None
+        pairs = period_scope(tree, beads, period, now)
+    rows = [_row(bead, epic, now, chosen.end if chosen else None) for bead, epic in pairs]
+    reworks = {b.id: (b.reopens, b.bugs) for b, _ in pairs}  # bead id -> (reopens, bugs)
+    last = set(workdays(today - timedelta(days=14), today)[-PACE_WINDOW:])
+    is_closed = chosen is not None and chosen.status == "closed"
     closed_span = (
-        max(len(_workdays(chosen.start, chosen.closed_on or chosen.end)), 1) if is_closed else None
+        max(len(workdays(chosen.start, chosen.closed_on or chosen.end)), 1)
+        if chosen is not None and is_closed
+        else None
     )
     by_member: dict[str, list[TeamBead]] = defaultdict(list)
     for r in rows:
@@ -207,28 +173,45 @@ def build_team(
         )
     ]
     totals = _figures(rows, reworks, last, closed_span)
-    working_days = len(_workdays(chosen.start, chosen.end))
-    days_left = (
-        working_days
-        if today < chosen.start
-        else len(_workdays(today + timedelta(days=1), chosen.end))
-    )
     waiting = totals.open + totals.in_progress
-    team = TeamTotals(
-        **totals.model_dump(),
-        working_days=working_days,
-        elapsed=0 if today < chosen.start else len(_workdays(chosen.start, min(today, chosen.end))),
-        days_left=days_left,
-        pace=round(totals.throughput / PACE_WINDOW, 2),
-        pace_needed=None if is_closed or days_left == 0 else round(waiting / days_left, 2),
-        late_open=waiting if not is_closed and today > chosen.end else 0,
-    )
-    horizon = max(chosen.end, chosen.closed_on if is_closed and chosen.closed_on else today)
-    calendar = _workdays(chosen.start, horizon)
+    pace = round(totals.throughput / PACE_WINDOW, 2)
+    if chosen is not None:
+        working_days = len(workdays(chosen.start, chosen.end))
+        days_left = (
+            working_days
+            if today < chosen.start
+            else len(workdays(today + timedelta(days=1), chosen.end))
+        )
+        team = TeamTotals(
+            **totals.model_dump(),
+            working_days=working_days,
+            elapsed=0
+            if today < chosen.start
+            else len(workdays(chosen.start, min(today, chosen.end))),
+            days_left=days_left,
+            pace=pace,
+            pace_needed=None if is_closed or days_left == 0 else round(waiting / days_left, 2),
+            late_open=waiting if not is_closed and today > chosen.end else 0,
+        )
+        first = chosen.start
+        horizon = max(chosen.end, chosen.closed_on if is_closed and chosen.closed_on else today)
+    else:
+        assert period is not None
+        team = TeamTotals(
+            **totals.model_dump(),
+            working_days=None,
+            elapsed=None,
+            days_left=None,
+            pace=pace,
+            pace_needed=None,
+            late_open=0,
+        )
+        first, horizon = today - timedelta(days=period), today
+    calendar = workdays(first, horizon)
     per_day: dict[date, Counter[str]] = {d: Counter() for d in calendar}
     for r in rows:
         if r.bucket == "closed" and r.closed_at is not None and calendar:
-            day = min(max(_workday(_day(r.closed_at)), calendar[0]), calendar[-1])
+            day = min(max(workday(day_of(r.closed_at)), calendar[0]), calendar[-1])
             per_day[day][_member(r)] += 1
     return TeamReport(
         generated_at=now,
@@ -236,7 +219,8 @@ def build_team(
         today=today,
         milestones=milestones,
         undated=undated,
-        milestone=chosen.id,
+        milestone=chosen.id if chosen else None,
+        period_days=period,
         team=team,
         members=members,
         days=[DayRow(date=d, closed=dict(per_day[d])) for d in calendar],

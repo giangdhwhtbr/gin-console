@@ -12,19 +12,47 @@ from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import BeadsError
 from gin_console.config import ProjectEntry, Settings
 from gin_console.reports.interactions import InteractionStore
-from gin_console.reports.models import Report, TeamReport
+from gin_console.reports.models import Report, ReportBead, TeamReport
+from gin_console.reports.scope import (
+    MilestoneScope,
+    PeriodScope,
+    Scope,
+    day_of,
+    list_milestones,
+)
 from gin_console.reports.service import build_report
 from gin_console.reports.source import read_beads
 from gin_console.reports.team import build_team
 
 TTL = timedelta(seconds=60)
 PERIODS = {"7": 7, "30": 30, "90": 90}
-_SPRINT = re.compile(r"[A-Za-z0-9._-]{1,100}")
 _MILESTONE = re.compile(r"[A-Za-z0-9._-]{1,200}")
 
 
 def _message(exc: BeadsError | RecursionError) -> str:
     return str(exc) or "issues.jsonl was too deeply nested"
+
+
+def parse_scope(milestone: str | None, days: str | None) -> Scope | None | JSONResponse:
+    """None when neither key is given; a 422 answer for a bad or doubled scope."""
+    if milestone is not None and days is not None:
+        return JSONResponse(status_code=422, content={"error": "give milestone or days, not both"})
+    if days is not None:
+        if days not in PERIODS:
+            return JSONResponse(status_code=422, content={"error": "days must be 7, 30 or 90"})
+        return PeriodScope(PERIODS[days])
+    if milestone is not None:
+        if _MILESTONE.fullmatch(milestone) is None:
+            return JSONResponse(
+                status_code=422,
+                content={"error": "milestone may hold only letters, digits, '.', '_' and '-'"},
+            )
+        return MilestoneScope(milestone)
+    return None
+
+
+class _UnknownMilestone(LookupError):
+    pass
 
 
 def build_router(
@@ -35,65 +63,58 @@ def build_router(
     on_refresh: list[Callable[[], None]],
 ) -> APIRouter:
     router = APIRouter()
-    reports = KeyedCache[tuple[str, int, str | None], Report](TTL, clock)
+    reports = KeyedCache[tuple[str, Scope], Report](TTL, clock)
     on_refresh.append(reports.clear)
-    team = KeyedCache[tuple[str, str | None], TeamReport](TTL, clock)
+    team = KeyedCache[tuple[str, Scope | None], TeamReport](TTL, clock)
     on_refresh.append(team.clear)
 
-    def fetch(entry: ProjectEntry, days: int, sprint: str | None) -> Report:
-        beads = read_beads(
-            snapshots.get(entry.path), entry.name, interactions.reopens(entry.path)
-        )
-        return build_report(beads, now=clock(), project=entry.name, days=days, sprint=sprint)
+    def beads_of(entry: ProjectEntry) -> list[ReportBead]:
+        return read_beads(snapshots.get(entry.path), entry.name, interactions.reopens(entry.path))
 
-    @router.get("/reports", response_model=Report)
-    def get_report(
-        project: str | None = None, days: str | None = None, sprint: str | None = None
-    ) -> Report | JSONResponse:
-        if project is None:
-            raise HTTPException(status_code=404)
+    def fetch(entry: ProjectEntry, scope: Scope) -> Report:
+        beads = beads_of(entry)
+        now = clock()
+        if isinstance(scope, MilestoneScope):
+            listed, _ = list_milestones(beads, day_of(now))
+            if scope.id not in {m.id for m in listed}:
+                raise _UnknownMilestone(scope.id)
+        return build_report(beads, now=now, project=entry.name, scope=scope)
+
+    def find(project: str | None) -> ProjectEntry:
         entry = next((p for p in settings.projects if p.name == project), None)
         if entry is None or not entry.path.is_dir():
             raise HTTPException(status_code=404)
-        period = PERIODS.get(days or "30")
-        if period is None:
-            return JSONResponse(status_code=422, content={"error": "days must be 7, 30 or 90"})
-        if sprint is not None and _SPRINT.fullmatch(sprint) is None:
-            return JSONResponse(
-                status_code=422,
-                content={"error": "sprint may hold only letters, digits, '.', '_' and '-'"},
-            )
+        return entry
+
+    @router.get("/reports", response_model=Report)
+    def get_report(
+        project: str | None = None, milestone: str | None = None, days: str | None = None
+    ) -> Report | JSONResponse:
+        entry = find(project)
+        scope = parse_scope(milestone, days)
+        if isinstance(scope, JSONResponse):
+            return scope
+        scope = scope or PeriodScope(30)
         try:
             # a failure is not cached (KeyedCache)
-            return reports.get((entry.name, period, sprint), lambda: fetch(entry, period, sprint))
+            return reports.get((entry.name, scope), lambda: fetch(entry, scope))
+        except _UnknownMilestone:
+            return JSONResponse(status_code=404, content={"error": "unknown milestone"})
         except (BeadsError, RecursionError) as exc:
             return JSONResponse(status_code=502, content={"error": _message(exc)})
 
     @router.get("/reports/team", response_model=TeamReport)
     def get_team(
-        project: str | None = None, milestone: str | None = None
+        project: str | None = None, milestone: str | None = None, days: str | None = None
     ) -> TeamReport | JSONResponse:
-        entry = next((p for p in settings.projects if p.name == project), None)
-        if entry is None or not entry.path.is_dir():
-            raise HTTPException(status_code=404)
-        if milestone is not None and _MILESTONE.fullmatch(milestone) is None:
-            return JSONResponse(
-                status_code=422,
-                content={"error": "milestone may hold only letters, digits, '.', '_' and '-'"},
-            )
+        entry = find(project)
+        scope = parse_scope(milestone, days)
+        if isinstance(scope, JSONResponse):
+            return scope
         try:
             return team.get(
-                (entry.name, milestone),
-                lambda: build_team(
-                    read_beads(
-                        snapshots.get(entry.path),
-                        entry.name,
-                        interactions.reopens(entry.path),
-                    ),
-                    now=clock(),
-                    project=entry.name,
-                    milestone=milestone,
-                ),
+                (entry.name, scope),
+                lambda: build_team(beads_of(entry), now=clock(), project=entry.name, scope=scope),
             )
         except (BeadsError, RecursionError) as exc:
             return JSONResponse(status_code=502, content={"error": _message(exc)})

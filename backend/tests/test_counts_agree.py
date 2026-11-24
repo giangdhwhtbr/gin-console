@@ -8,6 +8,7 @@ from gin_console.beads.snapshot import SnapshotStore, build_snapshot
 from gin_console.beads.source import list_beads, read_export
 from gin_console.projects.models import Beads
 from gin_console.projects.source import count_beads
+from gin_console.reports.scope import MilestoneScope
 from gin_console.reports.source import read_beads
 from gin_console.reports.team import build_team
 
@@ -43,7 +44,10 @@ def test_beads_021_blocked_counts_agree(tmp_path: Path) -> None:
     everything = list_beads(snapshot, closed=True)
     listed = [b for b in everything if b.blocked and b.issue_type != "milestone"]
     team = build_team(
-        read_beads(build_snapshot(rows), "alpha", {}), now=NOW, project="alpha", milestone="m1"
+        read_beads(build_snapshot(rows), "alpha", {}),
+        now=NOW,
+        project="alpha",
+        scope=MilestoneScope("m1"),
     ).team
     assert team is not None
     assert (counted.blocked, len(listed)) == (4, 4)

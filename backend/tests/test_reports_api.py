@@ -63,7 +63,7 @@ def test_reports_001_no_ai_usage_in_the_answer(tmp_path: Path) -> None:
         "generated_at",
         "project",
         "days",
-        "sprint",
+        "milestone",
         "totals",
         "delivery",
         "quality",
@@ -73,18 +73,26 @@ def test_reports_001_no_ai_usage_in_the_answer(tmp_path: Path) -> None:
 
 
 # REQ-REPORTS-001
-def test_reports_001_sprint_takes_the_labelled_epic_tree(tmp_path: Path) -> None:
+def test_reports_001_milestone_takes_its_scope(tmp_path: Path) -> None:
     fake = FakeExport(
         [
-            closed("a-1", 60, issue_type="epic", labels=["sprint:s7"]),
-            closed("a-1.1", 50, parent="a-1"),
-            closed("a-2", 5, issue_type="epic"),
+            bead(
+                "m2", issue_type="milestone", metadata={"start": "2026-11-02", "end": "2026-11-27"}
+            ),
+            bead(
+                "m3", issue_type="milestone", metadata={"start": "2026-11-30", "end": "2026-12-25"}
+            ),
+            bead("e-1", issue_type="epic", parent="m2"),
+            closed("t-1", 50, parent="e-1"),
+            bead("e-9", issue_type="epic", parent="m3"),
+            closed("t-9", 3, parent="e-9"),
         ]
     )
     api = make(tmp_path, {"alpha": fake})
-    body = api.get("/api/reports", params={"project": "alpha", "sprint": "s7"}).json()
-    assert body["sprint"] == "s7"
-    assert body["totals"]["closed"] == 2
+    body = api.get("/api/reports", params={"project": "alpha", "milestone": "m2"}).json()
+    assert body["milestone"] == "m2"
+    assert body["days"] is None
+    assert body["totals"]["closed"] == 1
 
 
 # REQ-REPORTS-001
@@ -103,14 +111,28 @@ def test_reports_001_cached_for_60_seconds(tmp_path: Path) -> None:
 
 
 # REQ-REPORTS-001
-def test_reports_001_bad_input_reads_nothing(tmp_path: Path) -> None:
-    fake = FakeExport([closed("a-1", 3)])
+def test_reports_001_bad_input(tmp_path: Path) -> None:
+    fake = FakeExport(
+        [
+            bead(
+                "m2", issue_type="milestone", metadata={"start": "2026-11-02", "end": "2026-11-27"}
+            ),
+            closed("a-1", 3),
+        ]
+    )
     api = make(tmp_path, {"alpha": fake})
     assert api.get("/api/reports", params={"project": "nope"}).status_code == 404
-    for extra in ({"days": "14"}, {"sprint": "a b"}, {"sprint": ""}):
+    for extra in (
+        {"days": "14"},
+        {"milestone": "a b"},
+        {"milestone": ""},
+        {"milestone": "m2", "days": "7"},
+    ):
         r = api.get("/api/reports", params={"project": "alpha", **extra})
         assert r.status_code == 422 and "error" in r.json()
     assert fake.calls == []
+    gone = api.get("/api/reports", params={"project": "alpha", "milestone": "gone"})
+    assert gone.status_code == 404 and gone.json() == {"error": "unknown milestone"}
 
 
 # REQ-REPORTS-001

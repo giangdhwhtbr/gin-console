@@ -79,6 +79,15 @@ def test_reports_008_api_default_and_named(tmp_path: Path) -> None:
 
 
 # REQ-REPORTS-008
+def test_reports_008_api_period(tmp_path: Path) -> None:
+    api = make(tmp_path, {"alpha": alpha()})
+    body = get(api, days="30").json()
+    assert (body["milestone"], body["period_days"]) == (None, 30)
+    assert [m["id"] for m in body["milestones"]] == ["m1", "m2"]
+    assert get(api).json()["period_days"] is None
+
+
+# REQ-REPORTS-008
 def test_reports_008_api_no_milestones(tmp_path: Path) -> None:
     api = make(tmp_path, {"beta": FakeExport([bead("b-1")])})
     body = api.get("/api/reports/team", params={"project": "beta"}).json()
@@ -92,8 +101,9 @@ def test_reports_008_api_bad_input(tmp_path: Path) -> None:
     api = make(tmp_path, {"alpha": fake})
     assert get(api, project="nope").status_code == 404
     assert api.get("/api/reports/team").status_code == 404
-    r = get(api, milestone="a b")
-    assert r.status_code == 422 and "error" in r.json()
+    for extra in ({"milestone": "a b"}, {"days": "14"}, {"milestone": "m1", "days": "7"}):
+        r = get(api, **extra)
+        assert r.status_code == 422 and "error" in r.json()
     assert fake.calls == []
 
 

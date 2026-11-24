@@ -122,8 +122,8 @@ class QualitySection(BaseModel):
 class Report(BaseModel):
     generated_at: datetime
     project: str
-    days: int
-    sprint: str | None
+    days: int | None
+    milestone: str | None
     totals: Totals
     delivery: DeliverySection
     quality: QualitySection
@@ -188,9 +188,9 @@ class MemberFigures(TeamFigures):
 
 
 class TeamTotals(TeamFigures):
-    working_days: int
-    elapsed: int
-    days_left: int
+    working_days: int | None  # the next three are None for a period
+    elapsed: int | None
+    days_left: int | None
     pace: float
     pace_needed: float | None
     late_open: int
@@ -208,6 +208,7 @@ class TeamReport(BaseModel):
     milestones: list[TeamMilestone]
     undated: int
     milestone: str | None
+    period_days: int | None
     team: TeamTotals | None
     members: list[MemberFigures]
     days: list[DayRow]

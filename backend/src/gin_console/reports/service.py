@@ -2,7 +2,7 @@
 
 import statistics
 from collections import Counter, defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 
 from gin_console.beads.definitions import person_key
@@ -19,47 +19,24 @@ from gin_console.reports.models import (
     Totals,
     WeekRow,
 )
+from gin_console.reports.scope import (
+    Key,
+    MilestoneScope,
+    PeriodScope,
+    Scope,
+    _key,
+    _Tree,
+    milestone_scope,
+)
 
 UNASSIGNED = "Unassigned"
 TOP = 10
 WORKDAY_MINUTES = 480  # gin-workflow workflow_core/milestone.py WORKDAY_MINUTES
 DAY = 86400.0
 
-Key = tuple[str, str]  # (project, bead id)
-
-
-def _key(bead: ReportBead) -> Key:
-    return (bead.project, bead.id)
-
 
 def member_of(bead: ReportBead) -> str:
     return person_key(bead.assignee) or UNASSIGNED
-
-
-class _Tree:
-    def __init__(self, beads: list[ReportBead]) -> None:
-        self.index: dict[Key, ReportBead] = {_key(b): b for b in beads}
-        self.children: dict[Key, list[ReportBead]] = defaultdict(list)
-        for bead in beads:
-            if bead.parent:
-                self.children[(bead.project, bead.parent)].append(bead)
-
-    def _lineage(self, bead: ReportBead) -> Iterable[ReportBead]:
-        """The bead, then its ancestors; stops on a cycle or a parent outside the list."""
-        seen: set[Key] = set()
-        current: ReportBead | None = bead
-        while current is not None and _key(current) not in seen:
-            yield current
-            seen.add(_key(current))
-            parent = current.parent
-            current = self.index.get((current.project, parent)) if parent else None
-
-    def epics_of(self, bead: ReportBead) -> list[ReportBead]:
-        """Every epic in the bead's lineage: itself when it is one, then its epic ancestors."""
-        return [b for b in self._lineage(bead) if b.issue_type == "epic"]
-
-    def under(self, bead: ReportBead, roots: set[Key]) -> bool:
-        return any(_key(b) in roots for b in self._lineage(bead))
 
 
 def _closed_at(bead: ReportBead) -> datetime:
@@ -129,13 +106,11 @@ def _times(closed: list[ReportBead], key: Callable[[ReportBead], str]) -> list[T
     ]
 
 
-def _delivery(
-    closed: list[ReportBead], now: datetime, days: int, sprint: str | None
-) -> DeliverySection:
+def _delivery(closed: list[ReportBead], now: datetime, days: int | None) -> DeliverySection:
     counts: dict[str, Counter[str]] = defaultdict(Counter)
     for bead in closed:
         counts[_week(_closed_at(bead).astimezone(UTC).date())][bead.issue_type] += 1
-    if sprint is None:
+    if days is not None:
         weeks = _weeks(
             (now - timedelta(days=days)).astimezone(UTC).date(), now.astimezone(UTC).date()
         )
@@ -206,36 +181,34 @@ def _quality(tree: _Tree, closed: list[ReportBead]) -> QualitySection:
     return QualitySection(members=members, epics=epics[:TOP])
 
 
-def build_report(
-    beads: list[ReportBead],
-    *,
-    now: datetime,
-    project: str,
-    days: int,
-    sprint: str | None,
-) -> Report:
+def build_report(beads: list[ReportBead], *, now: datetime, project: str, scope: Scope) -> Report:
     tree = _Tree(beads)
-    if sprint is None:
-        scope = beads
-        since = now - timedelta(days=days)
-        closed = [
-            b
-            for b in beads
-            if b.status == "closed" and b.closed_at is not None and b.closed_at >= since
-        ]
-    else:
-        roots = {
-            _key(b) for b in beads if b.issue_type == "epic" and f"sprint:{sprint}" in b.labels
-        }
-        scope = [b for b in beads if tree.under(b, roots)]
-        closed = [b for b in scope if b.status == "closed" and b.closed_at is not None]
+    days: int | None
+    milestone: str | None
+    match scope:
+        case PeriodScope(days=period):
+            days = period
+            since = now - timedelta(days=period)
+            closed = [
+                b
+                for b in beads
+                if b.status == "closed" and b.closed_at is not None and b.closed_at >= since
+            ]
+            milestone = None
+        case MilestoneScope(id=wanted):
+            days, milestone = None, wanted
+            closed = [
+                b
+                for b, _ in milestone_scope(tree, beads, wanted)
+                if b.status == "closed" and b.closed_at is not None
+            ]
     closed.sort(key=_key)
     return Report(
         generated_at=now,
         project=project,
         days=days,
-        sprint=sprint,
+        milestone=milestone,
         totals=_totals(closed),
-        delivery=_delivery(closed, now, days, sprint),
+        delivery=_delivery(closed, now, days),
         quality=_quality(tree, closed),
     )
