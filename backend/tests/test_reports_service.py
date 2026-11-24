@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from fake_export import dep
@@ -22,7 +22,7 @@ def report(
     sprint: str | None = None,
     reopens: dict[str, int] | None = None,
 ) -> Report:
-    beads = read_beads(snap(rows), "alpha", reopens or {})
+    beads = read_beads(snap(rows), "alpha", {k: [date.min] * n for k, n in (reopens or {}).items()})
     return build_report(beads, now=NOW, project="alpha", days=days, sprint=sprint)
 
 

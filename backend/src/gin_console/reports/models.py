@@ -5,6 +5,24 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from gin_console.beads.models import ChildCounts
+
+
+class MilestoneMove(BaseModel):
+    """An entry of `metadata.milestone_moves` (REQ-REPORTS-021)."""
+
+    day: date
+    source: str | None = None
+    target: str | None = None
+
+
+class PointsChange(BaseModel):
+    """An entry of `metadata.points_history` (REQ-REPORTS-021)."""
+
+    day: date
+    before: int | None = None
+    after: int | None = None
+
 
 class ReportBead(BaseModel):
     project: str
@@ -27,7 +45,15 @@ class ReportBead(BaseModel):
     end: str | None = None
     kickoff: str | None = None
     reopens: int = 0
+    reopened_on: list[date] = Field(default_factory=list)
     bugs: int = 0
+    bug_days: list[date] = Field(default_factory=list)
+    moves: list[MilestoneMove] = Field(default_factory=list)
+    points_history: list[PointsChange] = Field(default_factory=list)
+    blockers: list[str] = Field(default_factory=list)
+    blocked_since: datetime | None = None
+    child_counts: ChildCounts | None = None
+    planned_days_per_point: float | None = None  # milestone rows only
 
 
 class Totals(BaseModel):

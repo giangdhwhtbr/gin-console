@@ -2,8 +2,8 @@
 
 import json
 import threading
-from collections import Counter
 from collections.abc import Callable
+from datetime import date, datetime
 from pathlib import Path
 
 LOG = Path(".beads/interactions.jsonl")
@@ -24,34 +24,48 @@ def _is_reopen(line: object) -> str | None:
     return None
 
 
-def read_reopens(path: Path) -> dict[str, int]:
-    """Reopens per bead id. A missing or unreadable log is an expected case (a project
+def _day_of(line: object) -> date:
+    """The local date of a line's `created_at`, or `date.min` so the reopen still counts."""
+    stamp = line.get("created_at") if isinstance(line, dict) else None
+    try:
+        return (
+            datetime.fromisoformat(stamp).astimezone().date()
+            if isinstance(stamp, str)
+            else date.min
+        )
+    except ValueError:
+        return date.min
+
+
+def read_reopens(path: Path) -> dict[str, list[date]]:
+    """Dates of the reopens per bead id. A missing or unreadable log is an expected case (a project
     without interactions, a log bd has not written yet): it counts nothing, so a report
     never fails on it. A line that is not JSON counts nothing either."""
-    found: Counter[str] = Counter()
+    found: dict[str, list[date]] = {}
     try:
         with path.open(encoding="utf-8") as handle:
             for text in handle:
                 try:
-                    ident = _is_reopen(json.loads(text))
+                    line = json.loads(text)
                 except ValueError:
                     continue
+                ident = _is_reopen(line)
                 if ident is not None:
-                    found[ident] += 1
+                    found.setdefault(ident, []).append(_day_of(line))
     except OSError:
         return {}
-    return dict(found)
+    return found
 
 
 class InteractionStore:
     """Reopens per project directory, read again only when the log's size or mtime changed."""
 
-    def __init__(self, read: Callable[[Path], dict[str, int]] = read_reopens) -> None:
+    def __init__(self, read: Callable[[Path], dict[str, list[date]]] = read_reopens) -> None:
         self._read = read
         self._guard = threading.Lock()
-        self._items: dict[Path, tuple[tuple[int, int], dict[str, int]]] = {}
+        self._items: dict[Path, tuple[tuple[int, int], dict[str, list[date]]]] = {}
 
-    def reopens(self, project_dir: Path) -> dict[str, int]:
+    def reopens(self, project_dir: Path) -> dict[str, list[date]]:
         path = project_dir / LOG
         try:
             st = path.stat()

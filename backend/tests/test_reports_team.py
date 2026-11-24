@@ -35,7 +35,7 @@ def team(
     rows: list[Any], milestone: str | None = None, reopens: dict[str, int] | None = None
 ) -> TeamReport:
     return build_team(
-        read_beads(snap(rows), "alpha", reopens or {}),
+        read_beads(snap(rows), "alpha", {k: [date.min] * n for k, n in (reopens or {}).items()}),
         now=NOW,
         project="alpha",
         milestone=milestone,
