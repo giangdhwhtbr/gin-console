@@ -53,17 +53,24 @@ SHOW: dict[str, Any] = {
 
 
 class FakeGw:
-    """`milestone list` answers `outputs["list"]`, `milestone show` answers `outputs["show"]`."""
+    """`milestone list` answers `outputs["list"]`, `milestone show` answers `outputs["show"]`;
+    `failure` fails every command, `failures` only the subcommands it names."""
 
     def __init__(
-        self, outputs: dict[str, Any] | None = None, failure: Exception | None = None
+        self,
+        outputs: dict[str, Any] | None = None,
+        failure: Exception | None = None,
+        failures: dict[str, Exception] | None = None,
     ) -> None:
         self.outputs = {"list": LIST, "show": SHOW} if outputs is None else outputs
         self.failure = failure
+        self.failures = failures or {}  # fails only the named subcommand, e.g. "show"
         self.calls: list[list[str]] = []
 
     def __call__(self, args: list[str], cwd: Path) -> Any:
         self.calls.append(args)
         if self.failure is not None:
             raise self.failure
+        if args[1] in self.failures:
+            raise self.failures[args[1]]
         return self.outputs[args[1]]
