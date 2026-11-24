@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { detail, entry, epicPlan, list } from "@/features/milestones/milestoneFixtures";
 import { StatusSection } from "./StatusSection";
-import { statusEpic, statusKpis, statusMilestones, statusReport } from "./statusFixtures";
+import { periodStatusReport, statusEpic, statusKpis, statusMilestones, statusReport } from "./statusFixtures";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -243,5 +243,46 @@ describe("StatusSection", () => {
     expect(await screen.findByRole("link", { name: longTitle })).toHaveClass("truncate");
     expect(screen.queryByText(/spec not approved yet/)).toBeNull();
     expect(container.firstElementChild).toHaveClass("min-w-0");
+  });
+
+  it("REQ-REPORTS-038 Copy summary: a loaded milestone copies the Markdown with its epics once the detail arrived", async () => {
+    stubDetail(() => json(detail([epicPlan("e-1", { planned_start: "2026-11-11", planned_end: "2026-11-20" })])));
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    render(<StatusSection project="example" report={statusReport()} list={null} />);
+
+    await screen.findByText("11 Nov – 20 Nov");
+    await userEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+    expect(writeText).toHaveBeenCalledTimes(1);
+    const text = String((writeText.mock.calls[0] as unknown[])[0]);
+    expect(text).toContain("# Checkout v2 (11 Nov – 2 Dec)");
+    expect(text).toContain("| Team checkout |");
+    expect(text).toContain("11 Nov – 20 Nov");
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+  });
+
+  it("REQ-REPORTS-037 Copy summary: shows — for planned and verdict while the milestone detail failed", async () => {
+    stubDetail(() => json({ error: "gin down" }, 502));
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    render(<StatusSection project="example" report={statusReport()} list={null} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+    expect(String((writeText.mock.calls[0] as unknown[])[0])).toContain("| Team checkout | — | 2 of 4 tracks | — | — | lead |");
+  });
+
+  it("REQ-REPORTS-038 Copy summary: says Couldn't copy when the clipboard write rejects", async () => {
+    stubDetail();
+    vi.stubGlobal("navigator", { clipboard: { writeText: () => Promise.reject(new Error("denied")) } });
+    render(<StatusSection project="example" report={statusReport()} list={null} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+    expect(await screen.findByText("Couldn't copy")).toBeInTheDocument();
+  });
+
+  it("REQ-REPORTS-038 Copy summary: no button on a period scope", () => {
+    stubDetail();
+    render(<StatusSection project="example" report={periodStatusReport(30)} list={null} />);
+    expect(screen.queryByRole("button", { name: "Copy summary" })).toBeNull();
   });
 });
