@@ -1066,3 +1066,40 @@ The Team section SHALL show:
 - GIVEN a `trend` of `m0`, `m1` and `m2`, with `m2` selected and `m0`'s accuracy `null`
 - WHEN the Team section is shown
 - THEN the panel shows three columns and three rows, `m2` highlighted, and `m0`'s accuracy reads "—"
+
+### REQ-REPORTS-037: Status summary Markdown format
+Type: business-rule
+WHEN building a Markdown status summary for a loaded milestone on Reports Status, the frontend SHALL produce:
+- `# <milestone title> (<start> – <end>)` (or `# <milestone title>` when dates are missing) and a `Generated: <YYYY-MM-DD>` line;
+- `**Verdict:** <verdict> — <verdict sentence>`;
+- `## KPIs` with a bullet list of the five figures (Beads done, Points done, Pace, Blocked, Rework), each including its week-on-week change text when present;
+- `## Risks` with a bullet list of the rendered risk items (blocked chains, unestimated epics, unapproved specs), or `None.` when there are no risks;
+- `## Epics` with a Markdown table of columns `Epic | Verdict | Progress | Planned | Forecast | Assignee` in the same row order as `EpicTable`, using `—` when planned, forecast, or verdict is unavailable, and escaping `|` and newlines in cell text.
+
+#### Scenario: Full status summary
+- GIVEN a loaded Status section for milestone `PM reporting` with verdict `At risk`, 5 KPIs, 1 blocked-chain risk, and 2 epics
+- WHEN `summaryMarkdown` is called
+- THEN it returns Markdown containing the title heading, `**Verdict:** At risk — ...`, `## KPIs` with 5 bullets, `## Risks` with 1 bullet, and `## Epics` with a 2-row table matching `EpicTable` order
+
+#### Scenario: No risks and degraded milestone detail
+- GIVEN a loaded Status section with 0 risks and failed milestone detail
+- WHEN `summaryMarkdown` is called
+- THEN `## Risks` contains `None.` and the `## Epics` rows show `—` for Verdict, Planned, and Forecast
+
+### REQ-REPORTS-038: Copy summary button on Reports Status
+WHILE the Reports Status section (`/reports/status`) has a loaded milestone report, the section header SHALL show a `Copy summary` button; the button SHALL NOT be shown on period scopes or while the report is loading or in an error state. WHEN the user clicks `Copy summary`, the frontend SHALL build the Markdown of REQ-REPORTS-037 and write it via `navigator.clipboard.writeText`, SHALL show `Copied` on the button for 2 seconds on success, and IF the clipboard write rejects, THEN it SHALL show an inline `Couldn't copy` error message.
+
+#### Scenario: Copy succeeds
+- GIVEN `/reports/status` has loaded milestone `m1` and clipboard write resolves
+- WHEN the user clicks `Copy summary`
+- THEN `navigator.clipboard.writeText` is called with the Markdown summary and the button text changes to `Copied` for 2 seconds
+
+#### Scenario: Copy fails
+- GIVEN `/reports/status` has loaded milestone `m1` and clipboard write rejects
+- WHEN the user clicks `Copy summary`
+- THEN an inline `Couldn't copy` message is shown
+
+#### Scenario: Hidden on period scope
+- GIVEN `/reports/status` is switched to a 30-day period scope
+- WHEN the section renders
+- THEN no `Copy summary` button is rendered
