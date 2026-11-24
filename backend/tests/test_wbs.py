@@ -208,6 +208,17 @@ def test_027_cycle_terminates_and_emits_each_bead_once() -> None:
     rows = [child("a", "b"), child("b", "a")]
     doc = build(rows)
     assert sorted(r.id for r in doc.rows) == ["a", "b"]
+    two = build([child("a", "b"), child("b", "a"), child("c", "d"), child("d", "c")])
+    assert sorted(r.wbs for r in two.rows if r.level == 1) == ["1", "2"]
+
+
+# REQ-MILESTONE-UI-027
+def test_027_milestones_with_equal_start_ordered_by_id_only() -> None:
+    rows = [
+        ms("mb", "2026-12-01", priority=0, created_at="2026-10-01T10:00:00Z"),
+        ms("ma", "2026-12-01", priority=4, created_at="2026-10-20T10:00:00Z"),
+    ]
+    assert [r.id for r in build(rows).rows] == ["ma", "mb"]
 
 
 # REQ-MILESTONE-UI-027
@@ -249,6 +260,12 @@ def test_028_status_assignee_and_depends_on() -> None:
     )
     assert t1.depends_on_wbs == ["1.1.1", "ext-9"]
     assert t1.depends_on_ids == ["t2", "ext-9"]
+    twice = bead(
+        "t9",
+        dependencies=[dep("t9", "t2", "blocks"), dep("t9", "t2", "blocked-by")],
+    )
+    dup = by_id(build([bead("t2"), twice]))["t9"]
+    assert (dup.depends_on_ids, dup.depends_on_wbs) == (["t2"], ["1"])
     assert got["t2"].status == "Open"
     assert got["t3"].status == "In progress"
     assert (got["t3"].assignee, got["t3"].assignee_email) == ("bob", "Bob@Example.com")

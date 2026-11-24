@@ -160,10 +160,13 @@ def build_wbs(
         if milestone_id is not None:
             return [milestone_id] if is_milestone(milestone_id) else []
         pool = [i for i, r in rows.items() if _in_wbs(r) and is_root(i)]
-        return sorted(
-            pool,
-            key=lambda i: (0 if is_milestone(i) else 1 if is_epic(i) else 2, *order(i)[1:]),
-        )
+
+        def root_key(i: str) -> tuple[int, date, int, str, str]:
+            if is_milestone(i):  # milestones: planned start, then id only
+                return (0, planned_start(i), 0, "", i)
+            return (1 if is_epic(i) else 2, *order(i)[1:])
+
+        return sorted(pool, key=root_key)
 
     flat: list[tuple[str, str | None, str]] = []  # (id, parent, wbs)
     seen: set[str] = set()
@@ -180,7 +183,9 @@ def build_wbs(
     for n, ident in enumerate(top, 1):
         walk(ident, None, str(n))
     if milestone_id is None:  # beads only a cycle holds: roots in their own right, in id order
-        for ident in sorted(i for i, r in rows.items() if _in_wbs(r) and i not in seen):
+        for ident in sorted(i for i, r in rows.items() if _in_wbs(r)):
+            if ident in seen:
+                continue
             walk(ident, None, str(len(top) + 1))
             top.append(ident)
     number_of = {ident: number for ident, _, number in flat}
@@ -262,7 +267,7 @@ def build_wbs(
             if isinstance(minutes, (int, float)) and not isinstance(minutes, bool) and minutes:
                 estimate = minutes / WORKDAY_MINUTES
             percent = 1.0 if is_done(row) else 0.0
-        blockers = [t for t, k in _deps(row) if k in BLOCKING]
+        blockers = list(dict.fromkeys(t for t, k in _deps(row) if k in BLOCKING))
         milestone = milestone_of(ident)
         return WbsRow(
             wbs=number,
