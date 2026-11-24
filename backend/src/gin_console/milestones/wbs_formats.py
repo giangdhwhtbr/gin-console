@@ -4,10 +4,12 @@ Pure: no HTTP, no files; the workbook is built in memory."""
 
 import csv
 import io
+import math
 from datetime import UTC, date
 from typing import Any
 
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.styles import Font
 
 from gin_console.milestones.wbs import WbsDocument, WbsRow
@@ -46,6 +48,11 @@ def _safe_cell(value: str) -> str:
     return "'" + value if value[:1] in ("=", "+", "-", "@") else value
 
 
+def _xlsx_text(value: str) -> str:
+    """Drop the control characters openpyxl rejects, then guard against formulas."""
+    return _safe_cell(ILLEGAL_CHARACTERS_RE.sub("", value))
+
+
 def _days(value: float) -> str:
     return f"{value:g}"
 
@@ -58,7 +65,7 @@ def _estimate_text(row: WbsRow) -> str:
 
 
 def _percent_text(row: WbsRow) -> str:
-    return "" if row.percent_done is None else f"{round(row.percent_done * 100)}%"
+    return "" if row.percent_done is None else f"{math.floor(row.percent_done * 100 + 0.5)}%"
 
 
 def _iso(value: date | None) -> str:
@@ -82,19 +89,19 @@ def to_xlsx(doc: WbsDocument) -> bytes:
             estimate = _estimate_text(row)
         sheet.append(
             [
-                _safe_cell(row.wbs),
-                _safe_cell(row.id),
-                _safe_cell(row.name),
-                _safe_cell(row.type_label),
+                _xlsx_text(row.wbs),
+                _xlsx_text(row.id),
+                _xlsx_text(row.name),
+                _xlsx_text(row.type_label),
                 row.status,
-                _safe_cell(row.assignee),
+                _xlsx_text(row.assignee),
                 row.points,
                 estimate,
                 row.planned_start,
                 row.planned_end,
                 row.forecast_end,
                 row.percent_done,
-                _safe_cell(_depends(row)),
+                _xlsx_text(_depends(row)),
             ]
         )
         number = sheet.max_row
@@ -110,13 +117,13 @@ def to_xlsx(doc: WbsDocument) -> bytes:
 
     about: Any = book.create_sheet("About")
     scope = doc.scope_label + (f" ({doc.milestone_id})" if doc.milestone_id else "")
-    about.append(["Project", _safe_cell(doc.project)])
-    about.append(["Scope", _safe_cell(scope)])
+    about.append(["Project", _xlsx_text(doc.project)])
+    about.append(["Scope", _xlsx_text(scope)])
     about.append(["generated_at", doc.generated_at.isoformat()])
     for name, text in DEFINITIONS:
         about.append([f"Definition: {name}", text])
     if doc.warning:
-        about.append(["Warning", _safe_cell(doc.warning)])
+        about.append(["Warning", _xlsx_text(doc.warning)])
     out = io.BytesIO()
     book.save(out)
     return out.getvalue()
@@ -208,7 +215,7 @@ def to_csv(doc: WbsDocument) -> str:
 
 
 def _md_cell(value: str) -> str:
-    return " ".join(value.splitlines()).replace("|", "\\|")
+    return " ".join(value.splitlines()).replace("\\", "\\\\").replace("|", "\\|")
 
 
 def to_markdown(doc: WbsDocument) -> str:
@@ -216,7 +223,7 @@ def to_markdown(doc: WbsDocument) -> str:
     if stamp.tzinfo is not None:
         stamp = stamp.astimezone(UTC)
     lines = [
-        f"# {doc.project} WBS — {doc.scope_label}",
+        f"# {_md_cell(doc.project)} WBS — {_md_cell(doc.scope_label)}",
         "",
         f"Generated: {stamp:%Y-%m-%d %H:%M} UTC",
         "",

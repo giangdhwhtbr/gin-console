@@ -3,6 +3,7 @@ import io
 from datetime import UTC, date, datetime
 from typing import Any
 
+import pytest
 from openpyxl import load_workbook
 
 from gin_console.milestones.wbs import WbsDocument, WbsRow
@@ -273,3 +274,43 @@ def test_markdown_without_warning_and_cell_formats() -> None:
     )
     assumed = to_markdown(doc([row("e", "1", estimate_days=2.0, estimate_assumed=True)]))
     assert "| 2 (assumed) |" in assumed
+
+
+# REQ-MILESTONE-UI-030, REQ-MILESTONE-UI-031
+def test_percent_rounds_half_up() -> None:
+    rows = [row("t", "1", percent_done=0.125)]
+    assert "| 13% |" in to_markdown(doc(rows))
+    assert list(csv.reader(io.StringIO(to_csv(doc(rows)))))[1][-3] == "13%"
+
+
+# REQ-MILESTONE-UI-029
+def test_xlsx_strips_control_characters() -> None:
+    rows = [row("t", "1", name="bad\x00title\x07")]
+    book = load_workbook(io.BytesIO(to_xlsx(doc(rows))))
+    assert book["WBS"]["C2"].value == "badtitle"
+
+
+# REQ-MILESTONE-UI-031
+def test_markdown_heading_and_backslash_escaping() -> None:
+    document = doc([row("t", "1", name="a\\|b")], scope="Line one\nLine two")
+    lines = to_markdown(document).splitlines()
+    assert lines[0] == "# alpha WBS — Line one Line two"
+    assert any("a\\\\\\|b" in line for line in lines)
+
+
+# REQ-MILESTONE-UI-030
+@pytest.mark.parametrize("lead", ["+", "-", "@"])
+def test_csv_guards_fix_version_assignee_and_depends_on(lead: str) -> None:
+    rows = [
+        row(
+            "t",
+            "1",
+            milestone_title=f"{lead}ms",
+            assignee_email=f"{lead}who",
+            depends_on_wbs=[f"{lead}dep"],
+        )
+    ]
+    head, record = list(csv.reader(io.StringIO(to_csv(doc(rows)))))
+    assert record[head.index("Fix Version")] == f"'{lead}ms"
+    assert record[head.index("Assignee")] == f"'{lead}who"
+    assert record[head.index("Depends on")] == f"'{lead}dep"
