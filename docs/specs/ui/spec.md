@@ -892,7 +892,7 @@ On screens narrower than 768px the links and buttons of the navigation and the t
 - THEN a focus indicator is visible
 
 ### REQ-UI-063: Page title
-The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Beads · <project> · gin-console`, `My Tasks · <project> · gin-console`, `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console`, `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
+The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Beads · <project> · gin-console`, `My Tasks · <project> · gin-console`, `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console` with `<section>` one of Status, Team, Delivery, Velocity and Rework, `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
 
 #### Scenario: Bead page
 - GIVEN the bead `a-1` titled "Team checkout" in project `example`
@@ -900,9 +900,9 @@ The frontend SHALL set the document title to the name of what the page shows, th
 - THEN the document title is `Team checkout · example · gin-console`
 
 #### Scenario: Reports section
-- GIVEN `/reports?project=example&tab=quality`
+- GIVEN `/reports/rework?project=example`
 - WHEN the page loads
-- THEN the document title is `Reports · Quality · example · gin-console`
+- THEN the document title is `Reports · Rework · example · gin-console`
 
 #### Scenario: My Tasks
 - GIVEN `/my-tasks?project=example`
@@ -1382,27 +1382,27 @@ The "Bugs found" heading of REQ-UI-086 SHALL be shown in the bug color (the `typ
 - THEN the "Bugs found" heading uses the `type-bug` color and the bug rows do not
 
 ### REQ-UI-088: Reports page
-The frontend SHALL show the Reports page at `/reports`, loaded as its own chunk. The page SHALL show the report of the current project (REQ-UI-124), SHALL hold no project choice of its own (the switcher of REQ-UI-123 changes the project), and WHEN the URL has `project=all` (the retired choice "All projects"), SHALL replace it with the current project without adding a history entry. The panels of the Delivery and Quality tabs (REQ-UI-095) SHALL hold a period choice (7, 30 or 90 days, default 30) and a sprint field, which apply to those two tabs. The Team tab has its own choices (REQ-REPORTS-012). The page SHALL keep the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each tab SHALL open with its own row of figures (REQ-UI-090, REQ-UI-091, REQ-REPORTS-013, REQ-REPORTS-018). The page SHALL show no tokens, cost, budget or `gin usage` command.
+The frontend SHALL show the Reports page at `/reports/<section>` (REQ-UI-095), loaded as its own chunk. The page SHALL show the report of the current project (REQ-UI-124), SHALL hold no project choice of its own (the switcher of REQ-UI-123 changes the project), and WHEN the URL has `project=all` (the retired choice "All projects"), SHALL replace it with the current project without adding a history entry. Every section SHALL use the one scope of REQ-REPORTS-033. The page SHALL keep the section in the path and the choices in the URL query, so that a reload, the back button and a shared link show the same report. Each section SHALL open with its own row of figures (REQ-REPORTS-028, REQ-REPORTS-013, REQ-UI-090, REQ-REPORTS-018, REQ-UI-091). The page SHALL show no tokens, cost, budget or `gin usage` command.
 
 #### Scenario: shared link
-- GIVEN the URL `/reports?project=alpha&days=7&tab=delivery`
+- GIVEN the URL `/reports/delivery?project=alpha&days=7`
 - WHEN the page loads
-- THEN 7 days is selected and the report for `alpha` and 7 days is requested
+- THEN "Last 7 days" is selected and the report for `alpha` and 7 days is requested
 
 #### Scenario: Old link for all projects
-- GIVEN the current project is `alpha` and the URL `/reports?project=all&days=7&tab=delivery`
+- GIVEN the current project is `alpha` and the URL `/reports/delivery?project=all&days=7`
 - WHEN the page loads
-- THEN the URL becomes `/reports?project=alpha&days=7&tab=delivery`, 7 days is selected, and only the report for `alpha` is requested
+- THEN the URL becomes `/reports/delivery?project=alpha&days=7`, "Last 7 days" is selected, and only the report for `alpha` is requested
 
-#### Scenario: change period
-- GIVEN the Reports page for `alpha`, 30 days and the Delivery tab
-- WHEN the user picks 90 days
-- THEN the URL becomes `/reports?project=alpha&days=90&tab=delivery` without a reload and the report is requested again
+#### Scenario: change scope
+- GIVEN the Reports page for `alpha`, 30 days and the Delivery section
+- WHEN the user picks "Last 90 days"
+- THEN the URL becomes `/reports/delivery?project=alpha&days=90` without a reload and the report is requested again
 
-#### Scenario: period kept across tabs
-- GIVEN the Reports page for `alpha` with 7 days picked on the Delivery tab
-- WHEN the user picks the Team tab and then the Quality tab
-- THEN 7 days is selected in the Quality panel
+#### Scenario: scope kept across sections
+- GIVEN the Reports page for `alpha` with "Last 7 days" picked on the Delivery section
+- WHEN the user opens Team and then Rework
+- THEN "Last 7 days" is selected in the Rework section
 
 ### REQ-UI-090: Delivery flow view
 The Delivery tab SHALL show, in this order:
@@ -1445,18 +1445,18 @@ Source: `assets/2026-11-12/mockup/index.html`
 - THEN there is no "In progress now" figure, no "Oldest in progress" table and no "In progress by member" chart
 
 ### REQ-UI-091: Quality view
-The Quality tab SHALL show, in this order:
+The Rework section (`/reports/rework`, formerly the Quality tab) SHALL show, in this order:
 - A row of figures, each with a tooltip (REQ-UI-132) naming its source:
   - the rework rate (`totals.rework_rate`), or "—" when it is `null`;
   - reopens, summed over the member rows of REQ-REPORTS-005;
   - bugs found later, summed over the member rows.
 - A table of the member rows, with closed beads, reopens, bugs and rework rate.
 - A table of the epic rows, with the epic (its title linking to its bead page), closed beads, reopens, bugs and rework rate.
-The tab SHALL show no tokens, review cycles, rejections, findings or waivers.
+The section SHALL show no tokens, review cycles, rejections, findings or waivers.
 
 #### Scenario: figures
 - GIVEN member rows `ann` (4 closed, 1 reopen) and `bao` (1 closed, 1 bug) and `totals.rework_rate` 0.4
-- WHEN the Quality tab is shown
+- WHEN the Rework section is shown
 - THEN the figures read "40%", 1 reopen and 1 bug found later
 
 #### Scenario: open an epic
@@ -1466,14 +1466,14 @@ The tab SHALL show no tokens, review cycles, rejections, findings or waivers.
 
 #### Scenario: nothing closed
 - GIVEN a report with no selected closed bead
-- WHEN the Quality tab is shown
-- THEN the rework rate reads "—" and each table says "No data in this period"
+- WHEN the Rework section is shown
+- THEN the rework rate reads "—" and each table says "No data in this scope"
 
 ### REQ-UI-093: Report states
-The Reports page SHALL show a loading state while the report loads, SHALL show "No data in this period" in a section that has no rows instead of an empty chart, IF the report request fails, THEN SHALL show the error with a Retry button, and SHALL NOT show a late answer for filters that are no longer selected.
+The Reports page SHALL show a loading state while a section's report loads, SHALL show "No data in this scope" in a section that has no rows instead of an empty chart, IF a report request fails, THEN SHALL show the error with a Retry button, and SHALL NOT show a late answer for a scope that is no longer selected.
 
 #### Scenario: late answer
-- GIVEN the report for 30 days is loading and the user picks 7 days
+- GIVEN the report for 30 days is loading and the user picks "Last 7 days"
 - WHEN the answer for 30 days arrives
 - THEN the page does not show it
 
@@ -1521,53 +1521,51 @@ From 1024px the frontend SHALL show, at the top of the "Main" navigation's sideb
 - THEN no collapse control is shown and the theme control is under the brand mark, above the links
 
 ### REQ-UI-095: Report tabs
-WHILE the report sections are not listed in the sidebar (REQ-UI-129), the Reports page SHALL show the tabs Team, Delivery, Velocity and Quality, in that order, as a WAI-ARIA tab list in which Left and Right move between tabs. Under each tab name it SHALL show a headline:
-- Team, from the team report of the selected milestone:
-  - "Finished on time", or "Finished <n> d late" with a warning icon, for a closed milestone;
-  - "Starts <start>" before its start;
-  - "<closed> of <scope> done, late" with a warning icon when the milestone is late (REQ-MILESTONE-UI-023);
-  - otherwise "<closed> of <scope> done, on pace", or ", behind pace" with a warning icon when `pace_needed` is above `pace`;
-  - "No milestones" when the project has none.
+The Reports page SHALL have the sections Status, Team, Delivery, Velocity and Rework, in that order, each at its own path: `/reports/status`, `/reports/team`, `/reports/delivery`, `/reports/velocity` and `/reports/rework`. WHILE the sections are not listed in the sidebar (REQ-UI-129), the page SHALL show them as a row of links labelled "Report sections", the current one marked `aria-current="page"`, each link going to its path with the same query. Under each section name it SHALL show a headline:
+- Status: the verdict of REQ-REPORTS-027, with a warning icon for "At risk", "Late" and "Finished <n> d late"; no headline for a period.
+- Team, from the team report:
+  - for a milestone: "Finished on time", or "Finished <n> d late" with a warning icon, for a closed milestone; "Starts <start>" before its start; "<closed> of <scope> done, late" with a warning icon when the milestone is late (REQ-MILESTONE-UI-023); otherwise "<closed> of <scope> done, on pace", or ", behind pace" with a warning icon when `pace_needed` is above `pace`;
+  - for a period: "<n> members", counting `members` without `Unassigned`.
 - Delivery: "<closed> beads closed", where `<closed>` is `totals.closed`.
 - Velocity: "<x> days per point" from the selected project's `days_per_point` (REQ-REPORTS-018), with "assumed" when it is assumed, once the Milestones list has loaded; no headline when `days_per_point` is `null`.
-- Quality: "<rate> rework", with "—" in place of `<rate>` when `totals.rework_rate` is absent.
+- Rework: "<rate> rework", with "—" in place of `<rate>` when `totals.rework_rate` is absent.
 
-The page SHALL request the team report and the Milestones list (REQ-MILESTONE-UI-008, for the forecast `finish` of REQ-MILESTONE-UI-023 and for the Velocity tab) whatever the tab, and SHALL request the Milestones list at most once per project and refresh. WHILE the Milestones list is loading or after it failed, the Team headline SHALL apply REQ-MILESTONE-UI-023 without the forecast. It SHALL show no headline for a tab while its report loads or after it failed to load. It SHALL keep the selected tab in the URL query `tab` (`team`, `delivery`, `velocity` or `quality`), SHALL select Team when `tab` is missing or holds another value, including the retired `usage` and `coverage`, and SHALL keep the project, period, sprint, milestone and member when the tab changes. WHILE the window is narrower than the tab list, the tab list SHALL scroll sideways instead of widening the page and SHALL fade its edge on each side that has hidden tabs.
-Source: `assets/2026-11-12/mockup/index.html`
+The page SHALL request the team report, the status report and the Milestones list (REQ-MILESTONE-UI-008, for the forecast `finish` of REQ-MILESTONE-UI-023 and for the Velocity section) whatever the section, and SHALL request the Milestones list at most once per project and refresh. WHILE the Milestones list is loading or after it failed, the Status and Team headlines SHALL apply REQ-MILESTONE-UI-023 without the forecast. It SHALL show no headline for a section while its report loads or after it failed to load. WHEN the path is `/reports`, the page SHALL go to `/reports/status`, and WHEN the URL has `tab`, to the section it names, `quality` naming Rework and any other value, the retired `usage` and `coverage` included, naming Status, in both cases dropping `tab`, keeping the rest of the query and adding no history entry. A path under `/reports/` naming no section SHALL show the page of REQ-UI-125. Changing the section SHALL keep the project, the scope, the member and the status. WHILE the window is narrower than the row of links, the row SHALL scroll sideways instead of widening the page and SHALL fade its edge on each side that has hidden links.
+Source: `assets/2026-11-12/mockup/index.html`, `../ui/assets/2026-11-22/index.html#reports`
 
 #### Scenario: shared link
-- GIVEN the URL `/reports?project=alpha&days=7&tab=quality`
+- GIVEN the URL `/reports/rework?project=alpha&days=7`
 - WHEN the page loads
-- THEN the Quality tab is selected and its panel shows the report for `alpha` and 7 days
+- THEN Rework is marked current and its panel shows the report for `alpha` and 7 days
 
-#### Scenario: unknown tab
-- GIVEN the URL `/reports?project=alpha&tab=nope`
+#### Scenario: old tab links
+- GIVEN the URLs `/reports?project=alpha&days=7&tab=quality`, `/reports?project=alpha&tab=coverage` and `/reports?project=alpha`
+- WHEN each page loads
+- THEN the URLs become `/reports/rework?project=alpha&days=7`, `/reports/status?project=alpha` and `/reports/status?project=alpha`, without a history entry
+
+#### Scenario: unknown section
+- GIVEN the URL `/reports/nope?project=alpha`
 - WHEN the page loads
-- THEN the Team tab is selected
+- THEN the page of REQ-UI-125 is shown
 
-#### Scenario: change tab
-- GIVEN the Reports page for `alpha`, 90 days and the Delivery tab
-- WHEN the user picks the Quality tab
-- THEN the URL becomes `/reports?project=alpha&days=90&tab=quality` without a reload and no new report is requested
+#### Scenario: change section
+- GIVEN the Reports page for `alpha`, 90 days and the Delivery section
+- WHEN the user opens Rework
+- THEN the URL becomes `/reports/rework?project=alpha&days=90` without a reload and no new report is requested
 
-#### Scenario: velocity tab
-- GIVEN the Reports page for `alpha` on the Delivery tab, whose milestones list has `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}`
-- WHEN the user picks the Velocity tab
-- THEN the URL has `tab=velocity`, `GET /api/milestones?project=alpha` has been requested once, and the Velocity headline reads "1.4 days per point"
+#### Scenario: velocity section
+- GIVEN the Reports page for `alpha` on the Delivery section, whose milestones list has `days_per_point: {value: 1.4, measured_epics: 6, assumed: false}`
+- WHEN the user opens Velocity
+- THEN the path is `/reports/velocity`, `GET /api/milestones?project=alpha` has been requested once, and the Velocity headline reads "1.4 days per point"
 
 #### Scenario: headlines
-- GIVEN a report with 41 closed beads and rework rate 0.09
-- WHEN the page is shown
-- THEN the headlines read "41 beads closed" and "9% rework", and no tab is named AI usage or Data coverage
-
-#### Scenario: retired tab in a link
-- GIVEN the URL `/reports?project=alpha&tab=coverage`
-- WHEN the page loads
-- THEN the Team tab is selected
+- GIVEN a report with 41 closed beads and rework rate 0.09, and a status report whose verdict is "At risk"
+- WHEN the page is shown for a milestone
+- THEN the headlines read "At risk" with a warning icon, "41 beads closed" and "9% rework", and no section is named Quality, AI usage or Data coverage
 
 #### Scenario: team headline
 - GIVEN the team report of an open milestone with 27 of 64 beads closed, `pace` 3.6 and `pace_needed` 3.4, whose forecast `finish` is before its `end`
-- WHEN the page is shown on the Delivery tab
+- WHEN the page is shown on the Delivery section
 - THEN the Team headline reads "27 of 64 done, on pace" without a warning icon
 
 #### Scenario: late milestone headline
@@ -1575,15 +1573,15 @@ Source: `assets/2026-11-12/mockup/index.html`
 - WHEN the page is shown
 - THEN the Team headline reads "27 of 64 done, late" with a warning icon
 
-#### Scenario: keyboard
-- GIVEN the Delivery tab is selected and has focus
-- WHEN the user presses Right
-- THEN the Velocity tab is selected and has focus
-
-#### Scenario: Hidden tabs are hinted
-- GIVEN the Reports page at a window 360px wide where Quality does not fit
+#### Scenario: period headlines
+- GIVEN `/reports/delivery?project=alpha&days=30` with a team report of members `ann`, `bao` and `Unassigned`
 - WHEN the page is shown
-- THEN the right edge of the tab list fades, and scrolling it to the end removes the right fade and shows a left one
+- THEN Status has no headline and Team reads "2 members"
+
+#### Scenario: Hidden links are hinted
+- GIVEN the Reports page at a window 360px wide where Rework does not fit
+- WHEN the page is shown
+- THEN the right edge of the row fades, and scrolling it to the end removes the right fade and shows a left one
 
 ### REQ-UI-096: Refresh
 The frontend SHALL show on every page a "Refresh data" control, in the top bar below 768px and with the theme control at the top of the navigation column from 768px, and WHEN the user activates it, SHALL send `POST /api/refresh` (REQ-BEADS-012) and then load the current page's data again without a full reload and without changing the URL, showing the control as busy and disabled until the request ends; IF the request fails, THEN the page SHALL still load its data again and show its own error.
@@ -2452,22 +2450,23 @@ Every page SHALL start with a link "Skip to content" that is the first element t
 - THEN the focus is on the main content and the navigation was skipped
 
 ### REQ-UI-129: Report sections in the sidebar
-WHILE a Reports page is shown in a window 1024px wide or more with the sidebar expanded, the Main navigation SHALL list the report sections of REQ-UI-095 under the Reports link, each as a link with the section name and its headline, SHALL mark the selected section with `aria-current="page"`, and each link SHALL go to the same URL with `tab` set to its section. WHILE the window is narrower or the sidebar is collapsed, the sidebar SHALL list no sections and the page SHALL show the tab list of REQ-UI-095. The section links SHALL NOT show on other pages.
+WHILE a Reports page is shown in a window 1024px wide or more with the sidebar expanded, the Main navigation SHALL list the report sections of REQ-UI-095 under the Reports link, each as a link with the section name and its headline, SHALL mark the selected section with `aria-current="page"`, and each link SHALL go to the path of its section with the same query. WHILE the window is narrower or the sidebar is collapsed, the sidebar SHALL list no sections and the page SHALL show the row of section links of REQ-UI-095. The Reports link SHALL be marked current on every path under `/reports`. The section links SHALL NOT show on other pages.
+Source: `../ui/assets/2026-11-22/index.html#reports`, `../ui/assets/2026-11-22/reports-light.png`
 
 #### Scenario: Sections in the sidebar
-- GIVEN a window 1440px wide, the sidebar expanded and `/reports?project=a&tab=delivery`
+- GIVEN a window 1440px wide, the sidebar expanded and `/reports/delivery?project=a&milestone=m2`
 - WHEN the page is shown
-- THEN the sidebar lists Team, Delivery, Velocity and Quality under Reports with their headlines, Delivery is marked current, and the page shows no tab list
+- THEN the sidebar lists Status, Team, Delivery, Velocity and Rework under Reports with their headlines, Delivery is marked current, and the page shows no row of section links
 
 #### Scenario: Change section
-- GIVEN the Reports page at `/reports?project=a&days=7&tab=delivery` with sections in the sidebar
-- WHEN the user clicks Quality in the sidebar
-- THEN the URL becomes `/reports?project=a&days=7&tab=quality` and the Quality panel is shown
+- GIVEN the Reports page at `/reports/delivery?project=a&days=7` with sections in the sidebar
+- WHEN the user clicks Rework in the sidebar
+- THEN the URL becomes `/reports/rework?project=a&days=7` and the Rework panel is shown
 
 #### Scenario: Narrow window
 - GIVEN a window 900px wide
 - WHEN the Reports page is shown
-- THEN the sidebar lists no sections and the page shows its tab list
+- THEN the sidebar lists no sections and the page shows its row of section links
 
 ### REQ-UI-130: Progress whatever the filters
 Wherever the frontend shows how many of a bead's children are done (the List row, REQ-UI-044; the Graph node, REQ-UI-049; the bead page, REQ-UI-028; the epic Progress card, REQ-UI-120; the Gantt row, REQ-MILESTONE-UI-013), it SHALL take the numbers from the bead's `child_counts` (REQ-BEADS-022), so that "Show closed" and the other filters SHALL NOT change them.
