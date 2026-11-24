@@ -8,6 +8,7 @@ A web-based dashboard and observability console for [gin-workflow](https://githu
 
 - **Native Beads Explorer**: Interactive Kanban board, hierarchical list, and visual dependency graph with a one-line filter bar: the milestone, status and assignee as removable chips, and priority, labels, type, kind, capability and sprint under More filters; from 1024px a click selects a bead and shows its details beside every view.
 - **Milestones**: Dated milestones per project with a Gantt of the working-day schedule, a dependency graph per milestone, and a read-only kick-start preview (needs a gin-workflow with the `milestone` command and Beads task tracking).
+- **Reports**: Five sections (`/reports/status`, `/reports/team`, `/reports/delivery`, `/reports/velocity`, `/reports/rework`) sharing one scope (a dated milestone or the last 7, 30, or 90 days), with a milestone Status brief and Team KPI v2.
 - **Cross-Platform**: First-class support for Linux, macOS, and native Windows (no WSL required).
 
 ---
@@ -344,6 +345,18 @@ Pulls run as the console's user:
 
 - The systemd user service has no SSH agent. A `git+ssh` remote needs an SSH key without a passphrase, and the remote's host in `~/.ssh/known_hosts`.
 - The Docker image has no SSH client or key, so pulls from SSH remotes fail there with ssh's message.
+
+---
+
+## Reports
+
+`/reports` opens `/reports/status` for the active (or latest) milestone. Five sections share a single scope picker in the header — either a dated milestone or a rolling period (**Last 7 days**, **Last 30 days**, or **Last 90 days**) — and keep that scope when you move between sections:
+
+- **Status** (`/reports/status`): Milestone status brief with a verdict and summary sentence, five headline figures (beads, points, pace, blocked, rework) with week-ago changes, a daily burn-up chart, post-kickoff scope changes (added/removed epics, new estimates, re-estimates, and bugs), **Risks** (longest-waiting blocked beads including blocked chains, plus unestimated epics), and the epic table with planned and forecast dates.
+- **Team** (`/reports/team`): Team KPI v2 with team and per-member delivery, **Points delivered** (shared across contributors by closed tracks), **Estimate accuracy** (planned vs. actual days per point), an unassigned-scope note whenever 20% or more of closed beads have no assignee, and an **Across milestones** trend table.
+- **Delivery** (`/reports/delivery`): Closed beads, weekly throughput, and cycle time for the chosen milestone or period.
+- **Velocity** (`/reports/velocity`): Story-point velocity and milestone completion forecast.
+- **Rework** (`/reports/rework`): Reopens (from `.beads/interactions.jsonl`) and `discovered-from` bugs. Legacy links such as `/reports?tab=quality&days=7` redirect to `/reports/rework?days=7`.
 
 ---
 

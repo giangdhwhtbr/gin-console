@@ -3,7 +3,7 @@
 
 The project gets a real Beads database (`bd init` + `bd import`) and a minimal
 gin-workflow config, so every page works on it: Beads, My Tasks, Milestones (Gantt,
-forecast), Reports (Team, Delivery, Velocity, Quality). Dates are relative
+forecast), Reports (Status, Team, Delivery, Velocity, Rework). Dates are relative
 to today, so the charts always show recent work. Running it again rebuilds the project.
 
     python3 scripts/make_example_project.py            # writes examples/example-project
@@ -183,7 +183,17 @@ def build(today: date, seed: int = 7) -> list[Row]:
     def p_id(suffix: str) -> str:
         return f"{PREFIX}-{suffix}"
 
-    # Milestones: one closed late, one active, one planned.
+    # Milestones: three closed (for Across milestones trend), one active, one planned.
+    m0a_start, m0a_end = (
+        workday(today - timedelta(days=95)),
+        workday(today - timedelta(days=74), back=True),
+    )
+    m0a_closed = workday(m0a_end - timedelta(days=1), back=True)
+    m0b_start, m0b_end = (
+        workday(today - timedelta(days=70)),
+        workday(today - timedelta(days=49), back=True),
+    )
+    m0b_closed = workday(m0b_end, back=True)
     m1_start, m1_end = (
         workday(today - timedelta(days=45)),
         workday(today - timedelta(days=24), back=True),
@@ -199,6 +209,40 @@ def build(today: date, seed: int = 7) -> list[Row]:
     m3_start, m3_end = (
         workday(today + timedelta(days=14)),
         workday(today + timedelta(days=35), back=True),
+    )
+    p.add(
+        p_id("m0a"),
+        "Foundation & auth",
+        "milestone",
+        m0a_start - timedelta(days=7),
+        status="closed",
+        metadata={
+            "start": m0a_start.isoformat(),
+            "end": m0a_end.isoformat(),
+            "kickoff": m0a_start.isoformat(),
+            "committed_points": 8,
+            "planned_days_per_point": 2.0,
+        },
+        closed_at=stamp(m0a_closed, 17),
+        updated_at=stamp(m0a_closed, 17),
+        close_reason="Finished on time",
+    )
+    p.add(
+        p_id("m0b"),
+        "Catalogue & search",
+        "milestone",
+        m0b_start - timedelta(days=7),
+        status="closed",
+        metadata={
+            "start": m0b_start.isoformat(),
+            "end": m0b_end.isoformat(),
+            "kickoff": m0b_start.isoformat(),
+            "committed_points": 11,
+            "planned_days_per_point": 2.0,
+        },
+        closed_at=stamp(m0b_closed, 17),
+        updated_at=stamp(m0b_closed, 17),
+        close_reason="Finished on time",
     )
     p.add(
         p_id("m1"),
@@ -248,6 +292,67 @@ def build(today: date, seed: int = 7) -> list[Row]:
             **extra,
         )
 
+    # m0a & m0b: earlier closed milestones with pointed closed epics for Across milestones trend.
+    e01_end = workday(m0a_start + timedelta(days=11), back=True)
+    e03_end = workday(m0b_start + timedelta(days=13), back=True)
+    for m_id, m_start, sprint, specs in (
+        (
+            "m0a",
+            m0a_start,
+            "sprint:s11",
+            (
+                ("e01", "User auth", 5, m0a_start, e01_end, "ann", 4),
+                (
+                    "e02",
+                    "Session store",
+                    3,
+                    workday(e01_end + timedelta(days=1)),
+                    m0a_closed,
+                    "bao",
+                    3,
+                ),
+            ),
+        ),
+        (
+            "m0b",
+            m0b_start,
+            "sprint:s12",
+            (
+                ("e03", "Product catalogue", 8, m0b_start, e03_end, "chi", 5),
+                (
+                    "e04",
+                    "Quick search",
+                    3,
+                    workday(e03_end + timedelta(days=1)),
+                    m0b_closed,
+                    "dung",
+                    3,
+                ),
+            ),
+        ),
+    ):
+        for ident, title, pts, e_start, e_end, owner, n_tasks in specs:
+            e = epic(
+                ident,
+                title,
+                m_id,
+                m_start - timedelta(days=5),
+                status="closed",
+                priority=1,
+                labels=["roadmap", sprint],
+                metadata=points_meta(
+                    pts,
+                    f"{pts} points: scored at planning",
+                    m_start - timedelta(days=4),
+                ),
+                assignee=owner,
+                started_at=stamp(e_start),
+                closed_at=stamp(e_end, 16),
+                updated_at=stamp(e_end, 16),
+            )
+            for title_ in p.rng.sample(TITLES, n_tasks):
+                p.task(e["id"], title_, "closed", start=e_start, end=e_end)
+
     # m1: closed milestone, everything done (some closed after its end date).
     # e1 runs first and e2 after it, so each closed epic measures its own days per point.
     e1_end = workday(m1_start + timedelta(days=13), back=True)
@@ -277,6 +382,7 @@ def build(today: date, seed: int = 7) -> list[Row]:
             p.task(e["id"], title_, "closed", start=e_start, end=e_end)
 
     # m2: active milestone with every kind of epic.
+    reest_day = min(workday(m2_start + timedelta(days=3)), today)
     e3 = epic(
         "e3",
         "Payment page",
@@ -285,11 +391,29 @@ def build(today: date, seed: int = 7) -> list[Row]:
         status="in_progress",
         priority=1,
         labels=["roadmap", "sprint:s15"],
-        metadata=points_meta(
-            8,
-            "Two forms, card validation and a 3-D Secure redirect",
-            m2_start - timedelta(days=3),
-        ),
+        metadata={
+            "points": 8,
+            "points_reason": "Two forms, card validation and a 3-D Secure redirect",
+            # Stored as JSON text, as `bd` stores it, with a re-estimate after kickoff.
+            "points_history": json.dumps(
+                [
+                    {
+                        "from": None,
+                        "to": 5,
+                        "stage": "roadmap",
+                        "at": stamp(m2_start - timedelta(days=3), 11),
+                        "actor": "lead",
+                    },
+                    {
+                        "from": 5,
+                        "to": 8,
+                        "stage": "plan",
+                        "at": stamp(reest_day, 14),
+                        "actor": "bao",
+                    },
+                ]
+            ),
+        },
         assignee="bao",
         started_at=stamp(m2_start),
         description=(
@@ -321,6 +445,17 @@ def build(today: date, seed: int = 7) -> list[Row]:
         assignee="chi",
     )
     bug["dependencies"].append(p.dep(bug["id"], tasks3[0]["id"], "discovered-from", m2_start))
+    # Bug created after kickoff under a track (appears in Status changes as bug_added).
+    bug_day = min(workday(m2_start + timedelta(days=5)), today)
+    p.add(
+        p.child_id(tasks3[0]["id"]),
+        "Bug: 3-D Secure callback drops coupon code",
+        "bug",
+        bug_day,
+        parent=tasks3[0]["id"],
+        priority=1,
+        assignee="bao",
+    )
     tasks3[1]["comments"] = [
         {
             "id": "ex-c1",
@@ -439,6 +574,86 @@ def build(today: date, seed: int = 7) -> list[Row]:
         end=today,
         labels=["prep", "prep:spike"],
         assignee="bao",
+    )
+
+    # Status report extras in ex-m2:
+    # 1) Epic created without points and estimated after kickoff (changes: estimated).
+    est_day = min(workday(m2_start + timedelta(days=4)), today)
+    epic(
+        "e19",
+        "Promo codes",
+        "m2",
+        m2_start - timedelta(days=2),
+        assignee="chi",
+        labels=["roadmap"],
+        metadata={
+            "points": 3,
+            "points_reason": "Discount rules and redemption cap",
+            "points_history": [
+                {
+                    "from": None,
+                    "to": 3,
+                    "stage": "plan",
+                    "at": stamp(est_day, 10),
+                    "actor": "chi",
+                }
+            ],
+        },
+    )
+    # 2) Closed pointed epic with 4 unassigned closed tracks (>= 20% of closed scope unassigned,
+    #    and gives ex-m2 real Points delivered + Estimate accuracy).
+    e20_done = min(workday(m2_start + timedelta(days=5)), today)
+    e20 = epic(
+        "e20",
+        "Cart summary",
+        "m2",
+        m2_start - timedelta(days=4),
+        status="closed",
+        assignee="ann",
+        labels=["roadmap", "sprint:s15"],
+        started_at=stamp(m2_start),
+        closed_at=stamp(e20_done, 16),
+        updated_at=stamp(e20_done, 16),
+        metadata=points_meta(3, "Totals and tax line", m2_start - timedelta(days=3)),
+    )
+    for title_ in (
+        "Subtotal rounding",
+        "Tax line item",
+        "Shipping estimate row",
+        "Empty cart summary state",
+    ):
+        p.task(e20["id"], title_, "closed", start=m2_start, end=e20_done, assignee=None)
+    # 3) Blocked chain: chain_tail waits on chain_mid which is itself blocked by chain_root.
+    chain_dep_day = m2_start - timedelta(days=2)
+    chain_root = p.task(
+        e3["id"],
+        "Approve merchant gateway credentials",
+        "open",
+        start=m2_start,
+        end=today,
+        assignee="ann",
+    )
+    chain_mid = p.task(
+        e3["id"],
+        "Configure live payment webhook",
+        "blocked",
+        start=m2_start,
+        end=today,
+        assignee="bao",
+    )
+    chain_mid.setdefault("dependencies", []).append(
+        p.dep(chain_mid["id"], chain_root["id"], "blocks", chain_dep_day)
+    )
+    chain_tail = p.task(
+        e3["id"],
+        "Run live checkout smoke test",
+        "blocked",
+        start=m2_start,
+        end=today,
+        assignee="chi",
+    )
+    chain_tail.setdefault("dependencies", []).append(
+        p.dep(chain_tail["id"], chain_mid["id"], "blocks", chain_dep_day)
     )
 
     # m3: planned milestone, work not started.
@@ -932,7 +1147,7 @@ def check(out: Path, rows: list[Row]) -> list[str]:
                     f"{row['id']}.{key}: wrote {row.get(key)!r}, exported {got.get(key)!r}"
                 )
     kinds = Counter(r["issue_type"] for r in exported)
-    if kinds["milestone"] != 4 or kinds["epic"] < 9:
+    if kinds["milestone"] != 6 or kinds["epic"] < 9:
         problems.append(f"unexpected bead kinds: {dict(kinds)}")
     if not any("prep" in (r.get("labels") or []) for r in exported):
         problems.append("no prep task")
@@ -970,7 +1185,7 @@ def check(out: Path, rows: list[Row]) -> list[str]:
             problems.append(f"gin milestone list failed: {listed.stderr.strip()[-300:]}")
         else:
             statuses = sorted(m["status"] for m in json.loads(listed.stdout)["milestones"])
-            if statuses != ["active", "closed", "planned", "planned"]:
+            if statuses != ["active", "closed", "closed", "closed", "planned", "planned"]:
                 problems.append(f"gin milestone list statuses: {statuses}")
     return problems
 
