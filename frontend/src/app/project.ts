@@ -67,7 +67,7 @@ function withQuery(path: string, params: URLSearchParams): string {
   return query === "" ? path : `${path}?${query}`;
 }
 
-export function projectHref(path: "/beads" | "/milestones" | "/my-tasks" | "/reports", project: string): string {
+export function projectHref(path: "/beads" | "/milestones" | "/my-tasks" | "/reports" | "/reports/status", project: string): string {
   return project === "" ? path : withQuery(path, new URLSearchParams({ project }));
 }
 

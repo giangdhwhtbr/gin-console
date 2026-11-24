@@ -93,10 +93,12 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
     case "cycle":
       return <TableCell className="text-right">{formatDays(bead.cycle_days)}</TableCell>;
     case "on_time": {
+      // no end date to be late against: a bead of a period has no `late_days`
       const late = bead.late_days !== null && bead.late_days > 0;
+      const text = bead.late_days === null ? "—" : late ? `${bead.late_days} d late` : "On time";
       return (
         <TableCell>
-          <span className={cn("text-sm", late ? WARN : "text-muted-foreground")}>{late ? `${bead.late_days} d late` : "On time"}</span>
+          <span className={cn("text-sm", late ? WARN : "text-muted-foreground")}>{text}</span>
         </TableCell>
       );
     }
@@ -107,7 +109,7 @@ function Cell({ column, bead, project, today }: { column: Column; bead: TeamBead
 
 type Sort = { status: BeadStatus; column: Column; dir: Dir };
 
-/** The scope beads of the milestone (already limited to the member), by status, sortable, 15 rows at a time. */
+/** The scope beads of the milestone or the period (already limited to the member), by status, sortable, 15 rows at a time. */
 export function BeadTable({
   project,
   beads,
@@ -115,6 +117,7 @@ export function BeadTable({
   status,
   onStatus,
   today,
+  scope = "milestone",
 }: {
   project: string;
   beads: TeamBead[];
@@ -122,6 +125,7 @@ export function BeadTable({
   status: BeadStatus;
   onStatus: (s: BeadStatus) => void;
   today: string;
+  scope?: "milestone" | "period";
 }) {
   const [picked, setPicked] = useState<Sort | null>(null);
   const [more, setMore] = useState<{ key: string; shown: number }>({ key: "", shown: PAGE });
@@ -139,7 +143,7 @@ export function BeadTable({
   const columns = COLUMNS[status];
   const press = (column: Column) =>
     setPicked({ status, column, dir: sort.column === column ? (sort.dir === 1 ? -1 : 1) : 1 });
-  const empty = `No ${status === "all" ? "" : `${STATUS_NAME[status]} `}beads in this milestone${member === "" ? "" : ` for ${member}`}`;
+  const empty = `No ${status === "all" ? "" : `${STATUS_NAME[status]} `}beads in this ${scope === "period" ? "scope" : "milestone"}${member === "" ? "" : ` for ${member}`}`;
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-2">

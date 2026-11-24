@@ -64,8 +64,17 @@ function isReport(value: unknown): value is Report {
   );
 }
 
+/** A refused report request, with its HTTP status (422 is a bad scope). */
+export class ReportRequestError extends Error {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 /** The `error` of the answer; a 404 without one is an unknown project. */
-export async function failure(response: Response): Promise<Error> {
+export async function failure(response: Response): Promise<ReportRequestError> {
   let detail = response.status === 404 ? "Project not found" : `HTTP ${response.status}`;
   try {
     const body: unknown = await response.json();
@@ -74,7 +83,7 @@ export async function failure(response: Response): Promise<Error> {
   } catch {
     // keep the HTTP status
   }
-  return new Error(detail);
+  return new ReportRequestError(detail, response.status);
 }
 
 export async function fetchReport(project: string, scope: Exclude<Scope, { kind: "default" }>): Promise<Report> {

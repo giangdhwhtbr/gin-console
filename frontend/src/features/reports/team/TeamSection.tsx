@@ -80,6 +80,7 @@ export function TeamSection({
             status={filters.status || (milestone === null || milestone.status === "closed" ? "closed" : "open")}
             onStatus={(status) => onChange({ ...filters, status })}
             today={report.today}
+            scope={milestone === null ? "period" : "milestone"}
           />
         </div>
       )}

@@ -99,7 +99,15 @@ describe("TeamSection", () => {
     expect(screen.getByRole("tab", { name: /^Closed/ })).toHaveAttribute("aria-selected", "true");
   });
 
-  const period = (over: Partial<TeamReport> = {}) => teamReport({ milestone: null, period_days: 30, team: { ...teamTotals, working_days: null, elapsed: null, days_left: null, pace_needed: null, on_time: null }, ...over });
+  // a period has no end date, so no bead has `late_days`
+  const period = (over: Partial<TeamReport> = {}) =>
+    teamReport({
+      milestone: null,
+      period_days: 30,
+      team: { ...teamTotals, working_days: null, elapsed: null, days_left: null, pace_needed: null, on_time: null },
+      beads: teamReport().beads.map((b) => ({ ...b, late_days: null })),
+      ...over,
+    });
 
   it("REQ-REPORTS-012 period: the scope line names the days, and no Open Gantt link", () => {
     show(period(), { scope: { kind: "period", days: 30 } });
@@ -107,6 +115,20 @@ describe("TeamSection", () => {
     expect(screen.queryByRole("link", { name: "Open Gantt" })).toBeNull();
     expect(screen.getByRole("group", { name: "Key figures" })).toHaveTextContent("Throughput");
     expect(screen.getByRole("tab", { name: /^Closed/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("REQ-REPORTS-012 period: closed beads have no on-time verdict, and an empty list names the scope", () => {
+    show(period(), { scope: { kind: "period", days: 30 } });
+    const closedRow = screen.getAllByRole("row").find((r) => r.textContent?.includes("a-3"));
+    expect(closedRow).toBeDefined();
+    expect(closedRow).not.toHaveTextContent("On time");
+    expect(closedRow).toHaveTextContent("—");
+    cleanup();
+    show(period({ beads: [] }), { scope: { kind: "period", days: 30 } });
+    expect(screen.getByText("No closed beads in this scope")).toBeInTheDocument();
+    cleanup();
+    show(teamReport({ beads: [] }), { status: "closed" });
+    expect(screen.getByText("No closed beads in this milestone")).toBeInTheDocument();
   });
 
   it("REQ-REPORTS-017 no milestones: shows the last 30 days, not a milestone", () => {

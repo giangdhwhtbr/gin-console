@@ -599,6 +599,44 @@ describe("ReportsPage", () => {
     expect(teamCalls(mock)).toEqual(["/api/reports/team?project=beta", "/api/reports/team?project=beta&days=30"]);
   });
 
+  it("REQ-REPORTS-033 REQ-UI-093 a failed team report shows its error with Retry in the scope select's place, on Velocity too", async () => {
+    let calls = 0;
+    stub(undefined, (url) => (++calls === 1 ? json({ error: "team down" }, 502) : json(teamFor(url))));
+    open("/reports/velocity?project=alpha");
+    expect(await screen.findByText("team down")).toBeInTheDocument();
+    expect(screen.getByText("The team report could not be loaded")).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Report scope" })).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await scopeSelect()).toHaveDisplayValue("Milestone two");
+    await waitFor(() => expect(at()).toBe("/reports/velocity?project=alpha&milestone=m2"));
+    expect(screen.queryByText("team down")).toBeNull();
+  });
+
+  it("REQ-REPORTS-033 an unlisted milestone: the report is asked for only once the team report confirms a milestone", async () => {
+    const mock = stub(
+      (url) => (url.searchParams.get("milestone") === "zzz" ? json({ error: "unknown milestone" }, 404) : json(report())),
+      () => json(teamFixture({ milestone: "m2" })),
+    );
+    open("/reports/delivery?project=alpha&milestone=zzz");
+    await waitFor(() => expect(at()).toBe("/reports/delivery?project=alpha&milestone=m2"));
+    await screen.findByText("Beads closed");
+    expect(reportCalls(mock)).toEqual(["/api/reports?project=alpha&milestone=m2"]);
+    expect(screen.queryByText("unknown milestone")).toBeNull();
+  });
+
+  it("REQ-REPORTS-033 a milestone the team report refuses (422) is dropped for the default scope", async () => {
+    const mock = stub(undefined, (url) =>
+      url.searchParams.get("milestone") === "a b" ? json({ error: "milestone may hold only letters" }, 422) : json(teamFor(url)),
+    );
+    const before = window.history.length;
+    open("/reports/delivery?project=alpha&milestone=a+b");
+    await waitFor(() => expect(at()).toBe("/reports/delivery?project=alpha&milestone=m2"));
+    expect(window.history.length).toBe(before);
+    await screen.findByText("Beads closed");
+    expect(screen.queryByText(/milestone may hold only letters/)).toBeNull();
+    expect(reportCalls(mock)).toEqual(["/api/reports?project=alpha&milestone=m2"]);
+  });
+
   it("REQ-UI-095 Hidden links are hinted", async () => {
     const size = (el: HTMLElement, values: Record<string, number>) =>
       Object.entries(values).forEach(([key, value]) => Object.defineProperty(el, key, { configurable: true, writable: true, value }));

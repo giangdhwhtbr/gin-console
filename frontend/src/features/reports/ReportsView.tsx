@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { fetchMilestones, MilestonesError, type MilestoneList } from "@/features/milestones/api";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { formatDateTime } from "@/lib/dates";
-import { fetchReport, type Report } from "./api";
+import { fetchReport, ReportRequestError, type Report } from "./api";
 import { parseReportSearch, reportSearch, type Period, type ReportFilters, type Scope } from "./filters";
 import { DeliverySection } from "./DeliverySection";
 import { Figures } from "./Figures";
@@ -32,7 +32,8 @@ type Projects =
 
 type Settled = { status: "error"; message: string } | { status: "ok"; report: Report };
 type Loaded = { status: "loading" } | Settled;
-type SettledTeam = { status: "error"; message: string } | { status: "ok"; report: TeamReport };
+/** `refused`: the server answered 422, the scope in the URL is not one it takes. */
+type SettledTeam = { status: "error"; message: string; refused: boolean } | { status: "ok"; report: TeamReport };
 type LoadedTeam = { status: "loading" } | SettledTeam;
 type TeamAnswer = { base: string; requested: Scope; value: SettledTeam };
 
@@ -108,7 +109,8 @@ export function ReportsView({ section }: { section: ReportSection }) {
         setKnown({ project: selected, milestones: report.milestones });
       },
       (error: unknown) => {
-        if (live) setSettledTeam({ base: teamBase, requested, value: { status: "error", message: messageOf(error) } });
+        const refused = error instanceof ReportRequestError && error.status === 422;
+        if (live) setSettledTeam({ base: teamBase, requested, value: { status: "error", message: messageOf(error), refused } });
       },
     );
     return () => {
@@ -146,8 +148,10 @@ export function ReportsView({ section }: { section: ReportSection }) {
   const finish = list?.milestones.find((m) => m.id === chosen?.id)?.finish ?? null;
 
   // the URL names the project and the scope (REQ-UI-088, REQ-REPORTS-033): the current project for a missing or retired one,
-  // the team report's milestone, or 30 days without milestones, and on the Team section no member outside the scope
+  // the team report's milestone, or 30 days without milestones, and on the Team section no member outside the scope;
+  // a milestone the server refuses gives way to the default scope
   let fixed: ReportFilters = { ...filters, project: selected };
+  if (team.status === "error" && team.refused && scope.kind === "milestone") fixed = { ...fixed, scope: { kind: "default" } };
   if (teamReport !== null) {
     if (scope.kind === "default" || (scope.kind === "milestone" && teamReport.milestone !== scope.id)) {
       fixed = { ...fixed, scope: teamReport.milestone !== null ? { kind: "milestone", id: teamReport.milestone } : { kind: "period", days: 30 } };
@@ -159,10 +163,11 @@ export function ReportsView({ section }: { section: ReportSection }) {
     if (fix !== null) navigate(fix, { replace: true });
   }, [fix]);
 
-  // Delivery and Rework ask for the report of the scope once the URL names one
+  // Delivery and Rework ask for the report of the scope once the URL names one, and a milestone once the team report has it
+  const confirmed = scopeDays !== null || (scopeId !== null && teamReport?.milestone === scopeId);
   useEffect(() => {
     const requested = scopeOf(scopeId, scopeDays);
-    if (selected === "" || requested.kind === "default") return;
+    if (selected === "" || requested.kind === "default" || !confirmed) return;
     let live = true;
     fetchReport(selected, requested).then(
       (report) => {
@@ -175,7 +180,7 @@ export function ReportsView({ section }: { section: ReportSection }) {
     return () => {
       live = false;
     };
-  }, [selected, scopeId, scopeDays, key]);
+  }, [selected, scopeId, scopeDays, key, confirmed]);
 
   const headlineFor = (value: ReportSection): Headline | null => {
     switch (value) {
@@ -204,10 +209,8 @@ export function ReportsView({ section }: { section: ReportSection }) {
   // a new scope is a new place in the history, and its member and bead status start over (REQ-REPORTS-033)
   const pick = (next: Exclude<Scope, { kind: "default" }>) => navigate(sectionPath(section, reportSearch({ project: selected, scope: next, member: "", status: "" })));
 
-  const teamState = (
-    <>
-      {team.status === "loading" && <p className="text-muted-foreground">Loading team…</p>}
-      {team.status === "error" && (
+  // REQ-REPORTS-033, REQ-UI-093: every section needs the team report for its scope select, so its failure shows in the select's place
+  const teamError = team.status === "error" && (
         <Alert variant="destructive">
           <AlertTitle>The team report could not be loaded</AlertTitle>
           <AlertDescription>{team.message}</AlertDescription>
@@ -215,12 +218,10 @@ export function ReportsView({ section }: { section: ReportSection }) {
             Retry
           </Button>
         </Alert>
-      )}
-    </>
   );
   const reportBody = (body: (report: Report) => ReactNode) =>
-    scope.kind === "default" ? (
-      teamState
+    !confirmed ? (
+      team.status === "loading" && <p className="text-muted-foreground">Loading report…</p>
     ) : (
       <>
         {loaded.status === "loading" && <p className="text-muted-foreground">Loading report…</p>}
@@ -269,12 +270,12 @@ export function ReportsView({ section }: { section: ReportSection }) {
             </TabStrip>
           </div>
           <section aria-label={SECTION_LABELS[section]} className="flex min-w-0 flex-col gap-6">
-            {milestones !== null && <ScopeSelect milestones={milestones} scope={scope} onChange={pick} />}
+            {teamError || (milestones !== null && <ScopeSelect milestones={milestones} scope={scope} onChange={pick} />)}
             {section === "status" ? (
               <h2 className="font-semibold">Status</h2>
             ) : section === "team" ? (
               <>
-                {teamState}
+                {team.status === "loading" && <p className="text-muted-foreground">Loading team…</p>}
                 {teamReport !== null && <TeamSection project={selected} report={teamReport} filters={filters} finish={finish} onChange={change} />}
               </>
             ) : section === "velocity" ? (

@@ -184,6 +184,7 @@ describe("projectHref", () => {
     const p = await load();
     expect(p.projectHref("/beads", "")).toBe("/beads");
     expect(p.projectHref("/reports", "my app")).toBe("/reports?project=my+app");
+    expect(p.projectHref("/reports/status", "my app")).toBe("/reports/status?project=my+app");
     expect(p.projectHref("/my-tasks", "alpha")).toBe("/my-tasks?project=alpha");
     expect(p.projectHref("/my-tasks", "")).toBe("/my-tasks");
   });

@@ -55,7 +55,7 @@ describe("Layout", () => {
         ["Beads", "/beads?project=alpha"],
         ["My Tasks", "/my-tasks?project=alpha"],
         ["Milestones", "/milestones?project=alpha"],
-        ["Reports", "/reports?project=alpha"],
+        ["Reports", "/reports/status?project=alpha"],
       ]);
     },
   );
@@ -64,7 +64,7 @@ describe("Layout", () => {
     open("/beads?project=beta");
     await screen.findByRole("button", { name: "Project: beta" });
     const hrefs = within(nav()).getAllByRole("link").map((link) => link.getAttribute("href"));
-    expect(hrefs).toEqual(["/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/reports?project=beta"]);
+    expect(hrefs).toEqual(["/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/reports/status?project=beta"]);
   });
 
   it("REQ-UI-124 the links follow the favorite when the URL names no project", async () => {

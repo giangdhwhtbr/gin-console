@@ -65,7 +65,7 @@ export function teamReport(overrides: Partial<TeamReport> = {}): TeamReport {
     beads: [
       bead({ id: "a-1", status: "open", bucket: "open", assignee: null }),
       bead({ id: "a-2", status: "in_progress", bucket: "in_progress", started_at: "2026-11-08T09:00:00Z", age_days: 4 }),
-      bead({ id: "a-3", status: "closed", bucket: "closed", started_at: "2026-11-09T09:00:00Z", closed_at: "2026-11-10T09:00:00Z", cycle_days: 1 }),
+      bead({ id: "a-3", status: "closed", bucket: "closed", started_at: "2026-11-09T09:00:00Z", closed_at: "2026-11-10T09:00:00Z", cycle_days: 1, late_days: 0 }),
       bead({ id: "a-4", status: "blocked", bucket: "open" }),
     ],
     ...overrides,
