@@ -16,6 +16,7 @@ import { fetchMilestone, milestonePath, milestonesPath, type MilestoneDetail } f
 import { awayLine, plural } from "./format";
 import { dayOf, isoOf, zoomOf } from "./gantt";
 import { GanttTab } from "./GanttTab";
+import { ExportWbsMenu } from "./ExportWbsMenu";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneVelocity } from "./MilestoneVelocity";
 import { MilestoneStatus } from "./MilestoneStatus";
@@ -120,7 +121,7 @@ function Milestone({ project, id }: { project: string; id: string }) {
   );
 }
 
-export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDetail }) {
+export function MilestoneHeader({ project, plan }: { project: string; plan: MilestoneDetail }) {
   const [more, setMore] = useState(false);
   const date = (iso: string) => formatDate(iso, plan.today);
   const late = plan.overflow_days > 0;
@@ -136,6 +137,7 @@ export function MilestoneHeader({ plan }: { project: string; plan: MilestoneDeta
         <span className="flex items-center gap-3">
           <span className="font-mono text-sm text-muted-foreground">{plan.id}</span>
           <Legend verdicts />
+          <ExportWbsMenu project={project} milestone={plan.id} />
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">

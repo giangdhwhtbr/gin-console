@@ -14,6 +14,7 @@ import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
+import { ExportWbsMenu } from "./ExportWbsMenu";
 import { ForecastCard } from "./ForecastCard";
 import { percent, plural } from "./format";
 import { lateOf } from "./late";
@@ -55,7 +56,10 @@ export function MilestonesPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">Milestones</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-2xl font-semibold">Milestones</h1>
+        {selected !== "" && <ExportWbsMenu project={selected} />}
+      </div>
       {projects.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}
       {projects.status === "error" && (
         <Alert variant="destructive">
