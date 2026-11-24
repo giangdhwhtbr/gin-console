@@ -187,6 +187,7 @@ Interfaces produced:
   - `list_milestones(beads, today) -> tuple[list[TeamMilestone], int]` and `default_milestone(milestones, today) -> TeamMilestone`, moved from `_milestones` and `_default`.
   - `select_milestone(milestones, wanted: str | None, today) -> TeamMilestone | None`: the listed `wanted`, else the default, and `None` when the list is empty.
   - `milestone_scope(tree, beads, milestone_id) -> list[tuple[ReportBead, ReportBead]]`, moved from `_scope`.
+  - `_Tree`, `_key` and `Key` move here from `service.py`, which imports them back, so `service.build_report` can use `milestone_scope` without an import cycle.
   - `period_scope(tree, beads, days, now) -> list[tuple[ReportBead, ReportBead]]`: the REQ-REPORTS-009 period rule. The nearest epic is `tree.epics_of(bead)[0]`, or the bead itself when it has no epic.
 - `gin_console.reports.router.parse_scope(milestone: str | None, days: str | None) -> Scope | None | JSONResponse`:
   - `None` means neither key was given.
@@ -197,7 +198,7 @@ Interfaces produced:
   - For a milestone, the closed beads are those of `milestone_scope`, and the weeks run from the first to the last close, as the sprint path did.
   - The router answers 404 `{"error": "unknown milestone"}` when `scope` names no listed milestone, and uses `PeriodScope(30)` when neither key was given.
 - `build_team(beads, *, now, project, scope: Scope | None) -> TeamReport`:
-  - `TeamReport.days: int | None`.
+  - `TeamReport.period_days: int | None` (the period; `days` stays the `DayRow` list of REQ-REPORTS-011).
   - For a period, `milestone` is `None`, `late_days` is `None`, and `on_time` is `None`. In `TeamTotals`, `working_days`, `elapsed`, `days_left` and `pace_needed` become `int | None` / `float | None`, set to `None` with `late_open` 0. `pace` stays `throughput ÷ 5`. `days` (the `DayRow` list) covers the working days of the period.
 - Cache keys become `(project, scope)` with `scope: Scope | None`. Frozen dataclasses hash.
 
@@ -338,7 +339,7 @@ Steps:
   - Modify `frontend/src/features/reports/filters.ts` (`Scope` in place of `days`, `sprint`, `tab` and `milestone`)
   - Modify `frontend/src/features/reports/ReportsPage.tsx` (section from the path; scope rules; the links row; no period buttons or sprint field)
   - Modify `frontend/src/features/reports/api.ts:19-87` (`Report.days`, `Report.milestone`; `fetchReport(project, scope)`)
-  - Modify `frontend/src/features/reports/teamApi.ts:51-89` (`TeamReport.days`; `fetchTeam(project, scope)`)
+  - Modify `frontend/src/features/reports/teamApi.ts:51-89` (`TeamReport.period_days`; `fetchTeam(project, scope)`)
   - Modify `frontend/src/features/reports/headlines.ts` (Rework; Team for a period)
   - Modify `frontend/src/features/reports/sectionStore.ts` (`SectionLink.section`)
   - Modify `frontend/src/features/reports/team/TeamSection.tsx`, `team/MilestoneLine.tsx` (no milestone select; period line)
@@ -383,7 +384,7 @@ Interfaces produced:
 - `sectionStore.SectionLink = { section: ReportSection; label: string; headline: string; warn: boolean; href: string }`.
 - `fetchReport(project: string, scope: Exclude<Scope, { kind: "default" }>): Promise<Report>` and `fetchTeam(project: string, scope: Scope): Promise<TeamReport>`.
 - `VelocityTab({ answer, onRetry, selected }: { …; selected: string | null })`: a marked column is outlined in the identity colour, and the marked table row has `aria-current="true"` and `bg-muted`.
-- `teamHeadline(report, finish)` returns `"<n> members"` when `report.days !== null`. `headlines(report)` returns `{ delivery, rework }`.
+- `teamHeadline(report, finish)` returns `"<n> members"` when `report.period_days !== null`. `headlines(report)` returns `{ delivery, rework }`.
 
 Steps:
 1. Write `sections.test.ts` and the `filters.test.ts` cases for every URL rule. Run `pnpm -C frontend test --run src/features/reports/sections.test.ts src/features/reports/filters.test.ts`; they fail.

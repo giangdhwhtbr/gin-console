@@ -542,7 +542,7 @@ WHEN a client requests `GET /api/reports/team` with `project` (a configured proj
 - `milestones`: each milestone bead (`issue_type` `milestone`) whose `metadata.start` and `metadata.end` are ISO dates, with `id`, `title`, `status`, `start`, `end` and `closed_on`;
 - `undated`: the number of milestone beads left out because they lack those dates;
 - `milestone`: the selected id, or `null` when `milestones` is empty or `days` is given;
-- `days`: the period, or `null`;
+- `period_days`: the period, or `null` (`days` stays the working-day rows of REQ-REPORTS-011);
 - for the selected milestone or the period, the sections of REQ-REPORTS-009 to REQ-REPORTS-011;
 - `trend` and `unassigned` (REQ-REPORTS-035).
 
@@ -581,7 +581,7 @@ Source: `assets/2026-11-12/mockup/index.html`
 #### Scenario: period
 - GIVEN the same project
 - WHEN a client requests `/api/reports/team?project=alpha&days=30`
-- THEN `milestone` is `null`, `days` is 30, `milestones` still holds `m1`, `m2` and `m3`, and the sections describe the last 30 days
+- THEN `milestone` is `null`, `period_days` is 30, `milestones` still holds `m1`, `m2` and `m3`, and the sections describe the last 30 days
 
 #### Scenario: undated milestone
 - GIVEN a milestone bead without `metadata.end`

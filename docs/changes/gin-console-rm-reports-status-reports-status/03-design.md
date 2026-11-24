@@ -34,7 +34,7 @@ The work stays inside the `reports` context (ADR 0001), plus one field in `miles
 - **Models:** `reports/models.py`:
   - adds `StatusReport`, `StatusPeriod`, `StatusKpis` (`beads`, `points`, `pace`, `blocked`, `rework`), `BurnupDay`, `ScopeChange`, `Changes`, `BlockedRisk`, `Risks`, `StatusEpic`, `TrendRow` and `Unassigned`;
   - in `Report`, replaces `sprint` with `milestone`;
-  - in `TeamReport`, adds `days`, `trend` and `unassigned`.
+  - in `TeamReport`, adds `period_days`, `trend` and `unassigned`; its `days` stays the working-day rows of REQ-REPORTS-011.
   
   `milestones/models.py` `Forecast` adds `epics: list[ForecastEpic] = []`, with `ForecastEpic` holding `id`, `milestone`, `planned_start`, `planned_end` and `estimate_source` (REQ-MILESTONE-UI-008).
 - **Routes and navigation (frontend):**
