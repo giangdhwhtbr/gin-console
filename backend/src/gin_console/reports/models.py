@@ -181,6 +181,8 @@ class TeamFigures(BaseModel):
     rework_rate: float | None
     reopens: int
     bugs: int
+    points_delivered: float
+    accuracy: float | None  # milestone only; None without planned days per point
 
 
 class MemberFigures(TeamFigures):
@@ -201,6 +203,23 @@ class DayRow(BaseModel):
     closed: dict[str, int]  # member -> beads closed that working day; zero counts left out
 
 
+class TrendRow(BaseModel):
+    id: str
+    title: str
+    start: date
+    end: date
+    closed: int
+    points_delivered: float
+    on_time: float | None
+    rework_rate: float | None
+    accuracy: float | None
+
+
+class Unassigned(BaseModel):
+    closed: int  # closed beads of the scope without an assignee
+    total: int  # closed beads of the scope
+
+
 class TeamReport(BaseModel):
     generated_at: datetime
     project: str
@@ -213,6 +232,8 @@ class TeamReport(BaseModel):
     members: list[MemberFigures]
     days: list[DayRow]
     beads: list[TeamBead]
+    trend: list[TrendRow]
+    unassigned: Unassigned
 
 
 class StatusPeriod(BaseModel):

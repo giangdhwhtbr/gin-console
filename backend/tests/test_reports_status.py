@@ -646,3 +646,10 @@ def test_reports_020_no_milestones() -> None:
     r = status([mk("t-1", blocked=True)], None)
     assert (r.milestone, r.days, r.period, r.burnup, r.epics) == (None, None, None, [], [])
     assert r.kpis.blocked.count == 0
+
+
+# REQ-REPORTS-024
+def test_reports_024_an_entry_without_before_and_after_is_no_item() -> None:
+    history = [{"from": None, "to": None, "at": "2026-11-17T08:00:00Z"}]
+    beads = [M2, mk("e-6", "epic", parent="m2", points_history=history)]
+    assert status(beads).changes.items == []

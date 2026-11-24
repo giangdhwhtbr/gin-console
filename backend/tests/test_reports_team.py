@@ -475,3 +475,85 @@ def test_reports_010_period() -> None:
     assert t.late_open == 0
     # REQ-REPORTS-011: the calendar covers the working days of the period up to today
     assert r.days[0].date == date(2026, 10, 13) and r.days[-1].date == date(2026, 11, 12)
+
+
+def trend_rows() -> list[Any]:
+    starts = [f"2026-{m:02d}-01" for m in range(1, 9)]  # m1..m8 started before NOW
+    rows = [ms(f"m{n}", s, s[:8] + "28") for n, s in enumerate(starts, 1)]
+    return [*rows, ms("m9", "2026-12-01", "2026-12-28")]
+
+
+# REQ-REPORTS-035
+def test_reports_035_last_six_milestones() -> None:
+    for scope in (None, MilestoneScope("m2"), PeriodScope(30)):
+        r = team(trend_rows(), scope)
+        assert [t.id for t in r.trend] == ["m3", "m4", "m5", "m6", "m7", "m8"]
+    first = team(trend_rows()).trend[0]
+    assert (first.title, first.start, first.end) == (
+        "Title of m3",
+        date(2026, 3, 1),
+        date(2026, 3, 28),
+    )
+    assert team([]).trend == []
+    assert [t.id for t in team([ms("a", "2026-12-01", "2026-12-28")]).trend] == []
+
+
+# REQ-REPORTS-035
+def test_reports_035_trend_figures() -> None:
+    rows = [
+        ms("m1", "2026-10-05", "2026-10-30", status="closed", closed_at=at("2026-10-31")),
+        ms("m2", "2026-11-02", "2026-11-27"),
+        row(
+            "e1",
+            issue_type="epic",
+            parent="m1",
+            status="closed",
+            closed_at=at("2026-10-29"),
+            started_at=at("2026-10-26"),
+            metadata={"points": 5},
+        ),
+        closed("a", at("2026-10-28"), parent="e1", assignee="ann"),
+        closed("b", at("2026-11-03"), parent="e1", assignee="ann"),  # late
+        row("e2", issue_type="epic", parent="m2"),
+        closed("c", at("2026-11-04"), parent="e2"),
+    ]
+    by_id = {t.id: t for t in team(rows, PeriodScope(7)).trend}
+    m1 = by_id["m1"]
+    assert (m1.closed, m1.on_time, m1.rework_rate, m1.points_delivered) == (2, 0.5, 0.0, 5)
+    assert by_id["m2"].closed == 1 and by_id["m2"].points_delivered == 0
+
+
+# REQ-REPORTS-035
+def test_reports_035_unassigned_count() -> None:
+    beads = [closed(f"a{n}", at("2026-11-05"), parent="e1", assignee="ann") for n in range(5)]
+    beads += [closed(f"u{n}", at("2026-11-05"), parent="e1") for n in range(2)]
+    beads += [row("o1", parent="e1"), row("o2", parent="e1", assignee="ann")]
+    r = team([*standard(), *scoped("m2", "e1", beads)])
+    assert (r.unassigned.closed, r.unassigned.total) == (2, 7)
+    assert team([]).unassigned.total == 0
+
+
+# REQ-REPORTS-010
+def test_reports_010_points_and_accuracy_on_every_row() -> None:
+    rows = [
+        ms("m2", "2026-11-02", "2026-11-27"),
+        row(
+            "e1",
+            issue_type="epic",
+            parent="m2",
+            status="closed",
+            closed_at=at("2026-11-05"),
+            started_at=at("2026-11-02"),
+            metadata={"points": 5},
+        ),
+        closed("a", at("2026-11-04"), parent="e1", assignee="ann"),
+        row("b", parent="e1", assignee="bao"),
+    ]
+    rows[0]["metadata"]["planned_days_per_point"] = 2
+    r = team(rows)
+    assert r.team is not None
+    assert (r.team.points_delivered, r.team.accuracy) == (5, 2.5)  # 2 / (4 days / 5 points)
+    assert {m.member: (m.points_delivered, m.accuracy) for m in r.members} == {
+        "ann": (5, 2.5),
+        "bao": (0.0, None),
+    }

@@ -240,7 +240,7 @@ def changes(
             if epic.id not in before:
                 items.append(_item(day, "epic_added", epic, points=points_on(epic, day)))
             for entry in epic.points_history:
-                if entry.day != day:
+                if entry.day != day or (entry.before is None and entry.after is None):
                     continue
                 if entry.before is None:
                     items.append(_item(day, "estimated", epic, after=entry.after))

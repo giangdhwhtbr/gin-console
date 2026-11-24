@@ -19,7 +19,10 @@ from gin_console.reports.models import (
     TeamMilestone,
     TeamReport,
     TeamTotals,
+    TrendRow,
+    Unassigned,
 )
+from gin_console.reports.points import accuracy, delivered, points_delivered
 from gin_console.reports.scope import (
     MilestoneScope,
     PeriodScope,
@@ -37,6 +40,8 @@ from gin_console.reports.service import DAY, UNASSIGNED, _rework, _span
 
 PACE_WINDOW = 5  # working days behind `throughput`
 
+TREND_LENGTH = 6  # milestones in the trend
+
 Reworks = dict[str, tuple[int, int]]  # bead id -> (reopens, bugs)
 
 
@@ -50,6 +55,8 @@ def _figures(
     last: set[date],
     closed_span: int | None,
     period: bool,
+    points: float = 0.0,
+    estimate_accuracy: float | None = None,
 ) -> TeamFigures:
     done = [r for r in rows if r.bucket == "closed"]
     active = [r for r in rows if r.bucket == "in_progress"]
@@ -81,6 +88,8 @@ def _figures(
         rework_rate=(round(sum(1 for r in done if r.rework > 0) / len(done), 4) if done else None),
         reopens=sum(reworks[r.id][0] for r in done),
         bugs=sum(reworks[r.id][1] for r in done),
+        points_delivered=points,
+        accuracy=estimate_accuracy,
     )
 
 
@@ -97,6 +106,8 @@ def _empty(now: datetime, project: str, today: date, undated: int, days: int | N
         members=[],
         days=[],
         beads=[],
+        trend=[],
+        unassigned=Unassigned(closed=0, total=0),
     )
 
 
@@ -165,11 +176,20 @@ def _window(today: date, milestone: TeamMilestone | None) -> tuple[set[date], in
 
 
 def team_totals(
-    rows: list[TeamBead], reworks: Reworks, *, today: date, milestone: TeamMilestone | None
+    rows: list[TeamBead],
+    reworks: Reworks,
+    *,
+    today: date,
+    milestone: TeamMilestone | None,
+    points: float = 0.0,
+    estimate_accuracy: float | None = None,
 ) -> TeamTotals:
-    """The team figures of REQ-REPORTS-010 over `rows`; `milestone` None is a period."""
+    """The team figures of REQ-REPORTS-010 over `rows`; `milestone` None is a period. The
+    points and accuracy (REQ-REPORTS-034) are the caller's; the Status report leaves them."""
     last, closed_span = _window(today, milestone)
-    totals = _figures(rows, reworks, last, closed_span, milestone is None)
+    totals = _figures(
+        rows, reworks, last, closed_span, milestone is None, points, estimate_accuracy
+    )
     waiting = totals.open + totals.in_progress
     pace = round(totals.throughput / PACE_WINDOW, 2)
     if milestone is None:
@@ -202,6 +222,50 @@ def team_totals(
     )
 
 
+def _planned(tree: Tree, project: str, milestone_id: str) -> float | None:
+    found = tree.index.get((project, milestone_id))
+    return found.planned_days_per_point if found else None
+
+
+def _trend(
+    beads: list[ReportBead],
+    tree: Tree,
+    milestones: list[TeamMilestone],
+    *,
+    now: datetime,
+    project: str,
+) -> list[TrendRow]:
+    """The last 6 milestones started by today, oldest first (REQ-REPORTS-035)."""
+    today = day_of(now)
+    rows: list[TrendRow] = []
+    for m in [m for m in milestones if m.start <= today][-TREND_LENGTH:]:
+        scope_rows, reworks = team_rows(milestone_scope(tree, beads, m.id), now, m)
+        epics = delivered(beads, MilestoneScope(m.id), now)
+        planned = _planned(tree, project, m.id)
+        totals = team_totals(
+            scope_rows,
+            reworks,
+            today=today,
+            milestone=m,
+            points=points_delivered(epics, tree, None),
+            estimate_accuracy=accuracy(epics, tree, planned, None),
+        )
+        rows.append(
+            TrendRow(
+                id=m.id,
+                title=m.title,
+                start=m.start,
+                end=m.end,
+                closed=totals.closed,
+                points_delivered=totals.points_delivered,
+                on_time=totals.on_time,
+                rework_rate=totals.rework_rate,
+                accuracy=totals.accuracy,
+            )
+        )
+    return rows
+
+
 def build_team(
     beads: list[ReportBead], *, now: datetime, project: str, scope: Scope | None
 ) -> TeamReport:
@@ -215,9 +279,13 @@ def build_team(
     tree = Tree(beads)
     if chosen is not None:
         pairs = milestone_scope(tree, beads, chosen.id)
+        planned = _planned(tree, project, chosen.id)
+        epics = delivered(beads, MilestoneScope(chosen.id), now)
     else:
         assert period is not None
         pairs = period_scope(tree, beads, period, now)
+        planned = None
+        epics = delivered(beads, PeriodScope(period), now)
     rows, reworks = team_rows(pairs, now, chosen)
     last, closed_span = _window(today, chosen)
     by_member: dict[str, list[TeamBead]] = defaultdict(list)
@@ -225,13 +293,29 @@ def build_team(
         by_member[_member(r)].append(r)
     members = [
         MemberFigures(
-            member=name, **_figures(mine, reworks, last, closed_span, chosen is None).model_dump()
+            member=name,
+            **_figures(
+                mine,
+                reworks,
+                last,
+                closed_span,
+                chosen is None,
+                points_delivered(epics, tree, name),
+                accuracy(epics, tree, planned, name),
+            ).model_dump(),
         )
         for name, mine in sorted(
             by_member.items(), key=lambda kv: (kv[0] == UNASSIGNED, -len(kv[1]), kv[0])
         )
     ]
-    team = team_totals(rows, reworks, today=today, milestone=chosen)
+    team = team_totals(
+        rows,
+        reworks,
+        today=today,
+        milestone=chosen,
+        points=points_delivered(epics, tree, None),
+        estimate_accuracy=accuracy(epics, tree, planned, None),
+    )
     if chosen is not None:
         first = chosen.start
         is_closed = chosen.status == "closed"
@@ -257,4 +341,9 @@ def build_team(
         members=members,
         days=[DayRow(date=d, closed=dict(per_day[d])) for d in calendar],
         beads=rows,
+        trend=_trend(beads, tree, milestones, now=now, project=project),
+        unassigned=Unassigned(
+            closed=sum(1 for r in rows if r.bucket == "closed" and _member(r) == UNASSIGNED),
+            total=sum(1 for r in rows if r.bucket == "closed"),
+        ),
     )
