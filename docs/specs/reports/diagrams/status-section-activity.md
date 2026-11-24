@@ -12,6 +12,7 @@ flowchart TD
     read[Read the verdict and the risks]
     pick[Pick a scope]
     retry[Press Retry]
+    copyBtn[Click Copy summary]
     openEpic[Open an epic or a blocked bead]
   end
   subgraph page[Console page]
@@ -25,6 +26,9 @@ flowchart TD
     side{Milestones list and detail answered?}
     full[Verdict from pace, late rule and risks; figures; burn-up; changes; risks; epic table with planned and forecast dates]
     partial[Same, with the verdict without forecast and dashes for planned, forecast and epic verdicts]
+    clipOk{Clipboard write succeeded?}
+    copied[Show Copied for 2s]
+    copyErr[Show Couldn't copy]
     beadPage[Show the bead page, remembering the Status section]
     done(((End)))
   end
@@ -55,6 +59,12 @@ flowchart TD
   partial --> read
   read --> pick
   pick --> scope
+  read --> copyBtn
+  copyBtn --> clipOk
+  clipOk -->|4c ok| copied
+  clipOk -->|4e failed| copyErr
+  copied --> read
+  copyErr --> read
   read --> openEpic
   openEpic --> beadPage
   beadPage --> done
