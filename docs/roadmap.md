@@ -53,7 +53,7 @@ Source: Product brief from the UX review of 2026-11-21 (team lead, PM, member an
 - Spec cadence: every epic runs /discuss and gets a confirmed spec before /plan; the specs of milestone N+1 are confirmed during milestone N; Spec ready by is the milestone start.
 - Build: backend first (a `source.py` per external source returning pydantic models, tested with fixtures and fakes), then the UI; the models and API JSON are the contract. External commands are injected into `create_app`.
 - Integration: no feature flags (internal, read-only, single-user tool). Each epic deploys to the Tailscale build when its tracks merge. External dependencies are checked by hand before an epic starts, because bd 1.0.5 does not enforce them: `bd -C ../gin-workflow list --label provides:<capability> --all`.
-- Quality: gin-qa cases per REQ; Claude validates UI changes with Playwright on the Tailscale build; Exit criteria: checks green, the epic's TCs passed, no open bug bead on the epic.
+- Quality: gin-qa cases per REQ, written by a QA track at the end of each plan; an epic ships without them only by a PM decision recorded in the epic's notes. Claude validates UI changes with Playwright on the Tailscale build; Exit criteria: checks green, the epic's TCs passed, no open bug bead on the epic.
 - Load: 1 lane times the working days of the milestone.
 
 ## Strategy
@@ -188,7 +188,12 @@ Risks: Many tests pin the current filter layout and the default milestone rule o
 
 Outcome: A PM reports a milestone's status and hands over a WBS from the console.
 Demo: Open the Checkout v2 status report, read its verdict and risks, copy the summary, download the WBS in Excel.
-Result:
+Result: closed 2026-11-24; delivered 2 of 2 epics; 0 moved to Lead and Dev daily work
+- Outcome: reached; a PM reports a milestone's status, copies a summary, and downloads the WBS in three formats from the console
+- Demo: partial; the status report passed its test case on the deployed build; Copy summary and the WBS download were checked on the console's own milestone, not yet on Checkout v2 on the deployed build; the WBS epic has no test cases
+- Metrics: 2 of 2 epics done (100%); estimate accuracy not measured (both epics had points); 38% of capacity used; 0.11 days per point
+- Spillover: none
+- Actions: the Quality line now asks for a QA track in each plan, or a PM decision recorded on the epic to ship without test cases; noted that this machine migrates the shared task databases to the new bd version, and the cross-repository database still needs it
 Spec ready by: 2026-12-18
 Integration point: 2026-12-25
 - Integrates: gin-console-rm-reports-status, gin-console-rm-wbs-export
