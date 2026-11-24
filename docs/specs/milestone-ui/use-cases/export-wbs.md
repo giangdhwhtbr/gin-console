@@ -32,6 +32,10 @@ Download an up-to-date, hierarchically numbered WBS in Excel, CSV for Jira, or M
 2. The system attaches a warning in `X-WBS-Warning` (and in the Excel `About` sheet or Markdown header).
 3. Resume at step 6.
 
+### 4f. The Beads export cannot be read
+1. The system responds 502 with the reason.
+2. Use case ends.
+
 ### 3e. Unknown project, unknown milestone, or invalid format
 1. The system responds 404 (unknown project or milestone) or 422 (invalid format or milestone id).
 2. Use case ends.

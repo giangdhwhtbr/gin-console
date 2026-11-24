@@ -15,6 +15,8 @@ flowchart TD
     validate{Valid project, milestone, and format?}
     reject[Respond 404 or 422]
     snap[Read Beads snapshot with closed beads, excluding prep and merge gates]
+    snapCheck{Beads export readable?}
+    beadsFail[Respond 502 with the reason]
     ginCheck{gin milestone list/show succeeded?}
     joinGin[Join planned dates, forecast end, and epic estimates]
     degraded[Leave gin fields blank and record X-WBS-Warning]
@@ -29,7 +31,10 @@ flowchart TD
   validate -->|3e invalid| reject
   reject --> done
   validate -->|3 valid| snap
-  snap --> ginCheck
+  snap --> snapCheck
+  snapCheck -->|4f unreadable| beadsFail
+  beadsFail --> done
+  snapCheck -->|4 readable| ginCheck
   ginCheck -->|4 ok| joinGin
   ginCheck -->|4e failed| degraded
   joinGin --> empty

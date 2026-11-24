@@ -19,7 +19,7 @@ User decisions 2026-11-24:
 - **Summary:** confirmed as written.
 - **Project-wide export placement:** on the Milestones list page header (in addition to the Milestone page header for milestone-scoped export).
 - **Included beads:** every bead in scope, open and closed, excluding prep tasks and merge gates (matching `child_counts`).
-- **Estimate column:** days for epics from `gin` (marked `(assumed)` when assumed); sum of epics for milestones; `estimate_minutes` converted to days for tasks when set, else blank.
+- **Estimate column:** days for epics from `gin` (marked `(assumed)` when assumed); sum of epics for milestones; `estimated_minutes` converted to days for tasks when set, else blank.
 - **Architecture:** build WBS files in the backend (`GET /api/milestones/{project}/wbs`) using `openpyxl` for Excel; Copy summary is frontend-only.
 - **CSV format:** one CSV format in Jira External System Import layout (`Issue ID`, `Parent ID`, `Issue Type`, `Summary`, `Status`, `Labels`, `Assignee`, `Story Points`, `Original Estimate` in seconds, `Start date`, `Due date`, `Fix Version`, `Link "Blocks"`), with WBS columns appended at the end.
 
