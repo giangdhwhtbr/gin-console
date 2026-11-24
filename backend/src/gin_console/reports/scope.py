@@ -9,28 +9,28 @@ from gin_console.beads.milestones import current_milestone, milestone_status, pa
 from gin_console.beads.prep import is_prep
 from gin_console.reports.models import ReportBead, TeamMilestone
 
-Key = tuple[str, str]  # (project, bead id)
+BeadKey = tuple[str, str]  # (project, bead id)
 
 
-def _key(bead: ReportBead) -> Key:
+def bead_key(bead: ReportBead) -> BeadKey:
     return (bead.project, bead.id)
 
 
-class _Tree:
+class Tree:
     def __init__(self, beads: list[ReportBead]) -> None:
-        self.index: dict[Key, ReportBead] = {_key(b): b for b in beads}
-        self.children: dict[Key, list[ReportBead]] = defaultdict(list)
+        self.index: dict[BeadKey, ReportBead] = {bead_key(b): b for b in beads}
+        self.children: dict[BeadKey, list[ReportBead]] = defaultdict(list)
         for bead in beads:
             if bead.parent:
                 self.children[(bead.project, bead.parent)].append(bead)
 
     def _lineage(self, bead: ReportBead) -> Iterable[ReportBead]:
         """The bead, then its ancestors; stops on a cycle or a parent outside the list."""
-        seen: set[Key] = set()
+        seen: set[BeadKey] = set()
         current: ReportBead | None = bead
-        while current is not None and _key(current) not in seen:
+        while current is not None and bead_key(current) not in seen:
             yield current
-            seen.add(_key(current))
+            seen.add(bead_key(current))
             parent = current.parent
             current = self.index.get((current.project, parent)) if parent else None
 
@@ -110,16 +110,16 @@ def select_milestone(
     )
 
 
-def _tracked(tree: _Tree, bead: ReportBead) -> bool:
+def _tracked(tree: Tree, bead: ReportBead) -> bool:
     """False for a milestone, a prep task, or an epic split into tasks (its children carry it)."""
     if bead.issue_type == "milestone" or is_prep(bead.labels):
         return False  # prep tasks are not tracked work (REQ-BEADS-002)
-    tracks = [c for c in tree.children.get(_key(bead), []) if not is_prep(c.labels)]
+    tracks = [c for c in tree.children.get(bead_key(bead), []) if not is_prep(c.labels)]
     return not (bead.issue_type == "epic" and tracks)
 
 
 def milestone_scope(
-    tree: _Tree, beads: list[ReportBead], milestone_id: str
+    tree: Tree, beads: list[ReportBead], milestone_id: str
 ) -> list[tuple[ReportBead, ReportBead]]:
     """(bead, nearest epic) of beads under an epic of the milestone; an epic while childless."""
     rows: list[tuple[ReportBead, ReportBead]] = []
@@ -134,7 +134,7 @@ def milestone_scope(
 
 
 def period_scope(
-    tree: _Tree, beads: list[ReportBead], days: int, now: datetime
+    tree: Tree, beads: list[ReportBead], days: int, now: datetime
 ) -> list[tuple[ReportBead, ReportBead]]:
     """(bead, nearest epic) of beads closed in the last `days` days or in progress."""
     since = now - timedelta(days=days)

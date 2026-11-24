@@ -453,6 +453,15 @@ def test_reports_009_period_scope() -> None:
 
 
 # REQ-REPORTS-010
+def test_reports_010_milestone_on_time_even_with_a_close_without_date() -> None:
+    beads = [closed("a1", at("2026-11-05"), parent="e1"), row("a2", status="closed", parent="e1")]
+    t = team([*standard(), *scoped("m2", "e1", beads)]).team
+    assert t is not None
+    assert t.closed == 2
+    assert t.on_time == 0.5  # `None` only for a period
+
+
+# REQ-REPORTS-010
 def test_reports_010_period() -> None:
     days = ["2026-11-06", "2026-11-09", "2026-11-10", "2026-11-11"]
     beads = [closed(f"c{n}", at(days[n % 4])) for n in range(4)]

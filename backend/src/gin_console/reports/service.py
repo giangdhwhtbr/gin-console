@@ -20,12 +20,12 @@ from gin_console.reports.models import (
     WeekRow,
 )
 from gin_console.reports.scope import (
-    Key,
+    BeadKey,
     MilestoneScope,
     PeriodScope,
     Scope,
-    _key,
-    _Tree,
+    Tree,
+    bead_key,
     milestone_scope,
 )
 
@@ -156,13 +156,13 @@ def _member_row(name: str, beads: list[ReportBead]) -> QualityRow:
     )
 
 
-def _quality(tree: _Tree, closed: list[ReportBead]) -> QualitySection:
+def _quality(tree: Tree, closed: list[ReportBead]) -> QualitySection:
     by_member: dict[str, list[ReportBead]] = defaultdict(list)
-    by_epic: dict[Key, list[ReportBead]] = defaultdict(list)
+    by_epic: dict[BeadKey, list[ReportBead]] = defaultdict(list)
     for bead in closed:
         by_member[member_of(bead)].append(bead)
         if nearest := tree.epics_of(bead):
-            by_epic[_key(nearest[0])].append(bead)
+            by_epic[bead_key(nearest[0])].append(bead)
     members = [_member_row(name, beads) for name, beads in by_member.items()]
     members.sort(key=lambda r: (r.member == UNASSIGNED, -r.closed, r.member))
     epics = [
@@ -182,7 +182,7 @@ def _quality(tree: _Tree, closed: list[ReportBead]) -> QualitySection:
 
 
 def build_report(beads: list[ReportBead], *, now: datetime, project: str, scope: Scope) -> Report:
-    tree = _Tree(beads)
+    tree = Tree(beads)
     days: int | None
     milestone: str | None
     match scope:
@@ -202,7 +202,7 @@ def build_report(beads: list[ReportBead], *, now: datetime, project: str, scope:
                 for b, _ in milestone_scope(tree, beads, wanted)
                 if b.status == "closed" and b.closed_at is not None
             ]
-    closed.sort(key=_key)
+    closed.sort(key=bead_key)
     return Report(
         generated_at=now,
         project=project,

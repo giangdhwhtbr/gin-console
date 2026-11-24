@@ -9,7 +9,7 @@ from gin_console.reports.router import parse_scope
 from gin_console.reports.scope import (
     MilestoneScope,
     PeriodScope,
-    _Tree,
+    Tree,
     period_scope,
     select_milestone,
 )
@@ -80,7 +80,7 @@ def test_reports_009_period_scope() -> None:
         "alpha",
         {},
     )
-    pairs = period_scope(_Tree(beads), beads, 30, NOW)
+    pairs = period_scope(Tree(beads), beads, 30, NOW)
     assert [(b.id, epic.id) for b, epic in pairs] == [
         ("e.1", "e"),
         ("ip", "ip"),

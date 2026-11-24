@@ -1,4 +1,5 @@
-"""The Team report of one milestone (spec REQ-REPORTS-008..011), built from the project's beads.
+"""The Team report of a milestone or a period (spec REQ-REPORTS-008..011), built from the
+project's beads, and the figures the Status report reuses (`team_rows`, `team_totals`).
 
 Dates are local (`astimezone()`); the working days are Monday to Friday."""
 
@@ -15,6 +16,7 @@ from gin_console.reports.models import (
     TeamBead,
     TeamEpic,
     TeamFigures,
+    TeamMilestone,
     TeamReport,
     TeamTotals,
 )
@@ -22,7 +24,7 @@ from gin_console.reports.scope import (
     MilestoneScope,
     PeriodScope,
     Scope,
-    _Tree,
+    Tree,
     day_of,
     list_milestones,
     milestone_scope,
@@ -35,6 +37,8 @@ from gin_console.reports.service import DAY, UNASSIGNED, _rework, _span
 
 PACE_WINDOW = 5  # working days behind `throughput`
 
+Reworks = dict[str, tuple[int, int]]  # bead id -> (reopens, bugs)
+
 
 def _member(row: TeamBead) -> str:
     return person_key(row.assignee) or UNASSIGNED
@@ -45,6 +49,7 @@ def _figures(
     reworks: dict[str, tuple[int, int]],
     last: set[date],
     closed_span: int | None,
+    period: bool,
 ) -> TeamFigures:
     done = [r for r in rows if r.bucket == "closed"]
     active = [r for r in rows if r.bucket == "in_progress"]
@@ -70,7 +75,7 @@ def _figures(
         oldest_in_progress=max(ages) if ages else None,
         on_time=(
             round(sum(1 for r in done if r.late_days == 0) / len(done), 4)
-            if done and all(r.late_days is not None for r in done)
+            if done and not period
             else None
         ),
         rework_rate=(round(sum(1 for r in done if r.rework > 0) / len(done), 4) if done else None),
@@ -138,6 +143,65 @@ def _row(
     )
 
 
+def team_rows(
+    pairs: list[tuple[ReportBead, ReportBead]], now: datetime, milestone: TeamMilestone | None
+) -> tuple[list[TeamBead], Reworks]:
+    """The scope rows of (bead, nearest epic) pairs; `milestone` None is a period."""
+    end = milestone.end if milestone else None
+    rows = [_row(bead, epic, now, end) for bead, epic in pairs]
+    return rows, {b.id: (b.reopens, b.bugs) for b, _ in pairs}
+
+
+def _window(today: date, milestone: TeamMilestone | None) -> tuple[set[date], int | None]:
+    """The working days behind `throughput`, and the span of a closed milestone, else None."""
+    last = set(workdays(today - timedelta(days=14), today)[-PACE_WINDOW:])
+    closed = milestone is not None and milestone.status == "closed"
+    span = (
+        max(len(workdays(milestone.start, milestone.closed_on or milestone.end)), 1)
+        if milestone is not None and closed
+        else None
+    )
+    return last, span
+
+
+def team_totals(
+    rows: list[TeamBead], reworks: Reworks, *, today: date, milestone: TeamMilestone | None
+) -> TeamTotals:
+    """The team figures of REQ-REPORTS-010 over `rows`; `milestone` None is a period."""
+    last, closed_span = _window(today, milestone)
+    totals = _figures(rows, reworks, last, closed_span, milestone is None)
+    waiting = totals.open + totals.in_progress
+    pace = round(totals.throughput / PACE_WINDOW, 2)
+    if milestone is None:
+        return TeamTotals(
+            **totals.model_dump(),
+            working_days=None,
+            elapsed=None,
+            days_left=None,
+            pace=pace,
+            pace_needed=None,
+            late_open=0,
+        )
+    is_closed = milestone.status == "closed"
+    working_days = len(workdays(milestone.start, milestone.end))
+    days_left = (
+        working_days
+        if today < milestone.start
+        else len(workdays(today + timedelta(days=1), milestone.end))
+    )
+    return TeamTotals(
+        **totals.model_dump(),
+        working_days=working_days,
+        elapsed=0
+        if today < milestone.start
+        else len(workdays(milestone.start, min(today, milestone.end))),
+        days_left=days_left,
+        pace=pace,
+        pace_needed=None if is_closed or days_left == 0 else round(waiting / days_left, 2),
+        late_open=waiting if not is_closed and today > milestone.end else 0,
+    )
+
+
 def build_team(
     beads: list[ReportBead], *, now: datetime, project: str, scope: Scope | None
 ) -> TeamReport:
@@ -148,64 +212,32 @@ def build_team(
     chosen = None if period is not None else select_milestone(milestones, wanted, today)
     if chosen is None and period is None:
         return _empty(now, project, today, undated, None)
-    tree = _Tree(beads)
+    tree = Tree(beads)
     if chosen is not None:
         pairs = milestone_scope(tree, beads, chosen.id)
     else:
         assert period is not None
         pairs = period_scope(tree, beads, period, now)
-    rows = [_row(bead, epic, now, chosen.end if chosen else None) for bead, epic in pairs]
-    reworks = {b.id: (b.reopens, b.bugs) for b, _ in pairs}  # bead id -> (reopens, bugs)
-    last = set(workdays(today - timedelta(days=14), today)[-PACE_WINDOW:])
-    is_closed = chosen is not None and chosen.status == "closed"
-    closed_span = (
-        max(len(workdays(chosen.start, chosen.closed_on or chosen.end)), 1)
-        if chosen is not None and is_closed
-        else None
-    )
+    rows, reworks = team_rows(pairs, now, chosen)
+    last, closed_span = _window(today, chosen)
     by_member: dict[str, list[TeamBead]] = defaultdict(list)
     for r in rows:
         by_member[_member(r)].append(r)
     members = [
-        MemberFigures(member=name, **_figures(mine, reworks, last, closed_span).model_dump())
+        MemberFigures(
+            member=name, **_figures(mine, reworks, last, closed_span, chosen is None).model_dump()
+        )
         for name, mine in sorted(
             by_member.items(), key=lambda kv: (kv[0] == UNASSIGNED, -len(kv[1]), kv[0])
         )
     ]
-    totals = _figures(rows, reworks, last, closed_span)
-    waiting = totals.open + totals.in_progress
-    pace = round(totals.throughput / PACE_WINDOW, 2)
+    team = team_totals(rows, reworks, today=today, milestone=chosen)
     if chosen is not None:
-        working_days = len(workdays(chosen.start, chosen.end))
-        days_left = (
-            working_days
-            if today < chosen.start
-            else len(workdays(today + timedelta(days=1), chosen.end))
-        )
-        team = TeamTotals(
-            **totals.model_dump(),
-            working_days=working_days,
-            elapsed=0
-            if today < chosen.start
-            else len(workdays(chosen.start, min(today, chosen.end))),
-            days_left=days_left,
-            pace=pace,
-            pace_needed=None if is_closed or days_left == 0 else round(waiting / days_left, 2),
-            late_open=waiting if not is_closed and today > chosen.end else 0,
-        )
         first = chosen.start
+        is_closed = chosen.status == "closed"
         horizon = max(chosen.end, chosen.closed_on if is_closed and chosen.closed_on else today)
     else:
         assert period is not None
-        team = TeamTotals(
-            **totals.model_dump(),
-            working_days=None,
-            elapsed=None,
-            days_left=None,
-            pace=pace,
-            pace_needed=None,
-            late_open=0,
-        )
         first, horizon = today - timedelta(days=period), today
     calendar = workdays(first, horizon)
     per_day: dict[date, Counter[str]] = {d: Counter() for d in calendar}
