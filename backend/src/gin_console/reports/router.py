@@ -1,4 +1,4 @@
-"""GET /api/reports and GET /api/reports/team (spec REQ-REPORTS-001, 007, 008)."""
+"""GET /api/reports, /team and /status (spec REQ-REPORTS-001, 007, 008, 020)."""
 
 import re
 from collections.abc import Callable
@@ -12,7 +12,7 @@ from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import BeadsError
 from gin_console.config import ProjectEntry, Settings
 from gin_console.reports.interactions import InteractionStore
-from gin_console.reports.models import Report, ReportBead, TeamReport
+from gin_console.reports.models import Report, ReportBead, StatusReport, TeamReport
 from gin_console.reports.scope import (
     MilestoneScope,
     PeriodScope,
@@ -22,6 +22,7 @@ from gin_console.reports.scope import (
 )
 from gin_console.reports.service import build_report
 from gin_console.reports.source import read_beads
+from gin_console.reports.status import build_status
 from gin_console.reports.team import build_team
 
 TTL = timedelta(seconds=60)
@@ -67,6 +68,8 @@ def build_router(
     on_refresh.append(reports.clear)
     team = KeyedCache[tuple[str, Scope | None], TeamReport](TTL, clock)
     on_refresh.append(team.clear)
+    status = KeyedCache[tuple[str, Scope | None], StatusReport](TTL, clock)
+    on_refresh.append(status.clear)
 
     def beads_of(entry: ProjectEntry) -> list[ReportBead]:
         return read_beads(snapshots.get(entry.path), entry.name, interactions.reopens(entry.path))
@@ -115,6 +118,22 @@ def build_router(
             return team.get(
                 (entry.name, scope),
                 lambda: build_team(beads_of(entry), now=clock(), project=entry.name, scope=scope),
+            )
+        except (BeadsError, RecursionError) as exc:
+            return JSONResponse(status_code=502, content={"error": _message(exc)})
+
+    @router.get("/reports/status", response_model=StatusReport)
+    def get_status(
+        project: str | None = None, milestone: str | None = None, days: str | None = None
+    ) -> StatusReport | JSONResponse:
+        entry = find(project)
+        scope = parse_scope(milestone, days)
+        if isinstance(scope, JSONResponse):
+            return scope
+        try:
+            return status.get(
+                (entry.name, scope),
+                lambda: build_status(beads_of(entry), now=clock(), project=entry.name, scope=scope),
             )
         except (BeadsError, RecursionError) as exc:
             return JSONResponse(status_code=502, content={"error": _message(exc)})

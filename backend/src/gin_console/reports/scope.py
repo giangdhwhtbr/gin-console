@@ -34,6 +34,10 @@ class Tree:
             parent = current.parent
             current = self.index.get((current.project, parent)) if parent else None
 
+    def ancestors(self, bead: ReportBead) -> list[ReportBead]:
+        """The bead's parents, nearest first."""
+        return list(self._lineage(bead))[1:]
+
     def epics_of(self, bead: ReportBead) -> list[ReportBead]:
         """Every epic in the bead's lineage: itself when it is one, then its epic ancestors."""
         return [b for b in self._lineage(bead) if b.issue_type == "epic"]

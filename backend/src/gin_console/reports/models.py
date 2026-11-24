@@ -213,3 +213,121 @@ class TeamReport(BaseModel):
     members: list[MemberFigures]
     days: list[DayRow]
     beads: list[TeamBead]
+
+
+class StatusPeriod(BaseModel):
+    kickoff: date | None
+    working_days: int
+    elapsed: int
+    days_left: int
+
+
+class BeadsKpi(BaseModel):
+    done: int | None
+    scope: int | None
+    done_week_ago: int | None
+    scope_week_ago: int | None
+
+
+class PointsKpi(BaseModel):
+    done: float | None
+    scope: float | None
+    at_kickoff: float | None
+    done_week_ago: float | None
+
+
+class PaceKpi(BaseModel):
+    pace: float | None
+    pace_needed: float | None
+    pace_week_ago: float | None
+
+
+class BlockedKpi(BaseModel):
+    count: int
+    oldest_days: int | None
+
+
+class ReworkKpi(BaseModel):
+    rate: float | None
+    rate_week_ago: float | None
+
+
+class StatusKpis(BaseModel):
+    beads: BeadsKpi
+    points: PointsKpi
+    pace: PaceKpi
+    blocked: BlockedKpi
+    rework: ReworkKpi
+
+
+class BurnupDay(BaseModel):
+    day: date
+    scope_points: float
+    done_points: float
+
+
+ChangeKind = Literal["epic_added", "epic_removed", "estimated", "re_estimated", "bug_added"]
+
+
+class ScopeChange(BaseModel):
+    day: date
+    kind: ChangeKind
+    id: str
+    title: str
+    points: int | None = None
+    before: int | None = Field(None, serialization_alias="from")
+    after: int | None = Field(None, serialization_alias="to")
+    epic: TeamEpic | None = None
+    person: str | None = None
+
+
+class Changes(BaseModel):
+    scope_from: float | None
+    scope_to: float | None
+    items: list[ScopeChange]
+
+
+class Blocker(BaseModel):
+    id: str
+    title: str
+    person: str
+    blocked: bool
+
+
+class BlockedRisk(BaseModel):
+    id: str
+    title: str
+    days: int
+    blocker: Blocker | None
+
+
+class Risks(BaseModel):
+    blocked: list[BlockedRisk]
+    blocked_more: int
+    unestimated: list[TeamEpic]
+
+
+class StatusEpic(BaseModel):
+    id: str
+    title: str
+    status: str
+    points: int | None
+    person: str
+    closed_on: date | None
+    child_counts: ChildCounts
+
+
+class StatusReport(BaseModel):
+    generated_at: datetime
+    project: str
+    today: date
+    milestones: list[TeamMilestone]
+    undated: int
+    milestone: str | None
+    days: int | None
+    period: StatusPeriod | None
+    kpis: StatusKpis
+    burnup: list[BurnupDay]
+    changes: Changes
+    risks: Risks
+    epics: list[StatusEpic]
