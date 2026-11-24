@@ -4,10 +4,12 @@ import { plural, workdaysAfter } from "@/features/milestones/format";
 import { formatDate, formatRange } from "@/lib/dates";
 import { BurnupChart } from "./BurnupChart";
 import { ChangesPanel } from "./ChangesPanel";
+import { CopySummaryButton } from "./CopySummaryButton";
 import { EpicTable } from "./EpicTable";
 import { RisksPanel } from "./RisksPanel";
 import { selectedStatusMilestone, type StatusReport } from "./statusApi";
 import { StatusFigures } from "./StatusFigures";
+import { summaryMarkdown } from "./summaryMarkdown";
 import { statusVerdict } from "./verdict";
 import { VerdictPanel } from "./VerdictPanel";
 
@@ -75,11 +77,14 @@ export function StatusSection({
 
   return (
     <div className="flex min-w-0 flex-col gap-5">
-      <div className="flex min-w-0 flex-col gap-1">
-        <h2 className="text-xl font-semibold">{milestone.title}</h2>
-        <p className="text-sm text-muted-foreground">
-          {subtitleOf(report, milestone.start, milestone.end, milestone.status, milestone.closed_on)}
-        </p>
+      <div className="flex min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h2 className="text-xl font-semibold">{milestone.title}</h2>
+          <p className="text-sm text-muted-foreground">
+            {subtitleOf(report, milestone.start, milestone.end, milestone.status, milestone.closed_on)}
+          </p>
+        </div>
+        <CopySummaryButton buildText={() => summaryMarkdown({ report, milestone, verdict, detail: plan, forecast: forecastEpics })} />
       </div>
 
       <VerdictPanel verdict={verdict} />
