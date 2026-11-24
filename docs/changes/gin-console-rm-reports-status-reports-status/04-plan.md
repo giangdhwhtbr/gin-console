@@ -407,7 +407,7 @@ Steps:
   - Create `frontend/src/features/reports/status/verdict.ts`
   - Create `frontend/src/features/reports/status/StatusSection.tsx`, `VerdictPanel.tsx`, `StatusFigures.tsx`, `BurnupChart.tsx`, `ChangesPanel.tsx`, `RisksPanel.tsx` and `EpicTable.tsx`
   - Modify `frontend/src/features/milestones/format.ts` (`addWorkdays`)
-  - Modify `frontend/src/features/reports/ReportsPage.tsx` (requests the status report whatever the section; renders `StatusSection`; Status headline)
+  - Modify `frontend/src/features/reports/ReportsView.tsx` (the page body since Track 6; `ReportsPage.tsx` is the route wrapper): requests the status report whatever the section, renders `StatusSection` in place of the placeholder, adds the Status headline in `headlineFor`, and shows the "no milestones yet" state of REQ-REPORTS-032
   - Modify `frontend/src/features/reports/headlines.ts` (`statusHeadline`)
   - Test `frontend/src/features/reports/status/verdict.test.ts`, `statusApi.test.ts`, `StatusSection.test.tsx`, `BurnupChart.test.tsx`, `EpicTable.test.tsx`, `frontend/src/features/milestones/format.test.ts`, `frontend/src/features/reports/headlines.test.ts`
 - **Provider role**: `frontend`
@@ -439,7 +439,7 @@ Steps:
 1. Write `verdict.test.ts` with the six REQ-REPORTS-027 scenarios and the `addWorkdays` test. Run them; they fail. Write `addWorkdays` and `verdict.ts` until they pass.
 2. Write `statusApi.ts` with its test.
 3. Write `StatusSection.test.tsx` (REQ-REPORTS-028 and 032 scenarios, with `fetch` stubbed for the status report, the detail and the list), `BurnupChart.test.tsx` (REQ-REPORTS-029) and `EpicTable.test.tsx` (REQ-REPORTS-031). Add the REQ-REPORTS-030 cases to `StatusSection.test.tsx`. Run them; they fail.
-4. Write the components following `docs/specs/ui/assets/2026-11-22/index.html` (board `reports`). Wire `ReportsPage`, and add `statusHeadline` and its tests. Run all frontend tests and checks.
+4. Write the components following `docs/specs/ui/assets/2026-11-22/index.html` (board `reports`). Wire `ReportsView`, and add `statusHeadline` and its tests. Run all frontend tests and checks.
 5. Commit: `git commit -m "feat(reports): Status section with verdict, burn-up, changes, risks and epics (gin-console-rm-reports-status)"`
 
 ### Track 8: Team KPI v2 in the Team section
