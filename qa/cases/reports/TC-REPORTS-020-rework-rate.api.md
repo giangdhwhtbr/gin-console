@@ -1,6 +1,6 @@
 # TC-REPORTS-020: Rework rate
 
-- **REQ:** REQ-REPORTS-010@5a79bc07
+- **REQ:** REQ-REPORTS-010@14f37eaf
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-32-23-api

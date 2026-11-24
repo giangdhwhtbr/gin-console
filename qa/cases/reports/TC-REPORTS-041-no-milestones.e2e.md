@@ -1,6 +1,6 @@
 # TC-REPORTS-041: No milestones
 
-- **REQ:** REQ-REPORTS-017@94b4aefa
+- **REQ:** REQ-REPORTS-017@33de80f9
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-27-52
@@ -13,7 +13,8 @@
 - None
 
 **Steps:**
-1. Open `/reports?project=beta&tab=team`
+1. Open `/reports/team?project=beta`
 
 **Expected:**
-- It says "beta has no milestones yet" and offers to copy `gin milestone create`
+- The URL becomes `/reports/team?project=beta&days=30`
+- The Team section shows the last 30 days

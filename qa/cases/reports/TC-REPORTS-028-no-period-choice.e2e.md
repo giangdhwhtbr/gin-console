@@ -1,17 +1,17 @@
 # TC-REPORTS-028: No period choice
 
-- **REQ:** REQ-REPORTS-012@023dc4c5
+- **REQ:** REQ-REPORTS-012@79484a74
 - **Priority:** medium
 
 **Preconditions:**
-- The Team tab is selected
+- `/reports/team?project=alpha&days=30` on 23 Nov
 
 **Test data:**
 - None
 
 **Steps:**
-1. Select the Team tab
-2. Look at the panel for period buttons and a sprint field
+1. Open `/reports/team?project=alpha&days=30`
 
 **Expected:**
-- No period buttons and no sprint field are shown
+- The scope line reads "Last 30 days, 24 Oct – 23 Nov"
+- No "Open Gantt" link and no sprint field are shown

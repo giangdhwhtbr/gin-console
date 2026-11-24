@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-052@7774e760
+// TC: TC-REPORTS-052@e00be0b1
 import { test, expect } from '../evidence';
 import { entry, list, type MilestoneEntry } from '../support/api';
 import { stubReports } from '../support/reports';
@@ -24,15 +24,16 @@ test('TC-REPORTS-052: Milestones with velocity (REQ-REPORTS-018)', async ({ page
     await page.setViewportSize({ width: 1280, height: 900 });
   });
 
-  await ev.step('2. Open `/reports?project=alpha&tab=velocity`', async () => {
-    await page.goto('/reports?project=alpha&tab=velocity');
-    const panel = page.getByRole('tabpanel');
+  await ev.step('2. Open `/reports/velocity?project=alpha&milestone=m2`', async () => {
+    await page.goto('/reports/velocity?project=alpha&milestone=m2');
+    const panel = page.getByRole('region', { name: 'Velocity' });
     await expect(panel.getByText('1.4 days per point')).toBeVisible();
     await expect(panel.getByText('38%').first()).toBeVisible();
     await expect(panel.getByText('1.08').first()).toBeVisible();
     const rows = panel.getByRole('row');
     await expect(rows.filter({ hasText: 'm1' })).toHaveCount(1);
     await expect(rows.filter({ hasText: 'm2' })).toHaveCount(1);
+    await expect(rows.filter({ hasText: 'm2' })).toHaveAttribute('aria-current', 'true');
     const texts = await rows.allTextContents();
     expect(texts.findIndex((t) => t.startsWith('m1'))).toBeLessThan(texts.findIndex((t) => t.startsWith('m2')));
     await expect(rows.filter({ hasText: 'm3' })).toHaveCount(0);

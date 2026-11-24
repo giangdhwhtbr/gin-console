@@ -1,6 +1,6 @@
 # TC-REPORTS-061: Open after the end date
 
-- **REQ:** REQ-REPORTS-013@5683bbdb
+- **REQ:** REQ-REPORTS-013@cf4e7ed4
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-27-52
@@ -14,7 +14,7 @@
 - None
 
 **Steps:**
-1. Open `/reports?project=alpha&tab=team&milestone=m2`
+1. Open `/reports/team?project=alpha&milestone=m2`
 2. Look at the On time figure
 
 **Expected:**

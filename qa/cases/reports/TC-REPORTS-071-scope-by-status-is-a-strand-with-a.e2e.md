@@ -1,6 +1,6 @@
 # TC-REPORTS-071: Scope by status is a strand with a legend
 
-- **REQ:** REQ-REPORTS-013@5683bbdb
+- **REQ:** REQ-REPORTS-013@cf4e7ed4
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-27-52
@@ -14,7 +14,7 @@
 
 **Steps:**
 1. Set the window width to 1280 px
-2. Open `/reports?project=alpha&tab=team&milestone=m2`
+2. Open `/reports/team?project=alpha&milestone=m2`
 3. Look at "Scope by status" under the figures
 
 **Expected:**

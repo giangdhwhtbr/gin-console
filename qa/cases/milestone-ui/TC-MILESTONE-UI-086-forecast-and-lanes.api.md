@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-086: Forecast and lanes
 
-- **REQ:** REQ-MILESTONE-UI-008@3fdbaeb8
+- **REQ:** REQ-MILESTONE-UI-008@1d2ab3ad
 - **Priority:** medium
 
 **Preconditions:**

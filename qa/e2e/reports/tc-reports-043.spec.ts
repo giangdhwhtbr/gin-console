@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-043@8e6b82a6
+// TC: TC-REPORTS-043@86e42889
 import { test, expect } from '../evidence';
 import { stubReports, teamBody } from '../support/reports';
 
@@ -18,27 +18,27 @@ test('TC-REPORTS-043: Late answer (REQ-REPORTS-017)', async ({ page, ev }) => {
     const id = chosen === 'm2' ? 'm2' : 'm1';
     await route.fulfill({ json: { ...teamBody('alpha'), milestones, milestone: id } });
   });
-  const select = page.getByRole('combobox', { name: 'Milestone' });
+  const select = page.getByRole('combobox', { name: 'Report scope' });
 
-  await ev.step('1. Open `/reports?project=alpha&tab=team&milestone=m1`', async () => {
-    await page.goto('/reports?project=alpha&tab=team&milestone=m1');
-    await expect(select).toHaveValue('m1');
+  await ev.step('1. Open `/reports/team?project=alpha&milestone=m1`', async () => {
+    await page.goto('/reports/team?project=alpha&milestone=m1');
+    await expect(select).toHaveValue('milestone:m1');
   });
 
-  await ev.step('2. Pick `m2` in the Milestone select', async () => {
-    await select.selectOption('m2');
+  await ev.step('2. Pick `m2` in the scope select', async () => {
+    await select.selectOption('milestone:m2');
     await expect(page.getByText('Loading team…')).toBeVisible();
   });
 
-  await ev.step('3. Open "Reports" in the Main navigation', async () => {
-    await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Reports' }).click();
-    await expect(select).toHaveValue('m1');
+  await ev.step('3. Pick `m1` in the scope select', async () => {
+    await select.selectOption('milestone:m1');
+    await expect(select).toHaveValue('milestone:m1');
   });
 
   await ev.step('4. Release the delayed answer for `m2`', async () => {
     release();
     await page.waitForTimeout(300);
-    await expect(select).toHaveValue('m1');
+    await expect(select).toHaveValue('milestone:m1');
     await expect(page).toHaveURL(/milestone=m1/);
   });
 });

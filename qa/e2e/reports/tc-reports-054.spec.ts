@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-054@b1ae8007
+// TC: TC-REPORTS-054@4229c008
 import { test, expect } from '../evidence';
 import { entry, list, type MilestoneEntry } from '../support/api';
 import { stubReports } from '../support/reports';
@@ -14,9 +14,9 @@ test('TC-REPORTS-054: Nothing kicked off yet (REQ-REPORTS-018)', async ({ page, 
     await page.setViewportSize({ width: 1280, height: 900 });
   });
 
-  await ev.step('2. Open `/reports?project=alpha&tab=velocity`', async () => {
-    await page.goto('/reports?project=alpha&tab=velocity');
-    const panel = page.getByRole('tabpanel');
+  await ev.step('2. Open `/reports/velocity?project=alpha`', async () => {
+    await page.goto('/reports/velocity?project=alpha');
+    const panel = page.getByRole('region', { name: 'Velocity' });
     await expect(panel.getByText('No kicked-off milestones with points yet')).toBeVisible();
     await expect(panel.getByRole('img')).toHaveCount(0);
     await expect(panel.getByRole('table')).toHaveCount(0);

@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-069@a34bdeb2
+// TC: TC-REPORTS-069@15000ecb
 import { test, expect } from '../evidence';
 import { entry, list } from '../support/api';
 import { stubReports, teamBody } from '../support/reports';
@@ -25,8 +25,8 @@ test('TC-REPORTS-069: Milestone line shows status, period and working days', asy
     await page.setViewportSize({ width: 1280, height: 900 });
   });
 
-  await ev.step('2. Open /reports?project=alpha&tab=team&milestone=m2', async () => {
-    await page.goto('/reports?project=alpha&tab=team&milestone=m2');
+  await ev.step('2. Open `/reports/team?project=alpha&milestone=m2`', async () => {
+    await page.goto('/reports/team?project=alpha&milestone=m2');
     const line = page.getByRole('heading', { name: 'Second' }).locator('xpath=..');
     await expect(line).toBeVisible();
     const status = line.locator('[data-milestone-status]');

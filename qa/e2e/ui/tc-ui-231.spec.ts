@@ -13,7 +13,7 @@ test('TC-UI-231: Links carry the project (REQ-UI-124)', async ({ page, ev }) => 
     const nav = mainNav(page);
     await expect(nav.getByRole('link', { name: 'Beads', exact: true })).toHaveAttribute('href', '/beads?project=b');
     await expect(nav.getByRole('link', { name: 'Milestones', exact: true })).toHaveAttribute('href', '/milestones?project=b');
-    await expect(nav.getByRole('link', { name: 'Reports', exact: true })).toHaveAttribute('href', '/reports?project=b');
+    await expect(nav.getByRole('link', { name: 'Reports', exact: true })).toHaveAttribute('href', '/reports/status?project=b');
     await expect(nav.getByRole('link', { name: 'My Tasks', exact: true })).toHaveAttribute('href', '/my-tasks?project=b');
     await expect(nav.locator('a[href="/"]')).toHaveCount(0);
   });

@@ -58,12 +58,12 @@ export const milestoneList = {
     full(entry('ex-m3', { title: 'General availability', status: 'planned', start: '2026-11-30', end: '2026-12-18', finish: '2026-12-22' }), { lanes: 1, velocity: null }),
   ],
   unassigned_epics: 1, today: TODAY,
-  forecast: { deadline: '2026-12-31', lanes: 2, start: '2026-11-08', finish: '2026-12-23', overflow_days: 0, open_epics: 5, unestimated: 1, error: null },
+  forecast: { deadline: '2026-12-31', lanes: 2, start: '2026-11-08', finish: '2026-12-23', overflow_days: 0, open_epics: 5, unestimated: 1, error: null, epics: [] },
   days_per_point: { value: 1.4, measured_epics: 3, assumed: false },
 };
 
 export const report = {
-  generated_at: '2026-11-12T10:00:00Z', project: 'example', days: 30, sprint: null,
+  generated_at: '2026-11-12T10:00:00Z', project: 'example', days: null, milestone: 'ex-m2',
   totals: { closed: 4, rework_rate: 0.25 },
   delivery: {
     weeks: [{ week: '2026-W44', counts: { task: 3, bug: 1, epic: 1 } }, { week: '2026-W45', counts: { task: 5, feature: 2 } }],
@@ -76,16 +76,15 @@ export const report = {
     members: [{ member: LONG_MEMBER, closed: 4, reopens: 1, bugs: 1, rework_rate: 0.25 }],
     epics: [{ project: 'example', id: LONG_ID, title: LONG_TITLE, closed: 4, reopens: 1, bugs: 1, rework_rate: 0.5 }],
   },
-  errors: [],
 };
-export const figures = { scope: 4, closed: 1, in_progress: 1, open: 2, blocked: 1, unclaimed: 1, done: 0.25, throughput: 1, cycle_median: 1.5, oldest_in_progress: 4, on_time: 1, rework_rate: 0.1, reopens: 1, bugs: 1 };
+export const figures = { scope: 4, closed: 1, in_progress: 1, open: 2, blocked: 1, unclaimed: 1, done: 0.25, throughput: 1, cycle_median: 1.5, oldest_in_progress: 4, on_time: 1, rework_rate: 0.1, reopens: 1, bugs: 1, points_delivered: 5, accuracy: 0.86 };
 export const tb = (id: string, o: object) => ({
   id, title: LONG_TITLE, issue_type: 'task', status: 'open', bucket: 'open', assignee: LONG_MEMBER, priority: 2, created_at: '2026-11-02T09:00:00Z',
   epic: { id: LONG_ID, title: LONG_TITLE }, started_at: null, closed_at: null, cycle_days: null, age_days: null, late_days: null, rework: 0, ...o,
 });
 export const team = {
   generated_at: '2026-11-12T10:00:00Z', project: 'example', today: TODAY,
-  milestones: options.map((m) => ({ ...m, closed_on: m.status === 'closed' ? '2026-11-03' : null })), undated: 0, milestone: 'ex-m2',
+  milestones: options.map((m) => ({ ...m, closed_on: m.status === 'closed' ? '2026-11-03' : null })), undated: 0, milestone: 'ex-m2', period_days: null,
   team: { ...figures, working_days: 20, elapsed: 9, days_left: 11, pace: 3.6, pace_needed: 5.2, late_open: 2 },
   members: [{ ...figures, member: LONG_MEMBER }, { ...figures, member: 'qa', scope: 3 }, { ...figures, member: 'Unassigned', closed: 0 }],
   days: [{ date: '2026-11-10', closed: { [LONG_MEMBER]: 2, qa: 1 } }, { date: '2026-11-11', closed: {} }, { date: '2026-11-12', closed: { qa: 3 } }],
@@ -93,6 +92,25 @@ export const team = {
     tb('ex-e3.1', {}), tb('ex-e2.1', { status: 'in_progress', bucket: 'in_progress', started_at: '2026-11-08T09:00:00Z', age_days: 4, late_days: 2 }),
     tb('ex-e3.3', { status: 'closed', bucket: 'closed', started_at: '2026-11-09T09:00:00Z', closed_at: '2026-11-10T09:00:00Z', cycle_days: 1, rework: 2, assignee: 'qa' }),
   ],
+  trend: [],
+  unassigned: { closed: 0, total: 1 },
+};
+export const status = {
+  generated_at: '2026-11-12T10:00:00Z', project: 'example', today: TODAY,
+  milestones: options.map((m) => ({ ...m, closed_on: m.status === 'closed' ? '2026-11-03' : null })),
+  undated: 0, milestone: 'ex-m2', days: null,
+  period: { kickoff: '2026-11-02', working_days: 20, elapsed: 9, days_left: 11 },
+  kpis: {
+    beads: { done: 1, scope: 4, done_week_ago: 0, scope_week_ago: 4 },
+    points: { done: 5, scope: 12, at_kickoff: 12, done_week_ago: 2 },
+    pace: { pace: 3.6, pace_needed: 5.2, pace_week_ago: 3.0 },
+    blocked: { count: 1, oldest_days: 4 },
+    rework: { rate: 0.1, rate_week_ago: 0.1 },
+  },
+  burnup: [{ day: '2026-11-02', scope_points: 12, done_points: 0 }, { day: '2026-11-12', scope_points: 12, done_points: 5 }],
+  changes: { scope_from: 12, scope_to: 12, items: [] },
+  risks: { blocked: [], blocked_more: 0, unestimated: [] },
+  epics: [{ id: 'ex-e2', title: 'Search relevance', status: 'in_progress', points: 13, person: 'qa', closed_on: null, child_counts: { total: 2, closed: 0, in_progress: 1, blocked: 1, ready: 0, deferred: 0, prep_total: 0, prep_closed: 0 } }],
 };
 export const comments = [
   { id: 'c1', author: 'qa', created_at: '2026-10-30T10:00:00Z', truncated: false, text: '[gin close] ex-m1\nDelivered: onboarding revamp and the long tail of follow-ups\nSpillover: billing exports\nOutcome: shipped\nMetrics: say/do 0.6' },
@@ -116,8 +134,8 @@ export async function stubExample(page: Page): Promise<string[]> {
     const url = new URL(route.request().url());
     const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     let body: unknown = { error: 'not stubbed' };
-    let status = 404;
-    const ok = (value: unknown) => { body = value; status = 200; };
+    let statusCode = 404;
+    const ok = (value: unknown) => { body = value; statusCode = 200; };
     const p = url.pathname;
     if (p === '/api/projects/beads') {
       const beadsOf = { open: 5, in_progress: 2, blocked: 1, ready: 2, prep: 0, epics: [{ id: LONG_ID, title: LONG_TITLE }, { id: 'ex-e2', title: 'Search relevance' }] };
@@ -131,10 +149,11 @@ export async function stubExample(page: Page): Promise<string[]> {
     } else if (p === '/api/beads') ok(url.searchParams.get('closed') === '1' ? beads : beads.filter((x) => x.status !== 'closed'));
     else if (parts[1] === 'beads' && parts[4] === 'comments') ok(comments);
     else if (parts[1] === 'beads' && parts.length === 4 && beads.some((x) => x.id === parts[3])) ok(detailOf(parts[3]));
+    else if (p === '/api/reports/status') ok(status);
     else if (p === '/api/reports/team') ok(team);
     else if (p === '/api/reports') ok(report);
-    if (status === 404 && body && (body as { error?: string }).error === 'not stubbed') unstubbed.push(url.pathname);
-    await route.fulfill({ status, json: body });
+    if (statusCode === 404 && body && (body as { error?: string }).error === 'not stubbed') unstubbed.push(url.pathname);
+    await route.fulfill({ status: statusCode, json: body });
   });
   return unstubbed;
 }
@@ -148,8 +167,8 @@ export const scrollGantt = (to: number) => async (page: Page) => {
 };
 export const beadsView = (view: string): Visit => ({ name: `beads ${view}`, url: `/beads?project=example&milestone=all&view=${view}`, ready: text(/\d+ of \d+/) });
 export const loaded = async (page: Page) => {
-  await expect(page.getByRole('tabpanel').first()).toBeVisible();
+  await expect(page.getByRole('heading').first()).toBeVisible();
   await expect(page.getByText(/^Loading/)).toHaveCount(0);
 };
-export const report_ = (tab: string): Visit => ({ name: `reports ${tab}`, url: `/reports?project=example&tab=${tab}`, ready: loaded });
+export const report_ = (section: string): Visit => ({ name: `reports ${section}`, url: `/reports/${section === 'quality' ? 'rework' : section}?project=example`, ready: loaded });
 export const gantt = (zoom: string): Visit => ({ name: `gantt ${zoom}`, url: `/milestones/example/ex-m2?tab=gantt&zoom=${zoom}`, ready: async (page) => { await expect(page.locator('[data-scroller]').first()).toBeVisible(); await expect(page.getByText(/^Loading/)).toHaveCount(0); } });

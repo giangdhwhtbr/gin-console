@@ -1,6 +1,6 @@
 # TC-REPORTS-051: Long options on a phone
 
-- **REQ:** REQ-REPORTS-012@023dc4c5
+- **REQ:** REQ-REPORTS-012@79484a74
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-27-52
@@ -11,8 +11,8 @@
 - The browser window is 390px wide
 
 **Steps:**
-1. Open `/reports?project=alpha&tab=team`
+1. Open `/reports/team?project=alpha`
 
 **Expected:**
-- The Milestone select and the Member select fit inside the window
+- The scope select and the Member select fit inside the window
 - The page does not scroll sideways

@@ -22,7 +22,7 @@ const contrast = async (page: Page, url: string, tab: 'team' | 'velocity') => {
   } else {
     // the Team tab shows the chosen milestone's label as its heading; every milestone is a choice of the select
     await expect(page.getByRole('heading', { name: 'Beta readiness for the regional launch' }), `${url}: the milestone label is shown`).toBeVisible();
-    await expect(page.getByRole('combobox', { name: 'Milestone' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Report scope' })).toBeVisible();
   }
   const findings = (await readabilityFindings(page)).filter((f) => f.kind === 'contrast');
   expect(findings, `${url}: contrast below ${WCAG}:1

@@ -1,6 +1,6 @@
 # TC-UI-252: Loading
 
-- **REQ:** REQ-UI-063@2442ed2a
+- **REQ:** REQ-UI-063@df8c5fba
 - **Priority:** low
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

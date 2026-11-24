@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-070@51012cb5
+// TC: TC-REPORTS-070@3f376f5f
 import { test, expect } from '../evidence';
 import { stubReports, teamBody } from '../support/reports';
 
@@ -17,8 +17,8 @@ test('TC-REPORTS-070: Open and rework figures read as sentences', async ({ page,
     await page.setViewportSize({ width: 1280, height: 900 });
   });
 
-  await ev.step('2. Open /reports?project=alpha&tab=team&milestone=m2', async () => {
-    await page.goto('/reports?project=alpha&tab=team&milestone=m2');
+  await ev.step('2. Open `/reports/team?project=alpha&milestone=m2`', async () => {
+    await page.goto('/reports/team?project=alpha&milestone=m2');
     const figures = page.getByRole('group', { name: 'Key figures' });
     const open = figures.getByText('3 blocked, 8 unassigned', { exact: true });
     await expect(open).toBeVisible();

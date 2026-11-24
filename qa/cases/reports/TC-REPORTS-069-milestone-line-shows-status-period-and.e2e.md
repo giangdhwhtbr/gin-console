@@ -1,6 +1,6 @@
 # TC-REPORTS-069: Milestone line shows status, period and working days
 
-- **REQ:** REQ-REPORTS-012@023dc4c5
+- **REQ:** REQ-REPORTS-012@79484a74
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-27-52
@@ -14,7 +14,7 @@
 
 **Steps:**
 1. Set the window width to 1280 px
-2. Open `/reports?project=alpha&tab=team&milestone=m2`
+2. Open `/reports/team?project=alpha&milestone=m2`
 
 **Expected:**
 - The milestone line shows the title, the status "Active, late" as its glyph and word with a warning mark, "<start> – <end>" and "working day 8 of 16, 8 left"

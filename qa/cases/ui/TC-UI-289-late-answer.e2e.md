@@ -1,6 +1,6 @@
 # TC-UI-289: Late answer
 
-- **REQ:** REQ-UI-093@e7ea75ab
+- **REQ:** REQ-UI-093@55fd3b8b
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -8,14 +8,14 @@
 
 **Preconditions:**
 - The report for 30 days is loading (its answer is delayed)
-- The window is 900px wide, so the page shows its tab list
+- The window is 900px wide, so the page shows its row of section links
 
 **Test data:**
 - None
 
 **Steps:**
-1. Open `/reports?project=alpha&days=30&tab=delivery`
-2. Pick 7 days
+1. Open `/reports/delivery?project=alpha&days=30`
+2. Pick "Last 7 days" in the scope select
 3. Let the answer for 30 days arrive
 
 **Expected:**

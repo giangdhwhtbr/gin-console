@@ -1,4 +1,4 @@
-// TC: TC-UI-289@a52299e8
+// TC: TC-UI-289@25fcc6df
 import { test, expect } from '../evidence';
 import { stubReports, reportBody } from '../support/reports';
 
@@ -19,23 +19,24 @@ test('TC-UI-289: Late answer', async ({ page, ev }) => {
     }
     return route.fulfill({ json: reportBody('alpha', days, { closed: 7 }) });
   });
+  const scope = page.getByRole('combobox', { name: 'Report scope' });
 
-  await ev.step('1. Open `/reports?project=alpha&days=30&tab=delivery`', async () => {
-    await page.goto('/reports?project=alpha&days=30&tab=delivery');
-    await expect(page.getByRole('tab', { name: /^Delivery/ })).toHaveAttribute('aria-selected', 'true');
+  await ev.step('1. Open `/reports/delivery?project=alpha&days=30`', async () => {
+    await page.goto('/reports/delivery?project=alpha&days=30');
+    await expect(page.getByRole('link', { name: /^Delivery/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  await ev.step('2. Pick 7 days', async () => {
-    await page.getByRole('button', { name: '7 days' }).click();
-    await expect(page.getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByRole('tab', { name: 'Delivery 7 beads closed' })).toBeVisible();
+  await ev.step('2. Pick "Last 7 days" in the scope select', async () => {
+    await scope.selectOption('days:7');
+    await expect(scope).toHaveValue('days:7');
+    await expect(page.getByRole('link', { name: 'Delivery 7 beads closed' })).toBeVisible();
   });
 
   await ev.step('3. Let the answer for 30 days arrive', async () => {
     release();
     await expect.poll(() => late).toBe(true);
-    await expect(page.getByRole('tab', { name: 'Delivery 7 beads closed' })).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'Delivery 30 beads closed' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('link', { name: 'Delivery 7 beads closed' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Delivery 30 beads closed' })).toHaveCount(0);
+    await expect(scope).toHaveValue('days:7');
   });
 });

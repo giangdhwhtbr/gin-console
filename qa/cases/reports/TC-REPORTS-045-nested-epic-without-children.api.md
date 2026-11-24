@@ -1,6 +1,6 @@
 # TC-REPORTS-045: Nested epic without children
 
-- **REQ:** REQ-REPORTS-009@b3daf2cc
+- **REQ:** REQ-REPORTS-009@a8c235c2
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-32-23-api

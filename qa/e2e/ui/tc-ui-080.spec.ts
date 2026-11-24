@@ -1,4 +1,4 @@
-// TC: TC-UI-080@2e3c1b73
+// TC: TC-UI-080@74227579
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
@@ -10,11 +10,11 @@ test('TC-UI-080: Nothing closed', async ({ page, ev }) => {
     report: { closed: 0, reworkRate: null, members: [], epics: [] },
   });
 
-  await ev.step('1. Open `/reports?project=alpha&tab=quality`', async () => {
-    await page.goto('/reports?project=alpha&tab=quality');
-    await expect(page.getByRole('tab', { name: /^Quality/ })).toHaveAttribute('aria-selected', 'true');
-    const panel = page.locator('#panel-quality');
+  await ev.step('1. Open `/reports/rework?project=alpha`', async () => {
+    await page.goto('/reports/rework?project=alpha');
+    await expect(page.getByRole('link', { name: /^Rework/ })).toHaveAttribute('aria-current', 'page');
+    const panel = page.getByRole('region', { name: 'Rework', exact: true });
     await expect(panel).toContainText('—');
-    await expect(panel.getByText('No data in this period')).toHaveCount(2);
+    await expect(panel.getByText('No data in this scope')).toHaveCount(2);
   });
 });

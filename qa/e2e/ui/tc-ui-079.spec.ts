@@ -1,4 +1,4 @@
-// TC: TC-UI-079@572b1e9a
+// TC: TC-UI-079@798670ee
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
@@ -13,9 +13,9 @@ test('TC-UI-079: Open an epic', async ({ page, ev }) => {
     },
   });
 
-  await ev.step('1. Open `/reports?project=alpha&tab=quality`', async () => {
-    await page.goto('/reports?project=alpha&tab=quality');
-    await expect(page.getByRole('tab', { name: /^Quality/ })).toHaveAttribute('aria-selected', 'true');
+  await ev.step('1. Open `/reports/rework?project=alpha`', async () => {
+    await page.goto('/reports/rework?project=alpha');
+    await expect(page.getByRole('link', { name: /^Rework/ })).toHaveAttribute('aria-current', 'page');
     await expect(page.getByRole('link', { name: 'Epic one' })).toBeVisible();
   });
 

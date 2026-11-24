@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-055@05e9e937
+// TC: TC-REPORTS-055@67e21423
 import { test, expect } from '../evidence';
 import { failure } from '../support/api';
 import { stubReports } from '../support/reports';
@@ -12,9 +12,9 @@ test('TC-REPORTS-055: Milestones request fails (REQ-REPORTS-018)', async ({ page
     await page.setViewportSize({ width: 1280, height: 900 });
   });
 
-  await ev.step('2. Open `/reports?project=alpha&tab=velocity`', async () => {
-    await page.goto('/reports?project=alpha&tab=velocity');
-    const panel = page.getByRole('tabpanel');
+  await ev.step('2. Open `/reports/velocity?project=alpha`', async () => {
+    await page.goto('/reports/velocity?project=alpha');
+    const panel = page.getByRole('region', { name: 'Velocity' });
     await expect(panel.getByText('Milestones need a newer gin')).toBeVisible();
     await expect(panel.getByText(/days per point/)).toHaveCount(0);
   });

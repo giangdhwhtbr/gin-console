@@ -1,21 +1,21 @@
 # TC-UI-078: Quality figures
 
-- **REQ:** REQ-UI-091@6dedf223
+- **REQ:** REQ-UI-091@1e16f3d0
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
 - **Checked:** 204f1d3c
 
 **Preconditions:**
-- The Quality tab of the Reports page for `alpha`
+- The Rework section of the Reports page for `alpha`
 - Member rows `ann` (4 closed, 1 reopen) and `bao` (1 closed, 1 bug) and `totals.rework_rate` 0.4
-- The window is 900px wide, so the page shows its tab list
+- The window is 900px wide, so the page shows its row of section links
 
 **Test data:**
 - None
 
 **Steps:**
-1. Open `/reports?project=alpha&tab=quality`
+1. Open `/reports/rework?project=alpha`
 
 **Expected:**
 - The figures read "40%", 1 reopen and 1 bug found later

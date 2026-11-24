@@ -19,7 +19,7 @@ test('TC-BEADS-080: Shared link means the viewer', async ({ page, ev }) => {
     await expect(page.getByText('b-ann').first()).toBeVisible();
     await expect(page.getByText('b-mail').first()).toBeVisible();
     await expect(page.getByText('b-bob')).toHaveCount(0);
-    await page.getByRole('button', { name: /Assignee/ }).click();
+    await page.getByRole('button', { name: 'Assignee Me' }).click();
     await expect(page.getByRole('dialog').getByRole('checkbox', { name: 'Me' })).toBeChecked();
   });
 });

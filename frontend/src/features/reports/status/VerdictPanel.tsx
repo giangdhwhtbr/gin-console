@@ -15,7 +15,7 @@ export function VerdictPanel({ verdict }: { verdict: StatusVerdict }) {
       data-verdict-wash={wash ? "true" : undefined}
       className={cn(
         "flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border px-4 py-3",
-        wash ? "border-state-blocked/30 bg-state-blocked/10" : "bg-card",
+        wash ? "border-state-blocked/30 bg-state-blocked/5" : "bg-card",
       )}
     >
       <span

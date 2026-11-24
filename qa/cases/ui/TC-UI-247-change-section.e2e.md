@@ -1,6 +1,6 @@
 # TC-UI-247: Change section
 
-- **REQ:** REQ-UI-129@de1adeec
+- **REQ:** REQ-UI-129@7be2b291
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -11,9 +11,9 @@
 - The window is 1440px wide and the sidebar is expanded
 
 **Steps:**
-1. Open `/reports?project=a&days=7&tab=delivery`
-2. Click "Quality" in the sidebar
+1. Open `/reports/delivery?project=a&days=7`
+2. Click "Rework" in the sidebar
 
 **Expected:**
-- The URL becomes `/reports?project=a&days=7&tab=quality`
-- The Quality panel is shown
+- The URL becomes `/reports/rework?project=a&days=7`
+- The Rework panel is shown

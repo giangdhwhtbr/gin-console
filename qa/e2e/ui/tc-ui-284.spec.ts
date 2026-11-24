@@ -1,4 +1,4 @@
-// TC: TC-UI-284@875d0e05
+// TC: TC-UI-284@380fe9e6
 import { test, expect } from '../evidence';
 import { entry, list } from '../support/api';
 import { stubReports } from '../support/reports';
@@ -13,9 +13,9 @@ test('TC-UI-284: Late milestone headline', async ({ page, ev }) => {
     milestones: list([entry('m2', { title: 'Second', status: 'active', start: '2026-11-02', end: '2026-11-27', finish: '2026-12-15' })]),
   });
 
-  await ev.step('1. Open `/reports?project=alpha`', async () => {
-    await page.goto('/reports?project=alpha');
-    const team = page.getByRole('tab', { name: /^Team/ });
+  await ev.step('1. Open `/reports/status?project=alpha`', async () => {
+    await page.goto('/reports/status?project=alpha');
+    const team = page.getByRole('link', { name: /^Team/ });
     await expect(team).toContainText('27 of 64 done, late');
     await expect(team.locator('svg')).toHaveCount(1);
   });

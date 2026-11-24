@@ -1,8 +1,8 @@
-// TC: TC-UI-078@d3bf3c07
+// TC: TC-UI-078@fd132fe6
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
-test('TC-UI-078: Quality figures', async ({ page, ev }) => {
+test('TC-UI-078: Rework figures', async ({ page, ev }) => {
   // Preconditions: ann (4 closed, 1 reopen), bao (1 closed, 1 bug), rework rate 0.4; the window is 900px wide.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await page.setViewportSize({ width: 900, height: 900 });
@@ -17,10 +17,10 @@ test('TC-UI-078: Quality figures', async ({ page, ev }) => {
     },
   });
 
-  await ev.step('1. Open `/reports?project=alpha&tab=quality`', async () => {
-    await page.goto('/reports?project=alpha&tab=quality');
-    await expect(page.getByRole('tab', { name: /^Quality/ })).toHaveAttribute('aria-selected', 'true');
-    const panel = page.locator('#panel-quality');
+  await ev.step('1. Open `/reports/rework?project=alpha`', async () => {
+    await page.goto('/reports/rework?project=alpha');
+    await expect(page.getByRole('link', { name: /^Rework/ })).toHaveAttribute('aria-current', 'page');
+    const panel = page.getByRole('region', { name: 'Rework', exact: true });
     await expect(panel).toContainText('40%');
     await expect(panel).toContainText('ann');
     await expect(panel).toContainText('bao');

@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-042@62eae7e2
+// TC: TC-REPORTS-042@32adf2eb
 import { test, expect } from '../evidence';
 import { stubReports, teamBody } from '../support/reports';
 
@@ -14,8 +14,8 @@ test('TC-REPORTS-042: Failure (REQ-REPORTS-017)', async ({ page, ev }) => {
       : route.fulfill({ json: teamBody('alpha') });
   });
 
-  await ev.step('1. Open `/reports?project=alpha&tab=team`', async () => {
-    await page.goto('/reports?project=alpha&tab=team');
+  await ev.step('1. Open `/reports/team?project=alpha`', async () => {
+    await page.goto('/reports/team?project=alpha');
     await expect(page.getByText('The team report could not be loaded')).toBeVisible();
     await expect(page.getByText('bd failed')).toBeVisible();
   });
@@ -23,6 +23,6 @@ test('TC-REPORTS-042: Failure (REQ-REPORTS-017)', async ({ page, ev }) => {
   await ev.step('2. Press Retry', async () => {
     await page.getByRole('button', { name: 'Retry' }).click();
     await expect(page.getByText('The team report could not be loaded')).toHaveCount(0);
-    await expect(page.getByRole('combobox', { name: 'Milestone' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Report scope' })).toBeVisible();
   });
 });

@@ -38,7 +38,7 @@ describe("StatusSection", () => {
     const verdictPanel = container.querySelector("[data-verdict-tone='risk']");
     expect(verdictPanel).not.toBeNull();
     expect(verdictPanel).toHaveAttribute("data-verdict-wash", "true");
-    expect(verdictPanel).toHaveClass("bg-state-blocked/10");
+    expect(verdictPanel).toHaveClass("bg-state-blocked/5");
     expect(within(verdictPanel as HTMLElement).getByText("At risk")).toHaveClass("text-state-blocked");
     expect(verdictPanel?.querySelector("[data-glyph='deferred']")).not.toBeNull();
     await waitFor(() => expect(screen.getByRole("heading", { name: "Epics" })).toBeInTheDocument());

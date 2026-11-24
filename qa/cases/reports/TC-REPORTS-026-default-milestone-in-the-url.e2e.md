@@ -1,6 +1,6 @@
 # TC-REPORTS-026: Default milestone in the URL
 
-- **REQ:** REQ-REPORTS-012@023dc4c5
+- **REQ:** REQ-REPORTS-012@79484a74
 - **Priority:** high
 
 **Preconditions:**
@@ -11,7 +11,7 @@
 - None
 
 **Steps:**
-1. Open `/reports?project=alpha&tab=team`
+1. Open `/reports/team?project=alpha`
 
 **Expected:**
-- The URL becomes `/reports?project=alpha&days=30&tab=team&milestone=m2` without a reload
+- The URL becomes `/reports/team?project=alpha&milestone=m2` without adding a history entry

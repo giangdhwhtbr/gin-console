@@ -1,26 +1,26 @@
-// TC: TC-UI-020@426309c5
+// TC: TC-UI-020@1a2bc481
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
-test('TC-UI-020: Period kept across tabs (REQ-UI-088)', async ({ page, ev }) => {
-  // Precondition: the Reports page for alpha with 7 days picked on the Delivery tab; the window is 900px wide.
+test('TC-UI-020: Period kept across sections (REQ-UI-088)', async ({ page, ev }) => {
+  // Precondition: the Reports page for alpha with 7 days picked on the Delivery section; the window is 900px wide.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await page.setViewportSize({ width: 900, height: 900 });
   await stubReports(page, { projects: ['alpha'] });
 
-  await ev.step('0. Open `/reports?project=alpha&days=7&tab=delivery`', async () => {
-    await page.goto('/reports?project=alpha&days=7&tab=delivery');
-    await expect(page.getByRole('tab', { name: /^Delivery/ })).toHaveAttribute('aria-selected', 'true');
+  await ev.step('0. Open `/reports/delivery?project=alpha&days=7`', async () => {
+    await page.goto('/reports/delivery?project=alpha&days=7');
+    await expect(page.getByRole('link', { name: /^Delivery/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  await ev.step('1. Select the Team tab', async () => {
-    await page.getByRole('tab', { name: /^Team/ }).click();
-    await expect(page.getByRole('tab', { name: /^Team/ })).toHaveAttribute('aria-selected', 'true');
+  await ev.step('1. Open the Team section', async () => {
+    await page.getByRole('link', { name: /^Team/ }).click();
+    await expect(page.getByRole('link', { name: /^Team/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  await ev.step('2. Select the Quality tab', async () => {
-    await page.getByRole('tab', { name: /^Quality/ }).click();
-    await expect(page).toHaveURL(/days=7/);
-    await expect(page.locator('#panel-quality').getByRole('button', { name: '7 days' })).toHaveAttribute('aria-pressed', 'true');
+  await ev.step('2. Open the Rework section', async () => {
+    await page.getByRole('link', { name: /^Rework/ }).click();
+    await expect(page).toHaveURL(/\/reports\/rework\?.*days=7/);
+    await expect(page.getByRole('combobox', { name: 'Report scope' })).toHaveValue('days:7');
   });
 });

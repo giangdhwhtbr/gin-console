@@ -1,29 +1,25 @@
-// TC: TC-REPORTS-061@7385c618
+// TC: TC-REPORTS-061@e25ca93d
 import { test, expect } from '../evidence';
-import { stubApi } from '../support/api';
-
-const figures = {
-  scope: 8, closed: 4, in_progress: 0, open: 4, blocked: 0, unclaimed: 0, done: 0.5, throughput: 1,
-  cycle_median: 1.5, oldest_in_progress: null, on_time: 0.5, rework_rate: 0, reopens: 0, bugs: 0,
-};
+import { stubReports, teamBody } from '../support/reports';
 
 test('TC-REPORTS-061: Open after the end date', async ({ page, ev }) => {
   // Precondition: alpha has an open milestone m2 that ended yesterday; the team report answers late_open 4.
-  await stubApi(page, { projects: ['alpha'] });
-  await page.route('**/api/reports/team**', (route) =>
-    route.fulfill({
+  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
+  await stubReports(page, { projects: ['alpha'] });
+  await page.route('**/api/reports/team**', (route) => {
+    const base = teamBody('alpha', { closed: 4, scope: 8, pace: 1, paceNeeded: null });
+    return route.fulfill({
       json: {
-        generated_at: '2026-11-22T10:00:00Z', project: 'alpha', today: '2026-11-22',
+        ...base,
+        today: '2026-11-22',
         milestones: [{ id: 'm2', title: 'Milestone two', status: 'active', start: '2026-11-02', end: '2026-11-21', closed_on: null }],
-        undated: 0, milestone: 'm2',
-        team: { ...figures, working_days: 14, elapsed: 14, days_left: 0, pace: 1, pace_needed: null, late_open: 4 },
-        members: [], days: [], beads: [],
+        team: { ...base.team, in_progress: 0, open: 4, done: 0.5, on_time: 0.5, working_days: 14, elapsed: 14, days_left: 0, late_open: 4 },
       },
-    }),
-  );
+    });
+  });
 
-  await ev.step('1. Open `/reports?project=alpha&tab=team&milestone=m2`', async () => {
-    await page.goto('/reports?project=alpha&tab=team&milestone=m2');
+  await ev.step('1. Open `/reports/team?project=alpha&milestone=m2`', async () => {
+    await page.goto('/reports/team?project=alpha&milestone=m2');
     await expect(page.getByRole('group', { name: 'Key figures' })).toBeVisible();
   });
 

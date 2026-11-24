@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-053@70efd2d8
+// TC: TC-REPORTS-053@1d35c83d
 import { test, expect } from '../evidence';
 import { entry, list } from '../support/api';
 import { stubReports } from '../support/reports';
@@ -12,9 +12,9 @@ test('TC-REPORTS-053: Assumed days per point (REQ-REPORTS-018)', async ({ page, 
     await page.setViewportSize({ width: 1280, height: 900 });
   });
 
-  await ev.step('2. Open `/reports?project=alpha&tab=velocity`', async () => {
-    await page.goto('/reports?project=alpha&tab=velocity');
-    const panel = page.getByRole('tabpanel');
+  await ev.step('2. Open `/reports/velocity?project=alpha`', async () => {
+    await page.goto('/reports/velocity?project=alpha');
+    const panel = page.getByRole('region', { name: 'Velocity' });
     await expect(panel.getByText('1.0 days per point')).toBeVisible();
     await expect(panel.getByText('assumed')).toBeVisible();
   });

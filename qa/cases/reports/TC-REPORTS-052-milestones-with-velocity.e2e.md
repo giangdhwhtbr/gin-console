@@ -1,6 +1,6 @@
 # TC-REPORTS-052: Milestones with velocity
 
-- **REQ:** REQ-REPORTS-018@76e8618c
+- **REQ:** REQ-REPORTS-018@70b62d05
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-27-52
@@ -17,9 +17,9 @@
 
 **Steps:**
 1. Set the window width to 1280 px
-2. Open `/reports?project=alpha&tab=velocity`
+2. Open `/reports/velocity?project=alpha&milestone=m2`
 
 **Expected:**
 - The figures read "1.4 days per point", commitment met "38%" and accuracy "1.08"
-- The charts and the table hold `m1` then `m2`
+- The charts and the table hold `m1` then `m2`, and `m2` is marked
 - `m3` is not shown

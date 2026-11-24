@@ -1,4 +1,4 @@
-// TC: TC-UI-030@2f5caac8
+// TC: TC-UI-030@9d23d0ca
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
@@ -8,9 +8,9 @@ test('TC-UI-030: Team headline (REQ-UI-095)', async ({ page, ev }) => {
   await page.setViewportSize({ width: 900, height: 900 });
   await stubReports(page, { projects: ['alpha'], team: { closed: 27, scope: 64, pace: 3.6, paceNeeded: 3.4 } });
 
-  await ev.step('1. Open the Delivery tab', async () => {
-    await page.goto('/reports?project=alpha&tab=delivery');
-    const team = page.getByRole('tab', { name: /^Team/ });
+  await ev.step('1. Open `/reports/delivery?project=alpha`', async () => {
+    await page.goto('/reports/delivery?project=alpha');
+    const team = page.getByRole('link', { name: /^Team/ });
     await expect(team).toContainText('27 of 64 done, on pace');
     await expect(team.locator('svg')).toHaveCount(0);
   });

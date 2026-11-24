@@ -1,6 +1,6 @@
 # TC-REPORTS-057: Merge gates left out
 
-- **REQ:** REQ-REPORTS-001@256e3c2c
+- **REQ:** REQ-REPORTS-001@364d9ff4
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-32-23-api

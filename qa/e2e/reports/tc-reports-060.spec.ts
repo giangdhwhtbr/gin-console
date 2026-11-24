@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-060@550221ad
+// TC: TC-REPORTS-060@8cb14e5b
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
 import { reportBody, teamBody } from '../support/reports';
@@ -21,11 +21,11 @@ test('TC-REPORTS-060: Late active milestone', async ({ page, ev }) => {
   });
   await page.route(/\/api\/reports\?/, (route) => route.fulfill({ json: reportBody('alpha') }));
 
-  await ev.step('1. Open `/reports?project=alpha&tab=team&milestone=m2`', async () => {
-    await page.goto('/reports?project=alpha&tab=team&milestone=m2');
+  await ev.step('1. Open `/reports/team?project=alpha&milestone=m2`', async () => {
+    await page.goto('/reports/team?project=alpha&milestone=m2');
   });
 
-  await ev.step('2. Look at the status in the milestone line', async () => {
+  await ev.step('2. Look at the status in the scope line', async () => {
     const chip = page.locator('[data-milestone-status]');
     await expect(chip).toHaveText('Active, late');
     await expect(chip.locator('svg.lucide-triangle-alert')).toBeVisible();

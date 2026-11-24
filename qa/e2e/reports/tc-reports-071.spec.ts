@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-071@a018708c
+// TC: TC-REPORTS-071@71574834
 import { test, expect } from '../evidence';
 import { stubReports, teamBody } from '../support/reports';
 
@@ -17,8 +17,8 @@ test('TC-REPORTS-071: Scope by status is a strand with a legend', async ({ page,
     await page.setViewportSize({ width: 1280, height: 900 });
   });
 
-  await ev.step('2. Open /reports?project=alpha&tab=team&milestone=m2', async () => {
-    await page.goto('/reports?project=alpha&tab=team&milestone=m2');
+  await ev.step('2. Open `/reports/team?project=alpha&milestone=m2`', async () => {
+    await page.goto('/reports/team?project=alpha&milestone=m2');
     await expect(page.getByRole('group', { name: 'Key figures' }).getByText('27 of 64', { exact: true })).toBeVisible();
   });
 

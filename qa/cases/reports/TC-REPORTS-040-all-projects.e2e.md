@@ -1,6 +1,6 @@
 # TC-REPORTS-040: Retired all-projects link
 
-- **REQ:** REQ-REPORTS-017@94b4aefa
+- **REQ:** REQ-REPORTS-017@33de80f9
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-27-52
@@ -13,9 +13,9 @@
 - None
 
 **Steps:**
-1. Open `/reports?project=all&tab=team`
+1. Open `/reports/team?project=all`
 
 **Expected:**
-- The URL names `project=alpha` and `tab=team`, not `project=all`
-- The Team tab of `alpha` is shown
+- The URL becomes `/reports/team?project=alpha` (with scope), not `project=all`
+- The Team section of `alpha` is shown
 - Every request to `/api/reports/team` names `project=alpha` and none names `project=all`
