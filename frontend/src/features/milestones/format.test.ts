@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { awayLine, oneDecimal, percent, twoDecimals, workdaysAfter } from "./format";
+import { addWorkdays, awayLine, oneDecimal, percent, twoDecimals, workdaysAfter } from "./format";
 
 describe("workdaysAfter", () => {
   // REQ-MILESTONE-UI-016 spare days counted Monday to Friday in (end, finish]
@@ -8,6 +8,15 @@ describe("workdaysAfter", () => {
     expect(workdaysAfter("2026-12-31", "2027-01-07")).toBe(5);
     expect(workdaysAfter("2026-11-06", "2026-11-08")).toBe(0); // Friday to Sunday
     expect(workdaysAfter("2026-11-08", "2026-11-08")).toBe(0);
+  });
+});
+
+describe("addWorkdays", () => {
+  it("REQ-REPORTS-027 returns iso for 0 and skips weekends", () => {
+    expect(addWorkdays("2026-11-23", 0)).toBe("2026-11-23");
+    expect(addWorkdays("2026-11-23", 10)).toBe("2026-12-07"); // Mon 23 Nov + 10 working days = Mon 7 Dec
+    expect(addWorkdays("2026-11-23", 5)).toBe("2026-11-30"); // Mon 23 Nov + 5 working days = Mon 30 Nov
+    expect(addWorkdays("2026-11-20", 1)).toBe("2026-11-23"); // Fri 20 Nov + 1 working day = Mon 23 Nov
   });
 });
 

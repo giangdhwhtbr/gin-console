@@ -5,10 +5,12 @@ import { rememberProject, setFavorite } from "@/app/project";
 import { clearOrigin, getOrigin } from "@/app/origin";
 import { navigate } from "@/app/route";
 import type { Report } from "./api";
-import { entry, list } from "@/features/milestones/milestoneFixtures";
+import { detail, entry, list } from "@/features/milestones/milestoneFixtures";
 import { ReportsPage } from "./ReportsPage";
 import { useSections } from "./sectionStore";
 import { report } from "./reportFixtures";
+import { periodStatusReport, statusReport as statusFixture } from "./status/statusFixtures";
+import type { StatusReport } from "./status/statusApi";
 import { teamReport as teamFixture, teamTotals } from "./team/teamFixtures";
 import type { TeamReport } from "./teamApi";
 import { vel } from "./velocity/velocityFixtures";
@@ -30,18 +32,25 @@ const teamFor = (url: URL): TeamReport => {
   const days = url.searchParams.get("days");
   return days !== null ? periodTeam(Number(days)) : teamFixture({ milestone: url.searchParams.get("milestone") ?? "m2" });
 };
+const statusFor = (url: URL): StatusReport => {
+  const days = url.searchParams.get("days");
+  return days !== null ? periodStatusReport(Number(days)) : statusFixture({ milestone: url.searchParams.get("milestone") ?? "m2" });
+};
 
 const stub = (
   handler: (url: URL) => Response | Promise<Response> = () => json(report()),
   team: (url: URL) => Response | Promise<Response> = (url) => json(teamFor(url)),
   milestones: (url: URL) => Response | Promise<Response> = () => json(list([entry("m1")], { days_per_point: { value: 1.4, measured_epics: 6, assumed: false } })),
+  status: (url: URL) => Response | Promise<Response> = (url) => json(statusFor(url)),
 ) => {
   const mock = vi.fn((input: RequestInfo | URL) => {
     const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url, "http://localhost");
     if (url.pathname === "/api/projects/beads") return Promise.resolve(json([project("alpha"), project("beta")]));
     if (url.pathname === "/api/reports") return Promise.resolve(handler(url));
     if (url.pathname === "/api/reports/team") return Promise.resolve(team(url));
+    if (url.pathname === "/api/reports/status") return Promise.resolve(status(url));
     if (url.pathname === "/api/milestones") return Promise.resolve(milestones(url));
+    if (url.pathname.startsWith("/api/milestones/")) return Promise.resolve(json(detail([])));
     return Promise.resolve(json({}, 404));
   });
   vi.stubGlobal("fetch", mock);
@@ -65,6 +74,7 @@ afterEach(() => {
 });
 
 const teamCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports/team"));
+const statusCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports/status"));
 const reportCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports?"));
 const milestoneCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/milestones"));
 
@@ -254,12 +264,13 @@ describe("ReportsPage", () => {
     expect(sectionLink(/^Delivery/)).toHaveAttribute("href", "/reports/delivery?project=alpha&milestone=m2&member=ann&status=closed");
   });
 
-  it("REQ-UI-095 headlines: Delivery and Rework under their names, none under Status, and no Quality section", async () => {
+  it("REQ-UI-095 headlines: Status, Delivery and Rework under their names, and no Quality section", async () => {
     stub();
     open("/reports/delivery?project=alpha&milestone=m2");
     expect(await screen.findByRole("link", { name: /Delivery\s*4 beads closed/ })).toBeInTheDocument();
     expect(sectionLink(/Rework\s*25% rework/)).toBeInTheDocument();
-    expect(sectionLink(/^Status/)).toHaveAccessibleName("Status");
+    const statusLink = await screen.findByRole("link", { name: /Status\s*At risk/ });
+    expect(statusLink.querySelector("svg")).not.toBeNull();
     expect(screen.queryByText(/Quality|AI usage|Data coverage/)).toBeNull();
   });
 
@@ -443,8 +454,57 @@ describe("ReportsPage", () => {
     stub();
     open("/reports/status?project=alpha&milestone=m2");
     const panel = await screen.findByRole("region", { name: "Status" });
-    expect(within(panel).getByRole("heading", { name: "Status" })).toBeInTheDocument();
+    expect(await within(panel).findByRole("heading", { name: "Checkout v2" })).toBeInTheDocument();
     expect(sectionLink(/^Status/)).toHaveAttribute("aria-current", "page");
+  });
+
+  it("REQ-REPORTS-032 Period: shows 5 closed, 20%, 1, no verdict and milestone prompt", async () => {
+    stub();
+    open("/reports/status?project=alpha&days=30");
+    const panel = await screen.findByRole("region", { name: "Status" });
+    expect(await within(panel).findByText("5 closed")).toBeInTheDocument();
+    expect(within(panel).getByText("20%")).toBeInTheDocument();
+    expect(within(panel).getByText("1")).toBeInTheDocument();
+    expect(within(panel).getByText("Pick a milestone to see the verdict, burn-up and epics")).toBeInTheDocument();
+    expect(panel.querySelector("[data-verdict-tone]")).toBeNull();
+  });
+
+  it("REQ-REPORTS-032 No milestones: shows beta has no milestones yet and gin milestone create", async () => {
+    const emptyTeam = () => json(periodTeam(30, { milestones: [] }));
+    const emptyStatus = () => json(periodStatusReport(30, { project: "beta", milestones: [] }));
+    stub(undefined, emptyTeam, undefined, emptyStatus);
+    open("/reports/status?project=beta&days=30");
+    expect(await screen.findByRole("heading", { name: "beta has no milestones yet" })).toBeInTheDocument();
+    expect(screen.getByText("gin milestone create")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
+  });
+
+  it("REQ-REPORTS-032 Failure: retries after 502 and renders the Status section", async () => {
+    let calls = 0;
+    const mock = stub(undefined, undefined, undefined, (url) => (++calls === 1 ? json({ error: "status boom" }, 502) : json(statusFor(url))));
+    open("/reports/status?project=alpha&milestone=m2");
+    expect(await screen.findByText("status boom")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("heading", { name: "Checkout v2" })).toBeInTheDocument();
+    expect(statusCalls(mock)).toHaveLength(2);
+  });
+
+  it("REQ-REPORTS-032 late answer: drops a status answer for a scope no longer selected", async () => {
+    let release: (response: Response) => void = () => {};
+    stub(undefined, undefined, undefined, (url) =>
+      url.searchParams.get("milestone") === "m1"
+        ? new Promise<Response>((resolve) => {
+            release = resolve;
+          })
+        : json(statusFor(url)),
+    );
+    open("/reports/status?project=alpha&milestone=m1");
+    await userEvent.selectOptions(await scopeSelect(), "Milestone two");
+    expect(await screen.findByRole("heading", { name: "Checkout v2" })).toBeInTheDocument();
+    release(json(statusFixture({ milestone: "m1" })));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.getByRole("heading", { name: "Checkout v2" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Milestone one" })).toBeNull();
   });
 
   it("REQ-UI-093 late answer: drops the answer for a scope no longer selected", async () => {

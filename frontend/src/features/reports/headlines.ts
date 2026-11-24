@@ -1,14 +1,27 @@
 import { lateOf } from "@/features/milestones/late";
 import { formatDate } from "@/lib/dates";
-import type { DaysPerPoint } from "@/features/milestones/api";
+import type { DaysPerPoint, MilestoneList } from "@/features/milestones/api";
 import { oneDecimal, plural } from "@/features/milestones/format";
 import type { Report } from "./api";
 import { formatDays, formatPercent } from "./format";
 import type { ReportSection } from "./sections";
+import { selectedStatusMilestone, type StatusReport } from "./status/statusApi";
+import { statusVerdict } from "./status/verdict";
 import { lateDays } from "./team/format";
 import { selectedMilestone, UNASSIGNED, type TeamReport } from "./teamApi";
 
 export type Headline = { text: string; warn: boolean };
+
+/** REQ-UI-095: the Status section headline is its verdict word, with a warning icon for At risk, Late and Finished late; null for a period. */
+export function statusHeadline(report: StatusReport, list: MilestoneList | null): Headline | null {
+  if (report.days !== null) return null;
+  const milestone = selectedStatusMilestone(report);
+  if (milestone === null) return null;
+  const finish = list?.milestones.find((m) => m.id === milestone.id)?.finish ?? null;
+  const unsplit = report.epics.filter((e) => e.status !== "closed" && e.child_counts.total === 0).length;
+  const verdict = statusVerdict(report, milestone, finish, unsplit);
+  return { text: verdict.word, warn: verdict.tone === "risk" || verdict.tone === "late" };
+}
 
 /** `finish` is the forecast of the selected milestone from the Milestones list, `null` while that has not loaded. */
 export function teamHeadline(report: TeamReport, finish: string | null): Headline {

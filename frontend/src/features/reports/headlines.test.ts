@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { figures, headlines, teamHeadline, velocityHeadline } from "./headlines";
+import { entry, list } from "@/features/milestones/milestoneFixtures";
+import { figures, headlines, statusHeadline, teamHeadline, velocityHeadline } from "./headlines";
+import { periodStatusReport, statusKpis, statusReport } from "./status/statusFixtures";
 import { teamReport, teamTotals } from "./team/teamFixtures";
 import { report } from "./reportFixtures";
 
@@ -17,6 +19,18 @@ describe("report headlines", () => {
       delivery: { text: "41 beads closed", warn: false },
       rework: { text: "9% rework", warn: false },
     });
+    expect(statusHeadline(statusReport(), null)).toEqual({ text: "At risk", warn: true });
+    expect(statusHeadline(statusReport(), list([entry("m2", { finish: "2027-02-17" })]))).toEqual({ text: "Late", warn: true });
+    const onTrack = statusReport({
+      kpis: statusKpis({
+        beads: { done: 20, scope: 25, done_week_ago: 10, scope_week_ago: 25 },
+        pace: { pace: 2.0, pace_needed: 0.7, pace_week_ago: 2.0 },
+        blocked: { count: 0, oldest_days: null },
+      }),
+    });
+    expect(statusHeadline(onTrack, null)).toEqual({ text: "On track", warn: false });
+    expect(statusHeadline(statusReport({ milestone: "m1" }), null)).toEqual({ text: "Finished 2 d late", warn: true });
+    expect(statusHeadline(periodStatusReport(30), null)).toBeNull();
   });
   it("REQ-UI-095 no rate reads a dash", () => {
     const r = report({ totals: { closed: 0, rework_rate: null } });

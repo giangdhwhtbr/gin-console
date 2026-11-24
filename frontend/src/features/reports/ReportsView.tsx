@@ -8,17 +8,21 @@ import { Legend } from "@/components/Legend";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { fetchMilestones, MilestonesError, type MilestoneList } from "@/features/milestones/api";
+import { CopyCommand } from "@/features/milestones/CopyCommand";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { formatDateTime } from "@/lib/dates";
 import { fetchReport, ReportRequestError, type Report } from "./api";
 import { parseReportSearch, reportSearch, type Period, type ReportFilters, type Scope } from "./filters";
 import { DeliverySection } from "./DeliverySection";
 import { Figures } from "./Figures";
-import { figures, headlines, teamHeadline, velocityHeadline, type Headline } from "./headlines";
+import { figures, headlines, statusHeadline, teamHeadline, velocityHeadline, type Headline } from "./headlines";
 import { ReworkSection } from "./ReworkSection";
 import { ScopeSelect } from "./ScopeSelect";
 import { SectionLinks } from "./SectionLinks";
 import { SECTION_LABELS, SECTIONS, sectionPath, type ReportSection } from "./sections";
+import { fetchStatus, type StatusReport } from "./status/statusApi";
+import { StatusFigures } from "./status/StatusFigures";
+import { StatusSection } from "./status/StatusSection";
 import { TeamSection } from "./team/TeamSection";
 import { fetchTeam, selectedMilestone, type TeamMilestone, type TeamReport } from "./teamApi";
 import { clearSections, publishSections, type SectionLink } from "./sectionStore";
@@ -36,6 +40,9 @@ type Loaded = { status: "loading" } | Settled;
 type SettledTeam = { status: "error"; message: string; refused: boolean } | { status: "ok"; report: TeamReport };
 type LoadedTeam = { status: "loading" } | SettledTeam;
 type TeamAnswer = { base: string; requested: Scope; value: SettledTeam };
+type SettledStatus = { status: "error"; message: string } | { status: "ok"; report: StatusReport };
+type LoadedStatus = { status: "loading" } | SettledStatus;
+type StatusAnswer = { base: string; requested: Scope; value: SettledStatus };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -55,6 +62,12 @@ function answers(answer: TeamAnswer, base: string, scope: Scope): boolean {
   return scope.kind === "milestone" && answer.requested.kind !== "period" && answer.value.status === "ok" && answer.value.report.milestone === scope.id;
 }
 
+function answersStatus(answer: StatusAnswer, base: string, scope: Scope): boolean {
+  if (answer.base !== base) return false;
+  if (sameScope(answer.requested, scope)) return true;
+  return scope.kind === "milestone" && answer.requested.kind !== "period" && answer.value.status === "ok" && answer.value.report.milestone === scope.id;
+}
+
 /** The Reports page for one section: the scope of REQ-REPORTS-033, the row of section links and the section's panel. */
 export function ReportsView({ section }: { section: ReportSection }) {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
@@ -62,6 +75,8 @@ export function ReportsView({ section }: { section: ReportSection }) {
   const [attempt, setAttempt] = useState(0);
   const [settledTeam, setSettledTeam] = useState<TeamAnswer | null>(null);
   const [teamAttempt, setTeamAttempt] = useState(0);
+  const [settledStatus, setSettledStatus] = useState<StatusAnswer | null>(null);
+  const [statusAttempt, setStatusAttempt] = useState(0);
   // the milestones of the last team report of a project, which the scope select lists while the next one loads
   const [known, setKnown] = useState<{ project: string; milestones: TeamMilestone[] } | null>(null);
   // the Milestones list of each project asked for (REQ-UI-095), or why the request failed
@@ -97,6 +112,10 @@ export function ReportsView({ section }: { section: ReportSection }) {
   const teamCurrent = settledTeam !== null && answers(settledTeam, teamBase, scope);
   const team: LoadedTeam = settledTeam !== null && teamCurrent ? settledTeam.value : { status: "loading" };
 
+  const statusBase = JSON.stringify([selected, statusAttempt]);
+  const statusCurrent = settledStatus !== null && answersStatus(settledStatus, statusBase, scope);
+  const status: LoadedStatus = settledStatus !== null && statusCurrent ? settledStatus.value : { status: "loading" };
+
   // REQ-REPORTS-033: the team report is asked for whatever the section; its milestones fill the scope select
   useEffect(() => {
     if (selected === "" || teamCurrent) return;
@@ -117,6 +136,24 @@ export function ReportsView({ section }: { section: ReportSection }) {
       live = false;
     };
   }, [selected, scopeId, scopeDays, teamBase, teamCurrent]);
+
+  // REQ-UI-095: the status report is asked for whatever the section, for its headline and Status panel
+  useEffect(() => {
+    if (selected === "" || statusCurrent) return;
+    let live = true;
+    const requested = scopeOf(scopeId, scopeDays);
+    fetchStatus(selected, requested).then(
+      (report) => {
+        if (live) setSettledStatus({ base: statusBase, requested, value: { status: "ok", report } });
+      },
+      (error: unknown) => {
+        if (live) setSettledStatus({ base: statusBase, requested, value: { status: "error", message: messageOf(error) } });
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [selected, scopeId, scopeDays, statusBase, statusCurrent]);
   const milestones = known !== null && known.project === selected ? known.milestones : null;
 
   // REQ-UI-095: the Milestones list of a single project is asked for once, whatever the section; the page reloads it on Refresh
@@ -182,10 +219,12 @@ export function ReportsView({ section }: { section: ReportSection }) {
     };
   }, [selected, scopeId, scopeDays, key, confirmed]);
 
+  const statusReport = status.status === "ok" ? status.report : null;
+
   const headlineFor = (value: ReportSection): Headline | null => {
     switch (value) {
       case "status":
-        return null; // the verdict of the status report (REQ-REPORTS-027) comes with the Status section
+        return statusReport === null ? null : statusHeadline(statusReport, list);
       case "team":
         return teamReport === null ? null : teamHeadline(teamReport, finish);
       case "velocity":
@@ -272,7 +311,35 @@ export function ReportsView({ section }: { section: ReportSection }) {
           <section aria-label={SECTION_LABELS[section]} className="flex min-w-0 flex-col gap-6">
             {teamError || (milestones !== null && <ScopeSelect milestones={milestones} scope={scope} onChange={pick} />)}
             {section === "status" ? (
-              <h2 className="font-semibold">Status</h2>
+              <>
+                {status.status === "loading" && <p className="text-muted-foreground">Loading status…</p>}
+                {status.status === "error" && (
+                  <Alert variant="destructive">
+                    <AlertTitle>The status report could not be loaded</AlertTitle>
+                    <AlertDescription>{status.message}</AlertDescription>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setStatusAttempt((n) => n + 1)}>
+                      Retry
+                    </Button>
+                  </Alert>
+                )}
+                {statusReport !== null &&
+                  (statusReport.milestones.length === 0 ? (
+                    <div className="flex flex-col gap-3 rounded-lg border bg-card p-6">
+                      <h2 className="text-xl font-semibold">{selected} has no milestones yet</h2>
+                      <p className="text-sm text-muted-foreground">
+                        Milestones group epics into a dated release so you can track pace, burn-up and scope changes.
+                      </p>
+                      <CopyCommand command="gin milestone create" />
+                    </div>
+                  ) : statusReport.days !== null ? (
+                    <div className="flex min-w-0 flex-col gap-5">
+                      <StatusFigures kpis={statusReport.kpis} milestone={null} today={statusReport.today} />
+                      <p className="text-sm text-muted-foreground">Pick a milestone to see the verdict, burn-up and epics</p>
+                    </div>
+                  ) : (
+                    <StatusSection project={selected} report={statusReport} list={list} />
+                  ))}
+              </>
             ) : section === "team" ? (
               <>
                 {team.status === "loading" && <p className="text-muted-foreground">Loading team…</p>}

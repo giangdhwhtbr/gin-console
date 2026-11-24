@@ -147,7 +147,7 @@ const isForecastEpic = (value: unknown) =>
   isObject(value) &&
   strings(value, ["id", "planned_start", "planned_end"]) &&
   isStringOrNull(field(value, "milestone")) &&
-  (field(value, "estimate_source") === undefined || field(value, "estimate_source") === null || sourceOf(field(value, "estimate_source")) !== null);
+  (field(value, "estimate_source") === undefined || isStringOrNull(field(value, "estimate_source")));
 
 function isForecast(value: unknown): value is Forecast {
   return (

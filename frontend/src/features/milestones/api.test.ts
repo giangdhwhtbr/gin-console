@@ -99,12 +99,14 @@ describe("milestones api", () => {
     const epics = [
       { id: "e-1", milestone: "M1", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" },
       { id: "e-5", milestone: null, planned_start: "2026-12-23", planned_end: "2027-01-01" },
+      { id: "e-6", milestone: "M1", planned_start: "2026-12-24", planned_end: "2027-01-02", estimate_source: "future_source" },
     ] as unknown as Forecast["epics"];
     stubMilestones(() => json(list([entry("m-1")], { forecast: { ...forecast(), epics } })));
     const got = (await fetchMilestones("alpha")).forecast?.epics;
     expect(got).toEqual([
       { id: "e-1", milestone: "M1", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" },
       { id: "e-5", milestone: null, planned_start: "2026-12-23", planned_end: "2027-01-01", estimate_source: null },
+      { id: "e-6", milestone: "M1", planned_start: "2026-12-24", planned_end: "2027-01-02", estimate_source: null },
     ]);
   });
 

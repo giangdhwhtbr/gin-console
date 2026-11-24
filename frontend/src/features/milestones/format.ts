@@ -25,6 +25,18 @@ export function workdaysAfter(end: string, finish: string): number {
   return count;
 }
 
+/** The n-th working day (Monday to Friday) after `iso`; `iso` itself for 0. */
+export function addWorkdays(iso: string, n: number): string {
+  if (n <= 0) return iso;
+  const day = utcOf(iso);
+  let left = n;
+  while (left > 0) {
+    day.setUTCDate(day.getUTCDate() + 1);
+    if (day.getUTCDay() % 6 !== 0) left -= 1;
+  }
+  return day.toISOString().slice(0, 10);
+}
+
 /** REQ-MILESTONE-UI-020: "Away: ann 18–20 Nov, bao 25 Nov" from `{member: ["2026-11-18..2026-11-20", "2026-11-25"]}`; null when nobody is away. A range that is not a date or `from..to` is shown as it came. */
 export function awayLine(away: Readonly<Record<string, readonly string[]>>, today: string): string | null {
   const ISO = /^\d{4}-\d{2}-\d{2}$/;
