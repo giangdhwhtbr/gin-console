@@ -143,8 +143,18 @@ def test_reports_021_milestone_planned_days_per_point() -> None:
         row("m-3", issue_type="milestone", metadata={"planned_days_per_point": 0}),
         row("m-4", issue_type="milestone", metadata={"planned_days_per_point": True}),
         row("m-5", issue_type="milestone", metadata={"planned_days_per_point": "x"}),
+        row("m-6", issue_type="milestone", metadata={"planned_days_per_point": "inf"}),
+        row("m-7", issue_type="milestone", metadata={"planned_days_per_point": float("inf")}),
     ]
-    assert [b.planned_days_per_point for b in _by_id(rows).values()] == [1.5, 2.0, None, None, None]
+    assert [b.planned_days_per_point for b in _by_id(rows).values()] == [
+        1.5,
+        2.0,
+        None,
+        None,
+        None,
+        None,
+        None,
+    ]
 
 
 # REQ-REPORTS-021
@@ -166,3 +176,11 @@ def test_reports_021_history_read_from_metadata_text_or_list_and_broken_is_ignor
     assert [(m.source, m.target) for m in by_id["e-1"].moves] == [(None, "m-1")]
     assert by_id["e-1"].points_history == []
     assert [c.after for c in by_id["e-2"].points_history] == [5]
+
+
+# REQ-REPORTS-019
+def test_reports_019_bug_without_created_at_counts_on_the_minimum_date() -> None:
+    bug = row("b-1", issue_type="bug", dependencies=[dep("b-1", "a-1", "discovered-from")])
+    del bug["created_at"]
+    one = _by_id([row("a-1"), bug])["a-1"]
+    assert (one.bugs, one.bug_days) == (1, [date.min])

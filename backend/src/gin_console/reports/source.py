@@ -1,5 +1,6 @@
 """Beads of one project for reports, from its `.beads/issues.jsonl` snapshot."""
 
+import math
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict
 from datetime import date, datetime
@@ -75,7 +76,7 @@ def _bug_days(ident: str, snapshot: Snapshot) -> list[date]:
     for issue, kind in snapshot.dependents.get(ident, []):
         made = _stamp(snapshot.rows.get(issue, {}).get("created_at"))
         if kind == "discovered-from" and snapshot.rows.get(issue, {}).get("issue_type") == "bug":
-            days.append((made or datetime.min.astimezone()).astimezone().date())
+            days.append(made.astimezone().date() if made else date.min)
     return days
 
 
@@ -88,7 +89,7 @@ def _days_per_point(metadata: object) -> float | None:
             return None
     if isinstance(value, bool) or not isinstance(value, int | float):
         return None
-    return float(value) if value > 0 else None
+    return float(value) if math.isfinite(value) and value > 0 else None
 
 
 def read_beads(
@@ -112,7 +113,7 @@ def read_beads(
             fields["parent"] = snapshot.parents[ident]
         if raw.get("issue_type") == "epic":
             fields["child_counts"] = ChildCounts(**asdict(counts.get(ident, Counts())))
-        history = metadata if isinstance(metadata, dict) else {}
+        meta = metadata if isinstance(metadata, dict) else {}
         blockers, blocked_since = _blocking(ident, raw, snapshot)
         bug_days = _bug_days(ident, snapshot)
         reopened_on = list(reopens.get(ident, ()))
@@ -127,8 +128,8 @@ def read_beads(
                         "reopened_on": reopened_on,
                         "bugs": len(bug_days),
                         "bug_days": bug_days,
-                        "moves": parse_moves(history.get("milestone_moves")),
-                        "points_history": parse_points(history.get("points_history")),
+                        "moves": parse_moves(meta.get("milestone_moves")),
+                        "points_history": parse_points(meta.get("points_history")),
                         "blockers": blockers,
                         "blocked_since": blocked_since,
                     }
