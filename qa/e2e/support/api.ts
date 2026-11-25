@@ -42,6 +42,34 @@ export type BeadSummary = {
   waits_for: { plan: string; number: number; track_id: string | null; lane: string | null } | null;
 };
 
+export type OverviewProject = {
+  name: string; error: string | null; stale: boolean; milestone: { id: string; title: string } | null;
+  blocked: { id: string; title: string; assignee: string | null; days: number; blocker: { id: string; title: string; person: string; blocked: boolean } | null }[];
+  aging: { id: string; title: string; assignee: string | null; days: number }[];
+  unassigned: { id: string; title: string; priority: number | null }[];
+  in_progress: { id: string; title: string; assignee: string | null }[];
+  epics: { id: string; title: string }[];
+};
+export type Overview = { generated_at: string; aging_days: number; projects: OverviewProject[] };
+export type EpicWorkflowBody = {
+  stage: string; gates: Record<string, string>; warnings: string[];
+  review_waivers: { task_id: string; reason: string; actor: string }[];
+};
+
+/** A project of `GET /api/overview` with empty lists (REQ-OVERVIEW-001). */
+export const overviewProject = (name: string, o: Partial<OverviewProject> = {}): OverviewProject => ({
+  name, error: null, stale: false, milestone: null, blocked: [], aging: [], unassigned: [], in_progress: [], epics: [], ...o,
+});
+
+export const overview = (projects: OverviewProject[], o: Partial<Overview> = {}): Overview => ({
+  generated_at: '2026-11-23T12:00:00Z', aging_days: 3, projects, ...o,
+});
+
+/** `GET /api/beads/{project}/{epic}/workflow`: the gates not stated are met. */
+export const epicWorkflow = (gates: Record<string, string> = {}, review_waivers: EpicWorkflowBody['review_waivers'] = []): EpicWorkflowBody => ({
+  stage: 'execute', gates: { requirement_confirmed: 'met', plan_approved: 'met', orchestration_ready: 'met', ...gates }, warnings: [], review_waivers,
+});
+
 export const entry = (id: string, o: Partial<MilestoneEntry> = {}): MilestoneEntry => ({
   id, title: `Title ${id}`, status: 'planned', start: '2026-11-02', end: '2026-12-18', kickoff: null,
   finish: '2026-12-22', epics: { total: 6, closed: 0 }, warnings: 0, error: null, ...o,
@@ -126,6 +154,12 @@ export async function stubApi(
     beads?: BeadSummary[] | ((url: URL) => BeadSummary[] | Reply);
     /** GET /api/beads/milestones?project=…: the milestone choices of the Beads page (default none, no current). */
     milestoneOptions?: Answer<MilestoneOptions>;
+    /** GET /api/overview (REQ-OVERVIEW-001); without it the answer is 404. */
+    overview?: Answer<Overview>;
+    /** GET /api/reports/status?project=…&milestone=…: a body such as `statusBody` of support/reports.ts. */
+    status?: Answer<unknown>;
+    /** GET /api/beads/{project}/{epic}/workflow: the same answer for every epic, or a function of the URL. */
+    workflow?: Answer<EpicWorkflowBody>;
   } = {},
 ): Promise<Stub> {
   const stub: Stub = { calls: [] };
@@ -141,6 +175,9 @@ export async function stubApi(
     else if (url.pathname === '/api/beads/milestones') {
       reply = resolve(opts.milestoneOptions ?? { milestones: [], current: null }, url);
     }
+    else if (url.pathname === '/api/overview' && opts.overview !== undefined) reply = resolve(opts.overview, url);
+    else if (url.pathname === '/api/reports/status' && opts.status !== undefined) reply = resolve(opts.status, url);
+    else if (parts[1] === 'beads' && parts.length === 5 && parts[4] === 'workflow' && opts.workflow !== undefined) reply = resolve(opts.workflow, url);
     else if (url.pathname === '/api/milestones' && opts.milestones !== undefined) reply = resolve(opts.milestones, url);
     else if (parts[1] === 'milestones' && parts.length === 4 && opts.milestone !== undefined) {
       const m = opts.milestone;

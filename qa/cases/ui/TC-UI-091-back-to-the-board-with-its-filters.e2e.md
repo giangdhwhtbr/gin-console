@@ -1,6 +1,6 @@
 # TC-UI-091: Back to the Board with its filters
 
-- **REQ:** REQ-UI-073@3fe05bd7
+- **REQ:** REQ-UI-073@747662fe
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

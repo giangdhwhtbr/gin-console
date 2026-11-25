@@ -1,6 +1,6 @@
 # TC-UI-086: Place and filters
 
-- **REQ:** REQ-UI-072@1fd8a2f3
+- **REQ:** REQ-UI-072@f6caddae
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

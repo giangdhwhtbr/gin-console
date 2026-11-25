@@ -1,6 +1,6 @@
 # TC-UI-140: Home address
 
-- **REQ:** REQ-UI-099@00ea3e46
+- **REQ:** REQ-UI-099@56160f6e
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -11,8 +11,7 @@
 
 **Steps:**
 1. Open `/`
-2. Press the browser Back button
 
 **Expected:**
-- The URL becomes `/my-tasks?project=a` and the My Tasks page of `a` is shown
-- Back does not return to `/`
+- The Overview page is shown
+- The URL stays `/`

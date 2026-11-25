@@ -1,6 +1,6 @@
 # TC-UI-070: Current destination: Bead page
 
-- **REQ:** REQ-UI-057@e16f2d59
+- **REQ:** REQ-UI-057@519df087
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

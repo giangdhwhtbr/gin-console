@@ -1,6 +1,6 @@
 # TC-BEADS-077: Email and handle are one person in the Assignee filter
 
-- **REQ:** REQ-BEADS-023@7ee5b152
+- **REQ:** REQ-BEADS-023@22f76e66
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-27-52

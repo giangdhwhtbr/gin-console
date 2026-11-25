@@ -1,21 +1,16 @@
-// TC: TC-UI-140@947ce215
+// TC: TC-UI-140@a640d398
+// TC: TC-UI-140@x
 import { test, expect } from '../evidence';
-import { bead, stubApi } from '../support/api';
+import { overview, overviewProject, stubApi } from '../support/api';
 
 test('TC-UI-140: Home address (REQ-UI-099)', async ({ page, ev }) => {
   // Precondition: projects a and b are configured and the current project is a.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
-  await stubApi(page, { projects: ['a', 'b'], beads: [bead('a-1', { assignee: 'qa@example.com' })] });
-  await page.goto('/beads?project=a');
+  await stubApi(page, { projects: ['a', 'b'], overview: overview([overviewProject('a'), overviewProject('b')]) });
 
   await ev.step('1. Open `/`', async () => {
     await page.goto('/');
-    await expect(page).toHaveURL((u) => u.pathname + u.search === '/my-tasks?project=a');
-    await expect(page.getByRole('link', { name: 'Title a-1' })).toBeVisible();
-  });
-
-  await ev.step('2. Press the browser Back button', async () => {
-    await page.goBack();
-    await expect(page).toHaveURL((u) => u.pathname + u.search === '/beads?project=a');
+    await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible();
+    await expect(page).toHaveURL((u) => u.pathname + u.search === '/');
   });
 });

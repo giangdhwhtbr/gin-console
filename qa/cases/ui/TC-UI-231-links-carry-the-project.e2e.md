@@ -14,4 +14,4 @@
 
 **Expected:**
 - The Beads link goes to `/beads?project=b`, My Tasks to `/my-tasks?project=b`, Milestones to `/milestones?project=b` and Reports to `/reports?project=b`
-- No link goes to `/`
+- The Overview link goes to `/` and no other link goes to `/`

@@ -1,6 +1,6 @@
 # TC-UI-229: Icon rail
 
-- **REQ:** REQ-UI-123@4e5e7ee4
+- **REQ:** REQ-UI-123@74fc3d51
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

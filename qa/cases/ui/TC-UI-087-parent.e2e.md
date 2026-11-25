@@ -1,6 +1,6 @@
 # TC-UI-087: Parent
 
-- **REQ:** REQ-UI-072@1fd8a2f3
+- **REQ:** REQ-UI-072@f6caddae
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
