@@ -25,7 +25,8 @@ test('TC-UI-395: Jump palette caches until Refresh (REQ-UI-154)', async ({ page,
   });
   await ev.step('2. Press Ctrl+K again', async () => {
     await openPalette();
-    expect(beadCalls()).toBe(before + 2);
+    await page.waitForLoadState('networkidle');
+    await expect.poll(beadCalls).toBe(before + 2);
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
   });

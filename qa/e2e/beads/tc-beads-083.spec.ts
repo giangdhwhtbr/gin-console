@@ -14,8 +14,11 @@ test('TC-BEADS-083: Next command of an epic by stage (REQ-BEADS-025)', async ({ 
   await page.route(/\/api\/beads\/P\/e-1\/workflow$/, (route) => route.fulfill({ json: workflow({ stage }) }));
 
   const shows = async (command: string | null) => {
+    const answered = page.waitForResponse(/\/api\/beads\/P\/e-1\/workflow$/);
     await page.goto('/beads/P/e-1');
+    await answered;
     await expect(page.getByRole('heading', { name: 'Checkout epic', level: 1 })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Workflow' })).toBeVisible();
     if (command === null) await expect(page.getByText('Next', { exact: true })).toHaveCount(0);
     else await expect(page.getByText(command, { exact: true })).toBeVisible();
   };
