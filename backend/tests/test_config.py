@@ -187,3 +187,17 @@ def test_config_006_pull_must_be_a_boolean(tmp_path: Path, text: str) -> None:
 def test_config_006_unknown_beads_field(tmp_path: Path) -> None:
     with pytest.raises(ConfigError, match=r"beads\.interval"):
         load_settings(write(tmp_path, "beads: {interval: 5m}\n"))
+
+
+# REQ-CONFIG-007
+def test_config_007_aging_days_default_and_set(tmp_path: Path) -> None:
+    assert load_settings(write(tmp_path, "projects: []\n")).overview.aging_days == 3
+    text = "overview: {aging_days: 5}\n"
+    assert load_settings(write(tmp_path, text)).overview.aging_days == 5
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "2.5", "'3'", "true", "abc"])
+def test_config_007_invalid_aging_days(tmp_path: Path, value: str) -> None:
+    path = write(tmp_path, f"overview: {{aging_days: {value}}}\n")
+    with pytest.raises(ConfigError, match=r"overview\.aging_days"):
+        load_settings(path)

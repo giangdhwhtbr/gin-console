@@ -20,6 +20,7 @@ from gin_console.config import Settings
 from gin_console.milestones.router import build_router as build_milestones_router
 from gin_console.milestones.source import GwRunner
 from gin_console.milestones.source import run_gw as default_run_gw
+from gin_console.overview.router import build_router as build_overview_router
 from gin_console.projects.collect import collect_epic_workflow
 from gin_console.projects.models import BlockError, EpicWorkflow
 from gin_console.projects.router import build_router as build_projects_router
@@ -84,6 +85,7 @@ def create_app(
         drop_caches()
 
     api.include_router(build_projects_router(settings, snapshots, pulls))
+    api.include_router(build_overview_router(settings, snapshots, clock))
     api.include_router(
         build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh)
     )

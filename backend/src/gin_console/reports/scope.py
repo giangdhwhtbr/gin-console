@@ -114,7 +114,7 @@ def select_milestone(
     )
 
 
-def _tracked(tree: Tree, bead: ReportBead) -> bool:
+def tracked(tree: Tree, bead: ReportBead) -> bool:
     """False for a milestone, a prep task, or an epic split into tasks (its children carry it)."""
     if bead.issue_type == "milestone" or is_prep(bead.labels):
         return False  # prep tasks are not tracked work (REQ-BEADS-002)
@@ -128,7 +128,7 @@ def milestone_scope(
     """(bead, nearest epic) of beads under an epic of the milestone; an epic while childless."""
     rows: list[tuple[ReportBead, ReportBead]] = []
     for bead in beads:
-        if not _tracked(tree, bead):
+        if not tracked(tree, bead):
             continue
         epics = tree.epics_of(bead)
         if any(e.parent == milestone_id for e in epics):
@@ -144,7 +144,7 @@ def period_scope(
     since = now - timedelta(days=days)
     rows: list[tuple[ReportBead, ReportBead]] = []
     for bead in beads:
-        if not _tracked(tree, bead):
+        if not tracked(tree, bead):
             continue
         closed = bead.status == "closed" and bead.closed_at is not None and bead.closed_at >= since
         if closed or bead.status == "in_progress":

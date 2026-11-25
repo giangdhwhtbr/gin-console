@@ -6,6 +6,10 @@ server:
 # Without it the console pulls only on "Refresh data".
 # beads:
 #   pull_interval: 5m
+# Working days in progress before the Overview lists a bead (whole number, at least 1; default 3).
+# Older installs refuse this key.
+# overview:
+#   aging_days: 3
 projects:
   - name: qwikfone
     path: /home/gin/qwikfone
