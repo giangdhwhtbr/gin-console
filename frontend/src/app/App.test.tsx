@@ -82,6 +82,35 @@ describe("App routing", () => {
     expect(window.location.pathname).toBe("/milestones");
   });
 
+  it("REQ-UI-154 the jump palette opens from any page and Refresh data makes it load again", async () => {
+    window.history.replaceState(null, "", "/milestones");
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>((url) =>
+      Promise.resolve(json(url === "/api/projects/beads" || url.startsWith("/api/beads") ? [] : [])),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    render(<App />);
+    await screen.findByText(/no projects configured/i);
+    const loads = () => fetchMock.mock.calls.filter(([url]) => url === "/api/projects/beads").length;
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true, cancelable: true }));
+    });
+    expect(await screen.findByRole("dialog", { name: "Jump to a bead" })).toBeTruthy();
+    await screen.findByText("Type an id or a title");
+    const afterFirst = loads();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    const [button] = screen.getAllByRole("button", { name: "Refresh data" });
+    await userEvent.click(button);
+    await screen.findByText(/no projects configured/i);
+    const afterRefresh = loads();
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true, cancelable: true }));
+    });
+    await screen.findByText("Type an id or a title");
+    expect(loads()).toBeGreaterThan(afterRefresh);
+    expect(afterRefresh).toBeGreaterThanOrEqual(afterFirst);
+  });
+
   it("REQ-UI-055 opens Milestones from the sidebar without a reload", async () => {
     window.history.replaceState(null, "", "/beads");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));

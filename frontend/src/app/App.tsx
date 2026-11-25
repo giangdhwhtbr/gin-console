@@ -4,6 +4,7 @@ import { BeadsPage } from "@/features/beads/BeadsPage";
 import { OldGraphLink } from "@/features/beads/OldGraphLink";
 import { MilestonePage } from "@/features/milestones/MilestonePage";
 import { MilestonesPage } from "@/features/milestones/MilestonesPage";
+import { JumpPalette } from "@/features/jump/JumpPalette";
 import { MyTasksPage } from "@/features/my-tasks/MyTasksPage";
 import { useEmail } from "./identity";
 import { HintProvider } from "@/components/HintProvider";
@@ -57,6 +58,7 @@ export function App() {
   return (
     <HintProvider>
     <Layout onRefreshed={() => setEpoch((n) => n + 1)}>
+      <JumpPalette key={epoch} />
       <Fragment key={epoch}>
       {graph !== null ? (
         <OldGraphLink key={`${graph.project}/${graph.id ?? ""}`} project={graph.project} id={graph.id} select={select} />
