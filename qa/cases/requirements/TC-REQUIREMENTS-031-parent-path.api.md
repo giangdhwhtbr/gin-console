@@ -1,10 +1,10 @@
 # TC-REQUIREMENTS-031: Parent path
 
-- **REQ:** REQ-REQUIREMENTS-010@89434c84
+- **REQ:** REQ-REQUIREMENTS-010@f4cb8de5
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-25T17-33-21-api
-- **Checked:** 22c912de
+- **Run:** qa/evidence/2026-11-25T23-57-24-api
+- **Checked:** 37e0d54a
 
 **Preconditions:**
 - A confirmed folder `ui/2026-11-22` and a file `docs/specs/ui/spec.md` above it

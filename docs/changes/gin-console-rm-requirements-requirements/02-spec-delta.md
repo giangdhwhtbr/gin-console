@@ -185,7 +185,7 @@ WHEN a client requests `GET /api/requirements/mockups?project=<name>`, the serve
 ### REQ-REQUIREMENTS-010: Safe project files
 Type: non-functional
 Category: security
-The server SHALL read project files for the requirements endpoints only inside the change folders of `docs/changes` and the asset folders under the specs folder `docs/specs/<capability>/assets/`, after resolving symbolic links, and SHALL respond 404 for any other path, including one with `..`, an absolute path, a NUL byte, or a link that leads outside. `GET /api/requirements/mockups/<project>/files/<capability>/<date>/<path>` SHALL serve only files of a confirmed folder with the extension html, css, js, json, png, jpg, jpeg, gif, svg, webp or woff2.
+The server SHALL read project files for the requirements endpoints only inside the change folders of `docs/changes` and the asset folders under the specs folder `docs/specs/<capability>/assets/`, plus the `Source:` lines of `docs/specs/<capability>/spec.md` for the requirement ids of REQ-REQUIREMENTS-009 (returning no other text of it), after resolving symbolic links, and SHALL respond 404 for any other path, including one with `..`, an absolute path, a NUL byte, or a link that leads outside. `GET /api/requirements/mockups/<project>/files/<capability>/<date>/<path>` SHALL serve only files of a confirmed folder with the extension html, css, js, json, png, jpg, jpeg, gif, svg, webp or woff2.
 
 #### Scenario: Parent path
 - GIVEN the path `ui/2026-11-22/..%2f..%2fspec.md`
@@ -500,9 +500,9 @@ WHEN a bead is shown as a page, not as the details panel of another view, the be
 - THEN the breadcrumb reads "Overview" then the title of `a-1`, and "Overview" goes to `/`
 
 #### Scenario: From Requirements
-- GIVEN the Matrix section was last at `/requirements/matrix?project=a&status=untested`
-- WHEN the user opens `a-1` from it
-- THEN the breadcrumb reads "Requirements" then the title of `a-1`, and "Requirements" goes to `/requirements/matrix?project=a&status=untested`
+- GIVEN the Matrix section was last at `/requirements/matrix?project=a&status=untested&req=REQ-AUTH-001`
+- WHEN the user opens `a-1` from the details of `REQ-AUTH-001`
+- THEN the breadcrumb reads "Requirements" then the title of `a-1`, and "Requirements" goes to `/requirements/matrix?project=a&status=untested&req=REQ-AUTH-001`
 
 ### REQ-UI-073: Remembered place
 <!-- base: 747662fe22edb8b6d75adb65564c18b3396cffe2340a3029b4315f72c42262ff -->

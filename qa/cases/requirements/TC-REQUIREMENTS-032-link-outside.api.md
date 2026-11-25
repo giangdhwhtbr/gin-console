@@ -1,10 +1,10 @@
 # TC-REQUIREMENTS-032: Link outside
 
-- **REQ:** REQ-REQUIREMENTS-010@89434c84
+- **REQ:** REQ-REQUIREMENTS-010@f4cb8de5
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-25T17-33-21-api
-- **Checked:** 35c42bab
+- **Run:** qa/evidence/2026-11-25T23-57-24-api
+- **Checked:** 8748ea0b
 
 **Preconditions:**
 - A confirmed folder holds a symbolic link to a file outside it

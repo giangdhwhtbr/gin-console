@@ -1,10 +1,10 @@
 # TC-UI-086: Place and filters
 
-- **REQ:** REQ-UI-072@3768e26f
+- **REQ:** REQ-UI-072@bb47458a
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-25T17-32-34
-- **Checked:** d7c3124d
+- **Run:** qa/evidence/2026-11-25T23-57-16
+- **Checked:** dd72b772
 
 **Preconditions:**
 - Project `a` with bead `a-1` titled "Fix login"

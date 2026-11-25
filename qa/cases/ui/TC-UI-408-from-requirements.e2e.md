@@ -1,10 +1,10 @@
 # TC-UI-408: From Requirements
 
-- **REQ:** REQ-UI-072@3768e26f
+- **REQ:** REQ-UI-072@bb47458a
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-25T17-32-34
-- **Checked:** 11c480bd
+- **Run:** qa/evidence/2026-11-25T23-57-16
+- **Checked:** 84e0bfc5
 
 **Preconditions:**
 - The requirement `REQ-AUTH-001` is untested and has the bead `a-1`
