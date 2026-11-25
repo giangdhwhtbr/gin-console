@@ -1,4 +1,5 @@
 import errno
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -155,13 +156,24 @@ def test_requirements_010_not_found(root: Path, path: str) -> None:
 
 # REQ-REQUIREMENTS-010: read failure after the checks
 def test_requirements_010_read_fails(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    def fail(_: Path) -> bytes:
+    real = Path.open
+
+    def fail(path: Path, *args: Any, **kwargs: Any) -> Any:
+        if path.name == "description.md":
+            return real(path, *args, **kwargs)
         raise OSError(errno.EIO, "boom", str(root))
 
     client = make(root)
-    monkeypatch.setattr(Path, "read_bytes", fail)
+    monkeypatch.setattr(Path, "open", fail)
     res = client.get(f"{FILES}/ui/{DAY}/index.html")
     assert res.status_code == 404 and res.json() == {"detail": "Not Found"}
+
+
+# REQ-REQUIREMENTS-010: a file above the size limit
+def test_requirements_010_too_large(root: Path) -> None:
+    big = write(root / "docs" / "specs" / "ui" / "assets" / DAY / "big.html")
+    os.truncate(big, 20 * 1024 * 1024 + 1)
+    assert make(root).get(f"{FILES}/ui/{DAY}/big.html").status_code == 404
 
 
 # REQ-REQUIREMENTS-011: HTML, also for a range request, and SVG

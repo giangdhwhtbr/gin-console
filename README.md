@@ -376,7 +376,7 @@ The Requirements page covers a project whose gin-workflow layout is `sdd`. It ne
 - The Markdown files of the change folders in `docs/changes` and `docs/changes/archive`.
 - The asset folders `docs/specs/<capability>/assets/<YYYY-MM-DD>/` whose `description.md` has `Confirmed: <YYYY-MM-DD>`, and the `Source:` lines of `docs/specs/<capability>/spec.md` to name the requirements that use them.
 
-A folder that is a symbolic link is left out, and so is a file link that leads out of its folder. Mockups run isolated from the console: scripts work, but calls, forms, frames, storage and module scripts may not. See [ADR 0004](docs/adr/0004-serve-project-files.md).
+A folder that is a symbolic link is left out, and so is a file link that leads out of its folder. A mockup file above 20 MB (20,971,520 bytes) is not served, and a Markdown file above that size is shown as unreadable. Mockups run isolated from the console: scripts work, but calls, forms, frames, storage, module scripts and web fonts may not. See [ADR 0004](docs/adr/0004-serve-project-files.md).
 
 ---
 

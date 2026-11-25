@@ -1,6 +1,7 @@
 """Change folders and confirmed assets of a project in tmp_path."""
 
 import os
+import time
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,7 @@ from gin_console.requirements.models import Trace
 from gin_console.requirements.service import build_changes
 
 DAY = "2026-11-22"
+LIMIT = 20 * 1024 * 1024
 DESCRIPTION = f"# ui\n\nConfirmed: {DAY}\nConfirmed by: ba@example.com\n\n## Summary\nText\n"
 
 
@@ -100,10 +102,11 @@ def test_requirements_007_counts(tmp_path: Path) -> None:
         req("REQ-A-001", changes=[changed("new", "added", "2026-11-01")]),
         req("REQ-A-002", changes=[changed("new", "modified", "2026-11-01", signed)]),
         req("REQ-A-003", changes=[changed("new", "added", "2026-11-01", signed)]),
+        req("REQ-A-004", state="removed", changes=[changed("new", "removed", "2026-11-01")]),
     )
     body = build_changes(list_changes(tmp_path), Trace.model_validate(data), None, None)
     unnamed, new = body.changes
-    assert (new.added, new.modified, new.removed) == (2, 1, 0)
+    assert (new.added, new.modified, new.removed) == (2, 1, 1)
     assert new.signoff is not None and new.signoff.actor == "ba"
     assert (unnamed.added, unnamed.modified, unnamed.removed, unnamed.signoff) == (None,) * 4
 
@@ -203,14 +206,15 @@ def test_requirements_009_used_by(project: Path) -> None:
     write(
         project / "docs" / "specs" / "reports" / "spec.md",
         "# reports\nSource: `../ui/assets/2026-11-22/x.png`\n"
-        "### REQ-REPORTS-001: A\nSource: `../ui/assets/2026-11-2/index.html`\n"
+        "### REQ-REPORTS-001: A\nSource: `../ui/assets/2026-11-220/index.html`\n"
+        "### REQ-REPORTS-003: C\nSource: `../ui/assets/2026-11-22x`\n"
+        "## Notes\nSource: `../ui/assets/2026-11-22/index.html`\n"
         "### REQ-REPORTS-002: B\nSource: ../ui/assets/2026-11-22/index.html#reports, other\n",
     )
     write(
         project / "docs" / "specs" / "ui" / "spec.md",
         "### REQ-UI-129: A\nSource: `../ui/assets/2026-11-22/index.html#reports`\n"
-        "### REQ-UI-130: B\nSource: `assets/2026-11-22/index.html`, `assets/2026-11-22/a.png`\n"
-        "## Notes\nSource: `assets/2026-11-22/index.html`\n",
+        "### REQ-UI-130: B\nSource: `assets/2026-11-22/index.html`, `assets/2026-11-22/a.png`\n",
     )
     (found,) = list_mockups(project)
     assert found.requirements == ["REQ-REPORTS-002", "REQ-UI-129", "REQ-UI-130"]
@@ -251,7 +255,6 @@ def test_requirements_009_undecodable_name(project: Path) -> None:
         "C:x.html",
         "..\\..\\x.html",
         "\\\\host\\share\\x.html",
-        "index.html:x.html",
         "a\0.html",
         "\udcff.html",
         "x" * 5000 + ".html",
@@ -269,6 +272,104 @@ def test_requirements_009_undecodable_name(project: Path) -> None:
 )
 def test_requirements_010_outside(project: Path, path: str) -> None:
     assert mockup_file(project, "ui", DAY, path) is None
+
+
+# REQ-REQUIREMENTS-010: a drive, stream or separator of Windows, even where such a file exists
+@pytest.mark.skipif(os.name == "nt", reason="these names cannot exist on Windows")
+@pytest.mark.parametrize("name", ["index.html:x.html", "a\\b.html", "C:x.html"])
+def test_requirements_010_windows_characters(project: Path, name: str) -> None:
+    write(project / "docs" / "specs" / "ui" / "assets" / DAY / name)
+    assert mockup_file(project, "ui", DAY, name) is None
+    assert list_mockups(project)[0].html == ["index.html"]
+
+
+# REQ-REQUIREMENTS-010: a file above the limit is neither listed nor served
+def test_requirements_010_too_large(project: Path) -> None:
+    folder = project / "docs" / "specs" / "ui" / "assets" / DAY
+    os.truncate(write(folder / "big.html"), LIMIT + 1)
+    os.truncate(write(folder / "full.html"), LIMIT)
+    refused = mockup_file(project, "ui", DAY, "big.html") is None  # not asserted in place:
+    assert refused  # pytest would print the content
+    full = mockup_file(project, "ui", DAY, "full.html")
+    size = len(full[0]) if full is not None else 0
+    assert size == LIMIT
+    assert list_mockups(project)[0].html == ["full.html", "index.html"]
+
+
+# REQ-REQUIREMENTS-010: a file that grows after the size check is read no further than the limit
+def test_requirements_010_grows(project: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    asked: list[int] = []
+    real = Path.open
+
+    def grow(path: Path, *args: Any, **kwargs: Any) -> Any:
+        if path.name != "index.html":
+            return real(path, *args, **kwargs)
+        os.truncate(path, LIMIT + 10)
+        handle = real(path, *args, **kwargs)
+        read = handle.read
+
+        class Spy:
+            def __enter__(self) -> "Spy":
+                return self
+
+            def __exit__(self, *_: object) -> None:
+                handle.close()
+
+            def read(self, size: int = -1) -> Any:
+                asked.append(size)
+                return read(size)
+
+        return Spy()
+
+    monkeypatch.setattr(Path, "open", grow)
+    refused = mockup_file(project, "ui", DAY, "index.html") is None
+    assert refused
+    assert asked == [LIMIT + 1]
+
+
+# REQ-REQUIREMENTS-008, REQ-REQUIREMENTS-010: Markdown above the limit is unreadable
+def test_requirements_010_large_markdown(project: Path) -> None:
+    folder = change(project, "open")
+    os.truncate(write(folder / "03-design.md"), LIMIT + 1)
+    found = read_change(project, "open")
+    design = found.files["design"][:100] if found is not None else ""
+    assert design == "This file could not be read."
+    description = project / "docs" / "specs" / "ui" / "assets" / DAY / "description.md"
+    os.truncate(description, LIMIT + 1)
+    dates = [m.date for m in list_mockups(project)]
+    assert dates == []
+
+
+# REQ-REQUIREMENTS-009: a long line does not hold up the check
+@pytest.mark.parametrize(
+    "label", ["Confirmed:", "Confirmed: no", "Confirmed by:", "Epic:", "# ", "Source:", "### REQ-"]
+)
+def test_requirements_009_long_line(project: Path, label: str) -> None:
+    line = f"{label}{' ' * 200_000}x"  # a value, spaces and text made the old pattern quadratic
+    folder = project / "docs" / "specs" / "ui" / "assets" / DAY
+    write(folder / "description.md", f"{line}\n{DESCRIPTION}")
+    write(project / "docs" / "specs" / "ui" / "spec.md", f"### REQ-UI-001: A\n{line}\n")
+    write(change(project, "open") / "01-proposal.md", f"{line}\n")
+    started = time.monotonic()
+    list_mockups(project)
+    list_changes(project)
+    assert time.monotonic() - started < 2
+
+
+# REQ-REQUIREMENTS-009: space around the confirmation date
+def test_requirements_009_confirmed_spaces(project: Path) -> None:
+    folder = project / "docs" / "specs" / "ui" / "assets" / DAY
+    (folder / "description.md").write_bytes(b"a\r\nConfirmed:\t 2026-11-22 \t\r\n")
+    assert list_mockups(project)[0].confirmed == DAY
+
+
+# REQ-REQUIREMENTS-007, REQ-REQUIREMENTS-009: a byte order mark hides neither title nor confirmation
+def test_requirements_009_byte_order_mark(project: Path) -> None:
+    write(change(project, "open") / "01-proposal.md", "\ufeff# Marked\n")
+    folder = project / "docs" / "specs" / "ui" / "assets" / DAY
+    write(folder / "description.md", f"\ufeffConfirmed: {DAY}\n")
+    assert list_changes(project)[0].title == "Marked"
+    assert list_mockups(project)[0].description == f"Confirmed: {DAY}\n"
 
 
 # REQ-REQUIREMENTS-010: the extensions that are served
