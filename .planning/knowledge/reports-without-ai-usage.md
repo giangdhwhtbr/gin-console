@@ -8,7 +8,7 @@ gin-workflow retired AI usage tracking (epic gin-workflow-wkwb, decision 2026-11
 - Rework comes from Beads (REQ-REPORTS-019): reopens are `field_change` lines on `status` from `closed` to anything else in `.beads/interactions.jsonl` (`reports/interactions.py`, `InteractionStore`), bugs found later are `bug` beads with a `discovered-from` dependency (`beads/definitions.py` `bugs_found`), and `rework = reopens + bugs`; `rework_rate` is the share of closed beads with rework above 0. Team `rework` is an int, never null.
 - `InteractionStore` keeps the parsed reopens per project and reads the log again only when its size or `mtime_ns` changes; a missing log, a bad line or an unreadable file counts nothing and never fails a report. No interval cache: measured reports took 15–194 ms and a 940-line log parses in about 4 ms (the 60-second `KeyedCache` on the answer stays).
 - Failed projects show in `ReportErrors` above the tab list on every tab (REQ-UI-093); before, only Data coverage showed them.
-- Review cycles, rejections, findings and waivers left Reports; epic gin-console-rm-review-audit owns them.
+- Review cycles, rejections, findings and waivers left Reports; the epic planned for them, gin-console-rm-review-audit, was dropped on 2026-11-25 (never built).
 
 **Consequences**
 - Interaction logs start in October 2026 (gin-workflow 2026-10-01, gin-console 2026-10-12), so earlier reopens are not counted; on 2026-11-22 only qwikfone had real reopens.

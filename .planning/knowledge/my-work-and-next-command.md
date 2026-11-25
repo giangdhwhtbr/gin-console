@@ -9,7 +9,7 @@ Epic `gin-console-rm-my-work` (2026-11-25) turned My Tasks into My work (groups 
 - Blockers are read in `features/beads/blockers.ts`: `blocked_by` of a bead summary holds every `blocks` dependency, closed ones included, so a blocker counts as closed only when a loaded bead says so; an unknown blocker counts as open and is named by its id; a merge gate is named like the Tracks table ("be #2, merge pending").
 - The epic page loads the workflow once (`EpicPage`) and passes it to the header and the Workflow card; a details panel shows no epic command.
 - The jump palette (`features/jump/`) is mounted in `App.tsx` with `key={epoch}`, so Refresh data drops its loaded beads; the first opening loads every configured project in parallel and a failing project is named.
-- Review of a track is not readable from bead data while `project.review_ledger` is false: a track in review keeps status `in_progress`. The "In review" group moved to gin-console-rm-review-audit.
+- Review of a track is not readable from bead data while `project.review_ledger` is false: a track in review keeps status `in_progress`. The "In review" group was moved to gin-console-rm-review-audit, which was dropped on 2026-11-25, so no page shows it.
 
 **Consequences**
 - Claim commands are the solo form; a team-mode project is not told apart, and the stage of an epic with state Deferred gives no command.

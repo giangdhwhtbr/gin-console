@@ -26,6 +26,7 @@ Source: Product brief from the UX review of 2026-11-21 (team lead, PM, member an
 - Lead, Dev, QA and BA each get one view that answers their daily question.
 - One identity colour, a real type scale, and one way to draw state and progress.
 - Sessions and Quota are retired (decision 2026-11-21).
+- Reviews and gate audit (gin-console-rm-review-audit) is dropped (decision 2026-11-25): review ledgers are off in gin-console, no finding was open, and the epic page already shows gates and waivers.
 
 ## Summary
 
@@ -33,7 +34,7 @@ Source: Product brief from the UX review of 2026-11-21 (team lead, PM, member an
 |---|---|---|---|---|
 | Trust and wayfinding | 2026-11-23 to 2026-12-17 | The console keeps your project and place across pages, numbers mean the same everywhere, Sessions and Quota are gone, and the new look is in place. | Pick a project once and move through Beads, Milestones and Reports without losing it; open an epic from a milestone and return by its breadcrumb; the blocked count matches on Beads and Reports. | Retire Sessions and Quota; Navigation shell; One set of definitions; Strung visual system; Beads views interaction |
 | PM reporting | 2026-12-18 to 2026-12-29 | A PM reports a milestone's status and hands over a WBS from the console. | Open the Checkout v2 status report, read its verdict and risks, copy the summary, download the WBS in Excel. | Reports status and one scope; WBS export and summary |
-| Lead and Dev daily work | 2026-12-30 to 2027-01-12 | A lead starts the day on one overview across projects; a developer sees what to do next and copies the command to start it. | The overview lists blocked work with its owner across projects; My work shows next up; a bead page copies its claim command; an epic shows its review findings and gate history. | Overview for leads; My work and the next step; Reviews and gate audit |
+| Lead and Dev daily work | 2026-12-30 to 2027-01-12 | A lead starts the day on one overview across projects; a developer sees what to do next and copies the command to start it. | The overview lists blocked work with its owner across projects; My work shows next up; a bead page copies its claim command. | Overview for leads; My work and the next step |
 | QA and BA | 2027-01-13 to 2027-01-28 | BA and QA see requirements, sign-off, test coverage, bugs and bug screenshots. | The requirements matrix of one capability; a milestone's release readiness checklist; a bug's screenshots in the lightbox. | Requirements and traceability; Test coverage and release readiness; Bugs view; Evidence images from local files |
 | Unassigned | | | | Project timeline; Requirement sign-off and full trace; Test trends; Shared bead attachments |
 
@@ -72,7 +73,6 @@ flowchart LR
   defs --> wbs[WBS export]
   defs --> overview[Overview]
   shell --> mywork[My work]
-  shell --> audit[Reviews and gate audit]
   shell --> reqs[Requirements]
   reqs --> tests[Test coverage]
   defs --> bugs[Bugs view]
@@ -233,13 +233,13 @@ Risks: Tasks carry no estimates or dates in gin-workflow, so task rows show stat
 ## Milestone: Lead and Dev daily work
 
 Outcome: A lead starts the day on one overview across projects; a developer sees what to do next and copies the command to start it.
-Demo: The overview lists blocked work with its owner across projects; My work shows next up; a bead page copies its claim command; an epic shows its review findings and gate history.
+Demo: The overview lists blocked work with its owner across projects; My work shows next up; a bead page copies its claim command.
 Result:
 Spec ready by: 2026-12-30
 Integration point: 2027-01-07
-- Integrates: gin-console-rm-overview, gin-console-rm-my-work, gin-console-rm-review-audit
+- Integrates: gin-console-rm-overview, gin-console-rm-my-work
 - Flags on: none (no feature flags)
-- E2E scope: overview across projects, My work sections, next command on a bead, jump to a bead, review findings and gate history on an epic, phone layout of My work
+- E2E scope: overview across projects, My work sections, next command on a bead, jump to a bead, phone layout of My work
 - Exit criteria: checks green, the epics' TCs passed on the Tailscale build, no open bug bead on these epics
 
 ### Overview for leads
@@ -275,23 +275,6 @@ Legacy: none
 Depends on: gin-console-rm-nav-shell
 Evidence: Product brief (member walkthrough 2026-11-21: no claim command, no next signal, 91px task column on phones)
 Risks: Read the next command from gin state remedies instead of re-deriving workflow rules.
-
-### Reviews and gate audit
-Epic: gin-console-rm-review-audit
-Milestone: gin-console-qi7
-Points: 3 (2 local sources on 2 pages, low)
-Estimate: 2 (assumed)
-Kind: capability
-Complexity: low (two local file formats)
-Goal: A lead sees review health and who signed or waived what.
-Scope: Findings across beads from the review ledgers (severity, status, deferrals, follow-up beads) where ledgers exist; gate events (approvals, waivers, shipped) on the epic page and in the overview.
-Out of scope: Projects without ledgers show no review counts (ai_usage was retired, gin-console-5c4).
-Features: Review findings; gate history
-Capabilities: beads
-Legacy: none
-Depends on: gin-console-rm-nav-shell
-Evidence: Product brief (data survey 2026-11-21: review.json ledgers and events.jsonl are not read)
-Risks: The gate event log is local and gitignored, so another machine has a different history; say so in the UI.
 
 ## Milestone: QA and BA
 
