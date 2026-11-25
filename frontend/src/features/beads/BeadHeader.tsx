@@ -1,4 +1,6 @@
 import { Link } from "@/app/Link";
+import { useEmail } from "@/app/identity";
+import { CopyCommand } from "@/features/milestones/CopyCommand";
 import { buttonVariants } from "@/components/ui/button";
 import { FactList, type Fact } from "@/components/FactList";
 import { PriorityPill } from "@/components/PriorityPill";
@@ -15,9 +17,23 @@ import { LaneChip } from "./LaneChip";
 import { leaseOf, trackText, visibleLabels } from "./laneFacts";
 import { gateState, gateWords } from "./mergeGates";
 import { StateMark } from "./StateMark";
+import { blockerLabel, openBlockers } from "./blockers";
+import { nextCommand } from "./nextCommand";
 
 /** The title, fact line and facts of a bead (REQ-UI-028, REQ-UI-110), shared by the bead page and the epic page. */
-export function BeadHeader({ project, bead, graphLink = true }: { project: string; bead: BeadDetail; graphLink?: boolean }) {
+export function BeadHeader({
+  project,
+  bead,
+  graphLink = true,
+  stage = null,
+}: {
+  project: string;
+  bead: BeadDetail;
+  graphLink?: boolean;
+  stage?: string | null;
+}) {
+  const command = nextCommand(bead, useEmail() ?? "", stage);
+  const blockers = bead.blocked ? openBlockers(bead) : [];
   const complexity = bead.issue_type === "epic" ? complexityOf(bead.description) : null;
   const gate = bead.waits_for;
   const lease = leaseOf([bead.claim], new Date());
@@ -65,6 +81,25 @@ export function BeadHeader({ project, bead, graphLink = true }: { project: strin
         <p className="text-sm text-muted-foreground wrap-anywhere">{bead.points_reason}</p>
       )}
       <FactList facts={facts} />
+      {blockers.length > 0 && (
+        <p className="m-0 text-sm">
+          {"Blocked by "}
+          {blockers.map((blocker, i) => (
+            <span key={blocker.id}>
+              {i > 0 && ", "}
+              <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(blocker.id)}`} className="prose-link">
+                {blockerLabel(blocker)}
+              </Link>
+            </span>
+          ))}
+        </p>
+      )}
+      {command !== null && (
+        <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+          <span className="font-medium">Next</span>
+          <CopyCommand command={command} />
+        </div>
+      )}
       {graphLink &&
         bead.issue_type !== "epic" &&
         (bead.children.length > 0 ||

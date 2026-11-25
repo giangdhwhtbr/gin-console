@@ -15,6 +15,7 @@ export function ClosedColumn({
   all,
   onAll,
   choice,
+  known,
 }: {
   title: string;
   rule?: DefinitionKey;
@@ -27,6 +28,7 @@ export function ClosedColumn({
   all: boolean;
   onAll: (all: boolean) => void;
   choice: CardChoice;
+  known?: ReadonlyMap<string, BeadSummary>;
 }) {
   const shown = all ? beads : beads.slice(0, limit);
   const toggle =
@@ -36,6 +38,6 @@ export function ClosedColumn({
       </Button>
     ) : null;
   return (
-    <BoardColumn title={title} rule={rule} project={project} beads={shown} total={beads.length} empty={empty} footer={toggle} choice={choice} />
+    <BoardColumn title={title} rule={rule} project={project} beads={shown} total={beads.length} empty={empty} footer={toggle} choice={choice} known={known} />
   );
 }

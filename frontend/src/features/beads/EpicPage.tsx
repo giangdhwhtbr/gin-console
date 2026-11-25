@@ -1,6 +1,8 @@
+import { useCallback } from "react";
 import { navigate, useLocation } from "@/app/route";
 import { Tabs, type TabItem } from "@/components/Tabs";
-import type { BeadDetail } from "./api";
+import { fetchEpicWorkflow, type BeadDetail } from "./api";
+import { useLoad } from "@/features/milestones/useLoad";
 import { BeadBody } from "./BeadBody";
 import { BeadHeader } from "./BeadHeader";
 import { BeadsView } from "./BeadsView";
@@ -26,6 +28,9 @@ export function epicPath(project: string, id: string, tab: EpicTab, filters?: Be
 export function EpicPage({ project, bead }: { project: string; bead: BeadDetail }) {
   const { search } = useLocation();
   const { state } = useBeads(project, true, true);
+  const fetcher = useCallback(() => fetchEpicWorkflow(project, bead.id), [project, bead.id]);
+  const { state: workflow, retry } = useLoad(fetcher, false);
+  const stage = workflow.status === "ok" && workflow.data.stage !== "" ? workflow.data.stage : null;
   const asked = new URLSearchParams(search).get("tab");
   // `?tab=lanes` stays on Lanes while the beads load or fail (the view shows "Loading beads…" or the error with Retry); only loaded beads without lanes fall back to Overview
   const lanes = state.status === "ok" ? hasLanes(state.beads, bead.id) : asked === "lanes";
@@ -44,12 +49,12 @@ export function EpicPage({ project, bead }: { project: string; bead: BeadDetail 
 
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <BeadHeader project={project} bead={bead} />
+      <BeadHeader project={project} bead={bead} stage={stage} />
       <Tabs tabs={tabs} tab={tab} onChange={(next) => navigate(epicPath(project, bead.id, next), { replace: true })} label="Epic views" />
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className="flex min-w-0 flex-col gap-4">
         {tab === "overview" && (
           <>
-            <EpicOverview project={project} bead={bead} beads={state} lanesHref={epicPath(project, bead.id, "lanes")} />
+            <EpicOverview project={project} bead={bead} beads={state} lanesHref={epicPath(project, bead.id, "lanes")} workflow={workflow} retry={retry} />
             <BeadBody project={project} bead={bead} overview />
           </>
         )}

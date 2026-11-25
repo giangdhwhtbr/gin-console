@@ -1,10 +1,12 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useCallback } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { MilestoneList } from "@/features/milestones/api";
+import { useLoad } from "@/features/milestones/useLoad";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
 import type { EpicWorkflow } from "@/features/projects/api";
-import type { BeadDetail, BeadSummary } from "./api";
+import { fetchEpicWorkflow, type BeadDetail, type BeadSummary } from "./api";
 import { bead, json } from "./beadFixtures";
 import { E, E12, epic, g2, t4 } from "./epicFixtures";
 import { EpicOverview } from "./EpicOverview";
@@ -42,8 +44,13 @@ function stub(workflow: EpicWorkflow | number = WORKFLOW, milestones: MilestoneL
   );
 }
 
-const show = (beads: BeadsState = ok(E12), over: Partial<BeadDetail> = {}, head = epic) =>
-  render(<EpicOverview project="example" bead={detail(head, over)} beads={beads} lanesHref="/beads/example/ex-e12?tab=lanes" />);
+/** The page loads the workflow once and hands it to the overview (REQ-UI-120); this stands in for it. */
+function Loaded({ head, beads }: { head: BeadDetail; beads: BeadsState }) {
+  const fetcher = useCallback(() => fetchEpicWorkflow("example", head.id), [head.id]);
+  const { state, retry } = useLoad(fetcher, false);
+  return <EpicOverview project="example" bead={head} beads={beads} lanesHref="/beads/example/ex-e12?tab=lanes" workflow={state} retry={retry} />;
+}
+const show = (beads: BeadsState = ok(E12), over: Partial<BeadDetail> = {}, head = epic) => render(<Loaded head={detail(head, over)} beads={beads} />);
 const card = (name: string) => within(screen.getByRole("region", { name }));
 
 afterEach(() => {

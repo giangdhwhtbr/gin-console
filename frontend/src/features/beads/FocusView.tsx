@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { BoardColumn } from "./BoardColumn";
@@ -22,6 +22,7 @@ export function FocusView({
 }) {
   const rows = focusRows(beads, filters.group);
   const finished = filters.finished ? closedNewestFirst(beads) : [];
+  const known = useMemo(() => new Map(beads.map((b) => [b.id, b])), [beads]);
   const [allFinished, setAllFinished] = useState(false);
   const drawn = [
     ...rows.flatMap((row) => FOCUS_COLUMNS.flatMap(({ key }) => row.columns[key].map((b) => b.id))),
@@ -36,7 +37,7 @@ export function FocusView({
           const columns = (
             <div className="flex flex-wrap items-start gap-3">
               {FOCUS_COLUMNS.map(({ key, title, rule }) => (
-                <BoardColumn key={key} title={title} rule={rule} project={project} beads={row.columns[key]} choice={choice} />
+                <BoardColumn key={key} title={title} rule={rule} project={project} beads={row.columns[key]} choice={choice} known={known} />
               ))}
             </div>
           );
@@ -65,6 +66,7 @@ export function FocusView({
             all={allFinished}
             onAll={setAllFinished}
             choice={choice}
+            known={known}
           />
         )}
       </div>

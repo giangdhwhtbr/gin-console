@@ -1,9 +1,8 @@
 import { Check } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import type { EpicWorkflow } from "@/features/projects/api";
-import { useLoad } from "@/features/milestones/useLoad";
+import type { LoadState } from "@/features/milestones/useLoad";
 import { cn } from "@/lib/utils";
-import { fetchEpicWorkflow } from "./api";
 import { Fact, Facts, OverviewCard } from "./OverviewCard";
 
 const STAGES = ["discuss", "plan", "orchestrate", "execute", "ship"] as const;
@@ -75,9 +74,7 @@ function Stages({ workflow }: { workflow: EpicWorkflow }) {
 }
 
 /** REQ-UI-120: the stages of the epic with the current one marked, its gates, warnings and waivers; its own loading and error. */
-export function WorkflowCard({ project, id }: { project: string; id: string }) {
-  const fetcher = useCallback(() => fetchEpicWorkflow(project, id), [project, id]);
-  const { state, retry } = useLoad(fetcher, false);
+export function WorkflowCard({ workflow: state, retry }: { workflow: LoadState<EpicWorkflow>; retry: () => void }) {
   return (
     <OverviewCard title="Workflow">
       {state.status === "loading" && <p className="text-muted-foreground">Loading workflow…</p>}

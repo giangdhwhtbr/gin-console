@@ -6,10 +6,10 @@ import { BeadCard, type CardChoice } from "./BeadCard";
 
 afterEach(cleanup);
 
-const card = (item: ReturnType<typeof bead>, choice: CardChoice = cardChoice()) => {
+const card = (item: ReturnType<typeof bead>, choice: CardChoice = cardChoice(), known?: ReadonlyMap<string, ReturnType<typeof bead>>) => {
   render(
     <ul>
-      <BeadCard project="alpha" bead={item} choice={choice} />
+      <BeadCard project="alpha" bead={item} choice={choice} known={known} />
     </ul>,
   );
   return screen.getByRole("listitem");
@@ -130,5 +130,20 @@ describe("BeadCard", () => {
     expect(card(bead("a-1"), cardChoice({ tabStop: "a-1" }))).toHaveAttribute("tabIndex", "0");
     cleanup();
     expect(card(bead("a-2"), cardChoice({ tabStop: "a-1" }))).toHaveAttribute("tabIndex", "-1");
+  });
+
+  it("REQ-UI-065 a blocked card names its first open blocker by id and counts the others", () => {
+    const known = new Map([bead("b-1", { title: "Schema" }), bead("b-2", { title: "API" }), bead("b-0", { title: "Done", status: "closed" })].map((b) => [b.id, b]));
+    card(bead("a-3", { blocked: true, blocked_by: ["b-2", "b-0", "b-1"] }), cardChoice(), known);
+    expect(screen.getByText("Blocked by Schema +1")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-065 a blocked card with one open blocker has no count, one without open blockers no line", () => {
+    const known = new Map([bead("b-1", { title: "Schema" }), bead("b-0", { status: "closed" })].map((b) => [b.id, b]));
+    card(bead("a-3", { blocked: true, blocked_by: ["b-1"] }), cardChoice(), known);
+    expect(screen.getByText("Blocked by Schema")).toBeInTheDocument();
+    cleanup();
+    card(bead("a-4", { blocked: true, blocked_by: ["b-0"] }), cardChoice(), known);
+    expect(screen.queryByText(/Blocked by/)).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
 import { BoardColumn } from "./BoardColumn";
@@ -20,6 +20,7 @@ export function BoardView({
   onChange: (next: BeadFilters) => void;
 }) {
   const columns = boardColumns(beads);
+  const known = useMemo(() => new Map(beads.map((b) => [b.id, b])), [beads]);
   const [allDone, setAllDone] = useState(false);
   const drawn = BOARD_COLUMNS.flatMap(({ key }) =>
     (key === "done" && !allDone ? columns.done.slice(0, DONE_LIMIT) : columns[key]).map((b) => b.id),
@@ -46,9 +47,10 @@ export function BoardView({
               all={allDone}
               onAll={setAllDone}
               choice={choice}
+              known={known}
             />
           ) : (
-            <BoardColumn key={key} title={title} rule={rule} project={project} beads={columns[key]} choice={choice} />
+            <BoardColumn key={key} title={title} rule={rule} project={project} beads={columns[key]} choice={choice} known={known} />
           ),
         )}
       </div>

@@ -305,6 +305,65 @@ describe("EpicPage loading and errors", () => {
   });
 });
 
+describe("EpicPage next command", () => {
+  /** `stubE3` plus the workflow answer: a stage, or a status for an error; `hold` keeps the request pending. */
+  function withWorkflow(answer: string | number, hold = false) {
+    stubE3({ status: "in_progress" });
+    const base = vi.mocked(fetch).getMockImplementation();
+    if (base === undefined) throw new Error("no stub");
+    const mock = vi.fn((input: RequestInfo | URL) => {
+      const text = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      if (!new URL(text, "http://localhost").pathname.endsWith("/workflow")) return base(input);
+      if (hold) return new Promise<Response>(() => undefined);
+      if (typeof answer === "number") return Promise.resolve(json({ error: "gin state failed" }, answer));
+      return Promise.resolve(json({ stage: answer, gates: {}, warnings: [], review_waivers: [] }));
+    });
+    vi.stubGlobal("fetch", mock);
+    return mock;
+  }
+  const workflowCalls = (mock: ReturnType<typeof withWorkflow>) =>
+    mock.mock.calls.filter(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url).endsWith("/workflow")).length;
+
+  // REQ-BEADS-025 Scenario: epic command after the workflow loads
+  it("REQ-UI-151 REQ-BEADS-025 the epic command appears once the workflow loads, with one workflow request", async () => {
+    const mock = withWorkflow("orchestrate");
+    open("ex-e3");
+    expect(await screen.findByText("/gin:orchestrate ex-e3")).toBeInTheDocument();
+    expect(screen.getByText("Next")).toBeInTheDocument();
+    expect(await screen.findByRole("list", { name: "Stages" })).toBeInTheDocument();
+    expect(workflowCalls(mock)).toBe(1);
+  });
+
+  it("REQ-UI-151 a closed task's bead page shows no Next command", async () => {
+    const closed = bead("ex-t9", { status: "closed", closed_at: "2026-10-10T12:00:00Z" });
+    stub([closed], { "ex-t9": detail(closed) });
+    open("ex-t9");
+    expect(await screen.findByRole("heading", { name: closed.title })).toBeInTheDocument();
+    expect(screen.queryByText("Next")).toBeNull();
+  });
+
+  it("REQ-UI-151 REQ-BEADS-025 no epic command while the workflow loads", async () => {
+    withWorkflow("plan", true);
+    open("ex-e3");
+    expect(await screen.findByText("Loading workflow…")).toBeInTheDocument();
+    expect(screen.queryByText("Next")).toBeNull();
+  });
+
+  it("REQ-UI-151 REQ-UI-120 no epic command when the workflow fails; the card shows the error with Retry", async () => {
+    withWorkflow(502);
+    open("ex-e3");
+    expect(await screen.findByRole("button", { name: "Retry" })).toBeInTheDocument();
+    expect(screen.queryByText("Next")).toBeNull();
+  });
+
+  it("REQ-UI-151 REQ-UI-120 an empty stage shows No workflow and no command", async () => {
+    withWorkflow("");
+    open("ex-e3");
+    expect(await screen.findByText("No workflow")).toBeInTheDocument();
+    expect(screen.queryByText("Next")).toBeNull();
+  });
+});
+
 describe("epicPath", () => {
   it("REQ-UI-119 builds the URL with tab and filters, without tab for Overview and without project, view, scope or milestone", () => {
     expect(epicPath("my proj", "e-1", "overview")).toBe("/beads/my%20proj/e-1");
