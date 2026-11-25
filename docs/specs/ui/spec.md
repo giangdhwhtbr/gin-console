@@ -1599,7 +1599,8 @@ The frontend SHALL show on every page a "Refresh data" control, in the top bar b
 ## Diagrams
 - [Bead text as Markdown](diagrams/bead-text-markdown-activity.md)
 - [Login](diagrams/login-activity.md)
-- [My Tasks](diagrams/my-tasks-activity.md)
+- [My work](diagrams/my-tasks-activity.md)
+- [Jump palette](diagrams/jump-palette-activity.md)
 - [Graph view](diagrams/graph-view-activity.md)
 - [Graph layout](diagrams/graph-layout-activity.md)
 - [Details panel](diagrams/details-panel-activity.md)
@@ -1824,6 +1825,8 @@ The My Tasks page SHALL list only the beads of the current project (REQ-UI-124),
 - [Read a definition](use-cases/read-a-definition.md)
 - [Narrow the Beads list](use-cases/narrow-the-beads-list.md)
 - [Select and open a bead](use-cases/select-and-open-a-bead.md)
+- [Pick the next work](use-cases/pick-next-work.md)
+- [Jump to a bead](use-cases/jump-to-a-bead.md)
 
 ### REQ-UI-106: Graph view
 The Beads views SHALL offer the view Graph (`view=graph`), which SHALL draw, with the nodes, arrows, outside beads and cycle warning of REQ-UI-048 to REQ-UI-050 and REQ-UI-079, the direct children of its scope: the bead named by `scope` in the URL when it exists and has children, else the selected milestone, else the project (REQ-MILESTONE-UI-006) when "All" or "No milestone" is selected. The Graph view SHALL also serve the Graph tab of an epic page (REQ-UI-119), with the epic as its scope. It SHALL draw a node only when the node's bead or one of its descendants matches the search, the filters and "Show closed", and only the arrows between drawn nodes. It SHALL offer the switch "Only linked" of REQ-UI-081, on at first when the scope is the project and off otherwise. A node SHALL be selected and opened as REQ-UI-147 describes, opening a node with or without children opening its bead page. WHEN a node is selected, the view SHALL keep it as `select` and show its details panel as REQ-UI-148 describes, SHALL select nothing and show no details panel while `select` is absent, whatever the scope, so that the panel opens only when the user selects a node, and SHALL show and close the panel as REQ-UI-051 and REQ-UI-052 describe. The view SHALL show a breadcrumb from the milestone or project down to the scope, each item a link that sets `scope` to it, and SHALL set `scope` to a bead with children when the user chooses "Show children" in its details panel (REQ-UI-149). WHILE nothing matches, the view SHALL say "No beads match these filters".

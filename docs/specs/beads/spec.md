@@ -295,6 +295,7 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 - [Bead counts](diagrams/bead-counts-activity.md)
 - [Bead state as shown](diagrams/bead-state.md)
 - [Me filter](diagrams/me-filter-activity.md)
+- [Next command](diagrams/next-command-activity.md)
 
 ## Use Cases
 - [Refresh pulls Beads](use-cases/refresh-pulls-beads.md)
