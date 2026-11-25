@@ -1,5 +1,4 @@
 // TC: TC-OVERVIEW-028@1f5841da
-// TC: TC-OVERVIEW-028@x
 import { test, expect } from '../evidence';
 import { overview, overviewProject, stubApi } from '../support/api';
 import { signIn } from '../support/overview';

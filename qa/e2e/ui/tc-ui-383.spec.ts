@@ -1,5 +1,4 @@
 // TC: TC-UI-383@53dfb198
-// TC: TC-UI-383@x
 import { test, expect } from '../evidence';
 import { bead, overview, overviewProject, stubApi } from '../support/api';
 import { signIn } from '../support/overview';

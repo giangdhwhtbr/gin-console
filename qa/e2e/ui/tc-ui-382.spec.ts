@@ -1,5 +1,4 @@
 // TC: TC-UI-382@ca9faec1
-// TC: TC-UI-382@x
 import { test, expect } from '../evidence';
 import { overview, overviewProject, stubApi } from '../support/api';
 import { signIn } from '../support/overview';

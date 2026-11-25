@@ -1,5 +1,4 @@
 // TC: TC-OVERVIEW-026@f275f798
-// TC: TC-OVERVIEW-026@x
 import { test, expect } from '../evidence';
 import { epicWorkflow, overview, overviewProject, stubApi } from '../support/api';
 import { section, signIn } from '../support/overview';

@@ -8,7 +8,7 @@
 
 **Steps:**
 1. Open `/`
-2. Open the Work in progress section
+2. Read the row of `ann` in Work in progress
 
 **Expected:**
 - One row reads `ann` with total 3

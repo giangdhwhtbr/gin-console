@@ -1,5 +1,4 @@
 // TC: TC-OVERVIEW-024@7ad47701
-// TC: TC-OVERVIEW-024@x
 import { test, expect } from '../evidence';
 import { epicWorkflow, overview, overviewProject, stubApi } from '../support/api';
 import { epics, signIn } from '../support/overview';
@@ -27,7 +26,7 @@ test('TC-OVERVIEW-024: Bounded requests (REQ-OVERVIEW-008)', async ({ page, ev }
   await ev.step('2. Wait until all workflow requests have ended', async () => {
     await expect(page.getByRole('heading', { name: 'Gates not met (0)' })).toBeVisible();
     expect(total).toBe(14);
-    expect(most).toBeGreaterThan(0);
+    expect(most).toBeGreaterThan(1);
     expect(most).toBeLessThanOrEqual(4);
   });
 });

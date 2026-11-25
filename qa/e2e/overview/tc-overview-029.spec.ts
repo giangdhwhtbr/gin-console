@@ -1,5 +1,4 @@
 // TC: TC-OVERVIEW-029@7e9939a8
-// TC: TC-OVERVIEW-029@x
 import { test, expect } from '../evidence';
 import { epicWorkflow, overview, overviewProject, stubApi } from '../support/api';
 import { lateForecast, onTrackStatus, signIn } from '../support/overview';
@@ -24,8 +23,12 @@ test('TC-OVERVIEW-029: Poll does not run gin (REQ-OVERVIEW-010)', async ({ page,
 
   await ev.step('2. Wait 10 seconds', async () => {
     stub.calls.length = 0;
+    const polls = () => stub.calls.filter((u) => u.pathname === '/api/overview').length;
     await page.clock.runFor(10_000);
-    await expect.poll(() => stub.calls.filter((u) => u.pathname === '/api/overview').length).toBeGreaterThanOrEqual(1);
+    await expect.poll(polls).toBeGreaterThanOrEqual(1);
+    await page.clock.runFor(10_000); // the second answer has been handled once a third request goes out
+    await expect.poll(polls).toBeGreaterThanOrEqual(2);
+    await page.waitForTimeout(500); // real time: the answers of the polls are handled and any request they cause is sent
     expect(stub.calls.filter((u) => u.pathname !== '/api/overview' && u.pathname !== '/api/projects' && u.pathname !== '/api/projects/beads')).toEqual([]);
   });
 });

@@ -8,7 +8,7 @@ test('TC-UI-320: Sidebar brand mark', async ({ page, ev }) => {
   await stubApi(page);
 
   await ev.step('1. Open `/projects`', async () => {
-    await page.goto('/'); // the Projects page is the root of the console
+    await page.goto('/'); // the Overview page is the root of the console
     await expect(page.getByRole('navigation', { name: 'Main' })).toBeVisible();
   });
 

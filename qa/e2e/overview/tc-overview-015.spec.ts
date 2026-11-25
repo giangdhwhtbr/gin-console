@@ -1,5 +1,4 @@
-// TC: TC-OVERVIEW-015@fdfedd33
-// TC: TC-OVERVIEW-015@x
+// TC: TC-OVERVIEW-015@6b810689
 import { test, expect } from '../evidence';
 import { overview, overviewProject, stubApi } from '../support/api';
 import { signIn } from '../support/overview';
@@ -20,7 +19,7 @@ test('TC-OVERVIEW-015: One person in two projects (REQ-OVERVIEW-005)', async ({ 
     await expect(page.getByRole('heading', { name: 'Work in progress' })).toBeVisible();
   });
 
-  await ev.step('2. Open the Work in progress section', async () => {
+  await ev.step('2. Read the row of `ann` in Work in progress', async () => {
     const rows = page.locator('[data-person]');
     await expect(rows).toHaveCount(1);
     await expect(rows.first()).toHaveAttribute('data-person', 'ann');

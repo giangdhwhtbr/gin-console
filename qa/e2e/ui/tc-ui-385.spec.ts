@@ -1,5 +1,4 @@
 // TC: TC-UI-385@57c9c844
-// TC: TC-UI-385@x
 import { test, expect } from '../evidence';
 import { overview, overviewProject, stubApi } from '../support/api';
 import { signIn } from '../support/overview';
@@ -27,6 +26,11 @@ test('TC-UI-385: Choose on Overview (REQ-UI-123)', async ({ page, ev }) => {
     await projectList(page).getByRole('button', { name: 'b', exact: true }).click();
     await expect(page).toHaveURL((u) => u.pathname === '/');
     await expect(page.getByRole('link', { name: /Fix billing/ })).toBeVisible();
-    await expect(mainNav(page).getByRole('link', { name: 'Beads' })).toHaveAttribute('href', '/beads?project=b');
+    const nav = mainNav(page);
+    await expect(nav.getByRole('link', { name: 'Overview', exact: true })).toHaveAttribute('href', '/');
+    await expect(nav.getByRole('link', { name: 'Beads', exact: true })).toHaveAttribute('href', '/beads?project=b');
+    await expect(nav.getByRole('link', { name: 'My Tasks', exact: true })).toHaveAttribute('href', '/my-tasks?project=b');
+    await expect(nav.getByRole('link', { name: 'Milestones', exact: true })).toHaveAttribute('href', '/milestones?project=b');
+    await expect(nav.getByRole('link', { name: 'Reports', exact: true })).toHaveAttribute('href', '/reports/status?project=b');
   });
 });
