@@ -11,4 +11,4 @@
 1. From a tailnet device, open the `:8443` URL
 
 **Expected:**
-- The My Tasks page of the current project is shown
+- The My work page of the current project is shown

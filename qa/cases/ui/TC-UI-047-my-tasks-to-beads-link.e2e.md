@@ -1,4 +1,4 @@
-# TC-UI-047: My Tasks to Beads link
+# TC-UI-047: My work to Beads link
 
 - **REQ:** REQ-UI-022@7ac46b01
 - **Priority:** medium
@@ -7,7 +7,7 @@
 - **Checked:** 98a961f2
 
 **Preconditions:**
-- Project `a` is configured and the My Tasks page is shown
+- Project `a` is configured and the My work page is shown
 
 **Steps:**
 1. Click "Beads" in the main navigation

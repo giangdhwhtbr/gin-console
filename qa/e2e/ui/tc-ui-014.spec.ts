@@ -1,11 +1,11 @@
-// TC: TC-UI-014@c429eec0
+// TC: TC-UI-014@37fdaaf5
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
-test('TC-UI-014: My Tasks skips a missing project directory', async ({ page, ev }) => {
+test('TC-UI-014: My work skips a missing project directory', async ({ page, ev }) => {
   // Preconditions: C does not exist on disk; A exists and is current.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
-  const stub = await stubApi(page, { projects: ['A', 'C'], beads: [bead('a-1', { title: 'Task of A', assignee: 'qa@example.com' })] });
+  const stub = await stubApi(page, { projects: ['A', 'C'], beads: [bead('a-1', { title: 'Task of A', ready: true, assignee: 'qa@example.com' })] });
   await page.route('**/api/projects/beads', (route) => route.fulfill({
     json: [
       { name: 'A', path: '/home/gin/A', exists: true, workflow: null, beads: null },

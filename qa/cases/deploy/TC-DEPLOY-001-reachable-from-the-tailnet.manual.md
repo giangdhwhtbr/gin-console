@@ -11,4 +11,4 @@
 1. On the second device, open `https://<host>.ts.net:8443`
 
 **Expected:**
-- The My Tasks page of the current project loads (`/my-tasks?project=<current project>`)
+- The My work page of the current project loads (`/my-tasks?project=<current project>`)

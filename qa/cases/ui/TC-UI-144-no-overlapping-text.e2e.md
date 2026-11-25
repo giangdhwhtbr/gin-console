@@ -1,4 +1,4 @@
-# TC-UI-144: No overlapping text on My Tasks
+# TC-UI-144: No overlapping text on My work
 
 - **REQ:** REQ-UI-110@6bf5889e
 - **Priority:** high

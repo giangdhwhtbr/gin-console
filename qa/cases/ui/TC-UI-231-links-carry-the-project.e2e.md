@@ -13,5 +13,5 @@
 1. Open `/my-tasks?project=b`
 
 **Expected:**
-- The Beads link goes to `/beads?project=b`, My Tasks to `/my-tasks?project=b`, Milestones to `/milestones?project=b` and Reports to `/reports?project=b`
+- The Beads link goes to `/beads?project=b`, My work to `/my-tasks?project=b`, Milestones to `/milestones?project=b` and Reports to `/reports?project=b`
 - No link goes to `/`

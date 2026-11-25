@@ -1,4 +1,4 @@
-# TC-UI-016: The beads request of the project fails in My Tasks
+# TC-UI-016: The beads request of the project fails in My work
 
 - **REQ:** REQ-UI-102@366e8139
 - **Priority:** high

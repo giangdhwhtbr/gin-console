@@ -1,6 +1,6 @@
-# TC-UI-015: My Tasks does not request the full projects list
+# TC-UI-015: My work does not request the full projects list
 
-- **REQ:** REQ-UI-100@14d1209a
+- **REQ:** REQ-UI-100@6b611f17
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

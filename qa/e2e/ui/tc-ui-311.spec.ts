@@ -42,7 +42,7 @@ test('TC-UI-311: No middle dots in page text', async ({ page, ev }) => {
 
   await ev.step('5. Open `/my-tasks?project=P`', async () => {
     await page.goto('/my-tasks?project=P');
-    await expect(page.getByRole('heading', { name: 'My Tasks', level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'My work', level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Tune ranking weights' })).toBeVisible();
   });
   await ev.step('6. Read the text of the page', noDots);

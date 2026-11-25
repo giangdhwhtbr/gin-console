@@ -1,6 +1,6 @@
-# TC-UI-013: My Tasks with nothing assigned
+# TC-UI-013: My work with nothing assigned
 
-- **REQ:** REQ-UI-100@14d1209a
+- **REQ:** REQ-UI-100@6b611f17
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -14,5 +14,5 @@
 1. Open /my-tasks?project=A
 
 **Expected:**
-- The page says "No tasks assigned to giangdhwhtbr@gmail.com"
+- The page says "No work for giangdhwhtbr@gmail.com"
 - A link "Open the Beads page" goes to `/beads?project=A`

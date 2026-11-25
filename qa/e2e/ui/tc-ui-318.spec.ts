@@ -26,7 +26,7 @@ test('TC-UI-318: Current place uses the identity colour', async ({ page, ev }) =
     await expect(current).toHaveAttribute('aria-current', 'page');
     await expect(current).toHaveCSS('box-shadow', BAR);
     await expect(current.locator('svg').first()).toHaveCSS('color', 'rgb(106, 61, 184)');
-    for (const name of ['My Tasks', 'Milestones', 'Reports']) {
+    for (const name of ['My work', 'Milestones', 'Reports']) {
       const other = nav().getByRole('link', { name });
       await expect(other).toHaveCSS('box-shadow', 'none');
       await expect(other.locator('svg').first()).not.toHaveCSS('color', 'rgb(106, 61, 184)');

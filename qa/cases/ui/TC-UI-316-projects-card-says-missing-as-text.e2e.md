@@ -1,4 +1,4 @@
-# TC-UI-316: My Tasks row shows the state as text
+# TC-UI-316: My work row shows the state as text
 
 - **REQ:** REQ-UI-140@50e14546
 - **Priority:** medium

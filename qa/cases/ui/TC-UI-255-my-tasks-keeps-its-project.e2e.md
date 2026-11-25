@@ -1,4 +1,4 @@
-# TC-UI-255: My Tasks keeps its project
+# TC-UI-255: My work keeps its project
 
 - **REQ:** REQ-UI-073@3fe05bd7
 - **Priority:** medium
@@ -15,5 +15,5 @@
 3. Use the first link of the breadcrumb
 
 **Expected:**
-- After step 2 the first link reads "My Tasks"
-- After step 3 My Tasks of project `b` is shown, the URL is `/my-tasks?project=b` and there is no project select
+- After step 2 the first link reads "My work"
+- After step 3 My work of project `b` is shown, the URL is `/my-tasks?project=b` and there is no project select

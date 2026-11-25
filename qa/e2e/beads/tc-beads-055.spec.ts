@@ -11,7 +11,7 @@ test('TC-BEADS-055: Failed pull note follows the project switcher (REQ-BEADS-018
   await stubProjectPulls(page, [
     { name: 'A', path: '/tmp/a', pull: pulled(60, { status: 'error', error: 'Merge conflict detected' }) },
     { name: 'B', path: '/tmp/b', pull: null },
-  ], [bead('A-1', { assignee: 'qa@example.com' })]);
+  ], [bead('A-1', { ready: true, assignee: 'qa@example.com' })]);
   const note = 'Pulling Beads of A failed: Merge conflict detected. Run bd dolt pull in /tmp/a.';
 
   await ev.step('1. Open /my-tasks?project=A', async () => {

@@ -1,4 +1,4 @@
-# TC-UI-006: My Tasks shows the note of the current project only
+# TC-UI-006: My work shows the note of the current project only
 
 - **REQ:** REQ-UI-103@e6e5851a
 - **Priority:** high

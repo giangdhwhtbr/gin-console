@@ -9,7 +9,7 @@ test('TC-BEADS-056: Failed pull note (REQ-BEADS-018)', async ({ page, ev }) => {
   await stubProjectPulls(page, [
     { name: 'A', path: '/tmp/a', pull: pulled(60, { status: 'error', error: 'Merge conflict detected' }) },
     { name: 'B', path: '/tmp/b', pull: null },
-  ], [bead('A-1', { assignee: 'qa@example.com' })]);
+  ], [bead('A-1', { ready: true, assignee: 'qa@example.com' })]);
   const expectBelowNote = async () => {
     const listed = page.getByText('Title A-1').first();
     await expect(listed).toBeVisible();

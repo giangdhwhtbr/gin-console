@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // TC-1 of gin-console-3rr (REQ-UI-110): the readability check against a running console with real projects.
 //   node qa/e2e/readability-live.js --base http://127.0.0.1:8700 --project example --project qwikfone --out <dir>
-// Visits Projects, Beads (List, Board, Focus, Graph), an epic and a bead with points, the Lanes view and the Graph (with closed beads) of an epic with lanes, its epic page (Overview, Graph, Lanes) and its track and merge gate pages, My Tasks, Milestones, the
+// Visits Projects, Beads (List, Board, Focus, Graph), an epic and a bead with points, the Lanes view and the Graph (with closed beads) of an epic with lanes, its epic page (Overview, Graph, Lanes) and its track and merge gate pages, My work, Milestones, the
 // milestone with velocity (Gantt at every zoom, Beads, Retro) and Reports (every tab) at 390, 1024, 1440 and
 // 1920 px in light and dark, runs the in-page detector of qa/e2e/support/readability-inpage.js (the one
 // qa/e2e/ui/readability.spec.ts uses), saves a screenshot of every page with findings and findings.json, and

@@ -1,6 +1,6 @@
 # TC-UI-088: No remembered place
 
-- **REQ:** REQ-UI-072@1fd8a2f3
+- **REQ:** REQ-UI-072@0f9dc4f8
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

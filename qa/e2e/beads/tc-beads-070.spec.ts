@@ -9,7 +9,7 @@ test('TC-BEADS-070: No note for another project (REQ-BEADS-018)', async ({ page,
   await stubProjectPulls(page, [
     { name: 'A', path: '/tmp/a', pull: pulled(10, { status: 'error', error: 'Merge conflict detected' }) },
     { name: 'B', path: '/tmp/b', pull: pulled(10) },
-  ], [bead('B-1', { assignee: 'qa@example.com' })]);
+  ], [bead('B-1', { ready: true, assignee: 'qa@example.com' })]);
   const quiet = async () => {
     await expect(page.getByText('Title B-1').first()).toBeVisible();
     await expect(page.getByText(/Pulling Beads|Merge conflict detected/)).toHaveCount(0);

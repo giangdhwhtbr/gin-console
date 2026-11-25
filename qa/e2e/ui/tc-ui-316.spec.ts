@@ -1,8 +1,8 @@
-// TC: TC-UI-316@74adac9e
+// TC: TC-UI-316@19adf430
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
-test('TC-UI-316: My Tasks row shows the state as text', async ({ page, ev }) => {
+test('TC-UI-316: My work row shows the state as text', async ({ page, ev }) => {
   // Preconditions: project P reports a blocked bead assigned to the signed-in email; the window is 1440px wide.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await page.setViewportSize({ width: 1440, height: 900 });
