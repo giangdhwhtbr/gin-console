@@ -22,6 +22,12 @@ export const DEFINITIONS = {
   rework: "Rework: closed beads that were reopened (Beads interaction log) or had a bug found later (discovered-from).",
   reopens: "Reopens: how many times closed beads were reopened, from the Beads interaction log.",
   bugsFound: "Bugs found later: bugs linked discovered-from to a closed bead, from Beads dependencies.",
+  overviewMilestones: "Milestones: the open milestone of each project, an overdue one first, with its Reports status verdict.",
+  overviewAging: "In progress too long: beads in progress for more working days since their start than the number in the heading. Blocked beads are listed under Blocked; prep tasks, milestones, merge gates and epics split into tracks are left out.",
+  overviewGates: "Gates not met: epics in progress before requirement, plan or orchestration is approved, or with an unknown gate.",
+  overviewWaivers: "Waivers: waived gates and reviews of epics in progress.",
+  overviewUnassigned: "Unassigned ready: ready beads with no assignee; prep tasks, milestones, merge gates and epics split into tracks are left out.",
+  overviewWorkload: "Work in progress: beads in progress and not blocked, per assignee; prep tasks, milestones, merge gates and epics split into tracks are left out.",
 } as const;
 
 export type DefinitionKey = keyof typeof DEFINITIONS;
