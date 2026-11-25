@@ -9,6 +9,8 @@ Epic `gin-console-rm-my-work` (2026-11-25) turned My Tasks into My work (groups 
 - Blockers are read in `features/beads/blockers.ts`: `blocked_by` of a bead summary holds every `blocks` dependency, closed ones included, so a blocker counts as closed only when a loaded bead says so; an unknown blocker counts as open and is named by its id; a merge gate is named like the Tracks table ("be #2, merge pending").
 - The epic page loads the workflow once (`EpicPage`) and passes it to the header and the Workflow card; a details panel shows no epic command.
 - The jump palette (`features/jump/`) is mounted in `App.tsx` with `key={epoch}`, so Refresh data drops its loaded beads; the first opening loads every configured project in parallel and a failing project is named.
+- The jump palette (`JumpPalette`) sits inside the one `<Fragment key={epoch}>` in `App.tsx`: as a sibling with the same key it was never unmounted after Refresh data, and left its dialog, backdrop and keydown listener behind (8668d79, with a test). Siblings in Layout's children must not share a key.
+- A parallel session can ship between the pre-checks and the merge of ship: compare origin/master with the base of the branch right before merging. gin-console-rm-overview shipped (8f6e3e7) while this epic was being checked; the branch then conflicted in `docs/specs/ui/spec.md`, frontend tests and 29 QA files, and TC-UI-381 to 385 had to become TC-UI-400 to 404.
 - Review of a track is not readable from bead data while `project.review_ledger` is false: a track in review keeps status `in_progress`. The "In review" group was moved to gin-console-rm-review-audit, which was dropped on 2026-11-25, so no page shows it.
 
 **Consequences**

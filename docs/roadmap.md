@@ -56,6 +56,7 @@ Source: Product brief from the UX review of 2026-11-21 (team lead, PM, member an
 - Integration: no feature flags (internal, read-only, single-user tool). Each epic deploys to the Tailscale build when its tracks merge. External dependencies are checked by hand before an epic starts, because bd 1.0.5 does not enforce them: `bd -C ../gin-workflow list --label provides:<capability> --all`.
 - Quality: gin-qa cases per REQ; Claude validates UI changes with Playwright on the Tailscale build; Exit criteria: checks green, the epic's TCs passed, no open bug bead on the epic.
 - Load: 1 lane times the working days of the milestone.
+- Parallel work: when two sessions work in this repository, each runs its epic in its own worktree and never switches the main checkout; right before merging, compare origin/master with the base of the branch, because the other session may have shipped.
 
 ## Strategy
 
@@ -234,7 +235,12 @@ Risks: Tasks carry no estimates or dates in gin-workflow, so task rows show stat
 
 Outcome: A lead starts the day on one overview across projects; a developer sees what to do next and copies the command to start it.
 Demo: The overview lists blocked work with its owner across projects; My work shows next up; a bead page copies its claim command.
-Result:
+Result: closed 2026-11-25; delivered 2 of 2 epics; 0 moved to QA and BA
+- Outcome: reached; the Overview lists what needs a lead across projects, and My work shows a developer what to do next with the command to start it
+- Demo: partial; the Overview passed its test case on the deployed build except the unreadable project; My work and copying the claim command were checked on a local build with real data, not yet on the deployed build
+- Metrics: 2 of 2 epics done (100%); estimate accuracy not measured (both epics had points); 20% of capacity used; 0.15 days per point
+- Spillover: none
+- Actions: parallel sessions each work in their own copy and compare the shared main line before merging; recorded two lessons on the jump palette and on parallel merges
 Spec ready by: 2026-12-30
 Integration point: 2027-01-07
 - Integrates: gin-console-rm-overview, gin-console-rm-my-work
