@@ -1,6 +1,6 @@
 # TC-UI-113: Full card
 
-- **REQ:** REQ-UI-065@ca703482
+- **REQ:** REQ-UI-065@3e3273a6
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

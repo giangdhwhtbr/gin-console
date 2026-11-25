@@ -1,6 +1,6 @@
 # TC-UI-151: Home address without projects
 
-- **REQ:** REQ-UI-099@00ea3e46
+- **REQ:** REQ-UI-099@d20e7c33
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

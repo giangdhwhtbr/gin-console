@@ -15,8 +15,8 @@ test('TC-UI-046: Change project clears the milestone (REQ-UI-105)', async ({ pag
         : { milestones: [milestoneOption('m2', { status: 'active' }), milestoneOption('m3', { status: 'planned' })], current: 'm2' },
     beads: (url) =>
       url.searchParams.get('project') === 'beta'
-        ? [bead('beta-1', { assignee: me, milestone: 'b1' })]
-        : [bead('alpha-2', { assignee: me, milestone: 'm2' }), bead('alpha-3', { assignee: me, milestone: 'm3' })],
+        ? [bead('beta-1', { ready: true, assignee: me, milestone: 'b1' })]
+        : [bead('alpha-2', { ready: true, assignee: me, milestone: 'm2' }), bead('alpha-3', { ready: true, assignee: me, milestone: 'm3' })],
   });
 
   await ev.step('1. Open `/my-tasks?project=alpha&milestone=m3`', async () => {

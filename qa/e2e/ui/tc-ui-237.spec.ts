@@ -19,7 +19,7 @@ test('TC-UI-237: Unknown path (REQ-UI-125)', async ({ page, ev }) => {
     const main = page.getByRole('main');
     await expect(main.getByText('/nope')).toBeVisible();
     await expect(main.getByRole('link', { name: 'Beads' })).toHaveAttribute('href', '/beads?project=a');
-    await expect(main.getByRole('link', { name: 'My Tasks' })).toHaveAttribute('href', '/my-tasks?project=a');
+    await expect(main.getByRole('link', { name: 'My work' })).toHaveAttribute('href', '/my-tasks?project=a');
     await expect(page).toHaveTitle('Page not found · gin-console');
     await expect(mainNav(page).locator('[aria-current="page"]')).toHaveCount(0);
   });

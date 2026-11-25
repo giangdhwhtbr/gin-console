@@ -1,4 +1,4 @@
-# TC-UI-017: Projects fail in My Tasks
+# TC-UI-017: Projects fail in My work
 
 - **REQ:** REQ-UI-102@366e8139
 - **Priority:** high

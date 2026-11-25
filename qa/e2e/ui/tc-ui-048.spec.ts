@@ -8,7 +8,7 @@ test('TC-UI-048: Long project name at 360px (REQ-UI-061)', async ({ page, ev }) 
   // Precondition: a project with a 60-character name is configured; the window is 360px wide.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   const name = 'p'.repeat(60);
-  await stubApi(page, { projects: [name], beads: [bead('a-1', { assignee: 'qa@example.com' })] });
+  await stubApi(page, { projects: [name], beads: [bead('a-1', { ready: true, assignee: 'qa@example.com' })] });
   await page.setViewportSize({ width: 360, height: 800 });
   const noSideScroll = async () => {
     const [sw, cw] = await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.clientWidth]);

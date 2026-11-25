@@ -1,6 +1,6 @@
 # TC-UI-149: Card with points
 
-- **REQ:** REQ-UI-065@ca703482
+- **REQ:** REQ-UI-065@3e3273a6
 - **Priority:** medium
 
 **Preconditions:**

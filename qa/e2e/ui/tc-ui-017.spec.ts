@@ -1,8 +1,8 @@
-// TC: TC-UI-017@d40353fe
+// TC: TC-UI-017@0637b2d1
 import { test, expect } from '../evidence';
 import { stubApi } from '../support/api';
 
-test('TC-UI-017: Projects fail in My Tasks', async ({ page, ev }) => {
+test('TC-UI-017: Projects fail in My work', async ({ page, ev }) => {
   // Precondition: GET /api/projects/beads responds 500.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubApi(page, { projects: ['A'] });

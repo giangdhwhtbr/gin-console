@@ -14,4 +14,4 @@
 2. Open `/my-tasks?project=a`
 
 **Expected:**
-- No pull note is shown on the Beads page or My Tasks
+- No pull note is shown on the Beads page or My work

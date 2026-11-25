@@ -1,4 +1,4 @@
-# TC-UI-235: My Tasks of the current project
+# TC-UI-235: My work of the current project
 
 - **REQ:** REQ-UI-124@e7f9eed5
 - **Priority:** medium
@@ -11,7 +11,7 @@
 
 **Steps:**
 1. Open `/beads?project=b`
-2. Click "My Tasks" in the main navigation
+2. Click "My work" in the main navigation
 
 **Expected:**
-- The page is `/my-tasks?project=b` and shows the My Tasks page of `b`
+- The page is `/my-tasks?project=b` and shows the My work page of `b`

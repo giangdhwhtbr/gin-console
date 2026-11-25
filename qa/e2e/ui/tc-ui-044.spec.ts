@@ -8,7 +8,7 @@ test('TC-UI-044: Current project (REQ-UI-105)', async ({ page, ev }) => {
   const me = 'qa@example.com';
   await stubApi(page, {
     projects: ['alpha', 'beta'],
-    beads: beadsOf({ alpha: [bead('alpha-1', { assignee: me })], beta: [bead('beta-1', { assignee: me })] }),
+    beads: beadsOf({ alpha: [bead('alpha-1', { ready: true, assignee: me })], beta: [bead('beta-1', { ready: true, assignee: me })] }),
   });
 
   await ev.step('1. Open `/my-tasks`', async () => {

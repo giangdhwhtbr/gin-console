@@ -157,3 +157,22 @@ export async function stubApi(
   });
   return stub;
 }
+
+export type Related = { id: string; title: string; status: string; type: 'blocks' | 'parent-child' | 'discovered-from' };
+
+/** The bead as `GET /api/beads/{project}/{id}` answers it; `dependencies` and the other fields of the detail are overridable. */
+export const beadDetail = (b: BeadSummary, o: { dependencies?: Related[]; dependents?: Related[]; children?: Related[] } = {}) => ({
+  ...b, kind: null, capabilities: [], complexity: null, estimate_minutes: null, description: 'A description',
+  design: null, notes: null, acceptance_criteria: null, close_reason: null,
+  dependencies: [], dependents: [], children: [], bugs: [], ...o,
+});
+
+/** Bead pages of one project: answers `/api/beads/{project}/{id}` and its comments for each of `details` (a bead or its `beadDetail`). */
+export async function stubBeadDetails(page: Page, project: string, details: ReturnType<typeof beadDetail>[]): Promise<void> {
+  await page.route(/\/api\/beads\/[^/?]+\/[^/?]+(\/comments)?(\?.*)?$/, async (route) => {
+    const parts = new URL(route.request().url()).pathname.split('/').filter(Boolean).map(decodeURIComponent);
+    if (parts[parts.length - 1] === 'comments') return route.fulfill({ json: [] });
+    const found = parts[2] === project ? details.find((d) => d.id === parts[3]) : undefined;
+    return route.fulfill(found ? { json: found } : { status: 404, json: { error: 'not found' } });
+  });
+}

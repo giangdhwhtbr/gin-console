@@ -1,6 +1,6 @@
-# TC-UI-014: My Tasks skips a missing project directory
+# TC-UI-014: My work skips a missing project directory
 
-- **REQ:** REQ-UI-100@14d1209a
+- **REQ:** REQ-UI-100@6b611f17
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

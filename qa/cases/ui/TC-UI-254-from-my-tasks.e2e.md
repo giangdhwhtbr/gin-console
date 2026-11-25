@@ -1,6 +1,6 @@
-# TC-UI-254: From My Tasks
+# TC-UI-254: From My work
 
-- **REQ:** REQ-UI-072@1fd8a2f3
+- **REQ:** REQ-UI-072@0f9dc4f8
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -14,5 +14,5 @@
 2. Open `a-1` from the list
 
 **Expected:**
-- The breadcrumb reads "My Tasks" then "Fix login"
-- "My Tasks" goes to `/my-tasks?project=a`
+- The breadcrumb reads "My work" then "Fix login"
+- "My work" goes to `/my-tasks?project=a`

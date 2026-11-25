@@ -36,7 +36,7 @@ const groups: Record<string, Visit[]> = {
     { name: 'epic graph', url: '/beads/example/ex-e12?tab=graph&closed=1', ready: async (page) => { await expect(page.locator('section[data-lane]').first()).toBeVisible(); await expect(page.locator('[data-chip]').first()).toBeVisible(); } },
     { name: 'epic lanes', url: '/beads/example/ex-e12?tab=lanes', ready: async (page) => { await expect(page.getByTestId('lanes-canvas')).toBeVisible(); await expect(page.locator('[data-marker]').first()).toBeVisible(); } },
   ],
-  'my tasks': [{ name: 'my tasks', url: '/my-tasks?project=example', ready: async (page) => { await expect(page.getByRole('link', { name: /Search relevance/ }).first()).toBeVisible(); } }],
+  'my work': [{ name: 'my work', url: '/my-tasks?project=example', ready: async (page) => { await expect(page.getByRole('link', { name: /Track 7/ }).first()).toBeVisible(); } }],
   milestones: [{ name: 'milestones', url: '/milestones?project=example', ready: text('General availability') }],
   'gantt 1w and 2w': ['1w', '2w'].map(gantt),
   'gantt all and scrolled': [

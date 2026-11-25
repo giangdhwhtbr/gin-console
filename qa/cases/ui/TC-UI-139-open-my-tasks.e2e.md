@@ -1,6 +1,6 @@
-# TC-UI-139: Open My Tasks
+# TC-UI-139: Open My work
 
-- **REQ:** REQ-UI-099@00ea3e46
+- **REQ:** REQ-UI-099@d20e7c33
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -11,8 +11,8 @@
 
 **Steps:**
 1. Open `/beads?project=a`
-2. Click "My Tasks" in the main navigation
+2. Click "My work" in the main navigation
 
 **Expected:**
 - The URL is `/my-tasks?project=a` without a reload
-- The My Tasks page is shown and the "My Tasks" link is the current link
+- The My work page is shown and the "My work" link is the current link

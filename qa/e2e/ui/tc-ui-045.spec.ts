@@ -11,7 +11,7 @@ test('TC-UI-045: Project with a current milestone (REQ-UI-105)', async ({ page, 
       milestones: [milestoneOption('m2', { status: 'active' }), milestoneOption('m3', { status: 'planned' })],
       current: 'm2',
     },
-    beads: [bead('alpha-2', { assignee: me, milestone: 'm2' }), bead('alpha-3', { assignee: me, milestone: 'm3' })],
+    beads: [bead('alpha-2', { ready: true, assignee: me, milestone: 'm2' }), bead('alpha-3', { ready: true, assignee: me, milestone: 'm3' })],
   });
 
   await ev.step('1. Open `/my-tasks?project=alpha`', async () => {

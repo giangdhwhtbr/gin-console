@@ -1,19 +1,19 @@
-// TC: TC-UI-012@27c5f9e2
+// TC: TC-UI-012@e842f34b
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 import { beadsOf, stubBeadPages } from '../support/shell';
 
-test('TC-UI-012: My Tasks lists the current project in order', async ({ page, ev }) => {
+test('TC-UI-012: My work lists the current project in order', async ({ page, ev }) => {
   // Preconditions: A has a P2 bead updated today and a P1 bead updated last week, both mine; B has a bead of mine; A is current.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   const now = new Date().toISOString();
   const week = new Date(Date.now() - 7 * 86400000).toISOString();
   const byProject = {
     A: [
-      bead('a-2', { title: 'Newer P2', priority: 2, assignee: 'qa@example.com', updated_at: now }),
-      bead('a-1', { title: 'Older P1', priority: 1, assignee: 'qa@example.com', updated_at: week }),
+      bead('a-2', { title: 'Newer P2', ready: true, priority: 2, assignee: 'qa@example.com', updated_at: now }),
+      bead('a-1', { title: 'Older P1', ready: true, priority: 1, assignee: 'qa@example.com', updated_at: week }),
     ],
-    B: [bead('b-1', { title: 'Task of B', assignee: 'qa@example.com' })],
+    B: [bead('b-1', { title: 'Task of B', ready: true, assignee: 'qa@example.com' })],
   };
   const stub = await stubApi(page, { projects: ['A', 'B'], beads: beadsOf(byProject) });
   await stubBeadPages(page, byProject);
