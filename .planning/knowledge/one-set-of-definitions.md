@@ -38,7 +38,7 @@ The UX review of 2026-11-21 found the same scope showing 19, 17 and 0 blocked be
 - **Native `title`** is only for text cut short (REQ-UI-107); every other explanation goes through `Hint`. Marks in rows and cards take no focus, so the Legend covers keyboard and touch users.
 - **Required fields:** a required field added to the frontend `BeadSummary` breaks every local test builder and inline JSON body. Find them with `grep -rn "waits_for: null"` and add the default.
 - **E2E stubs:** `qa/e2e/support/api.ts` `withCounts()` fills `child_counts` from the stubbed list like the backend; `stubApi` and `lanes.ts` `stubDetails` apply it. `support/lanes.ts` `shown()` writes the REQ-UI-131 date-time.
-- **E2E facts:** `/` replaces itself with My Tasks of the current project (the Projects page was retired by gin-console-k4l). The List assignee column is hidden below the `@4xl` container width, so assignee checks need a 1440px window.
+- **E2E facts:** `/` is the Overview since gin-console-rm-overview (before it, `/` replaced itself with My Tasks, now named My work). The List assignee column is hidden below the `@4xl` container width, so assignee checks need a 1440px window.
 - **Backend fixtures:** `fake_export.bead(parent=...)` does not make a child for counts or blocked inheritance; use `dep(child, parent, "parent-child")`.
 - **Plain labels:** "Prep n of m done" is longer than "Prep n/m", so the second Gantt line cuts sooner (ellipsis plus hint). The Pace figure "2.4 done per day" wraps in the large value font; epic gin-console-rm-strung may restyle both.
 - **REQ-UI-095:** epic gin-console-5c4 changed it again after this epic archived (tabs without AI usage and Data coverage); its delta used the base hash of this epic's text.
