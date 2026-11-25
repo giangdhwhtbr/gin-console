@@ -339,6 +339,13 @@ projects:
     pull: false
 ```
 
+To change when the Overview lists a bead as in progress too long, set `overview.aging_days` to a whole number of working days of at least 1 (default 3). An install from before this setting refuses the key and does not start.
+
+```yaml
+overview:
+  aging_days: 5
+```
+
 The console only pulls. It never pushes, commits, exports, or resolves a merge conflict. When a card shows a merge conflict, resolve it with `bd` in that project, then select **Refresh data**. If `bd` does not export after a pull, the console shows the out-of-date note from [Beads export](#beads-export).
 
 Pulls run as the console's user:

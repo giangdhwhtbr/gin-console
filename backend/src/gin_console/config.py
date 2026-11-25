@@ -14,6 +14,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StrictBool,
+    StrictInt,
     ValidationError,
     field_validator,
     model_validator,
@@ -58,6 +59,13 @@ class BeadsSettings(BaseModel):
         return float(seconds)
 
 
+class OverviewSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # working days in progress before a bead is listed (REQ-CONFIG-007)
+    aging_days: StrictInt = Field(default=3, ge=1)
+
+
 class ProjectEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -78,6 +86,7 @@ class Settings(BaseModel):
 
     server: ServerSettings = Field(default_factory=ServerSettings)
     beads: BeadsSettings = Field(default_factory=BeadsSettings)
+    overview: OverviewSettings = Field(default_factory=OverviewSettings)
     projects: list[ProjectEntry] = Field(default_factory=list)
 
     @model_validator(mode="after")
