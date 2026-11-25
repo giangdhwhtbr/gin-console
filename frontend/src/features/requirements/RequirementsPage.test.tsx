@@ -271,6 +271,24 @@ describe("RequirementsPage sections", () => {
     expect(fetched.mock.calls.length).toBe(before);
   });
 
+  it.each([
+    ["changes", "Loading changes", "This project has no changes yet."],
+    ["mockups", "Loading mockups", "This project has no confirmed mockups yet."],
+  ])("REQ-REQUIREMENTS-019 an empty %s section shows loading until the list answers, and its normal text once the list failed", async (section, loading, empty) => {
+    let fail: () => void = () => undefined;
+    const list = new Promise<Response>((resolve) => {
+      fail = () => resolve(jsonResponse({ error: "boom" }, 502));
+    });
+    serve({ "/api/requirements": () => list, "/api/requirements/changes": () => jsonResponse(changes()), "/api/requirements/mockups": () => jsonResponse({ mockups: [] }) });
+    open(`/requirements/${section}?project=a`);
+    await waitFor(async () => expect(await rowTexts()).toEqual(["Matrix", "Changes 0", "Mockups 0"]));
+    expect(screen.getByText(loading)).toBeInTheDocument();
+    expect(screen.queryByText(empty)).toBeNull();
+    act(() => fail());
+    expect(await screen.findByText(empty)).toBeInTheDocument();
+    expect(screen.queryByText(loading)).toBeNull();
+  });
+
   it("REQ-REQUIREMENTS-019 Legacy: every section says the layout has no requirement ids", async () => {
     serve({
       "/api/requirements": () => jsonResponse({ ...listOf(), layout: "legacy" }),

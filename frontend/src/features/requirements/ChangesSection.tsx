@@ -6,6 +6,7 @@ import { changeHref } from "./paths";
 import { RequirementsError } from "./RequirementsError";
 import type { Fetched } from "./useFetched";
 
+const LOADING = "Loading changes";
 const counts = ({ added, modified, removed }: ChangeRow) => (added === null || modified === null || removed === null ? "Counts unknown" : `${added} added, ${modified} modified, ${removed} removed`);
 
 function ChangeItem({ project, row }: { project: string; row: ChangeRow }) {
@@ -45,9 +46,9 @@ function Group({ title, project, rows }: { title: string; project: string; rows:
   );
 }
 
-/** REQ-REQUIREMENTS-016, 019: open changes, then archived ones; a failed trace leaves the list with Unknown sign-offs. */
-export function ChangesSection({ project, legacy, list, retry }: { project: string; legacy: boolean; list: Fetched<ChangeList>; retry: () => void }) {
-  if (list.status === "loading") return <p className="text-muted-foreground">Loading changes</p>;
+/** REQ-REQUIREMENTS-016, 019: open changes, then archived ones; a failed trace leaves the list with Unknown sign-offs. `legacy` is null while the layout is unknown. */
+export function ChangesSection({ project, legacy, list, retry }: { project: string; legacy: boolean | null; list: Fetched<ChangeList>; retry: () => void }) {
+  if (list.status === "loading") return <p className="text-muted-foreground">{LOADING}</p>;
   if (list.status === "error") return <RequirementsError error={list.error} onRetry={retry} />;
   const { changes, error, cause } = list.data;
   // The server reads the folders from disk, so an empty list with an error truly has no changes.
@@ -63,7 +64,7 @@ export function ChangesSection({ project, legacy, list, retry }: { project: stri
     return (
       <div className="flex flex-col gap-3">
         {notice}
-        <p>{legacy ? LEGACY_TEXT : "This project has no changes yet."}</p>
+        <p>{legacy === null ? LOADING : legacy ? LEGACY_TEXT : "This project has no changes yet."}</p>
       </div>
     );
   return (

@@ -104,7 +104,7 @@ function RequirementsView({ project, shown: { section, folder } }: { project: st
   useEffect(() => publishSections(links, section));
   useEffect(() => clearSections, []);
 
-  const legacy = list.state.status === "ok" && list.state.data.layout === "legacy";
+  const legacy = list.state.status === "loading" ? null : list.state.status === "ok" && list.state.data.layout === "legacy";
   const row = changes.state.status === "ok" ? (changes.state.data.changes.find((c) => c.folder === folder) ?? null) : null;
   return (
     <section className="flex min-w-0 flex-col gap-4">

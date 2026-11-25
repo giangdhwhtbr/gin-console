@@ -20,7 +20,7 @@ const mockup = (fields: Partial<Mockup> = {}): Mockup => ({
   requirements: ["REQ-UI-001"],
   ...fields,
 });
-function show(mockups: Mockup[], url = "/requirements/mockups?project=a", legacy = false) {
+function show(mockups: Mockup[], url = "/requirements/mockups?project=a", legacy: boolean | null = false) {
   window.history.replaceState(null, "", url);
   render(<MockupsSection project="a" legacy={legacy} list={{ status: "ok", data: { mockups } }} retry={() => undefined} />);
 }
@@ -53,10 +53,31 @@ describe("MockupsSection", () => {
     expect(screen.queryByText("2020-11-22")).toBeNull();
   });
 
+  it("REQ-UI-131 the selected mockup's heading, region and frame write the date, its links keep the key", () => {
+    show([mockup({ date: "2020-11-22" })], "/requirements/mockups?project=a&mockup=ui/2020-11-22");
+    expect(within(screen.getByRole("region", { name: "ui 22 Nov 2020" })).getByRole("heading", { name: "ui 22 Nov 2020" })).toBeTruthy();
+    expect(screen.getByTitle("ui 22 Nov 2020 mockup/index.html")).toHaveAttribute("src", "/api/requirements/mockups/a/files/ui/2020-11-22/mockup/index.html");
+  });
+
+  it("REQ-UI-131 a key that is no folder key is said as it is", () => {
+    show([mockup()], "/requirements/mockups?project=a&mockup=ui/latest");
+    expect(screen.getByText("Mockup ui/latest was not found")).toBeTruthy();
+  });
+
+  it("REQ-REQUIREMENTS-019 while the layout is unknown, empty shows loading and a filled list shows at once", () => {
+    show([], "/requirements/mockups?project=a", null);
+    expect(screen.getByText("Loading mockups")).toBeTruthy();
+    expect(screen.queryByText("This project has no confirmed mockups yet.")).toBeNull();
+    cleanup();
+    show([mockup()], "/requirements/mockups?project=a", null);
+    expect(screen.getByRole("heading", { name: "ui" })).toBeTruthy();
+    expect(screen.queryByText("Loading mockups")).toBeNull();
+  });
+
   it("REQ-REQUIREMENTS-018 show a mockup: description and the frame", () => {
     show([mockup()], "/requirements/mockups?project=a&mockup=ui/2026-11-22");
     expect(screen.getByText("home")).toBeTruthy();
-    const frame = screen.getByTitle("ui 2026-11-22 mockup/index.html");
+    const frame = screen.getByTitle(`ui ${formatDate("2026-11-22")} mockup/index.html`);
     expect(frame).toHaveAttribute("sandbox", "allow-scripts");
     expect(frame).toHaveAttribute("src", "/api/requirements/mockups/a/files/ui/2026-11-22/mockup/index.html");
     const open = screen.getByRole("link", { name: "Open in a new tab" });
@@ -70,8 +91,8 @@ describe("MockupsSection", () => {
     expect(screen.getByRole("button", { name: "a.html" })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(screen.getByRole("button", { name: "b.html" }));
     expect(screen.getByRole("button", { name: "b.html" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTitle("ui 2026-11-22 b.html")).toBeTruthy();
-    expect(screen.queryByTitle("ui 2026-11-22 a.html")).toBeNull();
+    expect(screen.getByTitle(`ui ${formatDate("2026-11-22")} b.html`)).toBeTruthy();
+    expect(screen.queryByTitle(`ui ${formatDate("2026-11-22")} a.html`)).toBeNull();
   });
 
   it("REQ-REQUIREMENTS-018 images only: both images, no frame", () => {
@@ -114,7 +135,7 @@ describe("MockupsSection", () => {
 
   it("REQ-REQUIREMENTS-018 an unmatched mockup key says it was not found and keeps the list", () => {
     show([mockup()], "/requirements/mockups?project=a&mockup=ui/2000-01-01");
-    expect(screen.getByText("Mockup ui/2000-01-01 was not found")).toBeTruthy();
+    expect(screen.getByText("Mockup ui 1 Jan 2000 was not found")).toBeTruthy();
     expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-22")}` })).toBeTruthy();
     expect(document.querySelector("iframe")).toBeNull();
   });
@@ -123,6 +144,6 @@ describe("MockupsSection", () => {
     show([mockup(), mockup({ date: "2026-11-01" })], "/requirements/mockups?project=a&mockup=ui/2026-11-22");
     expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-22")}` })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-01")}` })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("heading", { name: "ui/2026-11-22" })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: `ui ${formatDate("2026-11-22")}` })).toHaveFocus();
   });
 });

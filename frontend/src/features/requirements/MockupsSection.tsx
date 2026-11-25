@@ -12,6 +12,15 @@ import { RequirementsError } from "./RequirementsError";
 import type { Fetched } from "./useFetched";
 
 const keyOf = (m: Mockup) => `${m.capability}/${m.date}`;
+const LOADING = "Loading mockups";
+/** REQ-UI-131: how a folder is named; the key stays in addresses. */
+const nameOf = (capability: string, date: string) => `${capability} ${formatDate(date)}`;
+
+/** A folder key as its name; any other text as it is. */
+function askedName(key: string): string {
+  const match = /^([^/]+)\/(\d{4}-\d{2}-\d{2})$/.exec(key);
+  return match === null ? key : nameOf(match[1], match[2]);
+}
 
 function Selected({ project, mockup }: { project: string; mockup: Mockup }) {
   const [chosen, setChosen] = useState<string | null>(null);
@@ -20,9 +29,9 @@ function Selected({ project, mockup }: { project: string; mockup: Mockup }) {
   useEffect(() => heading.current?.focus(), []);
   const src = (path: string) => mockupFileHref(project, mockup.capability, mockup.date, path);
   return (
-    <section aria-label={keyOf(mockup)} className="flex min-w-0 flex-col gap-3 rounded-lg border p-3">
+    <section aria-label={nameOf(mockup.capability, mockup.date)} className="flex min-w-0 flex-col gap-3 rounded-lg border p-3">
       <h2 ref={heading} tabIndex={-1} className="text-16 font-medium [overflow-wrap:anywhere]">
-        {keyOf(mockup)}
+        {nameOf(mockup.capability, mockup.date)}
       </h2>
       <MarkdownView text={mockup.description} />
       {file !== undefined && (
@@ -37,7 +46,7 @@ function Selected({ project, mockup }: { project: string; mockup: Mockup }) {
               Open in a new tab
             </a>
           </div>
-          <MockupFrame title={`${mockup.capability} ${mockup.date} ${file}`} src={src(file)} />
+          <MockupFrame title={`${nameOf(mockup.capability, mockup.date)} ${file}`} src={src(file)} />
         </>
       )}
       {mockup.images.map((path) => (
@@ -47,20 +56,20 @@ function Selected({ project, mockup }: { project: string; mockup: Mockup }) {
   );
 }
 
-/** REQ-REQUIREMENTS-018, 019: confirmed mockups by capability; the selected one in `mockup=<capability>/<date>`. */
-export function MockupsSection({ project, legacy, list, retry }: { project: string; legacy: boolean; list: Fetched<MockupList>; retry: () => void }) {
+/** REQ-REQUIREMENTS-018, 019: confirmed mockups by capability; the selected one in `mockup=<capability>/<date>`. `legacy` is null while the layout is unknown. */
+export function MockupsSection({ project, legacy, list, retry }: { project: string; legacy: boolean | null; list: Fetched<MockupList>; retry: () => void }) {
   const { search } = useLocation();
-  if (list.status === "loading") return <p className="text-muted-foreground">Loading mockups</p>;
+  if (list.status === "loading") return <p className="text-muted-foreground">{LOADING}</p>;
   if (list.status === "error") return <RequirementsError error={list.error} onRetry={retry} />;
   const { mockups } = list.data;
-  if (mockups.length === 0) return <p>{legacy ? LEGACY_TEXT : "This project has no confirmed mockups yet."}</p>;
+  if (mockups.length === 0) return <p>{legacy === null ? LOADING : legacy ? LEGACY_TEXT : "This project has no confirmed mockups yet."}</p>;
   const asked = new URLSearchParams(search).get("mockup");
   const selected = mockups.find((m) => keyOf(m) === asked);
   const missing = asked !== null && selected === undefined;
   const capabilities = [...new Set(mockups.map((m) => m.capability))];
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      {missing && <p role="status">{`Mockup ${asked} was not found`}</p>}
+      {missing && <p role="status">{`Mockup ${askedName(asked)} was not found`}</p>}
       {capabilities.map((capability) => (
         <section key={capability} className="flex flex-col gap-2">
           <h2 className="text-16 font-medium [overflow-wrap:anywhere]">{capability}</h2>
