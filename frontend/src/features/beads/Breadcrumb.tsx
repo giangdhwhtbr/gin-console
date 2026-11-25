@@ -32,6 +32,8 @@ const viewAndFilters = (filters: BeadFilters, context: FilterContext): string =>
 function firstLink(project: string, origin: Origin | null): { to: string; label: string } {
   if (origin === null) return { to: `/beads?project=${enc(project)}`, label: "Beads" };
   switch (origin.kind) {
+    case "overview":
+      return { to: origin.path, label: "Overview" };
     case "beads": {
       const filters = parseFilters(origin.search);
       return { to: `/beads${filtersToSearch(filters)}`, label: `Beads › ${viewAndFilters(filters, contextOf(origin))}` };

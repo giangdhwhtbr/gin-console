@@ -105,6 +105,19 @@ describe("Breadcrumb", () => {
     expect(crumb().getByText("Fix login")).toHaveAttribute("aria-current", "page");
   });
 
+  it("REQ-UI-072 From the Overview it reads Overview and goes to /", () => {
+    rememberOrigin("overview", "/", "", null);
+    render(<Breadcrumb project="a" id="a-1" title="Fix login" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/");
+    expect(crumb().getByText("Fix login")).toHaveAttribute("aria-current", "page");
+  });
+
+  it("REQ-UI-073 the Overview is used for a bead of any project", () => {
+    rememberOrigin("overview", "/", "", null);
+    render(<Breadcrumb project="b" id="b-1" title="Pay" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/");
+  });
+
   it("REQ-UI-073 My Tasks of another project is not used", () => {
     rememberOrigin("my-tasks", "/my-tasks", "?project=a", "a");
     render(<Breadcrumb project="b" id="b-1" title="Pay" parent={null} />);

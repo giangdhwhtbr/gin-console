@@ -1,6 +1,8 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { getOrigin } from "@/app/origin";
+import { navigate } from "@/app/route";
 import { HintProvider } from "@/components/HintProvider";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
 import type { EpicWorkflow } from "@/features/projects/api";
@@ -607,5 +609,40 @@ describe("OverviewPage workload", () => {
     page();
     await screen.findByRole("heading", { name: "Work in progress" });
     expect(within(section("Work in progress")).getByText("None")).toBeInTheDocument();
+  });
+});
+
+describe("OverviewPage place", () => {
+  it("REQ-UI-073 remembers the Overview, with its query and no project, for the bead pages", async () => {
+    window.history.replaceState(null, "", "/?project=b");
+    stub({ projects: [] });
+    page();
+    await screen.findByText("No projects configured.");
+    expect(getOrigin()).toMatchObject({ kind: "overview", path: "/", search: "?project=b", project: null });
+    window.history.replaceState(null, "", "/");
+  });
+
+  it("REQ-UI-127 Back to a Waivers row waits for the gates, then scrolls and focuses that row", async () => {
+    window.history.replaceState(null, "", "/");
+    Object.defineProperty(window, "scrollY", { value: 400, configurable: true });
+    navigate("/"); // gives the Overview entry its key
+    const overview: unknown = window.history.state;
+    navigate("/beads/a/e-1"); // leaves the Overview by opening e-1, saving 400px
+    window.history.replaceState(overview, "", "/");
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+    scrollTo.mockClear();
+    let answer: (reply: Response) => void = () => {};
+    stub({ projects: [project("a", { epics: [named("e-1")] })], workflow: () => new Promise<Response>((resolve) => (answer = resolve)) });
+    page();
+    act(() => void window.dispatchEvent(new PopStateEvent("popstate"))); // the browser's Back
+    await screen.findByRole("heading", { name: "Needs attention" });
+    await new Promise((resolve) => setTimeout(resolve, 100)); // frames pass while the gates are pending
+    expect(scrollTo).not.toHaveBeenCalled();
+    answer(json(workflow({}, [{ task_id: "e-1.2", reason: "no reviewer", actor: "x" }])));
+    await screen.findByRole("heading", { name: "Waivers (1)" });
+    await waitFor(() => expect(rowsIn("Waivers (1)")[0]).toHaveFocus());
+    expect(scrollTo).toHaveBeenCalledWith(0, 400);
+    Object.defineProperty(window, "scrollY", { value: 0, configurable: true });
   });
 });

@@ -137,48 +137,52 @@ describe("App routing", () => {
     await waitFor(() => expect(document.title).toBe("Page not found · gin-console"));
   });
 
-  it("REQ-UI-099 / is replaced by My Tasks of the current project without a history entry", async () => {
+  it("REQ-UI-099 / shows the Overview and the address stays /", async () => {
     window.history.replaceState(null, "", "/");
     const before = window.history.length;
-    vi.stubGlobal("fetch", vi.fn(() => alpha()));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url === "/api/overview" ? json({ aging_days: 3, projects: [] }) : alpha())));
     render(<App />);
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks?project=alpha"));
+    expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe("/");
     expect(window.history.length).toBe(before);
     expect(screen.queryByRole("heading", { name: "Page not found" })).toBeNull();
-    expect(screen.queryByRole("heading", { name: "Projects" })).toBeNull();
   });
 
-  it("REQ-UI-099 / when the project list cannot be loaded is replaced by /my-tasks", async () => {
+  it("REQ-UI-099 / when the project list cannot be loaded still shows the Overview at /", async () => {
     window.history.replaceState(null, "", "/");
-    const before = window.history.length;
-    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("offline"))));
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url === "/api/overview" ? json({ aging_days: 3, projects: [] }) : new Response("no", { status: 500 }))));
     render(<App />);
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks"));
-    expect(window.history.length).toBe(before);
+    expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe("/");
   });
 
-  it("REQ-UI-099 /?project=beta is replaced by My Tasks of beta", async () => {
+  it("REQ-UI-099 REQ-UI-124 /?project=beta shows the Overview and the links follow beta", async () => {
     window.history.replaceState(null, "", "/?project=beta");
-    const before = window.history.length;
-    vi.stubGlobal("fetch", vi.fn(() => json([
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url === "/api/overview" ? json({ aging_days: 3, projects: [] }) : json([
       { name: "alpha", path: "/a", exists: true, beads: null },
       { name: "beta", path: "/b", exists: true, beads: null },
-    ])));
+    ]))));
     render(<App />);
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks?project=beta"));
-    expect(window.history.length).toBe(before);
+    expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe("/?project=beta");
+    await waitFor(() => expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "My Tasks" })).toHaveAttribute("href", "/my-tasks?project=beta"));
   });
 
-  it("REQ-UI-099 / without projects is replaced by /my-tasks", async () => {
+  it("REQ-UI-096 REQ-UI-099 Refresh data at / keeps the address and loads the overview again", async () => {
     window.history.replaceState(null, "", "/");
-    const before = window.history.length;
-    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
+    const fetchMock = vi.fn((url: string) => Promise.resolve(url === "/api/overview" ? json({ aging_days: 3, projects: [] }) : alpha()));
+    vi.stubGlobal("fetch", fetchMock);
     render(<App />);
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks"));
-    expect(window.history.length).toBe(before);
+    await screen.findByRole("heading", { name: "Overview" });
+    const asked = () => fetchMock.mock.calls.filter(([url]) => url === "/api/overview").length;
+    const before = asked();
+    await userEvent.click(screen.getAllByRole("button", { name: "Refresh data" })[0]);
+    await waitFor(() => expect(asked()).toBeGreaterThan(before));
+    expect(window.location.pathname + window.location.search).toBe("/");
   });
 
   it.each<[string, string]>([
+    ["/", "Overview · gin-console"],
     ["/beads?project=alpha", "Beads · alpha · gin-console"],
     ["/milestones?project=alpha", "Milestones · alpha · gin-console"],
     ["/reports/rework?project=alpha", "Reports · Rework · alpha · gin-console"],

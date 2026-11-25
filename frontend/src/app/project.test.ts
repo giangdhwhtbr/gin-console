@@ -173,7 +173,7 @@ describe("switchProject", () => {
     expect(p.switchProject("/my-tasks", "?project=a&closed=1&milestone=m1", "b")).toBe("/my-tasks?project=b&closed=1");
   });
 
-  it("REQ-UI-123 leaves other addresses unchanged", async () => {
+  it("REQ-UI-123 the Overview keeps its address when a project is chosen", async () => {
     const p = await load();
     expect(p.switchProject("/", "", "b")).toBe("/");
   });

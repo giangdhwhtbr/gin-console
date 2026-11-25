@@ -1,12 +1,12 @@
 import { useMemo, useSyncExternalStore } from "react";
 
 export const RETURN_KEY = "gin-console-beads-return";
-const KINDS = ["beads", "milestone", "my-tasks", "reports"] as const;
+const KINDS = ["overview", "beads", "milestone", "my-tasks", "reports"] as const;
 export type OriginKind = (typeof KINDS)[number];
 /** The milestone in effect on a remembered Beads place, and the one in effect without `milestone` in its URL (REQ-UI-072, REQ-UI-143). */
 export type OriginMilestone = { inEffect: string; byDefault: string };
 /** The page a bead was opened from, which the breadcrumb and the navigation of a bead page return to.
- *  `project` is null only for nothing remembered yet. `label` is a milestone's title. */
+ *  `project` is null for the Overview, which belongs to no project, and for nothing remembered yet. `label` is a milestone's title. */
 export type Origin = { kind: OriginKind; path: string; search: string; project: string | null; label: string | null; milestone: OriginMilestone | null; open: Record<string, string[]> };
 
 const empty = (): Origin => ({ kind: "beads", path: "/beads", search: "", project: null, label: null, milestone: null, open: {} }); // a fresh object each time: callers may not share it
@@ -83,7 +83,7 @@ function save(next: Origin): void {
 }
 
 /** The page the breadcrumb and the navigation of a bead page return to. */
-export function rememberOrigin(kind: OriginKind, path: string, search: string, project: string, label: string | null = null, milestone: OriginMilestone | null = null): void {
+export function rememberOrigin(kind: OriginKind, path: string, search: string, project: string | null, label: string | null = null, milestone: OriginMilestone | null = null): void {
   const now = getOrigin();
   const sameMilestone = now.milestone?.inEffect === milestone?.inEffect && now.milestone?.byDefault === milestone?.byDefault;
   if (now.kind !== kind || now.path !== path || now.search !== search || now.project !== project || now.label !== label || !sameMilestone) {
@@ -91,9 +91,9 @@ export function rememberOrigin(kind: OriginKind, path: string, search: string, p
   }
 }
 
-/** The origin when it is a place of the project of the bead, else null. */
+/** The origin when it is the Overview (beads of any project) or a place of the bead's project, else null. */
 export function originFor(beadProject: string, origin: Origin): Origin | null {
-  return origin.project === beadProject ? origin : null;
+  return origin.kind === "overview" || origin.project === beadProject ? origin : null;
 }
 
 export function rememberOpen(project: string, ids: readonly string[]): void {

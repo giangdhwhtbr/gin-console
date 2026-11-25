@@ -136,4 +136,18 @@ describe("origin", () => {
     window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ kind: "beads", path: "/beads", search: "?project=a", project: "a", label: null, milestone: { inEffect: 3 }, open: {} }));
     expect(getOrigin().milestone).toBeNull();
   });
+
+  it("REQ-UI-073 the Overview is remembered with no project and parses after a reload", async () => {
+    rememberOrigin("overview", "/", "", null);
+    vi.resetModules();
+    const fresh = await import("@/app/origin");
+    expect(fresh.getOrigin()).toEqual({ ...EMPTY, kind: "overview", path: "/", search: "", project: null });
+  });
+
+  it("REQ-UI-072 REQ-UI-073 an Overview origin fits a bead of any project, a Beads origin only its own", () => {
+    const overview = { ...EMPTY, kind: "overview" as const, path: "/" };
+    expect(originFor("b", overview)).toBe(overview);
+    expect(originFor("b", { ...EMPTY, project: "a" })).toBeNull();
+    expect(originFor("a", { ...EMPTY, project: "a" })?.project).toBe("a");
+  });
 });

@@ -1,4 +1,6 @@
-import { useRestoreOnBack } from "@/app/route";
+import { useEffect } from "react";
+import { rememberOrigin } from "@/app/origin";
+import { useLocation, useRestoreOnBack } from "@/app/route";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,8 @@ const rowKey = (project: string, id: string) => JSON.stringify([project, id]);
 
 function Loaded({ data: { projects, aging_days: agingDays } }: { data: Overview }) {
   const gates = useGates(projects);
+  // the gate rows arrive after the lists: restoring earlier would not find a row opened from Gates or Waivers (REQ-UI-127)
+  useRestoreOnBack(gates.pending === null);
   if (projects.length === 0) return <p className="text-muted-foreground">No projects configured.</p>;
   return (
     <>
@@ -99,8 +103,11 @@ function Loaded({ data: { projects, aging_days: agingDays } }: { data: Overview 
 /** The lead's page over all projects (REQ-OVERVIEW-005, REQ-OVERVIEW-007 to 011). */
 export function OverviewPage() {
   usePageTitle("Overview");
+  const { search } = useLocation();
+  useEffect(() => {
+    rememberOrigin("overview", "/", search, null);
+  }, [search]);
   const { state, retry } = useLoad(fetchOverview, true);
-  useRestoreOnBack(state.status === "ok");
   const failure = state.status === "loading" ? null : state.error;
   return (
     // a long name or id breaks anywhere instead of widening the page (REQ-OVERVIEW-011)

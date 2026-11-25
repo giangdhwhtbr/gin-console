@@ -2,7 +2,7 @@ import { Popover } from "@base-ui/react/popover";
 import { ChevronsUpDown, Star } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { resolveProject, rememberProject, setFavorite, switchProject, useConfiguredProjects, useFavorite } from "./project";
+import { resolveProject, rememberProject, setFavorite, switchProject, useConfiguredProjects, useFavorite, useTabProject } from "./project";
 import { navigate, useLocation } from "./route";
 
 export type SwitcherVariant = "sidebar" | "rail" | "bar";
@@ -14,13 +14,17 @@ export function ProjectSwitcher({ variant }: { variant: SwitcherVariant }) {
   const { pathname, search } = useLocation();
   const projects = useConfiguredProjects();
   const favorite = useFavorite();
+  useTabProject(); // the named project follows a choice that leaves the address as it is
   const [open, setOpen] = useState(false);
   const names = projects.status === "ok" ? projects.names : [];
   const current = resolveProject(new URLSearchParams(search).get("project") ?? "", names);
   const ordered = favorite !== null && names.includes(favorite) ? [favorite, ...names.filter((name) => name !== favorite)] : names;
   const choose = (name: string) => {
     rememberProject(name);
-    navigate(switchProject(pathname, search, name));
+    const target = switchProject(pathname, search, name);
+    if (target !== pathname + search) navigate(target);
+    // the Overview stays at its address, but a project named there would still win over the choice
+    else if (pathname === "/" && new URLSearchParams(search).has("project")) navigate(`/?${new URLSearchParams({ project: name })}`, { replace: true });
     setOpen(false);
   };
   const label = current === "" ? "No project" : current;
