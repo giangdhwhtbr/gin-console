@@ -1,4 +1,4 @@
-// TC: TC-OVERVIEW-032@61cc87ce
+// TC: TC-OVERVIEW-032@9126b6bc
 import { test, expect } from '../evidence';
 import { overview, overviewProject, stubApi } from '../support/api';
 import { signIn } from '../support/overview';
@@ -34,7 +34,7 @@ test('TC-OVERVIEW-032: Narrow window (REQ-OVERVIEW-011)', async ({ page, ev }) =
     await expect(row.getByRole('link', { name: /t-8/ })).toBeVisible();
     await expect(row).toContainText('bao');
     const links = page.getByRole('navigation', { name: 'Main' }).getByRole('link');
-    await expect(links).toHaveText(['Overview', 'Beads', 'My work', 'Milestones', 'Reports']);
+    await expect(links).toHaveText(['Overview', 'Beads', 'My work', 'Milestones', 'REQs (Requirements)', 'Reports'], { useInnerText: true });
     for (const link of await links.all()) {
       const box = await link.boundingBox();
       expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);

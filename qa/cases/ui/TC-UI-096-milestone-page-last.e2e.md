@@ -1,6 +1,6 @@
 # TC-UI-096: Milestone page last
 
-- **REQ:** REQ-UI-073@747662fe
+- **REQ:** REQ-UI-073@9e85a65b
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

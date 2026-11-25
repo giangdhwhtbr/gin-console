@@ -1,6 +1,6 @@
 # TC-UI-235: My work of the current project
 
-- **REQ:** REQ-UI-124@e7f9eed5
+- **REQ:** REQ-UI-124@12df9249
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

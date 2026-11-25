@@ -1,6 +1,6 @@
 # TC-UI-251: Reports section
 
-- **REQ:** REQ-UI-063@ed6ecc69
+- **REQ:** REQ-UI-063@aa232cd1
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

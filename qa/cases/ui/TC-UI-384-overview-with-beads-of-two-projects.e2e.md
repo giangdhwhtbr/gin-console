@@ -1,6 +1,6 @@
 # TC-UI-384: Overview with beads of two projects
 
-- **REQ:** REQ-UI-073@747662fe
+- **REQ:** REQ-UI-073@9e85a65b
 - **Priority:** high
 
 **Preconditions:**

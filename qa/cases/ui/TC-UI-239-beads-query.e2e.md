@@ -1,6 +1,6 @@
 # TC-UI-239: Beads query
 
-- **REQ:** REQ-UI-126@a9ca80b7
+- **REQ:** REQ-UI-126@3abbb248
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

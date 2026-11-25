@@ -1,6 +1,6 @@
 # TC-UI-090: From a milestone page
 
-- **REQ:** REQ-UI-072@d77e4fb2
+- **REQ:** REQ-UI-072@3768e26f
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

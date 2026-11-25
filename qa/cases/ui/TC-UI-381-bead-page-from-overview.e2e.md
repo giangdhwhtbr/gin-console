@@ -1,6 +1,6 @@
 # TC-UI-381: Bead page from Overview
 
-- **REQ:** REQ-UI-057@b5f69a5b
+- **REQ:** REQ-UI-057@f37002dd
 - **Priority:** high
 
 **Preconditions:**

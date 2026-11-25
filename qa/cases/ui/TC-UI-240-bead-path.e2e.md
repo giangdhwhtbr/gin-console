@@ -1,6 +1,6 @@
 # TC-UI-240: Bead path
 
-- **REQ:** REQ-UI-126@a9ca80b7
+- **REQ:** REQ-UI-126@3abbb248
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
