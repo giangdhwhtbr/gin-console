@@ -83,4 +83,18 @@ describe("useKeyed", () => {
     });
     expect(result.current.size).toBe(2);
   });
+
+  it("REQ-OVERVIEW-008 frees the slot of a fetcher that throws synchronously", async () => {
+    const calls: string[] = [];
+    const fetcher = (key: string): Promise<string> => {
+      calls.push(key);
+      if (key === "a") throw new Error("boom");
+      return Promise.resolve("ok");
+    };
+    const { result } = renderHook(() => useKeyed(["a", "b"], fetcher, 1));
+    await act(() => Promise.resolve());
+    expect(calls).toEqual(["a", "b"]);
+    expect(result.current.get("a")).toEqual({ status: "error", message: "boom" });
+    expect(result.current.get("b")).toEqual({ status: "ok", data: "ok" });
+  });
 });

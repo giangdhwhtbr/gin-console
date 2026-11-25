@@ -27,6 +27,13 @@ describe("fetchOverview", () => {
     expect(fetch).toHaveBeenCalledWith("/api/overview");
   });
 
+  it("REQ-OVERVIEW-001 accepts a project with an error and empty lists beside a healthy one", async () => {
+    const failed = { name: "b", error: "bd not readable", stale: false, milestone: null, blocked: [], aging: [], unassigned: [], in_progress: [], epics: [] };
+    const body = { generated_at: "2026-11-25T00:00:00Z", aging_days: 7, projects: [project, failed] };
+    reply(body);
+    await expect(fetchOverview()).resolves.toEqual(body);
+  });
+
   it("REQ-OVERVIEW-001 rejects a malformed body", async () => {
     reply({ generated_at: "x", aging_days: 7, projects: [{ ...project, aging: [{ id: "a" }] }] });
     await expect(fetchOverview()).rejects.toThrow("unexpected response");

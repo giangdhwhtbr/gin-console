@@ -21,7 +21,8 @@ export function useKeyed<T>(keys: readonly string[], fetcher: (key: string) => P
   useEffect(() => {
     const pump = () => {
       while (live.current && running.current < limit && queue.current.length > 0) {
-        const key = queue.current.shift() ?? "";
+        const key = queue.current.shift();
+        if (key === undefined) break;
         running.current += 1;
         const settle = (answer: Answer<T>) => {
           running.current -= 1;
@@ -29,7 +30,7 @@ export function useKeyed<T>(keys: readonly string[], fetcher: (key: string) => P
           setAnswers((prev) => new Map(prev).set(key, answer));
           pump();
         };
-        fetcher(key).then(
+        new Promise<T>((resolve) => resolve(fetcher(key))).then(
           (data) => settle({ status: "ok", data }),
           (error: unknown) => settle({ status: "error", message: error instanceof Error ? error.message : String(error) }),
         );
