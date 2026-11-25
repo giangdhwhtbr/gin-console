@@ -1,6 +1,6 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Mockup } from "./api";
 import { MockupFrame } from "./MockupFrame";
 import { MockupsSection } from "./MockupsSection";
@@ -19,9 +19,9 @@ const mockup = (fields: Partial<Mockup> = {}): Mockup => ({
   requirements: ["REQ-UI-001"],
   ...fields,
 });
-function show(mockups: Mockup[], url = "/requirements/mockups?project=a") {
+function show(mockups: Mockup[], url = "/requirements/mockups?project=a", legacy = false) {
   window.history.replaceState(null, "", url);
-  render(<MockupsSection project="a" list={{ status: "ok", data: { mockups } }} retry={() => undefined} />);
+  render(<MockupsSection project="a" legacy={legacy} list={{ status: "ok", data: { mockups } }} retry={() => undefined} />);
 }
 
 describe("MockupsSection", () => {
@@ -35,7 +35,7 @@ describe("MockupsSection", () => {
     show([mockup(), mockup({ capability: "api", date: "2026-10-01", requirements: [] })]);
     expect(screen.getByRole("heading", { name: "ui" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "api" })).toBeTruthy();
-    const folder = screen.getByRole("link", { name: /22 Nov/ });
+    const folder = screen.getByRole("link", { name: "ui 2026-11-22" });
     expect(folder).toHaveAttribute("href", "/requirements/mockups?project=a&mockup=ui%2F2026-11-22");
     const item = folder.closest("li");
     if (item === null) throw new Error("no item");
@@ -82,9 +82,38 @@ describe("MockupsSection", () => {
     expect(screen.getByText("This project has no confirmed mockups yet.")).toBeTruthy();
   });
 
-  it("REQ-REQUIREMENTS-019 failure shows the error", () => {
+  it("REQ-REQUIREMENTS-019 failure shows the error and Retry works", async () => {
+    const retry = vi.fn();
     window.history.replaceState(null, "", "/requirements/mockups?project=a");
-    render(<MockupsSection project="a" list={{ status: "error", error: new RequirementsFailure("boom", 500) }} retry={() => undefined} />);
+    render(<MockupsSection project="a" legacy={false} list={{ status: "error", error: new RequirementsFailure("boom", 500) }} retry={retry} />);
     expect(screen.getByText("boom")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it("REQ-REQUIREMENTS-019 legacy and empty says the layout has no requirement ids", () => {
+    show([], "/requirements/mockups?project=a", true);
+    expect(screen.getByText("This project uses the legacy layout, which has no requirement ids.")).toBeTruthy();
+    expect(screen.queryByText("This project has no confirmed mockups yet.")).toBeNull();
+  });
+
+  it("REQ-REQUIREMENTS-018 legacy with mockups still lists them", () => {
+    show([mockup()], "/requirements/mockups?project=a", true);
+    expect(screen.getByRole("link", { name: "ui 2026-11-22" })).toBeTruthy();
+    expect(screen.queryByText(/legacy layout/)).toBeNull();
+  });
+
+  it("REQ-REQUIREMENTS-018 an unmatched mockup key says it was not found and keeps the list", () => {
+    show([mockup()], "/requirements/mockups?project=a&mockup=ui/2000-01-01");
+    expect(screen.getByText("Mockup ui/2000-01-01 was not found")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "ui 2026-11-22" })).toBeTruthy();
+    expect(document.querySelector("iframe")).toBeNull();
+  });
+
+  it("REQ-REQUIREMENTS-018 the selected folder is aria-current page and its heading takes focus", () => {
+    show([mockup(), mockup({ date: "2026-11-01" })], "/requirements/mockups?project=a&mockup=ui/2026-11-22");
+    expect(screen.getByRole("link", { name: "ui 2026-11-22" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "ui 2026-11-01" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("heading", { name: "ui/2026-11-22" })).toHaveFocus();
   });
 });

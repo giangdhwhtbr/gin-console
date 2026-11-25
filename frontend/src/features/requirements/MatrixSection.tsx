@@ -5,7 +5,7 @@ import type { RequirementList } from "./api";
 import { matching, parseFilters, SIGNOFFS, STATUSES, withFilters, type MatrixFilters } from "./filters";
 import { MatrixTable } from "./MatrixTable";
 import { RequirementDetails } from "./RequirementDetails";
-import { SIGNOFF_LABELS, STATUS_LABELS } from "./labels";
+import { LEGACY_TEXT, SIGNOFF_LABELS, STATUS_LABELS } from "./labels";
 import { RequirementsError } from "./RequirementsError";
 import type { Fetched } from "./useFetched";
 
@@ -17,7 +17,7 @@ export function MatrixSection({ project, list, retry }: { project: string; list:
   if (list.status === "loading") return <p className="text-muted-foreground">Loading requirements</p>;
   if (list.status === "error") return <RequirementsError error={list.error} onRetry={retry} />;
   const { layout, requirements, warnings } = list.data;
-  if (layout === "legacy") return <p>This project uses the legacy layout, which has no requirement ids.</p>;
+  if (layout === "legacy") return <p>{LEGACY_TEXT}</p>;
   if (requirements.length === 0) return <p>This project has no requirements yet.</p>;
 
   const filters = parseFilters(search);

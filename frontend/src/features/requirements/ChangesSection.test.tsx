@@ -1,5 +1,6 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ChangeList, ChangeRow } from "./api";
 import { RequirementsFailure } from "./api";
 import { signoff } from "./fixtures";
@@ -19,7 +20,7 @@ const row = (fields: Partial<ChangeRow> = {}): ChangeRow => ({
   removed: 0,
   ...fields,
 });
-const show = (data: ChangeList) => render(<ChangesSection project="a" list={{ status: "ok", data }} retry={() => undefined} />);
+const show = (data: ChangeList, legacy = false) => render(<ChangesSection project="a" legacy={legacy} list={{ status: "ok", data }} retry={() => undefined} />);
 const listOf = (...changes: ChangeRow[]): ChangeList => ({ changes, error: null, cause: null });
 
 describe("ChangesSection", () => {
@@ -61,8 +62,48 @@ describe("ChangesSection", () => {
     expect(screen.getByText("This project has no changes yet.")).toBeTruthy();
   });
 
-  it("REQ-REQUIREMENTS-019 failure shows the error", () => {
-    render(<ChangesSection project="a" list={{ status: "error", error: new RequirementsFailure("boom", 500) }} retry={() => undefined} />);
+  it("REQ-REQUIREMENTS-019 failure shows the error and Retry works", async () => {
+    const retry = vi.fn();
+    render(<ChangesSection project="a" legacy={false} list={{ status: "error", error: new RequirementsFailure("boom", 500) }} retry={retry} />);
     expect(screen.getByText("boom")).toBeTruthy();
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it("REQ-REQUIREMENTS-019 outdated cause shows the update command and keeps the changes listed", () => {
+    show({ changes: [row()], error: "gin too old", cause: "outdated" });
+    expect(screen.getByText("Requirements need a newer gin")).toBeTruthy();
+    expect(screen.getByText("gin-workflow/install.sh")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "My change" })).toBeTruthy();
+  });
+
+  it("REQ-REQUIREMENTS-019 schema cause shows its text and keeps the changes listed", () => {
+    show({ changes: [row()], error: "unsupported schema 2", cause: "schema" });
+    expect(screen.getByText("unsupported schema 2")).toBeTruthy();
+    expect(screen.getByText(/This console reads schema 1/)).toBeTruthy();
+    expect(screen.getByRole("link", { name: "My change" })).toBeTruthy();
+  });
+
+  it("REQ-REQUIREMENTS-019 legacy and empty says the layout has no requirement ids", () => {
+    show(listOf(), true);
+    expect(screen.getByText("This project uses the legacy layout, which has no requirement ids.")).toBeTruthy();
+    expect(screen.queryByText("This project has no changes yet.")).toBeNull();
+  });
+
+  it("REQ-REQUIREMENTS-016 legacy with changes still lists them", () => {
+    show(listOf(row()), true);
+    expect(screen.getByRole("link", { name: "My change" })).toBeTruthy();
+    expect(screen.queryByText(/legacy layout/)).toBeNull();
+  });
+
+  it("REQ-REQUIREMENTS-019 empty list with a trace error keeps both the error and the empty text", () => {
+    show({ changes: [], error: "trace failed", cause: null });
+    expect(screen.getByText("trace failed")).toBeTruthy();
+    expect(screen.getByText("This project has no changes yet.")).toBeTruthy();
+  });
+
+  it("REQ-REQUIREMENTS-016 a change without an epic shows no epic link", () => {
+    show(listOf(row({ epic: null })));
+    expect(screen.queryByText(/Epic:/)).toBeNull();
   });
 });

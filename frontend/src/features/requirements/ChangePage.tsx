@@ -94,5 +94,5 @@ export function ChangePage({ project, folder, row }: { project: string; folder: 
       );
     return <RequirementsError error={state.error} onRetry={retry} />;
   }
-  return <Body project={project} data={state.data} row={row} />;
+  return <Body project={project} data={state.data} row={row !== null && row.folder === folder ? row : null} />;
 }

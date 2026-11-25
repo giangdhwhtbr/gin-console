@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ChangeRow } from "./api";
 import { jsonResponse, signoff } from "./fixtures";
@@ -31,8 +32,9 @@ const row: ChangeRow = {
 };
 function show(response: Response, url = "/requirements/changes/my-change?project=a", signed: ChangeRow | null = row) {
   window.history.replaceState(null, "", url);
-  vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(response)));
-  render(<ChangePage project="a" folder="my-change" row={signed} />);
+  const fetchMock = vi.fn<(url: string) => Promise<Response>>(() => Promise.resolve(response.clone()));
+  vi.stubGlobal("fetch", fetchMock);
+  return { fetchMock, view: render(<ChangePage project="a" folder="my-change" row={signed} />) };
 }
 
 describe("ChangePage", () => {
@@ -75,7 +77,7 @@ describe("ChangePage", () => {
   it("REQ-REQUIREMENTS-017 a script in Markdown renders as text and does not run", async () => {
     show(jsonResponse(content({ proposal: "<script>alert(1)</script>" })));
     await waitFor(() => expect(screen.getByRole("heading", { name: "My change" })).toBeTruthy());
-    await screen.findByText(/alert\(1\)/);
+    expect(await screen.findByText("<script>alert(1)</script>")).toBeTruthy();
     expect(document.querySelector("main script, script")).toBeNull();
   });
 
@@ -85,9 +87,41 @@ describe("ChangePage", () => {
     expect(screen.getByRole("link", { name: "Changes" })).toHaveAttribute("href", "/requirements/changes?project=a");
   });
 
-  it("REQ-REQUIREMENTS-019 another failure shows the error with retry", async () => {
-    show(jsonResponse({ error: "boom" }, 500));
+  it("REQ-REQUIREMENTS-019 another failure shows the error and Retry fetches again", async () => {
+    const { fetchMock } = show(jsonResponse({ error: "boom" }, 500));
     await screen.findByText("boom");
-    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+    fetchMock.mockImplementationOnce(() => new Promise<Response>(() => undefined));
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(screen.getByText("Loading change")).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("REQ-REQUIREMENTS-017 no documents says so and shows no tabs", async () => {
+    show(jsonResponse(content({})));
+    await screen.findByText("This change has no documents yet.");
+    expect(screen.queryByRole("navigation", { name: "Change documents" })).toBeNull();
+  });
+
+  it("REQ-REQUIREMENTS-017 a null epic reads None, not a link", async () => {
+    show(jsonResponse(content({ proposal: "x" }, { epic: null })));
+    await screen.findByText("x");
+    expect(screen.getByText("None")).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /gin-console/ })).toBeNull();
+  });
+
+  it("REQ-REQUIREMENTS-017 another folder is fetched again and shows loading", async () => {
+    const { fetchMock, view } = show(jsonResponse(content({ proposal: "first" })));
+    await screen.findByText("first");
+    view.rerender(<ChangePage project="a" folder="other" row={null} />);
+    expect(screen.getByText("Loading change")).toBeTruthy();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/requirements/changes/a/other");
+  });
+
+  it("REQ-REQUIREMENTS-017 a row of another folder is ignored, the sign-off reads Unknown", async () => {
+    show(jsonResponse(content({ proposal: "x" })), "/requirements/changes/my-change?project=a", { ...row, folder: "else" });
+    await screen.findByText("x");
+    expect(screen.getByText("Unknown")).toBeTruthy();
+    expect(screen.queryByText(/ba, 5 Oct/)).toBeNull();
   });
 });

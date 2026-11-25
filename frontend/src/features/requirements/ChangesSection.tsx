@@ -1,7 +1,7 @@
 import { Link } from "@/app/Link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { ChangeList, ChangeRow } from "./api";
-import { signoffText } from "./labels";
+import { RequirementsFailure, type ChangeList, type ChangeRow } from "./api";
+import { LEGACY_TEXT, signoffText } from "./labels";
 import { changeHref } from "./paths";
 import { RequirementsError } from "./RequirementsError";
 import type { Fetched } from "./useFetched";
@@ -46,20 +46,24 @@ function Group({ title, project, rows }: { title: string; project: string; rows:
 }
 
 /** REQ-REQUIREMENTS-016, 019: open changes, then archived ones; a failed trace leaves the list with Unknown sign-offs. */
-export function ChangesSection({ project, list, retry }: { project: string; list: Fetched<ChangeList>; retry: () => void }) {
+export function ChangesSection({ project, legacy, list, retry }: { project: string; legacy: boolean; list: Fetched<ChangeList>; retry: () => void }) {
   if (list.status === "loading") return <p className="text-muted-foreground">Loading changes</p>;
   if (list.status === "error") return <RequirementsError error={list.error} onRetry={retry} />;
-  const { changes, error } = list.data;
-  const notice = error !== null && (
-    <Alert variant="destructive" role="status">
-      <AlertDescription>{error}</AlertDescription>
-    </Alert>
-  );
+  const { changes, error, cause } = list.data;
+  // The server reads the folders from disk, so an empty list with an error truly has no changes.
+  const notice =
+    error === null ? null : cause === null ? (
+      <Alert variant="destructive" role="status">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    ) : (
+      <RequirementsError error={new RequirementsFailure(error, 200, cause)} onRetry={retry} />
+    );
   if (changes.length === 0)
     return (
       <div className="flex flex-col gap-3">
         {notice}
-        <p>This project has no changes yet.</p>
+        <p>{legacy ? LEGACY_TEXT : "This project has no changes yet."}</p>
       </div>
     );
   return (

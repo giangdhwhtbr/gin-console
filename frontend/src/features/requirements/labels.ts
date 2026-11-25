@@ -12,3 +12,6 @@ export function signoffText(signoff: Signoff | null, today?: string): string {
   const at = signoff.at === null ? "" : `, ${formatDateTime(signoff.at, today)}`;
   return `${signoff.actor ?? "Unknown person"}${at}`;
 }
+
+/** REQ-REQUIREMENTS-019: what an empty section says for the legacy layout. */
+export const LEGACY_TEXT = "This project uses the legacy layout, which has no requirement ids.";
