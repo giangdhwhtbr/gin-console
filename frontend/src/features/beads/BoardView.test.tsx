@@ -516,6 +516,17 @@ describe("REQ-UI-148 details panel on the Board", () => {
     expect(screen.queryByRole("button", { name: "Show children" })).toBeNull();
   });
 
+  it("REQ-UI-151 the details panel of an epic shows no Next command", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=board&select=e-1");
+    stubPanel([bead("e-1", { issue_type: "epic", status: "in_progress" }), bead("e-1.1", { parent: "e-1", ready: true })]);
+    render(<BeadsPage />);
+    const panel = await screen.findByRole("complementary", { name: "Bead details" });
+    expect(await within(panel).findByRole("link", { name: "Open page" })).toBeInTheDocument();
+    expect(within(panel).getByText("e-1")).toBeInTheDocument();
+    expect(within(panel).queryByText("Next")).toBeNull();
+    expect(within(panel).queryByText(/\/gin:/)).toBeNull();
+  });
+
   it("REQ-UI-065 cards show Blocked by the first open blocker and the count of more", async () => {
     window.history.replaceState(null, "", "/beads?project=alpha&view=board");
     stubBeads(() =>

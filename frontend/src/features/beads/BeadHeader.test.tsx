@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { clearEmail, resetIdentity, setEmail } from "@/app/identity";
 import type { BeadDetail, BeadSummary, Relation } from "./api";
@@ -32,7 +32,9 @@ afterEach(() => {
   cleanup();
   clearEmail();
   resetIdentity();
+  vi.useRealTimers();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("BeadHeader next command and blockers", () => {
@@ -99,5 +101,26 @@ describe("BeadHeader next command and blockers", () => {
     cleanup();
     show(bead("e-1", { issue_type: "epic", status: "in_progress" }), {}, null);
     expect(screen.queryByText("Next")).toBeNull();
+  });
+
+  it("REQ-UI-151 Copy writes the exact command and reads Copied for 2 s", async () => {
+    vi.useFakeTimers();
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    show(bead("t-1", { ready: true }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+      await Promise.resolve();
+    });
+    expect(writeText).toHaveBeenCalledWith("gin task update t-1 --claim");
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(1900);
+    });
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
   });
 });

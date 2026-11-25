@@ -334,6 +334,14 @@ describe("EpicPage next command", () => {
     expect(workflowCalls(mock)).toBe(1);
   });
 
+  it("REQ-UI-151 a closed task's bead page shows no Next command", async () => {
+    const closed = bead("ex-t9", { status: "closed", closed_at: "2026-10-10T12:00:00Z" });
+    stub([closed], { "ex-t9": detail(closed) });
+    open("ex-t9");
+    expect(await screen.findByRole("heading", { name: closed.title })).toBeInTheDocument();
+    expect(screen.queryByText("Next")).toBeNull();
+  });
+
   it("REQ-UI-151 REQ-BEADS-025 no epic command while the workflow loads", async () => {
     withWorkflow("plan", true);
     open("ex-e3");
