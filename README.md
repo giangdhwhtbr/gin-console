@@ -9,6 +9,7 @@ A web-based dashboard and observability console for [gin-workflow](https://githu
 - **Native Beads Explorer**: Interactive Kanban board, hierarchical list, and visual dependency graph with a one-line filter bar: the milestone, status and assignee as removable chips, and priority, labels, type, kind, capability and sprint under More filters; from 1024px a click selects a bead and shows its details beside every view.
 - **Milestones**: Dated milestones per project with a Gantt of the working-day schedule, a dependency graph per milestone, and a read-only kick-start preview (needs a gin-workflow with the `milestone` command and Beads task tracking).
 - **Reports**: Five sections (`/reports/status`, `/reports/team`, `/reports/delivery`, `/reports/velocity`, `/reports/rework`) sharing one scope (a dated milestone or the last 7, 30, or 90 days), with a milestone Status brief and Team KPI v2.
+- **Requirements**: Every requirement of a project with its status, sign-off, beads and test cases, its change folders, and its confirmed mockups (needs a gin-workflow with `gin specs trace --all`).
 - **Cross-Platform**: First-class support for Linux, macOS, and native Windows (no WSL required).
 
 ---
@@ -364,6 +365,18 @@ Pulls run as the console's user:
 - **Delivery** (`/reports/delivery`): Closed beads, weekly throughput, and cycle time for the chosen milestone or period.
 - **Velocity** (`/reports/velocity`): Story-point velocity and milestone completion forecast.
 - **Rework** (`/reports/rework`): Reopens (from `.beads/interactions.jsonl`) and `discovered-from` bugs. Legacy links such as `/reports?tab=quality&days=7` redirect to `/reports/rework?days=7`.
+
+---
+
+## Requirements
+
+The Requirements page covers a project whose gin-workflow layout is `sdd`. It needs a gin-workflow with `gin specs trace --all`; with an older one it says so. It reads:
+
+- `gin specs trace --all` and `gin specs reqs`, kept for 60 seconds or until **Refresh data**.
+- The Markdown files of the change folders in `docs/changes` and `docs/changes/archive`.
+- The asset folders `docs/specs/<capability>/assets/<YYYY-MM-DD>/` whose `description.md` has `Confirmed: <YYYY-MM-DD>`, and the `Source:` lines of `docs/specs/<capability>/spec.md` to name the requirements that use them.
+
+A folder that is a symbolic link is left out, and so is a file link that leads out of its folder. A mockup file above 20 MB (20,971,520 bytes) is not served, and a Markdown file above that size is shown as unreadable. Mockups run isolated from the console: scripts work, but calls, forms, frames, storage, module scripts and web fonts may not. See [ADR 0004](docs/adr/0004-serve-project-files.md).
 
 ---
 
