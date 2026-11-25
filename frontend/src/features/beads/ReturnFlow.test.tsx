@@ -81,27 +81,27 @@ describe("return to the same place", () => {
       .filter((link) => link.getAttribute("aria-current") === "page")
       .map((link) => link.textContent);
 
-  it("REQ-UI-072 REQ-UI-057 From My Tasks the breadcrumb reads My Tasks, goes back to it, and the navigation marks My Tasks", async () => {
+  it("REQ-UI-072 REQ-UI-057 From My work the breadcrumb reads My work, goes back to it, and the navigation marks My work", async () => {
     stub();
     window.history.replaceState(null, "", "/my-tasks?project=alpha");
     render(<App />);
     await userEvent.click(await screen.findByRole("link", { name: /Ready one/ }));
     const nav = await screen.findByRole("navigation", { name: "Breadcrumb" });
     expect(window.location.pathname).toBe("/beads/alpha/a-1");
-    expect(marked()).toEqual(["My Tasks"]);
+    expect(marked()).toEqual(["My work"]);
     expect(await within(nav).findByText("Ready one")).toHaveAttribute("aria-current", "page");
-    await userEvent.click(within(nav).getByRole("link", { name: "My Tasks" }));
+    await userEvent.click(within(nav).getByRole("link", { name: "My work" }));
     expect(window.location.pathname).toBe("/my-tasks");
     expect(window.location.search).toBe("?project=alpha");
   });
 
-  it("REQ-UI-073 My Tasks without ?project= goes back to My Tasks of the current project", async () => {
+  it("REQ-UI-073 My work without ?project= goes back to My work of the current project", async () => {
     stub();
     window.history.replaceState(null, "", "/my-tasks");
     render(<App />);
     await userEvent.click(await screen.findByRole("link", { name: /Ready one/ }));
     const nav = await screen.findByRole("navigation", { name: "Breadcrumb" });
-    await userEvent.click(within(nav).getByRole("link", { name: "My Tasks" }));
+    await userEvent.click(within(nav).getByRole("link", { name: "My work" }));
     expect(window.location.pathname).toBe("/my-tasks");
     expect(window.location.search).toBe("?project=alpha");
   });
@@ -114,8 +114,8 @@ describe("return to the same place", () => {
     await screen.findByRole("navigation", { name: "Breadcrumb" });
     act(() => navigate("/beads/alpha/a-2"));
     const nav = await screen.findByRole("navigation", { name: "Breadcrumb" });
-    expect(within(nav).getByRole("link", { name: "My Tasks" })).toHaveAttribute("href", "/my-tasks?project=alpha");
-    expect(marked()).toEqual(["My Tasks"]);
+    expect(within(nav).getByRole("link", { name: "My work" })).toHaveAttribute("href", "/my-tasks?project=alpha");
+    expect(marked()).toEqual(["My work"]);
   });
 
   it("REQ-UI-072 REQ-UI-057 a bead page by address names Beads and marks Beads", async () => {

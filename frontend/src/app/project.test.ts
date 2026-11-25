@@ -168,7 +168,7 @@ describe("switchProject", () => {
     expect(p.switchProject("/milestones/a/m1", "?tab=beads", "b")).toBe("/milestones?project=b");
   });
 
-  it("REQ-UI-123 keeps closed and drops milestone on the My Tasks page", async () => {
+  it("REQ-UI-123 keeps closed and drops milestone on the My work page", async () => {
     const p = await load();
     expect(p.switchProject("/my-tasks", "?project=a&closed=1&milestone=m1", "b")).toBe("/my-tasks?project=b&closed=1");
   });

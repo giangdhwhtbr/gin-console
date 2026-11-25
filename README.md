@@ -205,7 +205,7 @@ scripts/docker-smoke.sh
 
 gin-console listens on `127.0.0.1` by default and refuses any other address. It has no authentication, so it is meant to stay on loopback behind `tailscale serve`. To listen on every interface, set both `GIN_CONSOLE_HOST=0.0.0.0` and `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1`. `GIN_CONSOLE_HOST` overrides `server.host` in the config. You can set `server.host: 0.0.0.0` in the config instead, but `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1` is still required.
 
-> **Warning**: gin-console has no authentication. The email on the login screen only selects "My Tasks"; it is not a password. Anyone who can reach the port can read projects and Beads. Allow the port only from trusted networks, for example behind a firewall or a VPN.
+> **Warning**: gin-console has no authentication. The email on the login screen only selects "My work"; it is not a password. Anyone who can reach the port can read projects and Beads. Allow the port only from trusted networks, for example behind a firewall or a VPN.
 
 ### Linux and macOS
 
@@ -326,7 +326,7 @@ The bead page no longer shows a reopen count.
 
 ## Pulling Beads
 
-**Refresh data** runs `bd dolt pull` in each configured project before it reloads, so beads pushed to a project's Dolt remote from other machines show up. It pulls at most four projects at a time and stops a pull after 30 seconds. Each project card shows the last pull: "pulled 2 minutes ago", "no Dolt remote", or "pull failed: <error>". When a pull fails, the Beads and My Tasks pages show the command to run by hand.
+**Refresh data** runs `bd dolt pull` in each configured project before it reloads, so beads pushed to a project's Dolt remote from other machines show up. It pulls at most four projects at a time and stops a pull after 30 seconds. Each project card shows the last pull: "pulled 2 minutes ago", "no Dolt remote", or "pull failed: <error>". When a pull fails, the Beads and My work pages show the command to run by hand.
 
 To pull on a schedule as well, set `beads.pull_interval` to whole seconds, minutes or hours of at least one minute, such as `90s`, `5m` or `1h`. Without it, or with `0`, the console pulls only on Refresh. To leave a project out of every pull, set `pull: false` on it:
 

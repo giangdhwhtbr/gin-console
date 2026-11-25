@@ -2,7 +2,7 @@
 """Build a gin-console example project with sample beads, for testing and demos.
 
 The project gets a real Beads database (`bd init` + `bd import`) and a minimal
-gin-workflow config, so every page works on it: Beads, My Tasks, Milestones (Gantt,
+gin-workflow config, so every page works on it: Beads, My work, Milestones (Gantt,
 forecast), Reports (Status, Team, Delivery, Velocity, Rework). Dates are relative
 to today, so the charts always show recent work. Running it again rebuilds the project.
 

@@ -27,7 +27,7 @@ type Place = { path: string; from: OriginKind | null };
 const isReports = (path: string) => path === "/reports" || path.startsWith("/reports/");
 const NAV = [
   { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: ({ path, from }: Place) => path === "/beads" || (path.startsWith("/beads/") && from === null) },
-  { to: (project: string) => projectHref("/my-tasks", project), label: "My Tasks", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
+  { to: (project: string) => projectHref("/my-tasks", project), label: "My work", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
   { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
   { to: (project: string) => projectHref("/reports/status", project), label: "Reports", icon: ChartColumn, current: ({ path, from }: Place) => isReports(path) || from === "reports" },
 ] as const;

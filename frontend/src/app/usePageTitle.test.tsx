@@ -24,8 +24,8 @@ describe("usePageTitle", () => {
   });
 
   it("REQ-UI-063 leaves out an empty project", () => {
-    render(<Page name="My Tasks" project="" />);
-    expect(document.title).toBe("My Tasks · gin-console");
+    render(<Page name="My work" project="" />);
+    expect(document.title).toBe("My work · gin-console");
   });
 
   it("REQ-UI-063 is gin-console while the name loads", () => {
