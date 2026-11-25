@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Link } from "@/app/Link";
+import { StateGlyph } from "@/components/StateGlyph";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/dates";
 import { StateWord } from "@/features/beads/StateMark";
@@ -11,12 +12,24 @@ import { useFetched } from "./useFetched";
 
 const enc = encodeURIComponent;
 
-/** The bead state from the status alone: the trace carries no ready or blocked flags, so an open bead reads Ready. */
-function stateOfStatus(status: string): GraphState {
+/** The states the trace's status names on its own; any other status (open may be blocked) is shown as itself. */
+function stateOfStatus(status: string): GraphState | null {
   if (status === "closed") return "done";
   if (status === "deferred" || status === "blocked") return status;
   if (status === "in_progress" || status === "hooked") return "in_progress";
-  return "ready";
+  return null;
+}
+
+function BeadState({ status }: { status: string }) {
+  const state = stateOfStatus(status);
+  if (state !== null) return <StateWord state={state} words={STATE_LABEL[state]} />;
+  const words = status === "" ? "Unknown" : `${status[0]?.toUpperCase() ?? ""}${status.slice(1).replace(/_/g, " ")}`;
+  return (
+    <span className="inline-flex max-w-full min-w-0 items-center gap-1 font-medium">
+      <StateGlyph state="ready" className="shrink-0" />
+      <span className="truncate">{words}</span>
+    </span>
+  );
 }
 
 function ScenarioList({ data }: { data: Scenarios }) {
@@ -140,10 +153,9 @@ export function RequirementDetails({ project, id, row, onClose }: { project: str
         ) : (
           <ul>
             {row.beads.map((b) => {
-              const state = stateOfStatus(b.status);
               return (
                 <li key={b.id} className="flex min-w-0 items-center gap-2">
-                  <StateWord state={state} words={STATE_LABEL[state]} />
+                  <BeadState status={b.status} />
                   <Link to={`/beads/${enc(project)}/${enc(b.id)}`} className="min-w-0 [overflow-wrap:anywhere] hover:text-identity">
                     <span className="font-mono text-13 text-muted-foreground">{b.id}</span> {b.title}
                   </Link>

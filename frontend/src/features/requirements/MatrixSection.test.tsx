@@ -196,6 +196,13 @@ describe("MatrixSection", () => {
     expect(screen.queryByText("was not found", { exact: false })).toBeNull();
   });
 
+  it("REQ-REQUIREMENTS-019 a malformed list, given as an error state, shows its message", () => {
+    window.history.replaceState(null, "", "/requirements/matrix?project=a");
+    render(<MatrixSection project="a" list={{ status: "error", error: new RequirementsFailure("unexpected response", 200) }} retry={() => undefined} />);
+    expect(screen.getByText("Requirements couldn't be loaded")).toBeTruthy();
+    expect(screen.getByText("unexpected response")).toBeTruthy();
+  });
+
   it("REQ-REQUIREMENTS-019 Retry calls the retry of the page", async () => {
     const retry = vi.fn();
     window.history.replaceState(null, "", "/requirements/matrix?project=a");

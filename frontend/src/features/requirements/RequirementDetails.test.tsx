@@ -79,6 +79,23 @@ describe("RequirementDetails parts", () => {
     }
     await screen.findByText("S of REQ-UI-001");
   });
+  it("REQ-REQUIREMENTS-015 an open or unknown status shows itself, never Ready", async () => {
+    open(requirement({ beads: [{ id: "b3", title: "Open bead", status: "open" }, { id: "b4", title: "Odd bead", status: "weird_one" }, { id: "b5", title: "Blocked bead", status: "blocked" }] }));
+    const p = within(panel());
+    const word = (title: string, text: string) => within(p.getByRole("link", { name: new RegExp(title) }).closest("li") ?? document.body).getByText(text);
+    expect(word("Open bead", "Open").className).not.toContain("sr-only");
+    expect(word("Odd bead", "Weird one")).toBeTruthy();
+    expect(word("Blocked bead", "Blocked")).toBeTruthy();
+    expect(p.queryByText("Ready")).toBeNull();
+    await screen.findByText("S of REQ-UI-001");
+  });
+  it("REQ-REQUIREMENTS-015 a malformed scenarios body says so and shows the rest", async () => {
+    open(row, "REQ-UI-001", () => jsonResponse({ nope: 1 }));
+    const p = within(panel());
+    expect(await p.findByText("Scenarios could not be loaded")).toBeTruthy();
+    expect(p.getByRole("link", { name: /Done bead/ })).toBeTruthy();
+    expect(p.getByText("tests/test_x.py")).toBeTruthy();
+  });
   it("REQ-REQUIREMENTS-015 unknown beads and cases read unknown", async () => {
     open(requirement({ beads: null, cases: null }));
     expect(within(panel()).getAllByText("unknown")).toHaveLength(2);
