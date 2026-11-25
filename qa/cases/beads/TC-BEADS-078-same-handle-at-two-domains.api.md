@@ -1,6 +1,6 @@
 # TC-BEADS-078: Same handle at two domains
 
-- **REQ:** REQ-BEADS-023@7ee5b152
+- **REQ:** REQ-BEADS-023@22f76e66
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T03-46-49-api

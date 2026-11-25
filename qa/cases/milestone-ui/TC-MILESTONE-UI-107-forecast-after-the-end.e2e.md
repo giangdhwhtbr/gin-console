@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-107: Forecast after the end
 
-- **REQ:** REQ-MILESTONE-UI-023@b9cc99e6
+- **REQ:** REQ-MILESTONE-UI-023@e06c801e
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

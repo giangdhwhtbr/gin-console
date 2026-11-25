@@ -1,6 +1,6 @@
 # TC-UI-250: Bead page
 
-- **REQ:** REQ-UI-063@1ae65ee3
+- **REQ:** REQ-UI-063@ed6ecc69
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

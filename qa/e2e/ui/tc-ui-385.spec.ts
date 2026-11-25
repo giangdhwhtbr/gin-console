@@ -1,31 +1,36 @@
-// TC: TC-UI-385@4b52dc5f
+// TC: TC-UI-385@57c9c844
 import { test, expect } from '../evidence';
-import { bead, beadDetail, stubApi, stubBeadDetails } from '../support/api';
+import { overview, overviewProject, stubApi } from '../support/api';
+import { signIn } from '../support/overview';
+import { mainNav, projectList, sidebarSwitcher } from '../support/shell';
 
-test('TC-UI-385: Next command on a ready task and its copy (REQ-UI-151)', async ({ page, context, ev }) => {
-  // Preconditions: email ann@x.com; ready task t-1 without an assignee blocks t-2 (so "View in graph" shows); the clipboard is allowed.
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'ann@x.com'));
-  const t1 = bead('t-1', { title: 'Set up CI', ready: true });
-  await stubApi(page, { beads: [t1] });
-  await stubBeadDetails(page, 'P', [beadDetail(t1, { dependents: [{ id: 't-2', title: 'Later', status: 'open', type: 'blocks' }] })]);
-  const command = 'gin task update t-1 --claim';
-
-  await ev.step('1. Open `/beads/P/t-1`', async () => {
-    await page.goto('/beads/P/t-1');
-    await expect(page.getByText('Next', { exact: true })).toBeVisible();
-    await expect(page.getByText(command, { exact: true })).toBeVisible();
-    const next = await page.getByRole('button', { name: 'Copy' }).boundingBox();
-    const graph = await page.getByRole('link', { name: 'View in graph' }).boundingBox();
-    expect(next).not.toBeNull();
-    expect(graph).not.toBeNull();
-    expect(next!.y).toBeLessThan(graph!.y);
+test('TC-UI-385: Choose on Overview (REQ-UI-123)', async ({ page, ev }) => {
+  // Precondition: projects a and b are configured and the current project is a.
+  await signIn(page);
+  await stubApi(page, {
+    projects: ['a', 'b'],
+    overview: overview([
+      overviewProject('a'),
+      overviewProject('b', { blocked: [{ id: 'b-1', title: 'Fix billing', assignee: null, days: 4, blocker: null }] }),
+    ]),
   });
 
-  await ev.step('2. Click "Copy" in the header', async () => {
-    await page.getByRole('button', { name: 'Copy' }).click();
-    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(command);
-    await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible({ timeout: 5000 });
+  await ev.step('1. Open `/`', async () => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: /Fix billing/ })).toBeVisible();
+    await expect(mainNav(page).getByRole('link', { name: 'Beads' })).toHaveAttribute('href', '/beads?project=a');
+  });
+
+  await ev.step('2. Choose project `b` in the project switcher', async () => {
+    await sidebarSwitcher(page, 'a').click();
+    await projectList(page).getByRole('button', { name: 'b', exact: true }).click();
+    await expect(page).toHaveURL((u) => u.pathname === '/');
+    await expect(page.getByRole('link', { name: /Fix billing/ })).toBeVisible();
+    const nav = mainNav(page);
+    await expect(nav.getByRole('link', { name: 'Overview', exact: true })).toHaveAttribute('href', '/');
+    await expect(nav.getByRole('link', { name: 'Beads', exact: true })).toHaveAttribute('href', '/beads?project=b');
+    await expect(nav.getByRole('link', { name: 'My work', exact: true })).toHaveAttribute('href', '/my-tasks?project=b');
+    await expect(nav.getByRole('link', { name: 'Milestones', exact: true })).toHaveAttribute('href', '/milestones?project=b');
+    await expect(nav.getByRole('link', { name: 'Reports', exact: true })).toHaveAttribute('href', '/reports/status?project=b');
   });
 });

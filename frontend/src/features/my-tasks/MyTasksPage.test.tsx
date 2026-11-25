@@ -70,11 +70,16 @@ describe("MyTasksPage", () => {
     expect(link).toHaveAttribute("aria-current", "page");
   });
 
-  it("REQ-UI-099 Home address without projects: My work says no projects are configured", async () => {
-    stubBeads(() => json([]), []);
+  it("REQ-UI-099 Home address without projects: the Overview says no projects are configured and the URL stays /", async () => {
+    const fetchMock = stubBeads(() => json([]), []);
+    const base = fetchMock.getMockImplementation();
+    fetchMock.mockImplementation((input: RequestInfo | URL) =>
+      requested(input) === "/api/overview" ? Promise.resolve(json({ generated_at: "2026-11-23T12:00:00Z", aging_days: 3, projects: [] })) : (base?.(input) ?? Promise.resolve(json({}, 404))),
+    );
     open("/");
-    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/my-tasks"));
+    expect(await screen.findByRole("heading", { name: "Overview" })).toBeInTheDocument();
     expect(await screen.findByText("No projects configured.")).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe("/");
     expect(screen.queryByRole("checkbox", { name: "Show closed" })).toBeNull();
   });
 

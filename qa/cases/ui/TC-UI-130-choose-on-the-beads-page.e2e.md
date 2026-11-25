@@ -1,6 +1,6 @@
 # TC-UI-130: Choose on the Beads page
 
-- **REQ:** REQ-UI-123@4e5e7ee4
+- **REQ:** REQ-UI-123@74fc3d51
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

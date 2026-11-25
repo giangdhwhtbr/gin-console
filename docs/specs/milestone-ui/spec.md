@@ -565,7 +565,7 @@ Wherever the frontend shows the state of a bead of type `milestone` (the header 
 
 ### REQ-MILESTONE-UI-023: Late milestone
 Type: business-rule
-A milestone SHALL be late WHEN it is not closed and today is after its `end`, WHEN it is not closed and its forecast `finish` (REQ-MILESTONE-UI-008) is after its `end`, or WHEN it is closed and the day it closed is after its `end`. The Milestones list (REQ-MILESTONE-UI-001), the milestone card of a bead page and of an epic Overview (REQ-UI-120), the Team tab (REQ-REPORTS-012) and the Team headline (REQ-UI-095) SHALL mark a milestone late by this rule only, and "behind pace" SHALL describe the pace of closing only, never lateness.
+A milestone SHALL be late WHEN it is not closed and today is after its `end`, WHEN it is not closed and its forecast `finish` (REQ-MILESTONE-UI-008) is after its `end`, or WHEN it is closed and the day it closed is after its `end`. The Milestones list (REQ-MILESTONE-UI-001), the milestone card of a bead page and of an epic Overview (REQ-UI-120), the Team tab (REQ-REPORTS-012), the Team headline (REQ-UI-095) and the Overview page (REQ-OVERVIEW-007) SHALL mark a milestone late by this rule only, and "behind pace" SHALL describe the pace of closing only, never lateness.
 
 #### Scenario: Forecast after the end
 - GIVEN active milestone `m1` ending on 1 Dec 2026 with a forecast `finish` of 16 Feb 2027, shown on 21 Nov 2026

@@ -1,4 +1,4 @@
-# TC-UI-383: Empty group of My work
+# TC-UI-402: Empty group of My work
 
 - **REQ:** REQ-UI-150@dca5fa0c
 - **Priority:** low

@@ -45,13 +45,14 @@ const marked = () =>
 
 describe("Layout", () => {
   it.each(["/", "/beads", "/sessions", "/reports"])(
-    "REQ-UI-055 REQ-UI-099 has one Main navigation with the four links and none to / on %s",
+    "REQ-UI-055 REQ-UI-099 has one Main navigation with the five links, Overview first, on %s",
     async (path) => {
       open(path);
       await screen.findByRole("button", { name: "Project: alpha" });
       expect(screen.getAllByRole("navigation")).toHaveLength(1);
       expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
       expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+        ["Overview", "/"],
         ["Beads", "/beads?project=alpha"],
         ["My work", "/my-tasks?project=alpha"],
         ["Milestones", "/milestones?project=alpha"],
@@ -64,7 +65,7 @@ describe("Layout", () => {
     open("/beads?project=beta");
     await screen.findByRole("button", { name: "Project: beta" });
     const hrefs = within(nav()).getAllByRole("link").map((link) => link.getAttribute("href"));
-    expect(hrefs).toEqual(["/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/reports/status?project=beta"]);
+    expect(hrefs).toEqual(["/", "/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/reports/status?project=beta"]);
   });
 
   it("REQ-UI-124 the links follow the favorite when the URL names no project", async () => {
@@ -107,7 +108,8 @@ describe("Layout", () => {
   });
 
   it.each([
-    ["/", []],
+    ["/", ["Overview"]],
+    ["/?project=beta", ["Overview"]],
     ["/beads", ["Beads"]],
     ["/beads/alpha/a-1", ["Beads"]],
     ["/my-tasks", ["My work"]],
@@ -131,6 +133,7 @@ describe("Layout", () => {
 
   it.each<[string, Parameters<typeof rememberOrigin> | null, string[]]>([
     ["Bead page by address", null, ["Beads"]],
+    ["Overview", ["overview", "/", "", null], ["Overview"]],
     ["Bead page from My work", ["my-tasks", "/my-tasks", "?project=alpha", "alpha"], ["My work"]],
     ["a milestone page", ["milestone", "/milestones/alpha/m-1", "?tab=beads", "alpha"], ["Milestones"]],
     ["Reports", ["reports", "/reports/rework", "?project=alpha&days=7", "alpha"], ["Reports"]],
@@ -158,6 +161,37 @@ describe("Layout", () => {
     open("/beads");
     await userEvent.click(within(nav()).getByRole("link", { name: "Reports" }));
     expect(marked()).toEqual(["Reports"]);
+  });
+
+  it("REQ-UI-057 REQ-UI-072 a bead page of another project opened from the Overview marks Overview", () => {
+    rememberOrigin("overview", "/", "", null);
+    open("/beads/beta/b-1");
+    expect(marked()).toEqual(["Overview"]);
+  });
+
+  it("REQ-UI-123 choosing a project on the Overview keeps the address and the links follow it", async () => {
+    open("/");
+    const before = window.history.length;
+    await userEvent.click(await screen.findByRole("button", { name: "alpha" }));
+    await userEvent.click(await screen.findByRole("button", { name: "beta" }));
+    await waitFor(() => expect(within(nav()).getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=beta"));
+    expect(window.location.pathname + window.location.search).toBe("/");
+    expect(window.history.length).toBe(before);
+    expect(within(nav()).getByRole("link", { name: "Overview" })).toHaveAttribute("href", "/");
+  });
+
+  it("REQ-UI-123 choosing a project on /?project=alpha makes the links follow it", async () => {
+    open("/?project=alpha");
+    await userEvent.click(await screen.findByRole("button", { name: "alpha" }));
+    await userEvent.click(await screen.findByRole("button", { name: "beta" }));
+    await waitFor(() => expect(within(nav()).getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=beta"));
+  });
+
+  it("REQ-UI-062 the five links share the phone bar and each is at least 44px tall", () => {
+    open("/");
+    const links = within(nav()).getAllByRole("link");
+    expect(links).toHaveLength(5);
+    for (const link of links) expect(link).toHaveClass("flex-1", "min-h-16"); // 64px tall, a fifth of 360px is 72px wide
   });
 
   it("REQ-UI-062 offers the theme control", () => {
@@ -216,11 +250,11 @@ describe("Layout", () => {
     }
   });
 
-  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the four links when collapsed", () => {
+  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the five links when collapsed", () => {
     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
     open("/beads");
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
-    expect(within(nav()).getAllByRole("link")).toHaveLength(4);
+    expect(within(nav()).getAllByRole("link")).toHaveLength(5);
     expect(marked()).toEqual(["Beads"]);
   });
 

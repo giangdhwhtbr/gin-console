@@ -1,23 +1,16 @@
-// TC: TC-UI-382@118f537c
+// TC: TC-UI-382@ca9faec1
 import { test, expect } from '../evidence';
-import { bead, stubApi } from '../support/api';
+import { overview, overviewProject, stubApi } from '../support/api';
+import { signIn } from '../support/overview';
 
-test('TC-UI-382: Prep task and epic left out of My work (REQ-UI-150)', async ({ page, ev }) => {
-  // Preconditions: email ann@x.com; a prep bead, a prep and track:2 bead and an epic, all ready without an assignee.
-  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'ann@x.com'));
-  await stubApi(page, {
-    beads: [
-      bead('t-1', { title: 'Prep only', ready: true, labels: ['prep'] }),
-      bead('t-2', { title: 'Prep of a track', ready: true, labels: ['prep', 'track:2'] }),
-      bead('e-1', { title: 'An epic', ready: true, issue_type: 'epic' }),
-    ],
-  });
+test('TC-UI-382: Overview title (REQ-UI-063)', async ({ page, ev }) => {
+  // Precondition: projects a and b are configured and the current project is a.
+  await signIn(page);
+  await stubApi(page, { projects: ['a', 'b'], overview: overview([overviewProject('a'), overviewProject('b')]) });
 
-  await ev.step('1. Open `/my-tasks?project=P`', async () => {
-    await page.goto('/my-tasks?project=P');
-    const unclaimed = page.getByRole('heading', { name: /^Unclaimed\b/ }).locator('xpath=..');
-    await expect(unclaimed.getByRole('link', { name: /Prep of a track/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /Prep only/ })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: /An epic/ })).toHaveCount(0);
+  await ev.step('1. Open `/`', async () => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible();
+    await expect(page).toHaveTitle('Overview · gin-console');
   });
 });

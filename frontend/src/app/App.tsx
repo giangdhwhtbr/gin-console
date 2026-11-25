@@ -6,9 +6,9 @@ import { MilestonePage } from "@/features/milestones/MilestonePage";
 import { MilestonesPage } from "@/features/milestones/MilestonesPage";
 import { JumpPalette } from "@/features/jump/JumpPalette";
 import { MyTasksPage } from "@/features/my-tasks/MyTasksPage";
+import { OverviewPage } from "@/features/overview/OverviewPage";
 import { useEmail } from "./identity";
 import { HintProvider } from "@/components/HintProvider";
-import { HomeRedirect } from "./HomeRedirect";
 import { Layout } from "./Layout";
 import { LoginPage } from "./LoginPage";
 import { NotFoundPage } from "./NotFoundPage";
@@ -77,7 +77,7 @@ export function App() {
           <ReportsPage />
         </Suspense>
       ) : pathname === "/" ? (
-        <HomeRedirect />
+        <OverviewPage />
       ) : (
         <NotFoundPage path={pathname} />
       )}

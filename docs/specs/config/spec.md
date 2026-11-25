@@ -63,6 +63,7 @@ IF the config has `server.scotty_base_url` or a project with `scotty_id`, THEN t
 
 ## Diagrams
 - [Pull settings](diagrams/pull-settings-activity.md)
+- [Overview settings](diagrams/overview-settings-activity.md)
 
 ### REQ-CONFIG-006: Pull settings
 The config SHALL accept an optional top-level `beads` section whose `pull_interval` is `0` or a duration of whole seconds, minutes or hours written as `<n>s`, `<n>m` or `<n>h`, of at least one minute, and an optional `pull` boolean (default `true`) on each project entry; IF `pull_interval` does not parse, is under one minute and not `0`, or `pull` is not a boolean, THEN the console SHALL exit with a non-zero status and a message naming the field (REQ-CONFIG-003).
@@ -81,3 +82,21 @@ The config SHALL accept an optional top-level `beads` section whose `pull_interv
 - GIVEN a config with `beads: {pull_interval: 30s}`
 - WHEN the console starts
 - THEN it exits non-zero and the message names `beads.pull_interval`
+
+### REQ-CONFIG-007: Overview settings
+The config SHALL accept an optional top-level `overview` section whose `aging_days` is an integer of at least 1, default 3; IF `aging_days` is anything else, THEN the console SHALL exit with a non-zero status and a message naming `overview.aging_days` (REQ-CONFIG-003).
+
+#### Scenario: Default
+- GIVEN a config without `overview`
+- WHEN the console starts
+- THEN `aging_days` is 3
+
+#### Scenario: Set
+- GIVEN a config with `overview: {aging_days: 5}`
+- WHEN the console starts
+- THEN `aging_days` is 5
+
+#### Scenario: Invalid
+- GIVEN a config with `overview: {aging_days: 0}`
+- WHEN the console starts
+- THEN it exits non-zero and the message names `overview.aging_days`

@@ -1,11 +1,11 @@
-import { ChartColumn, Flag, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
+import { ChartColumn, Flag, House, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { useSections } from "@/features/reports/sectionStore";
 import { cn } from "@/lib/utils";
 import { clearEmail, useEmail } from "./identity";
 import { Link } from "./Link";
 import { originFor, useOrigin, type Origin, type OriginKind } from "./origin";
-import { forgetConfiguredProjects, projectHref, resolveProject, useConfiguredProjects } from "./project";
+import { forgetConfiguredProjects, projectHref, resolveProject, useConfiguredProjects, useTabProject } from "./project";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { useLocation } from "./route";
 import { RefreshButton } from "./RefreshButton";
@@ -26,6 +26,7 @@ function beadOrigin(pathname: string, origin: Origin): OriginKind | null {
 type Place = { path: string; from: OriginKind | null };
 const isReports = (path: string) => path === "/reports" || path.startsWith("/reports/");
 const NAV = [
+  { to: () => "/", label: "Overview", icon: House, current: ({ path, from }: Place) => path === "/" || from === "overview" },
   { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: ({ path, from }: Place) => path === "/beads" || (path.startsWith("/beads/") && from === null) },
   { to: (project: string) => projectHref("/my-tasks", project), label: "My work", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
   { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
@@ -68,6 +69,7 @@ function Brand({ wordClass }: { wordClass?: string }) {
 export function Layout({ children, onRefreshed }: { children: ReactNode; onRefreshed: () => void }) {
   const { pathname, search } = useLocation();
   const projects = useConfiguredProjects();
+  useTabProject(); // a choice that leaves the address as it is (the Overview) still renders the links again
   const place: Place = { path: pathname, from: beadOrigin(pathname, useOrigin()) };
   const project = resolveProject(new URLSearchParams(search).get("project") ?? "", projects.status === "ok" ? projects.names : []);
   const refreshed = () => {

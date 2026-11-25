@@ -1,17 +1,31 @@
-// TC: TC-UI-383@7926097c
+// TC: TC-UI-383@53dfb198
 import { test, expect } from '../evidence';
-import { bead, stubApi } from '../support/api';
+import { bead, overview, overviewProject, stubApi } from '../support/api';
+import { signIn } from '../support/overview';
+import { beadsOf, stubBeadPages } from '../support/shell';
 
-test('TC-UI-383: Empty group of My work (REQ-UI-150)', async ({ page, ev }) => {
-  // Preconditions: email ann@x.com; one ready bead assigned to ann and no other bead of hers.
-  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'ann@x.com'));
-  await stubApi(page, { beads: [bead('t-1', { title: 'Mine ready', ready: true, assignee: 'ann' })] });
+test('TC-UI-383: Breadcrumb from Overview (REQ-UI-072)', async ({ page, ev }) => {
+  // Precondition: projects a and b are configured; bead a-1 of project a is titled "Fix login".
+  await signIn(page);
+  const byProject = { a: [bead('a-1', { title: 'Fix login' })], b: [] };
+  await stubApi(page, {
+    projects: ['a', 'b'],
+    beads: beadsOf(byProject),
+    overview: overview([overviewProject('a', { blocked: [{ id: 'a-1', title: 'Fix login', assignee: null, days: 4, blocker: null }] }), overviewProject('b')]),
+  });
+  await stubBeadPages(page, byProject);
 
-  await ev.step('1. Open `/my-tasks?project=P`', async () => {
-    await page.goto('/my-tasks?project=P');
-    const mine = page.getByRole('heading', { name: /^Assigned to me\b/ }).locator('xpath=..');
-    await expect(mine.getByRole('link', { name: /Mine ready/ })).toBeVisible();
-    const active = page.getByRole('heading', { name: /^In progress\b/ }).locator('xpath=..');
-    await expect(active.getByText('Nothing here')).toBeVisible();
+  await ev.step('1. Open `/`', async () => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: /Fix login/ })).toBeVisible();
+  });
+
+  await ev.step('2. Click the link of `a-1` in a list', async () => {
+    await page.getByRole('link', { name: /Fix login/ }).click();
+    await expect(page).toHaveURL(/\/beads\/a\/a-1$/);
+    const crumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+    await expect(crumb.getByRole('listitem')).toContainText(['Overview', 'Fix login']);
+    await expect(crumb.getByRole('link', { name: 'Overview' })).toHaveAttribute('href', '/');
+    await expect(crumb.locator('[aria-current="page"]')).toHaveText('Fix login');
   });
 });

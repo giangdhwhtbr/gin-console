@@ -1,33 +1,30 @@
-// TC: TC-UI-381@fe2b738c
+// TC: TC-UI-381@99c6ea7d
 import { test, expect } from '../evidence';
-import { bead, stubApi } from '../support/api';
+import { bead, overview, overviewProject, stubApi } from '../support/api';
+import { signIn } from '../support/overview';
+import { beadsOf, mainNav, stubBeadPages } from '../support/shell';
 
-test('TC-UI-381: Each group of My work (REQ-UI-150)', async ({ page, ev }) => {
-  // Preconditions: email ann@x.com; project P has t-1 to t-6 (test data).
-  await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'ann@x.com'));
+test('TC-UI-381: Bead page from Overview (REQ-UI-057)', async ({ page, ev }) => {
+  // Precondition: projects a and b are configured; bead a-1 is in project a.
+  await signIn(page);
+  const byProject = { a: [bead('a-1', { title: 'Fix login' })], b: [] };
   await stubApi(page, {
-    beads: [
-      bead('t-1', { title: 'Mine ready', ready: true, assignee: 'ann' }),
-      bead('t-2', { title: 'Nobody ready', ready: true }),
-      bead('t-3', { title: 'Mine active', status: 'in_progress', assignee: 'ann' }),
-      bead('t-4', { title: 'Mine stuck', assignee: 'ann', blocked: true, blocked_by: ['t-5'] }),
-      bead('t-5', { title: 'Bob blocker', assignee: 'bob' }),
-      bead('t-6', { title: 'Bob waits', assignee: 'bob', blocked: true, blocked_by: ['t-3'] }),
-    ],
+    projects: ['a', 'b'],
+    beads: beadsOf(byProject),
+    overview: overview([overviewProject('a', { blocked: [{ id: 'a-1', title: 'Fix login', assignee: null, days: 4, blocker: null }] }), overviewProject('b')]),
   });
-  const group = (name: string) => page.getByRole('heading', { name: new RegExp(`^${name}\\b`) }).locator('xpath=..');
+  await stubBeadPages(page, byProject);
 
-  await ev.step('1. Open `/my-tasks?project=P`', async () => {
-    await page.goto('/my-tasks?project=P');
-    await expect(group('Assigned to me').getByRole('link', { name: /Mine ready/ })).toBeVisible();
-    await expect(group('Unclaimed').getByRole('link', { name: /Nobody ready/ })).toBeVisible();
-    await expect(group('In progress').getByRole('link', { name: /Mine active/ })).toBeVisible();
-    await expect(group('Blocked').getByRole('link', { name: /Mine stuck/ })).toBeVisible();
-    await expect(group('Blocked')).toContainText('Blocked by Bob blocker');
-    await expect(group('Waiting on me').getByRole('link', { name: /Bob waits/ })).toBeVisible();
-    await expect(group('Waiting on me')).toContainText('Waits on Mine active');
-    await expect(page.getByRole('link', { name: /Bob blocker/ })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Assigned to me 1' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Waiting on me 1' })).toBeVisible();
+  await ev.step('1. Open `/`', async () => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: /Fix login/ })).toBeVisible();
+    await expect(mainNav(page).getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  await ev.step('2. Click the link of `a-1` in a list', async () => {
+    await page.getByRole('link', { name: /Fix login/ }).click();
+    await expect(page).toHaveURL(/\/beads\/a\/a-1$/);
+    await expect(mainNav(page).locator('[aria-current="page"]')).toHaveCount(1);
+    await expect(mainNav(page).getByRole('link', { name: 'Overview' })).toHaveAttribute('aria-current', 'page');
   });
 });

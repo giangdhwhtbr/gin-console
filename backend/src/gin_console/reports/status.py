@@ -99,7 +99,7 @@ def _blocked_ancestor(tree: Tree, bead: ReportBead) -> ReportBead | None:
     return next((a for a in tree.ancestors(bead) if a.blocked), None)
 
 
-def _wait(tree: Tree, bead: ReportBead, today: date) -> int:
+def wait(tree: Tree, bead: ReportBead, today: date) -> int:
     """The working days after the date the bead started waiting, up to `today`: its own
     blocking dependencies, else its nearest blocked ancestor's, else its last update."""
     ancestor = _blocked_ancestor(tree, bead)
@@ -110,7 +110,7 @@ def _wait(tree: Tree, bead: ReportBead, today: date) -> int:
 def blocked_waits(tree: Tree, pairs: Pairs, today: date) -> list[tuple[ReportBead, int]]:
     """The blocked scope beads with their wait, longest first and then by id."""
     waits = [
-        (bead, _wait(tree, bead, today))
+        (bead, wait(tree, bead, today))
         for bead, _ in pairs
         if bead.status != "closed" and bead.blocked
     ]
@@ -275,7 +275,7 @@ def changes(
     )
 
 
-def _blocker(tree: Tree, bead: ReportBead) -> Blocker | None:
+def blocker_of(tree: Tree, bead: ReportBead) -> Blocker | None:
     """The first by id of the open beads the bead waits on, else its nearest blocked ancestor."""
     owner = bead if bead.blockers else _blocked_ancestor(tree, bead)
     for ident in sorted(owner.blockers) if owner else []:
@@ -297,7 +297,7 @@ def risks(
     """The longest blocked beads and the open epics without points (REQ-REPORTS-025)."""
     return Risks(
         blocked=[
-            BlockedRisk(id=b.id, title=b.title, days=days, blocker=_blocker(tree, b))
+            BlockedRisk(id=b.id, title=b.title, days=days, blocker=blocker_of(tree, b))
             for b, days in waits[:RISKS_SHOWN]
         ],
         blocked_more=max(len(waits) - RISKS_SHOWN, 0),

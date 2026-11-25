@@ -1,6 +1,6 @@
 # TC-UI-139: Open My work
 
-- **REQ:** REQ-UI-099@d20e7c33
+- **REQ:** REQ-UI-099@b2bb4066
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

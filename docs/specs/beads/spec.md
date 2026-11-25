@@ -550,7 +550,7 @@ WHEN a client requests the bead list or a bead detail, the server SHALL add to e
 
 ### REQ-BEADS-023: One person for an email and its handle
 Type: business-rule
-The console SHALL take two assignee values for the same person WHEN they are equal once each is trimmed, lower-cased and cut before its first `@`, SHALL name that person by that cut value (its handle), and SHALL apply this rule in the Assignee filter (REQ-UI-082), Group by assignee (REQ-UI-034), the assignee shown on beads (REQ-UI-135), My Tasks (REQ-UI-100) and the members of the Team report (REQ-REPORTS-009).
+The console SHALL take two assignee values for the same person WHEN they are equal once each is trimmed, lower-cased and cut before its first `@`, SHALL name that person by that cut value (its handle), and SHALL apply this rule in the Assignee filter (REQ-UI-082), Group by assignee (REQ-UI-034), the assignee shown on beads (REQ-UI-135), My Tasks (REQ-UI-100), the members of the Team report (REQ-REPORTS-009) and the workload of the Overview page (REQ-OVERVIEW-005).
 
 #### Scenario: Email and handle
 - GIVEN beads assigned to `giangdhwhtbr`, `GiangDHWHTBR@gmail.com` and `ann@example.com`

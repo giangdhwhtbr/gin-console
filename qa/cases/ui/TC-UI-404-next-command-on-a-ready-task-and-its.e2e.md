@@ -1,4 +1,4 @@
-# TC-UI-385: Next command on a ready task and its copy
+# TC-UI-404: Next command on a ready task and its copy
 
 - **REQ:** REQ-UI-151@b4c85eae
 - **Priority:** high

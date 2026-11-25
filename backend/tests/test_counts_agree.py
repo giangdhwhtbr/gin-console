@@ -6,6 +6,7 @@ from fake_export import bead, dep, write_export
 
 from gin_console.beads.snapshot import SnapshotStore, build_snapshot
 from gin_console.beads.source import list_beads, read_export
+from gin_console.overview.service import build_overview
 from gin_console.projects.models import Beads
 from gin_console.projects.source import count_beads
 from gin_console.reports.scope import MilestoneScope
@@ -52,3 +53,6 @@ def test_beads_021_blocked_counts_agree(tmp_path: Path) -> None:
     assert team is not None
     assert (counted.blocked, len(listed)) == (4, 4)
     assert team.blocked == 3
+    assert (
+        len(build_overview(build_snapshot(rows), "alpha", 3, NOW, False).blocked) == counted.blocked
+    )

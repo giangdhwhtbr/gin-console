@@ -17,7 +17,7 @@ The UX review of 2026-11-21 found that every page picked its own project, breadc
   - The parent title in the breadcrumb comes from the loaded bead's `parent-child` dependency, with no extra request.
 - **Titles and Not found:**
   - `usePageTitle(name, project)` joins the parts with ` · ` and resets to `gin-console`. Document titles are the one place that keeps ` · ` (REQ-UI-139, style guard).
-  - `NotFoundPage` is the router fallback and links to Beads and My Tasks; `/` renders `HomeRedirect`, which replaces it with My Tasks of the current project.
+  - `NotFoundPage` is the router fallback and links to Beads and My Tasks; `/` is the Overview ([overview-page](overview-page.md)).
   - The details panel (an embedded `BeadDetailPage`) never retitles the page.
 - **Back:** `route.ts` gives every history entry a `{key}` in `history.state`.
   - A push saves `{y, opened}` for the leaving entry in `sessionStorage` `gin-console-scroll` (50 entries) and scrolls to the top.
