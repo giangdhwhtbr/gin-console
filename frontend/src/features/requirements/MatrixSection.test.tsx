@@ -133,4 +133,74 @@ describe("MatrixSection", () => {
     expect(screen.getByText("Requirements need a newer gin")).toBeTruthy();
     expect(screen.getByText("gin-workflow/install.sh")).toBeTruthy();
   });
+
+  it("REQ-REQUIREMENTS-013 counts every status over rows that are not removed", () => {
+    show(
+      ok(
+        requirement({ id: "R1", status: "failing" }),
+        requirement({ id: "R2", status: "untested" }),
+        requirement({ id: "R3", status: "untested" }),
+        requirement({ id: "R4", status: "unknown" }),
+        requirement({ id: "R5", status: "building" }),
+        requirement({ id: "R6", status: "covered" }),
+        requirement({ id: "R7", status: "failing", state: "removed" }),
+      ),
+    );
+    const names = screen.getAllByRole("button", { name: /^(Failing|Untested|Unknown|Building|Covered) \d+$/ }).map((b) => b.textContent);
+    expect(names).toEqual(["Failing 1", "Untested 2", "Unknown 1", "Building 1", "Covered 1"]);
+  });
+
+  it("REQ-REQUIREMENTS-013 a row with a null status reads Unknown and only a removed state reads Removed", () => {
+    show(ok(requirement({ id: "REQ-UI-001", status: null }), requirement({ id: "REQ-UI-002", status: "covered", state: "removed" })), "/requirements/matrix?project=a&removed=1");
+    const cell = (id: string) => screen.getByRole("link", { name: id }).closest("tr")?.querySelectorAll("td")[2]?.textContent;
+    expect(cell("REQ-UI-001")).toBe("Unknown");
+    expect(cell("REQ-UI-002")).toBe("Removed");
+  });
+
+  it("REQ-REQUIREMENTS-013 unknown reads per column", () => {
+    show(ok(requirement({ id: "REQ-UI-001", beads: null, cases: [] }), requirement({ id: "REQ-UI-002", beads: [], cases: null })));
+    const cells = (id: string) => [...(screen.getByRole("link", { name: id }).closest("tr")?.querySelectorAll("td") ?? [])].map((td) => td.textContent);
+    expect(cells("REQ-UI-001").slice(4)).toEqual(["unknown", "0/0"]);
+    expect(cells("REQ-UI-002").slice(4)).toEqual(["0/0", "unknown"]);
+  });
+
+  it("REQ-REQUIREMENTS-014 clear filters resets every filter and keeps project and req", async () => {
+    show(ok(requirement()), "/requirements/matrix?project=a&req=REQ-UI-001&status=failing&capability=ui&signoff=current&q=zzz&removed=1");
+    await userEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    await waitFor(() => expect(window.location.search).toBe("?project=a&req=REQ-UI-001"));
+  });
+
+  it("REQ-REQUIREMENTS-014 each filter control writes the URL", async () => {
+    show(ok(requirement({ capability: "ui" }), requirement({ id: "REQ-AUTH-001", capability: "auth" })));
+    await userEvent.selectOptions(screen.getByLabelText("Status"), "covered");
+    expect(window.location.search).toContain("status=covered");
+    await userEvent.selectOptions(screen.getByLabelText("Capability"), "auth");
+    expect(window.location.search).toContain("capability=auth");
+    await userEvent.selectOptions(screen.getByLabelText("Sign-off"), "none");
+    expect(window.location.search).toContain("signoff=none");
+    await userEvent.type(screen.getByLabelText("Search"), "a");
+    expect(window.location.search).toContain("q=a");
+    await userEvent.click(screen.getByRole("checkbox", { name: "Show removed" }));
+    expect(window.location.search).toContain("removed=1");
+  });
+
+  it("REQ-REQUIREMENTS-015 closing the panel removes req and keeps the rest", async () => {
+    show(ok(requirement()), "/requirements/matrix?project=a&req=REQ-UI-001&status=covered");
+    await userEvent.click(within(screen.getByRole("complementary", { name: "REQ-UI-001" })).getByRole("button", { name: "Close" }));
+    expect(window.location.search).toBe("?project=a&status=covered");
+  });
+
+  it("REQ-REQUIREMENTS-015 a removed requirement opens from req", () => {
+    show(ok(requirement({ id: "REQ-UI-002", state: "removed", status: null })), "/requirements/matrix?project=a&req=REQ-UI-002");
+    expect(screen.getByRole("complementary", { name: "REQ-UI-002" })).toBeTruthy();
+    expect(screen.queryByText("was not found", { exact: false })).toBeNull();
+  });
+
+  it("REQ-REQUIREMENTS-019 Retry calls the retry of the page", async () => {
+    const retry = vi.fn();
+    window.history.replaceState(null, "", "/requirements/matrix?project=a");
+    render(<MatrixSection project="a" list={{ status: "error", error: new RequirementsFailure("boom", 502) }} retry={retry} />);
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
 });

@@ -1,25 +1,23 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Link } from "@/app/Link";
-import { StateGlyph, type GlyphState } from "@/components/StateGlyph";
 import { Button } from "@/components/ui/button";
+import { formatDateTime } from "@/lib/dates";
+import { StateWord } from "@/features/beads/StateMark";
+import { STATE_LABEL, type GraphState } from "@/features/beads/graph";
 import { fetchScenarios, type Requirement, type Scenarios } from "./api";
-import { signoffText } from "./labels";
+import { SIGNOFF_LABELS } from "./labels";
 import { changeHref } from "./paths";
 import { useFetched } from "./useFetched";
 
 const enc = encodeURIComponent;
-const two = (n: number) => String(n).padStart(2, "0");
-const today = (): string => {
-  const now = new Date();
-  return `${now.getFullYear()}-${two(now.getMonth() + 1)}-${two(now.getDate())}`;
-};
 
-function glyphOf(status: string): GlyphState {
+/** The bead state from the status alone: the trace carries no ready or blocked flags, so an open bead reads Ready. */
+function stateOfStatus(status: string): GraphState {
   if (status === "closed") return "done";
-  if (status === "in_progress" || status === "blocked" || status === "deferred") return status;
+  if (status === "deferred" || status === "blocked") return status;
+  if (status === "in_progress" || status === "hooked") return "in_progress";
   return "ready";
 }
-const STATE_WORDS: Record<GlyphState, string> = { ready: "Ready", in_progress: "In progress", blocked: "Blocked", done: "Done", deferred: "Deferred" };
 
 function ScenarioList({ data }: { data: Scenarios }) {
   if (data.scenarios.length === 0) return <p className="text-muted-foreground">No scenarios.</p>;
@@ -57,6 +55,8 @@ function Part({ title, children }: { title: string; children: React.ReactNode })
 /** REQ-REQUIREMENTS-015: the panel of one requirement; the scenarios load on their own and may fail alone. */
 export function RequirementDetails({ project, id, row, onClose }: { project: string; id: string; row: Requirement | undefined; onClose: () => void }) {
   const { state } = useFetched(useCallback(() => fetchScenarios(project, id), [project, id]));
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => heading.current?.focus(), [id]);
   const close = (
     <Button variant="outline" size="sm" onClick={onClose}>
       Close
@@ -65,7 +65,9 @@ export function RequirementDetails({ project, id, row, onClose }: { project: str
   if (row === undefined) {
     return (
       <aside aria-label={id} className="flex flex-col items-start gap-2 rounded-lg border p-3">
-        <p>Requirement {id} was not found</p>
+        <h2 ref={heading} tabIndex={-1} className="text-14 font-medium">
+          Requirement {id} was not found
+        </h2>
         {close}
       </aside>
     );
@@ -74,7 +76,7 @@ export function RequirementDetails({ project, id, row, onClose }: { project: str
   return (
     <aside aria-label={id} className="flex min-w-0 flex-col gap-3 rounded-lg border p-3 text-sm">
       <div className="flex items-start justify-between gap-2">
-        <h2 className="min-w-0 text-16 font-medium [overflow-wrap:anywhere]">
+        <h2 ref={heading} tabIndex={-1} className="min-w-0 text-16 font-medium [overflow-wrap:anywhere]">
           <span className="font-mono text-13">{row.id}</span> {row.title}
         </h2>
         {close}
@@ -87,9 +89,19 @@ export function RequirementDetails({ project, id, row, onClose }: { project: str
       <Part title="Sign-off">
         <dl className="grid grid-cols-[auto_1fr] gap-x-2">
           <dt className="text-muted-foreground">State</dt>
-          <dd>{signoff.state}</dd>
-          <dt className="text-muted-foreground">Person and time</dt>
-          <dd>{signoffText(signoff, today())}</dd>
+          <dd>{SIGNOFF_LABELS[signoff.state]}</dd>
+          {signoff.state !== "none" && signoff.actor !== null && (
+            <>
+              <dt className="text-muted-foreground">Person</dt>
+              <dd>{signoff.actor}</dd>
+            </>
+          )}
+          {signoff.state !== "none" && signoff.at !== null && (
+            <>
+              <dt className="text-muted-foreground">Time</dt>
+              <dd>{formatDateTime(signoff.at)}</dd>
+            </>
+          )}
           {signoff.change !== null && (
             <>
               <dt className="text-muted-foreground">Change</dt>
@@ -128,11 +140,10 @@ export function RequirementDetails({ project, id, row, onClose }: { project: str
         ) : (
           <ul>
             {row.beads.map((b) => {
-              const glyph = glyphOf(b.status);
+              const state = stateOfStatus(b.status);
               return (
-                <li key={b.id} className="flex min-w-0 items-center gap-1">
-                  <StateGlyph state={glyph} />
-                  <span className="sr-only">{STATE_WORDS[glyph]}</span>
+                <li key={b.id} className="flex min-w-0 items-center gap-2">
+                  <StateWord state={state} words={STATE_LABEL[state]} />
                   <Link to={`/beads/${enc(project)}/${enc(b.id)}`} className="min-w-0 [overflow-wrap:anywhere] hover:text-identity">
                     <span className="font-mono text-13 text-muted-foreground">{b.id}</span> {b.title}
                   </Link>

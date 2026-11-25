@@ -10,7 +10,7 @@ function withReq(search: string, id: string): string {
 }
 
 const statusText = (row: Requirement): string =>
-  row.state === "removed" || row.status === null ? "Removed" : [STATUS_LABELS[row.status], ...row.reasons].join(", ");
+  row.state === "removed" ? "Removed" : [row.status === null ? "Unknown" : STATUS_LABELS[row.status], ...row.reasons].join(", ");
 
 const beadsText = (row: Requirement): string => (row.beads === null ? "unknown" : `${row.beads.filter((b) => b.status === "closed").length}/${row.beads.length}`);
 const casesText = (row: Requirement): string => (row.cases === null ? "unknown" : `${row.cases.filter((c) => c.effective_result === "passed").length}/${row.cases.length}`);
