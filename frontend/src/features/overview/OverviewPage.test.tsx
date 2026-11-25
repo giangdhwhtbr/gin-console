@@ -429,6 +429,8 @@ describe("OverviewPage status answer", () => {
     ["a milestone with a numeric closed_on", { milestones: [{ ...milestone, closed_on: 5 }] }],
     ["a numeric milestone id", { milestone: 5 }],
     ["a today that is not a date", { today: "today" }],
+    ["a today with a time", { today: "2026-11-23T10:00:00Z" }],
+    ["a milestone end with a time", { milestones: [{ ...milestone, end: "2026-12-02T10:00:00Z" }] }],
     ["a string scope", { kpis: { ...report.kpis, beads: { ...report.kpis.beads, scope: "14" } } }],
     ["a string points scope", { kpis: { ...report.kpis, points: { ...report.kpis.points, scope: "14" } } }],
     ["a string pace", { kpis: { ...report.kpis, pace: { ...report.kpis.pace, pace: "2" } } }],

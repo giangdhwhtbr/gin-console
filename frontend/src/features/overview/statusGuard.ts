@@ -2,8 +2,8 @@ import { field, isFiniteNumber, isString } from "@/lib/guards";
 
 const isObject = (value: unknown): value is object => typeof value === "object" && value !== null;
 const isNumberOrNull = (value: unknown) => value === null || isFiniteNumber(value);
-/** A value that starts with an ISO day, so that date arithmetic on it cannot throw. */
-const isDay = (value: unknown) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value) && !Number.isNaN(Date.parse(value.slice(0, 10)));
+/** An ISO day and nothing after it: date arithmetic on a date with a time throws. */
+const isDay = (value: unknown) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
 const at = (value: unknown, key: string): unknown => (isObject(value) ? field(value, key) : undefined);
 const every = (value: unknown, check: (item: unknown) => boolean) => Array.isArray(value) && value.every(check);
 
