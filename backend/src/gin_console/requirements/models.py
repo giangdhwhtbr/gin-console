@@ -119,3 +119,43 @@ class RequirementScenarios(BaseModel):
     title: str
     source: str | None
     scenarios: list[Scenario]
+
+
+class ChangeFolder(BaseModel):
+    folder: str
+    change: str
+    title: str
+    epic: str | None
+    archived: str | None
+
+
+class ChangeRow(ChangeFolder):
+    signoff: Signoff | None  # null: the trace does not name the change, or failed
+    added: int | None
+    modified: int | None
+    removed: int | None
+
+
+class ChangeList(BaseModel):
+    changes: list[ChangeRow]
+    error: str | None
+    cause: Cause | None
+
+
+class ChangeContent(ChangeFolder):
+    files: dict[str, str]  # proposal, spec-delta, design, plan, tests
+
+
+class Mockup(BaseModel):
+    capability: str
+    date: str
+    confirmed: str
+    confirmed_by: str | None
+    description: str
+    html: list[str]
+    images: list[str]
+    requirements: list[str]
+
+
+class MockupList(BaseModel):
+    mockups: list[Mockup]

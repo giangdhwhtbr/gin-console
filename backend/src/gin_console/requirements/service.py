@@ -79,3 +79,28 @@ def find_scenarios(reqs: m.Reqs, ident: str) -> m.RequirementScenarios | None:
         return None
     entry = next((r for r in found if r.section == "LIVING"), found[0])
     return m.RequirementScenarios(**entry.model_dump(exclude={"section"}))
+
+
+def build_changes(
+    folders: list[m.ChangeFolder], trace: m.Trace | None, error: str | None, cause: m.Cause | None
+) -> m.ChangeList:
+    ops: dict[str, list[str]] = {}
+    signoffs: dict[str, m.TraceSignoff | None] = {}
+    for requirement in trace.requirements if trace else []:
+        for change in requirement.changes:
+            key = folder_of(change)
+            ops.setdefault(key, []).append(change.op)
+            signoffs[key] = signoffs.get(key) or change.signoff
+    rows = []
+    for folder in folders:
+        named = ops.get(folder.folder)
+        rows.append(
+            m.ChangeRow(
+                **folder.model_dump(),
+                signoff=signoff_of(signoffs[folder.folder]) if named is not None else None,
+                added=named.count("added") if named is not None else None,
+                modified=named.count("modified") if named is not None else None,
+                removed=named.count("removed") if named is not None else None,
+            )
+        )
+    return m.ChangeList(changes=rows, error=error, cause=cause)

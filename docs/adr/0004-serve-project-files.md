@@ -1,7 +1,7 @@
 # The console serves files of a project, isolated
 
 Date: 2026-11-25
-Status: proposed
+Status: accepted
 
 ## Context
 Until epic gin-console-rm-requirements the console read only the Beads export of a project. The Requirements page shows change folders and confirmed interactive mockups. Mockups are HTML with scripts from a project checkout; served from the console's origin they could call its API as the viewer.
