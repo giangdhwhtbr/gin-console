@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-072@3768e26f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 5b59f090
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 2851b9e3
 
 **Preconditions:**
 - Project `a` with bead `a-1`

@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-124@12df9249
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** fbc28159
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 3d8751d4
 
 **Preconditions:**
 - Projects `a`, `b` and `c` are configured and `c` is the favorite; nothing was chosen in this tab

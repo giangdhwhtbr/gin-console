@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-123@1d5f1e95
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 6318f2ac
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** bdc21c83
 
 **Preconditions:**
 - Projects `a`, `b` and `c` are configured and `c` is the favorite (local storage `gin-console-favorite-project` holds `c`)

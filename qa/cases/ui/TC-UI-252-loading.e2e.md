@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-063@aa232cd1
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** d5e7dfca
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** a9cb5097
 
 **Preconditions:**
 - Project `example` has milestone `m1`, whose request has not been answered yet

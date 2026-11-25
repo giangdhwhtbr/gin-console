@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-126@3abbb248
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** e690f239
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 67fbae25
 
 **Preconditions:**
 - Projects `a` and `b` are configured, each with a bead

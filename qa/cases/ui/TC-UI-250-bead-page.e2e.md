@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-063@aa232cd1
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 23ad1d74
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** d1d68c50
 
 **Preconditions:**
 - Project `example` has bead `a-1` titled "Team checkout"

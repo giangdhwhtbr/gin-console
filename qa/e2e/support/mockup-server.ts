@@ -43,11 +43,13 @@ export async function startMockupServer(): Promise<MockupServer> {
     env: { ...process.env, GIN_CONSOLE_CONFIG: config },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  let failed: Error | null = null;
+  child.on('error', (error) => (failed = error)); // spawn failed: there is nothing to stop
   child.stdout?.on('data', (chunk: Buffer) => (output += chunk.toString()));
   child.stderr?.on('data', (chunk: Buffer) => (output += chunk.toString()));
   const base = `http://127.0.0.1:${port}`;
   const stop = async () => {
-    if (child.exitCode === null) {
+    if (failed === null && child.pid !== undefined && child.exitCode === null) {
       const exited = new Promise((resolve) => child.once('exit', resolve));
       child.kill('SIGINT');
       await exited;
@@ -55,6 +57,7 @@ export async function startMockupServer(): Promise<MockupServer> {
     fs.rmSync(dir, { recursive: true, force: true });
   };
   for (let attempt = 0; attempt < 100; attempt++) {
+    if (failed !== null) break;
     try {
       if ((await fetch(`${base}/api/health`)).ok) return { base, log: () => output, stop };
     } catch {
@@ -63,5 +66,5 @@ export async function startMockupServer(): Promise<MockupServer> {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
   await stop();
-  throw new Error(`the mockup server did not start:\n${output}`);
+  throw new Error(`the mockup server did not start: ${failed === null ? '' : String(failed)}\n${output}`);
 }

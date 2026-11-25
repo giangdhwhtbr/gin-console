@@ -3,7 +3,7 @@
 - **REQ:** REQ-REQUIREMENTS-008@fec00dd2
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-25T17-25-57-api
+- **Run:** qa/evidence/2026-11-25T17-33-21-api
 - **Checked:** ec3ee106
 
 **Preconditions:**

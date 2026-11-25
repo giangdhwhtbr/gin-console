@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-072@3768e26f
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 06f08a95
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** d7c3124d
 
 **Preconditions:**
 - Project `a` with bead `a-1` titled "Fix login"

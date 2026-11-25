@@ -296,10 +296,7 @@ def test_tc_requirements_022_open_and_archived(root: Path) -> None:
         make(root, FakeGin({"trace": trace()})).get("/api/requirements/changes", params=LIST).json()
     )
     folders = [c["folder"] for c in body["changes"]]
-    assert folders[0] in {"open", "full", "plain"} and folders[-2:] == [
-        "2026-10-01-old",
-        "2026-09-01-old",
-    ]
+    assert folders == ["full", "open", "plain", "2026-10-01-old", "2026-09-01-old"]
     row = next(c for c in body["changes"] if c["folder"] == "open")
     assert (row["title"], row["epic"]) == ("Open", "e-1")
 

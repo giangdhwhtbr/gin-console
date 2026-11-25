@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-072@3768e26f
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-44-27
-- **Checked:** 5e68a76e
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** d6eb3494
 
 **Preconditions:**
 - Project `a` has the milestone `m1`, which is its current milestone, and a bead `a-1` titled "Fix login"

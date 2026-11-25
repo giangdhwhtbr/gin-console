@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-057@f37002dd
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 07b85471
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 36bfe868
 
 **Preconditions:**
 - Project `alpha` is stubbed with milestone `m-1`

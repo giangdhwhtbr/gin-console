@@ -1,8 +1,6 @@
 // TC: TC-UI-410@d68afbc5
 import { test, expect } from '../evidence';
-import {  } from '../support/api';
 import { requirement, requirementList, stubRequirements } from '../support/requirements';
-import {  } from '../support/shell';
 
 test('TC-UI-410: Requirements query (REQ-UI-126)', async ({ page, ev }) => {
   // Precondition: projects a and b are configured.

@@ -1,6 +1,5 @@
 // TC: TC-UI-409@b9841bdf
 import { test, expect } from '../evidence';
-import {  } from '../support/api';
 import { changeContent, stubRequirements } from '../support/requirements';
 import { projectList, sidebarSwitcher } from '../support/shell';
 

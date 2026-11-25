@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-057@f37002dd
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** ccfc64dc
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 8599af9a
 
 **Preconditions:**
 - Project `alpha` is stubbed with bead `a-1`

@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-063@aa232cd1
 - **Priority:** low
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 7e16cd9d
 
 **Preconditions:**
 - Project `example` is configured

@@ -1,8 +1,6 @@
 // TC: TC-UI-407@9875dd17
 import { test, expect } from '../evidence';
-import {  } from '../support/api';
 import { changeContent, stubRequirements } from '../support/requirements';
-import {  } from '../support/shell';
 
 test('TC-UI-407: Requirements section title (REQ-UI-063)', async ({ page, ev }) => {
   // Precondition: project example is configured and has the change e1-login.

@@ -3,7 +3,7 @@
 - **REQ:** REQ-REQUIREMENTS-010@89434c84
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-25T17-25-57-api
+- **Run:** qa/evidence/2026-11-25T17-33-21-api
 - **Checked:** 35c42bab
 
 **Preconditions:**

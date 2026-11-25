@@ -3,8 +3,8 @@
 - **REQ:** REQ-UI-057@f37002dd
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 333a24fb
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 8944efb8
 
 **Preconditions:**
 - Project `alpha` is stubbed
