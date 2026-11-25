@@ -15,6 +15,7 @@ import { NotFoundPage } from "./NotFoundPage";
 import { useLocation } from "./route";
 
 const ReportsPage = lazy(() => import("@/features/reports/ReportsPage").then((m) => ({ default: m.ReportsPage })));
+const RequirementsPage = lazy(() => import("@/features/requirements/RequirementsPage").then((m) => ({ default: m.RequirementsPage })));
 
 function graphRoute(pathname: string): { project: string; id: string | null } | null {
   const match = /^\/beads\/([^/]+)(?:\/([^/]+))?\/graph$/.exec(pathname);
@@ -72,6 +73,10 @@ export function App() {
         <MyTasksPage />
       ) : pathname === "/milestones" ? (
         <MilestonesPage />
+      ) : pathname === "/requirements" || pathname.startsWith("/requirements/") ? (
+        <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+          <RequirementsPage />
+        </Suspense>
       ) : pathname === "/reports" || pathname.startsWith("/reports/") ? (
         <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
           <ReportsPage />

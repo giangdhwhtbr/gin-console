@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Mockup } from "./api";
 import { MockupFrame } from "./MockupFrame";
+import { formatDate } from "@/lib/dates";
 import { MockupsSection } from "./MockupsSection";
 import { RequirementsFailure } from "./api";
 
@@ -35,13 +36,21 @@ describe("MockupsSection", () => {
     show([mockup(), mockup({ capability: "api", date: "2026-10-01", requirements: [] })]);
     expect(screen.getByRole("heading", { name: "ui" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "api" })).toBeTruthy();
-    const folder = screen.getByRole("link", { name: "ui 2026-11-22" });
+    const folder = screen.getByRole("link", { name: `ui ${formatDate("2026-11-22")}` });
     expect(folder).toHaveAttribute("href", "/requirements/mockups?project=a&mockup=ui%2F2026-11-22");
     const item = folder.closest("li");
     if (item === null) throw new Error("no item");
     expect(within(item).getByText(/ba/)).toBeTruthy();
     expect(within(item).getByText(/23 Nov/)).toBeTruthy();
     expect(within(item).getByRole("link", { name: "REQ-UI-001" })).toHaveAttribute("href", "/requirements/matrix?project=a&req=REQ-UI-001");
+  });
+
+  it("REQ-UI-131 shows the mockup date in the one date format, its name unique per capability and date", () => {
+    show([mockup({ date: "2020-11-22" }), mockup({ date: "2021-11-22" }), mockup({ capability: "api", date: "2020-11-22" })]);
+    expect(screen.getByRole("link", { name: "ui 22 Nov 2020" })).toHaveAttribute("href", "/requirements/mockups?project=a&mockup=ui%2F2020-11-22");
+    expect(screen.getByRole("link", { name: "ui 22 Nov 2021" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "api 22 Nov 2020" })).toBeTruthy();
+    expect(screen.queryByText("2020-11-22")).toBeNull();
   });
 
   it("REQ-REQUIREMENTS-018 show a mockup: description and the frame", () => {
@@ -99,21 +108,21 @@ describe("MockupsSection", () => {
 
   it("REQ-REQUIREMENTS-018 legacy with mockups still lists them", () => {
     show([mockup()], "/requirements/mockups?project=a", true);
-    expect(screen.getByRole("link", { name: "ui 2026-11-22" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-22")}` })).toBeTruthy();
     expect(screen.queryByText(/legacy layout/)).toBeNull();
   });
 
   it("REQ-REQUIREMENTS-018 an unmatched mockup key says it was not found and keeps the list", () => {
     show([mockup()], "/requirements/mockups?project=a&mockup=ui/2000-01-01");
     expect(screen.getByText("Mockup ui/2000-01-01 was not found")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "ui 2026-11-22" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-22")}` })).toBeTruthy();
     expect(document.querySelector("iframe")).toBeNull();
   });
 
   it("REQ-REQUIREMENTS-018 the selected folder is aria-current page and its heading takes focus", () => {
     show([mockup(), mockup({ date: "2026-11-01" })], "/requirements/mockups?project=a&mockup=ui/2026-11-22");
-    expect(screen.getByRole("link", { name: "ui 2026-11-22" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "ui 2026-11-01" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-22")}` })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-01")}` })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("heading", { name: "ui/2026-11-22" })).toHaveFocus();
   });
 });

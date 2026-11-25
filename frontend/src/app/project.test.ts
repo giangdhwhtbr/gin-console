@@ -173,6 +173,18 @@ describe("switchProject", () => {
     expect(p.switchProject("/my-tasks", "?project=a&closed=1&milestone=m1", "b")).toBe("/my-tasks?project=b&closed=1");
   });
 
+  it("REQ-UI-123 Choose on a change page: opens the Changes section of the chosen project", async () => {
+    const p = await load();
+    expect(p.switchProject("/requirements/changes/e1-login", "?project=a&tab=plan&q=x", "b")).toBe("/requirements/changes?project=b");
+  });
+
+  it("REQ-UI-123 a Requirements section keeps its path and q, and drops the other keys", async () => {
+    const p = await load();
+    expect(p.switchProject("/requirements/matrix", "?project=a&status=failing&q=x&req=REQ-A-001&view=v&closed=1&tab=t&days=7", "b")).toBe("/requirements/matrix?project=b&q=x");
+    expect(p.switchProject("/requirements/mockups", "?project=a&mockup=ui/2026-11-22", "b")).toBe("/requirements/mockups?project=b");
+    expect(p.switchProject("/requirements", "?project=a", "b")).toBe("/requirements?project=b");
+  });
+
   it("REQ-UI-123 the Overview keeps its address when a project is chosen", async () => {
     const p = await load();
     expect(p.switchProject("/", "", "b")).toBe("/");
@@ -187,5 +199,6 @@ describe("projectHref", () => {
     expect(p.projectHref("/reports/status", "my app")).toBe("/reports/status?project=my+app");
     expect(p.projectHref("/my-tasks", "alpha")).toBe("/my-tasks?project=alpha");
     expect(p.projectHref("/my-tasks", "")).toBe("/my-tasks");
+    expect(p.projectHref("/requirements", "my app")).toBe("/requirements?project=my+app");
   });
 });

@@ -5,6 +5,7 @@ import { EMAIL_KEY, getEmail, resetIdentity, setEmail } from "./identity";
 import { Layout, SIDEBAR_KEY } from "./Layout";
 import { clearOrigin, rememberOrigin, RETURN_KEY } from "./origin";
 import { clearSections, publishSections, type SectionLink } from "@/features/reports/sectionStore";
+import { clearSections as clearRequirementSections, publishSections as publishRequirementSections, type SectionLink as RequirementSectionLink } from "@/features/requirements/sectionStore";
 import { forgetConfiguredProjects, setFavorite } from "./project";
 
 const json = (body: unknown) =>
@@ -26,6 +27,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   clearSections();
+  clearRequirementSections();
   resetIdentity();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
@@ -43,9 +45,12 @@ const marked = () =>
     .filter((link) => link.getAttribute("aria-current") === "page")
     .map((link) => link.textContent);
 
+/** The text of the Requirements link: its short label, then its wide one (CSS shows one of them). */
+const REQUIREMENTS = "REQs (Requirements)Requirements";
+
 describe("Layout", () => {
-  it.each(["/", "/beads", "/sessions", "/reports"])(
-    "REQ-UI-055 REQ-UI-099 has one Main navigation with the five links, Overview first, on %s",
+  it.each(["/", "/beads", "/sessions", "/requirements/matrix", "/reports"])(
+    "REQ-UI-055 REQ-UI-099 has one Main navigation with the six links, Overview first, on %s",
     async (path) => {
       open(path);
       await screen.findByRole("button", { name: "Project: alpha" });
@@ -56,6 +61,7 @@ describe("Layout", () => {
         ["Beads", "/beads?project=alpha"],
         ["My work", "/my-tasks?project=alpha"],
         ["Milestones", "/milestones?project=alpha"],
+        ["REQs (Requirements)Requirements", "/requirements?project=alpha"], // the short and the wide label; CSS shows one
         ["Reports", "/reports/status?project=alpha"],
       ]);
     },
@@ -65,7 +71,7 @@ describe("Layout", () => {
     open("/beads?project=beta");
     await screen.findByRole("button", { name: "Project: beta" });
     const hrefs = within(nav()).getAllByRole("link").map((link) => link.getAttribute("href"));
-    expect(hrefs).toEqual(["/", "/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/reports/status?project=beta"]);
+    expect(hrefs).toEqual(["/", "/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/requirements?project=beta", "/reports/status?project=beta"]);
   });
 
   it("REQ-UI-124 the links follow the favorite when the URL names no project", async () => {
@@ -124,6 +130,10 @@ describe("Layout", () => {
     ["/reports/nope", ["Reports"]],
     ["/reportsx", []],
     ["/quota", []],
+    ["/requirements", [REQUIREMENTS]],
+    ["/requirements/matrix", [REQUIREMENTS]],
+    ["/requirements/changes/e1-login", [REQUIREMENTS]],
+    ["/requirementsx", []],
     ["/nowhere", []],
     ["/beadsx", []],
   ])("REQ-UI-057 %s marks %j", (path, expected) => {
@@ -137,6 +147,7 @@ describe("Layout", () => {
     ["Bead page from My work", ["my-tasks", "/my-tasks", "?project=alpha", "alpha"], ["My work"]],
     ["a milestone page", ["milestone", "/milestones/alpha/m-1", "?tab=beads", "alpha"], ["Milestones"]],
     ["Reports", ["reports", "/reports/rework", "?project=alpha&days=7", "alpha"], ["Reports"]],
+    ["Bead page from Requirements", ["requirements", "/requirements/matrix", "?project=alpha", "alpha"], [REQUIREMENTS]],
     ["the Beads page", ["beads", "/beads", "?project=alpha", "alpha"], ["Beads"]],
     ["My work of another project", ["my-tasks", "/my-tasks", "?project=beta", "beta"], ["Beads"]],
   ])("REQ-UI-057 a bead page of alpha opened from %s marks %j", (_name, from, expected) => {
@@ -187,11 +198,11 @@ describe("Layout", () => {
     await waitFor(() => expect(within(nav()).getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=beta"));
   });
 
-  it("REQ-UI-062 the five links share the phone bar and each is at least 44px tall", () => {
+  it("REQ-UI-062 the six links share the phone bar and each is at least 44px tall", () => {
     open("/");
     const links = within(nav()).getAllByRole("link");
-    expect(links).toHaveLength(5);
-    for (const link of links) expect(link).toHaveClass("flex-1", "min-h-16"); // 64px tall, a fifth of 360px is 72px wide
+    expect(links).toHaveLength(6);
+    for (const link of links) expect(link).toHaveClass("flex-1", "min-h-16"); // 64px tall, a sixth of 360px is 60px wide
   });
 
   it("REQ-UI-062 offers the theme control", () => {
@@ -250,11 +261,11 @@ describe("Layout", () => {
     }
   });
 
-  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the five links when collapsed", () => {
+  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the six links when collapsed", () => {
     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
     open("/beads");
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
-    expect(within(nav()).getAllByRole("link")).toHaveLength(5);
+    expect(within(nav()).getAllByRole("link")).toHaveLength(6);
     expect(marked()).toEqual(["Beads"]);
   });
 
@@ -332,6 +343,61 @@ describe("Layout", () => {
       expect(document.querySelector('[data-sidebar="collapsed"]')).not.toBeNull();
       expect(list()).toBeNull();
     });
+  });
+
+  describe("requirement sections in the sidebar", () => {
+    const sections: RequirementSectionLink[] = [
+      { section: "matrix", label: "Matrix", count: 3, href: "/requirements/matrix?project=a" },
+      { section: "changes", label: "Changes", count: 0, href: "/requirements/changes?project=a" },
+      { section: "mockups", label: "Mockups", count: null, href: "/requirements/mockups?project=a" },
+    ];
+    const list = () => screen.queryByRole("list", { name: "Requirement sections" });
+    const links = () => within(screen.getByRole("list", { name: "Requirement sections" })).getAllByRole("link");
+
+    it("REQ-REQUIREMENTS-012 Wide: lists the sections with their known numbers, the selected one current", async () => {
+      publishRequirementSections(sections, "changes");
+      open("/requirements/changes?project=a");
+      expect(links().map((l) => l.textContent)).toEqual(["Matrix 3", "Changes 0", "Mockups"]);
+      expect(links().map((l) => l.getAttribute("aria-current"))).toEqual([null, "page", null]);
+      expect(list()).toHaveClass("hidden", "lg:flex");
+      await userEvent.click(links()[2]);
+      expect(window.location.pathname + window.location.search).toBe("/requirements/mockups?project=a");
+    });
+
+    it.each(["/beads", "/reports/status", "/requirementsx"])("REQ-REQUIREMENTS-012 lists nothing on %s", (path) => {
+      publishRequirementSections(sections, "changes");
+      open(path);
+      expect(list()).toBeNull();
+    });
+
+    it("REQ-REQUIREMENTS-012 lists nothing while the sidebar is collapsed", () => {
+      window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+      publishRequirementSections(sections, "changes");
+      open("/requirements/changes?project=a");
+      expect(list()).toBeNull();
+    });
+
+    it("REQ-REQUIREMENTS-012 REQ-UI-129 the report sections are not listed under Requirements", () => {
+      publishSections([{ section: "team", label: "Team", headline: "", warn: false, href: "/reports/team" }], "team");
+      open("/requirements/matrix");
+      expect(screen.queryByRole("list", { name: "Report sections" })).toBeNull();
+    });
+  });
+
+  it("REQ-UI-055 Short label: the phone bar and the icon rail show REQs named REQs (Requirements), the wide sidebar Requirements", () => {
+    open("/beads");
+    const link = () => within(nav()).getAllByRole("link")[4];
+    const [short, wide] = Array.from(link().querySelectorAll(":scope > span"));
+    expect(short).toHaveClass("lg:hidden");
+    expect(short.textContent).toBe("REQs (Requirements)");
+    expect(within(link()).getByText("(Requirements)")).toHaveClass("sr-only");
+    expect(wide).toHaveClass("hidden", "lg:inline");
+    expect(wide.textContent).toBe("Requirements");
+    cleanup();
+    window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
+    open("/beads");
+    expect(within(nav()).getByRole("link", { name: "REQs (Requirements)" })).toHaveAttribute("href", "/requirements");
+    expect(link().textContent).toBe("REQs (Requirements)");
   });
 
   it("REQ-UI-141 the current item has an identity bar and icon; the brand is three beads on an identity thread", () => {

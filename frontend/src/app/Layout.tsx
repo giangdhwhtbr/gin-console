@@ -1,6 +1,7 @@
-import { ChartColumn, Flag, House, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
+import { ChartColumn, FileCheck, Flag, House, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { useSections } from "@/features/reports/sectionStore";
+import { useRequirementSections } from "@/features/requirements/sectionStore";
 import { cn } from "@/lib/utils";
 import { clearEmail, useEmail } from "./identity";
 import { Link } from "./Link";
@@ -25,12 +26,14 @@ function beadOrigin(pathname: string, origin: Origin): OriginKind | null {
 
 type Place = { path: string; from: OriginKind | null };
 const isReports = (path: string) => path === "/reports" || path.startsWith("/reports/");
+const isRequirements = (path: string) => path === "/requirements" || path.startsWith("/requirements/");
 const NAV = [
-  { to: () => "/", label: "Overview", icon: House, current: ({ path, from }: Place) => path === "/" || from === "overview" },
-  { to: (project: string) => projectHref("/beads", project), label: "Beads", icon: ListChecks, current: ({ path, from }: Place) => path === "/beads" || (path.startsWith("/beads/") && from === null) },
-  { to: (project: string) => projectHref("/my-tasks", project), label: "My work", icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
-  { to: (project: string) => projectHref("/milestones", project), label: "Milestones", icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
-  { to: (project: string) => projectHref("/reports/status", project), label: "Reports", icon: ChartColumn, current: ({ path, from }: Place) => isReports(path) || from === "reports" },
+  { to: () => "/", label: "Overview", short: null, icon: House, current: ({ path, from }: Place) => path === "/" || from === "overview" },
+  { to: (project: string) => projectHref("/beads", project), label: "Beads", short: null, icon: ListChecks, current: ({ path, from }: Place) => path === "/beads" || (path.startsWith("/beads/") && from === null) },
+  { to: (project: string) => projectHref("/my-tasks", project), label: "My work", short: null, icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
+  { to: (project: string) => projectHref("/milestones", project), label: "Milestones", short: null, icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
+  { to: (project: string) => projectHref("/requirements", project), label: "Requirements", short: "REQs", icon: FileCheck, current: ({ path, from }: Place) => isRequirements(path) || from === "requirements" },
+  { to: (project: string) => projectHref("/reports/status", project), label: "Reports", short: null, icon: ChartColumn, current: ({ path, from }: Place) => isReports(path) || from === "reports" },
 ] as const;
 
 const LINK = cn(
@@ -88,6 +91,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
     }
   };
   const { sections, selected } = useSections();
+  const requirements = useRequirementSections();
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   return (
     <div data-sidebar={wide ? "expanded" : "collapsed"} className="group/shell flex min-h-screen flex-col bg-background text-foreground md:flex-row">
@@ -157,12 +161,39 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
           aria-label="Main"
           className="fixed inset-x-0 bottom-0 z-10 flex border-t bg-card pb-[env(safe-area-inset-bottom)] md:static md:flex-col md:gap-1 md:border-t-0 md:pb-0"
         >
-          {NAV.map(({ to, label, icon: Icon, current }) => (
+          {NAV.map(({ to, label, short, icon: Icon, current }) => (
             <Fragment key={label}>
               <Link to={to(project)} aria-current={current(place) ? "page" : undefined} className={cn(LINK, wide && LINK_WIDE)}>
                 <Icon aria-hidden className="size-5" />
-                {label}
+                {short === null ? (
+                  label
+                ) : (
+                  <>
+                    <span className={cn(wide && "lg:hidden")}>
+                      {`${short} `}
+                      <span className="sr-only">{`(${label})`}</span>
+                    </span>
+                    {wide && <span className="hidden lg:inline">{label}</span>}
+                  </>
+                )}
               </Link>
+              {label === "Requirements" && wide && isRequirements(pathname) && requirements.sections.length > 0 && (
+                <ul aria-label="Requirement sections" className="ml-4 hidden flex-col gap-0.5 border-l pl-2 lg:flex">
+                  {requirements.sections.map((section) => (
+                    <li key={section.section}>
+                      <Link
+                        to={section.href}
+                        aria-current={section.section === requirements.selected ? "page" : undefined}
+                        className="flex flex-col rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted aria-[current=page]:bg-muted aria-[current=page]:font-semibold aria-[current=page]:text-foreground"
+                      >
+                        {section.label}
+                        {section.count !== null && " "}
+                        {section.count !== null && <span className="text-xs font-normal">{section.count}</span>}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {label === "Reports" && wide && isReports(pathname) && sections.length > 0 && (
                 <ul aria-label="Report sections" className="ml-4 hidden flex-col gap-0.5 border-l pl-2 lg:flex">
                   {sections.map((section) => (

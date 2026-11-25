@@ -197,6 +197,25 @@ describe("Breadcrumb", () => {
     expect(crumb().getByRole("link", { name: "Beads › List" })).toBeInTheDocument();
   });
 
+  it("REQ-UI-072 REQ-UI-073 From Requirements: it reads Requirements and links to the remembered section with its query", () => {
+    rememberOrigin("requirements", "/requirements/matrix", "?project=a&status=untested", "a");
+    render(<Breadcrumb project="a" id="a-1" title="Fix login" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Requirements" })).toHaveAttribute("href", "/requirements/matrix?project=a&status=untested");
+    expect(crumb().getByText("Fix login")).toHaveAttribute("aria-current", "page");
+  });
+
+  it("REQ-UI-073 Requirements of another project is not the place of the bead", () => {
+    rememberOrigin("requirements", "/requirements/changes/e1", "?project=a", "a");
+    render(<Breadcrumb project="b" id="b-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=b");
+  });
+
+  it("REQ-UI-073 Reload: the stored Requirements place is read again", () => {
+    window.sessionStorage.setItem(RETURN_KEY, JSON.stringify({ kind: "requirements", path: "/requirements/changes/e1", search: "?project=a&tab=plan", project: "a", label: null, open: {} }));
+    render(<Breadcrumb project="a" id="a-1" parent={null} />);
+    expect(crumb().getByRole("link", { name: "Requirements" })).toHaveAttribute("href", "/requirements/changes/e1?project=a&tab=plan");
+  });
+
   it("REQ-UI-072 only the first link stays on a phone (the other items carry the hidden class)", () => {
     render(<Breadcrumb project="a" id="a-2" parent={{ id: "a-1", title: "Checkout" }} />);
     const items = crumb().getAllByRole("listitem");

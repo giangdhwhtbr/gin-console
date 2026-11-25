@@ -1,7 +1,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 
 export const RETURN_KEY = "gin-console-beads-return";
-const KINDS = ["overview", "beads", "milestone", "my-tasks", "reports"] as const;
+const KINDS = ["overview", "beads", "milestone", "my-tasks", "requirements", "reports"] as const;
 export type OriginKind = (typeof KINDS)[number];
 /** The milestone in effect on a remembered Beads place, and the one in effect without `milestone` in its URL (REQ-UI-072, REQ-UI-143). */
 export type OriginMilestone = { inEffect: string; byDefault: string };

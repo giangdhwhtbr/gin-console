@@ -74,7 +74,7 @@ export function MockupsSection({ project, legacy, list, retry }: { project: stri
                     aria-current={m === selected ? "page" : undefined}
                     className="prose-link font-medium [overflow-wrap:anywhere]"
                   >
-                    <span className="sr-only">{m.capability}</span> {m.date}
+                    <span className="sr-only">{m.capability}</span> {formatDate(m.date)}
                   </Link>
                   <span className="text-muted-foreground">{`Confirmed ${formatDate(m.confirmed)}${m.confirmed_by === null ? "" : ` by ${m.confirmed_by}`}`}</span>
                   {m.requirements.length > 0 && (

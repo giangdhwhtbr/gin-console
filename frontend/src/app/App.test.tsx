@@ -2,6 +2,7 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { bead } from "@/features/beads/beadFixtures";
+import { listOf, requirement } from "@/features/requirements/fixtures";
 import { clearOrigin } from "@/app/origin";
 import { App } from "./App";
 import { forgetConfiguredProjects } from "./project";
@@ -197,6 +198,58 @@ describe("App routing", () => {
     expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
     expect(screen.getByText("/reports/nope")).toBeInTheDocument();
     await waitFor(() => expect(document.title).toBe("Page not found · gin-console"));
+  });
+
+  it("REQ-REQUIREMENTS-012 REQ-UI-057 every path under /requirements is the Requirements page: /requirements, a section, a change, or the not-found page", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url === "/api/projects/beads" ? alpha() : new Response("{}", { status: 500 }))));
+    const before = window.history.length;
+    window.history.replaceState(null, "", "/requirements?project=alpha");
+    render(<App />);
+    await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/requirements/matrix?project=alpha"));
+    expect(window.history.length).toBe(before);
+    expect(await screen.findByRole("heading", { name: "Requirements" })).toBeInTheDocument();
+    const main = within(screen.getByRole("navigation", { name: "Main" }));
+    expect(main.getAllByRole("link").find((link) => link.getAttribute("href") === "/requirements?project=alpha")).toHaveAttribute("aria-current", "page");
+    cleanup();
+    window.history.replaceState(null, "", "/requirements/changes/e1-login?project=alpha");
+    render(<App />);
+    await waitFor(() => expect(document.title).toBe("e1-login · alpha · gin-console"));
+    cleanup();
+    window.history.replaceState(null, "", "/requirements/nope");
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+    expect(screen.getByText("/requirements/nope")).toBeInTheDocument();
+    await waitFor(() => expect(document.title).toBe("Page not found · gin-console"));
+  });
+
+  it("REQ-UI-072 REQ-UI-073 REQ-UI-057 From Requirements: a bead opened from the matrix details marks Requirements and leads back", async () => {
+    const row = requirement({ status: "untested", beads: [{ id: "a-1", title: "Fix login", status: "open" }] });
+    vi.stubGlobal("fetch", vi.fn((url: string) => {
+      if (url === "/api/projects/beads") return Promise.resolve(alpha());
+      if (url.startsWith("/api/requirements?")) return Promise.resolve(json(listOf(row)));
+      return Promise.resolve(new Response("{}", { status: 500 }));
+    }));
+    window.history.replaceState(null, "", "/requirements/matrix?project=alpha&status=untested&req=REQ-UI-001");
+    render(<App />);
+    await userEvent.click(await screen.findByRole("link", { name: /Fix login/ }));
+    expect(window.location.pathname).toBe("/beads/alpha/a-1");
+    const marked = within(screen.getByRole("navigation", { name: "Main" })).getAllByRole("link").filter((link) => link.getAttribute("aria-current") === "page");
+    expect(marked.map((link) => link.getAttribute("href"))).toEqual(["/requirements?project=alpha"]);
+    const crumb = await screen.findByRole("navigation", { name: "Breadcrumb" });
+    expect(within(crumb).getByRole("link", { name: "Requirements" })).toHaveAttribute("href", "/requirements/matrix?project=alpha&status=untested&req=REQ-UI-001");
+  });
+
+  it("REQ-UI-123 Choose on a change page: the URL becomes the Changes section of the chosen project", async () => {
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url === "/api/projects/beads" ? json([
+      { name: "a", path: "/a", exists: true, beads: null },
+      { name: "b", path: "/b", exists: true, beads: null },
+    ]) : new Response("{}", { status: 500 }))));
+    window.history.replaceState(null, "", "/requirements/changes/e1-login?project=a");
+    render(<App />);
+    await userEvent.click(await screen.findByRole("button", { name: "Project: a" }));
+    await userEvent.click(await screen.findByRole("button", { name: "b" }));
+    expect(window.location.pathname + window.location.search).toBe("/requirements/changes?project=b");
+    expect(await screen.findByRole("heading", { name: "Requirements" })).toBeInTheDocument();
   });
 
   it("REQ-UI-099 / shows the Overview and the address stays /", async () => {

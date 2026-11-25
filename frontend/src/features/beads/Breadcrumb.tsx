@@ -45,6 +45,8 @@ function firstLink(project: string, origin: Origin | null): { to: string; label:
     }
     case "my-tasks":
       return { to: origin.path + origin.search, label: "My work" };
+    case "requirements":
+      return { to: origin.path + origin.search, label: "Requirements" };
     case "reports":
       return { to: origin.path + origin.search, label: "Reports" };
   }
