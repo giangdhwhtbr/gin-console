@@ -92,7 +92,12 @@ flowchart LR
 
 Outcome: The console keeps your project and place across pages, numbers mean the same everywhere, Sessions and Quota are gone, and the new look is in place.
 Demo: Pick a project once and move through Beads, Milestones and Reports without losing it; open an epic from a milestone and return by its breadcrumb; the blocked count matches on Beads and Reports.
-Result:
+Result: closed 2026-11-25; delivered 5 of 5 epics; 0 moved to QA and BA
+- Outcome: reached; the project and the place are kept across pages, numbers mean the same everywhere, Sessions and Quota are gone, and the new look is in place
+- Demo: reached; taken from the recorded test cases on the deployed build, the demo was not run again at the close
+- Metrics: 5 of 5 epics done (100%); estimate accuracy not measured (all epics had points); 37% of capacity used; 0.11 days per point
+- Spillover: none
+- Actions: recorded that an epic finished within a day counts one day whatever its size
 Spec ready by: 2026-11-23
 Integration point: 2026-12-10
 - Integrates: gin-console-rm-retire-sessions-quota, gin-console-rm-nav-shell, gin-console-rm-definitions, gin-console-rm-strung, gin-console-rm-beads-views
