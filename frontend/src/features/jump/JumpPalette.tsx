@@ -98,7 +98,7 @@ export function JumpPalette() {
                   onClick={() => jump(entry)}
                   className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 aria-selected:bg-muted"
                 >
-                  <span className="font-mono text-xs">{entry.bead.id}</span>
+                  <span title={entry.bead.id} className="max-w-[45%] shrink-0 truncate font-mono text-xs">{entry.bead.id}</span>
                   <span className="min-w-0 flex-1 truncate">{entry.bead.title}</span>
                   <StateMark bead={entry.bead} />
                   <span className="text-xs text-muted-foreground">{entry.project}</span>
