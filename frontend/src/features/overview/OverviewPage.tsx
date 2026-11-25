@@ -22,8 +22,6 @@ const rowKey = (project: string, id: string) => JSON.stringify([project, id]);
 
 function Loaded({ data: { projects, aging_days: agingDays } }: { data: Overview }) {
   const gates = useGates(projects);
-  // the gate rows arrive after the lists: restoring earlier would not find a row opened from Gates or Waivers (REQ-UI-127)
-  useRestoreOnBack(gates.pending === null);
   if (projects.length === 0) return <p className="text-muted-foreground">No projects configured.</p>;
   return (
     <>
@@ -108,6 +106,10 @@ export function OverviewPage() {
     rememberOrigin("overview", "/", search, null);
   }, [search]);
   const { state, retry } = useLoad(fetchOverview, true);
+  // simplified: restores once the lists show, so a Gates or Waivers row (its answers come later), a row past the
+  // first 10 ("Show all" is local) and a bead id in several lists or projects (the first match gets the focus) may
+  // not get the focus; upgrade by passing the opened id to the hook and waiting for its row.
+  useRestoreOnBack(state.status === "ok");
   const failure = state.status === "loading" ? null : state.error;
   return (
     // a long name or id breaks anywhere instead of widening the page (REQ-OVERVIEW-011)

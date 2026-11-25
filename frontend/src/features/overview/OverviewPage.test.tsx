@@ -622,27 +622,49 @@ describe("OverviewPage place", () => {
     window.history.replaceState(null, "", "/");
   });
 
-  it("REQ-UI-127 Back to a Waivers row waits for the gates, then scrolls and focuses that row", async () => {
+  /** Leaves the Overview scrolled 400px down by opening `opened`, then stands on the Overview entry again. */
+  function leaveAndGoBack(opened: string) {
     window.history.replaceState(null, "", "/");
     Object.defineProperty(window, "scrollY", { value: 400, configurable: true });
     navigate("/"); // gives the Overview entry its key
     const overview: unknown = window.history.state;
-    navigate("/beads/a/e-1"); // leaves the Overview by opening e-1, saving 400px
+    navigate(`/beads/a/${opened}`);
     window.history.replaceState(overview, "", "/");
     const scrollTo = vi.fn();
     window.scrollTo = scrollTo;
     scrollTo.mockClear();
-    let answer: (reply: Response) => void = () => {};
-    stub({ projects: [project("a", { epics: [named("e-1")] })], workflow: () => new Promise<Response>((resolve) => (answer = resolve)) });
+    return scrollTo;
+  }
+  const browserBack = () => act(() => void window.dispatchEvent(new PopStateEvent("popstate")));
+
+  it("REQ-UI-127 Back to a Blocked row restores scroll and focus while the gates are still pending", async () => {
+    const scrollTo = leaveAndGoBack("t-3");
+    stub({ projects: [project("a", { blocked: [blocked("t-3")], epics: [named("e-1")] })], workflow: () => pending() });
     page();
-    act(() => void window.dispatchEvent(new PopStateEvent("popstate"))); // the browser's Back
-    await screen.findByRole("heading", { name: "Needs attention" });
-    await new Promise((resolve) => setTimeout(resolve, 100)); // frames pass while the gates are pending
-    expect(scrollTo).not.toHaveBeenCalled();
+    browserBack();
+    await screen.findByRole("heading", { name: "Blocked (1)" });
+    await waitFor(() => expect(rowsIn("Blocked (1)")[0]).toHaveFocus());
+    expect(scrollTo).toHaveBeenCalledWith(0, 400);
+    expect(screen.getAllByText("Checking 0 of 1")).toHaveLength(2); // Gates and Waivers: still pending
+    Object.defineProperty(window, "scrollY", { value: 0, configurable: true });
+  });
+
+  it("REQ-UI-127 gate answers arriving later neither scroll nor focus again", async () => {
+    const scrollTo = leaveAndGoBack("t-3");
+    let answer: (reply: Response) => void = () => {};
+    stub({ projects: [project("a", { blocked: [blocked("t-3")], epics: [named("e-1")] })], workflow: () => new Promise<Response>((resolve) => (answer = resolve)) });
+    page();
+    browserBack();
+    await waitFor(() => expect(rowsIn("Blocked (1)")[0]).toHaveFocus());
+    scrollTo.mockClear();
+    const other = document.createElement("button");
+    document.body.append(other);
+    other.focus();
     answer(json(workflow({}, [{ task_id: "e-1.2", reason: "no reviewer", actor: "x" }])));
     await screen.findByRole("heading", { name: "Waivers (1)" });
-    await waitFor(() => expect(rowsIn("Waivers (1)")[0]).toHaveFocus());
-    expect(scrollTo).toHaveBeenCalledWith(0, 400);
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(other).toHaveFocus();
+    other.remove();
     Object.defineProperty(window, "scrollY", { value: 0, configurable: true });
   });
 });
