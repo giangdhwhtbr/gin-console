@@ -30,6 +30,8 @@ def build_router(
             return ProjectOverview(
                 name=entry.name, error=str(exc) or "issues.jsonl was too deeply nested"
             )
+        except OverflowError:
+            return ProjectOverview(name=entry.name, error="issues.jsonl: date out of range")
 
     @router.get("/overview")
     def get_overview() -> Overview:

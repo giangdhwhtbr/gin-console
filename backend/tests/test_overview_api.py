@@ -1,7 +1,10 @@
+import time
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import pytest
 from fake_bd import FakeBd
 from fake_export import bead, write_export
 from fake_gw import FakeGw
@@ -91,3 +94,30 @@ def test_overview_001_stale_when_the_store_changed(tmp_path: Path) -> None:
 def test_config_007_aging_days_reaches_the_response(tmp_path: Path) -> None:
     api, _, _ = make(tmp_path, [], aging_days=5)
     assert api.get("/api/overview").json()["aging_days"] == 5
+
+
+@pytest.fixture
+def los_angeles(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    if not hasattr(time, "tzset"):
+        pytest.skip("no tzset on this platform")
+    monkeypatch.setenv("TZ", "America/Los_Angeles")
+    time.tzset()
+    yield
+    monkeypatch.undo()
+    time.tzset()
+
+
+# REQ-OVERVIEW-001
+@pytest.mark.usefixtures("los_angeles")
+def test_overview_001_out_of_range_date_stays_with_its_project(tmp_path: Path) -> None:
+    write_export(
+        tmp_path / "alpha",
+        [bead("a-1", status="in_progress", started_at="0001-01-01T00:00:00+00:00")],
+    )
+    write_export(tmp_path / "beta", [bead("b-1")])
+    api, _, _ = make(tmp_path, ["alpha", "beta"])
+    response = api.get("/api/overview")
+    assert response.status_code == 200
+    alpha, beta = response.json()["projects"]
+    assert "date out of range" in alpha["error"]
+    assert beta["error"] is None and [x["id"] for x in beta["unassigned"]] == ["b-1"]
