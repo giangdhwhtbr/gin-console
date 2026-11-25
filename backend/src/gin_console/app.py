@@ -26,6 +26,9 @@ from gin_console.projects.models import BlockError, EpicWorkflow
 from gin_console.projects.router import build_router as build_projects_router
 from gin_console.reports.interactions import InteractionStore
 from gin_console.reports.router import build_router as build_reports_router
+from gin_console.requirements.router import build_router as build_requirements_router
+from gin_console.requirements.source import GinRunner
+from gin_console.requirements.source import run_gin as default_run_gin
 
 # backend/src/gin_console/app.py -> repository root is parents[3]
 _METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
@@ -37,6 +40,7 @@ def create_app(
     static_dir: Path = DEFAULT_STATIC_DIR,
     read_beads: Reader = read_export,
     run_gw: GwRunner = default_run_gw,
+    run_gin: GinRunner = default_run_gin,
     clock: Callable[[], datetime] = utc_now,
     run_bd: BdRunner = run_bd_pull,
     schedule_pulls: bool = True,
@@ -90,6 +94,7 @@ def create_app(
         build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh)
     )
     api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh, snapshots))
+    api.include_router(build_requirements_router(settings, run_gin, clock, on_refresh))
     api.include_router(build_reports_router(settings, snapshots, interactions, clock, on_refresh))
 
     @api.api_route("/{rest:path}", methods=_METHODS)
