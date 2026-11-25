@@ -21,7 +21,7 @@ export function NotFoundPage({ path }: { path: string }) {
         </li>
         <li>
           <Link to={projectHref("/my-tasks", project)} className="prose-link">
-            My Tasks
+            My work
           </Link>
         </li>
       </ul>

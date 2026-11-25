@@ -98,14 +98,14 @@ describe("Breadcrumb", () => {
     expect(parent).toHaveAttribute("title", `${long}, a-1`);
   });
 
-  it("REQ-UI-072 From My Tasks it reads My Tasks and goes back to the page with its query", () => {
+  it("REQ-UI-072 From My work it reads My work and goes back to the page with its query", () => {
     rememberOrigin("my-tasks", "/my-tasks", "?project=a", "a");
     render(<Breadcrumb project="a" id="a-1" title="Fix login" parent={null} />);
-    expect(crumb().getByRole("link", { name: "My Tasks" })).toHaveAttribute("href", "/my-tasks?project=a");
+    expect(crumb().getByRole("link", { name: "My work" })).toHaveAttribute("href", "/my-tasks?project=a");
     expect(crumb().getByText("Fix login")).toHaveAttribute("aria-current", "page");
   });
 
-  it("REQ-UI-073 My Tasks of another project is not used", () => {
+  it("REQ-UI-073 My work of another project is not used", () => {
     rememberOrigin("my-tasks", "/my-tasks", "?project=a", "a");
     render(<Breadcrumb project="b" id="b-1" title="Pay" parent={null} />);
     expect(crumb().getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=b");

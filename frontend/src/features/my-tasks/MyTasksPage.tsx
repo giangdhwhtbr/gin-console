@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useEmail } from "@/app/identity";
 import { Link } from "@/app/Link";
 import { rememberOrigin } from "@/app/origin";
@@ -7,16 +7,14 @@ import { navigate, useLocation, useRestoreOnBack } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { isClosedMilestone, matchesMilestone, milestoneInEffect } from "@/features/beads/milestoneChoice";
 import { MilestoneFilter } from "@/features/beads/MilestoneFilter";
 import { useMilestones } from "@/features/beads/useMilestones";
 import { PullNote } from "@/features/beads/PullNote";
 import { StaleNote } from "@/features/beads/StaleNote";
-import { StateMark } from "@/features/beads/StateMark";
-import { TypeBadge } from "@/features/beads/TypeBadge";
-import { formatDate } from "@/lib/dates";
+import { groupWork, type WorkGroup } from "./groups";
 import { loadMyTasks, type MyTasks } from "./load";
+import { MyWorkGroup } from "./MyWorkGroup";
 
 type Outcome =
   | { status: "error"; message: string }
@@ -35,7 +33,7 @@ export function MyTasksPage() {
   const names = configured.status === "ok" ? configured.names : [];
   const unknown = configured.status === "ok" && isUnknownProject(asked, names);
   const project = configured.status === "ok" && !unknown ? resolveProject(asked, names) : "";
-  usePageTitle("My Tasks", project);
+  usePageTitle("My work", project);
 
   // REQ-UI-124: the project shown is the current one, and the URL says which it is
   useEffect(() => {
@@ -70,7 +68,7 @@ export function MyTasksPage() {
   useEffect(() => {
     if (project === "") return;
     let live = true;
-    loadMyTasks(email, fetchClosed, project).then(
+    loadMyTasks(fetchClosed, project).then(
       (data) => {
         if (live) setSettled({ request, outcome: { status: "ok", data } });
       },
@@ -84,8 +82,15 @@ export function MyTasksPage() {
   }, [email, fetchClosed, project, request]);
 
   useRestoreOnBack(state.status === "ok");
-  const tasks = state.status === "ok" ? state.data.tasks.filter((task) => matchesMilestone(task.bead, milestone)) : [];
-  const count = state.status === "ok" ? tasks.length : null;
+  const known = new Map((state.status === "ok" ? state.data.beads : []).map((bead) => [bead.id, bead]));
+  // REQ-UI-150: groups are computed from every bead of the project, then the milestone filter narrows each one
+  const groups: WorkGroup[] =
+    state.status === "ok"
+      ? groupWork(state.data.beads, email)
+          .filter((group) => group.key !== "closed" || fetchClosed)
+          .map((group) => ({ ...group, beads: group.beads.filter((bead) => matchesMilestone(bead, milestone)) }))
+      : [];
+  const count = state.status === "ok" ? groups.reduce((sum, group) => sum + group.beads.length, 0) : null;
   const noProjects = configured.status === "ok" && names.length === 0;
   const waiting = state.status === "loading" && !noProjects && !unknown;
   const change = (next: string) => {
@@ -97,7 +102,7 @@ export function MyTasksPage() {
 
   return (
     <section className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold">My Tasks</h1>
+      <h1 className="text-2xl font-semibold">My work</h1>
       {project !== "" && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {count !== null && <span className="text-sm text-muted-foreground">{count} {count === 1 ? "task" : "tasks"}</span>}
@@ -137,44 +142,22 @@ export function MyTasksPage() {
               <AlertDescription>{failure.message}</AlertDescription>
             </Alert>
           ))}
-          {tasks.length === 0 ? (
+          {count === 0 ? (
             <p className="text-muted-foreground">
-              <span>No tasks assigned to {email}</span>{" "}
+              <span>No work for {email}</span>{" "}
               <Link to={projectHref("/beads", project)} className="prose-link">
                 Open the Beads page
               </Link>
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Task</TableHead>
-                  <TableHead>State</TableHead>
-                  <TableHead className="hidden md:table-cell">Type</TableHead>
-                  <TableHead>Priority</TableHead>
-                  <TableHead className="hidden md:table-cell">Updated</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tasks.map(({ project, bead }) => (
-                  <TableRow key={bead.id} data-id={bead.id} tabIndex={-1}>
-                    <TableCell className="whitespace-normal">
-                      <Link to={`/beads/${encodeURIComponent(project)}/${encodeURIComponent(bead.id)}`}>
-                        <span className="font-mono text-13 text-muted-foreground">{bead.id}</span> {bead.title}
-                      </Link>
-                    </TableCell>
-                    <TableCell>
-                      <StateMark bead={bead} />
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <TypeBadge type={bead.issue_type} />
-                    </TableCell>
-                    <TableCell>P{bead.priority}</TableCell>
-                    <TableCell className="hidden md:table-cell">{formatDate(bead.updated_at)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <>
+              {groups.map((group) => (
+                <Fragment key={group.key}>
+                  {group.key === "mine" && <h2 className="text-base font-semibold">Next up</h2>}
+                  <MyWorkGroup group={group} project={project} known={known} email={email} />
+                </Fragment>
+              ))}
+            </>
           )}
         </>
       )}

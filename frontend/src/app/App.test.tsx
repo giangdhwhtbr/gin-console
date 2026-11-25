@@ -137,7 +137,7 @@ describe("App routing", () => {
     await waitFor(() => expect(document.title).toBe("Page not found · gin-console"));
   });
 
-  it("REQ-UI-099 / is replaced by My Tasks of the current project without a history entry", async () => {
+  it("REQ-UI-099 / is replaced by My work of the current project without a history entry", async () => {
     window.history.replaceState(null, "", "/");
     const before = window.history.length;
     vi.stubGlobal("fetch", vi.fn(() => alpha()));
@@ -157,7 +157,7 @@ describe("App routing", () => {
     expect(window.history.length).toBe(before);
   });
 
-  it("REQ-UI-099 /?project=beta is replaced by My Tasks of beta", async () => {
+  it("REQ-UI-099 /?project=beta is replaced by My work of beta", async () => {
     window.history.replaceState(null, "", "/?project=beta");
     const before = window.history.length;
     vi.stubGlobal("fetch", vi.fn(() => json([
@@ -186,8 +186,8 @@ describe("App routing", () => {
     ["/reports/team?project=alpha", "Reports · Team · alpha · gin-console"],
     ["/reports/delivery?project=alpha", "Reports · Delivery · alpha · gin-console"],
     ["/reports/velocity?project=alpha", "Reports · Velocity · alpha · gin-console"],
-    ["/my-tasks", "My Tasks · gin-console"],
-    ["/my-tasks?project=alpha", "My Tasks · alpha · gin-console"],
+    ["/my-tasks", "My work · gin-console"],
+    ["/my-tasks?project=alpha", "My work · alpha · gin-console"],
   ])("REQ-UI-063 titles %s", async (path, title) => {
     vi.stubGlobal("fetch", vi.fn(() => alpha()));
     window.history.replaceState(null, "", path);
@@ -207,12 +207,12 @@ describe("App routing", () => {
     window.history.replaceState(null, "", "/my-tasks?project=alpha");
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url.includes("/api/projects/beads") ? alpha() : json([]))));
     render(<App />);
-    await screen.findByRole("heading", { name: "My Tasks" });
+    await screen.findByRole("heading", { name: "My work" });
     await userEvent.click(screen.getByRole("link", { name: "Beads" }));
     expect(window.location.pathname).toBe("/beads");
     expect(await screen.findByRole("heading", { name: "Beads" })).toBeInTheDocument();
     act(() => window.history.back());
-    await screen.findByRole("heading", { name: "My Tasks" });
+    await screen.findByRole("heading", { name: "My work" });
     expect(window.location.pathname).toBe("/my-tasks");
   });
 

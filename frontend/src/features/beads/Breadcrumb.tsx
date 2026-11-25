@@ -42,7 +42,7 @@ function firstLink(project: string, origin: Origin | null): { to: string; label:
       return { to: origin.path + origin.search, label: tab === "beads" ? `${name} › ${viewAndFilters(parseFilters(origin.search), contextOf(origin))}` : name };
     }
     case "my-tasks":
-      return { to: origin.path + origin.search, label: "My Tasks" };
+      return { to: origin.path + origin.search, label: "My work" };
     case "reports":
       return { to: origin.path + origin.search, label: "Reports" };
   }

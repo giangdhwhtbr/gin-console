@@ -10,7 +10,6 @@ vi.mock("@/features/projects/api", async (importOriginal) => ({
 }));
 vi.mock("@/features/beads/api", () => ({ fetchBeads: vi.fn() }));
 
-const email = "giangdhwhtbr@gmail.com";
 const projects = vi.mocked(fetchProjectBeads);
 const beads = vi.mocked(fetchBeads);
 
@@ -27,7 +26,7 @@ describe("loadMyTasks", () => {
     });
     projects.mockResolvedValue([withStale("A", true), withStale("B", false), withStale("C", true, false)]);
     beads.mockResolvedValue([]);
-    const result = await loadMyTasks(email, false, "A");
+    const result = await loadMyTasks(false, "A");
     expect(result.stale).toEqual(["A"]);
   });
 
@@ -40,58 +39,41 @@ describe("loadMyTasks", () => {
       { ...project("D") },
     ]);
     beads.mockResolvedValue([]);
-    expect((await loadMyTasks(email, false, "A")).pullFailures).toEqual([{ project: "A", path: "/home/gin/A", error: "boom" }]);
-    expect((await loadMyTasks(email, false, "B")).pullFailures).toEqual([]);
+    expect((await loadMyTasks(false, "A")).pullFailures).toEqual([{ project: "A", path: "/home/gin/A", error: "boom" }]);
+    expect((await loadMyTasks(false, "B")).pullFailures).toEqual([]);
   });
 
-  it("REQ-UI-100 gathers my beads of the current project only, in order", async () => {
-    beads.mockResolvedValue([
-      bead("a-1", { assignee: "giangdhwhtbr", priority: 2, updated_at: "2026-11-10T00:00:00Z" }),
-      bead("a-2", { assignee: "alice" }),
-      bead("a-3", { assignee: email, priority: 1, updated_at: "2026-11-03T00:00:00Z" }),
-    ]);
-    const result = await loadMyTasks(email, false, "A");
+  it("REQ-UI-100 returns every bead of the current project, not only mine, from that project only", async () => {
+    beads.mockResolvedValue([bead("a-1", { assignee: "giangdhwhtbr" }), bead("a-2", { assignee: "alice" }), bead("a-3")]);
+    const result = await loadMyTasks(false, "A");
     expect(beads.mock.calls).toEqual([["A", false]]);
-    expect(result.tasks.map((t) => [t.project, t.bead.id])).toEqual([["A", "a-3"], ["A", "a-1"]]);
+    expect(result.beads.map((b) => b.id)).toEqual(["a-1", "a-2", "a-3"]);
     expect(result.failures).toEqual([]);
-  });
-
-  it("REQ-UI-100 equal priority puts the newest update first, then id", async () => {
-    beads.mockResolvedValue([
-      bead("a-2", { assignee: "giangdhwhtbr", updated_at: "2026-11-01T00:00:00Z" }),
-      bead("a-1", { assignee: "giangdhwhtbr", updated_at: "2026-11-01T00:00:00Z" }),
-      bead("a-3", { assignee: "giangdhwhtbr", updated_at: "2026-11-05T00:00:00Z" }),
-    ]);
-    const result = await loadMyTasks(email, false, "A");
-    expect(result.tasks.map((t) => t.bead.id)).toEqual(["a-3", "a-1", "a-2"]);
   });
 
   it("REQ-UI-101 closed is passed through", async () => {
     beads.mockResolvedValue([]);
-    await loadMyTasks(email, true, "B");
+    await loadMyTasks(true, "B");
     expect(beads).toHaveBeenCalledWith("B", true);
   });
 
   it("REQ-UI-102 a failing project is reported", async () => {
     beads.mockRejectedValue(new Error("bd failed"));
-    const result = await loadMyTasks(email, false, "B");
+    const result = await loadMyTasks(false, "B");
     expect(result.failures).toEqual([{ project: "B", message: "bd failed" }]);
-    expect(result.tasks).toEqual([]);
+    expect(result.beads).toEqual([]);
   });
 
   it("REQ-UI-102 a projects failure rejects", async () => {
     projects.mockRejectedValue(new Error("Could not load projects (HTTP 500)"));
-    await expect(loadMyTasks(email, false, "A")).rejects.toThrow("Could not load projects");
+    await expect(loadMyTasks(false, "A")).rejects.toThrow("Could not load projects");
   });
 });
 
 describe("loadMyTasks merge gates", () => {
-  it("REQ-UI-116 Not on the Board: a merge gate is not a task of mine", async () => {
-    beads.mockResolvedValue([
-      bead("a-1", { assignee: email }),
-      bead("a-2", { assignee: email, waits_for: { plan: "p", number: 1, track_id: null, lane: null } }),
-    ]);
-    const result = await loadMyTasks(email, false, "A");
-    expect(result.tasks.map((t) => t.bead.id)).toEqual(["a-1"]);
+  it("REQ-UI-150 a merge gate is returned so that a blocker can be named; the groups leave it out", async () => {
+    const gate = bead("a-2", { waits_for: { plan: "p", number: 1, track_id: null, lane: null } });
+    beads.mockResolvedValue([bead("a-1"), gate]);
+    expect((await loadMyTasks(false, "A")).beads.map((b) => b.id)).toEqual(["a-1", "a-2"]);
   });
 });

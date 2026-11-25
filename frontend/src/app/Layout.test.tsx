@@ -53,7 +53,7 @@ describe("Layout", () => {
       expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
       expect(within(nav()).getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
         ["Beads", "/beads?project=alpha"],
-        ["My Tasks", "/my-tasks?project=alpha"],
+        ["My work", "/my-tasks?project=alpha"],
         ["Milestones", "/milestones?project=alpha"],
         ["Reports", "/reports/status?project=alpha"],
       ]);
@@ -110,7 +110,7 @@ describe("Layout", () => {
     ["/", []],
     ["/beads", ["Beads"]],
     ["/beads/alpha/a-1", ["Beads"]],
-    ["/my-tasks", ["My Tasks"]],
+    ["/my-tasks", ["My work"]],
     ["/milestones", ["Milestones"]],
     ["/milestones/alpha/m-1", ["Milestones"]],
     ["/milestonesx", []],
@@ -131,11 +131,11 @@ describe("Layout", () => {
 
   it.each<[string, Parameters<typeof rememberOrigin> | null, string[]]>([
     ["Bead page by address", null, ["Beads"]],
-    ["Bead page from My Tasks", ["my-tasks", "/my-tasks", "?project=alpha", "alpha"], ["My Tasks"]],
+    ["Bead page from My work", ["my-tasks", "/my-tasks", "?project=alpha", "alpha"], ["My work"]],
     ["a milestone page", ["milestone", "/milestones/alpha/m-1", "?tab=beads", "alpha"], ["Milestones"]],
     ["Reports", ["reports", "/reports/rework", "?project=alpha&days=7", "alpha"], ["Reports"]],
     ["the Beads page", ["beads", "/beads", "?project=alpha", "alpha"], ["Beads"]],
-    ["My Tasks of another project", ["my-tasks", "/my-tasks", "?project=beta", "beta"], ["Beads"]],
+    ["My work of another project", ["my-tasks", "/my-tasks", "?project=beta", "beta"], ["Beads"]],
   ])("REQ-UI-057 a bead page of alpha opened from %s marks %j", (_name, from, expected) => {
     if (from !== null) rememberOrigin(...from);
     open("/beads/alpha/a-1");
