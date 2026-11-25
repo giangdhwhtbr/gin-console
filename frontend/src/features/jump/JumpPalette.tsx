@@ -19,8 +19,10 @@ export function JumpPalette() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== "k") return;
       event.preventDefault();
+      setText("");
+      setSelected(0);
       setOpen(true);
-      if (load.kind !== "idle") return;
+      if (load.kind !== "idle" && load.kind !== "failed") return;
       setLoad({ kind: "loading" });
       loadAllBeads().then(
         (loaded) => setLoad({ kind: "ready", loaded }),

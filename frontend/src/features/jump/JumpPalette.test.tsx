@@ -172,6 +172,39 @@ describe("JumpPalette", () => {
     expect(fetchMock.mock.calls.length).toBeGreaterThan(calls);
   });
 
+  it("REQ-UI-154 reopening after a failed project list loads again", async () => {
+    let ok = false;
+    const fetchMock = vi.fn((url: string) => {
+      if (url === "/api/projects/beads") return Promise.resolve(ok ? json(projects) : json({ error: "down" }, 500));
+      return Promise.resolve(json([bead("a-1")]));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<JumpPalette />);
+    open();
+    await screen.findByText("Could not load projects");
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    ok = true;
+    open();
+    await userEvent.type(await screen.findByRole("textbox", { name: "Search beads" }), "a-1");
+    expect((await screen.findAllByRole("option")).length).toBeGreaterThan(0);
+  });
+
+  it("REQ-UI-154 reopening shows an empty field and the hint", async () => {
+    stub();
+    render(<JumpPalette />);
+    open();
+    await screen.findByText("Type an id or a title");
+    await userEvent.type(screen.getByRole("textbox", { name: "Search beads" }), "login");
+    await screen.findAllByRole("option");
+    await userEvent.keyboard("{Escape}");
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    open();
+    const input = await screen.findByRole("textbox", { name: "Search beads" });
+    expect((input as HTMLInputElement).value).toBe("");
+    expect(await screen.findByText("Type an id or a title")).toBeTruthy();
+  });
+
   it("REQ-UI-154 removes its listener on unmount", () => {
     stub();
     const { unmount } = render(<JumpPalette />);
