@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "@/app/Link";
 import { StateGlyph } from "@/components/StateGlyph";
 import { Hint } from "@/components/ui/tooltip";
@@ -7,7 +8,8 @@ import { statusVerdict } from "@/features/reports/status/verdict";
 import { DEFINITIONS } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
 import type { Named, ProjectOverview } from "./api";
-import { useKeyed, type Answer } from "./useKeyed";
+import { isReadableStatus } from "./statusGuard";
+import { createSlots, useKeyed, type Answer } from "./useKeyed";
 
 const LIMIT = 4;
 
@@ -18,9 +20,11 @@ function parse(key: string): string[] {
   return Array.isArray(parsed) ? parsed.map(String) : ["", ""];
 }
 
-function loadStatus(key: string): Promise<StatusReport> {
+async function loadStatus(key: string): Promise<StatusReport> {
   const [project, id] = parse(key);
-  return fetchStatus(project, { kind: "milestone", id });
+  const report = await fetchStatus(project, { kind: "milestone", id });
+  if (!isReadableStatus(report)) throw new Error("Could not load the status report (unexpected response)");
+  return report;
 }
 
 /** Keyed by milestone, not only by project: a new milestone must not read a list loaded before it was named (REQ-OVERVIEW-010). */
@@ -63,8 +67,10 @@ function Status({ id, status, forecast }: { id: string; status: Answer<StatusRep
 export function MilestoneLines({ projects }: { projects: readonly ProjectOverview[] }) {
   const readable = projects.filter((p) => p.error === null);
   const keys = readable.flatMap((p) => (p.milestone === null ? [] : [keyOf(p.name, p.milestone)]));
-  const status = useKeyed(keys, loadStatus, LIMIT);
-  const forecast = useKeyed(keys.filter((key) => status.get(key)?.status === "ok"), loadForecast, LIMIT);
+  const [statusSlots] = useState(() => createSlots(LIMIT));
+  const [forecastSlots] = useState(() => createSlots(LIMIT));
+  const status = useKeyed(keys, loadStatus, statusSlots);
+  const forecast = useKeyed(keys.filter((key) => status.get(key)?.status === "ok"), loadForecast, forecastSlots);
   return (
     <section className="flex min-w-0 flex-col gap-2">
       <h2 className="text-xl font-semibold">

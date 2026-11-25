@@ -20,7 +20,9 @@ type Backend = {
 };
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
-const pending = () => new Promise<Response>(() => undefined);
+const unanswered: (() => void)[] = [];
+/** A reply that stays open until the test ends, so that it holds no gate slot in the next test. */
+const pending = () => new Promise<Response>((_, reject) => unanswered.push(() => reject(new Error("the test ended"))));
 
 const project = (name: string, over: Partial<ProjectOverview> = {}): ProjectOverview => ({
   name,
@@ -85,9 +87,11 @@ const tick = (ms = 0) => act(() => vi.advanceTimersByTimeAsync(ms));
 const section = (heading: string) => screen.getByRole("heading", { name: heading }).closest("section") ?? document.body;
 const rowsIn = (heading: string) => within(section(heading)).queryAllByRole("listitem");
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   vi.useRealTimers();
+  unanswered.splice(0).forEach((end) => end());
+  await new Promise((resolve) => setTimeout(resolve, 0)); // the gate slots outlive the page: let its requests end
   vi.unstubAllGlobals();
 });
 
@@ -362,6 +366,120 @@ describe("OverviewPage gates", () => {
     page();
     expect(await screen.findByRole("heading", { name: "Gates not met (0)" })).toBeInTheDocument();
     expect(peak).toBe(4);
+  });
+});
+
+describe("OverviewPage gates after the page was left", () => {
+  it("REQ-OVERVIEW-008 at most 4 workflow requests are open when the page is opened again, and the new page finishes", async () => {
+    const open: (() => void)[] = [];
+    let peak = 0;
+    const { calls } = stub({
+      projects: [project("a", { epics: Array.from({ length: 14 }, (_, i) => named(`e-${i}`)) })],
+      workflow: () =>
+        new Promise((resolve) => {
+          const answer = () => {
+            open.splice(open.indexOf(answer), 1);
+            resolve(json(workflow()));
+          };
+          open.push(answer);
+          peak = Math.max(peak, open.length);
+        }),
+    });
+    const asked = () => calls.filter((url) => url.endsWith("/workflow"));
+    const first = page();
+    await waitFor(() => expect(open).toHaveLength(4));
+    first.unmount();
+    page();
+    expect(await screen.findAllByText("Checking 0 of 14")).toHaveLength(2);
+    expect(open).toHaveLength(4);
+    expect(asked()).toHaveLength(4);
+    for (let i = 0; i < 40 && screen.queryByRole("heading", { name: "Gates not met (0)" }) === null; i += 1) {
+      await act(async () => {
+        open[0]?.();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+    }
+    expect(screen.getByRole("heading", { name: "Gates not met (0)" })).toBeInTheDocument();
+    expect(peak).toBe(4);
+    expect(asked()).toHaveLength(4 + 14); // the page that was left started nothing more
+  });
+
+  it("REQ-OVERVIEW-007 verdicts and forecasts do not wait for a gate slot", async () => {
+    stub({ projects: [project("a", { milestone: named("m1"), epics: Array.from({ length: 5 }, (_, i) => named(`e-${i}`)) })], workflow: pending });
+    page();
+    expect(await screen.findByText("On track")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("Checking forecast")).toBeNull());
+    expect(screen.getAllByText("Checking 0 of 5")).toHaveLength(2);
+  });
+});
+
+describe("OverviewPage status answer", () => {
+  const report = onTrack("m1");
+  const two = () => [project("a", { milestone: named("m1"), blocked: [blocked("t-3")] }), project("b", { milestone: named("m2") })];
+  const milestone = report.milestones[0];
+
+  it.each<[string, object]>([
+    ["kpis without its parts", { kpis: {} }],
+    ["a null epic", { epics: [null] }],
+    ["an epic without child counts", { epics: [{ status: "open", points: 1 }] }],
+    ["an epic with string points", { epics: [{ status: "open", points: "1", child_counts: { total: 0 } }] }],
+    ["a null milestone", { milestones: [null] }],
+    ["a milestone without an end", { milestones: [{ ...milestone, end: null }] }],
+    ["a milestone with an end that is not a date", { milestones: [{ ...milestone, end: "soon" }] }],
+    ["a milestone with a numeric closed_on", { milestones: [{ ...milestone, closed_on: 5 }] }],
+    ["a numeric milestone id", { milestone: 5 }],
+    ["a today that is not a date", { today: "today" }],
+    ["a string scope", { kpis: { ...report.kpis, beads: { ...report.kpis.beads, scope: "14" } } }],
+    ["a string points scope", { kpis: { ...report.kpis, points: { ...report.kpis.points, scope: "14" } } }],
+    ["a string pace", { kpis: { ...report.kpis, pace: { ...report.kpis.pace, pace: "2" } } }],
+    ["a null blocked count", { kpis: { ...report.kpis, blocked: { count: null, oldest_days: null } } }],
+  ])("REQ-OVERVIEW-007 a status answer with %s is an error on its line only", async (_, over) => {
+    stub({ projects: two(), status: (name, id) => json(name === "a" ? { ...report, ...over } : onTrack(id)) });
+    page();
+    expect(await screen.findByText("On track")).toBeInTheDocument();
+    const [a, b] = rowsIn("Milestones");
+    await waitFor(() => expect(a).toHaveTextContent("Could not load the status report (unexpected response)"));
+    expect(b).toHaveTextContent("On track");
+    expect(screen.getByRole("link", { name: /t-3/ })).toBeInTheDocument();
+  });
+
+  it("REQ-OVERVIEW-007 null figures are accepted where the report allows them", async () => {
+    const nulls = {
+      ...report,
+      kpis: {
+        beads: { done: null, scope: null, done_week_ago: null, scope_week_ago: null },
+        points: { done: null, scope: null, at_kickoff: null, done_week_ago: null },
+        pace: { pace: null, pace_needed: null, pace_week_ago: null },
+        blocked: { count: 0, oldest_days: null },
+        rework: { rate: null, rate_week_ago: null },
+      },
+      epics: report.epics.map((e) => ({ ...e, points: null })),
+    };
+    stub({ projects: [project("a", { milestone: named("m1") })], status: () => json(nulls) });
+    page();
+    expect(await screen.findByText("On track")).toBeInTheDocument();
+  });
+
+  it("REQ-OVERVIEW-007 the sentence has no estimate part before the forecast, and it and the unsplit epics after", async () => {
+    let answer: (response: Response) => void = () => undefined;
+    const unsplit = report.epics.map((e) => ({ ...e, child_counts: { ...e.child_counts, total: 0 } }));
+    stub({
+      projects: [project("a", { milestone: named("m1") })],
+      status: () => json({ ...report, epics: unsplit }),
+      milestones: () => new Promise((resolve) => { answer = resolve; }),
+    });
+    page();
+    const lead = "At today's pace the 4 open beads close around 25 Nov, 5 working days before the end.";
+    expect(await screen.findByText(lead)).toBeInTheDocument();
+    answer(json(list([entry("m1", { finish: "2026-11-30" })])));
+    expect(await screen.findByText(`${lead} The epic estimates finish on 30 Nov; 1 epic is not split into tasks yet.`)).toBeInTheDocument();
+  });
+
+  it("REQ-OVERVIEW-007 a report of another milestone reads Status not available", async () => {
+    stub({ projects: [project("a", { milestone: named("m1") })], status: () => json(onTrack("m9")) });
+    page();
+    expect(await screen.findByText("Status not available")).toBeInTheDocument();
+    expect(screen.queryByText("On track")).toBeNull();
   });
 });
 

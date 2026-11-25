@@ -5,9 +5,10 @@ import type { ProjectOverview } from "./api";
 import { AttentionSection } from "./AttentionSection";
 import { BeadLink } from "./BeadLink";
 import { gateIssues, waiversOf } from "./gates";
-import { useKeyed, type Answer } from "./useKeyed";
+import { createSlots, useKeyed, type Answer } from "./useKeyed";
 
-const LIMIT = 4;
+/** Shared by every mount: requests of a page that was left or refreshed still count (REQ-OVERVIEW-008). */
+const GATE_SLOTS = createSlots(4);
 
 function load(key: string): Promise<EpicWorkflow> {
   const parsed: unknown = JSON.parse(key);
@@ -18,7 +19,7 @@ function load(key: string): Promise<EpicWorkflow> {
 /** REQ-OVERVIEW-008: the workflow of each epic in progress, asked once, at most 4 at a time. */
 export function useGates(projects: readonly ProjectOverview[]) {
   const epics = projects.flatMap((p) => p.epics.map((epic) => ({ project: p.name, epic, key: JSON.stringify([p.name, epic.id]) })));
-  const answers = useKeyed(epics.map((e) => e.key), load, LIMIT);
+  const answers = useKeyed(epics.map((e) => e.key), load, GATE_SLOTS);
   const done = epics.filter((e) => answers.has(e.key)).length;
   return { epics, answers, pending: done < epics.length ? `Checking ${done} of ${epics.length}` : null };
 }
