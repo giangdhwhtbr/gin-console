@@ -574,3 +574,52 @@ The Assignee filter of the Beads page and of the Beads tab of a milestone page S
 - GIVEN the link `/beads?project=example&assignee=me` opened in a browser that holds the email `ann@example.com`
 - WHEN the Beads page loads
 - THEN it shows the beads assigned to `ann` or `ann@example.com`, with "Me" selected
+
+### REQ-BEADS-025: Next command of a bead
+Type: business-rule
+WHEN given a bead, the signed-in email, and, for an epic, the workflow stage reported by `gin state --workflow-id <epic>` (REQ-UI-120), the console SHALL name one next command or none, by the first rule that matches:
+- none when the bead is closed or deferred, is blocked (REQ-BEADS-021), is a milestone, or is a merge gate (REQ-BEADS-019);
+- for an epic, `/gin:<stage> <id>` when the stage is `discuss`, `plan`, `orchestrate` or `ship`, `/gin:execute <id>` when the stage is `execute`, else none (an unknown, missing or failed stage);
+- `gin task update <id> --claim` when the bead is ready and has no assignee or is assigned to the same person (REQ-BEADS-023) as the email;
+- `/gin:execute <id>` when the bead is in progress or hooked and assigned to the same person as the email;
+- none otherwise, including a bead in progress for another person.
+
+#### Scenario: Ready and unclaimed
+- GIVEN a ready task `t-1` without an assignee and the email `ann@x.com`
+- WHEN its next command is named
+- THEN it is `gin task update t-1 --claim`
+
+#### Scenario: Ready and mine
+- GIVEN a ready task `t-2` assigned to `ann` and the email `ann@x.com`
+- WHEN its next command is named
+- THEN it is `gin task update t-2 --claim`
+
+#### Scenario: In progress and mine
+- GIVEN an in-progress task `t-3` assigned to `ANN@other.com` and the email `ann@x.com`
+- WHEN its next command is named
+- THEN it is `/gin:execute t-3`
+
+#### Scenario: In progress for another person
+- GIVEN an in-progress task `t-4` assigned to `bob` and the email `ann@x.com`
+- WHEN its next command is named
+- THEN there is none
+
+#### Scenario: Ready but assigned to another person
+- GIVEN a ready task `t-5` assigned to `bob` and the email `ann@x.com`
+- WHEN its next command is named
+- THEN there is none
+
+#### Scenario: Blocked
+- GIVEN a task `t-6` whose status is `in_progress`, assigned to `ann`, with an open blocker
+- WHEN its next command is named
+- THEN there is none
+
+#### Scenario: Epic by stage
+- GIVEN an open epic `e-1` whose workflow stage is `plan`
+- WHEN its next command is named
+- THEN it is `/gin:plan e-1`, and with the stage `execute` it is `/gin:execute e-1`, and with the stage `progress` or an unknown stage there is none
+
+#### Scenario: Merge gate and milestone
+- GIVEN a merge gate `g-1` and a milestone `m-1`
+- WHEN their next commands are named
+- THEN there is none for either
