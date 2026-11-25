@@ -111,6 +111,39 @@ describe("App routing", () => {
     expect(afterRefresh).toBeGreaterThanOrEqual(afterFirst);
   });
 
+  it("REQ-UI-154 REQ-UI-096 a palette open while Refresh runs is gone when it ends, and one Ctrl+K loads once", async () => {
+    window.history.replaceState(null, "", "/nowhere");
+    let finish: () => void = () => undefined;
+    const pending = new Promise<Response>((resolve) => {
+      finish = () => resolve(json({}));
+    });
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>((url) =>
+      url === "/api/refresh" ? pending : Promise.resolve(json([])),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const keys = vi.spyOn(console, "error");
+    render(<App />);
+    const ctrlK = () =>
+      act(() => {
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true, bubbles: true, cancelable: true }));
+      });
+    await userEvent.click(screen.getAllByRole("button", { name: "Refresh data" })[0]);
+    ctrlK();
+    expect(await screen.findByRole("dialog", { name: "Jump to a bead" })).toBeTruthy();
+    await act(async () => {
+      finish();
+      await pending;
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    const loads = () => fetchMock.mock.calls.filter(([url]) => url === "/api/projects/beads").length;
+    const before = loads();
+    ctrlK();
+    await screen.findByText("Type an id or a title");
+    expect(loads() - before).toBe(1);
+    expect(keys.mock.calls.some((c) => String(c[0]).includes("same key"))).toBe(false);
+    keys.mockRestore();
+  });
+
   it("REQ-UI-055 opens Milestones from the sidebar without a reload", async () => {
     window.history.replaceState(null, "", "/beads");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));

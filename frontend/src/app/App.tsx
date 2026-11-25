@@ -58,8 +58,8 @@ export function App() {
   return (
     <HintProvider>
     <Layout onRefreshed={() => setEpoch((n) => n + 1)}>
-      <JumpPalette key={epoch} />
       <Fragment key={epoch}>
+      <JumpPalette />
       {graph !== null ? (
         <OldGraphLink key={`${graph.project}/${graph.id ?? ""}`} project={graph.project} id={graph.id} select={select} />
       ) : milestone !== null ? (
