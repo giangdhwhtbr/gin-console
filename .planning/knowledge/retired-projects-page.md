@@ -4,11 +4,11 @@
 Once the project switcher in the sidebar and phone bar chose the current project (epic gin-console-rm-nav-shell), the Projects page at `/`, the "All projects" choice of Reports and the project select of My Tasks duplicated it. Epic gin-console-k4l (2026-11-23) removed them from both stacks.
 
 **Decision/Solution**
-- **Landing:** `/` renders `frontend/src/app/HomeRedirect.tsx`, which shows "Loading…" and then replaces the address with `/my-tasks?project=<current>` (`resolveProject` of `?project=`, tab, favorite, first), or `/my-tasks` with no configured project, without a history entry (REQ-UI-099). The Main navigation has four links, Beads, My Tasks, Milestones and Reports, each with `?project=`.
+- **Landing (replaced on 2026-11-25 by the Overview, see [overview-page](overview-page.md)):** `/` rendered `frontend/src/app/HomeRedirect.tsx`, which shows "Loading…" and then replaces the address with `/my-tasks?project=<current>` (`resolveProject` of `?project=`, tab, favorite, first), or `/my-tasks` with no configured project, without a history entry (REQ-UI-099). The Main navigation has four links, Beads, My Tasks, Milestones and Reports, each with `?project=`.
 - **Reports and My Tasks** read only the current project and have no project select. `project=all` is the retired Reports value: `isUnknownProject` lets it through and the page resolves it to the current project. `switchProject` keeps `view`, `closed`, `tab`, `days` and `q`, so on My Tasks a project change drops `milestone`.
 - **My Tasks** has no Project column. An empty list says "No tasks assigned to <email>" and links "Open the Beads page" to `/beads?project=<current>` (REQ-UI-100).
 - **Backend:** `GET /api/projects` and its `Collector`, `collect_workflow`, `build_project` and the `Project`, `Workflow`, `Workspace`, `WorkspaceRepo` and `Team` models are gone. `/api/projects/beads` (REQ-SERVER-010) stays, with `Epic.workflow` always null. `collect_epic_workflow`, `run_json` and `CollectError` stay in `projects/collect.py`. Reports lost `ALL`, `ProjectError` and `Report.errors`, so `/api/reports?project=all` answers 404.
-- **Origin:** `origin.ts` has no `projects` kind, and `rememberOrigin` always takes a project.
+- **Origin:** `origin.ts` has no `projects` kind. `rememberOrigin` takes a project, or null for the Overview.
 - **Bugs found on the way:**
   - The phone top bar overflowed 360px with a long project name. The bar switcher is now `min-w-0 shrink`, and the brand word is `max-sm:sr-only`.
   - `cn` dropped `text-primary-foreground` next to the custom size `text-13`. `frontend/src/lib/utils.ts` builds `cn` with `createCn` and a `font-size` class group for `13`.

@@ -82,3 +82,21 @@ The config SHALL accept an optional top-level `beads` section whose `pull_interv
 - GIVEN a config with `beads: {pull_interval: 30s}`
 - WHEN the console starts
 - THEN it exits non-zero and the message names `beads.pull_interval`
+
+### REQ-CONFIG-007: Overview settings
+The config SHALL accept an optional top-level `overview` section whose `aging_days` is an integer of at least 1, default 3; IF `aging_days` is anything else, THEN the console SHALL exit with a non-zero status and a message naming `overview.aging_days` (REQ-CONFIG-003).
+
+#### Scenario: Default
+- GIVEN a config without `overview`
+- WHEN the console starts
+- THEN `aging_days` is 3
+
+#### Scenario: Set
+- GIVEN a config with `overview: {aging_days: 5}`
+- WHEN the console starts
+- THEN `aging_days` is 5
+
+#### Scenario: Invalid
+- GIVEN a config with `overview: {aging_days: 0}`
+- WHEN the console starts
+- THEN it exits non-zero and the message names `overview.aging_days`
