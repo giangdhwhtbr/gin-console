@@ -1,3 +1,5 @@
+import type { LoadState } from "@/features/milestones/useLoad";
+import type { EpicWorkflow } from "@/features/projects/api";
 import type { BeadDetail } from "./api";
 import { laneRows, trackRows } from "./epicOverview";
 import { LaneSummary } from "./LaneSummary";
@@ -8,7 +10,21 @@ import type { BeadsState } from "./useBeads";
 import { WorkflowCard } from "./WorkflowCard";
 
 /** REQ-UI-120, REQ-UI-121: the cards, the Lanes summary (when the epic has lanes) and the Tracks table above the description. */
-export function EpicOverview({ project, bead, beads, lanesHref }: { project: string; bead: BeadDetail; beads: BeadsState; lanesHref: string }) {
+export function EpicOverview({
+  project,
+  bead,
+  beads,
+  lanesHref,
+  workflow,
+  retry,
+}: {
+  project: string;
+  bead: BeadDetail;
+  beads: BeadsState;
+  lanesHref: string;
+  workflow: LoadState<EpicWorkflow>;
+  retry: () => void;
+}) {
   const loaded = beads.status === "ok" ? beads.beads : null;
   const rows = loaded === null ? [] : laneRows(loaded, bead.id, new Date());
   const lanes = rows.some((r) => r.lane !== null);
@@ -16,7 +32,7 @@ export function EpicOverview({ project, bead, beads, lanesHref }: { project: str
     <>
       <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
         <ProgressCard bead={bead} beads={beads} />
-        <WorkflowCard project={project} id={bead.id} />
+        <WorkflowCard workflow={workflow} retry={retry} />
         <MilestoneCard project={project} bead={bead} />
       </div>
       {loaded !== null && lanes && <LaneSummary beads={loaded} epicId={bead.id} rows={rows} lanesHref={lanesHref} />}

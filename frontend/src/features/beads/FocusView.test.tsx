@@ -366,4 +366,18 @@ describe("REQ-UI-148 details panel on the Focus view", () => {
     expect(await within(panel).findByRole("link", { name: "Open page" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Show children" })).toBeNull();
   });
+
+  it("REQ-UI-065 cards show Blocked by the first open blocker and the count of more", async () => {
+    window.history.replaceState(null, "", "/beads?project=alpha&view=focus");
+    stubBeads(() =>
+      json([
+        bead("k-1", { title: "Schema", status: "in_progress" }),
+        bead("k-2", { title: "API", status: "in_progress" }),
+        bead("k-3", { title: "Waiting", blocked: true, blocked_by: ["k-2", "k-1"] }),
+      ]),
+    );
+    render(<BeadsPage />);
+    await screen.findByRole("link", { name: "Waiting" });
+    expect(screen.getByText("Blocked by Schema +1")).toBeInTheDocument();
+  });
 });

@@ -5,6 +5,7 @@ import { PriorityPill } from "@/components/PriorityPill";
 import { SizeBadge } from "@/components/SizeBadge";
 import { cn } from "@/lib/utils";
 import type { BeadSummary } from "./api";
+import { blockerSummary } from "./blockers";
 import { AssigneeName } from "./AssigneeName";
 import { CountBadge } from "./CountBadge";
 import { KindBadge } from "./KindBadge";
@@ -26,7 +27,18 @@ export type CardChoice = {
 
 const stop = (event: { stopPropagation: () => void }) => event.stopPropagation();
 
-export function BeadCard({ project, bead, choice }: { project: string; bead: BeadSummary; choice: CardChoice }) {
+export function BeadCard({
+  project,
+  bead,
+  choice,
+  known,
+}: {
+  project: string;
+  bead: BeadSummary;
+  choice: CardChoice;
+  known?: ReadonlyMap<string, BeadSummary>;
+}) {
+  const blocker = bead.blocked ? blockerSummary(bead, known ?? new Map()) : null;
   const short = shortId(bead.id);
   const selected = choice.selected === bead.id;
   const onKeyDown = (event: KeyboardEvent<HTMLLIElement>) => {
@@ -62,6 +74,12 @@ export function BeadCard({ project, bead, choice }: { project: string; bead: Bea
           {bead.title}
         </Link>
       </span>
+      {blocker !== null && (
+        <p className="m-0 text-xs text-muted-foreground wrap-anywhere">
+          {`Blocked by ${blocker.label}`}
+          {blocker.more > 0 && ` +${blocker.more}`}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <StateMark bead={bead} />
         <TypeBadge type={bead.issue_type} />

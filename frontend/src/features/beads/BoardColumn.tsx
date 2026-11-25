@@ -14,6 +14,7 @@ export function BoardColumn({
   empty = "No beads",
   footer = null,
   choice,
+  known,
 }: {
   title: string;
   rule?: DefinitionKey;
@@ -23,6 +24,7 @@ export function BoardColumn({
   empty?: string;
   footer?: ReactNode;
   choice: CardChoice;
+  known?: ReadonlyMap<string, BeadSummary>;
 }) {
   const prep = beads.filter((b) => isPrep(b.labels)).length;
   const own = beads.length - prep;
@@ -45,7 +47,7 @@ export function BoardColumn({
       ) : (
         <ul className="flex flex-col gap-2">
           {beads.map((bead) => (
-            <BeadCard key={bead.id} project={project} bead={bead} choice={choice} />
+            <BeadCard key={bead.id} project={project} bead={bead} choice={choice} known={known} />
           ))}
         </ul>
       )}
