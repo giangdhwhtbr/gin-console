@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { SECTION_LABELS, SECTIONS, legacyTarget, sectionOf, sectionPath } from "./sections";
 
 describe("report sections", () => {
-  it("REQ-UI-095 lists Status, Team, Delivery, Velocity and Rework in that order", () => {
-    expect(SECTIONS).toEqual(["status", "team", "delivery", "velocity", "rework"]);
-    expect(SECTIONS.map((s) => SECTION_LABELS[s])).toEqual(["Status", "Team", "Delivery", "Velocity", "Rework"]);
+  it("REQ-UI-095 lists Status, Team, Delivery, Velocity, Rework and Bugs in that order", () => {
+    expect(SECTIONS).toEqual(["status", "team", "delivery", "velocity", "rework", "bugs"]);
+    expect(SECTIONS.map((s) => SECTION_LABELS[s])).toEqual(["Status", "Team", "Delivery", "Velocity", "Rework", "Bugs"]);
   });
 
   it("REQ-UI-095 each section has its own path with the same query", () => {

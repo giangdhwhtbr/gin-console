@@ -9,6 +9,7 @@ import { detail, entry, list } from "@/features/milestones/milestoneFixtures";
 import { ReportsPage } from "./ReportsPage";
 import { useSections } from "./sectionStore";
 import { report } from "./reportFixtures";
+import { bugsReport } from "./bugs/bugsFixtures";
 import { periodStatusReport, statusReport as statusFixture } from "./status/statusFixtures";
 import type { StatusReport } from "./status/statusApi";
 import { teamReport as teamFixture, teamTotals } from "./team/teamFixtures";
@@ -42,6 +43,7 @@ const stub = (
   team: (url: URL) => Response | Promise<Response> = (url) => json(teamFor(url)),
   milestones: (url: URL) => Response | Promise<Response> = () => json(list([entry("m1")], { days_per_point: { value: 1.4, measured_epics: 6, assumed: false } })),
   status: (url: URL) => Response | Promise<Response> = (url) => json(statusFor(url)),
+  bugs: (url: URL) => Response | Promise<Response> = () => json(bugsReport()),
 ) => {
   const mock = vi.fn((input: RequestInfo | URL) => {
     const url = new URL(typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url, "http://localhost");
@@ -49,6 +51,7 @@ const stub = (
     if (url.pathname === "/api/reports") return Promise.resolve(handler(url));
     if (url.pathname === "/api/reports/team") return Promise.resolve(team(url));
     if (url.pathname === "/api/reports/status") return Promise.resolve(status(url));
+    if (url.pathname === "/api/reports/bugs") return Promise.resolve(bugs(url));
     if (url.pathname === "/api/milestones") return Promise.resolve(milestones(url));
     if (url.pathname.startsWith("/api/milestones/")) return Promise.resolve(json(detail([])));
     return Promise.resolve(json({}, 404));
@@ -75,6 +78,7 @@ afterEach(() => {
 
 const teamCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports/team"));
 const statusCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports/status"));
+const bugsCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports/bugs"));
 const reportCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/reports?"));
 const milestoneCalls = (mock: ReturnType<typeof stub>) => requested(mock).filter((u) => u.startsWith("/api/milestones"));
 
@@ -401,15 +405,15 @@ describe("ReportsPage", () => {
     expect(milestoneCalls(mock)).toHaveLength(2);
   });
 
-  it("REQ-UI-095 the row of links reads Status, Team, Delivery, Velocity and Rework, each going to its path with the same query", async () => {
+  it("REQ-UI-095 the row of links reads Status, Team, Delivery, Velocity, Rework and Bugs, each going to its path with the same query", async () => {
     stub();
     open("/reports/delivery?project=alpha&days=7");
     await screen.findByText("Beads closed");
     const links = within(screen.getByRole("navigation", { name: "Report sections" })).getAllByRole("link");
-    const order = ["Status", "Team", "Delivery", "Velocity", "Rework"];
+    const order = ["Status", "Team", "Delivery", "Velocity", "Rework", "Bugs"];
     links.forEach((l, i) => expect(l.textContent?.startsWith(order[i])).toBe(true));
     expect(links.map((l) => l.getAttribute("href"))).toEqual(
-      ["status", "team", "delivery", "velocity", "rework"].map((s) => `/reports/${s}?project=alpha&days=7`),
+      ["status", "team", "delivery", "velocity", "rework", "bugs"].map((s) => `/reports/${s}?project=alpha&days=7`),
     );
     expect(links[2]).toHaveAttribute("aria-current", "page");
   });
@@ -439,7 +443,7 @@ describe("ReportsPage", () => {
   });
 
   it("REQ-REPORTS-033 every section shows the scope select, and the page shows no tokens, cost or budget", async () => {
-    for (const section of ["status", "team", "delivery", "velocity", "rework"]) {
+    for (const section of ["status", "team", "delivery", "velocity", "rework", "bugs"]) {
       stub();
       open(`/reports/${section}?project=alpha&milestone=m2`);
       expect(await scopeSelect()).toHaveDisplayValue("Milestone two");
@@ -505,6 +509,87 @@ describe("ReportsPage", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.getByRole("heading", { name: "Checkout v2" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Milestone one" })).toBeNull();
+  });
+
+  it("REQ-UI-095 bugs section and headline: /reports/bugs shows the Bugs panel and its headline", async () => {
+    stub(undefined, undefined, undefined, undefined, () => json(bugsReport({ figures: { ...bugsReport().figures, open_now: 25 } })));
+    open("/reports/bugs?project=alpha&days=30");
+    const panel = await screen.findByRole("region", { name: "Bugs" });
+    expect(await within(panel).findByRole("heading", { name: "Open bugs" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /Bugs\s*25 open bugs/ })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("REQ-UI-095 bugs section and headline: opening Bugs from Rework requests no new bugs report", async () => {
+    const mock = stub();
+    open("/reports/rework?project=alpha&days=7");
+    await screen.findByRole("link", { name: /Bugs\s*3 open bugs/ });
+    const before = bugsCalls(mock).length;
+    await userEvent.click(sectionLink(/^Bugs/));
+    expect(at()).toBe("/reports/bugs?project=alpha&days=7");
+    expect(await screen.findByRole("region", { name: "Bugs" })).toBeInTheDocument();
+    expect(bugsCalls(mock)).toHaveLength(before);
+    expect(before).toBe(1);
+  });
+
+  it("REQ-REPORTS-033 the bugs report is requested for the scope, whatever the section", async () => {
+    const mock = stub();
+    open("/reports/delivery?project=alpha&days=7");
+    await screen.findByText("Beads closed");
+    await waitFor(() => expect(bugsCalls(mock)).toEqual(["/api/reports/bugs?project=alpha&days=7"]));
+  });
+
+  it("REQ-REPORTS-033 Default scope in the URL: the bugs report is asked for once and its headline stays when the milestone is written", async () => {
+    const mock = stub(undefined, undefined, undefined, undefined, (url) =>
+      json(bugsReport({ milestone: url.searchParams.get("milestone") ?? "m2", figures: { ...bugsReport().figures, open_now: 4 } })),
+    );
+    open("/reports/status?project=alpha");
+    const headline = /Bugs\s*4 open bugs/;
+    await screen.findByRole("link", { name: headline });
+    await waitFor(() => expect(at()).toBe("/reports/status?project=alpha&milestone=m2"));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.getByRole("link", { name: headline })).toBeInTheDocument();
+    expect(bugsCalls(mock)).toHaveLength(1);
+  });
+
+  it("REQ-UI-095 the Bugs headline is absent while the bugs report loads and after it fails", async () => {
+    stub(undefined, undefined, undefined, undefined, () => new Promise<Response>(() => {}));
+    open("/reports/bugs?project=alpha&days=30");
+    expect(await screen.findByText("Loading bugs…")).toBeInTheDocument();
+    expect(sectionLink(/^Bugs$/)).toHaveAccessibleName("Bugs");
+    cleanup();
+    stub(undefined, undefined, undefined, undefined, () => json({ error: "bugs boom" }, 502));
+    open("/reports/bugs?project=alpha&days=30");
+    expect(await screen.findByText("bugs boom")).toBeInTheDocument();
+    expect(sectionLink(/^Bugs$/)).toHaveAccessibleName("Bugs");
+  });
+
+  it("REQ-REPORTS-044 Failure: retries after 502 and renders the Bugs section", async () => {
+    let calls = 0;
+    const mock = stub(undefined, undefined, undefined, undefined, () => (++calls === 1 ? json({ error: "bugs boom" }, 502) : json(bugsReport())));
+    open("/reports/bugs?project=alpha&days=30");
+    expect(await screen.findByText("The bugs report could not be loaded")).toBeInTheDocument();
+    expect(screen.getByText("bugs boom")).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("heading", { name: "Open bugs" })).toBeInTheDocument();
+    expect(bugsCalls(mock)).toHaveLength(2);
+  });
+
+  it("REQ-REPORTS-044 Late answer: the report for 30 days arriving after the one for 7 days is not shown", async () => {
+    let release: (response: Response) => void = () => {};
+    stub(undefined, undefined, undefined, undefined, (url) =>
+      url.searchParams.get("days") === "30"
+        ? new Promise<Response>((resolve) => {
+            release = resolve;
+          })
+        : json(bugsReport({ figures: { ...bugsReport().figures, open_now: 7 } })),
+    );
+    open("/reports/bugs?project=alpha&days=30");
+    await userEvent.selectOptions(await scopeSelect(), "Last 7 days");
+    expect(await screen.findByRole("link", { name: /Bugs\s*7 open bugs/ })).toBeInTheDocument();
+    release(json(bugsReport({ figures: { ...bugsReport().figures, open_now: 99 } })));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.getByRole("link", { name: /Bugs\s*7 open bugs/ })).toBeInTheDocument();
+    expect(screen.queryByText(/99 open bugs/)).toBeNull();
   });
 
   it("REQ-UI-093 late answer: drops the answer for a scope no longer selected", async () => {
@@ -759,7 +844,7 @@ describe("ReportsPage", () => {
     const { result } = renderHook(() => useSections());
     await waitFor(() => expect(result.current.sections.find((s) => s.section === "delivery")?.headline).not.toBe(""));
     expect(result.current.selected).toBe("delivery");
-    expect(result.current.sections.map((s) => s.section)).toEqual(["status", "team", "delivery", "velocity", "rework"]);
+    expect(result.current.sections.map((s) => s.section)).toEqual(["status", "team", "delivery", "velocity", "rework", "bugs"]);
     expect(result.current.sections.find((s) => s.section === "rework")?.href).toBe("/reports/rework?project=alpha&days=7");
   });
 
@@ -769,7 +854,7 @@ describe("ReportsPage", () => {
     const view = render(<ReportsPage />);
     await screen.findByRole("navigation", { name: "Report sections" });
     const { result } = renderHook(() => useSections());
-    expect(result.current.sections).toHaveLength(5);
+    expect(result.current.sections).toHaveLength(6);
     view.unmount();
     expect(result.current.sections).toHaveLength(0);
   });

@@ -252,6 +252,7 @@ describe("App routing", () => {
     ["/reports/team?project=alpha", "Reports · Team · alpha · gin-console"],
     ["/reports/delivery?project=alpha", "Reports · Delivery · alpha · gin-console"],
     ["/reports/velocity?project=alpha", "Reports · Velocity · alpha · gin-console"],
+    ["/reports/bugs?project=alpha", "Reports · Bugs · alpha · gin-console"],
     ["/my-tasks", "My work · gin-console"],
     ["/my-tasks?project=alpha", "My work · alpha · gin-console"],
   ])("REQ-UI-063 titles %s", async (path, title) => {
