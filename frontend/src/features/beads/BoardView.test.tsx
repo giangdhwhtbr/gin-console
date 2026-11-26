@@ -522,7 +522,7 @@ describe("REQ-UI-148 details panel on the Board", () => {
     render(<BeadsPage />);
     const panel = await screen.findByRole("complementary", { name: "Bead details" });
     expect(await within(panel).findByRole("link", { name: "Open page" })).toBeInTheDocument();
-    expect(within(panel).getByText("e-1")).toBeInTheDocument();
+    expect(await within(panel).findByText("e-1")).toBeInTheDocument(); // the bead loads after the panel shows "Open page"
     expect(within(panel).queryByText("Next")).toBeNull();
     expect(within(panel).queryByText(/\/gin:/)).toBeNull();
   });

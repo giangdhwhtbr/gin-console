@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-OVERVIEW-011@de69ba7f
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-26T02-30-19
+- **Checked:** b0dcaa14
 
 **Preconditions:**
 - The window is 360px wide
@@ -16,4 +19,4 @@
 **Expected:**
 - The scroll width of the page does not exceed its client width
 - The row shows the bead, project, assignee, wait, blocker and the blocker's person
-- The five links of the "Main" navigation are at least 44px high and wide and their labels are not clipped
+- The six links of the "Main" navigation are at least 44px high and wide and their labels are not clipped

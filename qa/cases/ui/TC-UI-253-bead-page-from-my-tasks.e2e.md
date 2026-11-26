@@ -1,10 +1,10 @@
 # TC-UI-253: Bead page from My work
 
-- **REQ:** REQ-UI-057@b5f69a5b
+- **REQ:** REQ-UI-057@f37002dd
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 855d587c
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** b585b974
 
 **Preconditions:**
 - Project `alpha` has bead `a-1` assigned to the user, who is shown in My work

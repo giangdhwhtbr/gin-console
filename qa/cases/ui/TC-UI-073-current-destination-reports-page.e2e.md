@@ -1,10 +1,10 @@
 # TC-UI-073: Current destination: Reports page
 
-- **REQ:** REQ-UI-057@b5f69a5b
+- **REQ:** REQ-UI-057@f37002dd
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 179ac7b7
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** d33995fb
 
 **Preconditions:**
 - Project `alpha` is stubbed

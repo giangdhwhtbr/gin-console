@@ -1,10 +1,10 @@
 # TC-UI-230: Phone
 
-- **REQ:** REQ-UI-123@74fc3d51
+- **REQ:** REQ-UI-123@1d5f1e95
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 93cd7656
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 686fc3e8
 
 **Preconditions:**
 - Project `a` is configured

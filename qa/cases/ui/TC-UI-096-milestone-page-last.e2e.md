@@ -1,10 +1,10 @@
 # TC-UI-096: Milestone page last
 
-- **REQ:** REQ-UI-073@747662fe
+- **REQ:** REQ-UI-073@9e85a65b
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** cb8c6f6a
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** dad96c30
 
 **Preconditions:**
 - Project `a` with milestone `m2` and bead `a-1` under it with a dependency so that it is a node of the Graph view

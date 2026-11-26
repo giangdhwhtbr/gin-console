@@ -1,10 +1,10 @@
 # TC-UI-092: From bead to bead
 
-- **REQ:** REQ-UI-073@747662fe
+- **REQ:** REQ-UI-073@9e85a65b
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 99b4eaff
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 2c0754d4
 
 **Preconditions:**
 - Project `a` with bead `a-1` related to bead `a-2`

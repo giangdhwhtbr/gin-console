@@ -1,10 +1,10 @@
 # TC-UI-088: No remembered place
 
-- **REQ:** REQ-UI-072@d77e4fb2
+- **REQ:** REQ-UI-072@bb47458a
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 06ffe265
+- **Run:** qa/evidence/2026-11-25T23-57-16
+- **Checked:** f0e3ea17
 
 **Preconditions:**
 - Project `a` with bead `a-1`; the Beads page was not shown in this browser tab

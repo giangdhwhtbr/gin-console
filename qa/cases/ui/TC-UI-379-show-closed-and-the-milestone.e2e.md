@@ -1,10 +1,10 @@
 # TC-UI-379: Show closed and the milestone
 
-- **REQ:** REQ-UI-072@d77e4fb2
+- **REQ:** REQ-UI-072@bb47458a
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-44-27
-- **Checked:** 5e68a76e
+- **Run:** qa/evidence/2026-11-25T23-57-16
+- **Checked:** 73138b5d
 
 **Preconditions:**
 - Project `a` has the milestone `m1`, which is its current milestone, and a bead `a-1` titled "Fix login"

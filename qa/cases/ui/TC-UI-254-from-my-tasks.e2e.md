@@ -1,10 +1,10 @@
 # TC-UI-254: From My work
 
-- **REQ:** REQ-UI-072@d77e4fb2
+- **REQ:** REQ-UI-072@bb47458a
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 5e5fb3eb
+- **Run:** qa/evidence/2026-11-25T23-57-16
+- **Checked:** 9e19558a
 
 **Preconditions:**
 - Project `a` has bead `a-1` titled "Fix login" assigned to the user

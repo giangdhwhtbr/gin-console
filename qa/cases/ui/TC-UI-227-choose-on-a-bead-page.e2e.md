@@ -1,10 +1,10 @@
 # TC-UI-227: Choose on a bead page
 
-- **REQ:** REQ-UI-123@74fc3d51
+- **REQ:** REQ-UI-123@1d5f1e95
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 17a8df1f
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** bda852f3
 
 **Preconditions:**
 - Projects `a` and `b` are configured; project `a` has bead `a-1`

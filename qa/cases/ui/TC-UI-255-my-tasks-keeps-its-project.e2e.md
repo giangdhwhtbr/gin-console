@@ -1,10 +1,10 @@
 # TC-UI-255: My work keeps its project
 
-- **REQ:** REQ-UI-073@747662fe
+- **REQ:** REQ-UI-073@9e85a65b
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** b92f464c
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 55db4b10
 
 **Preconditions:**
 - Projects `a` and `b` are configured; project `b` has bead `b-1` assigned to the user

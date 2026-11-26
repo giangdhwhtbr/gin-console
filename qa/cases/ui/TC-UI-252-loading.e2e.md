@@ -1,10 +1,10 @@
 # TC-UI-252: Loading
 
-- **REQ:** REQ-UI-063@431fe3c3
+- **REQ:** REQ-UI-063@4b804324
 - **Priority:** low
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** d5e7dfca
+- **Run:** qa/evidence/2026-11-26T02-30-19
+- **Checked:** 10ba8b53
 
 **Preconditions:**
 - Project `example` has milestone `m1`, whose request has not been answered yet

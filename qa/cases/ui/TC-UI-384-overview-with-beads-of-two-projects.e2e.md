@@ -1,7 +1,10 @@
 # TC-UI-384: Overview with beads of two projects
 
-- **REQ:** REQ-UI-073@747662fe
+- **REQ:** REQ-UI-073@9e85a65b
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** d4a44a9f
 
 **Preconditions:**
 - Projects `a` and `b` are configured and the current project is `a`

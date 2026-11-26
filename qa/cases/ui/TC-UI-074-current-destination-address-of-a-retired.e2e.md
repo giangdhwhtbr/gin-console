@@ -1,10 +1,10 @@
 # TC-UI-074: Current destination: Address of a retired page
 
-- **REQ:** REQ-UI-057@b5f69a5b
+- **REQ:** REQ-UI-057@f37002dd
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 9ba2f7ec
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 12265047
 
 **Preconditions:**
 - Project `alpha` is stubbed

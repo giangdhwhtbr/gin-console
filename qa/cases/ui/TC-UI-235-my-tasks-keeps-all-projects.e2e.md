@@ -1,10 +1,10 @@
 # TC-UI-235: My work of the current project
 
-- **REQ:** REQ-UI-124@e7f9eed5
+- **REQ:** REQ-UI-124@12df9249
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 7c989e91
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 4f028f39
 
 **Preconditions:**
 - Projects `a` and `b` are configured and the current project is `b`

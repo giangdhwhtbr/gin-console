@@ -1,10 +1,10 @@
 # TC-UI-232: Last chosen beats the favorite
 
-- **REQ:** REQ-UI-124@e7f9eed5
+- **REQ:** REQ-UI-124@12df9249
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** 2fe0e1bc
+- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Checked:** 389deb69
 
 **Preconditions:**
 - Projects `a` and `b` are configured, the favorite is `a` and session storage `gin-console-project` holds `b` (chosen earlier in this tab)

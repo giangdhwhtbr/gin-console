@@ -1,10 +1,10 @@
 # TC-UI-090: From a milestone page
 
-- **REQ:** REQ-UI-072@d77e4fb2
+- **REQ:** REQ-UI-072@bb47458a
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T10-34-33
-- **Checked:** ac13997a
+- **Run:** qa/evidence/2026-11-25T23-57-16
+- **Checked:** 454b6a98
 
 **Preconditions:**
 - Project `a` with milestone `m2` titled "Checkout v2" and bead `a-1` under it

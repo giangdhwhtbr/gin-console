@@ -27,6 +27,7 @@ Source: Product brief from the UX review of 2026-11-21 (team lead, PM, member an
 - One identity colour, a real type scale, and one way to draw state and progress.
 - Sessions and Quota are retired (decision 2026-11-21).
 - Reviews and gate audit (gin-console-rm-review-audit) is dropped (decision 2026-11-25): review ledgers are off in gin-console, no finding was open, and the epic page already shows gates and waivers.
+- Requirement sign-off and full trace (gin-console-rm-req-signoff) is merged into gin-console-rm-requirements (decision 2026-11-25): gin-workflow shipped req-signoff-trace before it started.
 
 ## Summary
 
@@ -36,7 +37,7 @@ Source: Product brief from the UX review of 2026-11-21 (team lead, PM, member an
 | PM reporting | 2026-12-18 to 2026-12-29 | A PM reports a milestone's status and hands over a WBS from the console. | Open the Checkout v2 status report, read its verdict and risks, copy the summary, download the WBS in Excel. | Reports status and one scope; WBS export and summary |
 | Lead and Dev daily work | 2026-12-30 to 2027-01-12 | A lead starts the day on one overview across projects; a developer sees what to do next and copies the command to start it. | The overview lists blocked work with its owner across projects; My work shows next up; a bead page copies its claim command. | Overview for leads; My work and the next step |
 | QA and BA | 2027-01-13 to 2027-01-28 | BA and QA see requirements, sign-off, test coverage, bugs and bug screenshots. | The requirements matrix of one capability; a milestone's release readiness checklist; a bug's screenshots in the lightbox. | Requirements and traceability; Test coverage and release readiness; Bugs view; Evidence images from local files |
-| Unassigned | | | | Project timeline; Requirement sign-off and full trace; Test trends; Shared bead attachments |
+| Unassigned | | | | Project timeline; Test trends; Shared bead attachments |
 
 ## Constraints
 
@@ -80,8 +81,7 @@ flowchart LR
   shell --> imgA[Evidence images]
   shell --> timeline[Project timeline]
   gw1[gin-workflow milestone-chained-forecast] -.-> timeline
-  reqs --> signoff[Sign-off and full trace]
-  gw2[gin-workflow req-signoff-trace] -.-> signoff
+  gw2[gin-workflow req-signoff-trace] -.-> reqs
   tests --> trends[Test trends]
   gw3[gin-workflow qa-run-history] -.-> trends
   imgA --> imgB[Shared attachments]
@@ -307,19 +307,19 @@ Integration point: 2027-01-25
 ### Requirements and traceability
 Epic: gin-console-rm-requirements
 Milestone: gin-console-9ge
-Points: 8 (1 new page, a join of specs, beads and cases, high: three sources)
-Estimate: 4 (assumed)
+Points: 13 (5 stories, 19 new and 8 changed REQs, 1 new page with 3 sections and a change page, 6 endpoints, file serving with isolation; high: two gin contracts and project files)
+Estimate: 7 (assumed)
 Kind: capability
-Complexity: high (joins three sources)
+Complexity: high (two gin contracts and project files)
 Goal: A BA sees every requirement, its sign-off, the work that builds it and the tests that prove it.
-Scope: A requirements catalog from `gin specs reqs --format json`; the console joins requirements to beads through req labels and to cases through `gin-qa cases export` into one matrix (covered, building, untested, failing); spec sign-off per epic; confirmed mockups; a read-only view of a change folder (proposal, spec delta, design, plan, tests).
+Scope: A requirements catalog and matrix (covered, building, untested, failing, unknown) from `gin specs trace --all --format json` with scenarios from `gin specs reqs`; sign-off per requirement and per change, archived changes included; confirmed mockups in an isolated frame; a read-only view of a change folder (proposal, spec delta, design, plan, tests). Takes over gin-console-rm-req-signoff (decision 2026-11-25).
 Out of scope: Editing specs.
-Features: Requirements catalog; traceability matrix; spec sign-off per epic; confirmed mockups; change folder view
-Capabilities: requirements (new)
+Features: Requirements catalog; traceability matrix; sign-off per requirement; trace for archived changes; confirmed mockups; change folder view
+Capabilities: requirements (new), ui
 Legacy: none
-Depends on: gin-console-rm-nav-shell
+Depends on: gin-console-rm-nav-shell, external:gin-workflow:req-signoff-trace
 Evidence: Product brief (data survey 2026-11-21: gin specs reqs and gin-qa cases export print JSON; nothing joins them)
-Risks: Until Requirement sign-off and full trace, sign-off is per epic and only open changes have a trace; the view says so.
+Risks: Sign-offs recorded before gin kept hashes show as unknown version; null beads or cases (qwikfone) show as unknown.
 
 ### Test coverage and release readiness
 Epic: gin-console-rm-test-coverage
@@ -391,22 +391,6 @@ Legacy: none
 Depends on: gin-console-rm-nav-shell, external:gin-workflow:milestone-chained-forecast
 Evidence: Product brief (PM request 2026-11-21; gin-workflow-6yoq)
 Risks: Starts only when gin-workflow ships the capability (decision 2026-11-21: no stitched interim).
-
-### Requirement sign-off and full trace
-Epic: gin-console-rm-req-signoff
-Points: 2 (swap the console's own join for a CLI call, low)
-Estimate: 1 (assumed)
-Kind: capability
-Complexity: low (a new JSON contract)
-Goal: Sign-off per requirement and a trace over archived changes in the requirements view.
-Scope: Read sign-off per requirement and `gin specs trace --all --format json`; replace the console's own requirement, bead and case join with it.
-Out of scope: Editing sign-off.
-Features: Sign-off per requirement; trace for archived changes
-Capabilities: requirements (new)
-Legacy: none
-Depends on: gin-console-rm-requirements, external:gin-workflow:req-signoff-trace
-Evidence: Product brief (data survey 2026-11-21; gin-workflow-ch2v)
-Risks: The JSON contract is new; record it in the change design.
 
 ### Test trends
 Epic: gin-console-rm-test-trends
