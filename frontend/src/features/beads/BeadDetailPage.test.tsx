@@ -874,4 +874,50 @@ describe("BeadDetailPage", () => {
       expect(calls.some((url) => url.includes("/api/beads/milestones"))).toBe(false);
     });
   });
+
+  it("REQ-BEADS-029 panel under the description, and Escape in the lightbox returns focus to the tile", async () => {
+    stubFetch(
+      beadDetail("a-5", {
+        images: [
+          { n: 1, path: "qa/01.png", caption: "01.png", available: true },
+          { n: 2, path: "/tmp/x.png", caption: "x.png", available: false },
+        ],
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    const panel = await screen.findByRole("region", { name: "Images (2)" });
+    expect(within(panel).getByText("Not on this host")).toBeInTheDocument();
+    const tile = within(panel).getByRole("button");
+    await userEvent.click(tile);
+    expect(await screen.findByRole("dialog", { name: "01.png" })).toBeInTheDocument();
+    expect(screen.getByText("1 of 1")).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(tile).toHaveFocus());
+  });
+
+  it("REQ-UI-028 an inline bead image in the description opens the lightbox", async () => {
+    stubFetch(
+      beadDetail("a-5", {
+        description: "![Step 1](qa/01.png)",
+        images: [{ n: 1, path: "qa/01.png", caption: "Step 1", available: true }],
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    const inline = await waitFor(() => {
+      const el = document.querySelector<HTMLElement>(".markdown img");
+      if (el === null) throw new Error("image not rendered");
+      return el;
+    });
+    expect(inline).toHaveAttribute("src", "/api/beads/alpha/a-5/images/1");
+    await userEvent.click(inline);
+    expect(await screen.findByRole("dialog", { name: "Step 1" })).toBeInTheDocument();
+  });
+
+  it("REQ-BEADS-029 a bead without images has no panel", async () => {
+    stubFetch(beadDetail("a-5", { images: [] }));
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    await screen.findByRole("heading", { name: "Title a-5" });
+    expect(screen.queryByRole("region", { name: /Images/ })).toBeNull();
+  });
 });

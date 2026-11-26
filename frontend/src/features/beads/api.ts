@@ -16,6 +16,7 @@ export type ChildCounts = {
   ready?: number;
   deferred?: number;
 };
+export type BeadImage = { n: number; path: string; caption: string; available: boolean };
 export type BeadSummary = {
   id: string;
   title: string;
@@ -48,6 +49,7 @@ export type BeadSummary = {
   claim: Claim | null;
   waits_for: GateRef | null;
   child_counts: ChildCounts;
+  image_count?: number;
 };
 export type MilestoneStatus = "active" | "scheduled" | "planned" | "closed";
 export type MilestoneOption = {
@@ -76,8 +78,13 @@ export type BeadDetail = BeadSummary & {
   dependents: Relation[];
   children: Child[];
   bugs: Relation[];
+  images?: BeadImage[];
 };
 export type Comment = { id: string; author: string; text: string; created_at: string; truncated: boolean };
+
+/** The address of image `n` of a bead (REQ-BEADS-028); the browser never sends a path. */
+export const imageUrl = (project: string, id: string, n: number): string =>
+  `/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/images/${n}`;
 
 export class BeadNotFoundError extends Error {}
 
@@ -126,7 +133,8 @@ function isSummary(value: unknown): value is BeadSummary {
     isMissingOr(field(value, "lane"), isString) &&
     isMissingOr(field(value, "track"), isTrackRef) &&
     isMissingOr(field(value, "claim"), isClaim) &&
-    isMissingOr(field(value, "waits_for"), isGateRef)
+    isMissingOr(field(value, "waits_for"), isGateRef) &&
+    isMissingOr(field(value, "image_count"), isFiniteNumber)
   );
 }
 
@@ -177,6 +185,13 @@ const isRelations = (value: unknown) => Array.isArray(value) && value.every(isRe
 const isChildren = (value: unknown) =>
   Array.isArray(value) && value.every((c) => isRelation(c) && typeof field(c, "prep") === "boolean");
 
+const isBeadImage = (value: unknown) =>
+  isObject(value) &&
+  isFiniteNumber(field(value, "n")) &&
+  isString(field(value, "path")) &&
+  isString(field(value, "caption")) &&
+  typeof field(value, "available") === "boolean";
+
 function isDetail(value: unknown): value is BeadDetail {
   return (
     isSummary(value) &&
@@ -184,7 +199,8 @@ function isDetail(value: unknown): value is BeadDetail {
       isStringOrNull(field(value, k)),
     ) &&
     ["dependencies", "dependents", "bugs"].every((k) => isRelations(field(value, k))) &&
-    isChildren(field(value, "children"))
+    isChildren(field(value, "children")) &&
+    isMissingOr(field(value, "images"), (images) => Array.isArray(images) && images.every(isBeadImage))
   );
 }
 
