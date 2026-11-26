@@ -346,10 +346,10 @@ Estimate: 2 (assumed)
 Kind: capability
 Complexity: low (bug beads already loaded)
 Goal: See where bugs come from and how long they stay open.
-Scope: Bugs per epic and capability through discovered-from; found by QA versus found later; open age; trend per week.
-Out of scope: Filing bugs.
-Features: Bugs by source; open age; found by QA versus later
-Capabilities: qa (new)
+Scope: A Bugs section in Reports: bugs per source epic through discovered-from and parents, with source unknown; open bugs and their age; opened and closed per week.
+Out of scope: Filing bugs; bugs by capability and found by QA versus found later (decision 2026-11-25: 6% of the bugs reach a capability, and gin-qa marks no bug).
+Features: Bugs by source; open age; weekly trend
+Capabilities: reports
 Legacy: none
 Depends on: gin-console-rm-definitions
 Evidence: Product brief (QA perspective 2026-11-21)

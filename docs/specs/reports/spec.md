@@ -503,12 +503,14 @@ Source: `assets/2026-11-12/mockup/index.html`
 - [Rework](diagrams/rework-activity.md)
 - [Status section](diagrams/status-section-activity.md)
 - [Status verdict](diagrams/status-verdict-state.md)
+- [Bugs section](diagrams/bugs-section-activity.md)
 
 ## Use Cases
 - [Review the team in a milestone](use-cases/review-team-in-milestone.md)
 - [Review velocity](use-cases/review-velocity.md)
 - [Review rework](use-cases/review-rework.md)
 - [Review the status of a milestone](use-cases/review-milestone-status.md)
+- [See where bugs come from](use-cases/see-where-bugs-come-from.md)
 
 ### REQ-REPORTS-018: Velocity tab
 WHEN the Velocity section (`/reports/velocity`) is shown, the frontend SHALL request `GET /api/milestones?project=<p>` (REQ-MILESTONE-UI-008) for the selected project, unless REQ-UI-095 has already loaded it, and SHALL show:
