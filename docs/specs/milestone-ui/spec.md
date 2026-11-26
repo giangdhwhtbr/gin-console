@@ -389,10 +389,12 @@ The Gantt SHALL load the project's beads, open and closed, and for each epic wit
 - [Milestone status and late mark](diagrams/milestone-status-activity.md)
 - [Gantt verdict](diagrams/gantt-verdict-activity.md)
 - [WBS export](diagrams/wbs-export-activity.md)
+- [Project timeline](diagrams/project-timeline-activity.md)
 
 ## Use Cases
 - [Read the verdict of a Gantt row](use-cases/read-gantt-verdict.md)
 - [Export a WBS](use-cases/export-wbs.md)
+- [See the project timeline](use-cases/see-project-timeline.md)
 
 ### REQ-MILESTONE-UI-016: Project forecast card
 WHEN the Milestones list of a project has a non-null `forecast`, gin-console SHALL show a forecast card above the milestone list with:
