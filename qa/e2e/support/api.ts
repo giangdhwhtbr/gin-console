@@ -14,7 +14,22 @@ export type MilestoneEntry = {
 export type MilestoneList = {
   milestones: MilestoneEntry[]; unassigned_epics: number; today: string;
   days_per_point?: { value: number; measured_epics: number; assumed: boolean } | null;
+  /** REQ-MILESTONE-UI-008: the project forecast with its chained milestones and epics; absent reads as null. */
+  forecast?: Forecast | null;
+  /** REQ-MILESTONE-UI-008: the closed epics of the project; null when Beads could not be read. */
+  closed_epics?: ClosedEpic[] | null;
 };
+export type ForecastEpic = {
+  id: string; milestone: string | null; planned_start: string; planned_end: string;
+  estimate_source: 'points' | 'days' | 'assumed' | null; title: string | null; status: string | null;
+  lane: number | null; remaining_days: number | null; warnings: { code: string; days: number | null }[];
+};
+export type ForecastMilestone = { id: string; start: string | null; finish: string | null; overflow_days: number };
+export type Forecast = {
+  deadline: string | null; lanes: number; start: string; finish: string | null; overflow_days: number;
+  open_epics: number; unestimated: number; error: string | null; epics: ForecastEpic[]; milestones: ForecastMilestone[];
+};
+export type ClosedEpic = { id: string; title: string; milestone: string | null; start: string; end: string };
 export type EpicPlan = {
   id: string; title: string; status: string; estimate_days: number | null;
   planned_start: string; planned_end: string; depends_on: string[];
@@ -76,7 +91,25 @@ export const entry = (id: string, o: Partial<MilestoneEntry> = {}): MilestoneEnt
 });
 
 export const list = (milestones: MilestoneEntry[], o: Partial<MilestoneList> = {}): MilestoneList => ({
-  milestones, unassigned_epics: 0, today: '2026-10-29', ...o,
+  milestones, unassigned_epics: 0, today: '2026-10-29', closed_epics: [], ...o,
+});
+
+export const forecast = (o: Partial<Forecast> = {}): Forecast => ({
+  deadline: null, lanes: 1, start: '2026-11-02', finish: null, overflow_days: 0, open_epics: 0, unestimated: 0,
+  error: null, epics: [], milestones: [], ...o,
+});
+
+export const forecastEpic = (id: string, o: Partial<ForecastEpic> = {}): ForecastEpic => ({
+  id, milestone: null, planned_start: '2026-11-02', planned_end: '2026-11-04', estimate_source: 'points',
+  title: `Title ${id}`, status: 'open', lane: 1, remaining_days: 3, warnings: [], ...o,
+});
+
+export const forecastMilestone = (id: string, o: Partial<ForecastMilestone> = {}): ForecastMilestone => ({
+  id, start: '2026-11-02', finish: '2026-11-04', overflow_days: 0, ...o,
+});
+
+export const closedEpic = (id: string, o: Partial<ClosedEpic> = {}): ClosedEpic => ({
+  id, title: `Title ${id}`, milestone: null, start: '2026-10-12', end: '2026-10-28', ...o,
 });
 
 export const milestoneOption = (id: string, o: Partial<MilestoneOption> = {}): MilestoneOption => ({

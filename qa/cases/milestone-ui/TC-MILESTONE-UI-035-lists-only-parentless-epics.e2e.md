@@ -9,7 +9,7 @@ Preconditions:
 - project P with open epics A (labelled `roadmap`) and B (no labels) without a parent, open epic C whose parent is milestone M1, open epic D whose parent is epic A, and open task T without a parent
 
 Steps:
-1. Open /milestones?project=P
+1. Open /milestones?project=P&view=list
 
 Expected:
 - The "Epics not in a milestone" heading shows 2

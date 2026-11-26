@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-038@63675304
+// TC: TC-MILESTONE-UI-038@d3cd73b8
 import { test, expect } from '../evidence';
 import { bead, entry, list, stubApi } from '../support/api';
 
@@ -12,8 +12,8 @@ test('TC-MILESTONE-UI-038: Every epic in a milestone', async ({ page, ev }) => {
     ],
   });
 
-  await ev.step('1. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('1. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     await expect(page.getByRole('heading', { name: 'Epics not in a milestone (0)' })).toBeVisible();
     await expect(page.getByText('Every epic is in a milestone.')).toBeVisible();
     await expect(page.getByRole('list', { name: 'Epics not in a milestone' })).toHaveCount(0);

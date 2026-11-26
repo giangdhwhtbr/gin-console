@@ -273,7 +273,8 @@ FORECAST: dict[str, Any] = {
 
 
 # REQ-MILESTONE-UI-008 forecast and lanes
-def test_milestone_ui_008_forecast_and_lanes(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-086@e4e0341d
+def test_tc_milestone_ui_086_forecast_and_lanes(tmp_path: Path) -> None:
     listed = {**LIST, "forecast": FORECAST, "milestones": [{**LIST["milestones"][0], "lanes": 2}]}
     api = make(tmp_path, FakeGw({"list": listed, "show": {**SHOW, "lanes": 2}}))
     body = api.get("/api/milestones", params={"project": "proj"}).json()
@@ -323,7 +324,8 @@ def test_milestone_ui_008_forecast_epics(tmp_path: Path) -> None:
 
 
 # REQ-MILESTONE-UI-008 chained milestones
-def test_milestone_ui_008_chained_milestones_pass_through(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-138@b80a1fdf
+def test_tc_milestone_ui_138_chained_milestones_pass_through(tmp_path: Path) -> None:
     api = make(tmp_path, FakeGw({"list": LIST_CHAINED, "show": SHOW}))
     body = api.get("/api/milestones", params={"project": "proj"}).json()
     assert body["forecast"]["milestones"] == [
@@ -361,7 +363,8 @@ def _closed_export(tmp_path: Path) -> None:
 
 
 # REQ-MILESTONE-UI-008 closed epics
-def test_milestone_ui_008_closed_epics(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-139@699af57b
+def test_tc_milestone_ui_139_closed_epics(tmp_path: Path) -> None:
     _closed_export(tmp_path)
     body = _epics_of(tmp_path, FakeGw()).json()
     assert body["closed_epics"] == [
@@ -383,7 +386,8 @@ def test_milestone_ui_008_closed_epics(tmp_path: Path) -> None:
 
 
 # REQ-MILESTONE-UI-008 closed epics unreadable
-def test_milestone_ui_008_closed_epics_unreadable(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-140@b2d4e7fa
+def test_tc_milestone_ui_140_closed_epics_unreadable(tmp_path: Path) -> None:
     def unreadable(cwd: Path) -> Any:
         raise BeadsError("no export")
 
@@ -402,7 +406,8 @@ def test_milestone_ui_008_forecast_without_epics_is_empty(tmp_path: Path) -> Non
 
 
 # REQ-MILESTONE-UI-008 output from an older gin-workflow
-def test_milestone_ui_008_older_output_answers_null(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-087@97f27663
+def test_tc_milestone_ui_087_older_output_answers_null(tmp_path: Path) -> None:
     api = make(tmp_path, FakeGw())
     body = api.get("/api/milestones", params={"project": "proj"}).json()
     assert body["forecast"] is None
@@ -436,7 +441,8 @@ def test_milestone_ui_008_spec_confirmed_missing_is_null(tmp_path: Path) -> None
 
 
 # REQ-MILESTONE-UI-008 entry without dates
-def test_milestone_ui_008_entry_without_dates_is_listed(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-074@a8cb822b
+def test_tc_milestone_ui_074_entry_without_dates_is_listed(tmp_path: Path) -> None:
     undated = {
         **LIST["milestones"][0],
         "id": "gw-m4",
@@ -455,7 +461,8 @@ def test_milestone_ui_008_entry_without_dates_is_listed(tmp_path: Path) -> None:
 
 
 # REQ-MILESTONE-UI-008 schedule facts
-def test_milestone_ui_008_schedule_facts_pass_through(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-088@0c7e607b
+def test_tc_milestone_ui_088_schedule_facts_pass_through(tmp_path: Path) -> None:
     warning = {"code": "open_bugs", "count": 2}
     epic = {**SHOW["epics"][0], "remaining_days": 2, "assumed_days": None, "warnings": [warning]}
     away = {"ann": ["2026-11-18..2026-11-20"]}
@@ -469,7 +476,8 @@ def test_milestone_ui_008_schedule_facts_pass_through(tmp_path: Path) -> None:
 
 
 # REQ-MILESTONE-UI-008 older output without schedule facts
-def test_milestone_ui_008_older_output_has_no_schedule_facts(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-087@97f27663
+def test_tc_milestone_ui_087_older_output_has_no_schedule_facts(tmp_path: Path) -> None:
     body = make(tmp_path, FakeGw()).get("/api/milestones/proj/gw-ab1").json()
     assert (body["integration"], body["deadline"], body["away"]) == (None, None, {})
     assert body["epics"][0]["remaining_days"] is None
@@ -478,7 +486,8 @@ def test_milestone_ui_008_older_output_has_no_schedule_facts(tmp_path: Path) -> 
 
 
 # REQ-MILESTONE-UI-008
-def test_milestone_ui_008_story_points_through_the_api(tmp_path: Path) -> None:
+# TC: TC-MILESTONE-UI-093@299be58b
+def test_tc_milestone_ui_093_story_points_through_the_api(tmp_path: Path) -> None:
     dpp = {"value": 1.4, "measured_epics": 6, "assumed": False}
     velocity = {"committed_points": 21, "completed_points": 13, "say_do": 0.62}
     listed = {

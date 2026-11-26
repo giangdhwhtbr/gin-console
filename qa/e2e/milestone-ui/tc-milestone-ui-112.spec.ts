@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-112@76df0be6
+// TC: TC-MILESTONE-UI-112@db12a3a7
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
 
@@ -18,8 +18,8 @@ test('TC-MILESTONE-UI-112: Older gin-workflow without lanes', async ({ page, ev 
     await page.setViewportSize({ width: 1280, height: 900 });
   });
 
-  await ev.step('2. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('2. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     await expect(page.getByRole('heading', { name: 'Milestones' })).toBeVisible();
     const rows = page.getByRole('list', { name: 'Milestones' }).getByRole('listitem').filter({ hasText: 'launch' });
     await expect(rows).toHaveCount(2);

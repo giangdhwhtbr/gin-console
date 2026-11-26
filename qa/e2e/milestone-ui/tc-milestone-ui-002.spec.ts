@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-002@98659363
+// TC: TC-MILESTONE-UI-002@249dfbab
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
 
@@ -10,8 +10,8 @@ test('TC-MILESTONE-UI-002: Kickoff date shown when set', async ({ page, ev }) =>
     ]),
   });
 
-  await ev.step('1. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('1. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     const m2 = page.getByRole('list', { name: 'Milestones' }).getByRole('listitem').filter({ hasText: 'Beta launch' });
     await expect(m2).toContainText('Kicks off 16 Nov');
     await expect(m2).toContainText('16 Nov – 27 Nov');
