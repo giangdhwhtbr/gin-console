@@ -13,9 +13,11 @@ import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { formatDateTime } from "@/lib/dates";
 import { fetchReport, ReportRequestError, type Report } from "./api";
 import { parseReportSearch, reportSearch, type Period, type ReportFilters, type Scope } from "./filters";
+import { fetchBugs, type BugsReport } from "./bugs/bugsApi";
+import { BugsSection } from "./bugs/BugsSection";
 import { DeliverySection } from "./DeliverySection";
 import { Figures } from "./Figures";
-import { figures, headlines, statusHeadline, teamHeadline, velocityHeadline, type Headline } from "./headlines";
+import { bugsHeadline, figures, headlines, statusHeadline, teamHeadline, velocityHeadline, type Headline } from "./headlines";
 import { ReworkSection } from "./ReworkSection";
 import { ScopeSelect } from "./ScopeSelect";
 import { SectionLinks } from "./SectionLinks";
@@ -43,6 +45,9 @@ type TeamAnswer = { base: string; requested: Scope; value: SettledTeam };
 type SettledStatus = { status: "error"; message: string } | { status: "ok"; report: StatusReport };
 type LoadedStatus = { status: "loading" } | SettledStatus;
 type StatusAnswer = { base: string; requested: Scope; value: SettledStatus };
+type SettledBugs = { status: "error"; message: string } | { status: "ok"; report: BugsReport };
+type LoadedBugs = { status: "loading" } | SettledBugs;
+type BugsAnswer = { base: string; requested: Scope; value: SettledBugs };
 
 const messageOf = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
@@ -68,6 +73,11 @@ function answersStatus(answer: StatusAnswer, base: string, scope: Scope): boolea
   return scope.kind === "milestone" && answer.requested.kind !== "period" && answer.value.status === "ok" && answer.value.report.milestone === scope.id;
 }
 
+/** The bugs report answers only the request it was made for; unlike the status report it never follows a milestone. */
+function answersBugs(answer: BugsAnswer, base: string, scope: Scope): boolean {
+  return answer.base === base && sameScope(answer.requested, scope);
+}
+
 /** The Reports page for one section: the scope of REQ-REPORTS-033, the row of section links and the section's panel. */
 export function ReportsView({ section }: { section: ReportSection }) {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
@@ -77,6 +87,8 @@ export function ReportsView({ section }: { section: ReportSection }) {
   const [teamAttempt, setTeamAttempt] = useState(0);
   const [settledStatus, setSettledStatus] = useState<StatusAnswer | null>(null);
   const [statusAttempt, setStatusAttempt] = useState(0);
+  const [settledBugs, setSettledBugs] = useState<BugsAnswer | null>(null);
+  const [bugsAttempt, setBugsAttempt] = useState(0);
   // the milestones of the last team report of a project, which the scope select lists while the next one loads
   const [known, setKnown] = useState<{ project: string; milestones: TeamMilestone[] } | null>(null);
   // the Milestones list of each project asked for (REQ-UI-095), or why the request failed
@@ -116,6 +128,10 @@ export function ReportsView({ section }: { section: ReportSection }) {
   const statusCurrent = settledStatus !== null && answersStatus(settledStatus, statusBase, scope);
   const status: LoadedStatus = settledStatus !== null && statusCurrent ? settledStatus.value : { status: "loading" };
 
+  const bugsBase = JSON.stringify([selected, bugsAttempt]);
+  const bugsCurrent = settledBugs !== null && answersBugs(settledBugs, bugsBase, scope);
+  const bugs: LoadedBugs = settledBugs !== null && bugsCurrent ? settledBugs.value : { status: "loading" };
+
   // REQ-REPORTS-033: the team report is asked for whatever the section; its milestones fill the scope select
   useEffect(() => {
     if (selected === "" || teamCurrent) return;
@@ -154,6 +170,24 @@ export function ReportsView({ section }: { section: ReportSection }) {
       live = false;
     };
   }, [selected, scopeId, scopeDays, statusBase, statusCurrent]);
+
+  // REQ-UI-095: the bugs report is asked for whatever the section, for its headline and Bugs panel
+  useEffect(() => {
+    if (selected === "" || bugsCurrent) return;
+    let live = true;
+    const requested = scopeOf(scopeId, scopeDays);
+    fetchBugs(selected, requested).then(
+      (report) => {
+        if (live) setSettledBugs({ base: bugsBase, requested, value: { status: "ok", report } });
+      },
+      (error: unknown) => {
+        if (live) setSettledBugs({ base: bugsBase, requested, value: { status: "error", message: messageOf(error) } });
+      },
+    );
+    return () => {
+      live = false;
+    };
+  }, [selected, scopeId, scopeDays, bugsBase, bugsCurrent]);
   const milestones = known !== null && known.project === selected ? known.milestones : null;
 
   // REQ-UI-095: the Milestones list of a single project is asked for once, whatever the section; the page reloads it on Refresh
@@ -220,6 +254,7 @@ export function ReportsView({ section }: { section: ReportSection }) {
   }, [selected, scopeId, scopeDays, key, confirmed]);
 
   const statusReport = status.status === "ok" ? status.report : null;
+  const bugsLoaded = bugs.status === "ok" ? bugs.report : null;
 
   const headlineFor = (value: ReportSection): Headline | null => {
     switch (value) {
@@ -229,6 +264,8 @@ export function ReportsView({ section }: { section: ReportSection }) {
         return teamReport === null ? null : teamHeadline(teamReport, finish);
       case "velocity":
         return list === null ? null : velocityHeadline(list.days_per_point);
+      case "bugs":
+        return bugsLoaded === null ? null : bugsHeadline(bugsLoaded);
       case "delivery":
       case "rework":
         return loaded.status === "ok" ? headlines(loaded.report)[value] : null;
@@ -361,6 +398,20 @@ export function ReportsView({ section }: { section: ReportSection }) {
                   />
                 </>
               ))
+            ) : section === "bugs" ? (
+              <>
+                {bugs.status === "loading" && <p className="text-muted-foreground">Loading bugs…</p>}
+                {bugs.status === "error" && (
+                  <Alert variant="destructive">
+                    <AlertTitle>The bugs report could not be loaded</AlertTitle>
+                    <AlertDescription>{bugs.message}</AlertDescription>
+                    <Button type="button" size="sm" variant="outline" onClick={() => setBugsAttempt((n) => n + 1)}>
+                      Retry
+                    </Button>
+                  </Alert>
+                )}
+                {bugsLoaded !== null && <BugsSection project={selected} report={bugsLoaded} />}
+              </>
             ) : (
               reportBody((report) => <ReworkSection report={report} />)
             )}
