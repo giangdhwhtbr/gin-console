@@ -13,6 +13,9 @@ server:
 projects:
   - name: qwikfone
     path: /home/gin/qwikfone
+    # Folders besides `path` whose screenshots this project's beads may show (absolute paths).
+    # evidence_roots:
+    #   - /home/gin/infra/bug-sync-mcp/data/attachments
   - name: scotty
     path: /home/gin/scotty
     pull: false   # never run `bd dolt pull` here
