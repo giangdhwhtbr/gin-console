@@ -4,8 +4,11 @@ the only module that decides what an image of a bead is and reads one.
 The browser never sends a path: it asks for image `n` of a bead, and the file is found again here.
 """
 
+import os
 import re
+import stat
 import threading
+from bisect import bisect_left
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -26,11 +29,22 @@ _MARKDOWN = re.compile(
     r"(!?)\[([^\[\]\n]*)\]\([ \t]*(?:<([^<>\n]*)>|([^\s()<>]+))"
     r"(?:[ \t]+(?:\"[^\"\n]*\"|'[^'\n]*'|\([^()\n]*\)))?[ \t]*\)"
 )
-_LOCAL = re.compile(r"^[ \t]*local:[ \t]*(.*?)[ \t]*$", re.M)
+# no lazy group before an optional run: that is quadratic on a long run of spaces
+_LOCAL = re.compile(r"^[ \t]*local:[ \t]*([^\n]*)$", re.M)
 _TOKEN = re.compile(r"[^\s`]+")  # a path standing alone between spaces, backticks or line ends
 _SCHEME = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*:")
 _DRIVE = re.compile(r"[A-Za-z]:[/\\]")  # a Windows drive, not a scheme
 _ABSOLUTE_DRIVE = re.compile(r"[A-Za-z]:/")
+_FILE_URL = re.compile(r"file://([^/]*)(/.*)?", re.I | re.S)
+_SLASH_DRIVE = re.compile(r"/[A-Za-z]:/")
+# one open of the resolved file: never wait on a FIFO, never follow a link put in its place
+_OPEN_FLAGS = (
+    os.O_RDONLY
+    | getattr(os, "O_NONBLOCK", 0)
+    | getattr(os, "O_NOFOLLOW", 0)
+    | getattr(os, "O_BINARY", 0)
+)
+_HEAD = 12  # the bytes `media_type` needs
 _MARKDOWN_TEXT, _ALT_ABOVE, _NO_CAPTION = 0, 1, 2  # where a caption comes from, best first
 
 
@@ -64,11 +78,24 @@ def _decode(text: str) -> str:
         return text
 
 
+def _file_url(address: str) -> str | None:
+    """The path of a `file://` URL of this host (no host or `localhost`), `/C:/…` as `C:/…`;
+    None for another host."""
+    url = _FILE_URL.fullmatch(address)
+    if url is None or url[2] is None or url[1].lower() not in ("", "localhost"):
+        return None
+    path = _decode(url[2])
+    return path[1:] if _SLASH_DRIVE.match(path) else path
+
+
 def _path(address: str, url: bool) -> str | None:
-    """The path an address names; None for another scheme or a file that is no image. A Markdown
-    address is a URL, so it is percent-decoded as the browser does."""
+    """The path an address names; None for another scheme or host, or a file that is no image. A
+    Markdown address is a URL, so it is percent-decoded as the browser does."""
     if address[:7].lower() == "file://":
-        path = _decode(address[7:])
+        found = _file_url(address)
+        if found is None:
+            return None
+        path = found
     elif _SCHEME.match(address) and not _DRIVE.match(address):
         return None
     else:
@@ -80,7 +107,9 @@ def _alt_above(text: str, line_start: int) -> str:
     """The alt text of the first Markdown image on the line right above `line_start`."""
     if line_start == 0:
         return ""
-    above = text[: line_start - 1].rpartition("\n")[2]
+    above = text[
+        text.rfind("\n", 0, line_start - 1) + 1 : line_start - 1
+    ]  # no copy of the text above
     image = next((m for m in _MARKDOWN.finditer(above) if m[1]), None)
     return image[2].strip() if image is not None else ""
 
@@ -102,11 +131,18 @@ def _mentions(text: str) -> list[_Mention]:
         found += _mention(match.start(), _path(address, url=True), match[2].strip(), _MARKDOWN_TEXT)
     for match in _LOCAL.finditer(text):
         taken.append(match.span(1))
-        caption = _alt_above(text, match.start())
-        found += _mention(match.start(1), _path(match[1], url=False), caption, _ALT_ABOVE)
+        path = _path(match[1].rstrip(" \t"), url=False)
+        if path is not None:
+            found += _mention(match.start(1), path, _alt_above(text, match.start()), _ALT_ABOVE)
+    taken.sort()
+    starts = [start for start, _ in taken]
+    reach: list[int] = []  # the furthest end of the spans up to each one
+    for _, end in taken:
+        reach.append(max(end, reach[-1]) if reach else end)
     for match in _TOKEN.finditer(text):
         path = _path(match[0], url=False)
-        if path is not None and not any(s < match.end() and match.start() < e for s, e in taken):
+        last = bisect_left(starts, match.end()) - 1  # the last span starting before the token ends
+        if path is not None and not (last >= 0 and reach[last] > match.start()):
             found += _mention(match.start(), path, "", _NO_CAPTION)
     return sorted(found, key=lambda mention: mention.at)
 
@@ -177,37 +213,52 @@ def _real_folders(folders: Sequence[Path]) -> list[Path]:
     return real
 
 
-def _inspect(file: Path, folders: Sequence[Path]) -> tuple[Path, str] | None:
-    """The real file and its type, when it is an image this host may serve."""
+def _load(file: Path, folders: Sequence[Path], limit: int) -> tuple[bytes, str] | None:
+    """The first `limit` bytes of `file` and its type, when it is an image this host may serve;
+    `folders` are results of `_real_folders`. The file is opened once and every check after the
+    containment is made on that open file."""
     try:
         found = file.resolve(strict=True)
-        inside = any(found.is_relative_to(folder) for folder in _real_folders(folders))
-        if not inside or not found.is_file() or found.stat().st_size > MAX_BYTES:
+        if not any(found.is_relative_to(folder) for folder in folders):
             return None
-        with found.open("rb") as handle:
-            kind = media_type(handle.read(12))
-    except _REFUSED:  # missing, unreadable or refused by the system: not available
+        checked = os.stat(found)
+        handle = os.open(found, _OPEN_FLAGS)
+    except _REFUSED:  # missing, unreadable, replaced by a link, or refused by the system
         return None
-    return (found, kind) if kind is not None else None
+    try:
+        opened = os.fstat(handle)
+        same = (opened.st_dev, opened.st_ino) == (checked.st_dev, checked.st_ino)
+        if not same or not stat.S_ISREG(opened.st_mode) or opened.st_size > MAX_BYTES:
+            return None
+        content = _read_all(handle, limit)
+    except OSError:  # gone or refused while it was read
+        return None
+    finally:
+        os.close(handle)
+    kind = media_type(content)
+    return (content, kind) if kind is not None and len(content) <= MAX_BYTES else None
+
+
+def _read_all(handle: int, limit: int) -> bytes:
+    chunks: list[bytes] = []
+    left = limit
+    while left > 0:
+        chunk = os.read(handle, min(left, 1024 * 1024))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        left -= len(chunk)
+    return b"".join(chunks)
 
 
 def check(file: Path, folders: Sequence[Path]) -> str | None:
     """The media type of `file` when it is available (REQ-BEADS-027), else None."""
-    checked = _inspect(file, folders)
-    return checked[1] if checked is not None else None
+    return _check(file, _real_folders(folders))
 
 
-def _read(file: Path, folders: Sequence[Path]) -> tuple[bytes, str] | None:
-    checked = _inspect(file, folders)
-    if checked is None:
-        return None
-    try:
-        with checked[0].open("rb") as handle:
-            content = handle.read(MAX_BYTES + 1)
-    except OSError:  # gone or refused since it was checked
-        return None
-    kind = media_type(content)  # the bytes read, however the file changed since
-    return (content, kind) if kind is not None and len(content) <= MAX_BYTES else None
+def _check(file: Path, real_folders: Sequence[Path]) -> str | None:
+    loaded = _load(file, real_folders, _HEAD)
+    return loaded[1] if loaded is not None else None
 
 
 def _folders(entry: ProjectEntry) -> list[Path]:
@@ -221,11 +272,16 @@ def _text(raw: Mapping[str, Any], key: str) -> str | None:
 
 def find_images(raw: Mapping[str, Any], entry: ProjectEntry, home: Path) -> list[FoundImage]:
     """The images of one exported bead, numbered from 1, each checked on this host."""
-    folders = _folders(entry)
+    return _find(raw, entry, home, _real_folders(_folders(entry)))
+
+
+def _find(
+    raw: Mapping[str, Any], entry: ProjectEntry, home: Path, real_folders: Sequence[Path]
+) -> list[FoundImage]:
     found: list[FoundImage] = []
     for n, ref in enumerate(bead_refs(_text(raw, "description"), _text(raw, "notes")), start=1):
         file = locate(ref.path, entry.path, home)
-        ready = file is not None and check(file, folders) is not None
+        ready = file is not None and _check(file, real_folders) is not None
         found.append(FoundImage(n, ref.path, ref.caption, file, ready))
     return found
 
@@ -237,22 +293,27 @@ class ImageIndex:
     def __init__(self, home: Path) -> None:
         self._home = home
         self._guard = threading.Lock()
+        self._locks: dict[str, threading.Lock] = {}  # one computation per project at a time
         self._items: dict[str, tuple[Snapshot, dict[str, list[FoundImage]]]] = {}
 
     def of(self, entry: ProjectEntry, snapshot: Snapshot) -> Mapping[str, list[FoundImage]]:
         """Images by bead id; a bead without images is left out."""
         with self._guard:
-            hit = self._items.get(entry.name)
-        if hit is not None and hit[0] is snapshot:
-            return hit[1]
-        found: dict[str, list[FoundImage]] = {}
-        for ident, raw in snapshot.rows.items():
-            images = find_images(raw, entry, self._home)
-            if images:
-                found[ident] = images
-        with self._guard:
-            self._items[entry.name] = (snapshot, found)
-        return found
+            lock = self._locks.setdefault(entry.name, threading.Lock())
+        with lock:
+            with self._guard:
+                hit = self._items.get(entry.name)
+            if hit is not None and hit[0] is snapshot:
+                return hit[1]
+            real_folders = _real_folders(_folders(entry))  # once for every bead
+            found: dict[str, list[FoundImage]] = {}
+            for ident, raw in snapshot.rows.items():
+                images = _find(raw, entry, self._home, real_folders)
+                if images:
+                    found[ident] = images
+            with self._guard:
+                self._items[entry.name] = (snapshot, found)
+            return found
 
     def read(
         self, entry: ProjectEntry, snapshot: Snapshot, bead_id: str, n: int
@@ -262,4 +323,4 @@ class ImageIndex:
         image = images[n - 1] if 1 <= n <= len(images) else None
         if image is None or image.file is None:
             return None
-        return _read(image.file, _folders(entry))
+        return _load(image.file, _real_folders(_folders(entry)), MAX_BYTES + 1)

@@ -1,10 +1,15 @@
 """The images a bead names (REQ-BEADS-026) and whether each may be served (REQ-BEADS-027)."""
 
+import os
 import sys
+import threading
+import time
 from pathlib import Path
+from typing import Any
 
 import pytest
 
+from gin_console.beads import images as images_module
 from gin_console.beads.images import (
     MAX_BYTES,
     MAX_IMAGES,
@@ -74,6 +79,13 @@ def test_beads_026_forms_and_order() -> None:
         ImageRef("shots/a.png", "Before"),
         ImageRef("~/brain/b.JPG", "b.JPG"),
         ImageRef("d.webp", "d.webp"),
+    ]
+    raw = {"id": "t-1", "description": description, "notes": notes}
+    found = find_images(raw, ProjectEntry(name="p", path=Path("/p")), Path("/home"))
+    assert [(i.n, i.path) for i in found] == [
+        (1, "shots/a.png"),
+        (2, "~/brain/b.JPG"),
+        (3, "d.webp"),
     ]
 
 
@@ -333,3 +345,149 @@ def test_beads_028_read_checks_again(tmp_path: Path) -> None:
     assert index.read(alpha, snapshot, "b-1", 1) is None
     shot.unlink()
     assert index.read(alpha, snapshot, "b-1", 1) is None
+
+
+# REQ-BEADS-026: file://localhost is this host; another host names no image of the bead; a
+# Windows drive after the slash is a drive path
+def test_beads_026_file_url_hosts_and_drives() -> None:
+    text = (
+        "file://localhost/x/y.png file://LOCALHOST/x/z.png file://server/share/a.png "
+        "[b](file://other/b.png) file:///C:/shots/c.png file:///c%3A/shots/d.png file://localhost"
+    )
+    assert paths(image_refs(text)) == ["/x/y.png", "/x/z.png", "C:/shots/c.png", "c:/shots/d.png"]
+
+
+def finishes_quickly(text: str) -> None:
+    started = time.perf_counter()
+    image_refs(text)
+    assert time.perf_counter() - started < 0.5
+
+
+# REQ-BEADS-026: bead text is untrusted, so finding its images stays linear
+@pytest.mark.parametrize(
+    "text",
+    [
+        "local:" + " " * 65_536 + "x",
+        "local: a" + " " * 65_536 + "b",
+        "local: a" + " " * 65_536,
+        "local:" + " " * 65_536 + "a.png",
+        "\n".join(["local:" + " " * 64] * 1_000),
+        "local:\n" * 50_000,
+        "![a](b)\nlocal: c.png\n" * 20_000,
+        "[a](b" + " " * 65_536,
+        "![a](b" + " " * 65_536 + "x",
+        '[a](b "' + " " * 65_536,
+        "[" + "a" * 65_536,
+        "[a](b) x.png " * 20_000,
+        " ".join(f"[{n}](u{n}.png) v{n}.png" for n in range(10_000)),
+    ],
+    ids=[
+        "local",
+        "local-inner",
+        "local-trailing",
+        "local-image",
+        "local-lines",
+        "many-local",
+        "many-local-images",
+        "link",
+        "image",
+        "title",
+        "text",
+        "spans",
+        "pairs",
+    ],
+)
+def test_beads_026_parsing_is_linear(text: str) -> None:
+    finishes_quickly(text)
+
+
+# REQ-BEADS-026: a local: line keeps its path without the spaces around it
+def test_beads_026_local_line_trailing_spaces() -> None:
+    assert paths(image_refs("local:   my shots/a.png \t ")) == ["my shots/a.png"]
+
+
+# REQ-BEADS-027: a FIFO is no image, and checking it does not wait for a writer
+@pytest.mark.skipif(sys.platform == "win32", reason="no FIFOs")
+def test_beads_027_fifo_is_not_available(tmp_path: Path) -> None:
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
+    alpha.path.mkdir()
+    os.mkfifo(alpha.path / "pipe.png")
+    result: list[bool] = []
+    worker = threading.Thread(target=lambda: result.append(available("pipe.png", alpha, tmp_path)))
+    worker.start()
+    worker.join(timeout=2)
+    assert not worker.is_alive() and result == [False]
+
+
+def swap_on_open(monkeypatch: pytest.MonkeyPatch, target: Path, swap: Any) -> None:
+    """Run `swap` right before `target` is opened: the file changes between check and read."""
+    real_open = os.open
+
+    def opening(path: Any, flags: int, *args: Any, **kwargs: Any) -> int:
+        if Path(path) == target.resolve():
+            swap()
+        return real_open(path, flags, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", opening)
+
+
+# REQ-BEADS-028: the bytes come from the file that was checked, not one put in its place
+def test_beads_028_read_uses_the_checked_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
+    shot = put(alpha.path / "a.png")
+    other = put(alpha.path / "other.png", PNG + b"swapped")
+    snapshot = build_snapshot([{"id": "b-1", "description": "a.png"}])
+    index = ImageIndex(tmp_path)
+    index.of(alpha, snapshot)
+    swap_on_open(monkeypatch, shot, lambda: os.replace(other, shot))
+    assert index.read(alpha, snapshot, "b-1", 1) is None
+
+
+# REQ-BEADS-028: a link put in place of the checked file is not followed
+@needs_symlinks
+def test_beads_028_read_refuses_a_link_put_in_place(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
+    shot = put(alpha.path / "a.png")
+    outside = put(tmp_path / "secret.png", PNG + b"secret")
+
+    def to_link() -> None:
+        shot.unlink()
+        shot.symlink_to(outside)
+
+    swap_on_open(monkeypatch, shot, to_link)
+    assert check(shot, [alpha.path]) is None
+
+
+# REQ-BEADS-001 (once per export snapshot): concurrent requests for a new snapshot work it out
+# once, and resolve the folders once for every bead
+def test_beads_026_index_computes_once_under_concurrency(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha", evidence_roots=[tmp_path / "att"])
+    put(alpha.path / "a.png")
+    rows = [{"id": f"b-{n}", "description": "a.png b.png"} for n in range(5)]
+    snapshot = build_snapshot(rows)
+    real = images_module._real_folders
+    calls: list[int] = []
+
+    def slow(folders: Any) -> list[Path]:
+        calls.append(1)
+        time.sleep(0.2)
+        return real(folders)
+
+    monkeypatch.setattr(images_module, "_real_folders", slow)
+    index = ImageIndex(tmp_path)
+    found: list[object] = []
+    workers = [
+        threading.Thread(target=lambda: found.append(index.of(alpha, snapshot))) for _ in range(4)
+    ]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join()
+    assert len(calls) == 1
+    assert all(result is found[0] for result in found) and len(found) == 4
