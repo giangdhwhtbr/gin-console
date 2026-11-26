@@ -1,11 +1,12 @@
-export type ReportSection = "status" | "team" | "delivery" | "velocity" | "rework";
-export const SECTIONS: readonly ReportSection[] = ["status", "team", "delivery", "velocity", "rework"];
+export type ReportSection = "status" | "team" | "delivery" | "velocity" | "rework" | "bugs";
+export const SECTIONS: readonly ReportSection[] = ["status", "team", "delivery", "velocity", "rework", "bugs"];
 export const SECTION_LABELS: Record<ReportSection, string> = {
   status: "Status",
   team: "Team",
   delivery: "Delivery",
   velocity: "Velocity",
   rework: "Rework",
+  bugs: "Bugs",
 };
 
 const ROOT = "/reports";

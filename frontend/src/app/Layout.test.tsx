@@ -299,7 +299,7 @@ describe("Layout", () => {
   });
 
   describe("report sections in the sidebar", () => {
-    const SECTIONS = ["status", "team", "delivery", "velocity", "rework"] as const;
+    const SECTIONS = ["status", "team", "delivery", "velocity", "rework", "bugs"] as const;
     const sections: SectionLink[] = SECTIONS.map((section) => ({
       section,
       label: section[0].toUpperCase() + section.slice(1),
@@ -309,16 +309,17 @@ describe("Layout", () => {
     }));
     const list = () => screen.queryByRole("list", { name: "Report sections" });
 
-    it("REQ-UI-129 Sections in the sidebar: the five sections with headlines under Reports, the selected one marked, when expanded", () => {
+    it("REQ-UI-129 Sections in the sidebar: the six sections with headlines under Reports, the selected one marked, when expanded", () => {
       publishSections(sections, "delivery");
       open("/reports/delivery?project=a&milestone=m2");
       expect(document.querySelector('[data-sidebar="expanded"]')).not.toBeNull();
       const links = within(list()!).getAllByRole("link");
-      expect(links.map((l) => l.textContent?.split(" ")[0])).toEqual(["Status", "Team", "Delivery", "Velocity", "Rework"]);
+      expect(links.map((l) => l.textContent?.split(" ")[0])).toEqual(["Status", "Team", "Delivery", "Velocity", "Rework", "Bugs"]);
       expect(links[2]).toHaveAccessibleName("Delivery delivery headline");
       expect(links[2]).toHaveAttribute("aria-current", "page");
       expect(links.filter((l) => l.getAttribute("aria-current") === "page")).toHaveLength(1);
       expect(links[4]).toHaveAttribute("href", "/reports/rework?project=a&milestone=m2");
+      expect(links[5]).toHaveAttribute("href", "/reports/bugs?project=a&milestone=m2");
       expect(list()).toHaveClass("hidden", "lg:flex");
       expect(within(nav()).getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
     });

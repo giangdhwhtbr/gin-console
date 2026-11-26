@@ -1,4 +1,4 @@
-// TC: TC-REPORTS-089@ab09221f
+// TC: TC-REPORTS-089@e6f84eb3
 import { test, expect } from '../evidence';
 import { stubReports, teamBody } from '../support/reports';
 
@@ -8,7 +8,7 @@ test('TC-REPORTS-089: One shared scope kept across sections and normalized in UR
     { id: 'm1', title: 'First', status: 'closed' as const, start: '2026-10-05', end: '2026-10-30', closed_on: '2026-10-30' },
     { id: 'm2', title: 'Second', status: 'active' as const, start: '2026-11-02', end: '2026-11-27', closed_on: null },
   ];
-  await stubReports(page, { projects: ['alpha', 'beta'] });
+  const stub = await stubReports(page, { projects: ['alpha', 'beta'] });
   await page.route('**/api/reports/team**', (route) => {
     const url = new URL(route.request().url());
     const project = url.searchParams.get('project') ?? 'alpha';
@@ -83,5 +83,12 @@ test('TC-REPORTS-089: One shared scope kept across sections and normalized in UR
       !u.searchParams.has('milestone'),
     );
     await expect(scope.locator('option')).toHaveText(['Last 7 days', 'Last 30 days', 'Last 90 days']);
+  });
+
+  await ev.step('6. Open `/reports/bugs?project=alpha&days=7`', async () => {
+    await page.goto('/reports/bugs?project=alpha&days=7');
+    await expect(page.getByRole('link', { name: /^Bugs/ })).toHaveAttribute('aria-current', 'page');
+    await expect(scope).toHaveValue('days:7');
+    await expect.poll(() => stub.calls.some((u) => u.pathname === '/api/reports/bugs' && u.searchParams.get('project') === 'alpha' && u.searchParams.get('days') === '7')).toBe(true);
   });
 });

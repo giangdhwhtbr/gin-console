@@ -1,9 +1,9 @@
-// TC: TC-UI-152@9161dd49
+// TC: TC-UI-152@fab2c529
 import { test, expect } from '../evidence';
 import { stubReports } from '../support/reports';
 
 test('TC-UI-152: Hidden sections are hinted (REQ-UI-095)', async ({ page, ev }) => {
-  // Precondition: project alpha exists; the section links do not all fit in a 360 px window.
+  // Precondition: project alpha exists; Bugs does not fit in a 360 px window.
   await page.addInitScript(() => window.localStorage.setItem('gin-console.email', 'qa@example.com'));
   await stubReports(page, { projects: ['alpha'] });
   const strip = page.getByRole('navigation', { name: 'Report sections' });

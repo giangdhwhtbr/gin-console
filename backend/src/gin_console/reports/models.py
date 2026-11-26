@@ -50,6 +50,7 @@ class ReportBead(BaseModel):
     bug_days: list[date] = Field(default_factory=list)
     moves: list[MilestoneMove] = Field(default_factory=list)
     points_history: list[PointsChange] = Field(default_factory=list)
+    found_in: list[str] = Field(default_factory=list)  # ids of its discovered-from targets
     blockers: list[str] = Field(default_factory=list)
     blocked_since: datetime | None = None
     child_counts: ChildCounts | None = None
@@ -352,3 +353,58 @@ class StatusReport(BaseModel):
     changes: Changes
     risks: Risks
     epics: list[StatusEpic]
+
+
+class BugPeriod(BaseModel):
+    start: date
+    end: date
+
+
+class BugFigures(BaseModel):
+    total: int
+    opened: int
+    closed: int
+    open_now: int
+    oldest_open_days: int | None
+    median_close_days: float | None
+
+
+class BugWeek(BaseModel):
+    start: date  # the Monday of the ISO week
+    opened: int
+    closed: int
+
+
+class BugEpic(BaseModel):
+    id: str | None  # None: the row of unknown source
+    title: str | None
+    opened: int
+    closed: int
+    open_now: int
+
+
+class EpicRef(BaseModel):
+    id: str
+    title: str
+
+
+class OpenBug(BaseModel):
+    id: str
+    title: str
+    priority: int | None
+    assignee: str | None  # person_key of the assignee
+    age_days: int
+    epic: EpicRef | None
+
+
+class BugsReport(BaseModel):
+    generated_at: datetime
+    project: str
+    today: date
+    milestone: str | None
+    days: int | None
+    period: BugPeriod | None
+    figures: BugFigures
+    weeks: list[BugWeek]
+    epics: list[BugEpic]
+    open: list[OpenBug]

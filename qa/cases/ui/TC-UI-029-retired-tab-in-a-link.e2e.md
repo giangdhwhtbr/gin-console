@@ -1,6 +1,6 @@
 # TC-UI-029: Retired tab in a link
 
-- **REQ:** REQ-UI-095@c0140122
+- **REQ:** REQ-UI-095@3fd9927e
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

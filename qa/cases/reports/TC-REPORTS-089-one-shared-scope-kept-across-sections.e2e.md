@@ -1,6 +1,6 @@
 # TC-REPORTS-089: One shared scope kept across sections and normalized in URL
 
-- **REQ:** REQ-REPORTS-033@43896a63
+- **REQ:** REQ-REPORTS-033@9dc9dc7e
 - **Priority:** high
 
 **Preconditions:**
@@ -16,6 +16,7 @@
 3. Pick "Last 7 days" in the scope select
 4. Open `/reports/team?project=alpha&milestone=m2&member=ann&status=closed` and pick `m1` in the scope select
 5. Open `/reports/team?project=beta`
+6. Open `/reports/bugs?project=alpha&days=7`
 
 **Expected:**
 - After step 1, URL normalizes to `/reports/delivery?project=alpha&milestone=m1` (dropping `days` and `sprint`) without a history entry
@@ -23,3 +24,4 @@
 - After step 3, URL becomes `/reports/team?project=alpha&days=7` with a history entry
 - After step 4, URL becomes `/reports/team?project=alpha&milestone=m1` (`member` and `status` cleared)
 - After step 5, URL becomes `/reports/team?project=beta&days=30` and the select lists only the three periods
+- After step 6, the Bugs section is shown, the scope select reads "Last 7 days" and the bugs report is requested for `alpha` and 7 days

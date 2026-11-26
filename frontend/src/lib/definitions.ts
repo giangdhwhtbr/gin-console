@@ -28,6 +28,11 @@ export const DEFINITIONS = {
   overviewWaivers: "Waivers: waived gates and reviews of epics in progress.",
   overviewUnassigned: "Unassigned ready: ready beads with no assignee; prep tasks, milestones, merge gates and epics split into tracks are left out.",
   overviewWorkload: "Work in progress: beads in progress and not blocked, per assignee; prep tasks, milestones, merge gates and epics split into tracks are left out.",
+  bugsOpened: "Opened: bugs created in this scope, from every source. Bugs found later in Rework counts only the bugs linked discovered-from to a closed bead.",
+  bugsClosed: "Closed: bugs closed in this scope, from every source. Bugs found later in Rework counts only the bugs linked discovered-from to a closed bead.",
+  bugsOpenNow: "Open now: every open bug of the project, deferred ones included, whatever the scope.",
+  bugsOldest: "Oldest open: days since the oldest open bug of the project was created, whatever the scope.",
+  bugsMedian: "Median days to close: the median of the days from creation to close of the bugs closed in this scope.",
 } as const;
 
 export type DefinitionKey = keyof typeof DEFINITIONS;

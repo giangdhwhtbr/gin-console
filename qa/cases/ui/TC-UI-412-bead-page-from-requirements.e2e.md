@@ -1,4 +1,4 @@
-# TC-UI-406: Bead page from Requirements
+# TC-UI-412: Bead page from Requirements
 
 - **REQ:** REQ-UI-057@f37002dd
 - **Priority:** medium

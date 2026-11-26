@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { entry, list } from "@/features/milestones/milestoneFixtures";
-import { figures, headlines, statusHeadline, teamHeadline, velocityHeadline } from "./headlines";
+import { bugsReport } from "./bugs/bugsFixtures";
+import { bugsHeadline, figures, headlines, statusHeadline, teamHeadline, velocityHeadline } from "./headlines";
 import { periodStatusReport, statusKpis, statusReport } from "./status/statusFixtures";
 import { teamReport, teamTotals } from "./team/teamFixtures";
 import { report } from "./reportFixtures";
@@ -76,5 +77,16 @@ describe("report headlines", () => {
     const t = teamReport();
     const weekend = { ...t, milestones: t.milestones.map((m) => (m.id === "m1" ? { ...m, end: "2026-10-30", closed_on: "2026-10-31" } : m)), milestone: "m1" };
     expect(teamHeadline(weekend, null)).toEqual({ text: "Finished on time", warn: false });
+  });
+});
+
+describe("bugsHeadline", () => {
+  const withOpen = (open_now: number) => bugsReport({ figures: { ...bugsReport().figures, open_now } });
+  it.each([
+    [0, "No open bugs"],
+    [1, "1 open bug"],
+    [25, "25 open bugs"],
+  ])("REQ-UI-095 bugs headline for %i open bugs", (n, text) => {
+    expect(bugsHeadline(withOpen(n))).toEqual({ text, warn: false });
   });
 });

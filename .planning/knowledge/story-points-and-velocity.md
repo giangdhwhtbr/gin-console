@@ -10,6 +10,8 @@ Epic gin-console-ulf (2026-11-19) shows gin-workflow story points and velocity K
 - gin rules that shape test data: `committed_points` and `planned_days_per_point` are stored on the milestone at kick-start; a pointed epic needs the `roadmap` label; `days_per_point` counts working days from `started_at` to `closed_at` of the last 10 closed pointed epics, so epics that each span a whole milestone give unrealistic values; `added_points` comes from `milestone_moves` after the kickoff. `bd import` accepts `points_history` and `milestone_moves` as lists in metadata.
 - The Milestones list grid uses `@min-[60rem]:` with seven columns (see [container-queries-for-lists](container-queries-for-lists.md)).
 
+- `actual_days` (gin `milestone.py`, console `reports/points.py`) counts working days Monday to Friday from `started_at` to `closed_at`, at least 1, so an epic done on a weekend or within a day is 1 whatever its size. Trust and wayfinding (gin-console-6bd) had 5 epics of 3 to 13 points at 1 day each, hence 0.11 days per point: that shows the floor more than the effort.
+
 **Consequences**
 - The example project's milestone epics now carry `roadmap`, so its forecast card shows and `ex-m2` has many warnings.
 - `say_do` of an active milestone reads 0% until its pointed epics close.

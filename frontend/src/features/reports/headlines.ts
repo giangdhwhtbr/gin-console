@@ -3,6 +3,7 @@ import { formatDate } from "@/lib/dates";
 import type { DaysPerPoint, MilestoneList } from "@/features/milestones/api";
 import { oneDecimal, plural } from "@/features/milestones/format";
 import type { Report } from "./api";
+import type { BugsReport } from "./bugs/bugsApi";
 import { formatDays, formatPercent } from "./format";
 import type { ReportSection } from "./sections";
 import { selectedStatusMilestone, type StatusReport } from "./status/statusApi";
@@ -61,4 +62,10 @@ export function figures(section: ReportSection, report: Report): [string, string
     ["Median cycle time", formatDays(delivery.overall.cycle?.median ?? null)],
     ["Median lead time", formatDays(delivery.overall.lead?.median ?? null)],
   ];
+}
+
+/** REQ-UI-095: the Bugs section headline counts the open bugs of the project. */
+export function bugsHeadline(report: BugsReport): Headline {
+  const open = report.figures.open_now;
+  return { text: open === 0 ? "No open bugs" : plural(open, "open bug"), warn: false };
 }

@@ -23,3 +23,6 @@ export const VELOCITY_COLORS = {
   daysPerPoint: "var(--series-3)",
   planned: "var(--series-4)",
 } as const;
+
+/** Bugs section series: opened is the alarming one, closed the done one. */
+export const BUG_COLORS = { opened: "var(--color-destructive)", closed: "var(--color-state-done)" } as const;
