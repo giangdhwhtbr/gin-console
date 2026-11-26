@@ -21,6 +21,7 @@ from gin_console.milestones.source import (
     list_milestones,
     show_milestone,
     with_epic_states,
+    with_history,
 )
 from gin_console.milestones.wbs import build_wbs
 from gin_console.milestones.wbs_formats import to_csv, to_markdown, to_xlsx
@@ -77,7 +78,7 @@ def build_router(
             snapshot = snapshots.get(cwd)
         except BeadsError:
             snapshot = None  # REQ-MILESTONE-UI-025: no readable export, so the fallback counts
-        return with_epic_states(listing, snapshot)
+        return with_history(with_epic_states(listing, snapshot), snapshot)
 
     @router.get("/milestones/{project}/wbs")
     def get_wbs(  # REQ-MILESTONE-UI-026

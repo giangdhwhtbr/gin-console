@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 from fake_export import bead, dep, write_export
-from fake_gw import LIST, SHOW, FakeGw
+from fake_gw import LIST, LIST_CHAINED, SHOW, FakeGw
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -277,7 +277,7 @@ def test_milestone_ui_008_forecast_and_lanes(tmp_path: Path) -> None:
     listed = {**LIST, "forecast": FORECAST, "milestones": [{**LIST["milestones"][0], "lanes": 2}]}
     api = make(tmp_path, FakeGw({"list": listed, "show": {**SHOW, "lanes": 2}}))
     body = api.get("/api/milestones", params={"project": "proj"}).json()
-    assert body["forecast"] == {**FORECAST, "epics": []}
+    assert body["forecast"] == {**FORECAST, "epics": [], "milestones": []}
     assert body["milestones"][0]["lanes"] == 2
     assert api.get("/api/milestones/proj/gw-ab1").json()["lanes"] == 2
 
@@ -293,7 +293,9 @@ def test_milestone_ui_008_forecast_epics(tmp_path: Path) -> None:
             "planned_end": "2026-11-25",
             "remaining_days": 3,
             "estimate_source": "points",
-            "warnings": [],
+            "title": "Epic one",
+            "status": "open",
+            "warnings": [{"code": "overflow", "days": 42}],
         },
         {
             "id": "e-5",
@@ -309,23 +311,86 @@ def test_milestone_ui_008_forecast_epics(tmp_path: Path) -> None:
     listed = {**LIST, "forecast": {**FORECAST, "epics": epics}}
     api = make(tmp_path, FakeGw({"list": listed, "show": SHOW}))
     body = api.get("/api/milestones", params={"project": "proj"}).json()
-    keys = ["id", "milestone", "planned_start", "planned_end", "estimate_source"]
-    assert [{k: e[k] for k in keys} for e in body["forecast"]["epics"]] == [
+    assert body["forecast"]["epics"] == [
         {
-            "id": "e-1",
-            "milestone": "M1",
-            "planned_start": "2026-11-23",
-            "planned_end": "2026-11-25",
-            "estimate_source": "points",
+            **epics[0],
+            "title": "Epic one",
+            "status": "open",
+            "warnings": [{"code": "overflow", "days": 42, "count": None}],
+        },
+        {**epics[1], "title": None, "status": None, "warnings": []},
+    ]
+
+
+# REQ-MILESTONE-UI-008 chained milestones
+def test_milestone_ui_008_chained_milestones_pass_through(tmp_path: Path) -> None:
+    api = make(tmp_path, FakeGw({"list": LIST_CHAINED, "show": SHOW}))
+    body = api.get("/api/milestones", params={"project": "proj"}).json()
+    assert body["forecast"]["milestones"] == [
+        {"id": "M1", "start": "2026-11-02", "finish": "2026-11-20", "overflow_days": 3},
+        {"id": "M2", "start": None, "finish": None, "overflow_days": 0},
+        {"id": "M4", "start": None, "finish": None, "overflow_days": 0},
+    ]
+
+
+def _closed_export(tmp_path: Path) -> None:
+    roadmap = ["roadmap"]
+    rows = [
+        bead("m1", issue_type="milestone"),
+        bead(
+            "e-2",
+            issue_type="epic",
+            status="closed",
+            labels=roadmap,
+            started_at="2026-10-12T09:00:00Z",
+            closed_at="2026-10-28T09:00:00Z",
+            dependencies=[dep("e-2", "m1", "parent-child")],
+        ),
+        bead(
+            "e-3",
+            issue_type="epic",
+            status="closed",
+            labels=roadmap,
+            created_at="2026-10-01T09:00:00Z",
+            closed_at="2026-10-09T09:00:00Z",
+        ),
+        bead("e-4", issue_type="epic", status="closed", closed_at="2026-10-09T09:00:00Z"),
+        bead("e-5", issue_type="epic", labels=roadmap),
+    ]
+    write_export(tmp_path / "alpha", rows)
+
+
+# REQ-MILESTONE-UI-008 closed epics
+def test_milestone_ui_008_closed_epics(tmp_path: Path) -> None:
+    _closed_export(tmp_path)
+    body = _epics_of(tmp_path, FakeGw()).json()
+    assert body["closed_epics"] == [
+        {
+            "id": "e-3",
+            "title": "Title of e-3",
+            "milestone": None,
+            "start": "2026-10-01",
+            "end": "2026-10-09",
         },
         {
-            "id": "e-5",
-            "milestone": "M1",
-            "planned_start": "2026-12-23",
-            "planned_end": "2027-01-01",
-            "estimate_source": "assumed",
+            "id": "e-2",
+            "title": "Title of e-2",
+            "milestone": "m1",
+            "start": "2026-10-12",
+            "end": "2026-10-28",
         },
     ]
+
+
+# REQ-MILESTONE-UI-008 closed epics unreadable
+def test_milestone_ui_008_closed_epics_unreadable(tmp_path: Path) -> None:
+    def unreadable(cwd: Path) -> Any:
+        raise BeadsError("no export")
+
+    (tmp_path / "alpha").mkdir()
+    response = _epics_of(tmp_path, FakeGw(), read_beads=unreadable)
+    assert response.status_code == 200
+    assert response.json()["closed_epics"] is None
 
 
 # REQ-MILESTONE-UI-008 a forecast without epics answers an empty list
@@ -333,6 +398,7 @@ def test_milestone_ui_008_forecast_without_epics_is_empty(tmp_path: Path) -> Non
     api = make(tmp_path, FakeGw({"list": {**LIST, "forecast": FORECAST}, "show": SHOW}))
     body = api.get("/api/milestones", params={"project": "proj"}).json()
     assert body["forecast"]["epics"] == []
+    assert body["forecast"]["milestones"] == []
 
 
 # REQ-MILESTONE-UI-008 output from an older gin-workflow

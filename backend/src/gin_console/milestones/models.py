@@ -54,12 +54,30 @@ class MilestoneEntry(BaseModel):
     velocity: Velocity | None = None
 
 
+class EpicWarning(BaseModel):
+    code: Text
+    days: int | None = None
+    count: int | None = None
+
+
 class ForecastEpic(BaseModel):
     id: Text
     milestone: Text | None
     planned_start: IsoDate
     planned_end: IsoDate
     estimate_source: Literal["points", "days", "assumed"] | None = None
+    title: Text | None = None
+    status: Text | None = None
+    lane: int | None = None
+    remaining_days: int | None = None
+    warnings: list[EpicWarning] = Field(default_factory=list)
+
+
+class ForecastMilestone(BaseModel):
+    id: Text
+    start: IsoDate | None = None
+    finish: IsoDate | None = None
+    overflow_days: int = 0
 
 
 class Forecast(BaseModel):
@@ -72,6 +90,15 @@ class Forecast(BaseModel):
     unestimated: int
     error: Text | None
     epics: list[ForecastEpic] = Field(default_factory=list)
+    milestones: list[ForecastMilestone] = Field(default_factory=list)
+
+
+class ClosedEpic(BaseModel):
+    id: Text
+    title: Text
+    milestone: Text | None
+    start: IsoDate
+    end: IsoDate
 
 
 class MilestoneList(BaseModel):
@@ -80,12 +107,7 @@ class MilestoneList(BaseModel):
     today: IsoDate
     forecast: Forecast | None = None
     days_per_point: DaysPerPoint | None = None
-
-
-class EpicWarning(BaseModel):
-    code: Text
-    days: int | None = None
-    count: int | None = None
+    closed_epics: list[ClosedEpic] | None = None
 
 
 class ExternalDependency(BaseModel):
