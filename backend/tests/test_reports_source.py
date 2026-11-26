@@ -122,6 +122,25 @@ def test_reports_021_bug_days_are_the_dates_of_discovered_from_bugs() -> None:
     assert one.bugs == 2
 
 
+# REQ-REPORTS-040
+def test_reports_040_found_in_is_the_sorted_discovered_from_targets() -> None:
+    rows = [
+        row(
+            "b-1",
+            issue_type="bug",
+            dependencies=[
+                dep("b-1", "t-9", "discovered-from"),
+                dep("b-1", "t-1", "discovered-from"),
+                dep("b-1", "t-5", "blocks"),
+            ],
+        ),
+        row("t-1"),
+    ]
+    by_id = _by_id(rows)
+    assert by_id["b-1"].found_in == ["t-1", "t-9"]
+    assert by_id["t-1"].found_in == []
+
+
 # REQ-REPORTS-021
 def test_reports_021_epic_gets_child_counts() -> None:
     rows = [
