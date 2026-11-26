@@ -12,8 +12,9 @@ FILE = f"/api/requirements/mockups/p/files/ui/{DAY}/style.css"
 REFUSED = {"error": "cross-site request refused"}
 
 
-def client(tmp_path: Path, bd: FakeBd) -> TestClient:
-    """An app over project `p`, which has a confirmed mockup folder with `style.css`."""
+def client(tmp_path: Path, bd: FakeBd, root_path: str = "") -> TestClient:
+    """An app over project `p`, which has a confirmed mockup folder with `style.css`, served
+    under `root_path` as a reverse proxy would."""
     (tmp_path / "dist").mkdir()
     (tmp_path / "dist" / "index.html").write_text("<html>console</html>")
     folder = tmp_path / "p" / "docs" / "specs" / "ui" / "assets" / DAY
@@ -22,7 +23,7 @@ def client(tmp_path: Path, bd: FakeBd) -> TestClient:
     (folder / "style.css").write_text("body { color: red; }")
     settings = Settings(projects=[ProjectEntry(name="p", path=tmp_path / "p")])
     app = create_app(settings, static_dir=tmp_path / "dist", run_bd=bd, schedule_pulls=False)
-    return TestClient(app)
+    return TestClient(app, root_path=root_path)
 
 
 def site(value: str) -> dict[str, str]:
@@ -150,3 +151,15 @@ def test_server_012_not_found_paths(tmp_path: Path, path: str) -> None:
 def test_server_012_frontend_not_refused(tmp_path: Path) -> None:
     res = client(tmp_path, FakeBd()).get("/beads", headers=site("cross-site"))
     assert res.status_code == 200 and "console" in res.text
+
+
+# REQ-SERVER-012: behind a proxy with a root path, the check uses the route path
+def test_server_012_root_path(tmp_path: Path) -> None:
+    app = client(tmp_path, FakeBd(), root_path="/console")
+    assert app.get("/console/api/health").status_code == 200
+    res = app.get("/console/api/health", headers=site("cross-site"))
+    assert res.status_code == 403 and res.json() == REFUSED
+    res = app.get(f"/console{FILE}", headers=site("cross-site"))
+    assert res.status_code == 200 and res.text == "body { color: red; }"
+    res = app.post(f"/console{FILE}", headers=site("cross-site"))
+    assert res.status_code == 403 and res.json() == REFUSED

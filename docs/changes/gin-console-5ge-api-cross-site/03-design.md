@@ -5,7 +5,7 @@ Epic: gin-console-5ge
 ## Architecture
 
 - `backend/src/gin_console/app.py`: one HTTP middleware, added in `create_app` beside the gzip middleware, so it runs before every router and before the SPA fallback.
-  - It reads `request.url.path` and the header `sec-fetch-site`.
+  - It reads the header `sec-fetch-site` and the route path: `scope["path"]` without `scope["root_path"]`, the decoded path the router matches, so the check also holds behind a proxy with a root path. Not `request.url.path`, which Starlette cuts at a decoded `?` or `#`.
   - It refuses when the path starts with `/api/` and the value is `cross-site` or `same-site`, unless the method is GET and the path starts with `/api/requirements/mockups/` and has `/files/` as its third segment after `mockups` (`/api/requirements/mockups/<project>/files/...`).
   - A refusal is `JSONResponse(status_code=403, content={"error": "cross-site request refused"})`.
 - Nothing else changes: the mockup CSP, the sandbox and the file checks of ADR 0004 stay.

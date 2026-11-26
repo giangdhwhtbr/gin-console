@@ -11,6 +11,7 @@ from pathlib import Path
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.types import Scope
 
 from gin_console.beads.pull import BdRunner, PullScheduler, PullService, run_bd_pull
 from gin_console.beads.router import build_router as build_beads_router
@@ -36,6 +37,16 @@ _METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
 DEFAULT_STATIC_DIR = Path(__file__).resolve().parents[3] / "frontend" / "dist"
 _REFUSED_SITES = {"cross-site", "same-site"}
 _MOCKUP_FILES = re.compile(r"/api/requirements/mockups/[^/]+/files/")
+
+
+def route_path(scope: Scope) -> str:
+    """The decoded path the router matches: scope["path"] without the proxy's root_path.
+    Not request.url.path, which is cut at a decoded "?" or "#"."""
+    path: str = scope["path"]
+    root: str = scope.get("root_path", "")
+    if root and path.startswith(root + "/"):
+        return path[len(root) :]
+    return path
 
 
 def refuses_cross_site(method: str, path: str, site: str | None) -> bool:
@@ -94,10 +105,8 @@ def create_app(
     async def refuse_cross_site(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
-        # scope["path"] is the decoded path the router matches; request.url.path would cut it
-        # at a decoded "?" or "#"
         site = request.headers.get("sec-fetch-site")
-        if refuses_cross_site(request.method, request.scope["path"], site):
+        if refuses_cross_site(request.method, route_path(request.scope), site):
             return JSONResponse(status_code=403, content={"error": "cross-site request refused"})
         return await call_next(request)
 
