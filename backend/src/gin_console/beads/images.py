@@ -45,6 +45,8 @@ _OPEN_FLAGS = (
     | getattr(os, "O_BINARY", 0)
 )
 _HEAD = 12  # the bytes `media_type` needs
+_FD_PATHS = Path("/proc/self/fd")  # where Linux names the file behind each open descriptor
+_BROKEN_ESCAPE = re.compile(r"%(?![0-9A-Fa-f]{2})")
 _MARKDOWN_TEXT, _ALT_ABOVE, _NO_CAPTION = 0, 1, 2  # where a caption comes from, best first
 
 
@@ -72,6 +74,10 @@ class _Mention:
 
 
 def _decode(text: str) -> str:
+    """Percent-decoded as the browser's `decodeURIComponent`: a text with a broken escape, or
+    with bytes that are no UTF-8, stays as written."""
+    if _BROKEN_ESCAPE.search(text):
+        return text
     try:
         return unquote(text, errors="strict")
     except UnicodeDecodeError:
@@ -230,13 +236,28 @@ def _load(file: Path, folders: Sequence[Path], limit: int) -> tuple[bytes, str] 
         same = (opened.st_dev, opened.st_ino) == (checked.st_dev, checked.st_ino)
         if not same or not stat.S_ISREG(opened.st_mode) or opened.st_size > MAX_BYTES:
             return None
+        if not _still_inside(handle, opened, file, folders):
+            return None
         content = _read_all(handle, limit)
-    except OSError:  # gone or refused while it was read
+    except _REFUSED:  # gone or refused while it was read
         return None
     finally:
         os.close(handle)
     kind = media_type(content)
     return (content, kind) if kind is not None and len(content) <= MAX_BYTES else None
+
+
+def _still_inside(handle: int, opened: os.stat_result, file: Path, folders: Sequence[Path]) -> bool:
+    """The open file still lies inside an allowed folder: a folder on the way may have been
+    swapped for a link after `file` was resolved, and both `os.stat` and `os.open` follow it."""
+    if _FD_PATHS.is_dir():
+        # the kernel's name for the open file, links resolved; read once, never walked again
+        place = Path(os.readlink(_FD_PATHS / str(handle)))
+        return any(place.is_relative_to(folder) for folder in folders)
+    again = file.resolve(strict=True)
+    current = os.stat(again)
+    inside = any(again.is_relative_to(folder) for folder in folders)
+    return inside and (current.st_dev, current.st_ino) == (opened.st_dev, opened.st_ino)
 
 
 def _read_all(handle: int, limit: int) -> bytes:

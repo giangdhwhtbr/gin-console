@@ -1,9 +1,12 @@
 """The images a bead names (REQ-BEADS-026) and whether each may be served (REQ-BEADS-027)."""
 
+import gc
+import math
 import os
 import sys
 import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -357,48 +360,56 @@ def test_beads_026_file_url_hosts_and_drives() -> None:
     assert paths(image_refs(text)) == ["/x/y.png", "/x/z.png", "C:/shots/c.png", "c:/shots/d.png"]
 
 
-def finishes_quickly(text: str) -> None:
+SIZE = 16_384  # characters; the work for twice as many must not grow much more than twice
+# bead text of about `n` characters, shaped to make a backtracking or pairwise parser slow
+SHAPES: dict[str, Callable[[int], str]] = {
+    "local": lambda n: "local:" + " " * n + "x",
+    "local-inner": lambda n: "local: a" + " " * n + "b",
+    "local-trailing": lambda n: "local: a" + " " * n,
+    "local-image": lambda n: "local:" + " " * n + "a.png",
+    "local-lines": lambda n: "\n".join(["local:" + " " * 64] * (n // 70)),
+    "many-local": lambda n: "local:\n" * (n // 7),
+    "many-local-images": lambda n: "![a](b)\nlocal: c.png\n" * (n // 21),
+    "link": lambda n: "[a](b" + " " * n,
+    "image": lambda n: "![a](b" + " " * n + "x",
+    "title": lambda n: '[a](b "' + " " * n,
+    "text": lambda n: "[" + "a" * n,
+    "spans": lambda n: "[a](b) x.png " * (n // 13),
+    "pairs": lambda n: " ".join(f"[{k}](u{k}.png) v{k}.png" for k in range(n // 20)),
+}
+
+
+def best_time(text: str, repeats: int) -> float:
+    """The fastest of three timings of `repeats` parses: the least disturbed by other work."""
+    timings: list[float] = []
+    for _ in range(3):
+        started = time.perf_counter()
+        for _ in range(repeats):
+            image_refs(text)
+        timings.append(time.perf_counter() - started)
+    return min(timings)
+
+
+# REQ-BEADS-026: bead text is untrusted, so finding its images stays linear: twice the text takes
+# less than three times as long (a quadratic parser takes four)
+@pytest.mark.parametrize("shape", list(SHAPES))
+def test_beads_026_parsing_is_linear(shape: str) -> None:
+    small, large = SHAPES[shape](SIZE), SHAPES[shape](2 * SIZE)
     started = time.perf_counter()
-    image_refs(text)
-    assert time.perf_counter() - started < 0.5
-
-
-# REQ-BEADS-026: bead text is untrusted, so finding its images stays linear
-@pytest.mark.parametrize(
-    "text",
-    [
-        "local:" + " " * 65_536 + "x",
-        "local: a" + " " * 65_536 + "b",
-        "local: a" + " " * 65_536,
-        "local:" + " " * 65_536 + "a.png",
-        "\n".join(["local:" + " " * 64] * 1_000),
-        "local:\n" * 50_000,
-        "![a](b)\nlocal: c.png\n" * 20_000,
-        "[a](b" + " " * 65_536,
-        "![a](b" + " " * 65_536 + "x",
-        '[a](b "' + " " * 65_536,
-        "[" + "a" * 65_536,
-        "[a](b) x.png " * 20_000,
-        " ".join(f"[{n}](u{n}.png) v{n}.png" for n in range(10_000)),
-    ],
-    ids=[
-        "local",
-        "local-inner",
-        "local-trailing",
-        "local-image",
-        "local-lines",
-        "many-local",
-        "many-local-images",
-        "link",
-        "image",
-        "title",
-        "text",
-        "spans",
-        "pairs",
-    ],
-)
-def test_beads_026_parsing_is_linear(text: str) -> None:
-    finishes_quickly(text)
+    image_refs(large)
+    once = time.perf_counter() - started
+    assert once < 3  # the old local: pattern took about 6 s on this text, and 25 s on 64 KB
+    # each timing long enough (about 20 ms) for the clock and the scheduler not to matter
+    repeats = max(1, math.ceil(0.02 / max(once / 2, 1e-6)))
+    ratios: list[float] = []
+    gc.disable()  # no collection inside one timing but not the other
+    try:
+        # up to three tries: a busy host can slow one timing, a quadratic parser slows them all
+        while len(ratios) < 3 and min(ratios, default=4) >= 3:
+            ratios.append(best_time(large, repeats) / best_time(small, repeats))
+    finally:
+        gc.enable()
+    assert min(ratios) < 3, ratios
 
 
 # REQ-BEADS-026: a local: line keeps its path without the spaces around it
@@ -491,3 +502,54 @@ def test_beads_026_index_computes_once_under_concurrency(
         worker.join()
     assert len(calls) == 1
     assert all(result is found[0] for result in found) and len(found) == 4
+
+
+def swap_on_stat(monkeypatch: pytest.MonkeyPatch, target: Path, swap: Any) -> None:
+    """Run `swap` once, right before `target` is first stat-ed after it was resolved."""
+    real_stat = os.stat
+    swapped: list[bool] = []
+
+    def stating(path: Any, *args: Any, **kwargs: Any) -> os.stat_result:
+        if not swapped and Path(path) == target:
+            swapped.append(True)
+            swap()
+        return real_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(os, "stat", stating)
+
+
+# REQ-BEADS-027, REQ-BEADS-028: a folder on the way swapped for a link after the file was resolved
+# leads the open file out of the allowed folders; it is refused, through /proc/self/fd where the
+# system has it and by resolving the path again elsewhere
+@needs_symlinks
+@pytest.mark.parametrize("descriptors", ["proc", "none"])
+def test_beads_028_folder_swapped_for_a_link_after_resolve(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, descriptors: str
+) -> None:
+    if descriptors == "none":
+        monkeypatch.setattr(images_module, "_FD_PATHS", tmp_path / "no-proc")
+    elif not Path("/proc/self/fd").is_dir():
+        pytest.skip("no /proc/self/fd")
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
+    shot = put(alpha.path / "shots" / "a.png")
+    put(tmp_path / "evil" / "a.png", PNG + b"outside")
+
+    def to_link() -> None:
+        (alpha.path / "shots").rename(alpha.path / "shots-old")
+        (alpha.path / "shots").symlink_to(tmp_path / "evil")
+
+    swap_on_stat(monkeypatch, shot.resolve(), to_link)
+    assert check(shot, [alpha.path]) is None
+
+
+# REQ-BEADS-027: the fallback without /proc/self/fd still serves an untouched file
+def test_beads_027_available_without_proc(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(images_module, "_FD_PATHS", tmp_path / "no-proc")
+    shot = put(tmp_path / "alpha" / "a.png")
+    assert check(shot, [tmp_path / "alpha"]) == "image/png"
+
+
+# REQ-BEADS-026: an address with a broken escape stays as written, as the browser keeps it
+def test_beads_026_broken_escape_kept_as_written() -> None:
+    text = "[x](a%20b%.png) ![y](c%2.png) [z](d%20e.png)"
+    assert paths(image_refs(text)) == ["a%20b%.png", "c%2.png", "d e.png"]

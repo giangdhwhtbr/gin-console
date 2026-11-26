@@ -13,6 +13,8 @@ describe("image match", () => {
     expect(imagePath("file:///srv/att/y.png")).toBe("/srv/att/y.png");
     expect(imagePath("qa/a%20b.png")).toBe("qa/a b.png");
     expect(imagePath("100%.png")).toBe("100%.png");
+    expect(imagePath("a%20b%.png")).toBe("a%20b%.png");
+    expect(imagePath("c%2.png")).toBe("c%2.png");
   });
 
   it("REQ-BEADS-026 imagePath reads file://localhost as this host, drops another host, keeps a drive", () => {
