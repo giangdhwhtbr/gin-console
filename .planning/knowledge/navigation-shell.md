@@ -12,7 +12,7 @@ The UX review of 2026-11-21 found that every page picked its own project, breadc
 - **Switcher:** `ProjectSwitcher.tsx` has three variants: sidebar from 1024px, a letter button in the rail, and the phone top bar. The Beads and Milestones pages have no project select of their own.
 - **Unknown project:** `UnknownProject.tsx` shows "No project <name> is configured" and makes no data request. `ProjectGuard` wraps the bead and milestone pages and shows "Loading projects…" while the list loads.
 - **Origin:** `frontend/src/app/origin.ts`, moved from `features/beads/returnState.ts`.
-  - Fields: `kind` (`beads`, `milestone`, `my-tasks`, `reports`; `projects` was removed with the Projects page), `project` (always a project name since gin-console-k4l), `label` (the milestone title) and `open`. The storage key `gin-console-beads-return` is unchanged.
+  - Fields: `kind` (`beads`, `milestone`, `my-tasks`, `reports`, and `requirements` since gin-console-rm-requirements; `projects` was removed with the Projects page), `project` (always a project name since gin-console-k4l), `label` (the milestone title) and `open`. The storage key `gin-console-beads-return` is unchanged.
   - `originFor` decides whether the breadcrumb's first link and the marked nav link use the origin.
   - The parent title in the breadcrumb comes from the loaded bead's `parent-child` dependency, with no extra request.
 - **Titles and Not found:**
@@ -24,7 +24,7 @@ The UX review of 2026-11-21 found that every page picked its own project, breadc
   - Only a real browser popstate marks an arrival; `navigate`'s own popstate is synthetic and clears it.
   - `useRestoreOnBack(ready)` scrolls once the data is shown, or to the top when nothing is saved. It then focuses `[data-id=<opened>]` and sets `data-last-opened` for 2 s, using a module-level timer.
   - `history.scrollRestoration` is `manual` (`main.tsx`).
-- **Report sections:** `features/reports/sectionStore.ts`. ReportsPage publishes the sections and headlines; Layout lists them under Reports while the sidebar is expanded from `lg`. The page's tab list hides through `lg:group-data-[sidebar=expanded]/shell:hidden`.
+- **Report sections:** `features/reports/sectionStore.ts`. ReportsPage publishes the sections and headlines; Layout lists them under Reports while the sidebar is expanded from `lg`. The Requirements page does the same with `features/requirements/sectionStore.ts` ([requirements-page](requirements-page.md)). The page's tab list hides through `lg:group-data-[sidebar=expanded]/shell:hidden`.
 
 **Consequences**
 - **Test isolation:** the stores are module state that survives between vitest cases. Page tests reset them in `beforeEach` (`setFavorite(null)`, `rememberProject(...)`, `forgetConfiguredProjects()`, `clearOrigin()`) or re-import with `vi.resetModules()`.
