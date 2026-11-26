@@ -3,7 +3,7 @@
 - **REQ:** REQ-SERVER-004@b306e141
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-23T03-32-23-api
+- **Run:** qa/evidence/2026-11-26T14-14-56-api
 - **Checked:** be8ee062
 
 **Preconditions:**
