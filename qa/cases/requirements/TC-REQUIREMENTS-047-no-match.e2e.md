@@ -3,7 +3,7 @@
 - **REQ:** REQ-REQUIREMENTS-014@99d1fce2
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-25T17-32-34
+- **Run:** qa/evidence/2026-11-26T02-30-19
 - **Checked:** 3f8a427e
 
 **Preconditions:**

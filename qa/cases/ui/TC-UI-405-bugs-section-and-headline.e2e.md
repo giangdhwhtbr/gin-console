@@ -2,6 +2,9 @@
 
 - **REQ:** REQ-UI-095@3fd9927e
 - **Priority:** high
+- **Result:** passed
+- **Run:** qa/evidence/2026-11-26T02-30-19
+- **Checked:** 97e30fb9
 
 **Preconditions:**
 - Project `alpha` has a bugs report whose `figures.open_now` is 25, and a rework report
