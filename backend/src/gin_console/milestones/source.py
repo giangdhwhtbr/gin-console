@@ -1,14 +1,15 @@
 """Milestones of a project via `gin milestone`; the only module that knows its JSON."""
 
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Literal, Protocol
 
 from pydantic import ValidationError
 
 from gin_console.beads.definitions import Counts, child_counts
+from gin_console.beads.milestones import milestone_of
 from gin_console.beads.snapshot import Snapshot
-from gin_console.milestones.models import MilestoneDetail, MilestoneList
+from gin_console.milestones.models import ClosedEpic, MilestoneDetail, MilestoneList
 from gin_console.projects.collect import CollectError, run_json
 
 GW_TIMEOUT = 30.0
@@ -34,9 +35,7 @@ def run_gw(args: list[str], cwd: Path) -> Any:
         return run_json(["gin", *args], cwd, timeout=GW_TIMEOUT)
     except CollectError as exc:
         if exc.returncode == 2 and "invalid choice: 'milestone'" in exc.stderr:
-            raise MilestonesError(
-                "this gin has no milestone command", "outdated"
-            ) from None
+            raise MilestonesError("this gin has no milestone command", "outdated") from None
         if "providers.task_tracking: beads" in exc.stderr:
             raise MilestonesError(
                 "milestones need providers.task_tracking: beads", "tracking"
@@ -51,9 +50,7 @@ def _schema_1(data: Any, what: str) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise MilestonesError(f"gin milestone {what} output was not understood")
     if data.get("schema") != SCHEMA:
-        raise MilestonesError(
-            f"gin reports milestone schema {data.get('schema')}", "schema"
-        )
+        raise MilestonesError(f"gin reports milestone schema {data.get('schema')}", "schema")
     return data
 
 
@@ -88,6 +85,45 @@ def with_epic_states(listing: MilestoneList, snapshot: Snapshot | None) -> Miles
             }
         entries.append(entry.model_copy(update={"epics": epics.model_copy(update=update)}))
     return listing.model_copy(update={"milestones": entries})
+
+
+def _local_date(stamp: Any) -> str:
+    return datetime.fromisoformat(stamp).astimezone().date().isoformat()
+
+
+def closed_epics(snapshot: Snapshot) -> list[ClosedEpic]:
+    """Closed roadmap epics with their local start and end dates; a row whose stamps do not
+    parse is left out."""
+    found: list[ClosedEpic] = []
+    for ident, row in snapshot.rows.items():
+        if (
+            row.get("issue_type") != "epic"
+            or row.get("status") != "closed"
+            or "roadmap" not in (row.get("labels") or [])
+        ):
+            continue
+        try:
+            found.append(
+                ClosedEpic(
+                    id=ident,
+                    title=str(row.get("title")),
+                    milestone=milestone_of(snapshot, parent)
+                    if (parent := snapshot.parents.get(ident))
+                    else None,
+                    start=_local_date(row.get("started_at") or row.get("created_at")),
+                    end=_local_date(row.get("closed_at")),
+                )
+            )
+        except (TypeError, ValueError, ValidationError):
+            continue
+    return sorted(found, key=lambda e: (e.start, e.id))
+
+
+def with_history(listing: MilestoneList, snapshot: Snapshot | None) -> MilestoneList:
+    """Closed epics from the export; null when the export is unreadable."""
+    return listing.model_copy(
+        update={"closed_epics": None if snapshot is None else closed_epics(snapshot)}
+    )
 
 
 def show_milestone(

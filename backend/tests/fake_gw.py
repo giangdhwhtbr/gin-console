@@ -22,6 +22,25 @@ LIST: dict[str, Any] = {
     "unassigned_epics": 3,
     "today": "2026-10-29",
 }
+LIST_CHAINED: dict[str, Any] = {
+    **LIST,
+    "forecast": {
+        "deadline": None,
+        "lanes": 1,
+        "start": "2026-11-02",
+        "finish": None,
+        "overflow_days": 0,
+        "open_epics": 2,
+        "unestimated": 0,
+        "error": None,
+        "milestones": [
+            {"id": "M1", "start": "2026-11-02", "finish": "2026-11-20", "overflow_days": 3},
+            {"id": "M2", "start": None, "finish": None, "overflow_days": 0},
+            {"id": "M4", "start": None, "finish": None},
+        ],
+        "epics": [],
+    },
+}
 SHOW: dict[str, Any] = {
     "schema": 1,
     "id": "gw-ab1",

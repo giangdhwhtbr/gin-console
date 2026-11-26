@@ -11,6 +11,7 @@ from fake_gw import LIST, SHOW, FakeGw
 from gin_console.beads.snapshot import build_snapshot
 from gin_console.milestones.source import (
     MilestonesError,
+    closed_epics,
     list_milestones,
     run_gw,
     show_milestone,
@@ -212,3 +213,39 @@ def test_milestone_ui_025_bead_missing() -> None:
     }
     absent = with_epic_states(_listing(3, 1), build_snapshot([bead("x")]))
     assert absent.milestones[0].epics.ready == 2
+
+
+def _closed(ident: str, **overrides: Any) -> dict[str, Any]:
+    fields = {"closed_at": "2026-10-28T09:00:00Z", **overrides}
+    return bead(ident, issue_type="epic", status="closed", labels=["roadmap"], **fields)
+
+
+# REQ-MILESTONE-UI-008 closed epics
+def test_milestone_ui_008_closed_epic_takes_the_nearest_milestone() -> None:
+    rows = [
+        bead("m1", issue_type="milestone"),
+        bead("e-1", issue_type="epic", dependencies=[dep("e-1", "m1", "parent-child")]),
+        _closed("e-6", dependencies=[dep("e-6", "e-1", "parent-child")]),
+    ]
+    assert [(e.id, e.milestone) for e in closed_epics(build_snapshot(rows))] == [("e-6", "m1")]
+
+
+# REQ-MILESTONE-UI-008 closed epics
+def test_milestone_ui_008_closed_epic_without_a_readable_stamp_is_left_out() -> None:
+    rows = [
+        _closed("e-1", closed_at=None),
+        _closed("e-2", closed_at="not a date"),
+        _closed("e-3", started_at="garbage"),
+        _closed("e-4"),
+    ]
+    assert [e.id for e in closed_epics(build_snapshot(rows))] == ["e-4"]
+
+
+# REQ-MILESTONE-UI-008 closed epics
+def test_milestone_ui_008_closed_epics_are_ordered_by_start_then_id() -> None:
+    rows = [
+        _closed("e-b", started_at="2026-10-12T09:00:00Z"),
+        _closed("e-c", started_at="2026-10-01T09:00:00Z"),
+        _closed("e-a", started_at="2026-10-12T09:00:00Z"),
+    ]
+    assert [e.id for e in closed_epics(build_snapshot(rows))] == ["e-c", "e-a", "e-b"]
