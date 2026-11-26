@@ -60,22 +60,16 @@ const sameScope = (a: Scope, b: Scope) =>
 /**
  * An answer counts only for the request it was made for. An answer to the default scope, or to a milestone the server
  * does not list, also counts for the milestone it chose, so writing that milestone into the URL does not ask again.
+ * The team, status and bugs reports share this rule.
  */
-function answers(answer: TeamAnswer, base: string, scope: Scope): boolean {
+function answers(
+  answer: { base: string; requested: Scope; value: { status: "error" } | { status: "ok"; report: { milestone: string | null } } },
+  base: string,
+  scope: Scope,
+): boolean {
   if (answer.base !== base) return false;
   if (sameScope(answer.requested, scope)) return true;
   return scope.kind === "milestone" && answer.requested.kind !== "period" && answer.value.status === "ok" && answer.value.report.milestone === scope.id;
-}
-
-function answersStatus(answer: StatusAnswer, base: string, scope: Scope): boolean {
-  if (answer.base !== base) return false;
-  if (sameScope(answer.requested, scope)) return true;
-  return scope.kind === "milestone" && answer.requested.kind !== "period" && answer.value.status === "ok" && answer.value.report.milestone === scope.id;
-}
-
-/** The bugs report answers only the request it was made for; unlike the status report it never follows a milestone. */
-function answersBugs(answer: BugsAnswer, base: string, scope: Scope): boolean {
-  return answer.base === base && sameScope(answer.requested, scope);
 }
 
 /** The Reports page for one section: the scope of REQ-REPORTS-033, the row of section links and the section's panel. */
@@ -125,11 +119,11 @@ export function ReportsView({ section }: { section: ReportSection }) {
   const team: LoadedTeam = settledTeam !== null && teamCurrent ? settledTeam.value : { status: "loading" };
 
   const statusBase = JSON.stringify([selected, statusAttempt]);
-  const statusCurrent = settledStatus !== null && answersStatus(settledStatus, statusBase, scope);
+  const statusCurrent = settledStatus !== null && answers(settledStatus, statusBase, scope);
   const status: LoadedStatus = settledStatus !== null && statusCurrent ? settledStatus.value : { status: "loading" };
 
   const bugsBase = JSON.stringify([selected, bugsAttempt]);
-  const bugsCurrent = settledBugs !== null && answersBugs(settledBugs, bugsBase, scope);
+  const bugsCurrent = settledBugs !== null && answers(settledBugs, bugsBase, scope);
   const bugs: LoadedBugs = settledBugs !== null && bugsCurrent ? settledBugs.value : { status: "loading" };
 
   // REQ-REPORTS-033: the team report is asked for whatever the section; its milestones fill the scope select

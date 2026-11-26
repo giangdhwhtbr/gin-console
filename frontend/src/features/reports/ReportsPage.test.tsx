@@ -538,6 +538,19 @@ describe("ReportsPage", () => {
     await waitFor(() => expect(bugsCalls(mock)).toEqual(["/api/reports/bugs?project=alpha&days=7"]));
   });
 
+  it("REQ-REPORTS-033 Default scope in the URL: the bugs report is asked for once and its headline stays when the milestone is written", async () => {
+    const mock = stub(undefined, undefined, undefined, undefined, (url) =>
+      json(bugsReport({ milestone: url.searchParams.get("milestone") ?? "m2", figures: { ...bugsReport().figures, open_now: 4 } })),
+    );
+    open("/reports/status?project=alpha");
+    const headline = /Bugs\s*4 open bugs/;
+    await screen.findByRole("link", { name: headline });
+    await waitFor(() => expect(at()).toBe("/reports/status?project=alpha&milestone=m2"));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.getByRole("link", { name: headline })).toBeInTheDocument();
+    expect(bugsCalls(mock)).toHaveLength(1);
+  });
+
   it("REQ-UI-095 the Bugs headline is absent while the bugs report loads and after it fails", async () => {
     stub(undefined, undefined, undefined, undefined, () => new Promise<Response>(() => {}));
     open("/reports/bugs?project=alpha&days=30");
