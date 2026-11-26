@@ -30,7 +30,8 @@ Rules of the change: the browser never sends a path; one module decides what an 
 - A path with `..`, `\`, NUL or a stray `:`: refused before any disk access.
 - A folder of `evidence_roots` that does not exist: serves nothing; a relative one stops startup (REQ-CONFIG-003).
 - More than 50 image paths in a bead: the first 50 are kept.
-- An unreadable export: 502 as today (REQ-BEADS-005).
+- An unreadable export: 502 as today (REQ-BEADS-005) on the list and the detail; the image route answers its one 404, since an `<img>` gains nothing from a 502.
+- A path is opened once, without following a final symlink and without blocking (a FIFO is refused), and the size, type and file identity are checked on that open file, so a swap between the check and the read cannot serve another file.
 
 ## Testing
 

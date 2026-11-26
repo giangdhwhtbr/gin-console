@@ -23,7 +23,7 @@ The config SHALL accept on each project entry an optional `evidence_roots` list 
 ### REQ-BEADS-026: Images a bead names
 Type: business-rule
 The server SHALL take as the images of a bead the paths ending in `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp` (in any letter case) that its description, and then its notes, name in any of these forms: the address of a Markdown image, the target of a Markdown link, the rest of a line starting with `local:` after optional spaces, and a path standing alone between spaces, backticks or the start and end of a line. It SHALL:
-- drop a `file://` prefix and percent-decode the rest, and drop any `http:`, `https:`, `attachment:` or other address with a scheme;
+- percent-decode the address of a Markdown image or link; turn a `file:` address into its path, dropping `file://` or `file://localhost`, and the `/` before a Windows drive (`file:///C:/a.png` is `C:/a.png`), and drop a `file:` address that names another host; drop any `http:`, `https:`, `attachment:` or other address with a scheme;
 - read a path starting with `~/` from the home folder of the user running the console, and a relative path from the project's `path`;
 - keep the order of first appearance, keep a path met again once, and keep at most 50 images;
 - give each image `n` (1, 2, … in that order), `path` (as written, without `file://`), and `caption`: the alt text of the Markdown image or the text of the link that names it first, else, for a `local:` line, the alt text of a Markdown image on the line right above it, else its file name.
