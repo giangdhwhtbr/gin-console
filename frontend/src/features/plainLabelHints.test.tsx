@@ -36,7 +36,7 @@ const withHints = (node: React.ReactElement) => render(<HintProvider>{node}</Hin
 
 describe("plain labels carry a tooltip", () => {
   it("REQ-UI-134 Milestones list headers", async () => {
-    window.history.replaceState(null, "", "/milestones?project=alpha");
+    window.history.replaceState(null, "", "/milestones?project=alpha&view=list");
     stubMilestones(() => json(list([entry("m-1", { title: "Beta" })])));
     withHints(<MilestonesPage />);
     await screen.findByRole("link", { name: "Beta" });

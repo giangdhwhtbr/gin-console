@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { fetchMilestones, milestonePath, milestonesPath, type MilestoneEntry } from "./api";
+import { fetchMilestones, milestonePath, milestonesPath, type DaysPerPoint, type Forecast, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
 import { ExportWbsMenu } from "./ExportWbsMenu";
 import { ForecastCard } from "./ForecastCard";
@@ -20,6 +20,9 @@ import { percent, plural } from "./format";
 import { lateOf } from "./late";
 import { MilestoneError } from "./MilestoneError";
 import { MilestoneStatus } from "./MilestoneStatus";
+import { ProjectFinish } from "./ProjectFinish";
+import { ProjectTimeline } from "./timeline/ProjectTimeline";
+import { zoomOf, type Zoom } from "./timeline/axis";
 import { UnassignedEpics } from "./UnassignedEpics";
 import { useLoad } from "./useLoad";
 
@@ -29,10 +32,31 @@ const ORDER = ["active", "scheduled", "planned", "closed"];
 const rank = (status: string) => (ORDER.includes(status) ? ORDER.indexOf(status) : ORDER.length);
 const COLUMNS = "@min-[60rem]:grid-cols-[8rem_minmax(0,1fr)_11rem_4rem_5.5rem_8.5rem_6rem]";
 
+type View = "timeline" | "list";
+const VIEWS: { view: View; label: string }[] = [
+  { view: "timeline", label: "Timeline" },
+  { view: "list", label: "List" },
+];
+
+/** The URL of the page with `changes` applied to the current query; a `null` value removes the key. */
+function pathWith(search: string, changes: Record<string, string | null>): string {
+  const query = new URLSearchParams(search);
+  for (const [key, value] of Object.entries(changes)) {
+    if (value === null) query.delete(key);
+    else query.set(key, value);
+  }
+  return `/milestones?${query.toString()}`;
+}
+
 export function MilestonesPage() {
   const [projects, setProjects] = useState<Projects>({ status: "loading" });
   const { search } = useLocation();
-  const asked = new URLSearchParams(search).get("project") ?? "";
+  const params = new URLSearchParams(search);
+  const asked = params.get("project") ?? "";
+  // REQ-MILESTONE-UI-033: the Timeline unless the URL says view=list
+  const view: View = params.get("view") === "list" ? "list" : "timeline";
+  const showClosed = params.get("closed") === "1";
+  const zoom = zoomOf(params.get("zoom"));
 
   useEffect(() => {
     void fetchProjectBeads().then(
@@ -58,7 +82,23 @@ export function MilestonesPage() {
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">Milestones</h1>
-        {selected !== "" && <ExportWbsMenu project={selected} />}
+        {selected !== "" && (
+          <div className="flex items-center gap-3">
+            <nav aria-label="View" className="flex gap-1 text-sm">
+              {VIEWS.map((v) => (
+                <Link
+                  key={v.view}
+                  to={pathWith(search, { view: v.view === "list" ? "list" : null })}
+                  aria-current={v.view === view ? "page" : undefined}
+                  className={cn("rounded px-2 py-1 hover:bg-muted", v.view === view && "bg-secondary font-medium")}
+                >
+                  {v.label}
+                </Link>
+              ))}
+            </nav>
+            <ExportWbsMenu project={selected} />
+          </div>
+        )}
       </div>
       {projects.status === "loading" && <p className="text-muted-foreground">Loading projects…</p>}
       {projects.status === "error" && (
@@ -69,7 +109,7 @@ export function MilestonesPage() {
       )}
       {projects.status === "ok" && names.length === 0 && <p className="text-muted-foreground">No projects configured.</p>}
       {unknown && <UnknownProject name={asked} names={names} hrefOf={(name) => projectHref("/milestones", name)} />}
-      {selected !== "" && <MilestoneTable key={selected} project={selected} />}
+      {selected !== "" && <MilestoneTable key={selected} project={selected} view={view} zoom={zoom} showClosed={showClosed} search={search} />}
     </section>
   );
 }
@@ -78,7 +118,9 @@ export function MilestonesPage() {
 const byStart = (a: MilestoneEntry, b: MilestoneEntry) =>
   a.start === null || b.start === null ? Number(a.start === null) - Number(b.start === null) : a.start.localeCompare(b.start);
 
-function MilestoneTable({ project }: { project: string }) {
+type TableProps = { project: string; view: View; zoom: Zoom; showClosed: boolean; search: string };
+
+function MilestoneTable({ project, view, zoom, showClosed, search }: TableProps) {
   const fetcher = useCallback(() => fetchMilestones(project), [project]);
   const { state, retry } = useLoad(fetcher, true);
   useRestoreOnBack(state.status === "ok");
@@ -89,7 +131,27 @@ function MilestoneTable({ project }: { project: string }) {
   return (
     <div className="@container flex min-w-0 flex-col gap-3">
       {state.error !== null && <p role="status" className="text-sm text-destructive">{`Refresh failed: ${state.error.message}`}</p>}
-      <ForecastCard forecast={forecast} today={today} daysPerPoint={days_per_point} />
+      <ProjectFinish forecast={forecast} today={today} />
+      {view === "timeline" ? (
+        <ProjectTimeline
+          project={project}
+          list={state.data}
+          zoom={zoom}
+          showClosed={showClosed}
+          onZoom={(next) => navigate(pathWith(search, { zoom: next === "months" ? null : next }))}
+          onShowClosed={(on) => navigate(pathWith(search, { closed: on ? "1" : null }))}
+        />
+      ) : (
+        <ListView project={project} rows={rows} today={today} forecast={forecast} daysPerPoint={days_per_point} />
+      )}
+    </div>
+  );
+}
+
+function ListView({ project, rows, today, forecast, daysPerPoint }: { project: string; rows: MilestoneEntry[]; today: string; forecast: Forecast | null; daysPerPoint: DaysPerPoint | null }) {
+  return (
+    <>
+      <ForecastCard forecast={forecast} today={today} daysPerPoint={daysPerPoint} />
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-2 text-sm">
           <p>{`No milestones in ${project} yet. Create one with:`}</p>
@@ -112,7 +174,7 @@ function MilestoneTable({ project }: { project: string }) {
         </ul>
       )}
       <UnassignedEpics project={project} />
-    </div>
+    </>
   );
 }
 

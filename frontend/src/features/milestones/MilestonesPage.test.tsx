@@ -1,9 +1,9 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { rememberProject, resolveProject, setFavorite } from "@/app/project";
+import { rememberProject, resolveProject, setFavorite, switchProject } from "@/app/project";
 import { bead, json } from "@/features/beads/beadFixtures";
-import { entry, forecast, list, stubMilestones } from "./milestoneFixtures";
+import { entry, forecast, forecastEpic, list, stubMilestones } from "./milestoneFixtures";
 import { MilestonesPage } from "./MilestonesPage";
 
 beforeEach(() => {
@@ -17,7 +17,7 @@ afterEach(() => {
 });
 
 function open(body: Response, beads: Parameters<typeof stubMilestones>[1] = []) {
-  window.history.replaceState(null, "", "/milestones?project=alpha");
+  window.history.replaceState(null, "", "/milestones?project=alpha&view=list");
   stubMilestones(() => body, beads);
   render(<MilestonesPage />);
 }
@@ -131,7 +131,7 @@ describe("MilestonesPage", () => {
 
   it("REQ-MILESTONE-UI-010 Show closed fetches closed beads and lists closed epics dimmed", async () => {
     const fetchMock = stubMilestones(() => json(list([entry("m-1")])), [epic("e-a"), epic("e-e", { status: "closed" })]);
-    window.history.replaceState(null, "", "/milestones?project=alpha");
+    window.history.replaceState(null, "", "/milestones?project=alpha&view=list");
     render(<MilestonesPage />);
     expect(await screen.findByRole("heading", { name: "Epics not in a milestone (1)" })).toBeInTheDocument();
     await userEvent.click(screen.getByRole("checkbox", { name: "Show closed" }));
@@ -269,5 +269,92 @@ describe("MilestonesPage", () => {
   it("REQ-MILESTONE-UI-001 older gin-workflow: a dash for lanes", async () => {
     open(json(list([entry("m-1", { title: "Beta", lanes: null })])));
     expect(within(await rowOf("Beta")).getAllByText("–")).toHaveLength(2); // lanes and say/do
+  });
+  describe("views", () => {
+    const openAt = (path: string, data = list([entry("m-1", { title: "Beta" })], { forecast: forecast({ epics: [forecastEpic("e-1")] }) })) => {
+      window.history.replaceState(null, "", path);
+      const mock = stubMilestones(() => json(data));
+      render(<MilestonesPage />);
+      return mock;
+    };
+    const milestoneCalls = (mock: ReturnType<typeof stubMilestones>) =>
+      mock.mock.calls.filter(([input]) => (typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url).startsWith("/api/milestones")).length;
+    const nav = () => within(screen.getByRole("navigation", { name: "View" }));
+
+    it("REQ-MILESTONE-UI-033 Default view: the Timeline, marked current, with no view in the URL", async () => {
+      openAt("/milestones?project=alpha");
+      expect(await screen.findByRole("region", { name: "Timeline" })).toBeInTheDocument();
+      expect(nav().getByRole("link", { name: "Timeline" })).toHaveAttribute("aria-current", "page");
+      expect(nav().getByRole("link", { name: "List" })).not.toHaveAttribute("aria-current");
+      expect(window.location.search).toBe("?project=alpha");
+      expect(screen.queryByRole("list", { name: "Milestones" })).not.toBeInTheDocument();
+    });
+
+    it("REQ-MILESTONE-UI-033 another view value shows the Timeline and is left alone", async () => {
+      openAt("/milestones?project=alpha&view=grid");
+      expect(await screen.findByRole("region", { name: "Timeline" })).toBeInTheDocument();
+      expect(window.location.search).toBe("?project=alpha&view=grid");
+    });
+
+    it("REQ-MILESTONE-UI-033 List: the URL gets view=list, the list and the forecast card show, and nothing is requested again", async () => {
+      const mock = openAt("/milestones?project=alpha");
+      await screen.findByRole("region", { name: "Timeline" });
+      await userEvent.click(nav().getByRole("link", { name: "List" }));
+      expect(await screen.findByRole("list", { name: "Milestones" })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "Project forecast" })).toBeInTheDocument();
+      expect(window.location.search).toBe("?project=alpha&view=list");
+      expect(nav().getByRole("link", { name: "List" })).toHaveAttribute("aria-current", "page");
+      await userEvent.click(nav().getByRole("link", { name: "Timeline" }));
+      expect(await screen.findByRole("region", { name: "Timeline" })).toBeInTheDocument();
+      expect(window.location.search).toBe("?project=alpha");
+      expect(milestoneCalls(mock)).toBe(1);
+    });
+
+    it("REQ-MILESTONE-UI-033 changing the view keeps closed and zoom", async () => {
+      openAt("/milestones?project=alpha&closed=1&zoom=quarters");
+      await screen.findByRole("region", { name: "Timeline" });
+      await userEvent.click(nav().getByRole("link", { name: "List" }));
+      expect(new URLSearchParams(window.location.search).toString()).toBe("project=alpha&closed=1&zoom=quarters&view=list");
+    });
+
+    it("REQ-MILESTONE-UI-033 choosing another project keeps view and closed, not zoom", () => {
+      expect(switchProject("/milestones", "?project=alpha&view=list&closed=1&zoom=weeks", "beta")).toBe("/milestones?project=beta&view=list&closed=1");
+    });
+
+    it("REQ-MILESTONE-UI-036 the zoom buttons write zoom, Months removes it", async () => {
+      openAt("/milestones?project=alpha");
+      await userEvent.click(await screen.findByRole("button", { name: "Quarters" }));
+      expect(window.location.search).toBe("?project=alpha&zoom=quarters");
+      expect(screen.getByRole("button", { name: "Quarters" })).toHaveAttribute("aria-pressed", "true");
+      await userEvent.click(screen.getByRole("button", { name: "Months" }));
+      expect(window.location.search).toBe("?project=alpha");
+    });
+
+    it("REQ-MILESTONE-UI-037 Show closed writes closed=1 and removes it again", async () => {
+      openAt("/milestones?project=alpha");
+      const box = await screen.findByRole("checkbox", { name: "Show closed" });
+      await userEvent.click(box);
+      expect(window.location.search).toBe("?project=alpha&closed=1");
+      expect(screen.getByRole("checkbox", { name: "Show closed" })).toBeChecked();
+      await userEvent.click(screen.getByRole("checkbox", { name: "Show closed" }));
+      expect(window.location.search).toBe("?project=alpha");
+    });
+
+    it("REQ-MILESTONE-UI-034 the project finish shows under the title in both views", async () => {
+      const data = list([entry("m-1", { title: "Beta" })], { today: "2026-11-26", forecast: forecast({ finish: "2026-12-22", deadline: "2026-12-11", overflow_days: 7, epics: [] }) });
+      openAt("/milestones?project=alpha", data);
+      expect(await screen.findByText("Project finishes 22 Dec")).toBeInTheDocument();
+      expect(screen.getByText("7 working days late")).toBeInTheDocument();
+      await userEvent.click(nav().getByRole("link", { name: "List" }));
+      expect(screen.getByText("Project finishes 22 Dec")).toBeInTheDocument();
+    });
+
+    it("REQ-MILESTONE-UI-001 the List view keeps the columns, the forecast card and the rows", async () => {
+      openAt("/milestones?project=alpha&view=list");
+      const header = (await screen.findByRole("list", { name: "Milestones" })).firstElementChild as HTMLElement;
+      for (const column of ["Status", "Milestone", "Period", "Parallel lanes", "Commitment met", "Epics", "Warnings"]) expect(within(header).getByText(column)).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Beta" })).toBeInTheDocument();
+      expect(screen.getByRole("region", { name: "Project forecast" })).toBeInTheDocument();
+    });
   });
 });
