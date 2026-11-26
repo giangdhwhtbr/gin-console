@@ -58,6 +58,7 @@ export function Legend({ verdicts = false }: { verdicts?: boolean }) {
               <Entry mark={<LaneChip lane="lane" />} text={DEFINITIONS.lane} />
               <Entry mark={<CountBadge kind="comments" count={2} />} text={DEFINITIONS.comments} />
               <Entry mark={<CountBadge kind="dependencies" count={2} />} text={DEFINITIONS.dependencies} />
+              <Entry mark={<CountBadge kind="images" count={2} />} text={DEFINITIONS.images} />
               <Entry
                 mark={
                   <span className="flex flex-wrap items-center gap-2">

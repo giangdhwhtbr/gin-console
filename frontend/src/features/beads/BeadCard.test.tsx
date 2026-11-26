@@ -40,6 +40,11 @@ describe("BeadCard", () => {
     expect(screen.getByText("alice")).toBeInTheDocument();
   });
 
+  it("REQ-UI-066 a card with image_count 2 shows an image indicator labelled 2 images", () => {
+    card(bead("a-5", { image_count: 2 }));
+    expect(screen.getByRole("img", { name: "2 images" })).toBeInTheDocument();
+  });
+
   it("REQ-UI-140 Board card without chips: a bug is a carnelian word and nothing carries a badge", () => {
     const li = card(bead("a-9", { issue_type: "bug", priority: 0, labels: ["x"] }));
     expect(screen.getByText("bug")).toHaveClass("text-type-bug");

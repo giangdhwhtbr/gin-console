@@ -29,6 +29,28 @@ describe("CountBadge", () => {
     expect(screen.getByRole("img", { name: "2 dependencies" })).toBeInTheDocument();
   });
 
+  it("REQ-UI-066 labels the image count with the singular and the plural", () => {
+    const { unmount } = render(<CountBadge kind="images" count={1} />);
+    expect(screen.getByRole("img", { name: "1 image" })).toBeInTheDocument();
+    unmount();
+    render(<CountBadge kind="images" count={2} />);
+    expect(screen.getByRole("img", { name: "2 images" })).toHaveTextContent("2");
+  });
+
+  it("REQ-UI-066 draws nothing for an image count of 0", () => {
+    const { container } = render(<CountBadge kind="images" count={0} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("REQ-UI-132 Image indicator: resting the pointer on it shows what the images are", async () => {
+    const user = userEvent.setup();
+    render(<HintProvider><CountBadge kind="images" count={2} /></HintProvider>);
+    const badge = screen.getByRole("img", { name: "2 images" });
+    expect(badge).not.toHaveAttribute("title");
+    await user.hover(badge);
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(DEFINITIONS.images);
+  });
+
   it("REQ-UI-140 both indicators are an icon and a number, without a background", () => {
     render(
       <>

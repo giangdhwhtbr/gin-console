@@ -117,6 +117,7 @@ export function ListRow({
         <span className="flex items-center gap-1">
           <CountBadge kind="comments" count={bead.comment_count} />
           <CountBadge kind="dependencies" count={bead.dependency_count} />
+          <CountBadge kind="images" count={bead.image_count ?? 0} />
         </span>
         <AssigneeName assignee={bead.assignee} className="hidden truncate text-muted-foreground @4xl:block" />
         <span className="hidden text-xs text-muted-foreground @4xl:block">{formatDate(bead.updated_at)}</span>
