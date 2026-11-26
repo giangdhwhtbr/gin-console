@@ -1,6 +1,6 @@
 # TC-UI-246: Sections in the sidebar
 
-- **REQ:** REQ-UI-129@7be2b291
+- **REQ:** REQ-UI-129@89b58eb2
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -14,6 +14,6 @@
 1. Open `/reports/delivery?project=a&milestone=m2`
 
 **Expected:**
-- The sidebar lists Status, Team, Delivery, Velocity and Rework under Reports, each with its headline
+- The sidebar lists Status, Team, Delivery, Velocity, Rework and Bugs under Reports, each with its headline, Bugs reading "<n> open bugs"
 - Delivery is marked `aria-current="page"`
 - The page shows no row of section links

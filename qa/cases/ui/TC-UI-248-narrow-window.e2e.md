@@ -1,6 +1,6 @@
 # TC-UI-248: Narrow window
 
-- **REQ:** REQ-UI-129@7be2b291
+- **REQ:** REQ-UI-129@89b58eb2
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

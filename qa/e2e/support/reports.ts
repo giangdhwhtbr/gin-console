@@ -1,4 +1,4 @@
-// Stubbed report APIs for the specs of the Reports page (REQ-UI-088, 095, 129, REQ-REPORTS-020..034).
+// Stubbed report APIs for the specs of the Reports page (REQ-UI-088, 095, 129, REQ-REPORTS-020..034, 039..044).
 import type { Page } from '@playwright/test';
 import { stubApi, type MilestoneList } from './api';
 
@@ -149,7 +149,37 @@ export const statusBody = (project: string, o: StatusOptions = {}) => {
   };
 };
 
-/** Stubs the projects and report endpoints (`/api/reports/status`, `/api/reports/team`, `/api/reports`). */
+export type BugsBody = {
+  generated_at: string; project: string; today: string; milestone: string | null; days: number | null;
+  period: { start: string; end: string } | null;
+  figures: {
+    total: number; opened: number; closed: number; open_now: number;
+    oldest_open_days: number | null; median_close_days: number | null;
+  };
+  weeks: { start: string; opened: number; closed: number }[];
+  epics: { id: string | null; title: string | null; opened: number; closed: number; open_now: number }[];
+  open: { id: string; title: string; priority: number | null; assignee: string | null; age_days: number; epic: { id: string; title: string } | null }[];
+};
+
+/** `GET /api/reports/bugs?project=…`: 14 bugs of `project`, 3 of them open, for the scope of `o` (default 30 days). */
+export const bugsBody = (project: string, o: Partial<BugsBody> = {}): BugsBody => ({
+  generated_at: '2026-11-25T12:00:00Z', project, today: '2026-11-25', milestone: null, days: 30,
+  period: { start: '2026-10-27', end: '2026-11-25' },
+  figures: { total: 14, opened: 13, closed: 11, open_now: 3, oldest_open_days: 43, median_close_days: 0.5 },
+  weeks: [{ start: '2026-11-16', opened: 5, closed: 3 }, { start: '2026-11-23', opened: 0, closed: 0 }],
+  epics: [
+    { id: 'e-2', title: 'Checkout', opened: 5, closed: 4, open_now: 1 },
+    { id: null, title: null, opened: 8, closed: 7, open_now: 2 },
+  ],
+  open: [
+    { id: 'a-1', title: 'Crash on save', priority: 0, assignee: 'ann', age_days: 43, epic: { id: 'e-2', title: 'Checkout' } },
+    { id: 'a-2', title: 'Wrong total', priority: null, assignee: null, age_days: 5, epic: null },
+    { id: 'a-3', title: 'Typo', priority: 3, assignee: 'bao', age_days: 2, epic: { id: 'e-2', title: 'Checkout' } },
+  ],
+  ...o,
+});
+
+/** Stubs the projects and report endpoints (`/api/reports/status`, `/api/reports/team`, `/api/reports/bugs`, `/api/reports`). */
 export async function stubReports(
   page: Page,
   opts: {
@@ -158,6 +188,8 @@ export async function stubReports(
     team?: TeamOptions;
     status?: StatusOptions;
     milestones?: MilestoneList;
+    /** `GET /api/reports/bugs`: the fields a case states (the scope is echoed from the URL); default `bugsBody`. */
+    bugs?: Partial<BugsBody>;
   } = {},
 ) {
   const stub = await stubApi(page, { projects: opts.projects ?? ['alpha'], milestones: opts.milestones });
@@ -188,6 +220,15 @@ export async function stubReports(
         ? { milestone: msParam, periodDays: null }
         : {};
     return route.fulfill({ json: teamBody(project, { ...scopeOpts, ...opts.team }) });
+  });
+  await page.route('**/api/reports/bugs**', (route) => {
+    const url = new URL(route.request().url());
+    stub.calls.push(url);
+    const params = url.searchParams;
+    const days = params.get('days');
+    const milestone = params.get('milestone');
+    const scope = days !== null ? { days: Number(days), milestone: null } : { days: null, milestone: milestone ?? 'm2' };
+    return route.fulfill({ json: bugsBody(params.get('project') ?? '', { ...scope, ...opts.bugs }) });
   });
   await page.route(/\/api\/reports\?/, (route) => {
     const url = new URL(route.request().url());

@@ -13,7 +13,7 @@ test('TC-UI-248: Narrow window (REQ-UI-129)', async ({ page, ev }) => {
     await page.goto('/reports/delivery?project=a');
     const strip = page.getByRole('navigation', { name: 'Report sections' });
     await expect(strip).toBeVisible();
-    await expect(strip.getByRole('link')).toHaveCount(5);
+    await expect(strip.getByRole('link')).toHaveCount(6);
     await expect(mainNav(page).getByRole('list', { name: 'Report sections' })).toHaveCount(0);
   });
 });
