@@ -383,6 +383,8 @@ describe("ReportsPage", () => {
     const mock = stub(undefined, undefined, () => new Promise<Response>((resolve) => { release = resolve; }));
     open("/reports/velocity?project=alpha&milestone=m2");
     expect(await screen.findByText("Loading velocity…")).toBeInTheDocument();
+    // the loading text can show before the Milestones request is sent; `release` exists only once it is
+    await waitFor(() => expect(milestoneCalls(mock)).toEqual(["/api/milestones?project=alpha"]));
     release(json(list([entry("m1")], { days_per_point: { value: 1.4, measured_epics: 6, assumed: false } })));
     expect(await screen.findByText("No kicked-off milestones with points yet")).toBeInTheDocument();
     expect(milestoneCalls(mock)).toEqual(["/api/milestones?project=alpha"]);
@@ -495,16 +497,19 @@ describe("ReportsPage", () => {
 
   it("REQ-REPORTS-032 late answer: drops a status answer for a scope no longer selected", async () => {
     let release: (response: Response) => void = () => {};
+    let sent = false; // set when the slow request is sent: a release before that would do nothing
     stub(undefined, undefined, undefined, (url) =>
       url.searchParams.get("milestone") === "m1"
         ? new Promise<Response>((resolve) => {
             release = resolve;
+            sent = true;
           })
         : json(statusFor(url)),
     );
     open("/reports/status?project=alpha&milestone=m1");
     await userEvent.selectOptions(await scopeSelect(), "Milestone two");
     expect(await screen.findByRole("heading", { name: "Checkout v2" })).toBeInTheDocument();
+    await waitFor(() => expect(sent).toBe(true));
     release(json(statusFixture({ milestone: "m1" })));
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.getByRole("heading", { name: "Checkout v2" })).toBeInTheDocument();
@@ -576,16 +581,19 @@ describe("ReportsPage", () => {
 
   it("REQ-REPORTS-044 Late answer: the report for 30 days arriving after the one for 7 days is not shown", async () => {
     let release: (response: Response) => void = () => {};
+    let sent = false; // set when the slow request is sent: a release before that would do nothing
     stub(undefined, undefined, undefined, undefined, (url) =>
       url.searchParams.get("days") === "30"
         ? new Promise<Response>((resolve) => {
             release = resolve;
+            sent = true;
           })
         : json(bugsReport({ figures: { ...bugsReport().figures, open_now: 7 } })),
     );
     open("/reports/bugs?project=alpha&days=30");
     await userEvent.selectOptions(await scopeSelect(), "Last 7 days");
     expect(await screen.findByRole("link", { name: /Bugs\s*7 open bugs/ })).toBeInTheDocument();
+    await waitFor(() => expect(sent).toBe(true));
     release(json(bugsReport({ figures: { ...bugsReport().figures, open_now: 99 } })));
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.getByRole("link", { name: /Bugs\s*7 open bugs/ })).toBeInTheDocument();
@@ -594,16 +602,19 @@ describe("ReportsPage", () => {
 
   it("REQ-UI-093 late answer: drops the answer for a scope no longer selected", async () => {
     let release: (response: Response) => void = () => {};
+    let sent = false; // set when the slow request is sent: a release before that would do nothing
     stub((url) =>
       url.searchParams.get("days") === "30"
         ? new Promise<Response>((resolve) => {
             release = resolve;
+            sent = true;
           })
         : json(withClosed(7000)),
     );
     open("/reports/delivery?project=alpha&days=30");
     await userEvent.selectOptions(await scopeSelect(), "Last 7 days");
     expect((await screen.findAllByText("7000")).length).toBeGreaterThan(0);
+    await waitFor(() => expect(sent).toBe(true));
     release(json(withClosed(9000000)));
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(screen.getAllByText("7000").length).toBeGreaterThan(0);
@@ -713,14 +724,17 @@ describe("ReportsPage", () => {
 
   it("REQ-REPORTS-017 late answer: drops the answer for a milestone no longer selected", async () => {
     let release: (response: Response) => void = () => {};
+    let sent = false; // set when the slow request is sent: a release before that would do nothing
     stub(undefined, (url) =>
-      url.searchParams.get("milestone") === null
+      url.searchParams.get("milestone") === "m2"
         ? new Promise<Response>((resolve) => {
             release = resolve;
+            sent = true;
           })
         : json(teamFor(url)),
     );
-    open("/reports/team?project=alpha");
+    open("/reports/team?project=alpha&milestone=m2");
+    await waitFor(() => expect(sent).toBe(true));
     act(() => navigate("/reports/team?project=alpha&milestone=m1"));
     expect(await screen.findByText("Closed, 2 d late")).toBeInTheDocument();
     release(json(teamFixture({ milestone: "m2" })));
@@ -786,8 +800,11 @@ describe("ReportsPage", () => {
     const size = (el: HTMLElement, values: Record<string, number>) =>
       Object.entries(values).forEach(([key, value]) => Object.defineProperty(el, key, { configurable: true, writable: true, value }));
     stub();
+    const listen = vi.spyOn(window, "addEventListener");
     open("/reports/delivery?project=alpha&days=30");
     const row = await screen.findByRole("navigation", { name: "Report sections" });
+    // TabStrip listens from an effect that may run after the row shows: wait before sizing anything
+    await waitFor(() => expect(listen).toHaveBeenCalledWith("resize", expect.any(Function)));
     const fades = () => ({ left: screen.queryByTestId("tabs-fade-left"), right: screen.queryByTestId("tabs-fade-right") });
     // wide window: everything fits
     size(row, { clientWidth: 900, scrollWidth: 900, scrollLeft: 0 });
@@ -823,6 +840,8 @@ describe("ReportsPage", () => {
     stub();
     open("/reports/delivery?project=alpha&days=30");
     const row = await screen.findByRole("navigation", { name: "Report sections" });
+    // TabStrip observes the links from an effect that may run after the row shows: wait before sizing anything
+    await waitFor(() => expect(observed.filter((o) => o.target.parentElement === row).length).toBeGreaterThan(0));
     const define = (key: string, value: number) => Object.defineProperty(row, key, { configurable: true, writable: true, value });
     define("clientWidth", 700);
     define("scrollWidth", 700);
@@ -830,8 +849,8 @@ describe("ReportsPage", () => {
     expect(screen.queryByTestId("tabs-fade-right")).toBeNull();
     // the headlines load: a link widens, the row's own box does not change
     define("scrollWidth", 900);
+    expect(screen.queryByTestId("tabs-fade-right")).toBeNull(); // only the observer callback may show it
     const links = observed.filter((o) => o.target.parentElement === row);
-    expect(links.length).toBeGreaterThan(0);
     act(() => links[0].fire());
     expect(screen.getByTestId("tabs-fade-right")).toBeInTheDocument();
   });
