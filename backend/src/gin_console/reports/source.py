@@ -80,6 +80,16 @@ def _bug_days(ident: str, snapshot: Snapshot) -> list[date]:
     return days
 
 
+def _found_in(snapshot: Snapshot) -> dict[str, list[str]]:
+    """For each bead, the sorted ids of its `discovered-from` targets (REQ-REPORTS-040)."""
+    found: dict[str, list[str]] = {}
+    for target, links in snapshot.dependents.items():
+        for issue, kind in links:
+            if kind == "discovered-from":
+                found.setdefault(issue, []).append(target)
+    return {issue: sorted(set(targets)) for issue, targets in found.items()}
+
+
 def _days_per_point(metadata: object) -> float | None:
     value = metadata.get("planned_days_per_point") if isinstance(metadata, dict) else None
     if isinstance(value, str):
@@ -97,6 +107,7 @@ def read_beads(
 ) -> list[ReportBead]:
     beads: list[ReportBead] = []
     counts = child_counts(snapshot)
+    found_in = _found_in(snapshot)
     for ident, raw in snapshot.rows.items():
         if is_merge_gate(raw):
             continue  # a placeholder, not work (REQ-BEADS-019)
@@ -130,6 +141,7 @@ def read_beads(
                         "bug_days": bug_days,
                         "moves": parse_moves(meta.get("milestone_moves")),
                         "points_history": parse_points(meta.get("points_history")),
+                        "found_in": found_in.get(ident, []),
                         "blockers": blockers,
                         "blocked_since": blocked_since,
                     }
