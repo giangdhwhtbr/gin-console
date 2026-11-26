@@ -747,12 +747,17 @@ The Graph view (REQ-UI-106) SHALL expose the graph to assistive technology with 
 - THEN the highlight changes without a transition
 
 ### REQ-UI-055: Main navigation
-The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Overview, Beads, My work, Milestones and Reports, in that order, Overview going to `/` and the others to `/beads`, `/my-tasks`, `/milestones` and `/reports` with `?project=<current project>` (REQ-UI-124).
+The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Overview, Beads, My work, Milestones, Requirements and Reports, in that order, Overview going to `/` and the others to `/beads`, `/my-tasks`, `/milestones`, `/requirements` and `/reports` with `?project=<current project>` (REQ-UI-124).
 
-#### Scenario: Five links
+#### Scenario: Six links
 - GIVEN any page is shown and the current project is `a`
 - WHEN the page loads
-- THEN the "Main" navigation holds the links Overview, Beads, My work, Milestones and Reports, one each, going to `/`, `/beads?project=a`, `/my-tasks?project=a`, `/milestones?project=a` and `/reports?project=a`
+- THEN the "Main" navigation holds the links Overview, Beads, My work, Milestones, Requirements and Reports, one each, going to `/`, `/beads?project=a`, `/my-tasks?project=a`, `/milestones?project=a`, `/requirements?project=a` and `/reports?project=a`
+
+#### Scenario: Short label
+- GIVEN a window 390px wide, or the icon rail
+- WHEN any page is shown
+- THEN the Requirements link shows "REQs", has the accessible name "REQs (Requirements)", and no label is cut off or overlaps another
 
 ### REQ-UI-056: Responsive navigation
 The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with an icon and a label per link while the window is narrower than 768px, an icon rail with a label under each icon from 768px up to 1023px, and from 1024px a sidebar with an icon and a label per link, or the icon rail while the sidebar is collapsed (REQ-UI-094), and SHALL be the same element in every case.
@@ -778,7 +783,7 @@ The "Main" navigation SHALL be a tab bar fixed to the bottom of the screen with 
 - THEN the navigation is a narrow column at the left with the label under each icon
 
 ### REQ-UI-057: Current destination
-The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight: Overview on `/`, Beads on `/beads`, My work on `/my-tasks`, Milestones on `/milestones` and `/milestones/<project>/<id>`, Reports on `/reports`. On a bead page it SHALL mark the link of the page the user opened the bead from in this browser tab (REQ-UI-073: Overview, My work, Milestones or Reports), and Beads when the bead was opened from the Beads page, another bead page, or by its address. It SHALL mark no link on the page of REQ-UI-125 and SHALL mark no other link.
+The "Main" navigation SHALL mark the link of the page being shown with `aria-current="page"` and a visible highlight: Overview on `/`, Beads on `/beads`, My work on `/my-tasks`, Milestones on `/milestones` and `/milestones/<project>/<id>`, Requirements on every path under `/requirements`, Reports on `/reports`. On a bead page it SHALL mark the link of the page the user opened the bead from in this browser tab (REQ-UI-073: Overview, My work, Milestones, Requirements or Reports), and Beads when the bead was opened from the Beads page, another bead page, or by its address. It SHALL mark no link on the page of REQ-UI-125 and SHALL mark no other link.
 
 #### Scenario: Bead page by address
 - GIVEN the URL `/beads/alpha/a-1` opened in a new tab
@@ -814,6 +819,11 @@ The "Main" navigation SHALL mark the link of the page being shown with `aria-cur
 - GIVEN the user opened `a-1` from the Overview page
 - WHEN the bead page is shown
 - THEN only the Overview link has `aria-current="page"`
+
+#### Scenario: Bead page from Requirements
+- GIVEN the user opened `a-1` from the Matrix section
+- WHEN the bead page is shown
+- THEN only the Requirements link has `aria-current="page"`
 
 ### REQ-UI-058: Theme
 The frontend SHALL start in the theme the system prefers, SHALL offer a control that switches between light and dark with an accessible name saying which theme it switches to, SHALL keep the choice in the browser and use it on the next visit, SHALL set the theme before the first paint so that the wrong theme is not shown, and IF the browser refuses to store the choice, THEN SHALL still switch for the current visit without an error.
@@ -897,7 +907,7 @@ On screens narrower than 768px the links and buttons of the navigation and the t
 - THEN a focus indicator is visible
 
 ### REQ-UI-063: Page title
-The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Overview · gin-console`, `Beads · <project> · gin-console`, `My work · <project> · gin-console`, `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console` with `<section>` one of Status, Team, Delivery, Velocity and Rework, `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
+The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Overview · gin-console`, `Beads · <project> · gin-console`, `My work · <project> · gin-console`, `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console` with `<section>` one of Status, Team, Delivery, Velocity and Rework, `Requirements · <section> · <project> · gin-console` with `<section>` one of Matrix, Changes and Mockups, `<change> · <project> · gin-console` on a change page, `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
 
 #### Scenario: Bead page
 - GIVEN the bead `a-1` titled "Team checkout" in project `example`
@@ -923,6 +933,11 @@ The frontend SHALL set the document title to the name of what the page shows, th
 - GIVEN two configured projects
 - WHEN `/` is shown
 - THEN the document title is `Overview · gin-console`
+
+#### Scenario: Requirements section
+- GIVEN `/requirements/changes?project=example`
+- WHEN the page loads
+- THEN the document title is `Requirements · Changes · example · gin-console`
 
 ### REQ-UI-064: State mark
 The frontend SHALL draw the state of a bead (Ready, In progress, Blocked, Done or Deferred, by the rules of REQ-UI-049) as a glyph whose fill says how far the bead has come, followed by the state's name wherever the state is named: Ready as a hollow ring in the Ready colour, In progress as a ring in the In progress colour with its right half filled, Done as a full bead in the Done colour, Blocked as a full bead in the Blocked colour crossed by a short bar in the surface colour (a knot), and Deferred as a dashed ring in the Deferred colour. The Board and Focus cards, the List and Tree rows, the Graph nodes, the bead page, My Tasks and the Gantt SHALL use the same glyph and name, and no card, row or node SHALL carry a coloured edge for its state. A milestone status (REQ-MILESTONE-UI-022) SHALL use the glyph of Deferred for Planned, of Ready for Scheduled, of In progress for Active and of Done for Closed.
@@ -1065,7 +1080,7 @@ The discussion SHALL show each comment as a block of its own with a border, with
 - THEN the text wraps inside its block and the page does not scroll sideways
 
 ### REQ-UI-072: Breadcrumb
-WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of: one link to the remembered place (REQ-UI-073) named for it, which is "Beads" followed by the name of its view and, when a filter is active (REQ-UI-143), ", N filters" where N counts the active filters, the title of the milestone with the same view and filter count for the Beads tab of a milestone page, the title of the milestone for its other tabs, or "Overview", "My work" or "Reports"; then the title of the bead's parent as a link to its page when it has one; then the title of the bead marked `aria-current="page"`. Each title SHALL be cut short to one line with the full title and the id as its `title`. Under 640px the breadcrumb SHALL show only the first link.
+WHEN a bead is shown as a page, not as the details panel of another view, the bead page SHALL show a navigation labelled "Breadcrumb" with an ordered list of: one link to the remembered place (REQ-UI-073) named for it, which is "Beads" followed by the name of its view and, when a filter is active (REQ-UI-143), ", N filters" where N counts the active filters, the title of the milestone with the same view and filter count for the Beads tab of a milestone page, the title of the milestone for its other tabs, or "Overview", "My work", "Requirements" or "Reports"; then the title of the bead's parent as a link to its page when it has one; then the title of the bead marked `aria-current="page"`. Each title SHALL be cut short to one line with the full title and the id as its `title`. Under 640px the breadcrumb SHALL show only the first link.
 
 #### Scenario: Place and filters
 - GIVEN the Beads page was last at `?project=a&view=board&status=open&q=fix`
@@ -1107,8 +1122,13 @@ WHEN a bead is shown as a page, not as the details panel of another view, the be
 - WHEN the user opens `a-1` from it
 - THEN the breadcrumb reads "Overview" then the title of `a-1`, and "Overview" goes to `/`
 
+#### Scenario: From Requirements
+- GIVEN the Matrix section was last at `/requirements/matrix?project=a&status=untested&req=REQ-AUTH-001`
+- WHEN the user opens `a-1` from the details of `REQ-AUTH-001`
+- THEN the breadcrumb reads "Requirements" then the title of `a-1`, and "Requirements" goes to `/requirements/matrix?project=a&status=untested&req=REQ-AUTH-001`
+
 ### REQ-UI-073: Remembered place
-The Overview page, the Beads page, the My Tasks page, the Reports page and the milestone page (any tab) SHALL remember their path and URL query for the current browser tab, the one shown last replacing the others, SHALL use it for the first link of the breadcrumb (REQ-UI-072) and the marked navigation link (REQ-UI-057) when it is the Overview page or of the bead's project and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
+The Overview page, the Beads page, the My Tasks page, the Reports page, the Requirements pages and the milestone page (any tab) SHALL remember their path and URL query for the current browser tab, the one shown last replacing the others, SHALL use it for the first link of the breadcrumb (REQ-UI-072) and the marked navigation link (REQ-UI-057) when it is the Overview page or of the bead's project and `/beads?project=<project>` otherwise, SHALL NOT change it when the user goes from bead to bead, and IF the browser refuses to store it, THEN SHALL keep it for the visit without an error.
 
 #### Scenario: Back to the Board with its filters
 - GIVEN the Board with the filter status "open" is shown
@@ -2356,6 +2376,7 @@ Source: `assets/2026-11-21/epic-page/mockup/index.html`
 The frontend SHALL show a project switcher labelled "Project" that names the current project (REQ-UI-124): at the top of the sidebar from 1024px while the sidebar is expanded, as a button holding the first letter of the project in the icon rail (from 768px up to 1023px, or while the sidebar is collapsed), and in the top bar below 768px. Opening it SHALL list every configured project whose directory exists, from `GET /api/projects/beads`, with the favorite first, each with a star button labelled "Make <name> the favorite" or, on the favorite, "Remove <name> as favorite", marked with `aria-pressed`. WHEN the user chooses a project, the frontend SHALL make it the current project and SHALL then:
 - on the Overview page, stay on `/` with the same content, the links of the Main navigation following the chosen project;
 - on the Beads, My Tasks, Milestones or Reports page, stay on that page with `project` replaced, keeping `view`, `closed`, `tab`, `days` and `q`, and dropping `milestone`, `select`, `scope`, `member`, `status`, `sprint` and the other filters;
+- on a Requirements section, stay on that section with `project` replaced, keeping `q` and dropping the other keys; on a change page, open the Changes section of the chosen project;
 - on a bead page, open the Beads page of the chosen project; on a milestone page, open the Milestones page of the chosen project.
 
 #### Scenario: Choose on the Beads page
@@ -2393,13 +2414,18 @@ The frontend SHALL show a project switcher labelled "Project" that names the cur
 - WHEN the user chooses project `b`
 - THEN the URL stays `/`, the page shows the same lists, and the Beads link goes to `/beads?project=b`
 
+#### Scenario: Choose on a change page
+- GIVEN the change page `/requirements/changes/e1-login?project=a`
+- WHEN the user chooses project `b`
+- THEN the URL becomes `/requirements/changes?project=b`
+
 ### REQ-UI-124: Current project
-The frontend SHALL take the current project, in this order: from the `project` query of the URL when it names a configured project whose directory exists; else the project last chosen in this browser tab; else the favorite project; else the first configured project. It SHALL remember as last chosen, for the browser tab, the project the Beads, My Tasks, Milestones, Reports, bead or milestone page shows and a project chosen in the switcher, and SHALL remember the favorite across tabs and visits. The Main navigation links Beads, My Tasks, Milestones and Reports SHALL carry `?project=<current project>`. WHEN the Beads, My Tasks, Milestones or Reports page opens without `project`, it SHALL show the current project and write it into the URL without adding a history entry. A remembered or favorite project that is no longer configured SHALL be skipped. IF the browser refuses to store a choice, THEN the choice SHALL last for the visit without an error.
+The frontend SHALL take the current project, in this order: from the `project` query of the URL when it names a configured project whose directory exists; else the project last chosen in this browser tab; else the favorite project; else the first configured project. It SHALL remember as last chosen, for the browser tab, the project the Beads, My Tasks, Milestones, Requirements, Reports, bead or milestone page shows and a project chosen in the switcher, and SHALL remember the favorite across tabs and visits. The Main navigation links Beads, My Tasks, Milestones, Requirements and Reports SHALL carry `?project=<current project>`. WHEN the Beads, My Tasks, Milestones, Requirements or Reports page opens without `project`, it SHALL show the current project and write it into the URL without adding a history entry. A remembered or favorite project that is no longer configured SHALL be skipped. IF the browser refuses to store a choice, THEN the choice SHALL last for the visit without an error.
 
 #### Scenario: Links carry the project
 - GIVEN the current project is `b`
 - WHEN any page is shown
-- THEN the Beads link goes to `/beads?project=b`, Milestones to `/milestones?project=b`, My Tasks to `/my-tasks?project=b`, and Reports to `/reports?project=b`
+- THEN the Beads link goes to `/beads?project=b`, Milestones to `/milestones?project=b`, My Tasks to `/my-tasks?project=b`, Requirements to `/requirements?project=b`, and Reports to `/reports?project=b`
 
 #### Scenario: Last chosen beats the favorite
 - GIVEN the favorite is `a` and the user chose `b` earlier in this tab
@@ -2440,7 +2466,7 @@ WHEN the path matches no page of the console, including the retired `/sessions`,
 - THEN the page shows "Page not found" and no navigation link has `aria-current="page"`
 
 ### REQ-UI-126: Unknown project
-WHEN the URL names a project that is not configured, in the `project` query of the Beads, My Tasks, Milestones or Reports page or in the path of a bead or milestone page, the frontend SHALL show "No project <name> is configured" with one link per configured project to the same page for that project, instead of another project's data, and SHALL NOT remember the name as the current project. The Reports value `all` is not a project name.
+WHEN the URL names a project that is not configured, in the `project` query of the Beads, My Tasks, Milestones, Requirements or Reports page or in the path of a bead or milestone page, the frontend SHALL show "No project <name> is configured" with one link per configured project to the same page for that project, instead of another project's data, and SHALL NOT remember the name as the current project. The Reports value `all` is not a project name.
 
 #### Scenario: Beads query
 - GIVEN projects `a` and `b`
@@ -2456,6 +2482,11 @@ WHEN the URL names a project that is not configured, in the `project` query of t
 - GIVEN projects `a` and `b`
 - WHEN the user opens `/beads/zzz/z-1`
 - THEN the page says "No project zzz is configured" and the current project is unchanged
+
+#### Scenario: Requirements query
+- GIVEN projects `a` and `b`
+- WHEN the user opens `/requirements/matrix?project=zzz`
+- THEN the page says "No project zzz is configured" with links to `/requirements/matrix?project=a` and `/requirements/matrix?project=b`, and shows no requirements
 
 ### REQ-UI-127: Back to your place
 WHEN the user comes back with the browser Back or Forward button to the Beads, My Tasks, Milestones, milestone or Reports page, the frontend SHALL scroll the page to where it was when the user left it, once the page shows its data, and WHEN the user left it by opening a bead, SHALL move the keyboard focus to that bead's row, card or node and mark it as last opened for 2 seconds, without motion WHILE the user asks for reduced motion. A page opened by a link or by its address SHALL start at the top. IF the browser refuses to store the position, THEN the page SHALL start at the top without an error.
