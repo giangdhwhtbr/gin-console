@@ -1,7 +1,7 @@
 import { vi } from "vitest";
 import { json, milestoneOption, project, projectMilestones } from "@/features/beads/beadFixtures";
 import type { BeadSummary, Comment } from "@/features/beads/api";
-import type { EpicPlan, Forecast, MilestoneDetail, MilestoneEntry, MilestoneList } from "./api";
+import type { ClosedEpic, EpicPlan, Forecast, ForecastEpic, ForecastMilestone, MilestoneDetail, MilestoneEntry, MilestoneList } from "./api";
 
 export const entry = (id: string, overrides: Partial<MilestoneEntry> = {}): MilestoneEntry => ({
   id,
@@ -25,6 +25,7 @@ export const list = (milestones: MilestoneEntry[], overrides: Partial<MilestoneL
   today: "2026-10-29",
   forecast: null,
   days_per_point: null,
+  closed_epics: [],
   ...overrides,
 });
 
@@ -38,6 +39,38 @@ export const forecast = (overrides: Partial<Forecast> = {}): Forecast => ({
   unestimated: 0,
   error: null,
   epics: [],
+  milestones: [],
+  ...overrides,
+});
+
+export const forecastEpic = (id: string, overrides: Partial<ForecastEpic> = {}): ForecastEpic => ({
+  id,
+  milestone: null,
+  planned_start: "2026-11-02",
+  planned_end: "2026-11-04",
+  estimate_source: "points",
+  title: `Title ${id}`,
+  status: "open",
+  lane: 1,
+  remaining_days: 3,
+  warnings: [],
+  ...overrides,
+});
+
+export const forecastMilestone = (id: string, overrides: Partial<ForecastMilestone> = {}): ForecastMilestone => ({
+  id,
+  start: "2026-11-02",
+  finish: "2026-11-04",
+  overflow_days: 0,
+  ...overrides,
+});
+
+export const closedEpic = (id: string, overrides: Partial<ClosedEpic> = {}): ClosedEpic => ({
+  id,
+  title: `Title ${id}`,
+  milestone: null,
+  start: "2026-10-12",
+  end: "2026-10-28",
   ...overrides,
 });
 

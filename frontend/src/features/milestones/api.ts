@@ -34,7 +34,20 @@ export type MilestoneEntry = {
   lanes: number | null;
   velocity: Velocity | null;
 };
-export type ForecastEpic = { id: string; milestone: string | null; planned_start: string; planned_end: string; estimate_source: EstimateSource | null };
+export type EpicWarning = { code: string; days: number | null; count: number | null };
+export type ForecastEpic = {
+  id: string;
+  milestone: string | null;
+  planned_start: string;
+  planned_end: string;
+  estimate_source: EstimateSource | null;
+  title: string | null;
+  status: string | null;
+  lane: number | null;
+  remaining_days: number | null;
+  warnings: EpicWarning[];
+};
+export type ForecastMilestone = { id: string; start: string | null; finish: string | null; overflow_days: number };
 export type Forecast = {
   deadline: string | null;
   lanes: number;
@@ -45,9 +58,17 @@ export type Forecast = {
   unestimated: number;
   error: string | null;
   epics: ForecastEpic[];
+  milestones: ForecastMilestone[];
 };
-export type MilestoneList = { milestones: MilestoneEntry[]; unassigned_epics: number; today: string; forecast: Forecast | null; days_per_point: DaysPerPoint | null };
-export type EpicWarning = { code: string; days: number | null; count: number | null };
+export type ClosedEpic = { id: string; title: string; milestone: string | null; start: string; end: string };
+export type MilestoneList = {
+  milestones: MilestoneEntry[];
+  unassigned_epics: number;
+  today: string;
+  forecast: Forecast | null;
+  days_per_point: DaysPerPoint | null;
+  closed_epics: ClosedEpic[] | null;
+};
 export type ExternalDependency = { id: string; milestone: string | null };
 export type EpicPlan = {
   id: string;
@@ -143,11 +164,24 @@ export function daysPerPointOf(value: unknown): DaysPerPoint | null {
 
 const sourceOf = (value: unknown): EstimateSource | null => (value === "points" || value === "days" || value === "assumed" ? value : null);
 
+const isWarning = (value: unknown) =>
+  isObject(value) && isString(field(value, "code")) && isNumberOrNull(field(value, "days")) && isLanes(field(value, "count"));
+
+// The fields a gin-workflow older than the Project timeline does not print may be missing; if present they must have their type.
 const isForecastEpic = (value: unknown) =>
   isObject(value) &&
   strings(value, ["id", "planned_start", "planned_end"]) &&
   isStringOrNull(field(value, "milestone")) &&
-  (field(value, "estimate_source") === undefined || isStringOrNull(field(value, "estimate_source")));
+  (field(value, "estimate_source") === undefined || isStringOrNull(field(value, "estimate_source"))) &&
+  ["title", "status"].every((k) => field(value, k) === undefined || isStringOrNull(field(value, k))) &&
+  ["lane", "remaining_days"].every((k) => isLanes(field(value, k))) &&
+  (field(value, "warnings") === undefined || every(field(value, "warnings"), isWarning));
+
+const isForecastMilestone = (value: unknown) =>
+  isObject(value) && isString(field(value, "id")) && stringsOrNull(value, ["start", "finish"]) && (field(value, "overflow_days") === undefined || isFiniteNumber(field(value, "overflow_days")));
+
+const isClosedEpic = (value: unknown) =>
+  isObject(value) && strings(value, ["id", "title", "start", "end"]) && isStringOrNull(field(value, "milestone"));
 
 function isForecast(value: unknown): value is Forecast {
   return (
@@ -155,18 +189,37 @@ function isForecast(value: unknown): value is Forecast {
     isString(field(value, "start")) &&
     stringsOrNull(value, ["deadline", "finish", "error"]) &&
     ["lanes", "overflow_days", "open_epics", "unestimated"].every((k) => isFiniteNumber(field(value, k))) &&
-    (field(value, "epics") === undefined || every(field(value, "epics"), isForecastEpic))
+    (field(value, "epics") === undefined || every(field(value, "epics"), isForecastEpic)) &&
+    (field(value, "milestones") === undefined || every(field(value, "milestones"), isForecastMilestone))
   );
 }
 
-/** REQ-MILESTONE-UI-008: an older gin has no `epics` in its forecast, and an epic may lack `estimate_source`; both read as empty or null. */
+const warningOf = (w: EpicWarning): EpicWarning => ({ code: w.code, days: w.days ?? null, count: w.count ?? null });
+
+/** REQ-MILESTONE-UI-008: an older gin has no `epics`, no `milestones` in its forecast, and an epic may lack `estimate_source`, `title`, `status`, `lane`, `remaining_days` or `warnings`; they read as empty or null. */
 function withEpics(forecast: Forecast | null): Forecast | null {
   if (forecast === null) return null;
   const epics = field(forecast, "epics");
+  const milestones = field(forecast, "milestones");
   return {
     ...forecast,
     epics: Array.isArray(epics)
-      ? epics.map((e: ForecastEpic) => ({ ...e, milestone: e.milestone ?? null, estimate_source: sourceOf(field(e, "estimate_source")) }))
+      ? epics.map((e: ForecastEpic) => {
+          const warnings = field(e, "warnings");
+          return {
+            ...e,
+            milestone: e.milestone ?? null,
+            estimate_source: sourceOf(field(e, "estimate_source")),
+            title: stringOrNull(field(e, "title")),
+            status: stringOrNull(field(e, "status")),
+            lane: numberOrNull(field(e, "lane")),
+            remaining_days: numberOrNull(field(e, "remaining_days")),
+            warnings: Array.isArray(warnings) ? warnings.map(warningOf) : [],
+          };
+        })
+      : [],
+    milestones: Array.isArray(milestones)
+      ? milestones.map((m: ForecastMilestone) => ({ id: m.id, start: m.start ?? null, finish: m.finish ?? null, overflow_days: numberOrNull(field(m, "overflow_days")) ?? 0 }))
       : [],
   };
 }
@@ -195,12 +248,11 @@ function isList(value: unknown): value is MilestoneList {
     every(field(value, "milestones"), isEntry) &&
     isFiniteNumber(field(value, "unassigned_epics")) &&
     isString(field(value, "today")) &&
-    (field(value, "forecast") === undefined || field(value, "forecast") === null || isForecast(field(value, "forecast")))
+    (field(value, "forecast") === undefined || field(value, "forecast") === null || isForecast(field(value, "forecast"))) &&
+    (field(value, "closed_epics") === undefined || field(value, "closed_epics") === null || every(field(value, "closed_epics"), isClosedEpic))
   );
 }
 
-const isWarning = (value: unknown) =>
-  isObject(value) && isString(field(value, "code")) && isNumberOrNull(field(value, "days")) && isLanes(field(value, "count"));
 const isExternal = (value: unknown) =>
   isObject(value) && isString(field(value, "id")) && isStringOrNull(field(value, "milestone"));
 
@@ -259,6 +311,7 @@ export async function fetchMilestones(project: string): Promise<MilestoneList> {
   return {
     ...body,
     forecast: withEpics(body.forecast ?? null),
+    closed_epics: body.closed_epics ?? null,
     days_per_point: daysPerPointOf(field(body, "days_per_point")),
     milestones: body.milestones.map((m) => ({ ...m, lanes: m.lanes ?? null, velocity: velocityOf(field(m, "velocity")) })),
   };

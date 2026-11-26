@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ForecastEpic } from "@/features/milestones/api";
-import { detail, epicPlan } from "@/features/milestones/milestoneFixtures";
+import { detail, epicPlan, forecastEpic } from "@/features/milestones/milestoneFixtures";
 import { EpicTable } from "./EpicTable";
 import { statusEpic } from "./statusFixtures";
 
@@ -23,7 +23,7 @@ describe("EpicTable", () => {
       epicPlan("e-3", { title: "Cart totals", status: "closed", planned_start: "2026-11-12", planned_end: "2026-11-19" }),
     ]);
     const forecast: ForecastEpic[] = [
-      { id: "e-1", milestone: "m2", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" },
+      forecastEpic("e-1", { milestone: "m2", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" }),
     ];
 
     render(<EpicTable project="example" epics={epics} detail={plan} forecast={forecast} today="2026-11-23" />);
@@ -58,7 +58,7 @@ describe("EpicTable", () => {
       }),
     ];
     const forecast: ForecastEpic[] = [
-      { id: "e-5", milestone: "m2", planned_start: "2026-12-23", planned_end: "2027-01-01", estimate_source: "assumed" },
+      forecastEpic("e-5", { milestone: "m2", planned_start: "2026-12-23", planned_end: "2027-01-01", estimate_source: "assumed" }),
     ];
     render(<EpicTable project="example" epics={epics} detail={null} forecast={forecast} today="2026-11-23" />);
     expect(screen.getByText("Not split yet")).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ForecastEpic } from "@/features/milestones/api";
-import { detail, epicPlan } from "@/features/milestones/milestoneFixtures";
+import { detail, epicPlan, forecastEpic } from "@/features/milestones/milestoneFixtures";
 import { statusEpic, statusMilestones, statusReport } from "./statusFixtures";
 import { summaryMarkdown, type StatusSummaryInput } from "./summaryMarkdown";
 import type { StatusVerdict } from "./verdict";
@@ -15,7 +15,7 @@ const verdict: StatusVerdict = {
 };
 const milestone = statusMilestones[1];
 const forecast: ForecastEpic[] = [
-  { id: "e-1", milestone: "m2", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" },
+  forecastEpic("e-1", { milestone: "m2", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" }),
 ];
 const closedCounts = { total: 2, closed: 2, in_progress: 0, blocked: 0, ready: 0, deferred: 0, prep_total: 0, prep_closed: 0 };
 
