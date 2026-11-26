@@ -897,7 +897,7 @@ On screens narrower than 768px the links and buttons of the navigation and the t
 - THEN a focus indicator is visible
 
 ### REQ-UI-063: Page title
-The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Overview · gin-console`, `Beads · <project> · gin-console`, `My work · <project> · gin-console`, `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console` with `<section>` one of Status, Team, Delivery, Velocity and Rework, `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
+The frontend SHALL set the document title to the name of what the page shows, then the project when the page shows one project, then `gin-console`, joined by ` · `: `Overview · gin-console`, `Beads · <project> · gin-console`, `My work · <project> · gin-console`, `Milestones · <project> · gin-console`, `<milestone title> · <project> · gin-console` on a milestone page, `Reports · <section> · <project> · gin-console` with `<section>` one of Status, Team, Delivery, Velocity, Rework and Bugs, `<bead title> · <project> · gin-console` on a bead page, and `Page not found · gin-console` (REQ-UI-125). WHILE a name is loading, and on the login page, the title SHALL be `gin-console`.
 
 #### Scenario: Bead page
 - GIVEN the bead `a-1` titled "Team checkout" in project `example`
@@ -1546,7 +1546,7 @@ From 1024px the frontend SHALL show, at the top of the "Main" navigation's sideb
 - THEN no collapse control is shown and the theme control is under the brand mark, above the links
 
 ### REQ-UI-095: Report tabs
-The Reports page SHALL have the sections Status, Team, Delivery, Velocity and Rework, in that order, each at its own path: `/reports/status`, `/reports/team`, `/reports/delivery`, `/reports/velocity` and `/reports/rework`. WHILE the sections are not listed in the sidebar (REQ-UI-129), the page SHALL show them as a row of links labelled "Report sections", the current one marked `aria-current="page"`, each link going to its path with the same query. Under each section name it SHALL show a headline:
+The Reports page SHALL have the sections Status, Team, Delivery, Velocity, Rework and Bugs, in that order, each at its own path: `/reports/status`, `/reports/team`, `/reports/delivery`, `/reports/velocity`, `/reports/rework` and `/reports/bugs`. WHILE the sections are not listed in the sidebar (REQ-UI-129), the page SHALL show them as a row of links labelled "Report sections", the current one marked `aria-current="page"`, each link going to its path with the same query. Under each section name it SHALL show a headline:
 - Status: the verdict of REQ-REPORTS-027, with a warning icon for "At risk", "Late" and "Finished <n> d late"; no headline for a period.
 - Team, from the team report:
   - for a milestone: "Finished on time", or "Finished <n> d late" with a warning icon, for a closed milestone; "Starts <start>" before its start; "<closed> of <scope> done, late" with a warning icon when the milestone is late (REQ-MILESTONE-UI-023); otherwise "<closed> of <scope> done, on pace", or ", behind pace" with a warning icon when `pace_needed` is above `pace`;
@@ -1554,8 +1554,9 @@ The Reports page SHALL have the sections Status, Team, Delivery, Velocity and Re
 - Delivery: "<closed> beads closed", where `<closed>` is `totals.closed`.
 - Velocity: "<x> days per point" from the selected project's `days_per_point` (REQ-REPORTS-018), with "assumed" when it is assumed, once the Milestones list has loaded; no headline when `days_per_point` is `null`.
 - Rework: "<rate> rework", with "—" in place of `<rate>` when `totals.rework_rate` is absent.
+- Bugs, from the bugs report (REQ-REPORTS-039): "<n> open bugs" ("1 open bug"), where `<n>` is `figures.open_now`, or "No open bugs" when it is 0.
 
-The page SHALL request the team report, the status report and the Milestones list (REQ-MILESTONE-UI-008, for the forecast `finish` of REQ-MILESTONE-UI-023 and for the Velocity section) whatever the section, and SHALL request the Milestones list at most once per project and refresh. WHILE the Milestones list is loading or after it failed, the Status and Team headlines SHALL apply REQ-MILESTONE-UI-023 without the forecast. It SHALL show no headline for a section while its report loads or after it failed to load. WHEN the path is `/reports`, the page SHALL go to `/reports/status`, and WHEN the URL has `tab`, to the section it names, `quality` naming Rework and any other value, the retired `usage` and `coverage` included, naming Status, in both cases dropping `tab`, keeping the rest of the query and adding no history entry. A path under `/reports/` naming no section SHALL show the page of REQ-UI-125. Changing the section SHALL keep the project, the scope, the member and the status. WHILE the window is narrower than the row of links, the row SHALL scroll sideways instead of widening the page and SHALL fade its edge on each side that has hidden links.
+The page SHALL request the team report, the status report, the bugs report and the Milestones list (REQ-MILESTONE-UI-008, for the forecast `finish` of REQ-MILESTONE-UI-023 and for the Velocity section) whatever the section, and SHALL request the Milestones list at most once per project and refresh. WHILE the Milestones list is loading or after it failed, the Status and Team headlines SHALL apply REQ-MILESTONE-UI-023 without the forecast. It SHALL show no headline for a section while its report loads or after it failed to load. WHEN the path is `/reports`, the page SHALL go to `/reports/status`, and WHEN the URL has `tab`, to the section it names, `quality` naming Rework and any other value, the retired `usage` and `coverage` included, naming Status, in both cases dropping `tab`, keeping the rest of the query and adding no history entry. A path under `/reports/` naming no section SHALL show the page of REQ-UI-125. Changing the section SHALL keep the project, the scope, the member and the status. WHILE the window is narrower than the row of links, the row SHALL scroll sideways instead of widening the page and SHALL fade its edge on each side that has hidden links.
 Source: `assets/2026-11-12/mockup/index.html`, `../ui/assets/2026-11-22/index.html#reports`
 
 #### Scenario: shared link
@@ -1603,8 +1604,13 @@ Source: `assets/2026-11-12/mockup/index.html`, `../ui/assets/2026-11-22/index.ht
 - WHEN the page is shown
 - THEN Status has no headline and Team reads "2 members"
 
+#### Scenario: bugs section and headline
+- GIVEN `/reports/rework?project=alpha&days=30` with a bugs report whose `figures.open_now` is 25
+- WHEN the user opens Bugs
+- THEN the URL becomes `/reports/bugs?project=alpha&days=30`, no new report is requested, and the Bugs headline reads "25 open bugs" without a warning icon
+
 #### Scenario: Hidden links are hinted
-- GIVEN the Reports page at a window 360px wide where Rework does not fit
+- GIVEN the Reports page at a window 360px wide where Bugs does not fit
 - WHEN the page is shown
 - THEN the right edge of the row fades, and scrolling it to the end removes the right fade and shows a left one
 
@@ -2495,7 +2501,7 @@ Source: `../ui/assets/2026-11-22/index.html#reports`, `../ui/assets/2026-11-22/r
 #### Scenario: Sections in the sidebar
 - GIVEN a window 1440px wide, the sidebar expanded and `/reports/delivery?project=a&milestone=m2`
 - WHEN the page is shown
-- THEN the sidebar lists Status, Team, Delivery, Velocity and Rework under Reports with their headlines, Delivery is marked current, and the page shows no row of section links
+- THEN the sidebar lists Status, Team, Delivery, Velocity, Rework and Bugs under Reports with their headlines, Delivery is marked current, and the page shows no row of section links
 
 #### Scenario: Change section
 - GIVEN the Reports page at `/reports/delivery?project=a&days=7` with sections in the sidebar
