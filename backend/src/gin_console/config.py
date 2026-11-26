@@ -7,9 +7,11 @@ import re
 import threading
 from collections.abc import Mapping
 from pathlib import Path, PureWindowsPath
+from typing import Annotated
 
 import yaml
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     Field,
@@ -66,19 +68,23 @@ class OverviewSettings(BaseModel):
     aging_days: StrictInt = Field(default=3, ge=1)
 
 
+def _absolute(value: Path) -> Path:
+    if not (value.is_absolute() or PureWindowsPath(value).is_absolute()):
+        raise ValueError("must be an absolute path")
+    return value
+
+
+AbsolutePath = Annotated[Path, AfterValidator(_absolute)]
+
+
 class ProjectEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     name: str = Field(min_length=1)
-    path: Path
+    path: AbsolutePath
     pull: StrictBool = True  # run `bd dolt pull` here on refresh and on schedule
-
-    @field_validator("path")
-    @classmethod
-    def _absolute(cls, value: Path) -> Path:
-        if not (value.is_absolute() or PureWindowsPath(value).is_absolute()):
-            raise ValueError("must be an absolute path")
-        return value
+    # folders besides `path` whose images the beads may show (REQ-CONFIG-008)
+    evidence_roots: list[AbsolutePath] = []
 
 
 class Settings(BaseModel):

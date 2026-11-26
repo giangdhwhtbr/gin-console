@@ -356,6 +356,26 @@ Pulls run as the console's user:
 
 ---
 
+## Bug screenshots
+
+A bead shows the PNG, JPEG, GIF and WebP files its description or notes name: Markdown images and links, `local:` lines, and paths standing alone, such as `qa/evidence/r1/01.png`, `~/shots/a.png` or `file:///srv/att/BUG-5.png`. A relative path is read from the project's `path`; `~/` is the home folder of the user running the console. Web addresses are never loaded.
+
+The console serves such a file only when it lies inside the project's `path` or inside one of its `evidence_roots`, links resolved, is at most 10 MB, and starts with the bytes of one of those formats. It serves only the images a bead names, by their number, and never a path the browser sends. A file it cannot serve shows as "Not on this host".
+
+To show screenshots kept outside the project, list their folders as absolute paths:
+
+```yaml
+projects:
+  - name: qwikfone
+    path: /home/gin/qwikfone
+    evidence_roots:
+      - /home/gin/infra/bug-sync-mcp/data/attachments
+```
+
+A folder of `evidence_roots` belongs to its project only. A folder that does not exist serves nothing, and a relative one stops the console at startup. The console never writes to these folders. It checks the files when it reads the Beads export, so after you add or remove a screenshot, select **Refresh data** to update the image counts.
+
+---
+
 ## Reports
 
 `/reports` opens `/reports/status` for the active (or latest) milestone. Six sections share a single scope picker in the header — either a dated milestone or a rolling period (**Last 7 days**, **Last 30 days**, or **Last 90 days**) — and keep that scope when you move between sections:

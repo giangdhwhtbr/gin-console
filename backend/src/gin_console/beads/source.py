@@ -3,6 +3,7 @@ JSON."""
 
 import json
 import re
+from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
@@ -12,6 +13,7 @@ from pydantic import ValidationError
 
 from gin_console.beads.definitions import Counts, child_counts, is_blocked
 from gin_console.beads.errors import BeadNotFound, BeadsError
+from gin_console.beads.images import FoundImage
 from gin_console.beads.kinds import (
     complexity_of,
     declared_capabilities,
@@ -146,7 +148,12 @@ def _points(raw: dict[str, Any]) -> tuple[int | None, str | None]:
     return points, reason if isinstance(reason, str) else None
 
 
-def _fields(snapshot: Snapshot, ident: str, counts: dict[str, Counts]) -> dict[str, Any]:
+Images = Mapping[str, Sequence[FoundImage]]
+
+
+def _fields(
+    snapshot: Snapshot, ident: str, counts: dict[str, Counts], images: Images
+) -> dict[str, Any]:
     raw = snapshot.rows[ident]
     issue_type = raw.get("issue_type")
     points, points_reason = _points(raw)
@@ -172,17 +179,18 @@ def _fields(snapshot: Snapshot, ident: str, counts: dict[str, Counts]) -> dict[s
         "claim": claim_of(raw.get("metadata")),
         "waits_for": gate_ref(snapshot, ident),
         "child_counts": asdict(counts.get(ident, Counts())),
+        "image_count": sum(image.available for image in images.get(ident, ())),
     }
 
 
-def list_beads(snapshot: Snapshot, closed: bool) -> list[BeadSummary]:
+def list_beads(snapshot: Snapshot, closed: bool, images: Images | None = None) -> list[BeadSummary]:
     beads: list[BeadSummary] = []
     counts = child_counts(snapshot)
     for ident, raw in snapshot.rows.items():
         if not closed and raw.get("status") == "closed":
             continue
         try:
-            beads.append(BeadSummary.model_validate(_fields(snapshot, ident, counts)))
+            beads.append(BeadSummary.model_validate(_fields(snapshot, ident, counts, images or {})))
         except ValidationError:
             continue  # a malformed bead is left out (REQ-BEADS-005)
     return beads
@@ -271,8 +279,9 @@ def _row(snapshot: Snapshot, bead_id: str) -> dict[str, Any]:
     return snapshot.rows[bead_id]
 
 
-def get_bead(snapshot: Snapshot, bead_id: str) -> BeadDetail:
+def get_bead(snapshot: Snapshot, bead_id: str, images: Images | None = None) -> BeadDetail:
     raw = _row(snapshot, bead_id)
+    images = images or {}
     own = [
         (dep["depends_on_id"], dep["type"])
         for dep in _own_deps(raw)
@@ -287,7 +296,7 @@ def get_bead(snapshot: Snapshot, bead_id: str) -> BeadDetail:
     try:
         return BeadDetail.model_validate(
             {
-                **_fields(snapshot, bead_id, child_counts(snapshot)),
+                **_fields(snapshot, bead_id, child_counts(snapshot), images),
                 "description": raw.get("description") or None,
                 "design": raw.get("design") or None,
                 "notes": raw.get("notes") or None,
@@ -297,6 +306,10 @@ def get_bead(snapshot: Snapshot, bead_id: str) -> BeadDetail:
                 "dependents": _relations(snapshot, [(i, k) for i, k in above if k == "blocks"]),
                 "children": _children(snapshot, above),
                 "bugs": _bugs(snapshot, bugs),
+                "images": [
+                    {"n": i.n, "path": i.path, "caption": i.caption, "available": i.available}
+                    for i in images.get(bead_id, ())
+                ],
             }
         )
     except ValidationError:

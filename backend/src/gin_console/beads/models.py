@@ -80,6 +80,7 @@ class BeadSummary(BaseModel):
     claim: Claim | None = None
     waits_for: GateRef | None = None
     child_counts: ChildCounts = Field(default_factory=ChildCounts)
+    image_count: int = 0  # images of REQ-BEADS-026 available on this host (REQ-BEADS-027)
 
 
 class Relation(BaseModel):
@@ -118,6 +119,17 @@ class Comment(BaseModel):
     truncated: bool = False
 
 
+class BeadImage(BaseModel):
+    """An image a bead names (REQ-BEADS-026); served by number, never by path (REQ-BEADS-028)."""
+
+    model_config = ConfigDict(strict=True)
+
+    n: int
+    path: Text
+    caption: Text
+    available: bool
+
+
 class BeadDetail(BeadSummary):
     description: Text | None = None
     design: Text | None = None
@@ -128,6 +140,7 @@ class BeadDetail(BeadSummary):
     dependents: list[GateRelation] = []
     children: list[ChildRelation] = []
     bugs: list[Relation] = []
+    images: list[BeadImage] = []
 
 
 class MilestoneOption(BaseModel):
