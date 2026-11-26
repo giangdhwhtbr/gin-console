@@ -1,12 +1,13 @@
 import { lazy, Suspense } from "react";
+import type { ImageResolver } from "./MarkdownView";
 
 const MarkdownView = lazy(() => import("./MarkdownView").then((m) => ({ default: m.MarkdownView })));
 
 /** Bead text as Markdown in its own chunk; the text as typed until that chunk loads. */
-export function MarkdownText({ text }: { text: string }) {
+export function MarkdownText({ text, images }: { text: string; images?: ImageResolver }) {
   return (
     <Suspense fallback={<p className="whitespace-break-spaces break-words [overflow-wrap:anywhere]">{text}</p>}>
-      <MarkdownView text={text} />
+      <MarkdownView text={text} images={images} />
     </Suspense>
   );
 }

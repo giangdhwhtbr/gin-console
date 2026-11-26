@@ -1,6 +1,20 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
-import { MarkdownView, safeUrl } from "./MarkdownView";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { BeadImage } from "./api";
+import { MarkdownView, safeUrl, type ImageResolver } from "./MarkdownView";
+import { findImage } from "./images/match";
+
+const beadImages: BeadImage[] = [
+  { n: 1, path: "qa/evidence/r1/01.png", caption: "01.png", available: true },
+  { n: 2, path: "/srv/att/BUG-5.png", caption: "BUG-5.png", available: true },
+  { n: 3, path: "/tmp/x.png", caption: "x.png", available: false },
+];
+const resolver = (open = vi.fn()): ImageResolver => ({
+  find: (address) => findImage(beadImages, address),
+  url: (n) => `/api/beads/alpha/a-1/images/${n}`,
+  open,
+});
 
 afterEach(cleanup);
 
@@ -61,8 +75,7 @@ describe("MarkdownView", () => {
     for (const a of container.querySelectorAll("a")) {
       expect(a.getAttribute("href") ?? "").toMatch(/^(https?:|mailto:)/i);
     }
-    const srcs = [...container.querySelectorAll("img")].map((i) => i.getAttribute("src") ?? "");
-    expect(srcs.filter((src) => src !== "")).toEqual(["https://e.com/a.png"]);
+    expect(container.querySelector("img")).toBeNull();
   });
 
   it("safeUrl keeps http, https and mailto only", () => {
@@ -80,5 +93,52 @@ describe("MarkdownView", () => {
     const url = "https://github.com/Qwikfoneoffice/QwikFone_Office_Backend/pull/263";
     const { container } = render(<MarkdownView text={`PR opened: ${url}`} />);
     expect(container.firstElementChild?.className).toContain("[overflow-wrap:anywhere]");
+  });
+
+  it("REQ-UI-028 bead image inline: shown from the images route and opens the lightbox on click", async () => {
+    const open = vi.fn();
+    render(<MarkdownView text={"![Step 1](qa/evidence/r1/01.png)"} images={resolver(open)} />);
+    const img = screen.getByRole("img", { name: "Step 1" });
+    expect(img).toHaveAttribute("src", "/api/beads/alpha/a-1/images/1");
+    expect(img).toHaveAttribute("loading", "lazy");
+    await userEvent.click(screen.getByRole("button"));
+    expect(open).toHaveBeenCalledWith(1, screen.getByRole("button"));
+  });
+
+  it("REQ-UI-028 external image not loaded: a link with the host, no img element", () => {
+    const { container } = render(
+      <MarkdownView text={"![chart](https://example.com/x.png)\n\n![key](attachment:ab12)"} images={resolver()} />,
+    );
+    const link = screen.getByRole("link", { name: "Image: chart (example.com)" });
+    expect(link).toHaveAttribute("href", "https://example.com/x.png");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noreferrer");
+    expect(screen.getByText("key")).toBeInTheDocument();
+    expect(container.querySelector("img")).toBeNull();
+  });
+
+  it("REQ-UI-028 a caller without a resolver shows attachment and relative images as alt text and external ones as links", () => {
+    const { container } = render(
+      <MarkdownView text={"![a](attachment:1) ![b](shots/b.png) ![c](http://e.com/c.png)"} />,
+    );
+    expect(container.querySelector("img")).toBeNull();
+    expect(container).toHaveTextContent("a b");
+    expect(screen.getByRole("link", { name: "Image: c (e.com)" })).toBeInTheDocument();
+  });
+
+  it("REQ-UI-028 link to a bead image is a button that opens the lightbox", async () => {
+    const open = vi.fn();
+    render(<MarkdownView text={"[BUG-5.png](file:///srv/att/BUG-5.png) [other](file:///etc/x.png)"} images={resolver(open)} />);
+    await userEvent.click(screen.getByRole("button", { name: "BUG-5.png" }));
+    expect(open).toHaveBeenCalledWith(2, screen.getByRole("button", { name: "BUG-5.png" }));
+    expect(screen.queryByRole("link", { name: "BUG-5.png" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "other" })).toBeNull();
+    expect(screen.getByText("other")).toBeInTheDocument();
+  });
+
+  it("REQ-UI-028 an unavailable bead image is alt text only", () => {
+    const { container } = render(<MarkdownView text={"![gone](/tmp/x.png)"} images={resolver()} />);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container).toHaveTextContent("gone");
   });
 });
