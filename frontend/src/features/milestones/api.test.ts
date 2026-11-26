@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { json } from "@/features/beads/beadFixtures";
 import { daysPerPointOf, fetchMilestone, fetchMilestones, milestonePath, MilestonesError, velocityOf, type Forecast } from "./api";
-import { detail, entry, epicPlan, forecast, list, stubMilestones } from "./milestoneFixtures";
+import { closedEpic, detail, entry, epicPlan, forecast, forecastEpic, forecastMilestone, list, stubMilestones } from "./milestoneFixtures";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -95,7 +95,7 @@ describe("milestones api", () => {
     await expect(fetchMilestone("alpha", "m-1", null)).rejects.toBeInstanceOf(MilestonesError);
   });
 
-  it("REQ-MILESTONE-UI-008 keeps the epics of the forecast, an epic without estimate_source reads as null", async () => {
+  it("REQ-MILESTONE-UI-008 keeps the epics of the forecast, an epic without estimate_source reads as null and an older epic gets the new fields' defaults", async () => {
     const epics = [
       { id: "e-1", milestone: "M1", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" },
       { id: "e-5", milestone: null, planned_start: "2026-12-23", planned_end: "2027-01-01" },
@@ -103,11 +103,53 @@ describe("milestones api", () => {
     ] as unknown as Forecast["epics"];
     stubMilestones(() => json(list([entry("m-1")], { forecast: { ...forecast(), epics } })));
     const got = (await fetchMilestones("alpha")).forecast?.epics;
+    const later = { title: null, status: null, lane: null, remaining_days: null, warnings: [] };
     expect(got).toEqual([
-      { id: "e-1", milestone: "M1", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points" },
-      { id: "e-5", milestone: null, planned_start: "2026-12-23", planned_end: "2027-01-01", estimate_source: null },
-      { id: "e-6", milestone: "M1", planned_start: "2026-12-24", planned_end: "2027-01-02", estimate_source: null },
+      { id: "e-1", milestone: "M1", planned_start: "2026-11-23", planned_end: "2026-11-25", estimate_source: "points", ...later },
+      { id: "e-5", milestone: null, planned_start: "2026-12-23", planned_end: "2027-01-01", estimate_source: null, ...later },
+      { id: "e-6", milestone: "M1", planned_start: "2026-12-24", planned_end: "2027-01-02", estimate_source: null, ...later },
     ]);
+  });
+
+  it("REQ-MILESTONE-UI-035 keeps the printed fields of a forecast epic and the chained milestones", async () => {
+    const epic = forecastEpic("e-1", { milestone: "M1", title: "Search", status: "in_progress", lane: 2, remaining_days: 4, warnings: [{ code: "overflow", days: 42, count: null }] });
+    const chained = [forecastMilestone("M2", { start: null, finish: null }), forecastMilestone("M1", { overflow_days: 3 })];
+    stubMilestones(() => json(list([entry("m-1")], { forecast: forecast({ epics: [epic], milestones: chained }) })));
+    const got = (await fetchMilestones("alpha")).forecast;
+    expect(got?.epics).toEqual([epic]);
+    expect(got?.milestones).toEqual(chained);
+  });
+
+  it("REQ-MILESTONE-UI-035 older output: a forecast without milestones reads as an empty chain, a warning without count as null", async () => {
+    const without = (x: object, key: string) => Object.fromEntries(Object.entries(x).filter(([k]) => k !== key));
+    const epic = { ...without(forecastEpic("e-1"), "title"), warnings: [{ code: "late", days: 2 }] };
+    stubMilestones(() => json(list([], { forecast: { ...without(forecast(), "milestones"), epics: [epic] } as unknown as Forecast })));
+    const got = (await fetchMilestones("alpha")).forecast;
+    expect(got?.milestones).toEqual([]);
+    expect(got?.epics[0].title).toBeNull();
+    expect(got?.epics[0].warnings).toEqual([{ code: "late", days: 2, count: null }]);
+  });
+
+  it("REQ-MILESTONE-UI-035 refuses a forecast epic or chained milestone of the wrong shape", async () => {
+    const badEpic = { ...forecastEpic("e-1"), lane: "one" } as unknown as Forecast["epics"][number];
+    stubMilestones(() => json(list([], { forecast: forecast({ epics: [badEpic] }) })));
+    await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");
+    const badMilestone = { id: "M1", start: 5, finish: null, overflow_days: 0 } as unknown as Forecast["milestones"][number];
+    stubMilestones(() => json(list([], { forecast: forecast({ milestones: [badMilestone] }) })));
+    await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");
+  });
+
+  it("REQ-MILESTONE-UI-037 reads the closed epics, null when absent or null, and refuses a wrong shape", async () => {
+    const closed = [closedEpic("ex-e2", { milestone: "ex-m1" }), closedEpic("ex-e0")];
+    stubMilestones(() => json(list([], { closed_epics: closed })));
+    expect((await fetchMilestones("alpha")).closed_epics).toEqual(closed);
+    stubMilestones(() => json(list([], { closed_epics: null })));
+    expect((await fetchMilestones("alpha")).closed_epics).toBeNull();
+    const older = Object.fromEntries(Object.entries(list([])).filter(([k]) => k !== "closed_epics"));
+    stubMilestones(() => json(older));
+    expect((await fetchMilestones("alpha")).closed_epics).toBeNull();
+    stubMilestones(() => json({ ...list([]), closed_epics: [{ id: "e", title: 1, milestone: null, start: "2026-10-01", end: "2026-10-02" }] }));
+    await expect(fetchMilestones("alpha")).rejects.toThrow("unexpected response");
   });
 
   it("REQ-MILESTONE-UI-008 a forecast without epics reads as an empty list", async () => {
