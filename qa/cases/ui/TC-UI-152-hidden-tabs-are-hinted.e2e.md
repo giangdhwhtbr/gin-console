@@ -1,6 +1,6 @@
 # TC-UI-152: Hidden tabs are hinted
 
-- **REQ:** REQ-UI-095@c0140122
+- **REQ:** REQ-UI-095@3fd9927e
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -8,7 +8,7 @@
 
 **Preconditions:**
 - Project `alpha` exists
-- Rework does not fit in a 360 px window
+- Bugs does not fit in a 360 px window
 - The sidebar shows the icon rail at this width, so the page shows its row of section links
 
 **Steps:**

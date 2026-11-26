@@ -4,6 +4,7 @@
 import { expect, type Page } from '@playwright/test';
 import { bead, detail, entry, epicPlan, milestoneOption } from './api';
 import { e12 } from './lanes';
+import { bugsBody } from './reports';
 export const LONG_ID = 'ex-payments-provider-migration-and-reconciliation-2026';
 export const LONG_TITLE = 'Payments provider migration and reconciliation across every regional ledger and settlement batch';
 export const LONG_MEMBER = 'nguyen.thi.thanh.huong.payments-team@example-company.com.vn';
@@ -151,6 +152,7 @@ export async function stubExample(page: Page): Promise<string[]> {
     else if (parts[1] === 'beads' && parts.length === 4 && beads.some((x) => x.id === parts[3])) ok(detailOf(parts[3]));
     else if (p === '/api/reports/status') ok(status);
     else if (p === '/api/reports/team') ok(team);
+    else if (p === '/api/reports/bugs') ok(bugsBody('example', { milestone: 'ex-m2', days: null }));
     else if (p === '/api/reports') ok(report);
     if (statusCode === 404 && body && (body as { error?: string }).error === 'not stubbed') unstubbed.push(url.pathname);
     await route.fulfill({ status: statusCode, json: body });
