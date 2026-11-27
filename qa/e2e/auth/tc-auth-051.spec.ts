@@ -1,12 +1,12 @@
 // TC: TC-AUTH-051@eb0a61f2
 import { test, expect } from '../evidence';
-import { account, needAccount, signInAs } from './auth-session';
+import { account, needAccount, OWN_PROJECT, signInAs } from './auth-session';
 
 test('TC-AUTH-051: Session lost while open (REQ-AUTH-015)', async ({ page, ev }) => {
   needAccount();
   const { user, password } = account();
-  await signInAs(page, '/beads?project=alpha');
-  await expect(page).toHaveURL(/\/beads\?project=alpha/);
+  await signInAs(page, `/beads?project=${OWN_PROJECT}`);
+  await expect(page).toHaveURL(new RegExp(`/beads\\?project=${OWN_PROJECT}`));
 
   await ev.step('1. The server answers the next data request with 401', async () => {
     await page.route('**/api/beads?*', (route) => route.fulfill({ status: 401, json: { error: 'sign-in required' } }));
@@ -25,6 +25,6 @@ test('TC-AUTH-051: Session lost while open (REQ-AUTH-015)', async ({ page, ev })
     await page.getByLabel('Password').fill(password);
     await page.getByRole('button', { name: 'Sign in' }).click();
     await expect(page.getByRole('button', { name: `Sign out ${user}` })).toBeVisible();
-    await expect(page).toHaveURL(/\/beads\?project=alpha/);
+    await expect(page).toHaveURL(new RegExp(`/beads\\?project=${OWN_PROJECT}`));
   });
 });

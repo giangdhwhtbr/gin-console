@@ -1,7 +1,9 @@
 // TC: TC-AUTH-050@f3de17a7
 import { test, expect } from '../evidence';
+import { needAccount } from './auth-session';
 
 test('TC-AUTH-050: Sign-in screen on a phone (REQ-AUTH-014)', async ({ page, ev }) => {
+  needAccount(); // only to skip on a console without auth
   await page.setViewportSize({ width: 390, height: 844 });
 
   await ev.step('1. Open the console', async () => {

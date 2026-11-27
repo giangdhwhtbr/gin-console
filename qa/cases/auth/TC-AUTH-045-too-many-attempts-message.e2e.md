@@ -4,7 +4,7 @@
 - **Priority:** high
 
 **Preconditions:**
-- The console runs with auth on and the default limit of 5 failures per user in 15 minutes
+- The console runs with auth on, the default limit of 5 failures per user in 15 minutes, and `auth.rate_limit.per_ip` well above 20 (for example 1000), because each run adds 6 failures to the IP's count
 - No session
 
 **Test data:**

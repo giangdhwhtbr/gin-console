@@ -1,6 +1,6 @@
 // TC: TC-AUTH-043@5094d8c1
 import { test, expect } from '../evidence';
-import { account, needAccount } from './auth-session';
+import { account, needAccount, OWN_PROJECT } from './auth-session';
 
 test('TC-AUTH-043: Sign in with the right password (REQ-AUTH-014)', async ({ page, ev }) => {
   needAccount();
@@ -22,7 +22,7 @@ test('TC-AUTH-043: Sign in with the right password (REQ-AUTH-014)', async ({ pag
     await expect(page.getByRole('heading', { name: 'Overview', level: 1 })).toBeVisible();
     await expect(page.getByRole('button', { name: `Sign out ${user}` })).toBeVisible();
     // My work uses the email the server holds for the user (the account's email is <user>@x.io)
-    await page.goto('/my-tasks?project=alpha');
+    await page.goto(`/my-tasks?project=${OWN_PROJECT}`);
     await expect(page.getByText(`No work for ${user}@x.io`)).toBeVisible();
   });
 });

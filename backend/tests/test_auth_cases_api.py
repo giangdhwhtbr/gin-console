@@ -11,6 +11,7 @@ from pathlib import Path
 import pytest
 from fake_bd import FakeBd
 from fastapi.testclient import TestClient
+from httpx import Response
 from test_auth_access_api import DAY, grant_path, make, signed_in
 from test_auth_api import (
     INVALID,
@@ -34,12 +35,22 @@ from gin_console.app import create_app
 from gin_console.auth.access import COOKIE
 from gin_console.auth.passwords import DUMMY_HASH, PREFIX, hash_password, verify
 from gin_console.auth.users import load_users, save_users
-from gin_console.config import ConfigError, ProjectEntry, Settings, load_settings
+from gin_console.config import AuthSettings, ConfigError, ProjectEntry, Settings, load_settings
 
 
 @pytest.fixture
 def console(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> Console:
     return Console(tmp_path, capsys)
+
+
+def console_login(console: Console, tmp_path: Path, name: str, password: str) -> Response:
+    """Sign in through an app (auth on) that reads the users file the `user` command wrote."""
+    settings = Settings(
+        projects=[ProjectEntry(name=n, path=tmp_path / n) for n in ("a", "b")],
+        auth=AuthSettings(enabled=True, users_file=console.users_file),
+    )
+    app = create_app(settings, run_bd=FakeBd(), schedule_pulls=False)
+    return sign_in(TestClient(app), name, password)
 
 
 # --- Config
@@ -381,11 +392,12 @@ def test_tc_auth_028_broken_users_file(tmp_path: Path, caplog: pytest.LogCapture
 
 
 # TC: TC-AUTH-029@e49311e7
-def test_tc_auth_029_user_created(console: Console) -> None:
+def test_tc_auth_029_user_created(console: Console, tmp_path: Path) -> None:
     password = password_of(console.ok("add", "an", "--email", "an@x.io", "--project", "a"))
     stored = str(console.users()["an"]["password_hash"])
     assert stored.startswith("scrypt$") and verify(password, stored)
     assert password not in console.users_file.read_text()
+    assert console_login(console, tmp_path, "an", password).status_code == 200
 
 
 # TC: TC-AUTH-030@4e241174
@@ -401,11 +413,13 @@ def test_tc_auth_031_user_add_name_taken(console: Console) -> None:
 
 
 # TC: TC-AUTH-032@8673055b
-def test_tc_auth_032_password_reset(console: Console) -> None:
+def test_tc_auth_032_password_reset(console: Console, tmp_path: Path) -> None:
     old = password_of(console.ok("add", "an", "--email", "an@x.io", "--project", "a"))
     new = password_of(console.ok("passwd", "an"))
     stored = str(console.users()["an"]["password_hash"])
     assert verify(new, stored) and not verify(old, stored)
+    assert console_login(console, tmp_path, "an", new).status_code == 200
+    assert console_login(console, tmp_path, "an", old).status_code == 401
 
 
 # TC: TC-AUTH-033@b8c5ce5b

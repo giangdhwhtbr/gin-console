@@ -1,8 +1,12 @@
-// TC: TC-AUTH-045@9956972a
+// TC: TC-AUTH-045@914e5d33
 import { test, expect } from '../evidence';
-import { fillSignIn } from './auth-session';
+import { fillSignIn, needAccount } from './auth-session';
+
+// Each run adds 6 failures to the IP's count: a retry would double that, so this spec never retries.
+test.describe.configure({ retries: 0 });
 
 test('TC-AUTH-045: Too many attempts message (REQ-AUTH-014)', async ({ page, ev }) => {
+  needAccount(); // only to skip on a console without auth
   // A name that has no account and is new on each run: the limit counts failures per name, so no real account is locked.
   const name = `limit-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 
