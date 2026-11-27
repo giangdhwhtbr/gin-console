@@ -1,6 +1,6 @@
 # TC-UI-053: Epic progress
 
-- **REQ:** REQ-UI-028@a720e49e
+- **REQ:** REQ-UI-028@5c612d02
 - **Priority:** medium
 
 **Preconditions:**
