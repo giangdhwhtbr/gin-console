@@ -15,7 +15,7 @@ Epic `gin-console-rm-evidence-images` shows the screenshots a bead names (descri
 - `attachment:<sha>` images still show as text; gin-console-rm-shared-attachments reuses `ImagesPanel` and `Lightbox` for them.
 
 **References**
-- `docs/changes/archive/<date>-gin-console-rm-evidence-images-evidence-images/`
+- `docs/changes/archive/2026-11-27-gin-console-rm-evidence-images-evidence-images/`
 - `backend/src/gin_console/beads/images.py`, `backend/tests/test_bead_images.py`, `frontend/src/features/beads/images/`
 - Beads: `gin-console-rm-evidence-images` (`.1` to `.4`)
 
