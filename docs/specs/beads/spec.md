@@ -53,7 +53,7 @@ WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return 
 - THEN `b-1` has `image_count: 2` and the task `image_count: 0`
 
 ### REQ-BEADS-002: Bead detail
-WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return the bead with the fields of REQ-BEADS-001 plus `description`, `dependencies` and `dependents` (each with `id`, `title`, `status` and `type`, where `type` is `blocks` or `parent-child`), `bugs` (each bead of type `bug` that has a `discovered-from` dependency on this bead, open or closed, with `id`, `title`, `status` and `type` `discovered-from`) `images` (the images of REQ-BEADS-026, each with `n`, `path`, `caption` and `available` as REQ-BEADS-027 says) and, for an epic, `children` (each with `id`, `title`, `status` and `prep`, closed children included), and SHALL respond 404 when the project or the bead does not exist. A bead SHALL be a prep task when its `labels` hold `prep` and no label starts with `track:` or `req:`. The children of an epic that are not prep tasks are its tracks. The `prep` field of a child SHALL be true for a prep task and false for a track.
+WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return the bead with the fields of REQ-BEADS-001 plus `description`, `dependencies` and `dependents` (each with `id`, `title`, `status` and `type`, where `type` is `blocks` or `parent-child`), `bugs` (each bead of type `bug` that has a `discovered-from` dependency on this bead, open or closed, with `id`, `title`, `status` and `type` `discovered-from`) `images` (the images of REQ-BEADS-026, each with `n`, `path`, `sha256` and `caption` as REQ-BEADS-026 says, `available` and `served_as` (`attachment`, `file` or `null`) as REQ-BEADS-027 says, and `reason`: for an image that has a `sha256` and is not available, the reason of its attachment (REQ-BEADS-031), else `null`) and, for an epic, `children` (each with `id`, `title`, `status` and `prep`, closed children included), and SHALL respond 404 when the project or the bead does not exist. A bead SHALL be a prep task when its `labels` hold `prep` and no label starts with `track:` or `req:`. The children of an epic that are not prep tasks are its tracks. The `prep` field of a child SHALL be true for a prep task and false for a track.
 
 #### Scenario: Dependencies and dependents
 - GIVEN a bead blocked by one bead and blocking another
@@ -83,7 +83,12 @@ WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return 
 #### Scenario: Images
 - GIVEN bug `b-1` whose description names `qa/evidence/r1/01.png`, present in the project, and `/tmp/x.png`
 - WHEN a client requests its detail
-- THEN `images` is `{n: 1, path: "qa/evidence/r1/01.png", caption: "01.png", available: true}` and `{n: 2, path: "/tmp/x.png", caption: "x.png", available: false}`
+- THEN `images` is `{n: 1, path: "qa/evidence/r1/01.png", sha256: null, caption: "01.png", available: true, served_as: "file", reason: null}` and `{n: 2, path: "/tmp/x.png", sha256: null, caption: "x.png", available: false, served_as: null, reason: null}`
+
+#### Scenario: Attachment images
+- GIVEN bug `b-1` whose description holds `![Step 1](attachment:A)` and whose entries are `{sha256: A}`, available, and `{sha256: B, name: "02.png", pruned_at: "2026-11-20T10:00:00Z"}`
+- WHEN a client requests its detail
+- THEN `images` is `{n: 1, path: null, sha256: A, caption: "Step 1", available: true, served_as: "attachment", reason: null}` and `{n: 2, path: null, sha256: B, caption: "02.png", available: false, served_as: null, reason: "pruned"}`
 
 ### REQ-BEADS-003: Safe, read-only commands
 The server SHALL NOT run any `bd` command other than `bd dolt pull` in a project directory when it pulls (REQ-BEADS-016), SHALL otherwise only read files under the project's `.beads` directory, SHALL accept a bead `id` only when it matches `[A-Za-z0-9][A-Za-z0-9._-]*` and respond 404 otherwise, SHALL treat any `closed` value other than `1` as absent without failing the request, and SHALL never itself create, update, close or delete a bead or write a file under `.beads`.
@@ -307,12 +312,16 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 - [Me filter](diagrams/me-filter-activity.md)
 - [Next command](diagrams/next-command-activity.md)
 - [Bead images](diagrams/bead-images-activity.md)
+- [Shared attachments](diagrams/shared-attachments-activity.md)
+- [Attachment on this host](diagrams/attachment-image-state.md)
+- [Attachment fetch status](diagrams/attachments-fetch-state.md)
 
 ## Use Cases
 - [Refresh pulls Beads](use-cases/refresh-pulls-beads.md)
 - [Scheduled Beads pull](use-cases/scheduled-beads-pull.md)
 - [Filter my beads](use-cases/filter-my-beads.md)
 - [See a bug's screenshots](use-cases/see-bug-screenshots.md)
+- [See shared screenshots](use-cases/see-shared-screenshots.md)
 
 ### REQ-BEADS-013: Stale export
 The server SHALL record, each time it reads a project's `.beads/issues.jsonl`, the content of the project's embedded Dolt manifests (`.beads/embeddeddolt/*/.dolt/noms/manifest`), and SHALL report the project's export as stale WHILE that content differs from the recorded content and the file has not changed since; WHERE a project has no such manifest, its export SHALL never be stale. `GET /api/projects/beads` SHALL include `stale` (a boolean) in the `beads` object of each project whose beads were read.
@@ -638,16 +647,33 @@ WHEN given a bead, the signed-in email, and, for an epic, the workflow stage rep
 
 ### REQ-BEADS-026: Images a bead names
 Type: business-rule
-The server SHALL take as the images of a bead the paths ending in `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp` (in any letter case) that its description, and then its notes, name in any of these forms: the address of a Markdown image, the target of a Markdown link, the rest of a line starting with `local:` after optional spaces, and a path standing alone between spaces, backticks or the start and end of a line. It SHALL:
-- percent-decode the address of a Markdown image or link; turn a `file:` address into its path, dropping `file://` or `file://localhost`, and the `/` before a Windows drive (`file:///C:/a.png` is `C:/a.png`), and drop a `file:` address that names another host; drop any `http:`, `https:`, `attachment:` or other address with a scheme;
+The server SHALL take as the images of a bead, in this order, the files and attachments that its description, and then its notes, name, and then the attachments of its `metadata.attachments` that the text does not name. A file is a path ending in `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp` (in any letter case) named in any of these forms: the address of a Markdown image, the target of a Markdown link, the rest of a line starting with `local:` after optional spaces, and a path standing alone between spaces, backticks or the start and end of a line. An attachment is a `sha256`: the 64 hex digits of an `attachment:<sha256>` address of a Markdown image or target of a Markdown link, or the `sha256` of an entry of `metadata.attachments` when it is 64 hex digits, in either case in any letter case and kept in lower case. It SHALL:
+- percent-decode the address of a Markdown image or link; turn a `file:` address into its path, dropping `file://` or `file://localhost`, and the `/` before a Windows drive (`file:///C:/a.png` is `C:/a.png`), and drop a `file:` address that names another host; drop any `http:`, `https:` or other address with a scheme, and an `attachment:` address that is not 64 hex digits;
+- take a file named on a `local:` line, when the line right above it holds a Markdown image whose address is an attachment, as the same image as that attachment: one image with both its `sha256` and its `path`;
 - read a path starting with `~/` from the home folder of the user running the console, and a relative path from the project's `path`;
-- keep the order of first appearance, keep a path met again once, and keep at most 50 images;
-- give each image `n` (1, 2, … in that order), `path` (as written, without `file://`), and `caption`: the alt text of the Markdown image or the text of the link that names it first, else, for a `local:` line, the alt text of a Markdown image on the line right above it, else its file name.
+- read `metadata.attachments` as a list, or as the JSON text of a list as `bd` exports it, ignore it otherwise, and ignore an entry of it that is not an object or has no `sha256` of 64 hex digits;
+- keep the order of first appearance, keep a path or a `sha256` met again once, and keep at most 50 images;
+- give each image `n` (1, 2, … in that order), `path` (as written, without `file://`, or `null` for an attachment without a `local:` line), `sha256` (or `null` for a file), and `caption`: the alt text of the Markdown image or the text of the link that names it first, else, for a `local:` line, the alt text of a Markdown image on the line right above it, else the `caption` of its entry, else the `name` of its entry, else its file name, else the first 12 digits of its `sha256`, taking only a non-empty string at each step.
 
 #### Scenario: gin-qa evidence
-- GIVEN a bug whose description holds `## Evidence`, `- ![TC-UI-115 step 1: Open the list](attachment:ab12)` and `  local: qa/evidence/r1/tc-ui-115/01.png`
+- GIVEN a bug whose description holds `## Evidence`, `- ![TC-UI-115 step 1: Open the list](attachment:A)` and `  local: qa/evidence/r1/tc-ui-115/01.png`
 - WHEN its images are found
-- THEN it has one image, `n` 1, `path` `qa/evidence/r1/tc-ui-115/01.png`, caption "TC-UI-115 step 1: Open the list", and nothing for the `attachment:` address
+- THEN it has one image, `n` 1, `sha256` `A`, `path` `qa/evidence/r1/tc-ui-115/01.png` and caption "TC-UI-115 step 1: Open the list"
+
+#### Scenario: Entries the text does not name
+- GIVEN a bug whose description holds `![Step 1](attachment:A)` and `shots/c.png`, and whose `metadata.attachments` is the JSON text of `[{sha256: B, caption: "Step 2"}, {sha256: A}, {sha256: "x"}, "oops"]`
+- WHEN its images are found
+- THEN its images are `A` (caption "Step 1"), `shots/c.png` and `B` (caption "Step 2"), numbered 1 to 3
+
+#### Scenario: Bad attachment addresses
+- GIVEN a bead whose description holds `![key](attachment:ab12)` and whose `metadata.attachments` is `"none"`
+- WHEN its images are found
+- THEN it has no images
+
+#### Scenario: Attachment named twice
+- GIVEN a bead whose description holds `![First](attachment:A)` and whose notes hold `[again](attachment:<A in upper case>)`
+- WHEN its images are found
+- THEN it has one image, `sha256` `A`, caption "First"
 
 #### Scenario: File link and absolute path line
 - GIVEN a bug with `[BUG-005_1.png](file:///home/gin/att/BUG-005_1.png)` followed by ``Absolute Path: `/home/gin/att/BUG-005_1.png` ``
@@ -666,7 +692,7 @@ The server SHALL take as the images of a bead the paths ending in `.png`, `.jpg`
 
 ### REQ-BEADS-027: Available image
 Type: business-rule
-An image of a bead (REQ-BEADS-026) SHALL be available only when its path holds no `..` part, no `\`, no NUL and no `:` other than in a Windows drive of an absolute path, and the file it names, with every symlink resolved, is a regular file inside the project's `path` or inside a folder of its `evidence_roots` (REQ-CONFIG-008), each folder taken with its own symlinks resolved, is at most 10 MB, and starts with the bytes of a PNG, JPEG, GIF or WebP file. The server SHALL check the text rules before touching the disk, and SHALL treat a file it cannot read as not available.
+An image of a bead (REQ-BEADS-026) SHALL be available when its attachment is available (REQ-BEADS-031) or its file is available, and an available image SHALL be served as an attachment (`served_as` `attachment`) when its attachment is available, else as a file (`file`); an image that is not available has `served_as` `null`. A file SHALL be available only when its path holds no `..` part, no `\`, no NUL and no `:` other than in a Windows drive of an absolute path, and the file it names, with every symlink resolved, is a regular file inside the project's `path` or inside a folder of its `evidence_roots` (REQ-CONFIG-008), each folder taken with its own symlinks resolved, is at most 10 MB, and starts with the bytes of a PNG, JPEG, GIF or WebP file. The server SHALL check the text rules before touching the disk, and SHALL treat a file it cannot read as not available.
 
 #### Scenario: Inside the project
 - GIVEN project `alpha` at `/p/alpha` and a PNG file `/p/alpha/qa/evidence/r1/01.png` of 200 KB
@@ -688,8 +714,13 @@ An image of a bead (REQ-BEADS-026) SHALL be available only when its path holds n
 - WHEN they are checked
 - THEN none is available
 
+#### Scenario: Attachment first, file as fallback
+- GIVEN bug `a-1` with the images `A` + `qa/evidence/r1/01.png` and `B` + `qa/evidence/r1/02.png` (each an attachment with a `local:` line), both files available, attachment `A` available and attachment `B` not fetched
+- WHEN its images are checked
+- THEN image 1 is available with `served_as` `attachment`, and image 2 is available with `served_as` `file`
+
 ### REQ-BEADS-028: Image request
-WHEN a client requests `GET /api/beads/{project}/{id}/images/{n}`, the server SHALL check image `n` of the bead (REQ-BEADS-026) again as REQ-BEADS-027 says and, when it is available, SHALL respond 200 with the file's bytes, `Content-Type` `image/png`, `image/jpeg`, `image/gif` or `image/webp` from its first bytes, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: sandbox; default-src 'none'`, `Content-Disposition: inline` and `Cache-Control: private, no-cache`. It SHALL respond 404, without saying why, when the project, the bead or the image `n` does not exist or the image is not available, and SHALL NOT take a path from the client.
+WHEN a client requests `GET /api/beads/{project}/{id}/images/{n}`, the server SHALL check the file of image `n` of the bead (REQ-BEADS-026) again as REQ-BEADS-027 says and, when it is available, SHALL respond 200 with the file's bytes, `Content-Type` `image/png`, `image/jpeg`, `image/gif` or `image/webp` from its first bytes, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: sandbox; default-src 'none'`, `Content-Disposition: inline` and `Cache-Control: private, no-cache`. It SHALL respond 404, without saying why, when the project, the bead or the image `n` does not exist, the image has no file (`path` `null`), or its file is not available, and SHALL NOT take a path from the client.
 
 #### Scenario: Served
 - GIVEN bead `a-1` of `alpha` whose image 1 is an available PNG
@@ -706,13 +737,28 @@ WHEN a client requests `GET /api/beads/{project}/{id}/images/{n}`, the server SH
 - WHEN a client requests `/api/beads/alpha/a-1/images/1`
 - THEN the response is 404
 
+#### Scenario: Attachment without a file
+- GIVEN bead `a-1` whose image 1 is the available attachment `A` with no `local:` line
+- WHEN a client requests `/api/beads/alpha/a-1/images/1`
+- THEN the response is 404
+
 ### REQ-BEADS-029: Images panel
-WHEN a bead has images (REQ-BEADS-002 `images`), the bead page, the epic page and the details panel SHALL show under the description a panel "Images (<count>)" with one tile per image in the order of `n`, each with its number and its caption: the image itself, loaded lazily from REQ-BEADS-028 with the caption as `alt`, for an available image, and "Not on this host" with the path as written for one that is not. Clicking or pressing Enter on an available tile SHALL open the lightbox of REQ-BEADS-030 on that image. The panel SHALL NOT show for a bead without images, and its tiles SHALL wrap so that the page does not scroll sideways at 390px.
+WHEN a bead has images (REQ-BEADS-002 `images`), the bead page, the epic page and the details panel SHALL show under the description a panel "Images (<count>)" with one tile per image in the order of `n`, each with its number and its caption: for an available image, the image itself with the caption as `alt`, loaded lazily from its address, which is `/api/beads/{project}/{id}/attachments/{sha256}` (REQ-BEADS-032) when `served_as` is `attachment` and `/api/beads/{project}/{id}/images/{n}` (REQ-BEADS-028) when it is `file`; for one that is not available, the text of its `reason`, "Not attached to this bead" for `not_listed`, "Pruned" for `pruned`, "Stored where this host cannot read it" for `unsupported_store`, "Not fetched yet" for `not_fetched` and "Not on this host" for `null`, followed by its `path` as written when it has one. WHEN the image of an available tile fails to load, the tile SHALL show its caption instead of a broken image. Clicking or pressing Enter on an available tile SHALL open the lightbox of REQ-BEADS-030 on that image. The panel SHALL NOT show for a bead without images, and its tiles SHALL wrap so that the page does not scroll sideways at 390px.
 
 #### Scenario: Two images, one missing
 - GIVEN bug `a-1` with image 1 available and caption `01.png`, and image 2 not available with path `/tmp/x.png`
 - WHEN its page is shown
 - THEN the panel reads "Images (2)", tile 1 shows the image with `alt` `01.png`, and tile 2 reads "Not on this host" and `/tmp/x.png`
+
+#### Scenario: Attachments
+- GIVEN bug `a-1` of `alpha` with image 1 the available attachment `A` (`served_as` `attachment`), image 2 a pruned attachment, image 3 an attachment not fetched with path `qa/evidence/r1/03.png`, and image 4 an attachment of the `s3` store
+- WHEN its page is shown
+- THEN tile 1 shows the image from `/api/beads/alpha/a-1/attachments/A`, tile 2 reads "Pruned", tile 3 reads "Not fetched yet" and `qa/evidence/r1/03.png`, and tile 4 reads "Stored where this host cannot read it"
+
+#### Scenario: Image fails to load
+- GIVEN bug `a-1` with image 1 available, whose address answers 404
+- WHEN its page is shown
+- THEN tile 1 shows its caption and no broken image
 
 #### Scenario: No images
 - GIVEN a bead whose `images` is empty
@@ -720,7 +766,7 @@ WHEN a bead has images (REQ-BEADS-002 `images`), the bead page, the epic page an
 - THEN there is no Images panel
 
 ### REQ-BEADS-030: Image lightbox
-The lightbox SHALL be a modal dialog that shows one available image of the bead large, its caption, "<k> of <m>" counting the available images, and a link "Open original" to its address of REQ-BEADS-028 opening in a new tab. WHILE it is open, ← and → SHALL show the previous and the next available image, without wrapping, and Escape or the close button SHALL close it and return the focus to the tile or link that opened it.
+The lightbox SHALL be a modal dialog that shows one available image of the bead large, its caption, "<k> of <m>" counting the available images, and a link "Open original" to its address (REQ-BEADS-029) opening in a new tab. WHILE it is open, ← and → SHALL show the previous and the next available image, without wrapping, and Escape or the close button SHALL close it and return the focus to the tile or link that opened it.
 
 #### Scenario: Step through
 - GIVEN bug `a-1` with available images 1 and 3 and a missing image 2
@@ -736,3 +782,111 @@ The lightbox SHALL be a modal dialog that shows one available image of the bead 
 - GIVEN the lightbox shows image 1 of `a-1` in `alpha`
 - WHEN the user looks at "Open original"
 - THEN it links to `/api/beads/alpha/a-1/images/1` with `target="_blank"` and `rel="noreferrer"`
+
+#### Scenario: Open original of an attachment
+- GIVEN the lightbox shows image 2 of `a-1` in `alpha`, the attachment `A` served as an attachment
+- WHEN the user looks at "Open original"
+- THEN it links to `/api/beads/alpha/a-1/attachments/A`
+
+### REQ-BEADS-031: Available attachment
+Type: business-rule
+An attachment of a bead (REQ-BEADS-026) SHALL be available only when the bead's `metadata.attachments` holds an entry with its `sha256`, that entry has no `pruned_at`, and either the entry's `store` is `git-ref` or missing and the blob `<aa>/<sha256>` is in the ref `refs/gin/attachments` or the ref `refs/gin-console/attachments` of the project's repository, or the entry's `store` is `local` and `.agent-workflow/attachments/<aa>/<sha256>` under the project's `path`, with every symlink resolved, is a regular file inside that `path`. The server SHALL NOT use the entry's `path`, `mime` or `bytes`, and SHALL check the bytes of an attachment when it is requested (REQ-BEADS-032). An attachment that is not available SHALL have the `reason` `not_listed` when the bead has no entry with its `sha256`, `pruned` when the entry has `pruned_at`, `unsupported_store` when the entry's `store` is another value (such as `s3`), and `not_fetched` otherwise. The server SHALL list the blobs of each of the two refs with `git ls-tree -r --name-only` at most once per export snapshot of the project (REQ-BEADS-012), and only when an entry of a bead of that project has the `git-ref` store or no store; a ref that does not exist SHALL count as having no blobs.
+
+#### Scenario: Blob in the shared store
+- GIVEN bead `a-1` of `alpha` with the entry `{sha256: A, store: "git-ref"}` and the blob `<aa>/A` in `refs/gin-console/attachments` only
+- WHEN its attachment `A` is checked
+- THEN it is available
+
+#### Scenario: Blob added on this host
+- GIVEN bead `a-1` with the entry `{sha256: A}` and the blob `<aa>/A` in `refs/gin/attachments` only
+- WHEN its attachment `A` is checked
+- THEN it is available
+
+#### Scenario: Reasons
+- GIVEN bead `a-1` whose description names `attachment:C`, with the entries `{sha256: A, store: "git-ref", pruned_at: "2026-11-20T10:00:00Z"}` and `{sha256: B, store: "s3"}`, and a project whose refs hold no blob
+- WHEN its attachments are checked
+- THEN `C` has the reason `not_listed`, `A` the reason `pruned` and `B` the reason `unsupported_store`, and none is available
+
+#### Scenario: Not fetched yet
+- GIVEN bead `a-1` with the entry `{sha256: A, store: "git-ref"}` and a project with neither ref
+- WHEN its attachment `A` is checked
+- THEN it is not available with the reason `not_fetched`
+
+#### Scenario: Local store
+- GIVEN project `alpha` at `/p/alpha`, bead `a-1` with the entries `{sha256: A, store: "local"}` and `{sha256: B, store: "local"}`, the file `/p/alpha/.agent-workflow/attachments/<aa>/A`, and `/p/alpha/.agent-workflow/attachments/<aa>/B` a symlink to `/tmp/B`
+- WHEN its attachments are checked
+- THEN `A` is available and `B` is not, with the reason `not_fetched`
+
+#### Scenario: No git without shared entries
+- GIVEN project `beta` whose beads have no entry, or only entries with the `local` store
+- WHEN a client lists its beads and opens one of them
+- THEN no `git` process was started
+
+#### Scenario: One listing per snapshot
+- GIVEN project `alpha` with git-ref entries on two beads
+- WHEN a client lists its beads twice and opens both beads, with no change to `.beads/issues.jsonl`
+- THEN `git ls-tree` ran at most once for each of the two refs
+
+### REQ-BEADS-032: Attachment request
+WHEN a client requests `GET /api/beads/{project}/{id}/attachments/{sha256}`, the server SHALL check that `sha256` is 64 lower-case hex digits and is the attachment of an image of the bead (REQ-BEADS-026), check that attachment again as REQ-BEADS-031 says, and read its bytes with `git cat-file` from `refs/gin/attachments`, else from `refs/gin-console/attachments`, or, for the `local` store, from its file opened once without following a link put in its place, as REQ-BEADS-027 opens a file. It SHALL respond 200 only when the bytes are at most 10 MB, their SHA-256 is `sha256`, and they start with the bytes of a PNG, JPEG, GIF or WebP file, with those bytes, `Content-Type` `image/png`, `image/jpeg`, `image/gif` or `image/webp` from the first bytes, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: sandbox; default-src 'none'`, `Content-Disposition: inline` and `Cache-Control: private, max-age=31536000, immutable`. It SHALL respond 404 with the body of REQ-BEADS-028, without saying why, in every other case, and SHALL NOT take a path from the client.
+
+#### Scenario: Served
+- GIVEN bead `a-1` of `alpha` with the entry `{sha256: A}` and the PNG blob `<aa>/A` of 300 KB, whose SHA-256 is `A`, in `refs/gin-console/attachments`
+- WHEN a client requests `/api/beads/alpha/a-1/attachments/A`
+- THEN the response is 200 with `image/png`, the blob's bytes, `Cache-Control: private, max-age=31536000, immutable` and the other three headers
+
+#### Scenario: Bytes refused
+- GIVEN bead `a-1` with the entries `A`, `B` and `C`, whose blobs are a PNG whose SHA-256 is not `A`, a text file whose SHA-256 is `B`, and a PNG of 11 MB whose SHA-256 is `C`
+- WHEN a client requests the three attachments
+- THEN every response is 404 with the body `{"error":"not found"}`
+
+#### Scenario: Not served
+- GIVEN bead `a-1` with the pruned entry `A` and bead `a-2` with the available entry `B`
+- WHEN a client requests attachment `A` of `a-1`, attachment `B` of `a-1`, attachment `ab12` of `a-1`, the upper-case form of `B` on `a-2`, and attachment `B` of `a-9`
+- THEN every response is 404 with the same body
+
+### REQ-BEADS-033: Fetch shared attachments
+WHEN the server pulls a project (REQ-BEADS-016), it SHALL, once that project's `bd dolt pull` has ended whatever its result, run `git fetch --quiet --no-write-fetch-head origin +refs/gin/attachments:refs/gin-console/attachments` in the project's directory for at most 30 seconds, within the limits of REQ-BEADS-016 (no project that sets `pull: false` or whose directory does not exist, at most four projects at a time, one pull of a project at a time), and SHALL keep for each project the result of its last fetch: `at` (the time the fetch ended, ISO 8601), `status` `ok` when the command exits 0, `no_store` when its output says that it could not find the remote ref, `no_remote` when its output says that `origin` does not appear to be a git repository, or `error` otherwise, and `error` (the last non-empty line of the command's output, "git fetch timed out" after 30 seconds, or "git not found") or `null`. `GET /api/projects/beads` SHALL include for each project `attachments_fetch`: that result, or `null` when the project has not been fetched since the server started or sets `pull: false`. `POST /api/refresh` and the scheduled pull (REQ-BEADS-017) SHALL wait for these fetches to end before they drop the snapshots, a failed fetch SHALL NOT fail the request that caused it, and the scheduled pull SHALL log each project whose fetch failed with its name and error.
+
+#### Scenario: Fetch after the pull
+- GIVEN project A whose `bd dolt pull` exits 1 with a merge conflict and whose `git fetch` exits 0
+- WHEN a client sends `POST /api/refresh`
+- THEN `git fetch` ran in A's directory after `bd dolt pull` ended, the response is 204, and A has `pull.status` `error` and `attachments_fetch.status` `ok`
+
+#### Scenario: No store, no remote
+- GIVEN project A whose `git fetch` exits 128 with "fatal: couldn't find remote ref refs/gin/attachments" and project B whose `git fetch` exits 128 with "fatal: 'origin' does not appear to be a git repository"
+- WHEN the server pulls
+- THEN A has `attachments_fetch.status` `no_store` and B has `no_remote`, both with `error` `null`
+
+#### Scenario: Failure and timeout
+- GIVEN project A whose `git fetch` exits 128 with "fatal: Could not read from remote repository." and project B whose `git fetch` runs longer than 30 seconds
+- WHEN the scheduled pull runs
+- THEN A has `attachments_fetch.status` `error` with that line, B has `error` "git fetch timed out", and the server log names both
+
+#### Scenario: Opted out
+- GIVEN project A with `pull: false`
+- WHEN the server pulls
+- THEN no `git` process ran in A's directory and A has `attachments_fetch` `null`
+
+### REQ-BEADS-034: Attachment fetch status display
+WHERE the `attachments_fetch` of a project in `GET /api/projects/beads` has `status` `error`, the Beads page and the My Tasks page SHALL show, above their list and while that project is the current project (REQ-UI-124), the note "Fetching attachments of <project> failed: <error>. Run `git fetch origin +refs/gin/attachments:refs/gin-console/attachments` in <path>." once, and SHALL show no such note for another project or for a project whose `attachments_fetch` is `null`, missing, or not `error`.
+
+#### Scenario: Failed fetch note
+- GIVEN project A whose `attachments_fetch.status` is `error` and project B whose `attachments_fetch.status` is `no_store`
+- WHEN the Beads page opens with A selected, and then with B selected
+- THEN the page shows one note naming A, its error, the `git fetch` command and A's path above the list for A, and no note for B
+
+#### Scenario: Older backend
+- GIVEN projects without an `attachments_fetch` key
+- WHEN the Beads and My Tasks pages load
+- THEN no fetch note is shown
+
+### REQ-BEADS-035: Git commands of the console
+Type: non-functional
+Category: security
+The server SHALL start `git` only as `git fetch` with the arguments of REQ-BEADS-033, `git ls-tree -r --name-only` on `refs/gin/attachments` or `refs/gin-console/attachments` (REQ-BEADS-031), and `git cat-file` on a blob `<aa>/<sha256>` of one of those refs (REQ-BEADS-032), each in a configured project's directory. It SHALL NOT create, move or delete any ref other than `refs/gin-console/attachments`, SHALL NOT push, SHALL NOT change `refs/gin/attachments` or `refs/gin/attachments-origin`, and SHALL NOT run `gin attach`.
+
+#### Scenario: Only the allowed commands
+- GIVEN project A with git-ref entries and a recording git runner
+- WHEN a client refreshes, lists A's beads, opens a bead and requests one of its attachments
+- THEN every recorded command is one of the three forms above, run in A's directory, and none names `refs/gin/attachments-origin`, `push` or `update-ref`

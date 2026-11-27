@@ -1,6 +1,6 @@
 # TC-BEADS-101: Lightbox steps through available images
 
-- **REQ:** REQ-BEADS-030@9ca2034f
+- **REQ:** REQ-BEADS-030@14c96b76
 - **Priority:** high
 
 **Preconditions:**

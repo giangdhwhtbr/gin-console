@@ -381,6 +381,8 @@ The bead page no longer shows a reopen count.
 
 **Refresh data** runs `bd dolt pull` in each configured project before it reloads, so beads pushed to a project's Dolt remote from other machines show up. It pulls at most four projects at a time and stops a pull after 30 seconds. Each project card shows the last pull: "pulled 2 minutes ago", "no Dolt remote", or "pull failed: <error>". When a pull fails, the Beads and My work pages show the command to run by hand.
 
+Right after each pull, whatever its result, the console runs `git fetch origin +refs/gin/attachments:refs/gin-console/attachments` in the project, so screenshots attached with `gin attach` show on this host. It stops that fetch after 30 seconds and skips projects with `pull: false`. A project without the store or without an `origin` remote is not an error. When the fetch fails, the Beads and My work pages show a note with the error and the command to run by hand, and the scheduled pull logs it.
+
 To pull on a schedule as well, set `beads.pull_interval` to whole seconds, minutes or hours of at least one minute, such as `90s`, `5m` or `1h`. Without it, or with `0`, the console pulls only on Refresh. To leave a project out of every pull, set `pull: false` on it:
 
 ```yaml
@@ -425,6 +427,8 @@ projects:
 ```
 
 A folder of `evidence_roots` belongs to its project only. A folder that does not exist serves nothing, and a relative one stops the console at startup. The console never writes to these folders. It checks the files when it reads the Beads export, so after you add or remove a screenshot, select **Refresh data** to update the image counts.
+
+A bead can also name a screenshot kept in the shared attachment store of `gin attach`, the `refs/gin/attachments` ref of the project's git repository. The console fetches that ref into its own `refs/gin-console/attachments` (see [Pulling Beads](#pulling-beads)) and reads images from it with `git ls-tree` and `git cat-file`. It reads only the `local` store; an `s3` store is not read, and its images show as not available. The console never changes `refs/gin/attachments`.
 
 ---
 

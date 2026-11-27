@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import TypeAdapter
 
 from gin_console.auth.access import ProjectsOf
+from gin_console.beads.attachments import SHA256, AttachmentStore, GitRunner
 from gin_console.beads.images import ImageIndex
 from gin_console.beads.models import BeadDetail, BeadSummary, Comment, ProjectMilestones
 from gin_console.beads.service import KeyedCache
@@ -35,6 +36,8 @@ IMAGE_HEADERS = {
     "Content-Disposition": "inline",
     "Cache-Control": "private, no-cache",
 }
+# an attachment is named by the hash of its bytes, so they never change
+ATTACHMENT_HEADERS = {**IMAGE_HEADERS, "Cache-Control": "private, max-age=31536000, immutable"}
 _IMAGE_NUMBER = re.compile(r"[0-9]{1,3}")  # an image number; anything else is not found
 
 
@@ -44,6 +47,10 @@ class WorkflowError(Exception):
 
 def _tag(body: bytes) -> str:
     return 'W/"' + hashlib.sha256(body).hexdigest()[:16] + '"'
+
+
+def _image_not_found() -> Response:
+    return Response(status_code=404, content=IMAGE_NOT_FOUND, media_type="application/json")
 
 
 def _matches(if_none_match: str | None, etag: str) -> bool:
@@ -62,12 +69,13 @@ def build_router(
     run_epic_workflow: Callable[[Path, str], EpicWorkflow | BlockError],
     on_refresh: list[Callable[[], None]],
     projects: ProjectsOf,
+    run_git: GitRunner,
 ) -> APIRouter:
     router = APIRouter()
     workflows = KeyedCache[tuple[str, str], EpicWorkflow](WORKFLOW_TTL, clock)
     on_refresh.append(workflows.clear)
 
-    images = ImageIndex(Path.home())
+    images = ImageIndex(Path.home(), AttachmentStore(run_git))
 
     def project_entry(request: Request, name: str | None) -> ProjectEntry:
         """A project the request may see (REQ-AUTH-007); 404 for any other, before a cache."""
@@ -132,22 +140,36 @@ def build_router(
     @router.get("/beads/{project}/{bead_id}/images/{n}")
     def get_image(request: Request, project: str, bead_id: str, n: str) -> Response:
         """Image `n` of a bead, checked again now (REQ-BEADS-028); never a path from the client."""
-        not_found = Response(
-            status_code=404, content=IMAGE_NOT_FOUND, media_type="application/json"
-        )
         if not valid_id(bead_id) or not _IMAGE_NUMBER.fullmatch(n):
-            return not_found
+            return _image_not_found()
         try:
             entry = project_entry(request, project)
             snapshot = snapshots.get(entry.path)
         except (HTTPException, BeadsError, RecursionError):  # no project, or no beads to read
-            return not_found
+            return _image_not_found()
         found = images.read(entry, snapshot, bead_id, int(n))
         if found is None:
-            return not_found
+            return _image_not_found()
         content, media = found
         # a plain response: FileResponse answers a bad Range header without these headers
         return Response(content, media_type=media, headers=IMAGE_HEADERS)
+
+    @router.get("/beads/{project}/{bead_id}/attachments/{sha256}")
+    def get_attachment(request: Request, project: str, bead_id: str, sha256: str) -> Response:
+        """Attachment `sha256` of a bead, checked again now (REQ-BEADS-032); never a path from
+        the client."""
+        if not valid_id(bead_id) or not SHA256.fullmatch(sha256):
+            return _image_not_found()
+        try:
+            entry = project_entry(request, project)
+            snapshot = snapshots.get(entry.path)
+        except (HTTPException, BeadsError, RecursionError):  # no project, or no beads to read
+            return _image_not_found()
+        found = images.read_attachment(entry, snapshot, bead_id, sha256)
+        if found is None:
+            return _image_not_found()
+        content, media = found
+        return Response(content, media_type=media, headers=ATTACHMENT_HEADERS)
 
     @router.get("/beads/{project}/{bead_id}/comments", response_model=list[Comment])
     def get_bead_comments(

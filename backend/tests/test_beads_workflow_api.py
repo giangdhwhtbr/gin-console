@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fake_bd import FakeBd
 from fake_export import FakeExport, bead, write_export
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -50,6 +51,7 @@ def make(
         static_dir=tmp_path / "dist",
         read_beads=FakeExport([bead("e-1", issue_type="epic")]),
         run_bd=FakeBd(),
+        run_git=FakeGit(),
         clock=clock or Clock(),
         run_epic_workflow=runner,
     )

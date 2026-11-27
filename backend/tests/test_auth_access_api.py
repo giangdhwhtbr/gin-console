@@ -1,5 +1,6 @@
 """Project access, refresh within access and the mockup grant (REQ-AUTH-007, 008, 016)."""
 
+import hashlib
 import inspect
 import json
 from collections.abc import Callable
@@ -12,6 +13,7 @@ from fake_bd import FakeBd
 from fake_export import bead, write_export
 from fake_gin import FakeGin, trace
 from fake_gin_qa import EXPORT, FakeGinQa, case, export
+from fake_git import FakeGit
 from fake_gw import FakeGw
 from fastapi.testclient import TestClient
 from test_auth_api import auth_app, sign_in, user, write_users
@@ -25,6 +27,7 @@ from gin_console.requirements.source import RequirementsError
 DAY = "2026-11-22"
 CSS = "body { color: red; }"
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+SHA = hashlib.sha256(PNG).hexdigest()
 NOT_FOUND = {"error": "not found"}
 
 # Every route that takes a project, by path or by `project` query, with project `b`.
@@ -33,6 +36,7 @@ PROJECT_ROUTES = [
     ("/api/beads/milestones", "/api/beads/milestones?project=b"),
     ("/api/beads/{project}/{bead_id}", "/api/beads/b/x-1"),
     ("/api/beads/{project}/{bead_id}/images/{n}", "/api/beads/b/x-1/images/1"),
+    ("/api/beads/{project}/{bead_id}/attachments/{sha256}", f"/api/beads/b/x-1/attachments/{SHA}"),
     ("/api/beads/{project}/{bead_id}/comments", "/api/beads/b/x-1/comments"),
     ("/api/beads/{project}/{bead_id}/workflow", "/api/beads/b/x-1/workflow"),
     ("/api/milestones", "/api/milestones?project=b"),
@@ -66,17 +70,23 @@ PROJECT_ROUTES = [
 
 
 def fill(project: Path, *more: dict[str, Any]) -> None:
-    """A bead `x-1` with an image and the beads `more`, a change `c`, a confirmed mockup with
-    `style.css`, and a run of case `TC-UI-001` whose step has that image."""
-    image = project / "qa" / "evidence" / "01.png"
-    image.parent.mkdir(parents=True)
-    image.write_bytes(PNG)
+    """A bead `x-1` with an image and an attachment of the local store and the beads `more`,
+    a change `c`, a confirmed mockup with `style.css`, and a run of case `TC-UI-001` whose step
+    has that image."""
+    for image in (
+        project / "qa" / "evidence" / "01.png",
+        project / ".agent-workflow" / "attachments" / SHA[:2] / SHA,
+    ):
+        image.parent.mkdir(parents=True)
+        image.write_bytes(PNG)
     shots = project / "qa" / "evidence" / "r1" / "tc-ui-001"
     shots.mkdir(parents=True)
     (shots / "01.png").write_bytes(PNG)
     steps = [{"title": "Open", "status": "passed", "screenshot": "01.png", "error": None}]
     (shots / "result.json").write_text(json.dumps({"status": "passed", "steps": steps}))
-    write_export(project, [bead("x-1", description="![one](qa/evidence/01.png)"), *more])
+    metadata = {"attachments": json.dumps([{"sha256": SHA, "store": "local"}])}
+    row = bead("x-1", description="![one](qa/evidence/01.png)", metadata=metadata)
+    write_export(project, [row, *more])
     change = project / "docs" / "changes" / "c"
     change.mkdir(parents=True)
     (change / "01-proposal.md").write_text("# C\n\nEpic: x-1\n")
@@ -95,6 +105,7 @@ def make(tmp_path: Path, bd: FakeBd | None = None) -> TestClient:
         run_gin=FakeGin({"trace": trace(), "reqs": RequirementsError("no reqs")}),
         run_epic_workflow=lambda cwd, ident: BlockError(error="no workflow"),
         run_gin_qa=FakeGinQa({EXPORT: export(case("TC-UI-001", run="qa/evidence/r1"))}),
+        run_git=FakeGit(),
     )
     fill(tmp_path / "a")
     fill(tmp_path / "b", bead("m-1", issue_type="milestone"))  # for the readiness route

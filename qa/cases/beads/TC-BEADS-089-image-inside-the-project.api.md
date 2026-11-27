@@ -1,6 +1,6 @@
 # TC-BEADS-089: Image inside the project
 
-- **REQ:** REQ-BEADS-027@864c75b7
+- **REQ:** REQ-BEADS-027@55f324e9
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-27T00-00-02-api

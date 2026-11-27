@@ -19,7 +19,9 @@ def build_router(
     @router.get("/projects/beads")
     def get_project_beads(request: Request) -> list[ProjectBeads]:
         return [
-            build_project_beads(entry, snapshots, pulls.result(entry.name))
+            build_project_beads(
+                entry, snapshots, pulls.result(entry.name), pulls.fetch_result(entry.name)
+            )
             for entry in projects(request)
         ]
 

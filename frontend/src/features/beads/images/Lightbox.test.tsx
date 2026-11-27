@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { imageAddress, type BeadImage } from "../api";
 import { Lightbox, type LightboxSlide } from "./Lightbox";
 
 afterEach(cleanup);
@@ -10,12 +11,14 @@ const slides: LightboxSlide[] = [
   { key: 1, src: "/api/beads/alpha/a-1/images/1", caption: "First" },
   { key: 3, src: "/api/beads/alpha/a-1/images/3", caption: "Third" },
 ];
+const sha = "a".repeat(64);
+const attachment: BeadImage = { n: 4, path: null, caption: "Fourth", available: true, sha256: sha, served_as: "attachment", reason: null };
 
-function Host({ start = 1, onClose = vi.fn() }: { start?: number; onClose?: () => void }) {
+function Host({ start = 1, onClose = vi.fn(), list = slides }: { start?: number; onClose?: () => void; list?: LightboxSlide[] }) {
   const [current, setCurrent] = useState<number | null>(start);
   return (
     <Lightbox
-      slides={slides}
+      slides={list}
       current={current}
       onChange={setCurrent}
       onClose={() => {
@@ -68,5 +71,15 @@ describe("Lightbox", () => {
   it("REQ-BEADS-030 nothing shows while no image is current", () => {
     render(<Lightbox slides={slides} current={null} onChange={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("REQ-BEADS-030 open original of an attachment links to the attachment route", () => {
+    const src = imageAddress("alpha", "a-1", attachment) ?? "";
+    render(<Host start={4} list={[...slides, { key: 4, src, caption: attachment.caption }]} />);
+    expect(screen.getByRole("img", { name: "Fourth" })).toHaveAttribute("src", `/api/beads/alpha/a-1/attachments/${sha}`);
+    const link = screen.getByRole("link", { name: "Open original" });
+    expect(link).toHaveAttribute("href", `/api/beads/alpha/a-1/attachments/${sha}`);
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noreferrer");
   });
 });

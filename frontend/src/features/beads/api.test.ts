@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BeadNotFoundError, fetchBead, fetchEpicWorkflow, fetchBeads, fetchComments, fetchMilestones } from "./api";
+import { BeadNotFoundError, attachmentUrl, imageAddress, fetchBead, fetchEpicWorkflow, fetchBeads, fetchComments, fetchMilestones } from "./api";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -485,5 +485,30 @@ describe("fetchEpicWorkflow", () => {
   it("REQ-BEADS-020 throws the server's error on 502", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ error: "gin state failed" }, 502))));
     await expect(fetchEpicWorkflow("p", "e")).rejects.toThrow("gin state failed");
+  });
+});
+
+describe("imageAddress", () => {
+  const sha = "a".repeat(64);
+  const base = { n: 2, caption: "c" };
+
+  it("REQ-BEADS-029 gives the attachment route, the file route, or null", () => {
+    expect(imageAddress("alpha", "a-1", { ...base, path: null, available: true, sha256: sha, served_as: "attachment" })).toBe(
+      attachmentUrl("alpha", "a-1", sha),
+    );
+    expect(imageAddress("alpha", "a-1", { ...base, path: "x.png", available: true, served_as: "file" })).toBe(
+      "/api/beads/alpha/a-1/images/2",
+    );
+    expect(imageAddress("alpha", "a-1", { ...base, path: "x.png", available: true })).toBe("/api/beads/alpha/a-1/images/2");
+    expect(imageAddress("alpha", "a-1", { ...base, path: "x.png", available: false })).toBeNull();
+    expect(imageAddress("alpha", "a-1", { ...base, path: null, available: true, served_as: "attachment" })).toBeNull();
+  });
+
+  it("REQ-BEADS-029 fetchBead accepts attachment images with a null path and rejects a bad reason", async () => {
+    const image = { n: 1, path: null, sha256: sha, caption: "c", available: false, served_as: null, reason: "pruned" };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ ...sampleDetail, images: [image] }))));
+    await expect(fetchBead("alpha", "a-1")).resolves.toMatchObject({ images: [image] });
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json({ ...sampleDetail, images: [{ ...image, reason: "bogus" }] }))));
+    await expect(fetchBead("alpha", "a-1")).rejects.toThrow();
   });
 });
