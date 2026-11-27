@@ -42,14 +42,19 @@ class ServerSettings(BaseModel):
     port: int = Field(default=8700, ge=1, le=65535)
 
 
-def parse_duration(value: object, minimum: int) -> float:
-    """Seconds of a duration written `<n>s`, `<n>m` or `<n>h`, at least `minimum` seconds."""
+def parse_duration(value: object, minimum: int, *, or_zero: bool = False) -> float:
+    """Seconds of a duration written `<n>s`, `<n>m` or `<n>h`, at least `minimum` seconds
+    (a whole number of minutes); with `or_zero`, `0` is accepted too."""
+    if or_zero and value in (0, "0") and not isinstance(value, bool):
+        return 0.0
+    allowed = "0 or " if or_zero else ""
     match = _DURATION.match(value) if isinstance(value, str) else None
     if match is None:
-        raise ValueError("must be a duration such as 90s, 5m or 1h")
+        raise ValueError(f"must be {allowed}a duration such as 90s, 5m or 1h")
     seconds = int(match[1]) * _UNIT[match[2]]
     if seconds < minimum:
-        raise ValueError(f"must be at least {minimum} seconds")
+        span = "one minute" if minimum == 60 else f"{minimum // 60} minutes"
+        raise ValueError(f"must be {allowed}at least {span}")
     if seconds > threading.TIMEOUT_MAX:  # the longest wait a thread can make
         raise ValueError(f"must be at most {int(threading.TIMEOUT_MAX)} seconds")
     return float(seconds)
@@ -63,12 +68,7 @@ class BeadsSettings(BaseModel):
     @field_validator("pull_interval", mode="before")
     @classmethod
     def _duration(cls, value: object) -> float:
-        if value in (0, "0") and not isinstance(value, bool):
-            return 0.0
-        try:
-            return parse_duration(value, 60)
-        except ValueError as exc:
-            raise ValueError(f"must be 0 or {str(exc).removeprefix('must be ')}") from None
+        return parse_duration(value, 60, or_zero=True)
 
 
 class OverviewSettings(BaseModel):

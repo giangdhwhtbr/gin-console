@@ -123,22 +123,27 @@ def save_users(path: Path, users: Iterable[User]) -> None:
             Path(temp).unlink(missing_ok=True)
 
 
+# Matches no file, so the first `current()` reads the file the caller loaded before.
+_UNREAD = (-1, -1, -1)
+
+
 class UserDirectory:
-    """The last valid users, read again when the file's (st_mtime_ns, st_size) changes."""
+    """The last valid users, read again when the file's (st_ino, st_mtime_ns, st_size)
+    changes; `os.replace` gives the file a new inode."""
 
     def __init__(self, path: Path, project_names: Sequence[str], users: dict[str, User]) -> None:
         self._path = path
         self._project_names = list(project_names)
         self._users = users
-        self._stat = self._stat_key()
+        self._stat: tuple[int, int, int] | None = _UNREAD
         self._lock = threading.Lock()
 
-    def _stat_key(self) -> tuple[int, int] | None:
+    def _stat_key(self) -> tuple[int, int, int] | None:
         try:
             info = self._path.stat()
         except OSError:
             return None
-        return (info.st_mtime_ns, info.st_size)
+        return (info.st_ino, info.st_mtime_ns, info.st_size)
 
     def current(self) -> tuple[dict[str, User], set[str]]:
         """The users, and the names removed or given a new hash since the last call.

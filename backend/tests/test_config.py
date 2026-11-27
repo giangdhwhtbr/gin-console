@@ -366,8 +366,25 @@ def test_config_009_invalid_field_names_the_field(tmp_path: Path, text: str, fie
 
 # REQ-CONFIG-009: the minimum is named in the message
 @pytest.mark.parametrize(
-    ("text", "minimum"), [("{session_ttl: 1m}", "300"), ("{rate_limit: {window: 30s}}", "60")]
+    ("text", "minimum"),
+    [("{session_ttl: 1m}", "5 minutes"), ("{rate_limit: {window: 30s}}", "one minute")],
 )
 def test_config_009_too_short_names_the_minimum(tmp_path: Path, text: str, minimum: str) -> None:
-    with pytest.raises(ConfigError, match=f"at least {minimum} seconds"):
+    with pytest.raises(ConfigError, match=f"must be at least {minimum}"):
         load_settings(write(tmp_path, f"auth: {text}\n"))
+
+
+# REQ-CONFIG-006 (Too short): the pull_interval messages keep their wording
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("30s", "must be 0 or at least one minute"),
+        ("5x", "must be 0 or a duration such as 90s, 5m or 1h"),
+        ("99999999999h", "must be at most"),
+    ],
+)
+def test_config_006_interval_messages(tmp_path: Path, text: str, message: str) -> None:
+    path = write(tmp_path, f"beads: {{pull_interval: {text}}}\n")
+    with pytest.raises(ConfigError, match=message) as exc:
+        load_settings(path)
+    assert "0 or at most" not in str(exc.value)

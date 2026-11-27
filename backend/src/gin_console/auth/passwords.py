@@ -27,9 +27,9 @@ def _b64decode(text: str) -> bytes:
 
 
 def _derive(password: str, salt: bytes) -> bytes:
-    return hashlib.scrypt(
-        password.encode("utf-8"), salt=salt, n=_N, r=_R, p=_P, dklen=_KEY_BYTES
-    )
+    # surrogatepass: a lone surrogate, which JSON allows, is hashed rather than raising
+    secret = password.encode("utf-8", "surrogatepass")
+    return hashlib.scrypt(secret, salt=salt, n=_N, r=_R, p=_P, dklen=_KEY_BYTES)
 
 
 def hash_password(password: str) -> str:

@@ -59,3 +59,15 @@ def test_auth_003_malformed_hash_is_false(encoded: str) -> None:
 def test_auth_003_dummy_hash_verifies_nothing(typed: str) -> None:
     assert DUMMY_HASH.startswith(PREFIX)
     assert not verify(typed, DUMMY_HASH)
+
+
+# REQ-AUTH-003: a lone surrogate (valid in JSON) is a wrong password, not an error
+@pytest.mark.parametrize("typed", ["\ud800", "a\udfffb"])
+def test_auth_003_lone_surrogate_is_false(typed: str) -> None:
+    assert not verify(typed, hash_password("secret"))
+    assert not verify(typed, DUMMY_HASH)
+
+
+# REQ-AUTH-003: the same encoding hashes and verifies such a password
+def test_auth_003_lone_surrogate_round_trip() -> None:
+    assert verify("\ud800", hash_password("\ud800"))

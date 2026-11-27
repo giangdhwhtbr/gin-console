@@ -240,3 +240,27 @@ def test_auth_009_deleted_file_keeps_last_users(
         assert list(users_dir.current()[0]) == ["an", "root"]
         users_dir.current()
     assert len([r for r in caplog.records if r.name == "gin_console.auth"]) == 1
+
+
+# REQ-AUTH-009: a change between the caller's load and the directory's start is not missed
+def test_auth_009_change_before_start(users_file: Path) -> None:
+    loaded = load_users(users_file, PROJECTS)
+    write_users(users_file, [user("an", ["a"], OTHER_HASH), user("root")])
+    users_dir = UserDirectory(users_file, PROJECTS, loaded)
+    users, changed = users_dir.current()
+    assert (users["an"].password_hash, changed) == (OTHER_HASH, {"an"})
+
+
+# REQ-AUTH-009: a file replaced by a rename with the same mtime and size is reloaded
+def test_auth_009_new_inode(users_file: Path) -> None:
+    users_dir = directory(users_file)
+    users_dir.current()
+    old = users_file.stat()
+    replacement = users_file.with_name("next.yaml")
+    replacement.write_text(
+        yaml.safe_dump({"users": [user("an", ["b"]), user("root")]}, sort_keys=False)
+    )
+    assert replacement.stat().st_size == old.st_size  # ["a"] and ["b"]: same size
+    os.utime(replacement, ns=(old.st_atime_ns, old.st_mtime_ns))
+    os.replace(replacement, users_file)
+    assert users_dir.current()[0]["an"].projects == ["b"]
