@@ -338,6 +338,7 @@ def app_client(
         static_dir=tmp_path / "dist",
         read_beads=reads,
         run_bd=fake,
+        run_git=FakeGit(),
         schedule_pulls=schedule,
         clock=lambda: NOW,
     )

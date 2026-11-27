@@ -7,7 +7,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fake_bd import FakeBd
 from fake_gin import FakeGin, req, trace
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -68,6 +70,8 @@ def make(root: Path, fake: Any) -> TestClient:
         settings,
         static_dir=root.parent / "dist",
         run_gin=fake,
+        run_bd=FakeBd(),
+        run_git=FakeGit(),
         clock=lambda: datetime(2026, 11, 25, 3, 0, tzinfo=UTC),
     )
     return TestClient(app, raise_server_exceptions=False)

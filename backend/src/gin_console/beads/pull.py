@@ -122,6 +122,7 @@ class PullService:
             run = run_git(FETCH_ARGS, path)
         except GitError as exc:
             message = str(exc)
+            # run_git words its timeout "git timed out"; the fetch names itself
             error = "git fetch timed out" if message.endswith("timed out") else message
             return FetchResult(at=self._clock(), status="error", error=error)
         except Exception:  # a failed fetch never fails the refresh or the scheduled run

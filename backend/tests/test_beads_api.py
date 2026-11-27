@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 from fake_bd import FakeBd
 from fake_export import FakeExport, bead, comment, dep, related, write_export
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -47,6 +48,7 @@ def make(tmp_path: Path, fake: Any = None, run_bd: BdRunner | None = None) -> Te
         static_dir=tmp_path / "dist",
         read_beads=read_export if fake is None else fake,
         run_bd=run_bd or FakeBd(),
+        run_git=FakeGit(),
         clock=Clock(),
     )
     return TestClient(app, raise_server_exceptions=False)

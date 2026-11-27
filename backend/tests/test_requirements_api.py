@@ -3,7 +3,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from fake_bd import FakeBd
 from fake_gin import FakeGin, req, trace
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -28,7 +30,14 @@ def make(tmp_path: Path, fake: Any) -> TestClient:
             ProjectEntry(name="gone", path=tmp_path / "gone"),
         ]
     )
-    app = create_app(settings, static_dir=tmp_path / "dist", run_gin=fake, clock=Clock())
+    app = create_app(
+        settings,
+        static_dir=tmp_path / "dist",
+        run_gin=fake,
+        run_bd=FakeBd(),
+        run_git=FakeGit(),
+        clock=Clock(),
+    )
     return TestClient(app, raise_server_exceptions=False)
 
 
