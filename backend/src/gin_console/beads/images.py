@@ -282,6 +282,11 @@ def _check(file: Path, real_folders: Sequence[Path]) -> str | None:
     return loaded[1] if loaded is not None else None
 
 
+def read_image(file: Path, folders: Sequence[Path]) -> tuple[bytes, str] | None:
+    """The bytes and media type of `file` when it is available (REQ-BEADS-027), read now."""
+    return _load(file, _real_folders(folders), MAX_BYTES + 1)
+
+
 def _folders(entry: ProjectEntry) -> list[Path]:
     return [entry.path, *entry.evidence_roots]
 
@@ -344,4 +349,4 @@ class ImageIndex:
         image = images[n - 1] if 1 <= n <= len(images) else None
         if image is None or image.file is None:
             return None
-        return _load(image.file, _real_folders(_folders(entry)), MAX_BYTES + 1)
+        return read_image(image.file, _folders(entry))

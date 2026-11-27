@@ -24,6 +24,7 @@ from gin_console.beads.images import (
     image_refs,
     locate,
     media_type,
+    read_image,
 )
 from gin_console.beads.snapshot import build_snapshot
 from gin_console.config import ProjectEntry
@@ -553,3 +554,24 @@ def test_beads_027_available_without_proc(tmp_path: Path, monkeypatch: pytest.Mo
 def test_beads_026_broken_escape_kept_as_written() -> None:
     text = "[x](a%20b%.png) ![y](c%2.png) [z](d%20e.png)"
     assert paths(image_refs(text)) == ["a%20b%.png", "c%2.png", "d e.png"]
+
+
+# REQ-BEADS-028, REQ-QA-006: read_image returns the bytes and type of a file `check` accepts
+def test_beads_028_read_image(tmp_path: Path) -> None:
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
+    shot = put(alpha.path / "a.png")
+    with put(alpha.path / "edge.png").open("r+b") as handle:
+        handle.truncate(MAX_BYTES)
+    with put(alpha.path / "over.png").open("r+b") as handle:
+        handle.truncate(MAX_BYTES + 1)
+    outside = put(tmp_path / "out.png")
+    folders = [alpha.path]
+    assert read_image(shot, folders) == (PNG, "image/png")
+    edge = read_image(alpha.path / "edge.png", folders)
+    assert edge is not None and len(edge[0]) == MAX_BYTES and edge[1] == "image/png"
+    assert read_image(alpha.path / "over.png", folders) is None
+    assert read_image(outside, folders) is None
+    assert read_image(outside, [alpha.path, tmp_path / "gone"]) is None
+    assert read_image(alpha.path / "gone.png", folders) is None
+    shot.write_bytes(SVG)
+    assert read_image(shot, folders) is None

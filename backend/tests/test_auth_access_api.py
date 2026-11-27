@@ -1,6 +1,7 @@
 """Project access, refresh within access and the mockup grant (REQ-AUTH-007, 008, 016)."""
 
 import inspect
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,7 @@ import pytest
 from fake_bd import FakeBd
 from fake_export import bead, write_export
 from fake_gin import FakeGin, trace
+from fake_gin_qa import EXPORT, FakeGinQa, case, export
 from fake_gw import FakeGw
 from fastapi.testclient import TestClient
 from test_auth_api import auth_app, sign_in, user, write_users
@@ -53,14 +55,26 @@ PROJECT_ROUTES = [
     ("/api/reports/team", "/api/reports/team?project=b"),
     ("/api/reports/status", "/api/reports/status?project=b"),
     ("/api/reports/bugs", "/api/reports/bugs?project=b"),
+    ("/api/qa/cases", "/api/qa/cases?project=b"),
+    ("/api/qa/cases/{project}/{case_id}", "/api/qa/cases/b/TC-UI-001"),
+    (
+        "/api/qa/cases/{project}/{case_id}/run/steps/{n}/screenshot",
+        "/api/qa/cases/b/TC-UI-001/run/steps/1/screenshot",
+    ),
 ]
 
 
 def fill(project: Path) -> None:
-    """A bead `x-1` with an image, a change `c` and a confirmed mockup with `style.css`."""
+    """A bead `x-1` with an image, a change `c`, a confirmed mockup with `style.css`, and a run
+    of case `TC-UI-001` whose step has that image."""
     image = project / "qa" / "evidence" / "01.png"
     image.parent.mkdir(parents=True)
     image.write_bytes(PNG)
+    shots = project / "qa" / "evidence" / "r1" / "tc-ui-001"
+    shots.mkdir(parents=True)
+    (shots / "01.png").write_bytes(PNG)
+    steps = [{"title": "Open", "status": "passed", "screenshot": "01.png", "error": None}]
+    (shots / "result.json").write_text(json.dumps({"status": "passed", "steps": steps}))
     write_export(project, [bead("x-1", description="![one](qa/evidence/01.png)")])
     change = project / "docs" / "changes" / "c"
     change.mkdir(parents=True)
@@ -79,6 +93,7 @@ def make(tmp_path: Path, bd: FakeBd | None = None) -> TestClient:
         run_gw=FakeGw(),
         run_gin=FakeGin({"trace": trace(), "reqs": RequirementsError("no reqs")}),
         run_epic_workflow=lambda cwd, ident: BlockError(error="no workflow"),
+        run_gin_qa=FakeGinQa({EXPORT: export(case("TC-UI-001", run="qa/evidence/r1"))}),
     )
     for name in ("a", "b"):
         fill(tmp_path / name)

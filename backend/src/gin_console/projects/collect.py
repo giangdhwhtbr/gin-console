@@ -68,15 +68,16 @@ def _resolve_cmd(cmd: list[str]) -> list[str]:
     """Adapt commands on Windows where shell scripts cannot be spawned directly."""
     if not cmd:
         return cmd
-    if sys.platform == "win32" and cmd[0] == "gin":
-        # install.ps1 puts a gin.cmd shim on PATH; CreateProcess finds it only by full name
-        shim = shutil.which("gin")
+    if sys.platform == "win32" and cmd[0] in {"gin", "gin-qa"}:
+        # install.ps1 puts a gin.cmd (gin-qa.cmd) shim on PATH; CreateProcess finds it only by
+        # full name
+        shim = shutil.which(cmd[0])
         if shim and Path(shim).suffix.lower() in {".cmd", ".bat", ".exe"}:
             return [shim, *cmd[1:]]
         # install.sh run from Git Bash leaves a script only bash can start
         bash = _find_bash()
         if bash:
-            return [bash, "-c", 'gin "$@"', "_", *cmd[1:]]
+            return [bash, "-c", f'{cmd[0]} "$@"', "_", *cmd[1:]]
     return cmd
 
 
