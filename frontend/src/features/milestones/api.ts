@@ -349,7 +349,7 @@ export async function fetchMilestone(project: string, id: string, start: string 
 
 export const milestonesPath = (project: string) => `/milestones?project=${enc(project)}`;
 
-export type MilestoneTab = "gantt" | "beads" | "retro";
+export type MilestoneTab = "gantt" | "beads" | "retro" | "readiness";
 
 /** `extra`: a Beads filters query (with or without "?"), merged after tab, start and zoom; its `project` and `milestone` are dropped. */
 export function milestonePath(project: string, id: string, tab: MilestoneTab = "gantt", start: string | null = null, zoom: Zoom = "all", extra = "") {
