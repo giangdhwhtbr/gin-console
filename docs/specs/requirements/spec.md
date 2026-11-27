@@ -199,7 +199,7 @@ WHEN a client requests `GET /api/requirements/mockups?project=<name>`, the serve
 ### REQ-REQUIREMENTS-010: Safe project files
 Type: non-functional
 Category: security
-The server SHALL read project files for the requirements endpoints only inside the change folders of `docs/changes` and the asset folders under the specs folder `docs/specs/<capability>/assets/`, plus the `Source:` lines of `docs/specs/<capability>/spec.md` for the requirement ids of REQ-REQUIREMENTS-009 (returning no other text of it), after resolving symbolic links, and SHALL respond 404 for any other path, including one with `..`, an absolute path, a NUL byte, or a link that leads outside. `GET /api/requirements/mockups/<project>/files/<capability>/<date>/<path>` SHALL serve only files of a confirmed folder with the extension html, css, js, json, png, jpg, jpeg, gif, svg, webp or woff2.
+The server SHALL read project files for the requirements endpoints only inside the change folders of `docs/changes` and the asset folders under the specs folder `docs/specs/<capability>/assets/`, plus the `Source:` lines of `docs/specs/<capability>/spec.md` for the requirement ids of REQ-REQUIREMENTS-009 (returning no other text of it), after resolving symbolic links, and SHALL respond 404 for any other path, including one with `..`, an absolute path, a NUL byte, or a link that leads outside. `GET /api/requirements/mockups/<project>/files/<capability>/<date>/<path>` and, while auth is on, `GET /api/requirements/mockups/<project>/g/<grant>/files/<capability>/<date>/<path>` (REQ-AUTH-016) SHALL serve only files of a confirmed folder with the extension html, css, js, json, png, jpg, jpeg, gif, svg, webp or woff2.
 
 #### Scenario: Parent path
 - GIVEN the path `ui/2026-11-22/..%2f..%2fspec.md`
@@ -220,6 +220,11 @@ The server SHALL read project files for the requirements endpoints only inside t
 - GIVEN a path holding `%00`
 - WHEN it is requested
 - THEN the response is 404
+
+#### Scenario: Grant path
+- GIVEN auth on, a valid grant `G` of a user allowed project `p`, and a confirmed mockup of `p`
+- WHEN `/api/requirements/mockups/p/g/G/files/ui/2026-11-22/mockup/style.css` is requested
+- THEN the file is served under the same rules as the path without `g/G`
 
 ### REQ-REQUIREMENTS-011: Mockup isolation
 Type: non-functional
