@@ -12,7 +12,7 @@ Epic `gin-console-rm-evidence-images` shows the screenshots a bead names (descri
 
 **Consequences**
 - An `evidence_roots` entry that is a symlink to `/` makes every image on the host servable: it is the operator's choice.
-- `attachment:<sha>` images still show as text; gin-console-rm-shared-attachments reuses `ImagesPanel` and `Lightbox` for them.
+- Since gin-console-rm-shared-attachments (2026-11-27), `attachment:<sha>` images are served from the shared store and a `local:` line under one merges into it; see [shared-attachments](shared-attachments.md).
 
 **References**
 - `docs/changes/archive/2026-11-27-gin-console-rm-evidence-images-evidence-images/`
