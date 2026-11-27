@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-070: Changing tab
 
-- **REQ:** REQ-MILESTONE-UI-018@3dbf80c2
+- **REQ:** REQ-MILESTONE-UI-018@85c83880
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
