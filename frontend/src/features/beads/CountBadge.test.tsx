@@ -49,6 +49,9 @@ describe("CountBadge", () => {
     expect(badge).not.toHaveAttribute("title");
     await user.hover(badge);
     expect(await screen.findByRole("tooltip")).toHaveTextContent(DEFINITIONS.images);
+    expect(DEFINITIONS.images).toBe(
+      "Images: screenshots of this bead the console can show, from files on the console host and attachments in the shared store.",
+    );
   });
 
   it("REQ-UI-140 both indicators are an icon and a number, without a background", () => {

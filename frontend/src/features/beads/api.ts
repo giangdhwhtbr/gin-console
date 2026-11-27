@@ -17,7 +17,16 @@ export type ChildCounts = {
   ready?: number;
   deferred?: number;
 };
-export type BeadImage = { n: number; path: string; caption: string; available: boolean };
+export type ImageReason = "not_listed" | "pruned" | "unsupported_store" | "not_fetched";
+export type BeadImage = {
+  n: number;
+  path: string | null;
+  caption: string;
+  available: boolean;
+  sha256?: string | null;
+  served_as?: "attachment" | "file" | null;
+  reason?: ImageReason | null;
+};
 export type BeadSummary = {
   id: string;
   title: string;
@@ -86,6 +95,21 @@ export type Comment = { id: string; author: string; text: string; created_at: st
 /** The address of image `n` of a bead (REQ-BEADS-028); the browser never sends a path. */
 export const imageUrl = (project: string, id: string, n: number): string =>
   `/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/images/${n}`;
+
+/** The address of an attachment of a bead in the shared store (REQ-BEADS-032). */
+export const attachmentUrl = (project: string, id: string, sha256: string): string =>
+  `/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/attachments/${sha256}`;
+
+/** The address an available image loads from (REQ-BEADS-029); null when not available. */
+export function imageAddress(project: string, id: string, image: BeadImage): string | null {
+  if (image.served_as === "attachment") {
+    return image.sha256 ? attachmentUrl(project, id, image.sha256) : null;
+  }
+  if (image.served_as === "file" || (image.served_as == null && image.available)) {
+    return imageUrl(project, id, image.n);
+  }
+  return null;
+}
 
 export class BeadNotFoundError extends Error {}
 
@@ -186,12 +210,16 @@ const isRelations = (value: unknown) => Array.isArray(value) && value.every(isRe
 const isChildren = (value: unknown) =>
   Array.isArray(value) && value.every((c) => isRelation(c) && typeof field(c, "prep") === "boolean");
 
+const IMAGE_REASONS = ["not_listed", "pruned", "unsupported_store", "not_fetched"];
 const isBeadImage = (value: unknown) =>
   isObject(value) &&
   isFiniteNumber(field(value, "n")) &&
-  isString(field(value, "path")) &&
+  isMissingOr(field(value, "path"), isString) &&
   isString(field(value, "caption")) &&
-  typeof field(value, "available") === "boolean";
+  typeof field(value, "available") === "boolean" &&
+  isMissingOr(field(value, "sha256"), isString) &&
+  isMissingOr(field(value, "served_as"), (served) => served === "attachment" || served === "file") &&
+  isMissingOr(field(value, "reason"), (reason) => IMAGE_REASONS.includes(String(reason)));
 
 function isDetail(value: unknown): value is BeadDetail {
   return (
