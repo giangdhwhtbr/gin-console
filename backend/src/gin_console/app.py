@@ -89,8 +89,9 @@ def create_app(
     snapshots = SnapshotStore(read_beads)
     interactions = InteractionStore()
     on_refresh: list[Callable[[], None]] = [snapshots.clear]
-    # the only bd command the console runs (ADR 0003): on refresh and on schedule
-    pulls = PullService(settings.projects, run_bd, clock)
+    # the only bd command the console runs (ADR 0003): on refresh and on schedule, each followed
+    # by the fetch of the shared attachment store (ADR 0006)
+    pulls = PullService(settings.projects, run_bd, clock, run_git)
     auth = AuthState(settings, clock)
     projects = projects_of(settings)
 
