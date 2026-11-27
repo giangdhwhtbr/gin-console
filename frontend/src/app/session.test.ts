@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { apiFetch, getSession, loadSession, resetSession, signIn, signOut } from "./session";
 
-const user = { name: "An", email: "an@example.com", projects: ["a"], mockup_grant: "g1" };
+const user = { name: "An", email: "an@example.com", projects: ["a"] };
 const reply = (status: number, body?: unknown, headers: Record<string, string> = {}) =>
   new Response(body === undefined ? null : JSON.stringify(body), { status, headers });
 
@@ -22,6 +22,12 @@ describe("loadSession", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(reply(200, { enabled: true, user: null }))));
     await loadSession();
     expect(getSession()).toEqual({ status: "signed-out", returnTo: null });
+  });
+
+  it("REQ-AUTH-002 drops a mockup_grant from the user", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(reply(200, { enabled: true, user: { ...user, mockup_grant: "g1" } }))));
+    await loadSession();
+    expect(getSession()).toEqual({ status: "signed-in", user });
   });
 
   it("REQ-AUTH-014 maps enabled with a user to signed-in", async () => {

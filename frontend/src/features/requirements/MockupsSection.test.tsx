@@ -18,6 +18,7 @@ const mockup = (fields: Partial<Mockup> = {}): Mockup => ({
   html: ["mockup/index.html"],
   images: [],
   requirements: ["REQ-UI-001"],
+  grant: null,
   ...fields,
 });
 function show(mockups: Mockup[], url = "/requirements/mockups?project=a", legacy: boolean | null = false) {
@@ -145,5 +146,14 @@ describe("MockupsSection", () => {
     expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-22")}` })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: `ui ${formatDate("2026-11-01")}` })).not.toHaveAttribute("aria-current");
     expect(screen.getByRole("heading", { name: `ui ${formatDate("2026-11-22")}` })).toHaveFocus();
+  });
+
+  it("REQ-REQUIREMENTS-009 each mockup's frame uses its own grant", () => {
+    const two = [mockup({ grant: "g1" }), mockup({ capability: "api", grant: "g2" })];
+    show(two, "/requirements/mockups?project=a&mockup=ui/2026-11-22");
+    expect(screen.getByTitle(`ui ${formatDate("2026-11-22")} mockup/index.html`)).toHaveAttribute("src", "/api/requirements/mockups/a/g/g1/files/ui/2026-11-22/mockup/index.html");
+    cleanup();
+    show(two, "/requirements/mockups?project=a&mockup=api/2026-11-22");
+    expect(screen.getByTitle(`api ${formatDate("2026-11-22")} mockup/index.html`)).toHaveAttribute("src", "/api/requirements/mockups/a/g/g2/files/api/2026-11-22/mockup/index.html");
   });
 });

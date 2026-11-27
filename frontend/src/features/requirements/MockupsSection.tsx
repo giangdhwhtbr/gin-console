@@ -27,7 +27,7 @@ function Selected({ project, mockup }: { project: string; mockup: Mockup }) {
   const file = chosen !== null && mockup.html.includes(chosen) ? chosen : mockup.html[0];
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => heading.current?.focus(), []);
-  const src = (path: string) => mockupFileHref(project, mockup.capability, mockup.date, path);
+  const src = (path: string) => mockupFileHref(project, mockup.capability, mockup.date, path, mockup.grant ?? null);
   return (
     <section aria-label={nameOf(mockup.capability, mockup.date)} className="flex min-w-0 flex-col gap-3 rounded-lg border p-3">
       <h2 ref={heading} tabIndex={-1} className="text-16 font-medium [overflow-wrap:anywhere]">
