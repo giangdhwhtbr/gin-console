@@ -12,7 +12,7 @@ import pytest
 from fake_bd import FakeBd
 from fastapi.testclient import TestClient
 from httpx import Response
-from test_auth_access_api import DAY, grant_path, make, signed_in
+from test_auth_access_api import DAY, REPORTS_DAY, grant_of, grant_path, make, signed_in
 from test_auth_api import (
     INVALID,
     LOCKED,
@@ -155,7 +155,7 @@ def test_tc_auth_003_login_while_auth_is_off(tmp_path: Path) -> None:
 # --- REQ-AUTH-002: sign in
 
 
-# TC: TC-AUTH-004@e4415547
+# TC: TC-AUTH-004@a76bce5b
 def test_tc_auth_004_sign_in_right_password(tmp_path: Path) -> None:
     res = sign_in(auth_app(tmp_path), "an")
     assert res.status_code == 200
@@ -166,6 +166,14 @@ def test_tc_auth_004_sign_in_right_password(tmp_path: Path) -> None:
     assert "httponly" in cookie and cookie["samesite"].lower() == "strict"
     assert cookie["path"] == "/" and cookie["max-age"] == "43200"
     assert "mockup_grant" not in body
+
+
+# TC: TC-AUTH-052@794bcd79
+def test_tc_auth_052_no_grant_in_the_user(tmp_path: Path) -> None:
+    client = auth_app(tmp_path)
+    sign_in(client, "an")
+    user_body = client.get("/api/auth/me").json()["user"]
+    assert user_body["name"] == "an" and "mockup_grant" not in user_body
 
 
 # TC: TC-AUTH-005@e0b0fbb5
@@ -483,7 +491,7 @@ def test_tc_auth_038_users_file_atomic_write(
 # --- REQ-AUTH-016: the mockup grant
 
 
-# TC: TC-AUTH-039@6a854b96
+# TC: TC-AUTH-039@29073c90
 def test_tc_auth_039_grant_styled_mockup(tmp_path: Path) -> None:
     app = make(tmp_path)
     _, grant = signed_in(app, "an")
@@ -491,14 +499,14 @@ def test_tc_auth_039_grant_styled_mockup(tmp_path: Path) -> None:
     assert res.status_code == 200 and res.text == "body { color: red; }"
 
 
-# TC: TC-AUTH-040@4d072f95
+# TC: TC-AUTH-040@84e2873f
 def test_tc_auth_040_grant_other_project(tmp_path: Path) -> None:
     app = make(tmp_path)
     _, grant = signed_in(app, "an")
     assert TestClient(app.app).get(grant_path("b", grant)).status_code == 404
 
 
-# TC: TC-AUTH-041@89828801
+# TC: TC-AUTH-041@251001d0
 def test_tc_auth_041_grant_ended_session(tmp_path: Path) -> None:
     app = make(tmp_path)
     an, grant = signed_in(app, "an")
@@ -506,10 +514,51 @@ def test_tc_auth_041_grant_ended_session(tmp_path: Path) -> None:
     assert TestClient(app.app).get(grant_path("a", grant)).status_code == 404
 
 
-# TC: TC-AUTH-042@1db7c33c
+# TC: TC-AUTH-042@3c1d249b
 def test_tc_auth_042_grant_is_not_a_session(tmp_path: Path) -> None:
     app = make(tmp_path)
     _, grant = signed_in(app, "an")
     client = TestClient(app.app)
     client.cookies.set(COOKIE, grant)
     assert client.get("/api/overview").status_code == 401
+
+
+# TC: TC-AUTH-053@4effc3cb
+def test_tc_auth_053_grant_of_another_folder(tmp_path: Path) -> None:
+    app = make(tmp_path)
+    an, grant = signed_in(app, "an")
+    assert grant != grant_of(an, "a", "reports", REPORTS_DAY)
+    other = f"/api/requirements/mockups/a/g/{grant}/files/reports/{REPORTS_DAY}/index.html"
+    plain = TestClient(app.app)
+    assert plain.get(grant_path("a", grant, "index.html")).status_code == 200
+    assert plain.get(other).status_code == 404
+
+
+# TC: TC-AUTH-054@610c930b
+def test_tc_auth_054_malformed_grant(tmp_path: Path) -> None:
+    app = make(tmp_path)
+    an, grant = signed_in(app, "an")
+    grant_id = grant.rpartition(".")[0]
+    token = an.cookies[COOKIE]
+    plain = TestClient(app.app)
+    bodies = set()
+    for bad in ("abc", f"{grant_id}.AAAA", token):
+        res = plain.get(grant_path("a", bad))
+        assert res.status_code == 404
+        bodies.add(res.content)
+    assert len(bodies) == 1  # one body for every refusal
+
+
+# TC: TC-AUTH-055@2d00ead9
+def test_tc_auth_055_grant_with_auth_off(tmp_path: Path) -> None:
+    folder = tmp_path / "a" / "docs" / "specs" / "ui" / "assets" / DAY
+    folder.mkdir(parents=True)
+    (folder / "description.md").write_text(f"# ui\nConfirmed: {DAY}\n")
+    (folder / "index.html").write_text("<p>x</p>")
+    (folder / "style.css").write_text("body { color: red; }")
+    client = auth_app(tmp_path, enabled=False)
+    listing = client.get("/api/requirements/mockups", params={"project": "a"}).json()["mockups"]
+    assert listing and all(m["grant"] is None for m in listing)
+    assert client.get(grant_path("a", "x.y")).status_code == 404
+    plain = client.get(f"/api/requirements/mockups/a/files/ui/{DAY}/style.css")
+    assert plain.status_code == 200 and plain.text == "body { color: red; }"

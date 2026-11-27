@@ -1,6 +1,6 @@
 # TC-AUTH-007: Username case
 
-- **REQ:** REQ-AUTH-002@a39796dc
+- **REQ:** REQ-AUTH-002@222b89fb
 - **Priority:** low
 
 **Preconditions:**

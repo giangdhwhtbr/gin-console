@@ -1,6 +1,6 @@
 # TC-REQUIREMENTS-035: Headers of a mockup file
 
-- **REQ:** REQ-REQUIREMENTS-011@9bc2cbb9
+- **REQ:** REQ-REQUIREMENTS-011@67443d75
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-25T17-33-21-api
@@ -14,4 +14,4 @@
 
 **Expected:**
 - `X-Content-Type-Options` is `nosniff`
-- `Content-Security-Policy` is `sandbox allow-scripts; connect-src 'none'; form-action 'none'; frame-src 'none'`
+- `Content-Security-Policy` is `sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; connect-src 'none'; form-action 'none'; frame-src 'none'`

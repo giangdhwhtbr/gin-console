@@ -66,7 +66,7 @@ export const gone = (error: string, cause: 'outdated' | 'schema' | null = null):
 
 /** The headers the server puts on every mockup file (REQ-REQUIREMENTS-011). */
 export const MOCKUP_HEADERS = {
-  'content-security-policy': "sandbox allow-scripts; connect-src 'none'; form-action 'none'; frame-src 'none'",
+  'content-security-policy': "sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; connect-src 'none'; form-action 'none'; frame-src 'none'",
   'x-content-type-options': 'nosniff',
 };
 
