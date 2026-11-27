@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-073@81a0353d
+// TC: TC-MILESTONE-UI-073@afdfb2e8
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
 
@@ -11,8 +11,8 @@ test('TC-MILESTONE-UI-073: Milestone without dates', async ({ page, ev }) => {
     ]),
   });
 
-  await ev.step('1. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('1. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     const rows = page.getByRole('list', { name: 'Milestones' }).getByRole('listitem');
     await expect(rows).toHaveCount(2);
     const m1 = rows.filter({ hasText: 'Alpha launch' });

@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-111@d78c7be4
+// TC: TC-MILESTONE-UI-111@7c310874
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
 
@@ -13,8 +13,8 @@ test('TC-MILESTONE-UI-111: Parallel lanes and finish in the list', async ({ page
     await page.setViewportSize({ width: 1280, height: 800 });
   });
 
-  await ev.step('2. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('2. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     const rows = page.getByRole('list', { name: 'Milestones' });
     const header = rows.locator('li[aria-hidden="true"]').first();
     for (const name of ['Status', 'Milestone', 'Period', 'Parallel lanes', 'Commitment met', 'Epics', 'Warnings']) {

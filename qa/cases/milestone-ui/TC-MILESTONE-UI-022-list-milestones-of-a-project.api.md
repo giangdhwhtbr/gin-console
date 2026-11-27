@@ -1,5 +1,5 @@
 # TC-MILESTONE-UI-022: List milestones of a project
-REQ: REQ-MILESTONE-UI-008@1d2ab3ad
+REQ: REQ-MILESTONE-UI-008@4b68a946
 Priority: high
 Result: passed
 Run: qa/evidence/2026-11-23T03-32-23-api

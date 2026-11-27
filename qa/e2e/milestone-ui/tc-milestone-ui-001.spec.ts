@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-001@7d76b6b4
+// TC: TC-MILESTONE-UI-001@5ec1f9bc
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
 import { projectList, sidebarSwitcher } from '../support/shell';
@@ -25,6 +25,12 @@ test('TC-MILESTONE-UI-001: List milestones with status, period, progress and war
   await ev.step('2. Select project P', async () => {
     await sidebarSwitcher(page, 'other').click();
     await projectList(page).getByRole('button', { name: 'P', exact: true }).click();
+    await expect(page).toHaveURL(/[?&]project=P(&|$)/);
+  });
+
+  await ev.step('3. Press List in the View row', async () => {
+    await page.getByRole('navigation', { name: 'View' }).getByRole('link', { name: 'List', exact: true }).click();
+    await expect(page).toHaveURL(/[?&]view=list(&|$)/);
     await expect(page).toHaveURL(/[?&]project=P(&|$)/);
     const rows = page.getByRole('list', { name: 'Milestones' }).getByRole('listitem');
     await expect(rows).toHaveCount(2);

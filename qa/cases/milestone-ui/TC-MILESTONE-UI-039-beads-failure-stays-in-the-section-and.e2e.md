@@ -9,7 +9,7 @@ Preconditions:
 - project P whose milestones load and whose `GET /api/beads` responds 502
 
 Steps:
-1. Open /milestones?project=P
+1. Open /milestones?project=P&view=list
 2. Click "Retry" in the section
 
 Expected:

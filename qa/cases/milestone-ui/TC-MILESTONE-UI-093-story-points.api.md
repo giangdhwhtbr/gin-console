@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-093: Story points
 
-- **REQ:** REQ-MILESTONE-UI-008@1d2ab3ad
+- **REQ:** REQ-MILESTONE-UI-008@4b68a946
 - **Priority:** medium
 
 **Preconditions:**

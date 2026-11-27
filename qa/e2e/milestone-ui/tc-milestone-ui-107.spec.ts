@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-107@d6d80665
+// TC: TC-MILESTONE-UI-107@d756615d
 import { test, expect } from '../evidence';
 import { bead, entry, list, stubApi } from '../support/api';
 import { reportBody, teamBody } from '../support/reports';
@@ -43,8 +43,8 @@ test('TC-MILESTONE-UI-107: Forecast after the end', async ({ page, ev }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
   });
 
-  await ev.step('2. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('2. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     const row = page.getByRole('list', { name: 'Milestones' }).getByRole('listitem').filter({ hasText: 'Checkout v2' });
     await expect(row).toHaveCount(1);
     const finish = row.getByText('Finishes 16 Feb 2027');

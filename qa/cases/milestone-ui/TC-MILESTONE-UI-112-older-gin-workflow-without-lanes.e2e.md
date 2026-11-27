@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-112: Older gin-workflow without lanes
 
-- **REQ:** REQ-MILESTONE-UI-001@6e63a57f
+- **REQ:** REQ-MILESTONE-UI-001@eeee2b06
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -14,7 +14,7 @@
 
 **Steps:**
 1. Set the window width to 1280 px
-2. Open `/milestones?project=P`
+2. Open `/milestones?project=P&view=list`
 
 **Expected:**
 - Each row shows "–" for Parallel lanes

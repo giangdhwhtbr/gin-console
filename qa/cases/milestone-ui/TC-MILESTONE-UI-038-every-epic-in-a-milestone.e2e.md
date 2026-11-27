@@ -9,7 +9,7 @@ Preconditions:
 - project P whose open epics all have a milestone parent
 
 Steps:
-1. Open /milestones?project=P
+1. Open /milestones?project=P&view=list
 
 Expected:
 - The section heading shows 0

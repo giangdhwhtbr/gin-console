@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-073: Milestone without dates
 
-- **REQ:** REQ-MILESTONE-UI-001@6e63a57f
+- **REQ:** REQ-MILESTONE-UI-001@eeee2b06
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
@@ -10,7 +10,7 @@
 - Project `P` whose `milestone list` reports M1 (active) and M4 with `start: null`, `end: null` and `error` "M4 has no start/end metadata"
 
 **Steps:**
-1. Open `/milestones?project=P`
+1. Open `/milestones?project=P&view=list`
 
 **Expected:**
 - M1 is shown normally

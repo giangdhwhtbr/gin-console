@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-037@4fb6e9b3
+// TC: TC-MILESTONE-UI-037@2833d4f8
 import { test, expect } from '../evidence';
 import { bead, entry, list, stubApi } from '../support/api';
 
@@ -13,8 +13,8 @@ test('TC-MILESTONE-UI-037: Show closed adds closed epics dimmed', async ({ page,
   });
   const rows = page.getByRole('list', { name: 'Epics not in a milestone' }).getByRole('listitem');
 
-  await ev.step('1. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('1. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     await expect(page.getByRole('heading', { name: 'Epics not in a milestone (1)' })).toBeVisible();
     await expect(rows).toHaveCount(1);
     await expect(rows.nth(0).getByRole('link', { name: 'Epic A' })).toBeVisible();

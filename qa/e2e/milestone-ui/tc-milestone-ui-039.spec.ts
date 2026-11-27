@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-039@cee37f76
+// TC: TC-MILESTONE-UI-039@231a1aa5
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
 
@@ -10,8 +10,8 @@ test('TC-MILESTONE-UI-039: Beads failure stays in the section and Retry refetche
   });
   const section = page.getByRole('region', { name: 'Epics not in a milestone' });
 
-  await ev.step('1. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('1. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     await expect(page.getByRole('list', { name: 'Milestones' }).getByRole('link', { name: 'Alpha launch' })).toBeVisible();
     await expect(section.getByText("Epics couldn't be loaded")).toBeVisible();
     await expect(section.getByText('bd failed')).toBeVisible();

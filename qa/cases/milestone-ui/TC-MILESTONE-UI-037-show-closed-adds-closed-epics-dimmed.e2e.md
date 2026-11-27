@@ -9,7 +9,7 @@ Preconditions:
 - project P with open epic A and closed epic E, both without a parent
 
 Steps:
-1. Open /milestones?project=P
+1. Open /milestones?project=P&view=list
 2. Check "Show closed"
 
 Expected:

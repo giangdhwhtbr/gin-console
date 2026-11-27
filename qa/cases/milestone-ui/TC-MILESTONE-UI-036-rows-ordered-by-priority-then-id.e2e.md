@@ -9,7 +9,7 @@ Preconditions:
 - project P with parentless open epics `p-b` (P1), `p-a` (P1), and `p-c` (P0)
 
 Steps:
-1. Open /milestones?project=P
+1. Open /milestones?project=P&view=list
 
 Expected:
 - The section lists `p-c`, `p-a`, `p-b` in that order

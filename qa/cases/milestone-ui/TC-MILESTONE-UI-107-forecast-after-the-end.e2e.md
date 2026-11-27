@@ -15,7 +15,7 @@
 
 **Steps:**
 1. Set the window width to 1280 px
-2. Open `/milestones?project=P`
+2. Open `/milestones?project=P&view=list`
 3. Open `/reports?project=P&tab=team`
 4. Open `/beads/P/e1`
 

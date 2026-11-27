@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-035@cd6be028
+// TC: TC-MILESTONE-UI-035@eb4ea127
 import { test, expect } from '../evidence';
 import { bead, entry, list, stubApi } from '../support/api';
 
@@ -16,8 +16,8 @@ test('TC-MILESTONE-UI-035: Lists only parentless epics', async ({ page, ev }) =>
     ],
   });
 
-  await ev.step('1. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('1. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     await expect(page.getByRole('heading', { name: 'Epics not in a milestone (2)' })).toBeVisible();
     const rows = page.getByRole('list', { name: 'Epics not in a milestone' }).getByRole('listitem');
     await expect(rows).toHaveCount(2);

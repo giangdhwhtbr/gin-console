@@ -1,4 +1,4 @@
-// TC: TC-MILESTONE-UI-004@321ad56f
+// TC: TC-MILESTONE-UI-004@82f1504d
 import { test, expect } from '../evidence';
 import { entry, list, stubApi } from '../support/api';
 
@@ -12,8 +12,8 @@ test('TC-MILESTONE-UI-004: Schedule error replaces progress and warnings', async
     ]),
   });
 
-  await ev.step('1. Open /milestones?project=P', async () => {
-    await page.goto('/milestones?project=P');
+  await ev.step('1. Open /milestones?project=P&view=list', async () => {
+    await page.goto('/milestones?project=P&view=list');
     const rows = page.getByRole('list', { name: 'Milestones' }).getByRole('listitem');
     await expect(rows).toHaveCount(2);
     const m2 = rows.filter({ hasText: 'Beta launch' });
