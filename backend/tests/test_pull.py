@@ -2,7 +2,7 @@ import logging
 import subprocess
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -10,10 +10,13 @@ from typing import Any
 import pytest
 from fake_bd import FakeBd
 from fake_export import FakeExport, bead, write_export
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
+from gin_console.beads.attachments import GitError, GitRun
 from gin_console.beads.pull import (
+    FETCH_ARGS,
     PULL_TIMEOUT_SECONDS,
     SCHEDULER_THREAD,
     PullRun,
@@ -23,7 +26,7 @@ from gin_console.beads.pull import (
 )
 from gin_console.config import BeadsSettings, ProjectEntry, Settings
 from gin_console.projects.collect import CollectError
-from gin_console.projects.models import PullResult
+from gin_console.projects.models import FetchResult, PullResult
 
 NOW = datetime(2026, 11, 19, 4, 0, tzinfo=UTC)
 NO_REMOTE = "Error: fetch from origin/main: Error 1105: no remote"
@@ -376,3 +379,158 @@ def test_beads_017_schedule_pulls_false_keeps_it_off(tmp_path: Path) -> None:
         time.sleep(0.1)
         assert not scheduler_alive()
     assert fake.calls == []
+
+
+# REQ-BEADS-033, REQ-BEADS-035: the fetch of the shared attachment store
+def fetching(entries: list[ProjectEntry], git: FakeGit, fake: FakeBd | None = None) -> PullService:
+    return PullService(entries, fake or FakeBd(), lambda: NOW, git)
+
+
+def fetch_answer(path: Path, run: GitRun | Exception) -> dict[tuple[Path, tuple[str, ...]], Any]:
+    return {(path, FETCH_ARGS): run}
+
+
+def test_beads_033_exact_fetch_arguments() -> None:
+    assert FETCH_ARGS == (
+        "fetch",
+        "--quiet",
+        "--no-write-fetch-head",
+        "origin",
+        "+refs/gin/attachments:refs/gin-console/attachments",
+    )
+
+
+def test_beads_033_fetch_after_a_failed_pull(tmp_path: Path) -> None:
+    order: list[str] = []
+    bd = FakeBd({tmp_path / "a": PullRun(1, CONFLICT)})
+    git = FakeGit(fetch_answer(tmp_path / "a", GitRun(0, b"", "")))
+
+    def run_bd(cwd: Path) -> PullRun:
+        order.append("bd")
+        return bd(cwd)
+
+    def run_git(args: Sequence[str], cwd: Path) -> GitRun:
+        order.append("git")
+        return git(args, cwd)
+
+    pulls = PullService(projects(tmp_path, "a"), run_bd, lambda: NOW, run_git)
+    pulls.pull_all()
+    assert order == ["bd", "git"]
+    assert git.calls == [(tmp_path / "a", FETCH_ARGS)]
+    pull = pulls.result("a")
+    assert pull is not None and pull.status == "error"
+    assert pulls.fetch_result("a") == FetchResult(at=NOW, status="ok", error=None)
+
+
+def test_beads_033_no_store_and_no_remote(tmp_path: Path) -> None:
+    git = FakeGit(
+        {
+            **fetch_answer(
+                tmp_path / "a",
+                GitRun(128, b"", "fatal: couldn't find remote ref refs/gin/attachments"),
+            ),
+            **fetch_answer(
+                tmp_path / "b",
+                GitRun(128, b"", "fatal: 'origin' does not appear to be a git repository"),
+            ),
+        }
+    )
+    pulls = fetching(projects(tmp_path, "a", "b"), git)
+    pulls.pull_all()
+    assert pulls.fetch_result("a") == FetchResult(at=NOW, status="no_store", error=None)
+    assert pulls.fetch_result("b") == FetchResult(at=NOW, status="no_remote", error=None)
+
+
+@pytest.mark.parametrize(
+    ("answer", "error"),
+    [
+        (
+            GitRun(128, b"", "fatal: x\nfatal: Could not read from remote repository.\n\n"),
+            "fatal: Could not read from remote repository.",
+        ),
+        (GitRun(1, b"", ""), "git fetch exited 1"),
+        (GitError("git timed out"), "git fetch timed out"),
+        (GitError("git not found"), "git not found"),
+        (GitError("git failed: denied"), "git failed: denied"),
+        (RuntimeError("boom"), "git fetch failed"),
+    ],
+)
+def test_beads_033_fetch_errors(tmp_path: Path, answer: GitRun | Exception, error: str) -> None:
+    git = FakeGit(fetch_answer(tmp_path / "a", answer))
+    pulls = fetching(projects(tmp_path, "a"), git)
+    pulls.pull_all()
+    assert pulls.fetch_result("a") == FetchResult(at=NOW, status="error", error=error)
+
+
+def test_beads_033_opted_out_or_missing_is_not_fetched(tmp_path: Path) -> None:
+    git = FakeGit()
+    entries = projects(tmp_path, "a", "b", a=False)
+    entries.append(ProjectEntry(name="gone", path=tmp_path / "gone"))
+    pulls = fetching(entries, git)
+    pulls.pull_all()
+    assert git.calls == [(tmp_path / "b", FETCH_ARGS)]
+    assert pulls.fetch_result("a") is None and pulls.fetch_result("gone") is None
+
+
+def test_beads_033_without_a_runner_nothing_is_fetched(tmp_path: Path) -> None:
+    pulls = service(projects(tmp_path, "a"), FakeBd())
+    pulls.pull_all()
+    assert pulls.fetch_result("a") is None
+
+
+def test_beads_033_four_at_a_time_with_both_fakes(tmp_path: Path) -> None:
+    bd, git = FakeBd(delay=0.03), FakeGit(delay=0.03)
+    pulls = fetching(projects(tmp_path, *[f"p{n}" for n in range(8)]), git, bd)
+    pulls.pull_all()
+    assert len(git.calls) == 8
+    assert 1 < bd.peak <= 4 and 1 < git.peak <= 4
+
+
+def test_beads_033_one_job_per_project_covers_the_fetch(tmp_path: Path) -> None:
+    git = FakeGit(delay=0.2)
+    pulls = fetching(projects(tmp_path, "a"), git)
+    running = threading.Thread(target=pulls.pull_all)
+    running.start()
+    until(lambda: git.running == 1)
+    pulls.pull_all()  # joins the running job
+    running.join()
+    assert len(git.calls) == 1
+
+
+def test_beads_033_refresh_waits_for_the_fetch(tmp_path: Path) -> None:
+    git = FakeGit(fetch_answer(tmp_path / "proj", GitRun(0, b"", "")), delay=0.1)
+    bd = FakeBd({tmp_path / "proj": PullRun(1, CONFLICT)})
+    write_export(tmp_path / "proj", [])
+    (tmp_path / "dist").mkdir(exist_ok=True)
+    settings = Settings(projects=[ProjectEntry(name="proj", path=tmp_path / "proj")])
+    app = create_app(
+        settings, static_dir=tmp_path / "dist", run_bd=bd, run_git=git, clock=lambda: NOW
+    )
+    api = TestClient(app)
+    assert api.post("/api/refresh").status_code == 204
+    assert git.calls == [(tmp_path / "proj", FETCH_ARGS)]
+    body = api.get("/api/projects/beads").json()[0]
+    assert body["pull"]["status"] == "error"
+    assert body["attachments_fetch"]["status"] == "ok"
+
+
+def test_beads_033_scheduled_run_logs_failed_fetches(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    git = FakeGit(
+        {
+            **fetch_answer(
+                tmp_path / "a", GitRun(128, b"", "fatal: Could not read from remote repository.")
+            ),
+            **fetch_answer(tmp_path / "b", GitError("git timed out")),
+            **fetch_answer(tmp_path / "c", GitRun(0, b"", "")),
+        }
+    )
+    pulls = fetching(projects(tmp_path, "a", "b", "c"), git)
+    scheduler = PullScheduler(pulls, 300, after=lambda: None)
+    with caplog.at_level(logging.WARNING, logger="gin_console.beads.pull"):
+        scheduler.run_once()
+    assert sorted(r.getMessage() for r in caplog.records) == [
+        "attachment fetch of a failed: fatal: Could not read from remote repository.",
+        "attachment fetch of b failed: git fetch timed out",
+    ]

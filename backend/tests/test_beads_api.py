@@ -10,7 +10,7 @@ from fake_export import FakeExport, bead, comment, dep, related, write_export
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
-from gin_console.beads.pull import BdRunner, PullRun, run_bd_pull
+from gin_console.beads.pull import FETCH_ARGS, BdRunner, PullRun, run_bd_pull
 from gin_console.beads.source import BeadsError, read_export
 from gin_console.config import ProjectEntry, Settings
 
@@ -236,7 +236,13 @@ def test_tc_beads_058_refresh_only_runs_bd_dolt_pull(
     api = TestClient(create_app(settings, static_dir=tmp_path / "dist"))
     assert api.post("/api/refresh").status_code == 204  # the default bd runner
     pull = ["bd", "dolt", "pull"]
-    assert sorted(started) == [(pull, tmp_path / "one"), (pull, tmp_path / "two")]
+    fetch = ["git", *FETCH_ARGS]  # the attachment fetch of ADR 0006 follows each pull
+    assert sorted(started) == [
+        (pull, tmp_path / "one"),
+        (pull, tmp_path / "two"),
+        (fetch, tmp_path / "one"),
+        (fetch, tmp_path / "two"),
+    ]
 
 
 # REQ-BEADS-012 (Refresh): the pull ends before the caches are dropped

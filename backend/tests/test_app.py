@@ -86,6 +86,7 @@ def test_server_010_projects_beads_answer(tmp_path: Path, fake: Fake) -> None:
             "exists": True,
             "beads": BEADS,
             "pull": None,
+            "attachments_fetch": None,
         },
         {
             "name": "absent",
@@ -93,6 +94,7 @@ def test_server_010_projects_beads_answer(tmp_path: Path, fake: Fake) -> None:
             "exists": False,
             "beads": None,
             "pull": None,
+            "attachments_fetch": None,
         },
     ]
     assert fake.calls == []  # the endpoint starts no process

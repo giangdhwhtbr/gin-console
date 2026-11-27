@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
 from gin_console.beads.attachments import REFS, blob_path
+from gin_console.beads.pull import FETCH_ARGS
 from gin_console.beads.source import read_export
 from gin_console.config import ProjectEntry, Settings
 
@@ -188,7 +189,7 @@ def test_beads_035_only_the_allowed_commands(tmp_path: Path) -> None:
     assert api.get("/api/beads", params={"project": "alpha"}).status_code == 200
     assert api.get("/api/beads/alpha/a-1").status_code == 200
     assert api.get(f"/api/beads/alpha/a-1/attachments/{A}").status_code == 200
-    allowed = {ls_tree(ref) for ref in REFS} | {
+    allowed = {FETCH_ARGS} | {ls_tree(ref) for ref in REFS} | {
         ("cat-file", mode, f"{ref}:{blob_path(A)}") for ref in REFS for mode in ("-s", "blob")
     }
     assert git.calls
