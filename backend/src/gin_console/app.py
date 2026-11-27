@@ -173,7 +173,17 @@ def create_app(
     )
     api.include_router(build_requirements_router(settings, run_gin, clock, on_refresh, projects))
     api.include_router(
-        build_qa_router(settings, run_gin_qa, snapshots, clock, on_refresh, projects)
+        build_qa_router(
+            settings,
+            run_gin_qa,
+            snapshots,
+            clock,
+            on_refresh,
+            projects,
+            run_gin,
+            run_gw,
+            run_epic_workflow,
+        )
     )
     api.include_router(
         build_reports_router(settings, snapshots, interactions, clock, on_refresh, projects)

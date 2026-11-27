@@ -1,9 +1,15 @@
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from gin_console.reports.models import EpicRef
+
 Cause = Literal["missing", "outdated"]
 RunReason = Literal["no_run", "not_on_host", "invalid"]
+ItemKey = Literal["cases", "results", "bugs", "gates"]
+ItemState = Literal["pass", "fail", "unknown"]
+Verdict = Literal["ready", "not_ready", "unknown"]
 
 
 # what `gin-qa cases export --format json` prints, only the keys the console uses (REQ-QA-001)
@@ -115,3 +121,63 @@ class CaseDetail(CaseRow):
 class QaErrorBody(BaseModel):
     error: str
     cause: Cause | None
+
+
+# the readiness checklist of a milestone (REQ-QA-008, REQ-QA-009)
+class ReqEntry(BaseModel):
+    id: str
+    title: str
+    capability: str
+
+
+class CaseEntry(BaseModel):
+    id: str
+    title: str
+    effective_result: str
+    bug: str | None
+
+
+class BugEntry(BaseModel):
+    id: str
+    title: str
+    priority: int
+    epic: EpicRef | None  # its source epic (REQ-REPORTS-040)
+
+
+class EpicEntry(BaseModel):
+    id: str
+    title: str
+    gate: str  # the first unmet gate, or "unknown" when its `gin state` failed
+
+
+class ReadinessItem(BaseModel):
+    """One item of the checklist; only the list of its `key` is filled."""
+
+    key: ItemKey
+    title: str
+    state: ItemState
+    note: str | None = None
+    error: str | None = None  # the message of the source that made it unknown
+    requirements: list[ReqEntry] = Field(default_factory=list)
+    cases: list[CaseEntry] = Field(default_factory=list)
+    bugs: list[BugEntry] = Field(default_factory=list)
+    epics: list[EpicEntry] = Field(default_factory=list)
+
+
+class MilestoneRef(BaseModel):
+    id: str
+    title: str
+
+
+class EpicRow(BaseModel):
+    id: str
+    title: str
+    status: str
+
+
+class Readiness(BaseModel):
+    milestone: MilestoneRef
+    epics: list[EpicRow]
+    generated_at: datetime
+    verdict: Verdict
+    items: list[ReadinessItem]  # always cases, results, bugs and gates, in that order
