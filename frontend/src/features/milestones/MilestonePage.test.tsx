@@ -280,9 +280,18 @@ describe("MilestonePage", () => {
     render(<MilestonePage project="alpha" id="m2" />);
   };
 
-  it("REQ-MILESTONE-UI-018 the tabs are Gantt, Beads and Retro", async () => {
+  it("REQ-MILESTONE-UI-018 the tabs are Gantt, Beads, Retro and Readiness", async () => {
     openRetro("", []);
-    expect((await screen.findAllByRole("tab")).map((t) => t.id)).toEqual(["tab-gantt", "tab-beads", "tab-retro"]);
+    expect((await screen.findAllByRole("tab")).map((t) => t.id)).toEqual(["tab-gantt", "tab-beads", "tab-retro", "tab-readiness"]);
+  });
+
+  it("REQ-MILESTONE-UI-018 tab=readiness opens the Readiness tab, and changing tab keeps only start and zoom", async () => {
+    openRetro("?tab=readiness&status=open&start=2026-11-10&zoom=2w", []);
+    expect(await screen.findByRole("tab", { name: "Readiness", selected: true })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("tab", { name: "Gantt" }));
+    expect(window.location.search).toBe("?start=2026-11-10&zoom=2w");
+    await userEvent.click(screen.getByRole("tab", { name: "Readiness" }));
+    expect(window.location.search).toBe("?tab=readiness&start=2026-11-10&zoom=2w");
   });
 
   it("REQ-MILESTONE-UI-019 tab=retro opens the Retro tab, counted by member", async () => {

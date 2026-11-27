@@ -21,6 +21,7 @@ import { MilestoneError } from "./MilestoneError";
 import { MilestoneVelocity } from "./MilestoneVelocity";
 import { MilestoneStatus } from "./MilestoneStatus";
 import { parseRetros } from "./retro";
+import { ReadinessTab } from "./ReadinessTab";
 import { RetroTab } from "./RetroTab";
 import { useMilestoneComments } from "./useMilestoneComments";
 import { useLoad } from "./useLoad";
@@ -29,6 +30,7 @@ const TABS = [
   { value: "gantt", label: "Gantt" },
   { value: "beads", label: "Beads" },
   { value: "retro", label: "Retro" },
+  { value: "readiness", label: "Readiness" },
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 
@@ -48,7 +50,7 @@ function Milestone({ project, id }: { project: string; id: string }) {
   const asked = params.get("start");
   const day = asked !== null && ISO.test(asked) ? dayOf(asked) : NaN; // month 13 gives NaN, Feb 31 rolls over
   const tabAsked = params.get("tab");
-  const tab: Tab = tabAsked === "beads" || tabAsked === "graph" ? "beads" : tabAsked === "retro" ? "retro" : "gantt";
+  const tab: Tab = tabAsked === "beads" || tabAsked === "graph" ? "beads" : tabAsked === "retro" ? "retro" : tabAsked === "readiness" ? "readiness" : "gantt";
   const zoom = zoomOf(params.get("zoom"));
   const start = !Number.isNaN(day) && isoOf(day) === asked ? asked : null;
   // REQ-MILESTONE-UI-018: the old Graph tab is the Graph view of the Beads tab
@@ -106,6 +108,8 @@ function Milestone({ project, id }: { project: string; id: string }) {
               />
             ) : tab === "retro" ? (
               <RetroTab milestoneId={id} comments={comments} />
+            ) : tab === "readiness" ? (
+              <ReadinessTab project={project} milestoneId={id} />
             ) : (
               <BeadsView
                 project={project}

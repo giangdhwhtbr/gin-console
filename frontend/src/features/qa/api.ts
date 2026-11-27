@@ -19,6 +19,26 @@ export type CaseDetail = Omit<CaseRow, "bug"> & {
   latest_run_reason: RunReason | null;
 };
 
+export type ItemState = "pass" | "fail" | "unknown";
+export type ReadinessItem = {
+  key: "cases" | "results" | "bugs" | "gates";
+  title: string;
+  state: ItemState;
+  note: string | null;
+  error: string | null;
+  requirements: { id: string; title: string; capability: string }[];
+  cases: { id: string; title: string; effective_result: string; bug: string | null }[];
+  bugs: { id: string; title: string; priority: number; epic: { id: string; title: string } | null }[];
+  epics: { id: string; title: string; gate: string }[];
+};
+export type Readiness = {
+  milestone: { id: string; title: string };
+  epics: { id: string; title: string; status: string }[];
+  generated_at: string;
+  verdict: "ready" | "not_ready" | "unknown";
+  items: ReadinessItem[];
+};
+
 /** The results a count can be filtered on; `not_run` is the URL value of "not run". */
 export const RESULT_KEYS = ["passed", "failed", "blocked", "not_run", "outdated", "other"] as const;
 export type ResultKey = (typeof RESULT_KEYS)[number];
@@ -65,6 +85,34 @@ const isCaseDetail = (value: unknown): value is CaseDetail => {
   );
 };
 
+const isTitled = (value: unknown) => isObject(value) && has(value, ["id", "title"], isString);
+const isReadinessItem = (value: unknown) => {
+  if (!isObject(value)) return false;
+  const key = field(value, "key");
+  const state = field(value, "state");
+  return (
+    (key === "cases" || key === "results" || key === "bugs" || key === "gates") &&
+    (state === "pass" || state === "fail" || state === "unknown") &&
+    isString(field(value, "title")) &&
+    has(value, ["note", "error"], isStringOrNull) &&
+    every(field(value, "requirements"), (r) => isObject(r) && has(r, ["id", "title", "capability"], isString)) &&
+    every(field(value, "cases"), (c) => isObject(c) && has(c, ["id", "title", "effective_result"], isString) && isStringOrNull(field(c, "bug"))) &&
+    every(field(value, "bugs"), (b) => isObject(b) && has(b, ["id", "title"], isString) && isFiniteNumber(field(b, "priority")) && (field(b, "epic") === null || isTitled(field(b, "epic")))) &&
+    every(field(value, "epics"), (e) => isObject(e) && has(e, ["id", "title", "gate"], isString))
+  );
+};
+const isReadiness = (value: unknown): value is Readiness => {
+  if (!isObject(value)) return false;
+  const verdict = field(value, "verdict");
+  return (
+    isTitled(field(value, "milestone")) &&
+    every(field(value, "epics"), (e) => isObject(e) && has(e, ["id", "title", "status"], isString)) &&
+    isString(field(value, "generated_at")) &&
+    (verdict === "ready" || verdict === "not_ready" || verdict === "unknown") &&
+    every(field(value, "items"), isReadinessItem)
+  );
+};
+
 async function get<T>(path: string, check: (value: unknown) => value is T): Promise<T> {
   const response = await apiFetch(path);
   const body: unknown = await response.json().catch(() => null);
@@ -80,6 +128,7 @@ async function get<T>(path: string, check: (value: unknown) => value is T): Prom
 const enc = encodeURIComponent;
 export const fetchCases = (project: string) => get(`/api/qa/cases?project=${enc(project)}`, isCaseList);
 export const fetchCase = (project: string, id: string) => get(`/api/qa/cases/${enc(project)}/${enc(id)}`, isCaseDetail);
+export const fetchReadiness = (project: string, milestone: string) => get(`/api/qa/readiness/${enc(project)}/${enc(milestone)}`, isReadiness);
 export const screenshotUrl = (project: string, id: string, n: number): string => `/api/qa/cases/${enc(project)}/${enc(id)}/run/steps/${n}/screenshot`;
 export const testsHref = (project: string, extra: Readonly<Record<string, string>> = {}): string => `/tests?${new URLSearchParams({ project, ...extra }).toString()}`;
 export const caseHref = (project: string, id: string): string => `/tests/${enc(project)}/${enc(id)}`;
