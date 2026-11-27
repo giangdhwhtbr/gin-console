@@ -255,6 +255,10 @@ def test_auth_016_other_project(tmp_path: Path) -> None:
     _, root_grant = signed_in(app, "root")
     res = TestClient(app.app).get(grant_path("b", root_grant))
     assert res.status_code == 404 and res.json() == NOT_FOUND
+    # a grant issued before the project was taken away, while the session lives on
+    write_users(tmp_path / "users.yaml", [user("an", ["b"]), user("root", "*")])
+    res = TestClient(app.app).get(grant_path("a", grant))
+    assert res.status_code == 404 and res.json() == NOT_FOUND
 
 
 # REQ-AUTH-016: Ended session

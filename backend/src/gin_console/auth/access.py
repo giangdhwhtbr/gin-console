@@ -68,8 +68,8 @@ class AuthState:
     def user_of_folder_grant(
         self, token: str, project: str, capability: str, date: str
     ) -> User | None:
-        """The user of a live session whose grant of this mockup folder is `token`; None for
-        any other token, also a malformed one (REQ-AUTH-016)."""
+        """The user of a live session whose grant of this mockup folder is `token`, while the
+        user may see `project`; None for any other token, also a malformed one (REQ-AUTH-016)."""
         grant_id, _, mac = token.rpartition(".")
         if not grant_id or not mac or not token.isascii():  # compare_digest takes ASCII text
             return None
@@ -79,7 +79,8 @@ class AuthState:
             return None
         if not hmac.compare_digest(token, folder_grant(session, project, capability, date)):
             return None
-        return users.get(session.name)
+        user = users.get(session.name)
+        return user if user is not None and user.allows(project) else None
 
 
 def folder_grant(session: Session, project: str, capability: str, date: str) -> str:
