@@ -1,6 +1,7 @@
 import { field, isFiniteNumber, isString } from "@/lib/guards";
 import { failure } from "../api";
 import { scopeQuery, type Scope } from "../filters";
+import { apiFetch } from "@/app/session";
 
 export type BugPeriod = { start: string; end: string };
 export type BugFigures = {
@@ -81,7 +82,7 @@ export function isBugsReport(value: unknown): value is BugsReport {
 export async function fetchBugs(project: string, scope: Scope): Promise<BugsReport> {
   const params = new URLSearchParams({ project });
   if (scope.kind !== "default") for (const [key, value] of scopeQuery(scope)) params.set(key, value);
-  const response = await fetch(`/api/reports/bugs?${params.toString()}`);
+  const response = await apiFetch(`/api/reports/bugs?${params.toString()}`);
   if (!response.ok) throw await failure(response);
   const body: unknown = await response.json();
   if (!isBugsReport(body)) throw new Error("Could not load the bugs report (unexpected response)");

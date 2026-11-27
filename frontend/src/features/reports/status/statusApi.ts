@@ -3,6 +3,7 @@ import { field } from "@/lib/guards";
 import { failure } from "../api";
 import { scopeQuery, type Scope } from "../filters";
 import type { TeamMilestone } from "../teamApi";
+import { apiFetch } from "@/app/session";
 
 export type StatusPeriod = {
   kickoff: string | null;
@@ -139,7 +140,7 @@ function isStatusReport(value: unknown): value is StatusReport {
 export async function fetchStatus(project: string, scope: Scope): Promise<StatusReport> {
   const params = new URLSearchParams({ project });
   if (scope.kind !== "default") for (const [key, value] of scopeQuery(scope)) params.set(key, value);
-  const response = await fetch(`/api/reports/status?${params.toString()}`);
+  const response = await apiFetch(`/api/reports/status?${params.toString()}`);
   if (!response.ok) throw await failure(response);
   const body: unknown = await response.json();
   if (!isStatusReport(body)) throw new Error("Could not load the status report (unexpected response)");
