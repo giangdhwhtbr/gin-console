@@ -10,6 +10,7 @@ from typing import Any
 from fake_bd import FakeBd
 from fake_export import bead, write_export
 from fake_gin_qa import EXPORT, FakeGinQa, case, export
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 from test_auth_api import auth_app, sign_in
 
@@ -44,6 +45,7 @@ def make(tmp_path: Path, fake: Any, clock: Clock | None = None) -> TestClient:
         run_gin_qa=fake,
         clock=clock or Clock(),
         run_bd=FakeBd(),
+        run_git=FakeGit(),
         schedule_pulls=False,
     )
     return TestClient(app, raise_server_exceptions=False)

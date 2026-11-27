@@ -13,6 +13,7 @@ from fake_bd import FakeBd
 from fake_export import FakeExport, bead, write_export
 from fake_gin import FakeGin, req, trace
 from fake_gin_qa import EXPORT, FakeGinQa, case, export
+from fake_git import FakeGit
 from fake_gw import SHOW, FakeGw
 from fastapi.testclient import TestClient
 from test_auth_api import auth_app, sign_in
@@ -141,6 +142,7 @@ def make(tmp_path: Path, sources: Sources, clock: Clock | None = None, **kwargs:
         run_gin_qa=sources.qa,
         clock=clock or Clock(),
         run_bd=FakeBd(),
+        run_git=FakeGit(),
         schedule_pulls=False,
         **options,
     )
