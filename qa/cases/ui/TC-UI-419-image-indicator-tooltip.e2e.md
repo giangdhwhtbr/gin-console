@@ -1,6 +1,6 @@
 # TC-UI-419: Image indicator tooltip
 
-- **REQ:** REQ-UI-132@87ad72f4
+- **REQ:** REQ-UI-132@a6b1922c
 - **Priority:** medium
 
 **Preconditions:**
@@ -11,5 +11,5 @@
 2. Rest the pointer on the image indicator 2 of the card of `t-1`
 
 **Expected:**
-- A tooltip says that it counts the screenshots the bead names that exist on the console host
+- A tooltip says that it counts the screenshots of the bead that this console can show: files on the console host and attachments in the shared store
 - The indicator has no `title` attribute

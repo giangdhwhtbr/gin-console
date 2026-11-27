@@ -1,6 +1,6 @@
 # TC-BEADS-088: Image limit
 
-- **REQ:** REQ-BEADS-026@ac85fc9c
+- **REQ:** REQ-BEADS-026@8e331dd0
 - **Priority:** low
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-27T00-00-02-api
