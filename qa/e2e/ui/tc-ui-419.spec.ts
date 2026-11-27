@@ -1,4 +1,4 @@
-// TC: TC-UI-419@e413ee0b
+// TC: TC-UI-419@e634f714
 import { test, expect } from '../evidence';
 import { bead, stubApi } from '../support/api';
 
@@ -15,7 +15,10 @@ test('TC-UI-419: Image indicator tooltip (REQ-UI-132)', async ({ page, ev }) => 
     const card = page.getByRole('listitem').filter({ has: page.getByRole('link', { name: 'Card title' }) });
     const indicator = card.getByRole('img', { name: '2 images' });
     await indicator.hover();
-    await expect(page.getByRole('tooltip')).toContainText('screenshots this bead names that exist on the console host');
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toContainText('screenshots of this bead the console can show');
+    await expect(tooltip).toContainText('files on the console host');
+    await expect(tooltip).toContainText('attachments in the shared store');
     await expect(indicator).not.toHaveAttribute('title', /.*/);
   });
 });

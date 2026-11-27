@@ -1,6 +1,6 @@
 # TC-UI-413: Bead image inline
 
-- **REQ:** REQ-UI-028@5c612d02
+- **REQ:** REQ-UI-028@b6db5034
 - **Priority:** high
 
 **Preconditions:**

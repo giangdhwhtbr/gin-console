@@ -1,6 +1,6 @@
 # TC-BEADS-035: Dependencies and dependents
 
-- **REQ:** REQ-BEADS-002@416355c8
+- **REQ:** REQ-BEADS-002@368f5c8f
 - **Priority:** medium
 
 **Preconditions:**

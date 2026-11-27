@@ -1,6 +1,6 @@
 # TC-BEADS-099: Bead without images has no panel
 
-- **REQ:** REQ-BEADS-029@79ee5c39
+- **REQ:** REQ-BEADS-029@8dd84d5b
 - **Priority:** medium
 
 **Preconditions:**

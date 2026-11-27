@@ -4,7 +4,18 @@ import { type BeadSummary, stubApi } from './api';
 
 export type Pull = { status: 'ok' | 'no_remote' | 'error'; at: string; error: string | null };
 
-export type PullProject = { name: string; path: string; beads?: unknown; pull?: Pull | null };
+export type AttachmentsFetch = { status: 'ok' | 'no_store' | 'no_remote' | 'error'; at: string; error: string | null };
+
+export type PullProject = {
+  name: string; path: string; beads?: unknown; pull?: Pull | null;
+  /** REQ-BEADS-033: the last fetch of the shared attachment store; absent is an older backend. */
+  attachments_fetch?: AttachmentsFetch | null;
+};
+
+/** A fetch of the shared store that ended just now. */
+export const fetched = (status: AttachmentsFetch['status'], error: string | null = null): AttachmentsFetch => ({
+  status, at: new Date().toISOString(), error,
+});
 
 /** A pull that happened `seconds` ago. */
 export const pulled = (seconds: number, o: Partial<Pull> = {}): Pull => ({
