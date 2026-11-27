@@ -16,6 +16,8 @@ from starlette.types import Scope
 
 from gin_console.auth.access import COOKIE, AuthState, projects_of
 from gin_console.auth.router import build_router as build_auth_router
+from gin_console.beads.attachments import GitRunner
+from gin_console.beads.attachments import run_git as default_run_git
 from gin_console.beads.pull import BdRunner, PullScheduler, PullService, run_bd_pull
 from gin_console.beads.router import build_router as build_beads_router
 from gin_console.beads.snapshot import Reader, SnapshotStore
@@ -81,6 +83,7 @@ def create_app(
     run_bd: BdRunner = run_bd_pull,
     schedule_pulls: bool = True,
     run_epic_workflow: Callable[[Path, str], EpicWorkflow | BlockError] = collect_epic_workflow,
+    run_git: GitRunner = default_run_git,
 ) -> FastAPI:
     # one read of .beads/issues.jsonl per project, reused until the file changes or a refresh
     snapshots = SnapshotStore(read_beads)
@@ -162,7 +165,9 @@ def create_app(
     api.include_router(build_projects_router(settings, snapshots, pulls, projects))
     api.include_router(build_overview_router(settings, snapshots, clock, projects))
     api.include_router(
-        build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh, projects)
+        build_beads_router(
+            settings, snapshots, clock, run_epic_workflow, on_refresh, projects, run_git
+        )
     )
     api.include_router(
         build_milestones_router(settings, run_gw, clock, on_refresh, snapshots, projects)

@@ -287,6 +287,22 @@ def test_tc_beads_097_images_of_the_detail(tmp_path: Path) -> None:
     description = "qa/evidence/r1/01.png\n/tmp/x.png"
     images = detail_images(tmp_path, bead("b-1", issue_type="bug", description=description))
     assert images == [
-        {"n": 1, "path": "qa/evidence/r1/01.png", "caption": "01.png", "available": True},
-        {"n": 2, "path": "/tmp/x.png", "caption": "x.png", "available": False},
+        {
+            "n": 1,
+            "path": "qa/evidence/r1/01.png",
+            "sha256": None,
+            "caption": "01.png",
+            "available": True,
+            "served_as": "file",
+            "reason": None,
+        },
+        {
+            "n": 2,
+            "path": "/tmp/x.png",
+            "sha256": None,
+            "caption": "x.png",
+            "available": False,
+            "served_as": None,
+            "reason": None,
+        },
     ]

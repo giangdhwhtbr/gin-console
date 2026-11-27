@@ -573,7 +573,23 @@ def test_beads_002_images(tmp_path: Path) -> None:
     )
     api = make(tmp_path, FakeExport(shown={"b-1": shown, "t-1": bead("t-1")}))
     assert api.get("/api/beads/proj/b-1").json()["images"] == [
-        {"n": 1, "path": "qa/evidence/r1/01.png", "caption": "01.png", "available": True},
-        {"n": 2, "path": outside.as_posix(), "caption": "x.png", "available": False},
+        {
+            "n": 1,
+            "path": "qa/evidence/r1/01.png",
+            "sha256": None,
+            "caption": "01.png",
+            "available": True,
+            "served_as": "file",
+            "reason": None,
+        },
+        {
+            "n": 2,
+            "path": outside.as_posix(),
+            "sha256": None,
+            "caption": "x.png",
+            "available": False,
+            "served_as": None,
+            "reason": None,
+        },
     ]
     assert api.get("/api/beads/proj/t-1").json()["images"] == []
