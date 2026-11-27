@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { Strand } from "@/components/Strand";
-import { imageUrl, type BeadDetail } from "./api";
+import { imageAddress, type BeadDetail } from "./api";
 import { ImagesPanel } from "./images/ImagesPanel";
 import { Lightbox } from "./images/Lightbox";
 import { findImage } from "./images/match";
@@ -27,7 +27,10 @@ export function BeadBody({ project, bead, overview = false }: { project: string;
   };
   const resolver: ImageResolver = {
     find: (address) => findImage(images, address),
-    url: (n) => imageUrl(project, bead.id, n),
+    url: (n) => {
+      const image = images.find((candidate) => candidate.n === n);
+      return (image && imageAddress(project, bead.id, image)) ?? "";
+    },
     open,
   };
 
