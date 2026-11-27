@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchProjectBeads, type ProjectBeads } from "@/features/projects/api";
 import { formatDate, formatRange } from "@/lib/dates";
 import { cn } from "@/lib/utils";
-import { fetchMilestones, milestonePath, milestonesPath, type DaysPerPoint, type Forecast, type MilestoneEntry } from "./api";
+import { fetchMilestones, milestonePath, type DaysPerPoint, type Forecast, type MilestoneEntry } from "./api";
 import { CopyCommand } from "./CopyCommand";
 import { ExportWbsMenu } from "./ExportWbsMenu";
 import { ForecastCard } from "./ForecastCard";
@@ -75,8 +75,8 @@ export function MilestonesPage() {
   useEffect(() => {
     if (selected === "") return;
     rememberProject(selected);
-    if (asked !== selected && window.location.pathname === "/milestones") navigate(milestonesPath(selected), { replace: true });
-  }, [selected, asked]);
+    if (asked !== selected && window.location.pathname === "/milestones") navigate(pathWith(search, { project: selected }), { replace: true });
+  }, [selected, asked, search]);
 
   return (
     <section className="flex flex-col gap-4">

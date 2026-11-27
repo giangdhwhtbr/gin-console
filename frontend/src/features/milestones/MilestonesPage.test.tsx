@@ -321,6 +321,15 @@ describe("MilestonesPage", () => {
       expect(switchProject("/milestones", "?project=alpha&view=list&closed=1&zoom=weeks", "beta")).toBe("/milestones?project=beta&view=list&closed=1");
     });
 
+    it("REQ-MILESTONE-UI-033 the project redirect keeps view, closed and zoom, in place", async () => {
+      const length = window.history.length;
+      openAt("/milestones?view=list&closed=1&zoom=weeks");
+      expect(await screen.findByRole("list", { name: "Milestones" })).toBeInTheDocument();
+      const query = new URLSearchParams(window.location.search);
+      expect(Object.fromEntries(query)).toEqual({ project: "alpha", view: "list", closed: "1", zoom: "weeks" });
+      expect(window.history.length).toBe(length);
+    });
+
     it("REQ-MILESTONE-UI-036 the zoom buttons write zoom, Months removes it", async () => {
       openAt("/milestones?project=alpha");
       await userEvent.click(await screen.findByRole("button", { name: "Quarters" }));
