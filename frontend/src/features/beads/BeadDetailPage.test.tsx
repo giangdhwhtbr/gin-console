@@ -896,6 +896,21 @@ describe("BeadDetailPage", () => {
     await waitFor(() => expect(tile).toHaveFocus());
   });
 
+  it("REQ-BEADS-030 the lightbox of an attachment shows and opens the attachment route", async () => {
+    const sha = "a".repeat(64);
+    stubFetch(
+      beadDetail("a-5", {
+        images: [{ n: 1, path: null, caption: "Step 1", available: true, sha256: sha, served_as: "attachment", reason: null }],
+      }),
+    );
+    render(<BeadDetailPage project="alpha" id="a-5" />);
+    const panel = await screen.findByRole("region", { name: "Images (1)" });
+    await userEvent.click(within(panel).getByRole("button"));
+    const dialog = await screen.findByRole("dialog", { name: "Step 1" });
+    expect(within(dialog).getByRole("img", { name: "Step 1" })).toHaveAttribute("src", `/api/beads/alpha/a-5/attachments/${sha}`);
+    expect(within(dialog).getByRole("link", { name: "Open original" })).toHaveAttribute("href", `/api/beads/alpha/a-5/attachments/${sha}`);
+  });
+
   it("REQ-UI-028 an inline bead image in the description opens the lightbox", async () => {
     stubFetch(
       beadDetail("a-5", {
