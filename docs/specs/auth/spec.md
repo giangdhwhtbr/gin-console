@@ -5,6 +5,7 @@
 ## Diagrams
 
 - [manage-users-activity](diagrams/manage-users-activity.md)
+- [mockup-grant-activity](diagrams/mockup-grant-activity.md)
 - [project-access-activity](diagrams/project-access-activity.md)
 - [session-state](diagrams/session-state.md)
 - [sign-in-activity](diagrams/sign-in-activity.md)
