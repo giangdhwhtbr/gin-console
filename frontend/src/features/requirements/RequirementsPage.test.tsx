@@ -10,7 +10,7 @@ import { clearSections, useRequirementSections } from "./sectionStore";
 
 const change = (fields: Partial<ChangeRow> = {}): ChangeRow => ({ folder: "e1-login", change: "e1", title: "Login", epic: "e1", archived: null, signoff: signoff(), added: 1, modified: 0, removed: 0, ...fields });
 const changes = (...rows: ChangeRow[]): ChangeList => ({ changes: rows, error: null, cause: null });
-const mockup: Mockup = { capability: "ui", date: "2026-11-22", confirmed: "2026-11-23", confirmed_by: "ba", description: "Home", html: ["index.html"], images: [], requirements: [] };
+const mockup: Mockup = { capability: "ui", date: "2026-11-22", confirmed: "2026-11-23", confirmed_by: "ba", description: "Home", html: ["index.html"], images: [], requirements: [], grant: null };
 const mockups: MockupList = { mockups: [mockup] };
 const content: ChangeContent = { folder: "e1-login", change: "e1", title: "Login", epic: "e1", archived: null, files: { proposal: "Why" } };
 const LIST = listOf(
