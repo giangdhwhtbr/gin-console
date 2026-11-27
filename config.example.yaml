@@ -10,6 +10,16 @@ server:
 # Older installs refuse this key.
 # overview:
 #   aging_days: 3
+# Sign-in (off by default). Create users first with `python -m gin_console user add`;
+# with `enabled: true` the console refuses to start without a valid users file.
+# auth:
+#   enabled: false
+#   users_file: ~/.config/gin-console/users.yaml
+#   session_ttl: 12h        # how long a sign-in lasts (5m, 2h; at least 5m)
+#   rate_limit:
+#     per_user: 5           # failed sign-ins per username within the window
+#     per_ip: 20            # failed sign-ins per client address within the window
+#     window: 15m           # at least 1m
 projects:
   - name: qwikfone
     path: /home/gin/qwikfone
