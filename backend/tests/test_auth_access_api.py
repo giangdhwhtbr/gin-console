@@ -61,12 +61,13 @@ PROJECT_ROUTES = [
         "/api/qa/cases/{project}/{case_id}/run/steps/{n}/screenshot",
         "/api/qa/cases/b/TC-UI-001/run/steps/1/screenshot",
     ),
+    ("/api/qa/readiness/{project}/{milestone}", "/api/qa/readiness/b/m-1"),
 ]
 
 
-def fill(project: Path) -> None:
-    """A bead `x-1` with an image, a change `c`, a confirmed mockup with `style.css`, and a run
-    of case `TC-UI-001` whose step has that image."""
+def fill(project: Path, *more: dict[str, Any]) -> None:
+    """A bead `x-1` with an image and the beads `more`, a change `c`, a confirmed mockup with
+    `style.css`, and a run of case `TC-UI-001` whose step has that image."""
     image = project / "qa" / "evidence" / "01.png"
     image.parent.mkdir(parents=True)
     image.write_bytes(PNG)
@@ -75,7 +76,7 @@ def fill(project: Path) -> None:
     (shots / "01.png").write_bytes(PNG)
     steps = [{"title": "Open", "status": "passed", "screenshot": "01.png", "error": None}]
     (shots / "result.json").write_text(json.dumps({"status": "passed", "steps": steps}))
-    write_export(project, [bead("x-1", description="![one](qa/evidence/01.png)")])
+    write_export(project, [bead("x-1", description="![one](qa/evidence/01.png)"), *more])
     change = project / "docs" / "changes" / "c"
     change.mkdir(parents=True)
     (change / "01-proposal.md").write_text("# C\n\nEpic: x-1\n")
@@ -95,8 +96,8 @@ def make(tmp_path: Path, bd: FakeBd | None = None) -> TestClient:
         run_epic_workflow=lambda cwd, ident: BlockError(error="no workflow"),
         run_gin_qa=FakeGinQa({EXPORT: export(case("TC-UI-001", run="qa/evidence/r1"))}),
     )
-    for name in ("a", "b"):
-        fill(tmp_path / name)
+    fill(tmp_path / "a")
+    fill(tmp_path / "b", bead("m-1", issue_type="milestone"))  # for the readiness route
     return client
 
 
