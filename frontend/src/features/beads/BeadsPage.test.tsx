@@ -211,6 +211,28 @@ describe("BeadsPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("REQ-BEADS-034 Failed fetch note: one note for the selected project with an error, none for a no_store one", async () => {
+    const at = "2026-11-19T10:00:00Z";
+    const failed: ProjectBeads = { ...withBeads("alpha"), attachments_fetch: { at, status: "error", error: "no network" } };
+    const noStore: ProjectBeads = { ...withBeads("omega"), attachments_fetch: { at, status: "no_store", error: null } };
+    stub(() => json([bead("a-1")]), [failed, noStore]);
+    render(<BeadsPage />);
+    const note = await screen.findByRole("alert");
+    expect(note).toHaveTextContent(
+      "Fetching attachments of alpha failed: no network. Run git fetch origin +refs/gin/attachments:refs/gin-console/attachments in /home/gin/alpha.",
+    );
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    act(() => navigate("/beads?project=omega"));
+    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+  });
+
+  it("REQ-BEADS-034 Older backend: no fetch note", async () => {
+    stub(() => json([bead("a-1")]), [withBeads("alpha"), { ...withBeads("omega"), attachments_fetch: { status: "bad" } as never }]);
+    render(<BeadsPage />);
+    expect(await screen.findByText("Title a-1")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
   it("REQ-UI-081 no separate Dependencies entry; the View nav has Graph", async () => {
     stub(() => json([bead("a-1")]));
     render(<BeadsPage />);
