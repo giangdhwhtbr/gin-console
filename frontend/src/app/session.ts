@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { navigate } from "./route";
 
-export type SessionUser = { name: string; email: string; projects: string[]; mockup_grant?: string };
+export type SessionUser = { name: string; email: string; projects: string[] };
 
 export type SessionState =
   | { status: "loading" }
@@ -29,9 +29,9 @@ const isStringList = (value: unknown): value is string[] => Array.isArray(value)
 
 function parseUser(value: unknown): SessionUser | null {
   if (!isRecord(value)) return null;
-  const { name, email, projects, mockup_grant: grant } = value;
+  const { name, email, projects } = value;
   if (typeof name !== "string" || typeof email !== "string" || !isStringList(projects)) return null;
-  return typeof grant === "string" ? { name, email, projects, mockup_grant: grant } : { name, email, projects };
+  return { name, email, projects };
 }
 
 export function getSession(): SessionState {
