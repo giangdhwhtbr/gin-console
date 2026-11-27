@@ -453,6 +453,17 @@ A folder that is a symbolic link is left out, and so is a file link that leads o
 
 ---
 
+## Tests
+
+The test cases of a project and their latest e2e runs need gin-qa on the console host. The Docker image installs gin only, so there the console answers "gin-qa is not installed on the console host". The console reads:
+
+- `gin-qa cases export --format json`, run in the project's `path` for at most 30 seconds, and kept for 60 seconds or until **Refresh data**. The effective result of each case is gin-qa's; the console never works it out again.
+- `<run>/<case id in lower case>/result.json` of the run folder a case's `run` names, at most 1 MB, when that folder lies inside the project's `path`, links resolved.
+
+Step screenshots show only on a host that has the run folder. gin-qa writes run folders under `qa/evidence` on the machine that ran the tests, so another host reports that the run folder is not on it until it has a copy. A screenshot is served with the checks of [Bug screenshots](#bug-screenshots), from the project's `path` only, never from `evidence_roots`. See [ADR 0007](docs/adr/0007-console-reads-qa-results.md).
+
+---
+
 ## Development Mode
 
 For active frontend and backend development with hot reloading:

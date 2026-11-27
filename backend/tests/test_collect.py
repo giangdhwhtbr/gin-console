@@ -200,6 +200,30 @@ def test_server_009_windows_runs_gin_cmd_shim(monkeypatch: pytest.MonkeyPatch) -
     assert _resolve_cmd(["bd", "list"]) == ["bd", "list"]
 
 
+# REQ-SERVER-009, REQ-QA-002: gin-qa runs through its .cmd shim on Windows, as gin does
+def test_server_009_windows_runs_gin_qa_cmd_shim(monkeypatch: pytest.MonkeyPatch) -> None:
+    from gin_console.projects.collect import _resolve_cmd
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    shim = r"C:\Users\u\.local\bin\gin-qa.cmd"
+    monkeypatch.setattr("shutil.which", lambda name: shim if name == "gin-qa" else None)
+
+    assert _resolve_cmd(["gin-qa", "cases", "export"]) == [shim, "cases", "export"]
+
+
+# REQ-SERVER-009, REQ-QA-002: gin-qa without a .cmd shim runs through Git Bash on Windows
+def test_server_009_gin_qa_without_cmd_shim_runs_via_bash_on_windows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from gin_console.projects.collect import _resolve_cmd
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    bash = r"C:\Git\bin\bash.exe"
+    monkeypatch.setattr("shutil.which", lambda name: bash if "bash" in name else None)
+
+    assert _resolve_cmd(["gin-qa", "cases"]) == [bash, "-c", 'gin-qa "$@"', "_", "cases"]
+
+
 # REQ-SERVER-006
 # REQ-MILESTONE-UI-007
 def test_server_006_milestone_not_counted_as_ready(
