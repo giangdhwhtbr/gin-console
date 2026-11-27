@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from collections.abc import Callable
 from datetime import datetime
 
@@ -25,6 +26,8 @@ class AuthState:
         self.session_ttl = auth.session_ttl
         users = load_users(auth.users_file, names) if auth.enabled else {}
         self._directory = UserDirectory(auth.users_file, names, users)
+        # over a reload and the end of its sessions, so no request between them uses one
+        self._reload = threading.Lock()
         self.sessions = SessionStore(clock, auth.session_ttl)
         limits = auth.rate_limit
         self.per_user = FailureLimiter(clock, limits.per_user, limits.window)
@@ -33,9 +36,10 @@ class AuthState:
     def users(self) -> dict[str, User]:
         """The current users; reading them ends the sessions of users removed or given a new
         password since the last read (REQ-AUTH-009)."""
-        users, changed = self._directory.current()
-        if changed:
-            self.sessions.end_users(changed)
+        with self._reload:
+            users, changed = self._directory.current()
+            if changed:
+                self.sessions.end_users(changed)
         return users
 
     def _user_of(self, find: Callable[[str], Session | None], key: str | None) -> User | None:

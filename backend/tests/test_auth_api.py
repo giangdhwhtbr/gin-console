@@ -1,8 +1,10 @@
 """Sign-in, the session middleware and session end over the API (REQ-AUTH-001 to 006, 009)."""
 
+import asyncio
 import logging
 import os
-from collections.abc import Callable
+import threading
+from collections.abc import Callable, Iterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal
@@ -12,11 +14,11 @@ import yaml
 from fake_bd import FakeBd
 from fake_export import bead, write_export
 from fastapi.testclient import TestClient
-from httpx import Response
+from httpx import ASGITransport, AsyncClient, Response
 
 from gin_console.app import create_app
 from gin_console.auth import router as auth_router
-from gin_console.auth.access import COOKIE
+from gin_console.auth.access import COOKIE, AuthState
 from gin_console.auth.passwords import DUMMY_HASH, hash_password, verify
 from gin_console.auth.users import User, save_users
 from gin_console.config import AuthSettings, ProjectEntry, RateLimitSettings, Settings
@@ -133,6 +135,13 @@ def test_auth_001_login_while_off(tmp_path: Path) -> None:
     # with auth off a cookie changes nothing
     client.cookies.set(COOKIE, "anything")
     assert client.get("/api/overview").status_code == 200
+
+
+# REQ-AUTH-001: logout while off sets no cookie
+def test_auth_001_logout_while_off(tmp_path: Path) -> None:
+    res = auth_app(tmp_path, enabled=False).post("/api/auth/logout")
+    assert res.status_code == 404
+    assert "set-cookie" not in res.headers
 
 
 # REQ-AUTH-002: Right password
@@ -256,6 +265,54 @@ def test_auth_003_malformed_body(tmp_path: Path, content: bytes) -> None:
     assert "set-cookie" not in res.headers
 
 
+def login_body(username: str, password: str) -> bytes:
+    return f'{{"username": "{username}", "password": "{password}"}}'.encode()
+
+
+# REQ-AUTH-003: a body over 4096 bytes is the malformed body, without a check
+def test_auth_003_body_too_large(tmp_path: Path, verifies: Verifies) -> None:
+    client = auth_app(tmp_path)
+    big = login_body("an", "p" * 4096)
+    headers = {"content-type": "application/json"}
+    res = client.post("/api/auth/login", content=big, headers=headers)
+    assert res.status_code == 401 and res.json() == INVALID
+
+    def chunks() -> Iterator[bytes]:  # no Content-Length: the read itself is capped
+        yield big[:3000]
+        yield big[3000:]
+
+    res = client.post("/api/auth/login", content=chunks(), headers=headers)
+    assert res.status_code == 401 and res.json() == INVALID
+    res = client.post(
+        "/api/auth/login",
+        content=login_body("an", PASSWORDS["an"]),
+        headers={**headers, "content-length": "5000"},
+    )
+    assert res.status_code == 401  # a length over the limit is refused before the read
+    assert verifies.hashes == []
+    assert sign_in(client, "an").status_code == 200  # 4096 bytes or less is read
+
+
+# REQ-AUTH-003: a username over 64 characters is malformed and counts against the IP only
+def test_auth_003_long_username(tmp_path: Path, verifies: Verifies) -> None:
+    client = auth_app(tmp_path)
+    for _ in range(19):
+        res = sign_in(client, "a" * 65, "x")
+        assert res.status_code == 401 and res.json() == INVALID
+    assert verifies.hashes == []
+    assert sign_in(client, "b" * 64, "x").status_code == 401  # 64 is a name: checked
+    assert verifies.hashes == [DUMMY_HASH]
+    assert sign_in(client, "an").status_code == 429  # the IP reached 20
+
+
+# REQ-AUTH-003: a body nested too deeply to parse is malformed
+def test_auth_003_deeply_nested_body(tmp_path: Path) -> None:
+    res = auth_app(tmp_path).post(
+        "/api/auth/login", content=b"[" * 4000, headers={"content-type": "application/json"}
+    )
+    assert res.status_code == 401 and res.json() == INVALID
+
+
 # REQ-AUTH-003: a password JSON allows but UTF-8 does not (a lone surrogate) is just wrong
 def test_auth_003_lone_surrogate(tmp_path: Path) -> None:
     client = auth_app(tmp_path)
@@ -311,6 +368,35 @@ def test_auth_004_username_locked(tmp_path: Path, verifies: Verifies) -> None:
     assert sign_in(client, "an").headers["retry-after"] == "1"
     # another user from the same IP is not locked
     assert sign_in(client, "root").status_code == 200
+
+
+# REQ-AUTH-004: concurrent sign-ins are counted before their checks, so they cannot pass the limit
+def test_auth_004_concurrent_attempts(tmp_path: Path, verifies: Verifies) -> None:
+    app = auth_app(tmp_path).app
+
+    async def attempts() -> list[int]:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+            body = {"username": "an", "password": "wrong"}
+            answers = await asyncio.gather(
+                *(client.post("/api/auth/login", json=body) for _ in range(12))
+            )
+        return sorted(res.status_code for res in answers)
+
+    assert asyncio.run(attempts()) == [401] * 5 + [429] * 7
+    assert len(verifies.hashes) == 5
+
+
+# REQ-AUTH-004: a refused attempt leaves no count behind on the other key
+def test_auth_004_refusal_releases_the_other_key(tmp_path: Path) -> None:
+    client = auth_app(tmp_path)
+    for _ in range(5):
+        sign_in(client, "an", "wrong")  # the IP has 5
+    for _ in range(10):
+        assert sign_in(client, "an", "wrong").status_code == 429  # not counted on the IP
+    for n in range(15):
+        assert sign_in(client, f"user-{n % 3}", "wrong").status_code == 401
+    assert sign_in(client, "root").status_code == 429  # 20 now
 
 
 # REQ-AUTH-004: IP locked
@@ -495,6 +581,34 @@ def test_auth_009_password_reset(tmp_path: Path) -> None:
     assert other.get("/api/overview").status_code == 200  # other users stay signed in
     assert sign_in(client, "an").status_code == 401
     assert sign_in(client, "an", "new").status_code == 200
+
+
+# REQ-AUTH-009: a request during a reload waits until the changed users' sessions have ended
+def test_auth_009_reload_ends_sessions_before_other_reads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    users_file = tmp_path / "users.yaml"
+    write_users(users_file, [user("an", [])])
+    settings = Settings(auth=AuthSettings(enabled=True, users_file=users_file))
+    state = AuthState(settings, Clock())
+    state.users()
+    token = state.sessions.create("an").token
+    write_users(users_file, [user("an", [], hash_password("new"))])
+    seen: list[User | None] = []
+    blocked: list[bool] = []
+    reader = threading.Thread(target=lambda: seen.append(state.user_of_token(token)))
+    end_users = state.sessions.end_users
+
+    def slow_end(names: Any) -> None:
+        reader.start()
+        reader.join(0.2)
+        blocked.append(reader.is_alive())
+        end_users(names)
+
+    monkeypatch.setattr(state.sessions, "end_users", slow_end)
+    state.users()
+    reader.join(2)
+    assert blocked == [True] and seen == [None]
 
 
 # REQ-AUTH-009: a removed user is signed out
