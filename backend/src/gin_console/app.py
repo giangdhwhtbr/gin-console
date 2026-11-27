@@ -9,10 +9,13 @@ from importlib.metadata import version
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.types import Scope
 
+from gin_console.auth.access import COOKIE, AuthState, projects_of
+from gin_console.auth.router import build_router as build_auth_router
 from gin_console.beads.pull import BdRunner, PullScheduler, PullService, run_bd_pull
 from gin_console.beads.router import build_router as build_beads_router
 from gin_console.beads.snapshot import Reader, SnapshotStore
@@ -36,7 +39,15 @@ from gin_console.requirements.source import run_gin as default_run_gin
 _METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
 DEFAULT_STATIC_DIR = Path(__file__).resolve().parents[3] / "frontend" / "dist"
 _REFUSED_SITES = {"cross-site", "same-site"}
-_MOCKUP_FILES = re.compile(r"/api/requirements/mockups/[^/]+/files/")
+_MOCKUP_FILES = re.compile(r"/api/requirements/mockups/[^/]+/(?:g/[^/]+/)?files/")
+_GRANT_FILES = re.compile(r"/api/requirements/mockups/[^/]+/g/([^/]+)/files/")
+# the API a request without a session may call while auth is on (REQ-AUTH-005, REQ-AUTH-006)
+_OPEN = {
+    ("GET", "/api/health"),
+    ("POST", "/api/auth/login"),
+    ("GET", "/api/auth/me"),
+    ("POST", "/api/auth/logout"),
+}
 
 
 def route_path(scope: Scope) -> str:
@@ -51,8 +62,8 @@ def route_path(scope: Scope) -> str:
 
 def refuses_cross_site(method: str, path: str, site: str | None) -> bool:
     """REQ-SERVER-012: a browser marks requests of other sites; only a mockup's GETs of its own
-    files pass. `path` is the decoded path the router matches, so the exception covers only
-    the mockup file route."""
+    files pass, with or without a grant. `path` is the decoded path the router matches, so the
+    exception covers only the mockup file routes."""
     if site is None or site.lower() not in _REFUSED_SITES:
         return False
     if path != "/api" and not path.startswith("/api/"):
@@ -77,6 +88,8 @@ def create_app(
     on_refresh: list[Callable[[], None]] = [snapshots.clear]
     # the only bd command the console runs (ADR 0003): on refresh and on schedule
     pulls = PullService(settings.projects, run_bd, clock)
+    auth = AuthState(settings, clock)
+    projects = projects_of(settings)
 
     def drop_caches() -> None:
         for clear in on_refresh:
@@ -100,7 +113,28 @@ def create_app(
     )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-    # added after gzip, so it runs first: a refusal never reaches gzip or a router
+    # added after gzip and before the cross-site guard, so it runs between them (REQ-AUTH-005)
+    @app.middleware("http")
+    async def require_session(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        path = route_path(request.scope)
+        if not auth.enabled or (path != "/api" and not path.startswith("/api/")):
+            return await call_next(request)
+        grant = _GRANT_FILES.match(path) if request.method == "GET" else None
+        if grant is not None:  # a mockup's file: the grant alone, never the cookie (REQ-AUTH-016)
+            user = await run_in_threadpool(auth.user_of_grant, grant[1])
+            if user is None:
+                return JSONResponse(status_code=404, content={"error": "not found"})
+            request.state.grant = grant[1]
+        else:
+            user = await run_in_threadpool(auth.user_of_token, request.cookies.get(COOKIE))
+            if user is None and (request.method, path) not in _OPEN:
+                return JSONResponse(status_code=401, content={"error": "sign-in required"})
+        request.state.user = user
+        return await call_next(request)
+
+    # added last, so it runs first: a refusal never reaches the session check, gzip or a router
     @app.middleware("http")
     async def refuse_cross_site(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
@@ -117,20 +151,26 @@ def create_app(
         return {"status": "ok", "version": version("gin-console")}
 
     @api.post("/refresh", status_code=204)
-    def refresh() -> None:
-        """Pull every project, then drop every cached answer so the next request reads its
-        sources again; a failed pull is kept as that project's result, not raised."""
-        pulls.pull_all()
+    def refresh(request: Request) -> None:
+        """Pull every project the request may see (REQ-AUTH-008), then drop every cached answer
+        so the next request reads its sources again; a failed pull is kept as that project's
+        result, not raised."""
+        pulls.pull_all([e.name for e in projects(request)] if auth.enabled else None)
         drop_caches()
 
-    api.include_router(build_projects_router(settings, snapshots, pulls))
-    api.include_router(build_overview_router(settings, snapshots, clock))
+    api.include_router(build_auth_router(settings, auth))
+    api.include_router(build_projects_router(settings, snapshots, pulls, projects))
+    api.include_router(build_overview_router(settings, snapshots, clock, projects))
     api.include_router(
-        build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh)
+        build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh, projects)
     )
-    api.include_router(build_milestones_router(settings, run_gw, clock, on_refresh, snapshots))
-    api.include_router(build_requirements_router(settings, run_gin, clock, on_refresh))
-    api.include_router(build_reports_router(settings, snapshots, interactions, clock, on_refresh))
+    api.include_router(
+        build_milestones_router(settings, run_gw, clock, on_refresh, snapshots, projects)
+    )
+    api.include_router(build_requirements_router(settings, run_gin, clock, on_refresh, projects))
+    api.include_router(
+        build_reports_router(settings, snapshots, interactions, clock, on_refresh, projects)
+    )
 
     @api.api_route("/{rest:path}", methods=_METHODS)
     def api_not_found(rest: str) -> None:

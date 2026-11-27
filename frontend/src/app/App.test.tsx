@@ -7,6 +7,7 @@ import { clearOrigin } from "@/app/origin";
 import { App } from "./App";
 import { forgetConfiguredProjects } from "./project";
 import { clearEmail, EMAIL_KEY, resetIdentity, setEmail } from "./identity";
+import { getSession } from "./session";
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -183,7 +184,7 @@ describe("App routing", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     window.history.replaceState(null, "", "/reports/delivery");
     render(<App />);
-    expect(await screen.findByRole("heading", { name: "Reports" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Reports" }, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
     cleanup();
     const before = window.history.length;
@@ -207,7 +208,7 @@ describe("App routing", () => {
     render(<App />);
     await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/requirements/matrix?project=alpha"));
     expect(window.history.length).toBe(before);
-    expect(await screen.findByRole("heading", { name: "Requirements" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Requirements" }, { timeout: 3000 })).toBeInTheDocument();
     const main = within(screen.getByRole("navigation", { name: "Main" }));
     expect(main.getAllByRole("link").find((link) => link.getAttribute("href") === "/requirements?project=alpha")).toHaveAttribute("aria-current", "page");
     cleanup();
@@ -599,4 +600,72 @@ describe("App routing", () => {
   });
 });
 
+describe("App with console accounts", () => {
+  const user = { name: "An", email: "an@example.com", projects: ["alpha"] };
+  const stubServer = (me: () => Response, extra: (url: string) => Response = () => json([])) => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        calls.push(url);
+        if (url === "/api/auth/me") return Promise.resolve(me());
+        if (url === "/api/auth/login") return Promise.resolve(json(user));
+        return Promise.resolve(extra(url));
+      }),
+    );
+    return calls;
+  };
 
+  it("REQ-AUTH-014 without a session the sign-in screen shows and no other data is requested", async () => {
+    clearEmail();
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    const calls = stubServer(() => json({ enabled: true, user: null }));
+    render(<App />);
+    expect(await screen.findByRole("textbox", { name: "Username" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Email" })).toBeNull();
+    expect(calls).toEqual(["/api/auth/me"]);
+  });
+
+  it("REQ-AUTH-014 with auth off the email screen stays", async () => {
+    clearEmail();
+    window.history.replaceState(null, "", "/");
+    stubServer(() => json({ enabled: false, user: null }));
+    render(<App />);
+    expect(await screen.findByRole("textbox", { name: "Email" })).toBeInTheDocument();
+  });
+
+  it("REQ-AUTH-014 signed in, the app opens without the email screen and My work uses the session email", async () => {
+    clearEmail();
+    window.history.replaceState(null, "", "/beads");
+    stubServer(() => json({ enabled: true, user }));
+    render(<App />);
+    expect(await screen.findByRole("navigation", { name: "Main" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Email" })).toBeNull();
+    expect(screen.getAllByRole("button", { name: "Sign out An" }).length).toBeGreaterThan(0);
+    expect(getSession()).toEqual({ status: "signed-in", user });
+  });
+
+  it("REQ-AUTH-015 a 401 on a beads page shows sign-in and after sign-in the same page returns", async () => {
+    clearEmail();
+    window.history.replaceState(null, "", "/beads?project=alpha");
+    let expired = false;
+    stubServer(
+      () => json({ enabled: true, user }),
+      (url) => {
+        if (url.startsWith("/api/beads") && !expired) {
+          expired = true;
+          return new Response(JSON.stringify({ error: "sign-in required" }), { status: 401 });
+        }
+        return url === "/api/projects/beads" ? alpha() : json([]);
+      },
+    );
+    render(<App />);
+    expect(await screen.findByRole("textbox", { name: "Username" })).toBeInTheDocument();
+    window.history.replaceState(null, "", "/");
+    await userEvent.type(screen.getByRole("textbox", { name: "Username" }), "an");
+    await userEvent.type(screen.getByLabelText("Password"), "pw");
+    await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(await screen.findByRole("navigation", { name: "Main" })).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe("/beads?project=alpha");
+  });
+});

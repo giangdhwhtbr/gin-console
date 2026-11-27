@@ -1,5 +1,6 @@
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
 import type { Zoom } from "./gantt";
+import { apiFetch } from "@/app/session";
 
 export type DaysPerPoint = { value: number; measured_epics: number; assumed: boolean };
 export type Velocity = {
@@ -304,7 +305,7 @@ async function failure(response: Response, what: string): Promise<MilestonesErro
 const enc = encodeURIComponent;
 
 export async function fetchMilestones(project: string): Promise<MilestoneList> {
-  const response = await fetch(`/api/milestones?project=${enc(project)}`);
+  const response = await apiFetch(`/api/milestones?project=${enc(project)}`);
   if (!response.ok) throw await failure(response, "Project");
   const body: unknown = await response.json();
   if (!isList(body)) throw new MilestonesError("Could not load milestones (unexpected response)");
@@ -319,7 +320,7 @@ export async function fetchMilestones(project: string): Promise<MilestoneList> {
 
 export async function fetchMilestone(project: string, id: string, start: string | null): Promise<MilestoneDetail> {
   const query = start === null ? "" : `?start=${enc(start)}`;
-  const response = await fetch(`/api/milestones/${enc(project)}/${enc(id)}${query}`);
+  const response = await apiFetch(`/api/milestones/${enc(project)}/${enc(id)}${query}`);
   if (!response.ok) throw await failure(response, "Milestone");
   const body: unknown = await response.json();
   if (!isDetail(body)) throw new MilestonesError("Could not load the milestone (unexpected response)");

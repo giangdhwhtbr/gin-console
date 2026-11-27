@@ -243,3 +243,148 @@ def test_config_008_relative_or_not_a_list_names_the_field(tmp_path: Path, value
     path = write(tmp_path, f"projects:\n  - {{name: q, path: /q, evidence_roots: {value}}}\n")
     with pytest.raises(ConfigError, match=r"projects\.0\.evidence_roots"):
         load_settings(path)
+
+
+def write_users_file(tmp_path: Path, projects: str = "'*'") -> Path:
+    path = tmp_path / "users.yaml"
+    path.write_text(
+        "users:\n"
+        "  - name: an\n"
+        "    email: an@x.io\n"
+        "    password_hash: scrypt$16384$8$1$c2FsdA$aGFzaA\n"
+        f"    projects: {projects}\n"
+    )
+    return path
+
+
+def auth_config(tmp_path: Path, users_file: Path, extra: str = "") -> Path:
+    return write(
+        tmp_path,
+        f"auth: {{enabled: true, users_file: '{users_file.as_posix()}'{extra}}}\n"
+        "projects:\n  - {name: a, path: /a}\n  - {name: b, path: /b}\n",
+    )
+
+
+# REQ-CONFIG-009 (Defaults)
+def test_config_009_defaults(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    auth = load_settings(write(tmp_path, "projects: []\n")).auth
+    assert auth.enabled is False
+    assert auth.users_file == tmp_path / ".config/gin-console/users.yaml"
+    assert auth.session_ttl == 12 * 3600
+    rate = auth.rate_limit
+    assert (rate.per_user, rate.per_ip, rate.window) == (5, 20, 15 * 60)
+
+
+# REQ-CONFIG-009: the fields as written
+def test_config_009_values(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("HOME", str(tmp_path))
+    path = write(
+        tmp_path,
+        "auth:\n"
+        "  users_file: ~/users.yaml\n"
+        "  session_ttl: 5m\n"
+        "  rate_limit: {per_user: 3, per_ip: 10, window: 1h}\n",
+    )
+    auth = load_settings(path).auth
+    assert (auth.users_file, auth.session_ttl) == (tmp_path / "users.yaml", 300)
+    rate = auth.rate_limit
+    assert (rate.per_user, rate.per_ip, rate.window) == (3, 10, 3600)
+
+
+# REQ-CONFIG-009: auth off never reads the users file
+def test_config_009_off_ignores_missing_users_file(tmp_path: Path) -> None:
+    path = write(tmp_path, f"auth: {{users_file: '{(tmp_path / 'none.yaml').as_posix()}'}}\n")
+    assert load_settings(path).auth.enabled is False
+
+
+# REQ-CONFIG-009: auth on with a valid users file starts
+def test_config_009_enabled_with_users(tmp_path: Path) -> None:
+    settings = load_settings(auth_config(tmp_path, write_users_file(tmp_path, "[a]")))
+    assert settings.auth.enabled is True
+
+
+# REQ-CONFIG-009 (Enabled without users)
+def test_config_009_enabled_without_users_file(tmp_path: Path) -> None:
+    users_file = tmp_path / "users.yaml"
+    with pytest.raises(ConfigError, match="not found") as exc:
+        load_settings(auth_config(tmp_path, users_file))
+    assert str(users_file) in str(exc.value)
+
+
+# REQ-CONFIG-009 (Enabled without users): a file that holds no user
+@pytest.mark.parametrize("text", ["", "users: []\n"])
+def test_config_009_enabled_with_no_user(tmp_path: Path, text: str) -> None:
+    users_file = tmp_path / "users.yaml"
+    users_file.write_text(text)
+    with pytest.raises(ConfigError, match="no user") as exc:
+        load_settings(auth_config(tmp_path, users_file))
+    assert str(users_file) in str(exc.value)
+
+
+# REQ-CONFIG-009: a users file that does not parse names the file
+def test_config_009_enabled_with_invalid_users_file(tmp_path: Path) -> None:
+    users_file = tmp_path / "users.yaml"
+    users_file.write_text("users: [\n")
+    with pytest.raises(ConfigError, match="invalid YAML") as exc:
+        load_settings(auth_config(tmp_path, users_file))
+    assert str(users_file) in str(exc.value)
+
+
+# REQ-CONFIG-009 (Unknown project)
+def test_config_009_unknown_project(tmp_path: Path) -> None:
+    users_file = write_users_file(tmp_path, "[a, ghost]")
+    with pytest.raises(ConfigError, match="ghost") as exc:
+        load_settings(auth_config(tmp_path, users_file))
+    assert str(users_file) in str(exc.value)
+
+
+# REQ-CONFIG-009 (Invalid limit), REQ-CONFIG-003: a wrong type or range names the field
+@pytest.mark.parametrize(
+    ("text", "field"),
+    [
+        ("{rate_limit: {per_user: 0}}", r"auth\.rate_limit\.per_user"),
+        ("{rate_limit: {per_user: '5'}}", r"auth\.rate_limit\.per_user"),
+        ("{rate_limit: {per_ip: 0}}", r"auth\.rate_limit\.per_ip"),
+        ("{rate_limit: {per_ip: 2.5}}", r"auth\.rate_limit\.per_ip"),
+        ("{rate_limit: {window: 30s}}", r"auth\.rate_limit\.window"),
+        ("{rate_limit: {window: 900}}", r"auth\.rate_limit\.window"),
+        ("{rate_limit: {burst: 3}}", r"auth\.rate_limit\.burst"),
+        ("{session_ttl: 1m}", r"auth\.session_ttl"),
+        ("{session_ttl: 299s}", r"auth\.session_ttl"),
+        ("{session_ttl: 12}", r"auth\.session_ttl"),
+        ("{session_ttl: 99999999999h}", r"auth\.session_ttl"),
+        ("{enabled: 'yes'}", r"auth\.enabled"),
+        ("{enabled: 1}", r"auth\.enabled"),
+        ("{users: []}", r"auth\.users"),
+    ],
+)
+def test_config_009_invalid_field_names_the_field(tmp_path: Path, text: str, field: str) -> None:
+    with pytest.raises(ConfigError, match=field):
+        load_settings(write(tmp_path, f"auth: {text}\n"))
+
+
+# REQ-CONFIG-009: the minimum is named in the message
+@pytest.mark.parametrize(
+    ("text", "minimum"),
+    [("{session_ttl: 1m}", "5 minutes"), ("{rate_limit: {window: 30s}}", "one minute")],
+)
+def test_config_009_too_short_names_the_minimum(tmp_path: Path, text: str, minimum: str) -> None:
+    with pytest.raises(ConfigError, match=f"must be at least {minimum}"):
+        load_settings(write(tmp_path, f"auth: {text}\n"))
+
+
+# REQ-CONFIG-006 (Too short): the pull_interval messages keep their wording
+@pytest.mark.parametrize(
+    ("text", "message"),
+    [
+        ("30s", "must be 0 or at least one minute"),
+        ("5x", "must be 0 or a duration such as 90s, 5m or 1h"),
+        ("99999999999h", "must be at most"),
+    ],
+)
+def test_config_006_interval_messages(tmp_path: Path, text: str, message: str) -> None:
+    path = write(tmp_path, f"beads: {{pull_interval: {text}}}\n")
+    with pytest.raises(ConfigError, match=message) as exc:
+        load_settings(path)
+    assert "0 or at most" not in str(exc.value)

@@ -112,6 +112,28 @@ def test_beads_016_opted_out_or_missing_is_not_pulled(tmp_path: Path) -> None:
     assert pulls.result("a") is None and pulls.result("b") is None
 
 
+# REQ-AUTH-008: a refresh pulls only the named projects; with no names, every project
+def test_auth_008_pull_named_projects(tmp_path: Path) -> None:
+    entries = [*projects(tmp_path, "a", "b", "c", c=False)]
+    fake = FakeBd()
+    pulls = service(entries, fake)
+    assert list(pulls.pull_all(["b", "c", "ghost"])) == ["b"]
+    assert fake.calls == [tmp_path / "b"]
+    assert pulls.pull_all([]) == {}
+    fake.calls.clear()
+    assert sorted(pulls.pull_all()) == ["a", "b"]
+
+
+# REQ-AUTH-008: the scheduled pull keeps pulling every project
+def test_auth_008_scheduled_pull_pulls_every_project(tmp_path: Path) -> None:
+    fake = FakeBd()
+    after: list[bool] = []
+    PullScheduler(
+        service(projects(tmp_path, "a", "b"), fake), 60, lambda: after.append(True)
+    ).run_once()
+    assert sorted(fake.calls) == [tmp_path / "a", tmp_path / "b"] and after == [True]
+
+
 # REQ-BEADS-016 (No remote)
 def test_beads_016_no_remote(tmp_path: Path) -> None:
     fake = FakeBd({tmp_path / "a": PullRun(1, f"{NO_REMOTE}\n")})

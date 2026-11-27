@@ -119,3 +119,26 @@ The config SHALL accept on each project entry an optional `evidence_roots` list 
 - GIVEN a project with `evidence_roots: [shots]`
 - WHEN the console starts
 - THEN it exits non-zero and the message names that project's `evidence_roots`
+
+### REQ-CONFIG-009: Auth settings
+The config SHALL accept an optional top-level `auth` section with `enabled` (boolean, default `false`), `users_file` (path, default `~/.config/gin-console/users.yaml`, `~` expanded), `session_ttl` (a duration written as `<n>m` or `<n>h`, at least 5 minutes, default `12h`) and `rate_limit` with `per_user` (integer ≥ 1, default 5), `per_ip` (integer ≥ 1, default 20) and `window` (a duration of at least one minute, default `15m`); IF a field is of the wrong type or out of range, or `enabled` is `true` and the users file is missing, does not parse, holds no user, or names a project that is not in `projects`, THEN the console SHALL exit with a non-zero status and a message naming the field or the file (REQ-CONFIG-003).
+
+#### Scenario: Defaults
+- GIVEN a config without `auth`
+- WHEN the console starts
+- THEN auth is off, the session TTL is 12 hours and the limits are 5 per user and 20 per IP in 15 minutes
+
+#### Scenario: Enabled without users
+- GIVEN a config with `auth: {enabled: true}` and no users file
+- WHEN the console starts
+- THEN it exits non-zero and the message names the users file
+
+#### Scenario: Unknown project
+- GIVEN auth enabled and a user assigned to `ghost`, which is not in `projects`
+- WHEN the console starts
+- THEN it exits non-zero and the message names `ghost`
+
+#### Scenario: Invalid limit
+- GIVEN a config with `auth: {rate_limit: {per_user: 0}}`
+- WHEN the console starts
+- THEN it exits non-zero and the message names `auth.rate_limit.per_user`

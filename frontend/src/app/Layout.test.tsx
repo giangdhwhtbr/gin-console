@@ -7,6 +7,7 @@ import { clearOrigin, rememberOrigin, RETURN_KEY } from "./origin";
 import { clearSections, publishSections, type SectionLink } from "@/features/reports/sectionStore";
 import { clearSections as clearRequirementSections, publishSections as publishRequirementSections, type SectionLink as RequirementSectionLink } from "@/features/requirements/sectionStore";
 import { forgetConfiguredProjects, setFavorite } from "./project";
+import { getSession, loadSession } from "./session";
 
 const json = (body: unknown) =>
   new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
@@ -284,6 +285,39 @@ describe("Layout", () => {
       open("/");
       await userEvent.click(screen.getAllByRole("button", { name: /^Log out/ })[0]);
       expect(getEmail()).toBeNull();
+    });
+  });
+
+  describe("signed in with a console account", () => {
+    beforeEach(async () => {
+      const user = { name: "An", email: "an@example.com", projects: ["alpha"] };
+      const stub = vi.fn((url: string) =>
+        Promise.resolve(
+          url === "/api/auth/me"
+            ? json({ enabled: true, user })
+            : url === "/api/auth/logout"
+              ? new Response(null, { status: 204 })
+              : url === "/api/projects/beads"
+                ? json([row("alpha")])
+                : json({}),
+        ),
+      );
+      vi.stubGlobal("fetch", stub);
+      await loadSession();
+    });
+
+    it("REQ-AUTH-014 the sidebar shows the user name and Sign out", () => {
+      open("/");
+      expect(screen.getAllByText("An").length).toBeGreaterThan(0);
+      expect(screen.getAllByRole("button", { name: "Sign out An" }).length).toBeGreaterThan(0);
+      expect(screen.queryByRole("button", { name: /^Log out/ })).toBeNull();
+    });
+
+    it("REQ-AUTH-014 Sign out posts to logout and returns to the sign-in screen", async () => {
+      open("/");
+      await userEvent.click(screen.getAllByRole("button", { name: "Sign out An" })[0]);
+      expect(fetch).toHaveBeenCalledWith("/api/auth/logout", expect.objectContaining({ method: "POST" }));
+      await waitFor(() => expect(getSession()).toEqual({ status: "signed-out", returnTo: null }));
     });
   });
 

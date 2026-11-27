@@ -4,6 +4,7 @@ import { useSections } from "@/features/reports/sectionStore";
 import { useRequirementSections } from "@/features/requirements/sectionStore";
 import { cn } from "@/lib/utils";
 import { clearEmail, useEmail } from "./identity";
+import { signOut, useSession } from "./session";
 import { Link } from "./Link";
 import { originFor, useOrigin, type Origin, type OriginKind } from "./origin";
 import { forgetConfiguredProjects, projectHref, resolveProject, useConfiguredProjects, useTabProject } from "./project";
@@ -82,6 +83,11 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
   const [collapsed, setCollapsed] = useState(storedCollapsed);
   const wide = !collapsed;
   const email = useEmail();
+  const session = useSession();
+  const signedIn = session.status === "signed-in";
+  const shown = session.status === "signed-in" ? session.user.name : email;
+  const leave = signedIn ? () => void signOut() : clearEmail;
+  const leaveLabel = signedIn ? `Sign out ${shown}` : `Log out ${shown}`;
   const toggle = () => {
     setCollapsed(wide);
     try {
@@ -111,12 +117,12 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
         <div className="flex shrink-0">
           <RefreshButton onRefreshed={refreshed} />
           <ThemeToggle />
-          {email !== null && (
+          {shown !== null && (
             <button
               type="button"
-              onClick={clearEmail}
-              aria-label={`Log out ${email}`}
-              title={`Log out ${email}`}
+              onClick={leave}
+              aria-label={leaveLabel}
+              title={leaveLabel}
               className={ICON_BUTTON}
             >
               <LogOut aria-hidden className="size-5" />
@@ -219,7 +225,7 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
             </Fragment>
           ))}
         </nav>
-        {email !== null && (
+        {shown !== null && (
           <div
             className={cn(
               "hidden md:mt-auto md:flex md:flex-col md:items-center md:gap-1 md:border-t md:pt-3",
@@ -228,20 +234,20 @@ export function Layout({ children, onRefreshed }: { children: ReactNode; onRefre
           >
             <span
               aria-hidden
-              title={email}
+              title={shown}
               className={cn(
                 "flex size-8 items-center justify-center rounded-full bg-muted text-xs font-semibold",
                 wide && "lg:hidden",
               )}
             >
-              {email[0]?.toUpperCase()}
+              {shown[0]?.toUpperCase()}
             </span>
-            <span className={cn("hidden truncate text-sm", wide && "lg:block")}>{email}</span>
+            <span className={cn("hidden truncate text-sm", wide && "lg:block")}>{shown}</span>
             <button
               type="button"
-              onClick={clearEmail}
-              aria-label={`Log out ${email}`}
-              title={`Log out ${email}`}
+              onClick={leave}
+              aria-label={leaveLabel}
+              title={leaveLabel}
               className={ICON_BUTTON}
             >
               <LogOut aria-hidden className="size-5" />

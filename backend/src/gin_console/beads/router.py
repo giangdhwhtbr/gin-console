@@ -4,10 +4,11 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 from pydantic import TypeAdapter
 
+from gin_console.auth.access import ProjectsOf
 from gin_console.beads.images import ImageIndex
 from gin_console.beads.models import BeadDetail, BeadSummary, Comment, ProjectMilestones
 from gin_console.beads.service import KeyedCache
@@ -60,6 +61,7 @@ def build_router(
     clock: Callable[[], datetime],
     run_epic_workflow: Callable[[Path, str], EpicWorkflow | BlockError],
     on_refresh: list[Callable[[], None]],
+    projects: ProjectsOf,
 ) -> APIRouter:
     router = APIRouter()
     workflows = KeyedCache[tuple[str, str], EpicWorkflow](WORKFLOW_TTL, clock)
@@ -67,14 +69,15 @@ def build_router(
 
     images = ImageIndex(Path.home())
 
-    def project_entry(name: str | None) -> ProjectEntry:
-        entry = next((p for p in settings.projects if p.name == name), None)
+    def project_entry(request: Request, name: str | None) -> ProjectEntry:
+        """A project the request may see (REQ-AUTH-007); 404 for any other, before a cache."""
+        entry = next((p for p in projects(request) if p.name == name), None)
         if entry is None or not entry.path.is_dir():
             raise HTTPException(status_code=404)
         return entry
 
-    def project_dir(name: str | None) -> Path:
-        return project_entry(name).path
+    def project_dir(request: Request, name: str | None) -> Path:
+        return project_entry(request, name).path
 
     def failure(exc: BeadsError | RecursionError) -> JSONResponse:
         return JSONResponse(
@@ -83,11 +86,12 @@ def build_router(
 
     @router.get("/beads", response_model=list[BeadSummary])
     def get_beads(
+        request: Request,
         project: str | None = None,
         closed: str | None = None,
         if_none_match: str | None = Header(default=None),
     ) -> Response:
-        entry = project_entry(project)
+        entry = project_entry(request, project)
         wants_closed = closed == "1"  # any other value means "no": it is never passed on
         try:
             snapshot = snapshots.get(entry.path)
@@ -102,8 +106,10 @@ def build_router(
         return Response(content=body, media_type="application/json", headers=headers)
 
     @router.get("/beads/milestones", response_model=ProjectMilestones)
-    def get_milestones(project: str | None = None) -> ProjectMilestones | JSONResponse:
-        cwd = project_dir(project)
+    def get_milestones(
+        request: Request, project: str | None = None
+    ) -> ProjectMilestones | JSONResponse:
+        cwd = project_dir(request, project)
         today = clock().astimezone().date()
         try:
             return list_milestones(snapshots.get(cwd), today)
@@ -111,8 +117,8 @@ def build_router(
             return failure(exc)
 
     @router.get("/beads/{project}/{bead_id}", response_model=BeadDetail)
-    def get_one(project: str, bead_id: str) -> BeadDetail | JSONResponse:
-        entry = project_entry(project)
+    def get_one(request: Request, project: str, bead_id: str) -> BeadDetail | JSONResponse:
+        entry = project_entry(request, project)
         if not valid_id(bead_id):
             raise HTTPException(status_code=404)
         try:
@@ -124,7 +130,7 @@ def build_router(
             return failure(exc)
 
     @router.get("/beads/{project}/{bead_id}/images/{n}")
-    def get_image(project: str, bead_id: str, n: str) -> Response:
+    def get_image(request: Request, project: str, bead_id: str, n: str) -> Response:
         """Image `n` of a bead, checked again now (REQ-BEADS-028); never a path from the client."""
         not_found = Response(
             status_code=404, content=IMAGE_NOT_FOUND, media_type="application/json"
@@ -132,7 +138,7 @@ def build_router(
         if not valid_id(bead_id) or not _IMAGE_NUMBER.fullmatch(n):
             return not_found
         try:
-            entry = project_entry(project)
+            entry = project_entry(request, project)
             snapshot = snapshots.get(entry.path)
         except (HTTPException, BeadsError, RecursionError):  # no project, or no beads to read
             return not_found
@@ -144,8 +150,10 @@ def build_router(
         return Response(content, media_type=media, headers=IMAGE_HEADERS)
 
     @router.get("/beads/{project}/{bead_id}/comments", response_model=list[Comment])
-    def get_bead_comments(project: str, bead_id: str) -> list[Comment] | JSONResponse:
-        cwd = project_dir(project)
+    def get_bead_comments(
+        request: Request, project: str, bead_id: str
+    ) -> list[Comment] | JSONResponse:
+        cwd = project_dir(request, project)
         if not valid_id(bead_id):
             raise HTTPException(status_code=404)
         try:
@@ -156,8 +164,10 @@ def build_router(
             return failure(exc)
 
     @router.get("/beads/{project}/{bead_id}/workflow", response_model=EpicWorkflow)
-    def get_bead_workflow(project: str, bead_id: str) -> EpicWorkflow | JSONResponse:
-        cwd = project_dir(project)
+    def get_bead_workflow(
+        request: Request, project: str, bead_id: str
+    ) -> EpicWorkflow | JSONResponse:
+        cwd = project_dir(request, project)
         if not valid_id(bead_id):
             raise HTTPException(status_code=404)
         try:

@@ -1,5 +1,6 @@
 import type { EpicWorkflow } from "@/features/projects/api";
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
+import { apiFetch } from "@/app/session";
 
 export type BeadKind = "capability" | "technical" | "parity";
 export type BeadComplexity = "low" | "medium" | "high";
@@ -226,7 +227,7 @@ async function failure(response: Response, what: string): Promise<Error> {
 }
 
 export async function fetchBeads(project: string, closed: boolean): Promise<BeadSummary[]> {
-  const response = await fetch(`/api/beads?project=${encodeURIComponent(project)}${closed ? "&closed=1" : ""}`);
+  const response = await apiFetch(`/api/beads?project=${encodeURIComponent(project)}${closed ? "&closed=1" : ""}`);
   if (!response.ok) throw await failure(response, "Project");
   const body: unknown = await response.json();
   if (!Array.isArray(body) || !body.every(isSummary)) {
@@ -236,7 +237,7 @@ export async function fetchBeads(project: string, closed: boolean): Promise<Bead
 }
 
 export async function fetchMilestones(project: string): Promise<ProjectMilestones> {
-  const response = await fetch(`/api/beads/milestones?project=${encodeURIComponent(project)}`);
+  const response = await apiFetch(`/api/beads/milestones?project=${encodeURIComponent(project)}`);
   if (!response.ok) throw await failure(response, "Project");
   const body: unknown = await response.json();
   if (!isProjectMilestones(body)) throw new Error("Could not load milestones (unexpected response)");
@@ -244,7 +245,7 @@ export async function fetchMilestones(project: string): Promise<ProjectMilestone
 }
 
 export async function fetchBead(project: string, id: string): Promise<BeadDetail> {
-  const response = await fetch(`/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`);
+  const response = await apiFetch(`/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}`);
   if (!response.ok) throw await failure(response, "Bead");
   const body: unknown = await response.json();
   if (!isDetail(body)) throw new Error("Could not load the bead (unexpected response)");
@@ -252,7 +253,7 @@ export async function fetchBead(project: string, id: string): Promise<BeadDetail
 }
 
 export async function fetchComments(project: string, id: string): Promise<Comment[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/comments`,
   );
   if (!response.ok) throw await failure(response, "Bead");
@@ -281,7 +282,7 @@ function isEpicWorkflow(value: unknown): value is EpicWorkflow {
 
 /** REQ-BEADS-020: the stage, gates, warnings and review waivers of an epic; a 502 throws the server's `error`. */
 export async function fetchEpicWorkflow(project: string, id: string): Promise<EpicWorkflow> {
-  const response = await fetch(`/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/workflow`);
+  const response = await apiFetch(`/api/beads/${encodeURIComponent(project)}/${encodeURIComponent(id)}/workflow`);
   if (!response.ok) throw await failure(response, "Bead");
   const body: unknown = await response.json();
   if (!isEpicWorkflow(body)) throw new Error("Could not load the workflow (unexpected response)");

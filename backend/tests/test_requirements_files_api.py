@@ -9,7 +9,9 @@ from fake_gin import FakeGin, req, trace
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
-from gin_console.config import ProjectEntry, Settings
+from gin_console.auth.passwords import hash_password
+from gin_console.auth.users import User, save_users
+from gin_console.config import AuthSettings, ProjectEntry, Settings
 from gin_console.requirements.source import RequirementsError
 
 DAY = "2026-11-22"
@@ -174,6 +176,41 @@ def test_requirements_010_too_large(root: Path) -> None:
     big = write(root / "docs" / "specs" / "ui" / "assets" / DAY / "big.html")
     os.truncate(big, 20 * 1024 * 1024 + 1)
     assert make(root).get(f"{FILES}/ui/{DAY}/big.html").status_code == 404
+
+
+def granted(root: Path) -> tuple[TestClient, str]:
+    """An app with auth on, and the grant path of a user allowed `proj`, without a cookie."""
+    users_file = root.parent / "users.yaml"
+    an = User(name="an", email="an@x.io", password_hash=hash_password("P"), projects=["proj"])
+    save_users(users_file, [an])
+    settings = Settings(
+        projects=[ProjectEntry(name="proj", path=root)],
+        auth=AuthSettings(enabled=True, users_file=users_file),
+    )
+    client = TestClient(create_app(settings, run_gin=FakeGin({}), schedule_pulls=False))
+    grant = client.post("/api/auth/login", json={"username": "an", "password": "P"}).json()[
+        "mockup_grant"
+    ]
+    client.cookies.clear()
+    return client, f"/api/requirements/mockups/proj/g/{grant}/files"
+
+
+# REQ-REQUIREMENTS-010: Grant path
+def test_requirements_010_grant_path(root: Path) -> None:
+    client, files = granted(root)
+    res = client.get(f"{files}/ui/{DAY}/index.html")
+    assert res.status_code == 200 and "<script>1</script>" in res.text
+    assert res.headers["content-security-policy"] == POLICY
+    assert res.headers["x-content-type-options"] == "nosniff"
+    for path in (
+        f"ui/{DAY}/..%2f..%2fspec.md",
+        f"ui/{DAY}/link.html",
+        "ui/2026-11-01/index.html",
+        f"ui/{DAY}/index.html%00",
+        f"ui/{DAY}/description.md",
+    ):
+        res = client.get(f"{files}/{path}")
+        assert res.status_code == 404 and res.json() == {"detail": "Not Found"}
 
 
 # REQ-REQUIREMENTS-011: HTML, also for a range request, and SVG

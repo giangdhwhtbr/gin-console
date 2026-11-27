@@ -1,6 +1,6 @@
 # TC-SERVER-014: Refresh from another site
 
-- **REQ:** REQ-SERVER-012@62d45eda
+- **REQ:** REQ-SERVER-012@bada5444
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-26T14-14-56-api

@@ -1,5 +1,6 @@
 import { field } from "@/lib/guards";
 import { scopeQuery, type Scope } from "./filters";
+import { apiFetch } from "@/app/session";
 
 export type Totals = { closed: number; rework_rate: number | null };
 export type WeekRow = { week: string; counts: Record<string, number> };
@@ -89,7 +90,7 @@ export async function failure(response: Response): Promise<ReportRequestError> {
 export async function fetchReport(project: string, scope: Exclude<Scope, { kind: "default" }>): Promise<Report> {
   const params = new URLSearchParams({ project });
   for (const [key, value] of scopeQuery(scope)) params.set(key, value);
-  const response = await fetch(`/api/reports?${params.toString()}`);
+  const response = await apiFetch(`/api/reports?${params.toString()}`);
   if (!response.ok) throw await failure(response);
   const body: unknown = await response.json();
   if (!isReport(body)) throw new Error("Could not load the report (unexpected response)");

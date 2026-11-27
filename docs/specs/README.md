@@ -14,3 +14,4 @@ Changes are proposed in `../changes/<epic-id>-<slug>/spec-delta.md` and merged h
 - [reports](reports/spec.md)
 - [overview](overview/spec.md)
 - [requirements](requirements/spec.md)
+- [auth](auth/spec.md)

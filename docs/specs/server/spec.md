@@ -151,7 +151,7 @@ WHEN a client that sends `Accept-Encoding` naming `gzip` requests any path, the 
 ### REQ-SERVER-012: Cross-site API requests
 Type: non-functional
 Category: security
-WHEN a request to a path under `/api/` carries the header `Sec-Fetch-Site` with the value `cross-site` or `same-site`, the server SHALL answer 403 with `{"error": "cross-site request refused"}` and SHALL NOT run the endpoint, for every method, except a GET request under `/api/requirements/mockups/<project>/files/` (REQ-REQUIREMENTS-010). A request with `Sec-Fetch-Site` `same-origin` or `none`, or without the header, SHALL be handled as before.
+WHEN a request to a path under `/api/` carries the header `Sec-Fetch-Site` with the value `cross-site` or `same-site`, the server SHALL answer 403 with `{"error": "cross-site request refused"}` and SHALL NOT run the endpoint, for every method, except a GET request under `/api/requirements/mockups/<project>/files/` or `/api/requirements/mockups/<project>/g/<grant>/files/` (REQ-REQUIREMENTS-010, REQ-AUTH-016). A request with `Sec-Fetch-Site` `same-origin` or `none`, or without the header, SHALL be handled as before.
 
 #### Scenario: Image from another site
 - GIVEN a page of another origin with `<img src="https://<console>/api/projects/beads">`
@@ -177,3 +177,8 @@ WHEN a request to a path under `/api/` carries the header `Sec-Fetch-Site` with 
 - GIVEN a confirmed mockup whose page loads its own `style.css`
 - WHEN the request arrives with `Sec-Fetch-Site: cross-site`
 - THEN the file is served; a POST to the same path is refused
+
+#### Scenario: Mockup files through a grant
+- GIVEN auth on and a confirmed mockup loaded through its grant path
+- WHEN its page requests `style.css` with `Sec-Fetch-Site: cross-site`
+- THEN the request is not refused by this check and reaches the grant check of REQ-AUTH-016

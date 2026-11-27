@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import Annotated, Literal
 from urllib.parse import quote
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 
+from gin_console.auth.access import ProjectsOf
 from gin_console.beads.errors import BeadsError
 from gin_console.beads.service import KeyedCache
 from gin_console.beads.snapshot import SnapshotStore
@@ -52,14 +53,16 @@ def build_router(
     clock: Callable[[], datetime],
     on_refresh: list[Callable[[], None]],
     snapshots: SnapshotStore,
+    projects: ProjectsOf,
 ) -> APIRouter:
     router = APIRouter()
     lists = KeyedCache[str, MilestoneList](TTL, clock)
     details = KeyedCache[tuple[str, str], MilestoneDetail](TTL, clock)
     on_refresh += [lists.clear, details.clear]
 
-    def project_dir(name: str | None) -> Path:
-        entry = next((p for p in settings.projects if p.name == name), None)
+    def project_dir(request: Request, name: str | None) -> Path:
+        """A project the request may see (REQ-AUTH-007); 404 for any other, before a cache."""
+        entry = next((p for p in projects(request) if p.name == name), None)
         if entry is None or not entry.path.is_dir():
             raise HTTPException(status_code=404)
         return entry.path
@@ -68,8 +71,10 @@ def build_router(
         return JSONResponse(status_code=502, content={"error": str(exc), "cause": exc.cause})
 
     @router.get("/milestones", response_model=MilestoneList)
-    def get_milestones(project: str | None = None) -> MilestoneList | JSONResponse:
-        cwd = project_dir(project)
+    def get_milestones(
+        request: Request, project: str | None = None
+    ) -> MilestoneList | JSONResponse:
+        cwd = project_dir(request, project)
         try:
             listing = lists.get(str(project), lambda: list_milestones(run, cwd))
         except MilestonesError as exc:
@@ -82,11 +87,12 @@ def build_router(
 
     @router.get("/milestones/{project}/wbs")
     def get_wbs(  # REQ-MILESTONE-UI-026
+        request: Request,
         project: str,
         format: WbsFormat,
         milestone: Annotated[str | None, Query(pattern=r"^[A-Za-z0-9._-]+$")] = None,
     ) -> Response:
-        cwd = project_dir(project)
+        cwd = project_dir(request, project)
         try:
             snapshot = snapshots.get(cwd)
         except BeadsError as exc:
@@ -145,9 +151,9 @@ def build_router(
 
     @router.get("/milestones/{project}/{milestone_id}", response_model=MilestoneDetail)
     def get_milestone(
-        project: str, milestone_id: str, start: date | None = None
+        request: Request, project: str, milestone_id: str, start: date | None = None
     ) -> MilestoneDetail | JSONResponse:
-        cwd = project_dir(project)
+        cwd = project_dir(request, project)
         if not valid_id(milestone_id):
             raise HTTPException(status_code=404)
         try:
