@@ -15,6 +15,7 @@ from gin_console.beads.service import KeyedCache
 from gin_console.beads.snapshot import Snapshot, SnapshotStore
 from gin_console.beads.source import valid_id
 from gin_console.config import ProjectEntry, Settings
+from gin_console.milestones.models import MilestoneDetail
 from gin_console.milestones.source import GwRunner, MilestonesError, show_milestone
 from gin_console.projects.models import BlockError, EpicWorkflow
 from gin_console.qa.models import CaseExport, CaseList, QaErrorBody, Readiness
@@ -29,6 +30,7 @@ from gin_console.requirements.source import GinRunner, RequirementsError, load_t
 
 TTL = timedelta(seconds=60)
 GATE_WORKERS = 4  # `gin state` processes at a time, over every readiness request (REQ-QA-009)
+GATE_TIMEOUT = 30.0  # for one `gin state`, as GIN_TIMEOUT: four at once queue on a host
 _STEP_NUMBER = re.compile(r"[0-9]{1,3}")  # a step number; anything else is not found
 
 
@@ -46,8 +48,9 @@ def build_router(
     router = APIRouter()
     exports = KeyedCache[str, CaseExport](TTL, clock)
     traces = KeyedCache[str, Trace](TTL, clock)
+    details = KeyedCache[tuple[str, str], MilestoneDetail](TTL, clock)
     gates = KeyedCache[tuple[str, str], EpicWorkflow](TTL, clock)
-    on_refresh += [exports.clear, traces.clear, gates.clear]
+    on_refresh += [exports.clear, traces.clear, details.clear, gates.clear]
     gate_pool = ThreadPoolExecutor(max_workers=GATE_WORKERS, thread_name_prefix="qa-gates")
 
     def project_entry(request: Request, name: str | None) -> ProjectEntry:
@@ -141,13 +144,15 @@ def build_router(
         try:
             snapshot = snapshots.get(entry.path)
         except (BeadsError, RecursionError) as exc:
-            beads_error = str(exc)
+            beads_error = str(exc) or "issues.jsonl was too deeply nested"  # a bare RecursionError
         else:
             if snapshot.rows.get(milestone, {}).get("issue_type") != "milestone":
                 raise HTTPException(status_code=404)
             beads = read_beads(snapshot, entry.name, {})
         try:
-            detail = show_milestone(run_gw, entry.path, milestone, None)
+            detail = details.get(
+                (entry.name, milestone), lambda: show_milestone(run_gw, entry.path, milestone, None)
+            )
         except MilestonesError as exc:
             return JSONResponse(status_code=502, content={"error": str(exc)})
         trace: Trace | None = None

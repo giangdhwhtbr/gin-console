@@ -1,11 +1,14 @@
 """The readiness checklist of a milestone over HTTP (REQ-QA-009, and REQ-QA-002 for it)."""
 
+import json
+import subprocess
 import threading
 import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+import pytest
 from fake_bd import FakeBd
 from fake_export import FakeExport, bead, write_export
 from fake_gin import FakeGin, req, trace
@@ -18,6 +21,7 @@ from gin_console.app import create_app
 from gin_console.beads.errors import BeadsError
 from gin_console.config import ProjectEntry, Settings
 from gin_console.milestones.source import MilestonesError
+from gin_console.projects.collect import collect_epic_workflow
 from gin_console.projects.models import BlockError, EpicWorkflow
 from gin_console.qa.readiness import GATES
 from gin_console.qa.source import QaError
@@ -119,7 +123,8 @@ class Sources:
 
 
 def make(tmp_path: Path, sources: Sources, clock: Clock | None = None, **kwargs: Any) -> TestClient:
-    """Projects `alpha` and `beta`, and `gone` whose directory is missing."""
+    """Projects `alpha` and `beta`, and `gone` whose directory is missing; `kwargs` go to
+    `create_app`, `run_epic_workflow=None` for its own `gin state`."""
     for name in ("alpha", "beta", "dist"):
         (tmp_path / name).mkdir(exist_ok=True)
     settings = Settings(
@@ -127,17 +132,17 @@ def make(tmp_path: Path, sources: Sources, clock: Clock | None = None, **kwargs:
             ProjectEntry(name=name, path=tmp_path / name) for name in ("alpha", "beta", "gone")
         ]
     )
+    options: dict[str, Any] = {"run_epic_workflow": sources.gates, **kwargs}
     app = create_app(
         settings,
         static_dir=tmp_path / "dist",
         run_gw=sources.gw,
         run_gin=sources.gin,
         run_gin_qa=sources.qa,
-        run_epic_workflow=sources.gates,
         clock=clock or Clock(),
         run_bd=FakeBd(),
         schedule_pulls=False,
-        **kwargs,
+        **options,
     )
     return TestClient(app, raise_server_exceptions=False)
 
@@ -208,9 +213,11 @@ def test_qa_009_refresh_runs_gates_again(tmp_path: Path) -> None:
     assert sources.gates.epics() == ["e1", "e1", "e2", "e2"]
     assert len(sources.gin.calls) == 2
     assert len(sources.qa.calls) == 2
+    assert len(sources.gw.calls) == 2
 
 
-# REQ-QA-009: each epic's gates are kept 60 seconds, the trace as REQ-REQUIREMENTS-006 says
+# REQ-QA-009: each epic's gates and the milestone are kept 60 seconds, the trace as
+# REQ-REQUIREMENTS-006 says
 def test_qa_009_gates_kept_sixty_seconds(tmp_path: Path) -> None:
     write_export(tmp_path / "alpha", rows("m2", "e1"))
     sources, clock = Sources(shown("m2", "e1")), Clock()
@@ -218,10 +225,14 @@ def test_qa_009_gates_kept_sixty_seconds(tmp_path: Path) -> None:
     readiness(client)
     clock.now += timedelta(seconds=59)
     readiness(client)
-    assert (sources.gates.epics(), len(sources.gin.calls)) == (["e1"], 1)
+    assert (sources.gates.epics(), len(sources.gin.calls), len(sources.gw.calls)) == (["e1"], 1, 1)
     clock.now += timedelta(seconds=2)
     readiness(client)
-    assert (sources.gates.epics(), len(sources.gin.calls)) == (["e1", "e1"], 2)
+    assert (sources.gates.epics(), len(sources.gin.calls), len(sources.gw.calls)) == (
+        ["e1", "e1"],
+        2,
+        2,
+    )
 
 
 # REQ-QA-009: a failed `gin state` is not kept, the gates of the other epics are
@@ -254,10 +265,13 @@ def test_qa_009_milestone_show_fails(tmp_path: Path) -> None:
     write_export(tmp_path / "alpha", rows("m2", "e1"))
     gw = FakeGw(failures={"show": MilestonesError("milestone m2 has no start")})
     sources = Sources({}, gw=gw)
-    res = readiness(make(tmp_path, sources))
+    client = make(tmp_path, sources)
+    res = readiness(client)
     assert res.status_code == 502
     assert res.json() == {"error": "milestone m2 has no start"}
     assert not (sources.gin.calls or sources.qa.calls or sources.gates.calls)
+    assert readiness(client).status_code == 502
+    assert len(gw.calls) == 2  # a failure is not kept
 
 
 # REQ-QA-009: a failing trace makes `cases` and `results` unknown; `bugs` and `gates` are worked out
@@ -321,6 +335,78 @@ def test_qa_009_snapshot_unreadable(tmp_path: Path) -> None:
     bugs = body["items"][2]
     assert (bugs["state"], bugs["error"]) == ("unknown", "issues.jsonl has a line that is not JSON")
     assert states(body)["gates"] == "pass"
+
+
+# REQ-QA-009: an export too deeply nested to read makes `bugs` unknown with a message
+def test_qa_009_snapshot_too_deep(tmp_path: Path) -> None:
+    failing = FakeExport(failure=RecursionError())
+    body = readiness(make(tmp_path, Sources(shown("m2", "e1")), read_beads=failing)).json()
+    bugs = body["items"][2]
+    assert (bugs["state"], bugs["error"]) == ("unknown", "issues.jsonl was too deeply nested")
+
+
+# REQ-QA-009: a merge gate is not work, so a P0 one is not an open bug of the milestone
+def test_qa_009_merge_gate_not_a_bug(tmp_path: Path) -> None:
+    gate = bead("g-1", issue_type="bug", priority=0, title="external: .planning/plans/x.md#2")
+    write_export(tmp_path / "alpha", [*rows("m2", "e1"), gate])
+    body = readiness(make(tmp_path, Sources(shown("m2", "e1")))).json()
+    assert (body["items"][2]["state"], body["items"][2]["bugs"]) == ("pass", [])
+
+
+# REQ-QA-009: two readiness requests at once share the four `gin state` at a time
+def test_qa_009_gates_bounded_across_requests(tmp_path: Path) -> None:
+    epics = [f"e{n}" for n in range(6)]
+    for project in ("alpha", "beta"):
+        write_export(tmp_path / project, rows("m4", *epics))
+    gates = Gates(delay=0.1)
+    client = make(tmp_path, Sources(shown("m4", *epics), gates=gates))
+    codes: list[int] = []
+    threads = [
+        threading.Thread(target=lambda p=p: codes.append(readiness(client, "m4", p).status_code))
+        for p in ("alpha", "beta")
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=10)
+    assert codes == [200, 200]
+    assert len(gates.calls) == 12
+    assert gates.peak <= 4
+
+
+class GinState:
+    """Stands in for `subprocess.run` of `gin state --workflow-id`: logs each timeout."""
+
+    def __init__(self) -> None:
+        self.timeouts: list[float] = []
+
+    def __call__(self, cmd: list[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
+        assert "--workflow-id" in cmd, cmd  # every other command is a fake of the app
+        self.timeouts.append(kwargs["timeout"])
+        state = {"stage": "shipped", "gates": dict.fromkeys(GATES, "satisfied")}
+        return subprocess.CompletedProcess(cmd, 0, json.dumps(state), "")
+
+
+# REQ-QA-009: the timeout of one `gin state` reaches the command; 10 seconds unless given
+def test_qa_009_epic_workflow_timeout(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    gin = GinState()
+    monkeypatch.setattr(subprocess, "run", gin)
+    assert isinstance(collect_epic_workflow(tmp_path, "e1"), EpicWorkflow)
+    assert isinstance(collect_epic_workflow(tmp_path, "e1", timeout=30.0), EpicWorkflow)
+    assert gin.timeouts == [10, 30.0]
+
+
+# REQ-QA-009: the readiness gives each `gin state` 30 seconds, as four queue on a host; the
+# workflow of a bead page keeps 10 seconds
+def test_qa_009_gates_get_thirty_seconds(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    gin = GinState()
+    monkeypatch.setattr(subprocess, "run", gin)
+    write_export(tmp_path / "alpha", rows("m2", "e1"))
+    client = make(tmp_path, Sources(shown("m2", "e1")), run_epic_workflow=None)
+    assert states(readiness(client).json())["gates"] == "pass"
+    assert gin.timeouts == [30.0]
+    assert client.get("/api/beads/alpha/e1/workflow").status_code == 200
+    assert gin.timeouts == [30.0, 10]
 
 
 # REQ-QA-002: a project not configured or whose directory is missing is not found

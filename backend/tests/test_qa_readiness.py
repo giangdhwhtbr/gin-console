@@ -278,6 +278,24 @@ def test_qa_008_failed_trace_is_unknown() -> None:
     assert result.verdict == "unknown"
 
 
+# REQ-QA-008: with the trace and the export both failed, the case items show the trace's error
+def test_qa_008_failed_trace_and_export_show_the_trace_error() -> None:
+    result = readiness(
+        M2,
+        None,
+        None,
+        beads(),
+        {"e1": shipped(), "e2": shipped()},
+        trace_error="gin specs trace failed",
+        export_error=NO_GIN_QA,
+    )
+    for key in ("cases", "results"):
+        assert (item(result, key).state, item(result, key).error) == (
+            "unknown",
+            "gin specs trace failed",
+        )
+
+
 # REQ-QA-008: an export snapshot that cannot be read makes `bugs` unknown with its error
 def test_qa_008_failed_snapshot_is_unknown() -> None:
     gates = {"e1": shipped(), "e2": shipped()}

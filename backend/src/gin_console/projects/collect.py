@@ -151,12 +151,15 @@ def _waivers(value: Any) -> list[ReviewWaiver]:
     return [w for w in items if w is not None]
 
 
-def collect_epic_workflow(path: Path, epic_id: str) -> EpicWorkflow | BlockError:
+def collect_epic_workflow(
+    path: Path, epic_id: str, *, timeout: float = TIMEOUT_SECONDS
+) -> EpicWorkflow | BlockError:
     try:
         data = run_json(
             ["gin", "state", "--workflow-id", epic_id, "--format", "json"],
             path,
             json_on_failure=True,
+            timeout=timeout,
         )
         return EpicWorkflow(
             stage=data["stage"],

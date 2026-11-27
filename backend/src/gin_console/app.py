@@ -5,6 +5,7 @@ import re
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime
+from functools import partial
 from importlib.metadata import version
 from pathlib import Path
 
@@ -29,6 +30,7 @@ from gin_console.overview.router import build_router as build_overview_router
 from gin_console.projects.collect import collect_epic_workflow
 from gin_console.projects.models import BlockError, EpicWorkflow
 from gin_console.projects.router import build_router as build_projects_router
+from gin_console.qa.router import GATE_TIMEOUT
 from gin_console.qa.router import build_router as build_qa_router
 from gin_console.qa.source import GinQaRunner
 from gin_console.qa.source import run_gin_qa as default_run_gin_qa
@@ -83,7 +85,8 @@ def create_app(
     clock: Callable[[], datetime] = utc_now,
     run_bd: BdRunner = run_bd_pull,
     schedule_pulls: bool = True,
-    run_epic_workflow: Callable[[Path, str], EpicWorkflow | BlockError] = collect_epic_workflow,
+    # None: the real `gin state`, 10 s for a bead page and GATE_TIMEOUT for the readiness
+    run_epic_workflow: Callable[[Path, str], EpicWorkflow | BlockError] | None = None,
     run_gin_qa: GinQaRunner = default_run_gin_qa,
 ) -> FastAPI:
     # one read of .beads/issues.jsonl per project, reused until the file changes or a refresh
@@ -166,7 +169,14 @@ def create_app(
     api.include_router(build_projects_router(settings, snapshots, pulls, projects))
     api.include_router(build_overview_router(settings, snapshots, clock, projects))
     api.include_router(
-        build_beads_router(settings, snapshots, clock, run_epic_workflow, on_refresh, projects)
+        build_beads_router(
+            settings,
+            snapshots,
+            clock,
+            run_epic_workflow or collect_epic_workflow,
+            on_refresh,
+            projects,
+        )
     )
     api.include_router(
         build_milestones_router(settings, run_gw, clock, on_refresh, snapshots, projects)
@@ -182,7 +192,7 @@ def create_app(
             projects,
             run_gin,
             run_gw,
-            run_epic_workflow,
+            run_epic_workflow or partial(collect_epic_workflow, timeout=GATE_TIMEOUT),
         )
     )
     api.include_router(
