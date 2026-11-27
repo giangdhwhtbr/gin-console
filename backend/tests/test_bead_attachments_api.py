@@ -3,6 +3,7 @@ behind it and behind the bead pages (REQ-BEADS-031, REQ-BEADS-035), over real ex
 recording git runner; no test starts git."""
 
 import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
@@ -33,7 +34,8 @@ PRUNED_AT = "2026-11-20T10:00:00Z"
 
 
 def attached(*items: Any) -> dict[str, Any]:
-    return {"metadata": {"attachments": list(items)}}
+    """The `metadata` of a bead with these entries, as bd exports it: the list as JSON text."""
+    return {"metadata": {"attachments": json.dumps(list(items))}}
 
 
 def serve(tmp_path: Path, git: FakeGit, projects: dict[str, list[Any]]) -> TestClient:

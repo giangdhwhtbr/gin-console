@@ -155,7 +155,7 @@ The server SHALL take as the images of a bead, in this order, the files and atta
 - percent-decode the address of a Markdown image or link; turn a `file:` address into its path, dropping `file://` or `file://localhost`, and the `/` before a Windows drive (`file:///C:/a.png` is `C:/a.png`), and drop a `file:` address that names another host; drop any `http:`, `https:` or other address with a scheme, and an `attachment:` address that is not 64 hex digits;
 - take a file named on a `local:` line, when the line right above it holds a Markdown image whose address is an attachment, as the same image as that attachment: one image with both its `sha256` and its `path`;
 - read a path starting with `~/` from the home folder of the user running the console, and a relative path from the project's `path`;
-- ignore `metadata.attachments` when it is not a list, and an entry of it that is not an object or has no `sha256` of 64 hex digits;
+- read `metadata.attachments` as a list, or as the JSON text of a list as `bd` exports it, ignore it otherwise, and ignore an entry of it that is not an object or has no `sha256` of 64 hex digits;
 - keep the order of first appearance, keep a path or a `sha256` met again once, and keep at most 50 images;
 - give each image `n` (1, 2, … in that order), `path` (as written, without `file://`, or `null` for an attachment without a `local:` line), `sha256` (or `null` for a file), and `caption`: the alt text of the Markdown image or the text of the link that names it first, else, for a `local:` line, the alt text of a Markdown image on the line right above it, else the `caption` of its entry, else the `name` of its entry, else its file name, else the first 12 digits of its `sha256`, taking only a non-empty string at each step.
 
@@ -165,7 +165,7 @@ The server SHALL take as the images of a bead, in this order, the files and atta
 - THEN it has one image, `n` 1, `sha256` `A`, `path` `qa/evidence/r1/tc-ui-115/01.png` and caption "TC-UI-115 step 1: Open the list"
 
 #### Scenario: Entries the text does not name
-- GIVEN a bug whose description holds `![Step 1](attachment:A)` and `shots/c.png`, and whose `metadata.attachments` is `[{sha256: B, caption: "Step 2"}, {sha256: A}, {sha256: "x"}, "oops"]`
+- GIVEN a bug whose description holds `![Step 1](attachment:A)` and `shots/c.png`, and whose `metadata.attachments` is the JSON text of `[{sha256: B, caption: "Step 2"}, {sha256: A}, {sha256: "x"}, "oops"]`
 - WHEN its images are found
 - THEN its images are `A` (caption "Step 1"), `shots/c.png` and `B` (caption "Step 2"), numbered 1 to 3
 

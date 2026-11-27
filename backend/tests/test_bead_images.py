@@ -2,6 +2,7 @@
 
 import gc
 import hashlib
+import json
 import math
 import os
 import sys
@@ -47,6 +48,11 @@ def no_git() -> AttachmentStore:
     return AttachmentStore(FakeGit())
 
 
+def exported(*items: Any) -> dict[str, str]:
+    """The `metadata` of a bead with these entries, as bd exports it: the list as JSON text."""
+    return {"attachments": json.dumps(list(items))}
+
+
 def put(path: Path, content: bytes = PNG) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(content)
@@ -87,9 +93,7 @@ def test_beads_026_local_line_under_another_image() -> None:
 
 # REQ-BEADS-026 (Entries the text does not name)
 def test_beads_026_entries_the_text_does_not_name() -> None:
-    metadata = {
-        "attachments": [{"sha256": B, "caption": "Step 2"}, {"sha256": A}, {"sha256": "x"}, "oops"]
-    }
+    metadata = exported({"sha256": B, "caption": "Step 2"}, {"sha256": A}, {"sha256": "x"}, "oops")
     assert bead_refs(f"![Step 1](attachment:{A})\nshots/c.png", None, metadata) == [
         ImageRef(None, "Step 1", A),
         ImageRef("shots/c.png", "c.png"),
@@ -122,15 +126,13 @@ def test_beads_026_attachment_captions() -> None:
         f"![](attachment:{shas[3]})\n  local: qa/r1/04.png\n"
         f"![](attachment:{shas[4]})\n  local: qa/r1/05.png"
     )
-    metadata = {
-        "attachments": [
-            {"sha256": shas[0], "caption": "From the entry", "name": "00.png"},
-            {"sha256": shas[1], "caption": "", "name": "01.png"},
-            {"sha256": shas[2], "caption": "Not this one"},
-            {"sha256": shas[4], "name": "named.png"},
-            {"sha256": shas[5], "caption": "  "},
-        ]
-    }
+    metadata = exported(
+        {"sha256": shas[0], "caption": "From the entry", "name": "00.png"},
+        {"sha256": shas[1], "caption": "", "name": "01.png"},
+        {"sha256": shas[2], "caption": "Not this one"},
+        {"sha256": shas[4], "name": "named.png"},
+        {"sha256": shas[5], "caption": "  "},
+    )
     assert [ref.caption for ref in bead_refs(text, None, metadata)] == [
         "From the entry",
         "01.png",
@@ -197,8 +199,7 @@ def test_beads_026_at_most_fifty() -> None:
 def test_beads_026_limit_counts_attachments() -> None:
     shas = [hashlib.sha256(str(k).encode()).hexdigest() for k in range(60)]
     text = "\n".join(f"![{k}](attachment:{shas[k]}) shots/{k}.png" for k in range(20))
-    metadata = {"attachments": [{"sha256": sha} for sha in shas]}
-    refs = bead_refs(text, None, metadata)
+    refs = bead_refs(text, None, exported(*({"sha256": sha} for sha in shas)))
     assert len(refs) == 50
     assert refs[:2] == [ImageRef(None, "0", shas[0]), ImageRef("shots/0.png", "0.png")]
     assert [ref.sha256 for ref in refs[40:]] == shas[20:30]
@@ -434,7 +435,7 @@ def test_beads_027_attachment_first_file_as_fallback(tmp_path: Path) -> None:
         f"![Step 2](attachment:{B})\n  local: qa/evidence/r1/02.png\n"
         f"![Step 3](attachment:{C})\n  local: qa/evidence/r1/03.png\n"
     )
-    metadata = {"attachments": [{"sha256": A}, {"sha256": B}, {"sha256": C}]}
+    metadata = exported({"sha256": A}, {"sha256": B}, {"sha256": C})
     snapshot = build_snapshot([{"id": "a-1", "description": description, "metadata": metadata}])
     images = ImageIndex(tmp_path, AttachmentStore(git)).of(alpha, snapshot)["a-1"]
     assert [(i.n, i.sha256, i.available, i.served_as, i.reason) for i in images] == [
@@ -503,7 +504,7 @@ def test_beads_028_032_read_and_read_attachment(tmp_path: Path) -> None:
     git.blob(alpha.path, REFS[0], A, PNG)
     description = f"![a](attachment:{A})\n![b](attachment:{B})\n  local: qa/r1/02.png"
     pruned = {"sha256": C, "pruned_at": "2026-11-20T10:00:00Z"}
-    metadata = {"attachments": [{"sha256": A}, {"sha256": B}, pruned]}
+    metadata = exported({"sha256": A}, {"sha256": B}, pruned)
     rows = [{"id": "a-1", "description": description, "metadata": metadata}, {"id": "a-2"}]
     snapshot = build_snapshot(rows)
     index = ImageIndex(tmp_path, AttachmentStore(git))

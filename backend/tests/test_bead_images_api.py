@@ -2,6 +2,7 @@
 the detail, over real export files."""
 
 import hashlib
+import json
 from pathlib import Path
 
 import pytest
@@ -208,7 +209,7 @@ def test_beads_002_attachment_images(tmp_path: Path) -> None:
         "b-1",
         issue_type="bug",
         description=f"![Step 1](attachment:{A})",
-        metadata={"attachments": entries},
+        metadata={"attachments": json.dumps(entries)},  # as bd exports a list
     )
     api = with_git(tmp_path, [row], git)
     assert api.get("/api/beads/alpha/b-1").json()["images"] == [
@@ -240,7 +241,7 @@ def test_beads_028_attachment_without_a_file(tmp_path: Path) -> None:
     git = FakeGit()
     git.listing(tmp_path / "alpha", REFS[0], [blob_path(A)])
     git.blob(tmp_path / "alpha", REFS[0], A, PNG)
-    metadata = {"attachments": [{"sha256": A}]}
+    metadata = {"attachments": json.dumps([{"sha256": A}])}
     row = bead("a-1", description=f"![a](attachment:{A})", metadata=metadata)
     api = with_git(tmp_path, [row], git)
     assert api.get("/api/beads/alpha/a-1").json()["images"][0]["served_as"] == "attachment"

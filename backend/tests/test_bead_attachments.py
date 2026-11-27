@@ -3,6 +3,7 @@ bytes it serves (REQ-BEADS-032) and the git commands it runs (REQ-BEADS-035), ov
 git runner; no test starts git."""
 
 import hashlib
+import json
 import logging
 import subprocess
 import sys
@@ -47,7 +48,9 @@ def alpha(tmp_path: Path) -> ProjectEntry:
 
 
 def row(ident: str, *items: Any, description: str = "") -> dict[str, Any]:
-    return {"id": ident, "description": description, "metadata": {"attachments": list(items)}}
+    """A bead with these entries, as bd exports them: the list as JSON text."""
+    metadata = {"attachments": json.dumps(list(items))}
+    return {"id": ident, "description": description, "metadata": metadata}
 
 
 def entry_of(snapshot: Snapshot, bead: str, sha: str) -> Entry | None:
@@ -214,6 +217,23 @@ def test_beads_031_listing_without_git(tmp_path: Path, caplog: pytest.LogCapture
     ]
 
 
+# REQ-BEADS-031: git failing on the second ref keeps the blobs of the first
+def test_beads_031_listing_keeps_the_first_ref(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    project = alpha(tmp_path)
+    git = FakeGit({(project.path, ls_tree(SHARED)): GitError("git timed out")})
+    git.listing(project.path, HOST, [blob_path(A)])
+    snapshot = build_snapshot([row("a-1", {"sha256": A}), row("a-2", {"sha256": B})])
+    store = AttachmentStore(git)
+    with caplog.at_level(logging.WARNING):
+        assert store.listing(project, snapshot) == {blob_path(A)}
+    assert check(store, project, snapshot, A) is None
+    assert [r.getMessage() for r in caplog.records] == [
+        "listing the attachments of alpha failed: git timed out"
+    ]
+
+
 # REQ-BEADS-032 (Bytes refused): the bytes are served only with their hash, as an image, at
 # most 10 MB
 def test_beads_032_served_checks_the_bytes() -> None:
@@ -296,11 +316,18 @@ def test_beads_032_read_from_the_local_store(tmp_path: Path) -> None:
     assert git.calls == []
 
 
-# REQ-BEADS-026: the valid entries of metadata.attachments, the sha lower-cased, each sha once
+# REQ-BEADS-026: the valid entries of metadata.attachments, a list or the JSON text of one as bd
+# exports it, the sha lower-cased, each sha once
 def test_beads_026_entries() -> None:
     assert entries({"attachments": "none"}) == []
     assert entries("none") == []
     assert entries(None) == []
+    assert entries({"attachments": json.dumps([{"sha256": A, "caption": "Step 1"}])}) == [
+        Entry(A, "git-ref", pruned=False, caption="Step 1", name=None)
+    ]
+    for text in ('[{"sha256": ', json.dumps({"sha256": A}), json.dumps(A), "[" * 100_000):
+        assert entries({"attachments": text}) == [], text[:20]
+    assert entries({"attachments": "[" * 100_000 + "]" * 100_000}) == []
     assert entries({"attachments": ["oops", {"sha256": "x"}, {"sha256": A.upper()}]}) == [
         Entry(A, "git-ref", pruned=False, caption=None, name=None)
     ]
@@ -311,11 +338,13 @@ def test_beads_026_entries() -> None:
         {"sha256": A, "store": None, "name": 5},
         {"sha256": f" {A}"},
     ]
-    assert entries({"attachments": items}) == [
+    expected = [
         Entry(B, "local", pruned=False, caption="Step 2", name="02.png"),
         Entry(C, "s3", pruned=True, caption=None, name=None),
         Entry(A, "git-ref", pruned=False, caption=None, name=None),
     ]
+    assert entries({"attachments": items}) == expected
+    assert entries({"attachments": json.dumps(items)}) == expected
 
 
 # REQ-BEADS-032: a sha256 is 64 lower-case hex digits, and its blob lies under its first two
@@ -348,7 +377,8 @@ def test_beads_035_only_the_allowed_commands(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-035: the real runner starts `git` with the arguments, in the directory, with the
-# console's child environment, for at most 30 seconds, and keeps the blob as bytes
+# console's child environment in the C locale and without prompts or input, for at most 30
+# seconds, and keeps the blob as bytes
 def test_beads_035_run_git_command(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     seen: list[dict[str, Any]] = []
 
@@ -363,7 +393,13 @@ def test_beads_035_run_git_command(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     call = seen[0]
     assert call["cmd"] == ["git", "cat-file", "-s", f"{HOST}:{blob_path(A)}"]
     assert call["cwd"] == tmp_path and call["timeout"] == GIT_TIMEOUT_SECONDS == 30.0
-    assert "VIRTUAL_ENV" not in call["env"]
+    assert "VIRTUAL_ENV" not in call["env"] and "PATH" in call["env"]
+    assert {k: call["env"][k] for k in ("LC_ALL", "LANGUAGE", "GIT_TERMINAL_PROMPT")} == {
+        "LC_ALL": "C",
+        "LANGUAGE": "C",
+        "GIT_TERMINAL_PROMPT": "0",
+    }
+    assert call["stdin"] is subprocess.DEVNULL
     assert call.get("text") is not True and call["check"] is False
 
 

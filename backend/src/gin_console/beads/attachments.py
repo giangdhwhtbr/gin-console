@@ -10,11 +10,12 @@ sha256 instead.
 """
 
 import hashlib
+import json
 import logging
 import re
 import subprocess
 import threading
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, NamedTuple, Protocol
@@ -55,12 +56,15 @@ class GitRunner(Protocol):
 
 def run_git(args: Sequence[str], cwd: Path) -> GitRun:
     """`git <args>` in `cwd`, stdout kept as bytes since a blob is binary. `git` is started
-    directly: `git.exe` on Windows needs no shim."""
+    directly: `git.exe` on Windows needs no shim. Its messages are in English, so they can be
+    matched, and it never waits for input, such as a credential prompt."""
+    env = {**_child_env(), "LC_ALL": "C", "LANGUAGE": "C", "GIT_TERMINAL_PROMPT": "0"}
     try:
         done = subprocess.run(
             ["git", *args],
             cwd=cwd,
-            env=_child_env(),
+            env=env,
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             timeout=GIT_TIMEOUT_SECONDS,
             check=False,
@@ -101,10 +105,22 @@ def _store(value: Any) -> str:
     return value if isinstance(value, str) else ""  # "" is a store this host cannot read
 
 
+def _listed(metadata: Any) -> Any:
+    """`metadata.attachments`, decoded when it is JSON text: bd exports a list that way."""
+    items = metadata.get("attachments") if isinstance(metadata, Mapping) else None
+    if not isinstance(items, str):
+        return items
+    try:
+        return json.loads(items)
+    except (ValueError, RecursionError):  # not JSON, or nested too deep: no entries
+        return None
+
+
 def entries(metadata: Any) -> list[Entry]:
-    """The valid entries of `metadata.attachments`, sha lower-cased, first of a sha kept; none
-    when `metadata` is no object or `attachments` no list."""
-    items = metadata.get("attachments") if isinstance(metadata, dict) else None
+    """The valid entries of `metadata.attachments`, a list or the JSON text of one, sha
+    lower-cased, first of a sha kept; none when `metadata` is no object or `attachments` no
+    list."""
+    items = _listed(metadata)
     found: dict[str, Entry] = {}
     for item in items if isinstance(items, list) else []:
         if not isinstance(item, dict):
@@ -185,9 +201,9 @@ class AttachmentStore:
         for ref in REFS:
             try:
                 done = self._run(["ls-tree", "-r", "--name-only", ref], entry.path)
-            except GitError as exc:  # the other ref would fail alike: shown as not fetched
+            except GitError as exc:  # a ref after it would fail alike: shown as not fetched
                 logger.warning("listing the attachments of %s failed: %s", entry.name, exc)
-                return frozenset()
+                break
             if done.returncode == 0:  # a ref that does not exist exits 128
                 paths.update(done.stdout.decode("utf-8", errors="replace").splitlines())
         return frozenset(paths)

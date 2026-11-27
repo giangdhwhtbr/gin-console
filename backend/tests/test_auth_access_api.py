@@ -2,6 +2,7 @@
 
 import hashlib
 import inspect
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -69,7 +70,7 @@ def fill(project: Path) -> None:
     ):
         image.parent.mkdir(parents=True)
         image.write_bytes(PNG)
-    metadata = {"attachments": [{"sha256": SHA, "store": "local"}]}
+    metadata = {"attachments": json.dumps([{"sha256": SHA, "store": "local"}])}
     row = bead("x-1", description="![one](qa/evidence/01.png)", metadata=metadata)
     write_export(project, [row])
     change = project / "docs" / "changes" / "c"
