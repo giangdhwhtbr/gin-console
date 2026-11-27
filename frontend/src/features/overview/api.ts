@@ -1,4 +1,5 @@
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
+import { apiFetch } from "@/app/session";
 
 export type Blocker = { id: string; title: string; person: string; blocked: boolean };
 export type Named = { id: string; title: string };
@@ -48,7 +49,7 @@ function isOverview(value: unknown): value is Overview {
 }
 
 export async function fetchOverview(): Promise<Overview> {
-  const response = await fetch("/api/overview");
+  const response = await apiFetch("/api/overview");
   if (!response.ok) throw new Error(`Could not load the overview (HTTP ${response.status})`);
   const body: unknown = await response.json();
   if (!isOverview(body)) throw new Error("Could not load the overview (unexpected response)");

@@ -1,4 +1,5 @@
 import { field, isFiniteNumber, isString, isStringOrNull } from "@/lib/guards";
+import { apiFetch } from "@/app/session";
 
 export type Cause = "outdated" | "schema";
 export type Status = "failing" | "building" | "unknown" | "covered" | "untested";
@@ -81,7 +82,7 @@ const isMockup = (value: unknown) =>
 const isMockups = (value: unknown): value is MockupList => isObject(value) && every(field(value, "mockups"), isMockup);
 
 async function get<T>(path: string, check: (value: unknown) => value is T): Promise<T> {
-  const response = await fetch(path);
+  const response = await apiFetch(path);
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const error = isObject(body) ? field(body, "error") : null;

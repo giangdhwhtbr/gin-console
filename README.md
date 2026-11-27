@@ -202,11 +202,63 @@ scripts/docker-smoke.sh
 
 ---
 
+## Access control
+
+Sign-in is off by default. With `auth.enabled: true` in the config, every person signs in with a username and a password and sees only the projects assigned to them. A project outside that list answers like an unknown project.
+
+### Turning sign-in on
+
+Create the first user before you turn sign-in on: with `auth.enabled: true` the console refuses to start while the users file is missing, does not parse, holds no user, or names a project that is not in `projects`.
+
+```bash
+uv run --directory backend -m gin_console user add an --email an@example.com --project my-project
+```
+
+Then add the `auth` section to the config and restart the console:
+
+```yaml
+auth:
+  enabled: true
+  users_file: ~/.config/gin-console/users.yaml   # the default
+  session_ttl: 12h                               # at least 5m
+  rate_limit:
+    per_user: 5     # failed sign-ins per username in the window
+    per_ip: 20      # failed sign-ins per client address in the window
+    window: 15m     # at least 1m
+```
+
+After `per_user` failed sign-ins for a username, or `per_ip` from one address, inside `window`, sign-in answers "too many attempts" until the oldest failure leaves the window. A session lasts `session_ttl` after sign-in. Sessions live in memory, so a restart signs everyone out. The session cookie is marked `Secure` when the request reaches the console as `https`. Behind a proxy such as `tailscale serve`, uvicorn takes the scheme and the client address from the proxy's `X-Forwarded-Proto` and `X-Forwarded-For` headers only when the proxy connects from loopback (`127.0.0.1` or `::1`). For a proxy at another address, as with Docker, set `FORWARDED_ALLOW_IPS` to that address; otherwise the cookie is not `Secure` and every sign-in counts against the proxy's address.
+
+### Managing users
+
+The `user` commands edit the users file named by `auth.users_file`; they work whether sign-in is on or off. Run each one from the repository root:
+
+```bash
+uv run --directory backend -m gin_console user add an --email an@example.com --project qwikfone scotty
+uv run --directory backend -m gin_console user add root --email root@example.com --all-projects
+uv run --directory backend -m gin_console user passwd an
+uv run --directory backend -m gin_console user assign an gin-workflow
+uv run --directory backend -m gin_console user assign an --all
+uv run --directory backend -m gin_console user unassign an scotty
+uv run --directory backend -m gin_console user remove an
+uv run --directory backend -m gin_console user list
+```
+
+`add` creates a user with the projects given after `--project`, or every project with `--all-projects`. `passwd` gives a user a new password. `assign` adds projects, or every project with `--all`. `unassign` removes projects; a user with every project must first be assigned the projects to keep. `remove` deletes a user. `list` prints the name, email and projects of each user, with `*` for every project, and never a password hash.
+
+`add` and `passwd` generate the password and print it once; there is no option to choose one. Pass it to the person over a private channel. A lost password needs `user passwd`.
+
+User names are lower-cased and use `a-z`, `0-9`, `.`, `_` and `-`. A command that fails prints the reason, exits 1 and leaves the users file as it was.
+
+The users file stores only scrypt hashes, with mode `0600` (on Windows the mode cannot be set). The running console reads it again after each change: a removed user, or one with a new password, is signed out at the next request, and other users get their new projects without signing in again.
+
+---
+
 ## Listening on all interfaces
 
-gin-console listens on `127.0.0.1` by default and refuses any other address. It has no authentication, so it is meant to stay on loopback behind `tailscale serve`. To listen on every interface, set both `GIN_CONSOLE_HOST=0.0.0.0` and `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1`. `GIN_CONSOLE_HOST` overrides `server.host` in the config. You can set `server.host: 0.0.0.0` in the config instead, but `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1` is still required.
+gin-console listens on `127.0.0.1` by default and refuses any other address. With sign-in off it has no authentication, so it is meant to stay on loopback behind `tailscale serve`. To listen on every interface, set both `GIN_CONSOLE_HOST=0.0.0.0` and `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1`. `GIN_CONSOLE_HOST` overrides `server.host` in the config. You can set `server.host: 0.0.0.0` in the config instead, but `GIN_CONSOLE_ALLOW_NON_LOOPBACK=1` is still required.
 
-> **Warning**: gin-console has no authentication. The email on the login screen only selects "My work"; it is not a password. Anyone who can reach the port can read projects and Beads. Allow the port only from trusted networks, for example behind a firewall or a VPN.
+> **Warning**: with sign-in off, the email on the login screen only selects "My work"; it is not a password. Anyone who can reach the port can read projects and Beads. Turn on [access control](#access-control) or allow the port only from trusted networks, for example behind a firewall or a VPN.
 
 ### Linux and macOS
 

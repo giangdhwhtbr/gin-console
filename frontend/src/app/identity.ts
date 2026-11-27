@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { getSession, subscribeSession } from "./session";
 
 export const EMAIL_KEY = "gin-console.email";
 
@@ -10,6 +11,8 @@ export function isEmail(value: string): boolean {
 }
 
 export function getEmail(): string | null {
+  const session = getSession();
+  if (session.status === "signed-in") return session.user.email.toLowerCase();
   if (memory === undefined) {
     try {
       const stored = window.localStorage.getItem(EMAIL_KEY);
@@ -53,8 +56,10 @@ export function resetIdentity(): void {
 
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
+  const stopSession = subscribeSession(listener);
   return () => {
     listeners.delete(listener);
+    stopSession();
   };
 };
 
