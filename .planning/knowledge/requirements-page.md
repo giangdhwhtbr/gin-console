@@ -4,7 +4,7 @@
 Epic gin-console-rm-requirements (2026-11-26) added `/requirements` with the sections Matrix, Changes and Mockups. gin-workflow had already shipped `gin specs trace --all` (capability req-signoff-trace), so the console reads the join of requirements, sign-off, beads, cases and tests from gin and took over epic gin-console-rm-req-signoff.
 
 **Decision/Solution**
-- **Sources:** `backend/src/gin_console/requirements/source.py` runs `gin specs trace --all --format json` (schema 1) and `gin specs reqs --format json`, 30 s timeout, one `KeyedCache` per command (60 s, cleared on refresh). The console starts neither `bd` nor `gin-qa`; gin does. Old gin (argparse exit 2) maps to cause `outdated`.
+- **Sources:** `backend/src/gin_console/requirements/source.py` runs `gin specs trace --all --format json` (schema 1) and `gin specs reqs --format json`, 30 s timeout, one `KeyedCache` per command (60 s, cleared on refresh). The requirements context starts neither `bd` nor `gin-qa`; gin does. Since gin-console-rm-test-coverage the `qa` context runs `gin-qa cases export` itself, for the case fields the trace leaves out (see [test-coverage](test-coverage.md)). Old gin (argparse exit 2) maps to cause `outdated`.
 - **Status:** `service.py` `status_of`: failing, building, unknown (null cases), covered (at least one case and all passed), else untested with reasons. Test files never change the status; null beads never block covered.
 - **Project files:** `files.py` is the only reader (ADR 0004).
   - Path containment: every part below the resolved project root must be a real directory, not a link, before a file is resolved inside it. Resolving the base first lets a linked `docs`, `assets` or date folder escape, and lets a linked date stand in for an unconfirmed folder.
