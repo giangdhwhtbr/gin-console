@@ -1,6 +1,6 @@
 # TC-BEADS-093: Image served
 
-- **REQ:** REQ-BEADS-028@487cfa9a
+- **REQ:** REQ-BEADS-028@efb2bd9f
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-27T00-00-02-api

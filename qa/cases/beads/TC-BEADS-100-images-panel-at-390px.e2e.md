@@ -1,6 +1,6 @@
 # TC-BEADS-100: Images panel at 390px
 
-- **REQ:** REQ-BEADS-029@79ee5c39
+- **REQ:** REQ-BEADS-029@8dd84d5b
 - **Priority:** medium
 
 **Preconditions:**

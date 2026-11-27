@@ -1,6 +1,8 @@
 """Project access, refresh within access and the mockup grant (REQ-AUTH-007, 008, 016)."""
 
+import hashlib
 import inspect
+import json
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -10,6 +12,7 @@ import pytest
 from fake_bd import FakeBd
 from fake_export import bead, write_export
 from fake_gin import FakeGin, trace
+from fake_git import FakeGit
 from fake_gw import FakeGw
 from fastapi.testclient import TestClient
 from test_auth_api import auth_app, sign_in, user, write_users
@@ -24,6 +27,7 @@ DAY = "2026-11-22"
 REPORTS_DAY = "2026-11-12"
 CSS = "body { color: red; }"
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+SHA = hashlib.sha256(PNG).hexdigest()
 NOT_FOUND = {"error": "not found"}
 POLICY = (
     "sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; "
@@ -36,6 +40,7 @@ PROJECT_ROUTES = [
     ("/api/beads/milestones", "/api/beads/milestones?project=b"),
     ("/api/beads/{project}/{bead_id}", "/api/beads/b/x-1"),
     ("/api/beads/{project}/{bead_id}/images/{n}", "/api/beads/b/x-1/images/1"),
+    ("/api/beads/{project}/{bead_id}/attachments/{sha256}", f"/api/beads/b/x-1/attachments/{SHA}"),
     ("/api/beads/{project}/{bead_id}/comments", "/api/beads/b/x-1/comments"),
     ("/api/beads/{project}/{bead_id}/workflow", "/api/beads/b/x-1/workflow"),
     ("/api/milestones", "/api/milestones?project=b"),
@@ -62,12 +67,18 @@ PROJECT_ROUTES = [
 
 
 def fill(project: Path) -> None:
-    """A bead `x-1` with an image, a change `c`, a confirmed mockup `ui` with `index.html` and
-    `style.css`, and a second confirmed mockup `reports` with `index.html`."""
-    image = project / "qa" / "evidence" / "01.png"
-    image.parent.mkdir(parents=True)
-    image.write_bytes(PNG)
-    write_export(project, [bead("x-1", description="![one](qa/evidence/01.png)")])
+    """A bead `x-1` with an image and an attachment of the local store, a change `c`, a confirmed
+    mockup `ui` with `index.html` and `style.css`, and a second confirmed mockup `reports` with
+    `index.html`."""
+    for image in (
+        project / "qa" / "evidence" / "01.png",
+        project / ".agent-workflow" / "attachments" / SHA[:2] / SHA,
+    ):
+        image.parent.mkdir(parents=True)
+        image.write_bytes(PNG)
+    metadata = {"attachments": json.dumps([{"sha256": SHA, "store": "local"}])}
+    row = bead("x-1", description="![one](qa/evidence/01.png)", metadata=metadata)
+    write_export(project, [row])
     change = project / "docs" / "changes" / "c"
     change.mkdir(parents=True)
     (change / "01-proposal.md").write_text("# C\n\nEpic: x-1\n")
@@ -90,6 +101,7 @@ def make(tmp_path: Path, bd: FakeBd | None = None) -> TestClient:
         run_gw=FakeGw(),
         run_gin=FakeGin({"trace": trace(), "reqs": RequirementsError("no reqs")}),
         run_epic_workflow=lambda cwd, ident: BlockError(error="no workflow"),
+        run_git=FakeGit(),
     )
     for name in ("a", "b"):
         fill(tmp_path / name)

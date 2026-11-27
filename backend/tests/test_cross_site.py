@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 from fake_bd import FakeBd
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app, refuses_cross_site
@@ -25,7 +26,13 @@ def client(tmp_path: Path, bd: FakeBd, root_path: str = "") -> TestClient:
     (folder / "description.md").write_text(f"# ui\nConfirmed: {DAY}\n")
     (folder / "style.css").write_text("body { color: red; }")
     settings = Settings(projects=[ProjectEntry(name="p", path=tmp_path / "p")])
-    app = create_app(settings, static_dir=tmp_path / "dist", run_bd=bd, schedule_pulls=False)
+    app = create_app(
+        settings,
+        static_dir=tmp_path / "dist",
+        run_bd=bd,
+        run_git=FakeGit(),
+        schedule_pulls=False,
+    )
     return TestClient(app, root_path=root_path)
 
 

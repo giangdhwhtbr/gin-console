@@ -307,7 +307,15 @@ def get_bead(snapshot: Snapshot, bead_id: str, images: Images | None = None) -> 
                 "children": _children(snapshot, above),
                 "bugs": _bugs(snapshot, bugs),
                 "images": [
-                    {"n": i.n, "path": i.path, "caption": i.caption, "available": i.available}
+                    {
+                        "n": i.n,
+                        "path": i.path,
+                        "sha256": i.sha256,
+                        "caption": i.caption,
+                        "available": i.available,
+                        "served_as": i.served_as,
+                        "reason": i.reason,
+                    }
                     for i in images.get(bead_id, ())
                 ],
             }

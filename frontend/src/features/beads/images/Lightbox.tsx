@@ -1,7 +1,7 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { imageUrl, type BeadImage } from "../api";
+import { imageAddress, type BeadImage } from "../api";
 
 /** REQ-BEADS-030: one available image large, stepping over the available images without wrapping. */
 export function Lightbox({
@@ -23,6 +23,7 @@ export function Lightbox({
   const available = images.filter((image) => image.available);
   const index = available.findIndex((image) => image.n === current);
   const image = index >= 0 ? available[index] : null;
+  const address = image ? imageAddress(project, beadId, image) : null;
 
   const step = (by: number) => {
     const next = available[index + by];
@@ -67,7 +68,7 @@ export function Lightbox({
                 </button>
                 <div className="flex min-w-0 flex-1 justify-center">
                   <img
-                    src={imageUrl(project, beadId, image.n)}
+                    src={address ?? undefined}
                     alt={image.caption}
                     className="max-h-[70vh] max-w-full object-contain"
                   />
@@ -86,7 +87,7 @@ export function Lightbox({
                 <span>
                   {index + 1} of {available.length}
                 </span>
-                <a href={imageUrl(project, beadId, image.n)} target="_blank" rel="noreferrer" className="prose-link">
+                <a href={address ?? undefined} target="_blank" rel="noreferrer" className="prose-link">
                   Open original
                 </a>
               </div>

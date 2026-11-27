@@ -31,6 +31,8 @@ export type Beads = {
 
 export type PullResult = { at: string; status: "ok" | "no_remote" | "error"; error: string | null };
 
+export type FetchResult = { at: string; status: "ok" | "no_store" | "no_remote" | "error"; error: string | null };
+
 export type ProjectBeads = {
   name: string;
   path: string;
@@ -38,6 +40,8 @@ export type ProjectBeads = {
   beads: Beads | BlockError | null;
   /** absent from an older backend; read it with `pullOf` */
   pull?: PullResult | null;
+  /** absent from an older backend; read it with `fetchOf` */
+  attachments_fetch?: FetchResult | null;
 };
 
 export function isBlockError(value: unknown): value is BlockError {
@@ -79,6 +83,21 @@ export function pullOf(project: { pull?: unknown }): PullResult | null {
   const error = "error" in pull ? pull.error : null;
   if (error !== null && typeof error !== "string") return null;
   return { at: pull.at, status: pull.status, error };
+}
+
+const FETCH_STATUSES: readonly unknown[] = ["ok", "no_store", "no_remote", "error"];
+
+/** The attachments fetch of a project when it is well formed; a missing, null or malformed one is null. */
+export function fetchOf(project: { attachments_fetch?: unknown }): FetchResult | null {
+  const { attachments_fetch: fetch } = project;
+  if (typeof fetch !== "object" || fetch === null) return null;
+  if (!("at" in fetch) || typeof fetch.at !== "string") return null;
+  if (!("status" in fetch) || !FETCH_STATUSES.includes(fetch.status)) return null;
+  const { status } = fetch;
+  if (status !== "ok" && status !== "no_store" && status !== "no_remote" && status !== "error") return null;
+  const error = "error" in fetch ? fetch.error : null;
+  if (error !== null && typeof error !== "string") return null;
+  return { at: fetch.at, status, error };
 }
 
 /** The error of a pull, with one wording when the backend sent none. */

@@ -120,14 +120,18 @@ class Comment(BaseModel):
 
 
 class BeadImage(BaseModel):
-    """An image a bead names (REQ-BEADS-026); served by number, never by path (REQ-BEADS-028)."""
+    """An image a bead names (REQ-BEADS-026); served by number (REQ-BEADS-028) or by the sha256
+    of its attachment (REQ-BEADS-032), never by path."""
 
     model_config = ConfigDict(strict=True)
 
     n: int
-    path: Text
+    path: Text | None
+    sha256: Text | None = None
     caption: Text
     available: bool
+    served_as: Literal["attachment", "file"] | None = None
+    reason: Literal["not_listed", "pruned", "unsupported_store", "not_fetched"] | None = None
 
 
 class BeadDetail(BeadSummary):

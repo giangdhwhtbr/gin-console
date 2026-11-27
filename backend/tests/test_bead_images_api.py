@@ -1,20 +1,26 @@
 """`GET /api/beads/{project}/{id}/images/{n}` (REQ-BEADS-028) and the image fields of the list and
 the detail, over real export files."""
 
+import hashlib
+import json
 from pathlib import Path
 
 import pytest
 from fake_bd import FakeBd
 from fake_export import bead, write_export
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
+from gin_console.beads.attachments import REFS, blob_path
 from gin_console.beads.source import read_export
 from gin_console.config import ProjectEntry, Settings
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
 JPEG = b"\xff\xd8\xff\xe0" + b"0" * 100
 NOT_FOUND = b'{"error":"not found"}'
+A = hashlib.sha256(PNG).hexdigest()
+B = hashlib.sha256(JPEG).hexdigest()
 HEADERS = {
     "x-content-type-options": "nosniff",
     "content-security-policy": "sandbox; default-src 'none'",
@@ -149,3 +155,96 @@ def test_beads_001_002_image_fields(tmp_path: Path) -> None:
         (3, "gone.png", False),
     ]
     assert api.get("/api/beads/q/q-1").json()["images"][0]["available"] is True
+
+
+def with_git(tmp_path: Path, rows: list[object], git: FakeGit) -> TestClient:
+    """Project `alpha` with these export rows, read through `git`."""
+    write_export(tmp_path / "alpha", rows)
+    (tmp_path / "dist").mkdir(exist_ok=True)
+    app = create_app(
+        Settings(projects=[ProjectEntry(name="alpha", path=tmp_path / "alpha")]),
+        static_dir=tmp_path / "dist",
+        read_beads=read_export,
+        run_bd=FakeBd(),
+        run_git=git,
+    )
+    return TestClient(app, raise_server_exceptions=False)
+
+
+# REQ-BEADS-002 (Images): each image with its sha256, served_as and reason
+def test_beads_002_images_fields(tmp_path: Path) -> None:
+    put(tmp_path / "alpha/qa/evidence/r1/01.png")
+    description = "qa/evidence/r1/01.png\n/tmp/x.png"
+    git = FakeGit()
+    api = with_git(tmp_path, [bead("b-1", issue_type="bug", description=description)], git)
+    assert api.get("/api/beads/alpha/b-1").json()["images"] == [
+        {
+            "n": 1,
+            "path": "qa/evidence/r1/01.png",
+            "sha256": None,
+            "caption": "01.png",
+            "available": True,
+            "served_as": "file",
+            "reason": None,
+        },
+        {
+            "n": 2,
+            "path": "/tmp/x.png",
+            "sha256": None,
+            "caption": "x.png",
+            "available": False,
+            "served_as": None,
+            "reason": None,
+        },
+    ]
+    assert git.calls == []
+
+
+# REQ-BEADS-002 (Attachment images)
+def test_beads_002_attachment_images(tmp_path: Path) -> None:
+    git = FakeGit()
+    git.listing(tmp_path / "alpha", REFS[1], [blob_path(A), blob_path(B)])
+    entries = [{"sha256": A}, {"sha256": B, "name": "02.png", "pruned_at": "2026-11-20T10:00:00Z"}]
+    row = bead(
+        "b-1",
+        issue_type="bug",
+        description=f"![Step 1](attachment:{A})",
+        metadata={"attachments": json.dumps(entries)},  # as bd exports a list
+    )
+    api = with_git(tmp_path, [row], git)
+    assert api.get("/api/beads/alpha/b-1").json()["images"] == [
+        {
+            "n": 1,
+            "path": None,
+            "sha256": A,
+            "caption": "Step 1",
+            "available": True,
+            "served_as": "attachment",
+            "reason": None,
+        },
+        {
+            "n": 2,
+            "path": None,
+            "sha256": B,
+            "caption": "02.png",
+            "available": False,
+            "served_as": None,
+            "reason": "pruned",
+        },
+    ]
+    rows = api.get("/api/beads", params={"project": "alpha"}).json()
+    assert [b["image_count"] for b in rows] == [1]
+
+
+# REQ-BEADS-028 (Attachment without a file)
+def test_beads_028_attachment_without_a_file(tmp_path: Path) -> None:
+    git = FakeGit()
+    git.listing(tmp_path / "alpha", REFS[0], [blob_path(A)])
+    git.blob(tmp_path / "alpha", REFS[0], A, PNG)
+    metadata = {"attachments": json.dumps([{"sha256": A}])}
+    row = bead("a-1", description=f"![a](attachment:{A})", metadata=metadata)
+    api = with_git(tmp_path, [row], git)
+    assert api.get("/api/beads/alpha/a-1").json()["images"][0]["served_as"] == "attachment"
+    response = api.get("/api/beads/alpha/a-1/images/1")
+    assert response.status_code == 404 and response.content == NOT_FOUND
+    assert api.get(f"/api/beads/alpha/a-1/attachments/{A}").content == PNG

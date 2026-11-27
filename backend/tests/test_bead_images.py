@@ -1,6 +1,8 @@
 """The images a bead names (REQ-BEADS-026) and whether each may be served (REQ-BEADS-027)."""
 
 import gc
+import hashlib
+import json
 import math
 import os
 import sys
@@ -11,8 +13,10 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fake_git import FakeGit
 
 from gin_console.beads import images as images_module
+from gin_console.beads.attachments import REFS, AttachmentStore, blob_path
 from gin_console.beads.images import (
     MAX_BYTES,
     MAX_IMAGES,
@@ -33,7 +37,20 @@ JPEG = b"\xff\xd8\xff\xe0" + b"0" * 100
 GIF = b"GIF89a" + b"0" * 100
 WEBP = b"RIFF\x10\x00\x00\x00WEBPVP8 " + b"0" * 100
 SVG = b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'
+A = hashlib.sha256(PNG).hexdigest()
+B = hashlib.sha256(JPEG).hexdigest()
+C = hashlib.sha256(b"C").hexdigest()
 needs_symlinks = pytest.mark.skipif(sys.platform == "win32", reason="symlinks need privileges")
+
+
+def no_git() -> AttachmentStore:
+    """A store whose refs do not exist."""
+    return AttachmentStore(FakeGit())
+
+
+def exported(*items: Any) -> dict[str, str]:
+    """The `metadata` of a bead with these entries, as bd exports it: the list as JSON text."""
+    return {"attachments": json.dumps(list(items))}
 
 
 def put(path: Path, content: bytes = PNG) -> Path:
@@ -42,7 +59,7 @@ def put(path: Path, content: bytes = PNG) -> Path:
     return path
 
 
-def paths(refs: list[ImageRef]) -> list[str]:
+def paths(refs: list[ImageRef]) -> list[str | None]:
     return [ref.path for ref in refs]
 
 
@@ -52,14 +69,91 @@ def available(written: str, entry: ProjectEntry, home: Path) -> bool:
 
 
 # REQ-BEADS-026 (gin-qa evidence)
-def test_beads_026_gin_qa_evidence_caption_from_the_line_above() -> None:
+def test_beads_026_gin_qa_evidence_is_one_image() -> None:
     text = (
         "## Evidence\n"
-        "- ![TC-UI-115 step 1: Open the list](attachment:ab12)\n"
+        f"- ![TC-UI-115 step 1: Open the list](attachment:{A})\n"
         "  local: qa/evidence/r1/tc-ui-115/01.png\n"
     )
     assert bead_refs(text, None) == [
-        ImageRef("qa/evidence/r1/tc-ui-115/01.png", "TC-UI-115 step 1: Open the list")
+        ImageRef("qa/evidence/r1/tc-ui-115/01.png", "TC-UI-115 step 1: Open the list", A)
+    ]
+
+
+# REQ-BEADS-026: a local: line under an image that is no attachment keeps the caption of the
+# line above and stays a file
+def test_beads_026_local_line_under_another_image() -> None:
+    text = "![Step 1](attachment:ab12)\n  local: qa/r1/01.png\n![](x.png)\nlocal: qa/r1/02.png"
+    assert bead_refs(text, None) == [
+        ImageRef("qa/r1/01.png", "Step 1"),
+        ImageRef("x.png", "x.png"),
+        ImageRef("qa/r1/02.png", "02.png"),
+    ]
+
+
+# REQ-BEADS-026 (Entries the text does not name)
+def test_beads_026_entries_the_text_does_not_name() -> None:
+    metadata = exported({"sha256": B, "caption": "Step 2"}, {"sha256": A}, {"sha256": "x"}, "oops")
+    assert bead_refs(f"![Step 1](attachment:{A})\nshots/c.png", None, metadata) == [
+        ImageRef(None, "Step 1", A),
+        ImageRef("shots/c.png", "c.png"),
+        ImageRef(None, "Step 2", B),
+    ]
+
+
+# REQ-BEADS-026 (Bad attachment addresses)
+def test_beads_026_bad_attachment_addresses() -> None:
+    text = f"![key](attachment:ab12) [k](attachment:{A}0) attachment:{A} ![x](attachment:{A[:-1]}g)"
+    assert bead_refs(text, None, {"attachments": "none"}) == []
+    assert bead_refs(None, None, "none") == []
+
+
+# REQ-BEADS-026 (Attachment named twice)
+def test_beads_026_attachment_named_twice() -> None:
+    notes = f"[again](attachment:{A.upper()}) and ![Again](<ATTACHMENT:{A}>)"
+    assert bead_refs(f"![First](attachment:{A})", notes, {"attachments": [{"sha256": A}]}) == [
+        ImageRef(None, "First", A)
+    ]
+
+
+# REQ-BEADS-026: the caption of an attachment, from the text, else its entry, else its file name,
+# else the start of its sha256
+def test_beads_026_attachment_captions() -> None:
+    shas = [hashlib.sha256(bytes([k])).hexdigest() for k in range(6)]
+    text = (
+        f"![](attachment:{shas[0]})\n"
+        f"[](attachment:{shas[1]}) and [the link](attachment:{shas[2]})\n"
+        f"![](attachment:{shas[3]})\n  local: qa/r1/04.png\n"
+        f"![](attachment:{shas[4]})\n  local: qa/r1/05.png"
+    )
+    metadata = exported(
+        {"sha256": shas[0], "caption": "From the entry", "name": "00.png"},
+        {"sha256": shas[1], "caption": "", "name": "01.png"},
+        {"sha256": shas[2], "caption": "Not this one"},
+        {"sha256": shas[4], "name": "named.png"},
+        {"sha256": shas[5], "caption": "  "},
+    )
+    assert [ref.caption for ref in bead_refs(text, None, metadata)] == [
+        "From the entry",
+        "01.png",
+        "the link",
+        "04.png",
+        "named.png",
+        shas[5][:12],
+    ]
+
+
+# REQ-BEADS-026: a path met again, under another attachment or alone, stays with its image
+def test_beads_026_pair_paths_kept_once() -> None:
+    text = (
+        f"shots/a.png\n![One](attachment:{A})\n  local: shots/a.png\n"
+        f"![Two](attachment:{B})\n  local: shots/b.png\nagain shots/b.png\n"
+        f"![Again](attachment:{B})\n  local: shots/c.png\nand shots/c.png"
+    )
+    assert bead_refs(text, None) == [
+        ImageRef("shots/a.png", "a.png"),
+        ImageRef(None, "One", A),
+        ImageRef("shots/b.png", "Two", B),
     ]
 
 
@@ -84,7 +178,8 @@ def test_beads_026_forms_and_order() -> None:
         ImageRef("d.webp", "d.webp"),
     ]
     raw = {"id": "t-1", "description": description, "notes": notes}
-    found = find_images(raw, ProjectEntry(name="p", path=Path("/p")), Path("/home"))
+    entry = ProjectEntry(name="p", path=Path("/p"))
+    found = find_images(raw, entry, Path("/home"), no_git(), frozenset())
     assert [(i.n, i.path) for i in found] == [
         (1, "shots/a.png"),
         (2, "~/brain/b.JPG"),
@@ -98,6 +193,16 @@ def test_beads_026_at_most_fifty() -> None:
     refs = bead_refs(text, None)
     assert MAX_IMAGES == 50
     assert paths(refs) == [f"shots/{n}.png" for n in range(50)]
+
+
+# REQ-BEADS-026 (Limit): attachments of the text and of the entries count too
+def test_beads_026_limit_counts_attachments() -> None:
+    shas = [hashlib.sha256(str(k).encode()).hexdigest() for k in range(60)]
+    text = "\n".join(f"![{k}](attachment:{shas[k]}) shots/{k}.png" for k in range(20))
+    refs = bead_refs(text, None, exported(*({"sha256": sha} for sha in shas)))
+    assert len(refs) == 50
+    assert refs[:2] == [ImageRef(None, "0", shas[0]), ImageRef("shots/0.png", "0.png")]
+    assert [ref.sha256 for ref in refs[40:]] == shas[20:30]
 
 
 # REQ-BEADS-026: every extension in any case, other suffixes and schemes dropped
@@ -308,13 +413,52 @@ def test_beads_026_027_find_images(tmp_path: Path) -> None:
     put(alpha.path / "qa/evidence/r1/01.png")
     outside = put(tmp_path / "x.png")
     raw = {"id": "b-1", "description": f"qa/evidence/r1/01.png\n{outside.as_posix()}", "notes": 3}
-    found = find_images(raw, alpha, tmp_path)
-    assert [(i.n, i.path, i.caption, i.available) for i in found] == [
-        (1, "qa/evidence/r1/01.png", "01.png", True),
-        (2, outside.as_posix(), "x.png", False),
+    found = find_images(raw, alpha, tmp_path, no_git(), frozenset())
+    assert [(i.n, i.path, i.caption, i.available, i.served_as) for i in found] == [
+        (1, "qa/evidence/r1/01.png", "01.png", True, "file"),
+        (2, outside.as_posix(), "x.png", False, None),
     ]
     assert found[0].file == alpha.path / "qa/evidence/r1/01.png"
-    assert find_images({"id": "b-2", "description": "..\\x.png"}, alpha, tmp_path)[0].file is None
+    refused = {"id": "b-2", "description": "..\\x.png"}
+    assert find_images(refused, alpha, tmp_path, no_git(), frozenset())[0].file is None
+
+
+# REQ-BEADS-027 (Attachment first, file as fallback)
+def test_beads_027_attachment_first_file_as_fallback(tmp_path: Path) -> None:
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
+    put(alpha.path / "qa/evidence/r1/01.png")
+    put(alpha.path / "qa/evidence/r1/02.png")
+    git = FakeGit()
+    git.listing(alpha.path, REFS[1], [blob_path(A)])
+    description = (
+        f"![Step 1](attachment:{A})\n  local: qa/evidence/r1/01.png\n"
+        f"![Step 2](attachment:{B})\n  local: qa/evidence/r1/02.png\n"
+        f"![Step 3](attachment:{C})\n  local: qa/evidence/r1/03.png\n"
+    )
+    metadata = exported({"sha256": A}, {"sha256": B}, {"sha256": C})
+    snapshot = build_snapshot([{"id": "a-1", "description": description, "metadata": metadata}])
+    images = ImageIndex(tmp_path, AttachmentStore(git)).of(alpha, snapshot)["a-1"]
+    assert [(i.n, i.sha256, i.available, i.served_as, i.reason) for i in images] == [
+        (1, A, True, "attachment", None),
+        (2, B, True, "file", None),
+        (3, C, False, None, "not_fetched"),
+    ]
+    assert images[0].file == alpha.path / "qa/evidence/r1/01.png"
+
+
+# REQ-BEADS-027, REQ-BEADS-031: an attachment without an entry, with a file or without
+def test_beads_027_attachment_not_listed(tmp_path: Path) -> None:
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
+    put(alpha.path / "qa/r1/01.png")
+    description = f"![a](attachment:{A})\n  local: qa/r1/01.png\n![b](attachment:{B})"
+    snapshot = build_snapshot([{"id": "a-1", "description": description}])
+    git = FakeGit()
+    images = ImageIndex(tmp_path, AttachmentStore(git)).of(alpha, snapshot)["a-1"]
+    assert [(i.available, i.served_as, i.reason) for i in images] == [
+        (True, "file", None),
+        (False, None, "not_listed"),
+    ]
+    assert git.calls == []
 
 
 # REQ-BEADS-001 (worked out once per export snapshot): the same snapshot object reuses the
@@ -324,7 +468,7 @@ def test_beads_026_index_once_per_snapshot(tmp_path: Path) -> None:
     shot = put(alpha.path / "a.png")
     rows = [{"id": "b-1", "description": "a.png"}, {"id": "b-2", "description": "none"}]
     snapshot = build_snapshot(rows)
-    index = ImageIndex(tmp_path)
+    index = ImageIndex(tmp_path, no_git())
     first = index.of(alpha, snapshot)
     assert list(first) == ["b-1"] and first["b-1"][0].available
     shot.unlink()
@@ -338,7 +482,7 @@ def test_beads_028_read_checks_again(tmp_path: Path) -> None:
     alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
     shot = put(alpha.path / "a.png")
     snapshot = build_snapshot([{"id": "b-1", "description": "a.png ../b.png"}])
-    index = ImageIndex(tmp_path)
+    index = ImageIndex(tmp_path, no_git())
     assert index.read(alpha, snapshot, "b-1", 1) == (PNG, "image/png")
     assert index.read(alpha, snapshot, "b-1", 2) is None
     assert index.read(alpha, snapshot, "b-1", 0) is None
@@ -348,6 +492,27 @@ def test_beads_028_read_checks_again(tmp_path: Path) -> None:
     assert index.read(alpha, snapshot, "b-1", 1) is None
     shot.unlink()
     assert index.read(alpha, snapshot, "b-1", 1) is None
+
+
+# REQ-BEADS-028 (Attachment without a file), REQ-BEADS-032: `read` serves only the file of image
+# n, `read_attachment` only an attachment of the bead that is available
+def test_beads_028_032_read_and_read_attachment(tmp_path: Path) -> None:
+    alpha = ProjectEntry(name="alpha", path=tmp_path / "alpha")
+    put(alpha.path / "qa/r1/02.png", JPEG)
+    git = FakeGit()
+    git.listing(alpha.path, REFS[0], [blob_path(A)])
+    git.blob(alpha.path, REFS[0], A, PNG)
+    description = f"![a](attachment:{A})\n![b](attachment:{B})\n  local: qa/r1/02.png"
+    pruned = {"sha256": C, "pruned_at": "2026-11-20T10:00:00Z"}
+    metadata = exported({"sha256": A}, {"sha256": B}, pruned)
+    rows = [{"id": "a-1", "description": description, "metadata": metadata}, {"id": "a-2"}]
+    snapshot = build_snapshot(rows)
+    index = ImageIndex(tmp_path, AttachmentStore(git))
+    assert index.read(alpha, snapshot, "a-1", 1) is None
+    assert index.read(alpha, snapshot, "a-1", 2) == (JPEG, "image/jpeg")
+    assert index.read_attachment(alpha, snapshot, "a-1", A) == (PNG, "image/png")
+    for bead, sha in (("a-1", B), ("a-1", C), ("a-1", "ab12"), ("a-2", A), ("a-9", A)):
+        assert index.read_attachment(alpha, snapshot, bead, sha) is None, (bead, sha)
 
 
 # REQ-BEADS-026: file://localhost is this host; another host names no image of the bead; a
@@ -450,7 +615,7 @@ def test_beads_028_read_uses_the_checked_file(
     shot = put(alpha.path / "a.png")
     other = put(alpha.path / "other.png", PNG + b"swapped")
     snapshot = build_snapshot([{"id": "b-1", "description": "a.png"}])
-    index = ImageIndex(tmp_path)
+    index = ImageIndex(tmp_path, no_git())
     index.of(alpha, snapshot)
     swap_on_open(monkeypatch, shot, lambda: os.replace(other, shot))
     assert index.read(alpha, snapshot, "b-1", 1) is None
@@ -491,7 +656,7 @@ def test_beads_026_index_computes_once_under_concurrency(
         return real(folders)
 
     monkeypatch.setattr(images_module, "_real_folders", slow)
-    index = ImageIndex(tmp_path)
+    index = ImageIndex(tmp_path, no_git())
     found: list[object] = []
     workers = [
         threading.Thread(target=lambda: found.append(index.of(alpha, snapshot))) for _ in range(4)

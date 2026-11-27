@@ -46,9 +46,18 @@ class PullResult(BaseModel):
     error: str | None = None
 
 
+class FetchResult(BaseModel):
+    """The last fetch of the shared attachment store of a project (REQ-BEADS-033)."""
+
+    at: datetime
+    status: Literal["ok", "no_store", "no_remote", "error"]
+    error: str | None = None
+
+
 class ProjectBeads(BaseModel):
     name: str
     path: str
     exists: bool
     beads: Beads | BlockError | None
     pull: PullResult | None = None
+    attachments_fetch: FetchResult | None = None

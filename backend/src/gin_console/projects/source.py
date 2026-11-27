@@ -8,7 +8,14 @@ from gin_console.beads.lanes import is_merge_gate
 from gin_console.beads.prep import row_is_prep
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.config import ProjectEntry
-from gin_console.projects.models import Beads, BlockError, Epic, ProjectBeads, PullResult
+from gin_console.projects.models import (
+    Beads,
+    BlockError,
+    Epic,
+    FetchResult,
+    ProjectBeads,
+    PullResult,
+)
 
 
 def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
@@ -53,7 +60,10 @@ def count_beads(snapshots: SnapshotStore, path: Path) -> Beads | BlockError:
 
 
 def build_project_beads(
-    entry: ProjectEntry, snapshots: SnapshotStore, pull: PullResult | None
+    entry: ProjectEntry,
+    snapshots: SnapshotStore,
+    pull: PullResult | None,
+    fetch: FetchResult | None = None,
 ) -> ProjectBeads:
     exists = entry.path.is_dir()
     return ProjectBeads(
@@ -62,4 +72,5 @@ def build_project_beads(
         exists=exists,
         beads=count_beads(snapshots, entry.path) if exists else None,
         pull=pull,
+        attachments_fetch=fetch,
     )

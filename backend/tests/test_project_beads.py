@@ -4,11 +4,15 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from fake_bd import FakeBd
 from fake_export import write_export
+from fake_git import FakeGit
 from fakes import ISSUES
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
+from gin_console.beads.attachments import GitRun
+from gin_console.beads.pull import FETCH_ARGS
 from gin_console.config import ProjectEntry, Settings
 
 
@@ -99,3 +103,28 @@ def test_server_006_project_beads_epics_have_status_and_no_workflow(
     epics = body[0]["beads"]["epics"]
     assert epics[0]["id"] == "e1" and epics[0]["status"] == "in_progress"
     assert all(not e.get("workflow") for e in epics)
+
+
+# REQ-BEADS-033: attachments_fetch is null before a pull and for pull: false, the result after
+def test_beads_033_attachments_fetch_in_the_summary(tmp_path: Path) -> None:
+    alpha, beta = project_dir(tmp_path, "alpha"), project_dir(tmp_path, "beta")
+    for path in (alpha, beta):
+        write_export(path, ISSUES)
+    git = FakeGit({(alpha, FETCH_ARGS): GitRun(0, b"", "")})
+    settings = Settings(
+        projects=[
+            ProjectEntry(name="alpha", path=alpha),
+            ProjectEntry(name="beta", path=beta, pull=False),
+        ]
+    )
+    api = TestClient(
+        create_app(settings, static_dir=tmp_path / "static", run_bd=FakeBd(), run_git=git)
+    )
+    assert [p["attachments_fetch"] for p in api.get("/api/projects/beads").json()] == [None, None]
+    assert api.post("/api/refresh").status_code == 204
+    alpha_body, beta_body = api.get("/api/projects/beads").json()
+    assert alpha_body["attachments_fetch"]["status"] == "ok"
+    assert alpha_body["attachments_fetch"]["error"] is None
+    assert alpha_body["attachments_fetch"]["at"]
+    assert beta_body["attachments_fetch"] is None
+    assert git.calls == [(alpha, FETCH_ARGS)]

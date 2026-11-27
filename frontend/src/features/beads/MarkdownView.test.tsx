@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BeadImage } from "./api";
+import { imageAddress, type BeadImage } from "./api";
 import { MarkdownView, safeUrl, type ImageResolver } from "./MarkdownView";
 import { findImage } from "./images/match";
 
@@ -9,10 +9,15 @@ const beadImages: BeadImage[] = [
   { n: 1, path: "qa/evidence/r1/01.png", caption: "01.png", available: true },
   { n: 2, path: "/srv/att/BUG-5.png", caption: "BUG-5.png", available: true },
   { n: 3, path: "/tmp/x.png", caption: "x.png", available: false },
+  { n: 4, path: null, caption: "Step 1", available: true, sha256: "a".repeat(64), served_as: "attachment", reason: null },
+  { n: 5, path: "qa/evidence/r1/02.png", caption: "Step 2", available: true, sha256: null, served_as: "file", reason: null },
 ];
 const resolver = (open = vi.fn()): ImageResolver => ({
   find: (address) => findImage(beadImages, address),
-  url: (n) => `/api/beads/alpha/a-1/images/${n}`,
+  url: (n) => {
+    const image = beadImages.find((candidate) => candidate.n === n);
+    return (image && imageAddress("alpha", "a-1", image)) ?? "";
+  },
   open,
 });
 
@@ -140,5 +145,30 @@ describe("MarkdownView", () => {
     const { container } = render(<MarkdownView text={"![gone](/tmp/x.png)"} images={resolver()} />);
     expect(container.querySelector("img")).toBeNull();
     expect(container).toHaveTextContent("gone");
+  });
+
+  it("REQ-UI-028 attachment image inline: one served as attachment, one as file, the local: line as text", () => {
+    const sha = "a".repeat(64);
+    render(
+      <MarkdownView
+        text={`![Step 1](attachment:${sha})\nlocal: qa/evidence/r1/01.png\n\n![Step 2](qa/evidence/r1/02.png)`}
+        images={resolver()}
+      />,
+    );
+    expect(screen.getByRole("img", { name: "Step 1" })).toHaveAttribute("src", `/api/beads/alpha/a-1/attachments/${sha}`);
+    expect(screen.getByRole("img", { name: "Step 2" })).toHaveAttribute("src", "/api/beads/alpha/a-1/images/5");
+    expect(screen.getByText(/local: qa\/evidence\/r1\/01\.png/)).toBeInTheDocument();
+  });
+
+  it("REQ-UI-028 link to an attachment image opens the lightbox; an unmatched attachment: is alt text", async () => {
+    const open = vi.fn();
+    const sha = "a".repeat(64);
+    const { container } = render(
+      <MarkdownView text={`[shot](attachment:${sha}) ![lost](attachment:${"c".repeat(64)})`} images={resolver(open)} />,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "shot" }));
+    expect(open).toHaveBeenCalledWith(4, screen.getByRole("button", { name: "shot" }));
+    expect(container.querySelector("img")).toBeNull();
+    expect(container).toHaveTextContent("lost");
   });
 });

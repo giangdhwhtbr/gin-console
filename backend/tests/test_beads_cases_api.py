@@ -13,6 +13,7 @@ from typing import Any
 import pytest
 from fake_bd import FakeBd
 from fake_export import bead, write_export
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -68,6 +69,7 @@ def make(
         static_dir=tmp_path / "dist",
         read_beads=reads or read_export,
         run_bd=bd or FakeBd(),
+        run_git=FakeGit(),
         clock=clock or Clock(),
         schedule_pulls=False,
     )
@@ -111,7 +113,13 @@ def test_tc_beads_011_missing_export_file_is_an_error_in_the_projects_block(
         ]
     )
     api = TestClient(
-        create_app(settings, static_dir=tmp_path / "dist", run_bd=FakeBd(), schedule_pulls=False)
+        create_app(
+            settings,
+            static_dir=tmp_path / "dist",
+            run_bd=FakeBd(),
+            run_git=FakeGit(),
+            schedule_pulls=False,
+        )
     )
     listing = api.get("/api/beads", params={"project": "P"})
     assert listing.status_code == 502
@@ -255,7 +263,13 @@ def test_tc_beads_045_opted_out_or_missing(tmp_path: Path) -> None:
         ]
     )
     api = TestClient(
-        create_app(settings, static_dir=tmp_path / "dist", run_bd=bd, schedule_pulls=False)
+        create_app(
+            settings,
+            static_dir=tmp_path / "dist",
+            run_bd=bd,
+            run_git=FakeGit(),
+            schedule_pulls=False,
+        )
     )
     assert api.post("/api/refresh").status_code == 204
     assert bd.calls == []
@@ -327,7 +341,7 @@ def test_tc_beads_052_failed_scheduled_pull_is_logged(
         beads=BeadsSettings.model_construct(pull_interval=0.05),
         projects=[ProjectEntry(name="A", path=tmp_path / "A")],
     )
-    app = create_app(settings, static_dir=tmp_path / "dist", run_bd=bd)
+    app = create_app(settings, static_dir=tmp_path / "dist", run_bd=bd, run_git=FakeGit())
     with caplog.at_level(logging.WARNING, logger="gin_console.beads.pull"):
         with TestClient(app) as api:  # starts the server
             deadline = time.monotonic() + 2

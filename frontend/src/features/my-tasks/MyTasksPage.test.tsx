@@ -60,6 +60,32 @@ describe("MyTasksPage", () => {
     expect(await screen.findAllByText("Title a-1")).toHaveLength(1);
   });
 
+  it("REQ-BEADS-034 Failed fetch note: one note naming the current project; none from an older backend", async () => {
+    const at = "2026-11-19T10:00:00Z";
+    const fetchMock = stubBeads(() => json([bead("a-1", { assignee: "giangdhwhtbr", ready: true })]), ["alpha", "omega"]);
+    const base = fetchMock.getMockImplementation();
+    let entries: unknown[] = [
+      { ...projectEntry("alpha"), attachments_fetch: { at, status: "error", error: "no network" } },
+      { ...projectEntry("omega"), attachments_fetch: { at, status: "error", error: "Disk full" } },
+    ];
+    fetchMock.mockImplementation((input: RequestInfo | URL) => {
+      if (!requested(input).startsWith("/api/projects/beads")) return base?.(input) ?? Promise.resolve(json({}, 404));
+      return Promise.resolve(json(entries));
+    });
+    open("/my-tasks?project=alpha");
+    const note = await screen.findByText(/Fetching attachments of alpha failed/);
+    expect(note).toHaveTextContent(
+      "Fetching attachments of alpha failed: no network. Run git fetch origin +refs/gin/attachments:refs/gin-console/attachments in /home/gin/alpha.",
+    );
+    expect(screen.queryByText(/Fetching attachments of omega/)).not.toBeInTheDocument();
+    expect(await screen.findAllByText("Title a-1")).toHaveLength(1);
+    cleanup();
+    entries = [projectEntry("alpha"), projectEntry("omega")];
+    open("/my-tasks?project=alpha");
+    expect(await screen.findAllByText("Title a-1")).toHaveLength(1);
+    expect(screen.queryByText(/Fetching attachments/)).not.toBeInTheDocument();
+  });
+
   it("REQ-UI-099 the My work link opens /my-tasks of the current project and is current", async () => {
     stubBeads(() => json([]));
     open("/beads?project=alpha");

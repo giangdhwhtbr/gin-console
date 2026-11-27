@@ -17,6 +17,7 @@ from gin_console.config import CONFIG_ENV, ProjectEntry, Settings, load_settings
 
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
 JPEG = b"\xff\xd8\xff\xe0" + b"0" * 100
+SHA = "ab" * 32
 NOT_FOUND = b'{"error":"not found"}'
 HEADERS = {
     "x-content-type-options": "nosniff",
@@ -104,16 +105,16 @@ def test_tc_config_009_relative_evidence_folder(
 
 
 # REQ-BEADS-026 (gin-qa evidence)
-# TC: TC-BEADS-085@04574127
+# TC: TC-BEADS-085@5e75b6a0
 def test_tc_beads_085_gin_qa_evidence_section(tmp_path: Path) -> None:
     description = (
         "## Evidence\n"
-        "- ![TC-UI-115 step 1: Open the list](attachment:ab12)\n"
+        f"- ![TC-UI-115 step 1: Open the list](attachment:{SHA})\n"
         "  local: qa/evidence/r1/tc-ui-115/01.png\n"
     )
     images = detail_images(tmp_path, bead("b-1", issue_type="bug", description=description))
-    assert [(i["n"], i["path"], i["caption"]) for i in images] == [
-        (1, "qa/evidence/r1/tc-ui-115/01.png", "TC-UI-115 step 1: Open the list")
+    assert [(i["n"], i["sha256"], i["path"], i["caption"]) for i in images] == [
+        (1, SHA, "qa/evidence/r1/tc-ui-115/01.png", "TC-UI-115 step 1: Open the list")
     ]
 
 
@@ -281,12 +282,28 @@ def test_tc_beads_096_image_count_of_the_list(tmp_path: Path) -> None:
 
 
 # REQ-BEADS-002 (Images)
-# TC: TC-BEADS-097@7336e197
+# TC: TC-BEADS-097@3415cc1e
 def test_tc_beads_097_images_of_the_detail(tmp_path: Path) -> None:
     put(tmp_path / "p/qa/evidence/r1/01.png")
     description = "qa/evidence/r1/01.png\n/tmp/x.png"
     images = detail_images(tmp_path, bead("b-1", issue_type="bug", description=description))
     assert images == [
-        {"n": 1, "path": "qa/evidence/r1/01.png", "caption": "01.png", "available": True},
-        {"n": 2, "path": "/tmp/x.png", "caption": "x.png", "available": False},
+        {
+            "n": 1,
+            "path": "qa/evidence/r1/01.png",
+            "sha256": None,
+            "caption": "01.png",
+            "available": True,
+            "served_as": "file",
+            "reason": None,
+        },
+        {
+            "n": 2,
+            "path": "/tmp/x.png",
+            "sha256": None,
+            "caption": "x.png",
+            "available": False,
+            "served_as": None,
+            "reason": None,
+        },
     ]

@@ -5,6 +5,7 @@ from typing import Any
 
 from fake_bd import FakeBd
 from fake_export import FakeExport, bead, write_export
+from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
@@ -35,6 +36,7 @@ def make(tmp_path: Path, runners: dict[str, Any], clock: Clock | None = None) ->
         static_dir=tmp_path / "dist",
         read_beads=lambda cwd: runners[cwd.name](cwd),
         run_bd=FakeBd(),
+        run_git=FakeGit(),
         clock=clock or Clock(),
     )
     return TestClient(app, raise_server_exceptions=False)

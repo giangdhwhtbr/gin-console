@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BeadImage } from "../api";
-import { findImage, imagePath } from "./match";
+import { attachmentSha, findImage, imagePath } from "./match";
 
 const images: BeadImage[] = [
   { n: 1, path: "qa/a b.png", caption: "a", available: true },
@@ -37,5 +37,23 @@ describe("image match", () => {
     expect(findImage(images, "file:///srv/att/y.png")?.n).toBe(3);
     expect(findImage(images, "/srv/att/x.png")).toBeNull();
     expect(findImage(images, "other.png")).toBeNull();
+  });
+
+  it("REQ-UI-028 attachmentSha reads an attachment: address of 64 hex digits, lower-cased", () => {
+    expect(attachmentSha(`attachment:${"A".repeat(64)}`)).toBe("a".repeat(64));
+    expect(attachmentSha("attachment:ab12")).toBeNull();
+    expect(attachmentSha("qa/a.png")).toBeNull();
+  });
+
+  it("REQ-UI-028 findImage matches an attachment: address by sha256, available images only", () => {
+    const shaA = "a".repeat(64);
+    const shaB = "b".repeat(64);
+    const list: BeadImage[] = [
+      { n: 1, path: null, caption: "A", available: true, sha256: shaA, served_as: "attachment", reason: null },
+      { n: 2, path: null, caption: "B", available: false, sha256: shaB, served_as: null, reason: "pruned" },
+    ];
+    expect(findImage(list, `attachment:${shaA.toUpperCase()}`)?.n).toBe(1);
+    expect(findImage(list, `attachment:${shaB}`)).toBeNull();
+    expect(findImage(list, `attachment:${"c".repeat(64)}`)).toBeNull();
   });
 });
