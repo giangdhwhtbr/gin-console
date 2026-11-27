@@ -3,8 +3,9 @@
 from collections.abc import Callable
 from datetime import datetime
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
+from gin_console.auth.access import ProjectsOf
 from gin_console.beads.errors import BeadsError
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.config import ProjectEntry, Settings
@@ -13,7 +14,10 @@ from gin_console.overview.service import build_overview
 
 
 def build_router(
-    settings: Settings, snapshots: SnapshotStore, clock: Callable[[], datetime]
+    settings: Settings,
+    snapshots: SnapshotStore,
+    clock: Callable[[], datetime],
+    projects: ProjectsOf,
 ) -> APIRouter:
     router = APIRouter()
     aging_days = settings.overview.aging_days
@@ -34,12 +38,12 @@ def build_router(
             return ProjectOverview(name=entry.name, error="issues.jsonl: date out of range")
 
     @router.get("/overview")
-    def get_overview() -> Overview:
+    def get_overview(request: Request) -> Overview:
         now = clock()
         return Overview(
             generated_at=now,
             aging_days=aging_days,
-            projects=[one(entry, now) for entry in settings.projects],
+            projects=[one(entry, now) for entry in projects(request)],
         )
 
     return router

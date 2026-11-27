@@ -28,22 +28,28 @@ class FailureLimiter:
             if not times:
                 del self._failures[key]
 
-    def retry_after(self, key: str) -> int | None:
-        """None while `key` is under the limit; else whole seconds until its oldest failure
-        leaves the window, at least 1."""
+    def reserve(self, key: str) -> int | None:
+        """Count one attempt of `key` now, before it is checked, so concurrent attempts cannot
+        pass the limit; at the limit count nothing and return the whole seconds until the
+        oldest failure leaves the window, at least 1."""
         with self._lock:
             now = self._clock()
             self._prune(now)
-            times = self._failures.get(key)
-            if times is None or len(times) < self._limit:
+            times = self._failures.setdefault(key, deque())
+            if len(times) < self._limit:
+                times.append(now)
                 return None
             return max(1, math.ceil((times[0] + self._window - now).total_seconds()))
 
-    def fail(self, key: str) -> None:
+    def release(self, key: str) -> None:
+        """Take back one attempt of `key` that did not fail: the newest. A concurrent attempt
+        may be newer, which only moves the end of a lock by that gap."""
         with self._lock:
-            now = self._clock()
-            self._prune(now)
-            self._failures.setdefault(key, deque()).append(now)
+            times = self._failures.get(key)
+            if times:
+                times.pop()
+            if not times:
+                self._failures.pop(key, None)
 
     def clear(self, key: str) -> None:
         with self._lock:

@@ -227,7 +227,7 @@ auth:
     window: 15m     # at least 1m
 ```
 
-After `per_user` failed sign-ins for a username, or `per_ip` from one address, inside `window`, sign-in answers "too many attempts" until the oldest failure leaves the window. A session lasts `session_ttl` after sign-in. Sessions live in memory, so a restart signs everyone out. The session cookie is marked `Secure` when the console is reached over `https`, for example through `tailscale serve`.
+After `per_user` failed sign-ins for a username, or `per_ip` from one address, inside `window`, sign-in answers "too many attempts" until the oldest failure leaves the window. A session lasts `session_ttl` after sign-in. Sessions live in memory, so a restart signs everyone out. The session cookie is marked `Secure` when the request reaches the console as `https`. Behind a proxy such as `tailscale serve`, uvicorn takes the scheme and the client address from the proxy's `X-Forwarded-Proto` and `X-Forwarded-For` headers only when the proxy connects from loopback (`127.0.0.1` or `::1`). For a proxy at another address, as with Docker, set `FORWARDED_ALLOW_IPS` to that address; otherwise the cookie is not `Secure` and every sign-in counts against the proxy's address.
 
 ### Managing users
 
