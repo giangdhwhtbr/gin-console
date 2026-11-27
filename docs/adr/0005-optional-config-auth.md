@@ -1,7 +1,7 @@
 # Optional sign-in with config-managed users
 
 Date: 2026-11-27
-Status: proposed
+Status: accepted
 
 ## Context
 

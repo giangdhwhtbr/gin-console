@@ -6,7 +6,7 @@ project at once, and keeps each project's last result; `PullScheduler` pulls on 
 
 import logging
 import threading
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor, wait
 from datetime import datetime
 from pathlib import Path
@@ -54,12 +54,13 @@ class PullService:
         self._running: dict[str, Future[PullResult]] = {}
         self._results: dict[str, PullResult] = {}
 
-    def pull_all(self) -> dict[str, PullResult]:
-        """Pull every project that exists and does not opt out; return when all have ended."""
+    def pull_all(self, names: Collection[str] | None = None) -> dict[str, PullResult]:
+        """Pull every project, or those of `names` when given, that exists and does not opt
+        out; return when all have ended."""
         futures = {
             entry.name: self._start(entry)
             for entry in self._projects
-            if entry.pull and entry.path.is_dir()
+            if (names is None or entry.name in names) and entry.pull and entry.path.is_dir()
         }
         wait(futures.values())
         return {name: future.result() for name, future in futures.items()}

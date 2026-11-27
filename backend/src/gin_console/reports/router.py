@@ -4,9 +4,10 @@ import re
 from collections.abc import Callable
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
+from gin_console.auth.access import ProjectsOf
 from gin_console.beads.service import KeyedCache
 from gin_console.beads.snapshot import SnapshotStore
 from gin_console.beads.source import BeadsError
@@ -63,6 +64,7 @@ def build_router(
     interactions: InteractionStore,
     clock: Callable[[], datetime],
     on_refresh: list[Callable[[], None]],
+    projects: ProjectsOf,
 ) -> APIRouter:
     router = APIRouter()
     reports = KeyedCache[tuple[str, Scope], Report](TTL, clock)
@@ -86,17 +88,21 @@ def build_router(
                 raise _UnknownMilestone(scope.id)
         return build_report(beads, now=now, project=entry.name, scope=scope)
 
-    def find(project: str | None) -> ProjectEntry:
-        entry = next((p for p in settings.projects if p.name == project), None)
+    def find(request: Request, project: str | None) -> ProjectEntry:
+        """A project the request may see (REQ-AUTH-007); 404 for any other, before a cache."""
+        entry = next((p for p in projects(request) if p.name == project), None)
         if entry is None or not entry.path.is_dir():
             raise HTTPException(status_code=404)
         return entry
 
     @router.get("/reports", response_model=Report)
     def get_report(
-        project: str | None = None, milestone: str | None = None, days: str | None = None
+        request: Request,
+        project: str | None = None,
+        milestone: str | None = None,
+        days: str | None = None,
     ) -> Report | JSONResponse:
-        entry = find(project)
+        entry = find(request, project)
         scope = parse_scope(milestone, days)
         if isinstance(scope, JSONResponse):
             return scope
@@ -111,9 +117,12 @@ def build_router(
 
     @router.get("/reports/team", response_model=TeamReport)
     def get_team(
-        project: str | None = None, milestone: str | None = None, days: str | None = None
+        request: Request,
+        project: str | None = None,
+        milestone: str | None = None,
+        days: str | None = None,
     ) -> TeamReport | JSONResponse:
-        entry = find(project)
+        entry = find(request, project)
         scope = parse_scope(milestone, days)
         if isinstance(scope, JSONResponse):
             return scope
@@ -127,9 +136,12 @@ def build_router(
 
     @router.get("/reports/status", response_model=StatusReport)
     def get_status(
-        project: str | None = None, milestone: str | None = None, days: str | None = None
+        request: Request,
+        project: str | None = None,
+        milestone: str | None = None,
+        days: str | None = None,
     ) -> StatusReport | JSONResponse:
-        entry = find(project)
+        entry = find(request, project)
         scope = parse_scope(milestone, days)
         if isinstance(scope, JSONResponse):
             return scope
@@ -143,9 +155,12 @@ def build_router(
 
     @router.get("/reports/bugs", response_model=BugsReport)
     def get_bugs(
-        project: str | None = None, milestone: str | None = None, days: str | None = None
+        request: Request,
+        project: str | None = None,
+        milestone: str | None = None,
+        days: str | None = None,
     ) -> BugsReport | JSONResponse:
-        entry = find(project)
+        entry = find(request, project)
         scope = parse_scope(milestone, days)
         if isinstance(scope, JSONResponse):
             return scope

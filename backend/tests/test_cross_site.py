@@ -5,10 +5,13 @@ from fake_bd import FakeBd
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app, refuses_cross_site
-from gin_console.config import ProjectEntry, Settings
+from gin_console.auth.passwords import hash_password
+from gin_console.auth.users import User, save_users
+from gin_console.config import AuthSettings, ProjectEntry, Settings
 
 DAY = "2026-11-22"
 FILE = f"/api/requirements/mockups/p/files/ui/{DAY}/style.css"
+GRANT_FILE = f"/api/requirements/mockups/p/g/G/files/ui/{DAY}/style.css"
 REFUSED = {"error": "cross-site request refused"}
 
 
@@ -54,6 +57,13 @@ def site(value: str) -> dict[str, str]:
         ("GET", "/api/requirements/mockups/files/x", "cross-site", True),
         ("GET", "/api/requirements/mockups//files/x", "cross-site", True),
         ("GET", "/api/x/api/requirements/mockups/m/files/x", "cross-site", True),
+        ("GET", GRANT_FILE, "cross-site", False),
+        ("GET", GRANT_FILE, "same-site", False),
+        ("POST", GRANT_FILE, "cross-site", True),
+        ("HEAD", GRANT_FILE, "cross-site", True),
+        ("GET", "/api/requirements/mockups/p/g/files/x", "cross-site", True),
+        ("GET", "/api/requirements/mockups/p/g//files/x", "cross-site", True),
+        ("GET", "/api/requirements/mockups/p/g/G/h/files/x", "cross-site", True),
         ("GET", "/beads", "cross-site", False),
         ("GET", "/apix", "cross-site", False),
     ],
@@ -162,4 +172,31 @@ def test_server_012_root_path(tmp_path: Path) -> None:
     res = app.get(f"/console{FILE}", headers=site("cross-site"))
     assert res.status_code == 200 and res.text == "body { color: red; }"
     res = app.post(f"/console{FILE}", headers=site("cross-site"))
+    assert res.status_code == 403 and res.json() == REFUSED
+
+
+# REQ-SERVER-012: Mockup files through a grant
+def test_server_012_mockup_files_through_a_grant(tmp_path: Path) -> None:
+    users_file = tmp_path / "users.yaml"
+    save_users(
+        users_file,
+        [User(name="an", email="an@x.io", password_hash=hash_password("P"), projects=["p"])],
+    )
+    client(tmp_path, FakeBd())  # writes the dist folder and the confirmed mockup of `p`
+    settings = Settings(
+        projects=[ProjectEntry(name="p", path=tmp_path / "p")],
+        auth=AuthSettings(enabled=True, users_file=users_file),
+    )
+    app = TestClient(create_app(settings, static_dir=tmp_path / "dist", schedule_pulls=False))
+    grant = app.post("/api/auth/login", json={"username": "an", "password": "P"}).json()[
+        "mockup_grant"
+    ]
+    app.cookies.clear()
+    path = f"/api/requirements/mockups/p/g/{grant}/files/ui/{DAY}/style.css"
+    res = app.get(path, headers=site("cross-site"))
+    assert res.status_code == 200 and res.text == "body { color: red; }"
+    # not refused here, so the grant check of REQ-AUTH-016 answers
+    res = app.get(path.replace(grant, "forged"), headers=site("cross-site"))
+    assert res.status_code == 404 and res.json() == {"error": "not found"}
+    res = app.post(path, headers=site("cross-site"))
     assert res.status_code == 403 and res.json() == REFUSED
