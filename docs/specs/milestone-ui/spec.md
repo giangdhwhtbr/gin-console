@@ -471,7 +471,7 @@ Source: `assets/2026-11-08/mockup/index.html#milestone`
 - THEN the header shows no lane count and the rest of the header is unchanged
 
 ### REQ-MILESTONE-UI-018: Beads tab on the milestone page
-The milestone page SHALL offer the tabs Gantt, Beads and Retro (REQ-MILESTONE-UI-019), kept in the URL as `tab` (`gantt` when absent or unknown, `beads`, `retro`), and SHALL treat `tab=graph` as `tab=beads` with `view=graph`. WHILE the Beads tab is shown, the page SHALL show the Beads views (REQ-UI-030) of the milestone's project with the milestone fixed to this one, no Milestone filter in the filter bar or its sheet (REQ-UI-142) and "Clear filters" leaving the milestone as it is (REQ-UI-143), SHALL keep their search, filters, view, selection and graph scope in the milestone page's URL with the names the Beads page uses, and SHALL fetch closed beads without "Show closed" WHILE the milestone is closed. WHEN the user changes tab, the page SHALL keep only `start` and `zoom` of the query besides `tab`.
+The milestone page SHALL offer the tabs Gantt, Beads, Retro (REQ-MILESTONE-UI-019) and Readiness (REQ-QA-012), kept in the URL as `tab` (`gantt` when absent or unknown, `beads`, `retro`, `readiness`), and SHALL treat `tab=graph` as `tab=beads` with `view=graph`. WHILE the Beads tab is shown, the page SHALL show the Beads views (REQ-UI-030) of the milestone's project with the milestone fixed to this one, no Milestone filter in the filter bar or its sheet (REQ-UI-142) and "Clear filters" leaving the milestone as it is (REQ-UI-143), SHALL keep their search, filters, view, selection and graph scope in the milestone page's URL with the names the Beads page uses, and SHALL fetch closed beads without "Show closed" WHILE the milestone is closed. WHEN the user changes tab, the page SHALL keep only `start` and `zoom` of the query besides `tab`.
 
 #### Scenario: Beads tab
 - GIVEN milestone `m2` of project `p` with epics `e1` and `e2` and a bead `x` under milestone `m3`
@@ -502,6 +502,11 @@ The milestone page SHALL offer the tabs Gantt, Beads and Retro (REQ-MILESTONE-UI
 - GIVEN closed milestone `m1` whose beads are all closed
 - WHEN the user opens its Beads tab with "Show closed" off
 - THEN the closed beads of `m1` are shown
+
+#### Scenario: Readiness tab
+- GIVEN milestone `m2` of project `p`
+- WHEN the user opens `/milestones/p/m2?tab=readiness`
+- THEN the Readiness tab is shown and is the selected tab
 
 ### REQ-MILESTONE-UI-019: Retro tab on the milestone page
 The milestone page SHALL offer a third tab "Retro", kept in the URL as `tab=retro` and labelled with the number of members who left a retro, that SHALL read the comments of the milestone bead through `GET /api/beads/{project}/{id}/comments` and show:

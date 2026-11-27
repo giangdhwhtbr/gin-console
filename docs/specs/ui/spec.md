@@ -767,12 +767,12 @@ The Graph view (REQ-UI-106) SHALL expose the graph to assistive technology with 
 - THEN the highlight changes without a transition
 
 ### REQ-UI-055: Main navigation
-The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Overview, Beads, My work, Milestones, Requirements and Reports, in that order, Overview going to `/` and the others to `/beads`, `/my-tasks`, `/milestones`, `/requirements` and `/reports` with `?project=<current project>` (REQ-UI-124).
+The frontend SHALL show one navigation landmark labelled "Main" on every page, holding exactly one link each to Overview, Beads, My work, Milestones, Requirements, Tests and Reports, in that order, Overview going to `/` and the others to `/beads`, `/my-tasks`, `/milestones`, `/requirements`, `/tests` and `/reports` with `?project=<current project>` (REQ-UI-124).
 
-#### Scenario: Six links
+#### Scenario: Seven links
 - GIVEN any page is shown and the current project is `a`
 - WHEN the page loads
-- THEN the "Main" navigation holds the links Overview, Beads, My work, Milestones, Requirements and Reports, one each, going to `/`, `/beads?project=a`, `/my-tasks?project=a`, `/milestones?project=a`, `/requirements?project=a` and `/reports?project=a`
+- THEN the "Main" navigation holds the links Overview, Beads, My work, Milestones, Requirements, Tests and Reports, one each, going to `/`, `/beads?project=a`, `/my-tasks?project=a`, `/milestones?project=a`, `/requirements?project=a`, `/tests?project=a` and `/reports?project=a`
 
 #### Scenario: Short label
 - GIVEN a window 390px wide, or the icon rail
@@ -2451,12 +2451,12 @@ The frontend SHALL show a project switcher labelled "Project" that names the cur
 - THEN the URL becomes `/requirements/changes?project=b`
 
 ### REQ-UI-124: Current project
-The frontend SHALL take the current project, in this order: from the `project` query of the URL when it names a configured project whose directory exists; else the project last chosen in this browser tab; else the favorite project; else the first configured project. It SHALL remember as last chosen, for the browser tab, the project the Beads, My Tasks, Milestones, Requirements, Reports, bead or milestone page shows and a project chosen in the switcher, and SHALL remember the favorite across tabs and visits. The Main navigation links Beads, My Tasks, Milestones, Requirements and Reports SHALL carry `?project=<current project>`. WHEN the Beads, My Tasks, Milestones, Requirements or Reports page opens without `project`, it SHALL show the current project and write it into the URL without adding a history entry. A remembered or favorite project that is no longer configured SHALL be skipped. IF the browser refuses to store a choice, THEN the choice SHALL last for the visit without an error.
+The frontend SHALL take the current project, in this order: from the `project` query of the URL when it names a configured project whose directory exists; else the project last chosen in this browser tab; else the favorite project; else the first configured project. It SHALL remember as last chosen, for the browser tab, the project the Beads, My Tasks, Milestones, Requirements, Tests, Reports, bead, milestone or case page (REQ-QA-011) shows and a project chosen in the switcher, and SHALL remember the favorite across tabs and visits. The Main navigation links Beads, My Tasks, Milestones, Requirements, Tests and Reports SHALL carry `?project=<current project>`. WHEN the Beads, My Tasks, Milestones, Requirements, Tests or Reports page opens without `project`, it SHALL show the current project and write it into the URL without adding a history entry. A remembered or favorite project that is no longer configured SHALL be skipped. IF the browser refuses to store a choice, THEN the choice SHALL last for the visit without an error.
 
 #### Scenario: Links carry the project
 - GIVEN the current project is `b`
 - WHEN any page is shown
-- THEN the Beads link goes to `/beads?project=b`, Milestones to `/milestones?project=b`, My Tasks to `/my-tasks?project=b`, Requirements to `/requirements?project=b`, and Reports to `/reports?project=b`
+- THEN the Beads link goes to `/beads?project=b`, Milestones to `/milestones?project=b`, My Tasks to `/my-tasks?project=b`, Requirements to `/requirements?project=b`, Tests to `/tests?project=b`, and Reports to `/reports?project=b`
 
 #### Scenario: Last chosen beats the favorite
 - GIVEN the favorite is `a` and the user chose `b` earlier in this tab
@@ -2482,6 +2482,11 @@ The frontend SHALL take the current project, in this order: from the `project` q
 - GIVEN the browser throws when a choice is stored
 - WHEN the user chooses project `b` and opens Milestones
 - THEN the Milestones page of `b` is shown and no error is shown
+
+#### Scenario: Tests of the current project
+- GIVEN the current project is `b`
+- WHEN the user opens `/tests`, and then the case page `/tests/c/TC-UI-001`
+- THEN the Tests page of `b` is shown with the URL `/tests?project=b`, and after the case page the current project is `c`
 
 ### REQ-UI-125: Page not found
 WHEN the path matches no page of the console, including the retired `/sessions`, `/sessions/<project>/<id>` and `/quota`, the frontend SHALL show the heading "Page not found", the path, and links to the Beads page of the current project and to My Tasks, SHALL set the document title to `Page not found · gin-console`, and SHALL mark no link of the Main navigation.
