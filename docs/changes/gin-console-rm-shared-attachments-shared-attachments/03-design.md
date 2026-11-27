@@ -36,7 +36,7 @@ Rules of the change: the browser never sends a path; the console writes no ref b
 
 - Fetch: a non-zero exit, a timeout (30 seconds), a missing `git` or an `OSError` gives `status` `error` with a short message; it never fails the refresh or the scheduled run, and the scheduled run logs it. `no_store` and `no_remote` are quiet. A fetch runs even when the pull failed.
 - Listing: `git ls-tree` failing on a missing ref is an empty set; any other failure (git missing, timeout) leaves every git-ref attachment of the project `not_fetched` for that snapshot, logs once, and never fails the list or the bead page.
-- `metadata.attachments` that is not a list, an entry that is not an object, a `sha256` that is not 64 hex digits: ignored. `path`, `mime` and `bytes` of an entry are never used.
+- `metadata.attachments` that is neither a list nor the JSON text of one, an entry that is not an object, a `sha256` that is not 64 hex digits: ignored. `path`, `mime` and `bytes` of an entry are never used.
 - Serving: a malformed `sha256`, a `sha256` not among the bead's images, an entry pruned or in another store, a blob gone since the snapshot, a size over 10 MB (checked with `cat-file -s` before reading), a SHA-256 mismatch or unknown first bytes all answer the one 404. A `local` file is opened once without following a final symlink and checked inside the project's `path`.
 - Browser: an `<img>` that gets 404 shows the caption. Immutable caching is safe because the bytes of a `sha256` never change; a blob pruned later may stay in the browser's private cache.
 
