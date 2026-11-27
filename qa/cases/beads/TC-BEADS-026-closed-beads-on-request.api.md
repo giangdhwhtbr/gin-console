@@ -1,6 +1,6 @@
 # TC-BEADS-026: Closed beads on request
 
-- **REQ:** REQ-BEADS-001@81461c32
+- **REQ:** REQ-BEADS-001@d5450d95
 - **Priority:** medium
 
 **Preconditions:**

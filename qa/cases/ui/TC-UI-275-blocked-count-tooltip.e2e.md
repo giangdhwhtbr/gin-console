@@ -1,6 +1,6 @@
 # TC-UI-275: Blocked count tooltip
 
-- **REQ:** REQ-UI-132@cb96c267
+- **REQ:** REQ-UI-132@87ad72f4
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33
