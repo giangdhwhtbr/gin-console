@@ -25,6 +25,7 @@ export function BeadBody({ project, bead, overview = false }: { project: string;
     setCurrent(null);
     opener.current?.focus();
   };
+  const slides = images.filter((image) => image.available).map((image) => ({ key: image.n, src: imageUrl(project, bead.id, image.n), caption: image.caption }));
   const resolver: ImageResolver = {
     find: (address) => findImage(images, address),
     url: (n) => imageUrl(project, bead.id, n),
@@ -40,7 +41,7 @@ export function BeadBody({ project, bead, overview = false }: { project: string;
         <MarkdownText text={bead.description} images={resolver} />
       )}
       <ImagesPanel project={project} beadId={bead.id} images={images} onOpen={open} />
-      <Lightbox project={project} beadId={bead.id} images={images} current={current} onChange={setCurrent} onClose={close} />
+      <Lightbox slides={slides} current={current} onChange={setCurrent} onClose={close} />
       <TextSection title="Acceptance criteria" text={bead.acceptance_criteria} />
       <TextSection title="Design" text={bead.design} />
       <TextSection title="Notes" text={bead.notes} />

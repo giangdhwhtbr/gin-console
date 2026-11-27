@@ -163,6 +163,14 @@ describe("switchProject", () => {
     expect(p.switchProject("/beads/a/graph", "?x=1", "b")).toBe("/beads?project=b");
   });
 
+  it("REQ-UI-123 REQ-UI-124 keeps q only on the Tests page and opens it from a case page", async () => {
+    const p = await load();
+    expect(p.switchProject("/tests", "?project=a&capability=ui&result=failed&q=x", "b")).toBe("/tests?project=b&q=x");
+    expect(p.switchProject("/tests", "?project=a&capability=ui", "b")).toBe("/tests?project=b");
+    expect(p.switchProject("/tests/a/TC-UI-001", "", "b")).toBe("/tests?project=b");
+    expect(p.projectHref("/tests", "b")).toBe("/tests?project=b");
+  });
+
   it("REQ-UI-123 opens the Milestones page from a milestone page", async () => {
     const p = await load();
     expect(p.switchProject("/milestones/a/m1", "?tab=beads", "b")).toBe("/milestones?project=b");

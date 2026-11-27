@@ -1,4 +1,4 @@
-import { ChartColumn, FileCheck, Flag, House, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
+import { ChartColumn, FileCheck, FlaskConical, Flag, House, ListChecks, LogOut, PanelLeftClose, PanelLeftOpen, TriangleAlert, UserCheck } from "lucide-react";
 import { Fragment, useState, type ReactNode } from "react";
 import { useSections } from "@/features/reports/sectionStore";
 import { useRequirementSections } from "@/features/requirements/sectionStore";
@@ -34,6 +34,7 @@ const NAV = [
   { to: (project: string) => projectHref("/my-tasks", project), label: "My work", short: null, icon: UserCheck, current: ({ path, from }: Place) => path === "/my-tasks" || from === "my-tasks" },
   { to: (project: string) => projectHref("/milestones", project), label: "Milestones", short: null, icon: Flag, current: ({ path, from }: Place) => path === "/milestones" || path.startsWith("/milestones/") || from === "milestone" },
   { to: (project: string) => projectHref("/requirements", project), label: "Requirements", short: "REQs", icon: FileCheck, current: ({ path, from }: Place) => isRequirements(path) || from === "requirements" },
+  { to: (project: string) => projectHref("/tests", project), label: "Tests", short: null, icon: FlaskConical, current: ({ path }: Place) => path === "/tests" || path.startsWith("/tests/") },
   { to: (project: string) => projectHref("/reports/status", project), label: "Reports", short: null, icon: ChartColumn, current: ({ path, from }: Place) => isReports(path) || from === "reports" },
 ] as const;
 

@@ -67,7 +67,7 @@ function withQuery(path: string, params: URLSearchParams): string {
   return query === "" ? path : `${path}?${query}`;
 }
 
-export function projectHref(path: "/beads" | "/milestones" | "/my-tasks" | "/requirements" | "/reports" | "/reports/status", project: string): string {
+export function projectHref(path: "/beads" | "/milestones" | "/my-tasks" | "/requirements" | "/tests" | "/reports" | "/reports/status", project: string): string {
   return project === "" ? path : withQuery(path, new URLSearchParams({ project }));
 }
 
@@ -89,6 +89,11 @@ export function switchProject(pathname: string, search: string, name: string): s
     const q = new URLSearchParams(search).get("q");
     return withQuery(pathname, new URLSearchParams(q === null ? { project: name } : { project: name, q }));
   }
+  if (pathname === "/tests") {
+    const q = new URLSearchParams(search).get("q");
+    return withQuery(pathname, new URLSearchParams(q === null ? { project: name } : { project: name, q }));
+  }
+  if (pathname.startsWith("/tests/")) return projectHref("/tests", name);
   if (pathname.startsWith("/beads/")) return projectHref("/beads", name);
   if (pathname.startsWith("/milestones/")) return projectHref("/milestones", name);
   return pathname + search;

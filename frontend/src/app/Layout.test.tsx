@@ -51,7 +51,7 @@ const REQUIREMENTS = "REQs (Requirements)Requirements";
 
 describe("Layout", () => {
   it.each(["/", "/beads", "/sessions", "/requirements/matrix", "/reports"])(
-    "REQ-UI-055 REQ-UI-099 has one Main navigation with the six links, Overview first, on %s",
+    "REQ-UI-055 REQ-UI-099 has one Main navigation with the seven links, Overview first, on %s",
     async (path) => {
       open(path);
       await screen.findByRole("button", { name: "Project: alpha" });
@@ -63,6 +63,7 @@ describe("Layout", () => {
         ["My work", "/my-tasks?project=alpha"],
         ["Milestones", "/milestones?project=alpha"],
         ["REQs (Requirements)Requirements", "/requirements?project=alpha"], // the short and the wide label; CSS shows one
+        ["Tests", "/tests?project=alpha"],
         ["Reports", "/reports/status?project=alpha"],
       ]);
     },
@@ -72,7 +73,15 @@ describe("Layout", () => {
     open("/beads?project=beta");
     await screen.findByRole("button", { name: "Project: beta" });
     const hrefs = within(nav()).getAllByRole("link").map((link) => link.getAttribute("href"));
-    expect(hrefs).toEqual(["/", "/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/requirements?project=beta", "/reports/status?project=beta"]);
+    expect(hrefs).toEqual(["/", "/beads?project=beta", "/my-tasks?project=beta", "/milestones?project=beta", "/requirements?project=beta", "/tests?project=beta", "/reports/status?project=beta"]);
+  });
+
+  it("REQ-UI-055 REQ-UI-124 Links carry the project: the Tests link goes to /tests?project=b and is current on /tests", async () => {
+    open("/tests?project=beta");
+    await screen.findByRole("button", { name: "Project: beta" });
+    const tests = within(nav()).getByRole("link", { name: "Tests" });
+    expect(tests).toHaveAttribute("href", "/tests?project=beta");
+    expect(marked()).toEqual(["Tests"]);
   });
 
   it("REQ-UI-124 the links follow the favorite when the URL names no project", async () => {
@@ -199,11 +208,11 @@ describe("Layout", () => {
     await waitFor(() => expect(within(nav()).getByRole("link", { name: "Beads" })).toHaveAttribute("href", "/beads?project=beta"));
   });
 
-  it("REQ-UI-062 the six links share the phone bar and each is at least 44px tall", () => {
+  it("REQ-UI-062 the seven links share the phone bar and each is at least 44px tall", () => {
     open("/");
     const links = within(nav()).getAllByRole("link");
-    expect(links).toHaveLength(6);
-    for (const link of links) expect(link).toHaveClass("flex-1", "min-h-16"); // 64px tall, a sixth of 360px is 60px wide
+    expect(links).toHaveLength(7);
+    for (const link of links) expect(link).toHaveClass("flex-1", "min-h-16"); // 64px tall, a seventh of 360px is 51px wide
   });
 
   it("REQ-UI-062 offers the theme control", () => {
@@ -262,11 +271,11 @@ describe("Layout", () => {
     }
   });
 
-  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the six links when collapsed", () => {
+  it("REQ-UI-055 REQ-UI-056 REQ-UI-057 keeps one Main navigation with the seven links when collapsed", () => {
     window.localStorage.setItem(SIDEBAR_KEY, "collapsed");
     open("/beads");
     expect(screen.getAllByRole("navigation", { name: "Main" })).toHaveLength(1);
-    expect(within(nav()).getAllByRole("link")).toHaveLength(6);
+    expect(within(nav()).getAllByRole("link")).toHaveLength(7);
     expect(marked()).toEqual(["Beads"]);
   });
 
