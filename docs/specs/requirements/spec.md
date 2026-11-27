@@ -179,7 +179,7 @@ WHEN a client requests `GET /api/requirements/changes/<project>/<change>`, the s
 - THEN the response is 404
 
 ### REQ-REQUIREMENTS-009: Confirmed mockups
-WHEN a client requests `GET /api/requirements/mockups?project=<name>`, the server SHALL return each folder `docs/specs/<capability>/assets/<YYYY-MM-DD>/` whose `description.md` has a line `Confirmed: <YYYY-MM-DD>` and which holds at least one HTML or image file, newest first within each capability, with the capability, the date, the confirmation date, the person of `Confirmed by:` when given, the description text, the HTML and image file paths, and the ids of the living requirements whose `Source:` line points into the folder. Folders that are not confirmed SHALL be left out.
+WHEN a client requests `GET /api/requirements/mockups?project=<name>`, the server SHALL return each folder `docs/specs/<capability>/assets/<YYYY-MM-DD>/` whose `description.md` has a line `Confirmed: <YYYY-MM-DD>` and which holds at least one HTML or image file, newest first within each capability, with the capability, the date, the confirmation date, the person of `Confirmed by:` when given, the description text, the HTML and image file paths, the ids of the living requirements whose `Source:` line points into the folder, and the folder's `grant` for the signed-in session, `null` while auth is off (REQ-AUTH-016). Folders that are not confirmed SHALL be left out.
 
 #### Scenario: Not confirmed
 - GIVEN a folder with `Confirmed: no`
@@ -195,6 +195,11 @@ WHEN a client requests `GET /api/requirements/mockups?project=<name>`, the serve
 - GIVEN a confirmed folder with only PNG files
 - WHEN the list is requested
 - THEN it is returned with its images
+
+#### Scenario: Grant per folder
+- GIVEN auth on, a signed-in user, and two confirmed folders of one project
+- WHEN the list is requested
+- THEN each folder has its own `grant`, and the two differ
 
 ### REQ-REQUIREMENTS-010: Safe project files
 Type: non-functional
@@ -229,7 +234,7 @@ The server SHALL read project files for the requirements endpoints only inside t
 ### REQ-REQUIREMENTS-011: Mockup isolation
 Type: non-functional
 Category: security
-Every mockup file response SHALL carry `X-Content-Type-Options: nosniff` and the header `Content-Security-Policy` with `sandbox allow-scripts`, `connect-src 'none'`, `form-action 'none'` and `frame-src 'none'`. The frontend SHALL show a mockup only in an iframe whose `sandbox` attribute is exactly `allow-scripts`. A request a mockup makes to any other `/api` path, by any element or script, SHALL be refused (REQ-SERVER-012).
+Every mockup file response SHALL carry `X-Content-Type-Options: nosniff` and the header `Content-Security-Policy` `sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; connect-src 'none'; form-action 'none'; frame-src 'none'`, so a mockup loads only its own files and inline or `data:`/`blob:` content, and nothing from another origin. The frontend SHALL show a mockup only in an iframe whose `sandbox` attribute is exactly `allow-scripts`. A request a mockup makes to any other `/api` path, by any element or script, SHALL be refused (REQ-SERVER-012).
 
 #### Scenario: Script calls the API
 - GIVEN a mockup whose script fetches `/api/projects/beads` and posts to `/api/refresh`
@@ -250,6 +255,11 @@ Every mockup file response SHALL carry `X-Content-Type-Options: nosniff` and the
 - GIVEN a mockup with `<img src="/api/projects/beads">` and `<script src="/api/projects/beads">`
 - WHEN it is shown in the console or opened in its own tab
 - THEN neither request reaches a console endpoint
+
+#### Scenario: Outside resources
+- GIVEN a confirmed mockup with `<img src="https://example.com/x.png">` and a stylesheet from `https://fonts.googleapis.com`
+- WHEN it is shown in the console
+- THEN neither is requested, and its own `style.css` and inline styles still apply
 
 ### REQ-REQUIREMENTS-012: Requirements sections
 The frontend SHALL offer the sections Matrix, Changes and Mockups at `/requirements/matrix`, `/requirements/changes` and `/requirements/mockups`, and SHALL replace `/requirements` with the Matrix section keeping the query. From 1024px with the sidebar expanded, the sidebar SHALL list the sections under Requirements with the number of requirements that are not covered, the number of open changes and the number of mockup folders, leaving a number out while it is unknown; otherwise the page SHALL show them as a scrollable row of links. The selected one SHALL have `aria-current="page"`. An unknown path under `/requirements` SHALL show the page of REQ-UI-125.

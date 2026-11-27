@@ -20,6 +20,10 @@ Epic gin-console-hlj (2026-11-27) added optional authentication: `auth.enabled` 
   - `GET /api/requirements/mockups` returns `grant` per mockup from `request.state.session`, which the middleware sets on the cookie path; `null` while auth is off. Login and `me` return no grant.
   - Every grant failure, also while auth is off, answers the same 404 `{"error": "not found"}` in the middleware, before the router.
 - The mockup CSP (`requirements/router.py` `POLICY`) adds `default-src 'self' 'unsafe-inline' data: blob:`, so a mockup loads nothing from another origin (REQ-REQUIREMENTS-011).
+  - `hmac.compare_digest` on two `str` raises `TypeError` on non-ASCII text, and the percent-decoded path can carry such text, so `user_of_folder_grant` refuses a non-ASCII grant first; otherwise it is a 500.
+  - `Session.token` and `Session.grant_key` are `field(repr=False)`, so a repr in a log or traceback never shows them.
+  - The mockup list returns only folders with an HTML or image file; a test fixture with only `style.css` gets no grant.
+  - Chromium reports CSP-blocked subresource requests to Playwright's `page.on("request")`. TC-REQUIREMENTS-064 therefore asserts that no outside request reached a route stub and that each failed. The stub's CSP mirrors `POLICY`, which TC-REQUIREMENTS-035/036 pin.
 - The frontend `app/session.ts` provides `apiFetch`. Every `features/*/api.ts` call uses it, so a 401 returns to sign-in with the open page kept.
 
 **Consequences**
@@ -36,7 +40,7 @@ Epic gin-console-hlj (2026-11-27) added optional authentication: `auth.enabled` 
 **References**
 - Code: `backend/src/gin_console/auth/`, `backend/src/gin_console/app.py`, `frontend/src/app/{session.ts,SignInPage.tsx}`, `frontend/src/features/requirements/paths.ts`.
 - Decision: `docs/adr/0005-optional-config-auth.md`.
-- Change: `docs/changes/archive/2026-11-27-gin-console-hlj-optional-auth/`; the folder grant and strict CSP: `docs/changes/gin-console-dbt-mockup-grant-scope/`.
+- Change: `docs/changes/archive/2026-11-27-gin-console-hlj-optional-auth/`; the folder grant and strict CSP: `docs/changes/archive/2026-11-27-gin-console-dbt-mockup-grant-scope/`.
 - Beads: gin-console-hlj (tracks .1–.4), gin-console-dbt.
 - Related: [beads-pull](beads-pull.md), which notes the pre-commit hook needs frontend deps in a fresh worktree.
 
