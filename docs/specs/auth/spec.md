@@ -5,6 +5,7 @@
 ## Diagrams
 
 - [manage-users-activity](diagrams/manage-users-activity.md)
+- [mockup-grant-activity](diagrams/mockup-grant-activity.md)
 - [project-access-activity](diagrams/project-access-activity.md)
 - [session-state](diagrams/session-state.md)
 - [sign-in-activity](diagrams/sign-in-activity.md)
@@ -35,7 +36,7 @@ WHILE `auth.enabled` is `false`, the console SHALL serve every route as it does 
 - THEN the response is 404
 
 ### REQ-AUTH-002: Sign in
-WHILE auth is on, WHEN a client posts `{"username", "password"}` to `/api/auth/login` and the password matches the user's hash, the console SHALL create a session for that user, set a `gin_console_session` cookie holding a random token of at least 32 bytes with `HttpOnly`, `SameSite=Strict`, `Path=/` and `Max-Age` equal to `auth.session_ttl`, plus `Secure` when the request scheme is `https`, and answer 200 with the user's `name`, `email`, allowed project names and `mockup_grant` (REQ-AUTH-016); `GET /api/auth/me` with that cookie SHALL answer `{"enabled": true, "user": {...}}` with the same fields, and without a valid session `{"enabled": true, "user": null}`.
+WHILE auth is on, WHEN a client posts `{"username", "password"}` to `/api/auth/login` and the password matches the user's hash, the console SHALL create a session for that user, set a `gin_console_session` cookie holding a random token of at least 32 bytes with `HttpOnly`, `SameSite=Strict`, `Path=/` and `Max-Age` equal to `auth.session_ttl`, plus `Secure` when the request scheme is `https`, and answer 200 with the user's `name`, `email`, and allowed project names; `GET /api/auth/me` with that cookie SHALL answer `{"enabled": true, "user": {...}}` with the same fields, and without a valid session `{"enabled": true, "user": null}`.
 
 #### Scenario: Right password
 - GIVEN auth on and user `an` with password `P`
@@ -56,6 +57,11 @@ WHILE auth is on, WHEN a client posts `{"username", "password"}` to `/api/auth/l
 - GIVEN user `an`
 - WHEN a client signs in as `An` with the right password
 - THEN the sign-in succeeds
+
+#### Scenario: No grant in the user
+- GIVEN a client signed in as `an`
+- WHEN it calls `GET /api/auth/me`
+- THEN `user` has no `mockup_grant` field
 
 ### REQ-AUTH-003: Failed sign-in
 Type: non-functional
@@ -283,24 +289,39 @@ WHILE auth is on, WHEN any API request of the frontend answers 401, the frontend
 - THEN the sign-in screen is shown, and after signing in the beads page is shown again
 
 ### REQ-AUTH-016: Mockup file grant
-WHILE auth is on, sign-in SHALL also create a mockup grant, a random token of at least 32 bytes different from the session token, that ends with its session; `POST /api/auth/login` and `GET /api/auth/me` SHALL return it as `user.mockup_grant`, and the frontend SHALL load mockups from `/api/requirements/mockups/<project>/g/<grant>/files/...`, so the files a sandboxed mockup loads, which carry no session cookie, are still served. A request on that path SHALL be served only when the grant belongs to a live session whose user is allowed `<project>` (REQ-AUTH-007), and SHALL otherwise answer 404; a grant SHALL grant nothing but GET requests of that path. WHILE auth is off, the grant path SHALL answer 404 and `mockup_grant` SHALL be absent.
+WHILE auth is on, each session SHALL hold a grant id and a secret grant key of at least 32 random bytes, neither equal to the session token, and the grant key SHALL never leave the server; the grant of a mockup folder SHALL be `<grant id>.<mac>`, where `<mac>` is the unpadded base64url HMAC-SHA256 of `<project>/<capability>/<date>` under the grant key, and `GET /api/requirements/mockups?project=<name>` SHALL return it as `grant` on each mockup (REQ-REQUIREMENTS-009). The frontend SHALL load a mockup's files from `/api/requirements/mockups/<project>/g/<grant>/files/<capability>/<date>/...` with that mockup's grant, so the files a sandboxed mockup loads, which carry no session cookie, are still served. A request on that path SHALL be served only when the grant id names a live session, the mac matches the `<project>`, `<capability>` and `<date>` of the path, and the session's user is allowed `<project>` (REQ-AUTH-007); otherwise, including a malformed grant, it SHALL answer 404 with one body. A grant SHALL grant nothing but GET requests of that path. WHILE auth is off, the grant path SHALL answer 404 and `grant` SHALL be `null`.
 
 #### Scenario: Styled mockup
-- GIVEN user `an` signed in, allowed project `a`, and a confirmed mockup of `a` with `style.css`
-- WHEN the mockup page loads `style.css` through the grant path without a cookie
+- GIVEN user `an` signed in, allowed project `a`, and a confirmed mockup `ui/2026-11-22` of `a` with `style.css`
+- WHEN the mockup page loads `style.css` through its grant without a cookie
 - THEN the file is served
 
+#### Scenario: Grant of another folder
+- GIVEN `an`'s grant of `ui/2026-11-22` in project `a` and a second confirmed folder `reports/2026-11-12` of `a`
+- WHEN `/api/requirements/mockups/a/g/<that grant>/files/reports/2026-11-12/index.html` is requested
+- THEN the response is 404
+
 #### Scenario: Other project
-- GIVEN `an`'s grant and project `b`, which `an` may not see
-- WHEN `/api/requirements/mockups/b/g/<grant>/files/...` is requested
+- GIVEN `an`'s grant of a folder in `a` and project `b`, which `an` may not see
+- WHEN the grant path of `b` is requested with it
 - THEN the response is 404
 
 #### Scenario: Ended session
 - GIVEN `an` signed out
-- WHEN the old grant path is requested
+- WHEN an old grant path is requested
 - THEN the response is 404
 
+#### Scenario: Malformed grant
+- GIVEN auth on
+- WHEN the grant path is requested with `abc`, with a valid grant id and a wrong mac, or with the session token
+- THEN each answers 404
+
 #### Scenario: Grant is not a session
-- GIVEN `an`'s grant used as the `gin_console_session` cookie
+- GIVEN a mockup grant used as the `gin_console_session` cookie
 - WHEN a client calls `GET /api/overview`
 - THEN the response is 401
+
+#### Scenario: Auth off
+- GIVEN auth off
+- WHEN the mockup list is requested
+- THEN every mockup has `grant` null and the files load from the path without `g/`

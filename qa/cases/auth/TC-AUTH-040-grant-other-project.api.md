@@ -1,10 +1,10 @@
 # TC-AUTH-040: Grant other project
 
-- **REQ:** REQ-AUTH-016@d91a919b
+- **REQ:** REQ-AUTH-016@9b0a0c99
 - **Priority:** high
 
 **Preconditions:**
-- `an`'s grant; project `b`, which `an` may not see
+- `an`'s grant of a folder of `a` from the mockup list; project `b`, which `an` may not see
 
 **Steps:**
 1. Request `/api/requirements/mockups/b/g/<grant>/files/...`

@@ -7,7 +7,7 @@ Epic gin-console-hlj (2026-11-27) added optional authentication: `auth.enabled` 
 - Core in `backend/src/gin_console/auth/`:
   - `passwords.py`: stdlib scrypt `scrypt$16384$8$1$...`. Passwords are encoded with `"utf-8", "surrogatepass"`, because a lone surrogate passes `json.loads` and would otherwise raise in `verify`, giving a 500 that the limiter never counts.
   - `users.py`: `UserDirectory` reloads on `(st_ino, st_mtime_ns, st_size)`. It starts unread so the first call reloads, since `user passwd` writes a file of the same size.
-  - `sessions.py`: tokens and mockup grants in memory.
+  - `sessions.py`: tokens, grant ids and grant keys in memory.
   - `ratelimit.py`: `FailureLimiter.reserve`/`release`. Check and record happen under one lock, before the scrypt verify.
 - Login (`auth/router.py`):
   - The body is capped at 4096 bytes, and a username over 64 characters is malformed.
@@ -16,6 +16,14 @@ Epic gin-console-hlj (2026-11-27) added optional authentication: `auth.enabled` 
 - `projects_of(settings)` gives each router the request's allowed projects. Every resolver looks names up there before any cache, so caches stay keyed by project and a forbidden project answers the same 404 as an unknown one.
 - Middleware order: cross-site guard, then `require_session`, then gzip. In Starlette the middleware added last runs first.
 - Sandboxed mockups (no `allow-same-origin`) have an opaque origin, so their subresource requests carry no `SameSite` cookie. Mockups load through `/api/requirements/mockups/<project>/g/<grant>/files/...` (REQ-AUTH-016).
+  - The grant opens one folder: `<Session.grant>.<mac>`, the unpadded base64url HMAC-SHA256 of `<project>/<capability>/<date>` under `Session.grant_key` (`auth/access.py` `folder_grant`). No grant table: the middleware recomputes the mac from the decoded path, compares with `hmac.compare_digest`, and also refuses a user no longer allowed the project, so that case gets the same 404 as the others instead of the router's.
+  - `GET /api/requirements/mockups` returns `grant` per mockup from `request.state.session`, which the middleware sets on the cookie path; `null` while auth is off. Login and `me` return no grant.
+  - Every grant failure, also while auth is off, answers the same 404 `{"error": "not found"}` in the middleware, before the router.
+- The mockup CSP (`requirements/router.py` `POLICY`) adds `default-src 'self' 'unsafe-inline' data: blob:`, so a mockup loads nothing from another origin (REQ-REQUIREMENTS-011).
+  - `hmac.compare_digest` on two `str` raises `TypeError` on non-ASCII text, and the percent-decoded path can carry such text, so `user_of_folder_grant` refuses a non-ASCII grant first; otherwise it is a 500.
+  - `Session.token` and `Session.grant_key` are `field(repr=False)`, so a repr in a log or traceback never shows them.
+  - The mockup list returns only folders with an HTML or image file; a test fixture with only `style.css` gets no grant.
+  - Chromium reports CSP-blocked subresource requests to Playwright's `page.on("request")`. TC-REQUIREMENTS-064 therefore asserts that no outside request reached a route stub and that each failed. The stub's CSP mirrors `POLICY`, which TC-REQUIREMENTS-035/036 pin.
 - The frontend `app/session.ts` provides `apiFetch`. Every `features/*/api.ts` call uses it, so a 401 returns to sign-in with the open page kept.
 
 **Consequences**
@@ -27,14 +35,13 @@ Epic gin-console-hlj (2026-11-27) added optional authentication: `auth.enabled` 
   - FastAPI GET routes answer 405 to HEAD.
 - e2e auth specs need an auth-on console with `rate_limit.per_ip` far above 20 (`qa/guidelines.md`, "Auth e2e server"). They skip without `GIN_E2E_AUTH_USER` and `GIN_E2E_AUTH_PASSWORD`.
 - Open follow-ups:
-  - gin-console-3m3: the grant covers every allowed project, and the mockup CSP allows `img-src` to other origins.
   - gin-console-fsc: Docker does not mount the users file.
 
 **References**
 - Code: `backend/src/gin_console/auth/`, `backend/src/gin_console/app.py`, `frontend/src/app/{session.ts,SignInPage.tsx}`, `frontend/src/features/requirements/paths.ts`.
 - Decision: `docs/adr/0005-optional-config-auth.md`.
-- Change: `docs/changes/archive/2026-11-27-gin-console-hlj-optional-auth/`.
-- Beads: gin-console-hlj (tracks .1–.4).
+- Change: `docs/changes/archive/2026-11-27-gin-console-hlj-optional-auth/`; the folder grant and strict CSP: `docs/changes/archive/2026-11-27-gin-console-dbt-mockup-grant-scope/`.
+- Beads: gin-console-hlj (tracks .1–.4), gin-console-dbt.
 - Related: [beads-pull](beads-pull.md), which notes the pre-commit hook needs frontend deps in a fresh worktree.
 
 **Scope**

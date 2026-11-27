@@ -1,6 +1,6 @@
 # TC-AUTH-006: Me before sign-in
 
-- **REQ:** REQ-AUTH-002@a39796dc
+- **REQ:** REQ-AUTH-002@222b89fb
 - **Priority:** medium
 
 **Preconditions:**

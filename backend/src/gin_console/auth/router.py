@@ -29,7 +29,6 @@ class SessionUser(BaseModel):
     name: str
     email: str
     projects: list[str]
-    mockup_grant: str
 
 
 class Me(BaseModel):
@@ -73,12 +72,11 @@ async def _credentials(request: Request) -> tuple[str, str] | None:
 def build_router(settings: Settings, state: AuthState) -> APIRouter:
     router = APIRouter()
 
-    def view(user: User, session: Session) -> SessionUser:
+    def view(user: User) -> SessionUser:
         return SessionUser(
             name=user.name,
             email=user.email,
             projects=[entry.name for entry in allowed_projects(settings, user)],
-            mockup_grant=session.grant,
         )
 
     @router.get("/auth/me")
@@ -86,11 +84,7 @@ def build_router(settings: Settings, state: AuthState) -> APIRouter:
         if not state.enabled:
             return Me(enabled=False, user=None)
         user: User | None = getattr(request.state, "user", None)  # set by the middleware
-        token = request.cookies.get(COOKIE)
-        session = state.sessions.get(token) if token else None
-        if user is None or session is None:
-            return Me(enabled=True, user=None)
-        return Me(enabled=True, user=view(user, session))
+        return Me(enabled=True, user=None if user is None else view(user))
 
     def reserve(ip: str, key: str | None) -> JSONResponse | None:
         """Count this attempt for the IP and the username before any check (REQ-AUTH-004);
@@ -149,7 +143,7 @@ def build_router(settings: Settings, state: AuthState) -> APIRouter:
             httponly=True,
             samesite="strict",
         )
-        return view(user, session)
+        return view(user)
 
     @router.post("/auth/logout", status_code=204)
     def logout(request: Request, response: Response) -> None:

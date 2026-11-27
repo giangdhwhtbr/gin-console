@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 
-from gin_console.auth.access import ProjectsOf, via_grant
+from gin_console.auth.access import MockupGrant, ProjectsOf, via_grant
 from gin_console.beads.service import KeyedCache
 from gin_console.config import Settings
 from gin_console.requirements.files import (
@@ -17,6 +17,7 @@ from gin_console.requirements.files import (
 from gin_console.requirements.models import (
     ChangeContent,
     ChangeList,
+    Mockup,
     MockupList,
     Reqs,
     RequirementList,
@@ -32,8 +33,12 @@ from gin_console.requirements.source import (
 )
 
 TTL = timedelta(seconds=60)
-# mockups run scripts of a project checkout: no console origin, calls, forms or frames (ADR 0004)
-POLICY = "sandbox allow-scripts; connect-src 'none'; form-action 'none'; frame-src 'none'"
+# mockups run scripts of a project checkout: no console origin, calls, forms or frames, and
+# nothing of another origin (ADR 0004, REQ-REQUIREMENTS-011)
+POLICY = (
+    "sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; "
+    "connect-src 'none'; form-action 'none'; frame-src 'none'"
+)
 
 
 def build_router(
@@ -42,6 +47,7 @@ def build_router(
     clock: Callable[[], datetime],
     on_refresh: list[Callable[[], None]],
     projects: ProjectsOf,
+    mockup_grant: MockupGrant,
 ) -> APIRouter:
     router = APIRouter()
     traces = KeyedCache[str, Trace](TTL, clock)
@@ -100,7 +106,14 @@ def build_router(
 
     @router.get("/requirements/mockups", response_model=MockupList)
     def get_mockups(request: Request, project: str | None = None) -> MockupList:
-        return MockupList(mockups=list_mockups(project_dir(request, project)))
+        """The confirmed mockups, each with its folder grant for the session (REQ-AUTH-016)."""
+        mockups = list_mockups(project_dir(request, project))
+        name = str(project)  # a project of the request, once project_dir has passed
+
+        def granted(m: Mockup) -> Mockup:
+            return m.model_copy(update={"grant": mockup_grant(request, name, m.capability, m.date)})
+
+        return MockupList(mockups=[granted(m) for m in mockups])
 
     @router.get("/requirements/mockups/{project}/files/{capability}/{day}/{path:path}")
     def get_mockup_file(

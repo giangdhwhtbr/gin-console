@@ -190,14 +190,16 @@ def test_server_012_mockup_files_through_a_grant(tmp_path: Path) -> None:
         [User(name="an", email="an@x.io", password_hash=hash_password("P"), projects=["p"])],
     )
     client(tmp_path, FakeBd())  # writes the dist folder and the confirmed mockup of `p`
+    # an HTML file, so the mockup list returns the folder and its grant
+    (tmp_path / "p" / "docs" / "specs" / "ui" / "assets" / DAY / "index.html").write_text("<p/>")
     settings = Settings(
         projects=[ProjectEntry(name="p", path=tmp_path / "p")],
         auth=AuthSettings(enabled=True, users_file=users_file),
     )
     app = TestClient(create_app(settings, static_dir=tmp_path / "dist", schedule_pulls=False))
-    grant = app.post("/api/auth/login", json={"username": "an", "password": "P"}).json()[
-        "mockup_grant"
-    ]
+    app.post("/api/auth/login", json={"username": "an", "password": "P"})
+    (mockup,) = app.get("/api/requirements/mockups", params={"project": "p"}).json()["mockups"]
+    grant = mockup["grant"]
     app.cookies.clear()
     path = f"/api/requirements/mockups/p/g/{grant}/files/ui/{DAY}/style.css"
     res = app.get(path, headers=site("cross-site"))

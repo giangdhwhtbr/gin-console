@@ -155,6 +155,7 @@ class Mockup(BaseModel):
     html: list[str]
     images: list[str]
     requirements: list[str]
+    grant: str | None = None  # the folder grant of the session; None while auth is off
 
 
 class MockupList(BaseModel):

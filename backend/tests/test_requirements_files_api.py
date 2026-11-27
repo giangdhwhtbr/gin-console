@@ -16,7 +16,10 @@ from gin_console.requirements.source import RequirementsError
 
 DAY = "2026-11-22"
 FILES = "/api/requirements/mockups/proj/files"
-POLICY = "sandbox allow-scripts; connect-src 'none'; form-action 'none'; frame-src 'none'"
+POLICY = (
+    "sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; "
+    "connect-src 'none'; form-action 'none'; frame-src 'none'"
+)
 
 
 def write(path: Path, text: str = "x") -> Path:
@@ -33,6 +36,7 @@ def root(tmp_path: Path) -> Path:
     write(folder / "description.md", f"# ui\nConfirmed: {DAY}\n")
     write(folder / "index.html", "<script>1</script>" + " " * 2000)
     write(folder / "pic.svg", "<svg xmlns='http://www.w3.org/2000/svg'/>")
+    write(folder / "style.css", "body { color: red; }")
     draft = specs / "ui" / "assets" / "2026-11-01"
     write(draft / "description.md", "Confirmed: no\n")
     write(draft / "index.html")
@@ -111,6 +115,7 @@ def test_requirements_009_list(root: Path) -> None:
     assert [m["date"] for m in body["mockups"]] == [DAY]
     assert body["mockups"][0]["html"] == ["index.html"]
     assert body["mockups"][0]["images"] == ["pic.svg"]
+    assert body["mockups"][0]["grant"] is None  # auth is off
 
 
 # REQ-REQUIREMENTS-007, REQ-REQUIREMENTS-008, REQ-REQUIREMENTS-009, REQ-REQUIREMENTS-010
@@ -178,8 +183,8 @@ def test_requirements_010_too_large(root: Path) -> None:
     assert make(root).get(f"{FILES}/ui/{DAY}/big.html").status_code == 404
 
 
-def granted(root: Path) -> tuple[TestClient, str]:
-    """An app with auth on, and the grant path of a user allowed `proj`, without a cookie."""
+def signed_in(root: Path) -> TestClient:
+    """An app with auth on and a client signed in as a user allowed `proj`."""
     users_file = root.parent / "users.yaml"
     an = User(name="an", email="an@x.io", password_hash=hash_password("P"), projects=["proj"])
     save_users(users_file, [an])
@@ -188,11 +193,32 @@ def granted(root: Path) -> tuple[TestClient, str]:
         auth=AuthSettings(enabled=True, users_file=users_file),
     )
     client = TestClient(create_app(settings, run_gin=FakeGin({}), schedule_pulls=False))
-    grant = client.post("/api/auth/login", json={"username": "an", "password": "P"}).json()[
-        "mockup_grant"
+    client.post("/api/auth/login", json={"username": "an", "password": "P"})
+    return client
+
+
+def granted(root: Path) -> tuple[TestClient, str]:
+    """An app with auth on, and the grant path of `ui/DAY` from the mockup list, without a
+    cookie."""
+    client = signed_in(root)
+    (mockup,) = client.get("/api/requirements/mockups", params={"project": "proj"}).json()[
+        "mockups"
     ]
     client.cookies.clear()
-    return client, f"/api/requirements/mockups/proj/g/{grant}/files"
+    return client, f"/api/requirements/mockups/proj/g/{mockup['grant']}/files"
+
+
+# REQ-REQUIREMENTS-009: Grant per folder
+def test_requirements_009_grant_per_folder(root: Path) -> None:
+    second = root / "docs" / "specs" / "reports" / "assets" / "2026-11-12"
+    write(second / "description.md", "Confirmed: 2026-11-12\n")
+    write(second / "index.html")
+    client = signed_in(root)
+    mockups = client.get("/api/requirements/mockups", params={"project": "proj"}).json()["mockups"]
+    grants = {(m["capability"], m["date"]): m["grant"] for m in mockups}
+    assert set(grants) == {("ui", DAY), ("reports", "2026-11-12")}
+    ui, reports = grants[("ui", DAY)], grants[("reports", "2026-11-12")]
+    assert isinstance(ui, str) and isinstance(reports, str) and ui != reports
 
 
 # REQ-REQUIREMENTS-010: Grant path
@@ -205,17 +231,25 @@ def test_requirements_010_grant_path(root: Path) -> None:
     for path in (
         f"ui/{DAY}/..%2f..%2fspec.md",
         f"ui/{DAY}/link.html",
-        "ui/2026-11-01/index.html",
         f"ui/{DAY}/index.html%00",
         f"ui/{DAY}/description.md",
     ):
         res = client.get(f"{files}/{path}")
         assert res.status_code == 404 and res.json() == {"detail": "Not Found"}
+    # another folder fails the grant check before the router (REQ-AUTH-016)
+    res = client.get(f"{files}/ui/2026-11-01/index.html")
+    assert res.status_code == 404 and res.json() == {"error": "not found"}
 
 
-# REQ-REQUIREMENTS-011: HTML, also for a range request, and SVG
+# REQ-REQUIREMENTS-011: Outside resources and SVG; the exact policy on HTML, also for a range
+# request, CSS and SVG: own files and inline, data: or blob: content, nothing of another origin
 @pytest.mark.parametrize(
-    ("name", "media"), [("index.html", "text/html; charset=utf-8"), ("pic.svg", "image/svg+xml")]
+    ("name", "media"),
+    [
+        ("index.html", "text/html; charset=utf-8"),
+        ("style.css", "text/css; charset=utf-8"),
+        ("pic.svg", "image/svg+xml"),
+    ],
 )
 @pytest.mark.parametrize("headers", [{}, {"Range": "bytes=999999-"}, {"Range": "nonsense"}])
 def test_requirements_011_headers(

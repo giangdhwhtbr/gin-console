@@ -5,7 +5,7 @@ from __future__ import annotations
 import secrets
 import threading
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
 _TOKEN_BYTES = 32
@@ -13,8 +13,9 @@ _TOKEN_BYTES = 32
 
 @dataclass(frozen=True)
 class Session:
-    token: str  # the cookie value
-    grant: str  # the mockup file grant; never accepted as a cookie
+    token: str = field(repr=False)  # the cookie value
+    grant: str  # the id of the mockup folder grants; never accepted as a cookie
+    grant_key: bytes = field(repr=False)  # signs the mockup folder grants; never leaves the server
     name: str
     created: datetime
 
@@ -31,6 +32,7 @@ class SessionStore:
         session = Session(
             token=secrets.token_urlsafe(_TOKEN_BYTES),
             grant=secrets.token_urlsafe(_TOKEN_BYTES),
+            grant_key=secrets.token_bytes(_TOKEN_BYTES),
             name=name,
             created=self._clock(),
         )

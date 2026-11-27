@@ -13,12 +13,17 @@ from fake_git import FakeGit
 from fastapi.testclient import TestClient
 
 from gin_console.app import create_app
-from gin_console.config import ProjectEntry, Settings
+from gin_console.auth.passwords import hash_password
+from gin_console.auth.users import User, save_users
+from gin_console.config import AuthSettings, ProjectEntry, Settings
 from gin_console.requirements.source import RequirementsError
 
 DAY = "2026-11-22"
 FILES = "/api/requirements/mockups/proj/files"
-POLICY = "sandbox allow-scripts; connect-src 'none'; form-action 'none'; frame-src 'none'"
+POLICY = (
+    "sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; "
+    "connect-src 'none'; form-action 'none'; frame-src 'none'"
+)
 LIST = {"project": "proj"}
 
 
@@ -398,7 +403,7 @@ def test_tc_requirements_034_nul_byte(root: Path) -> None:
     assert make(root, FakeGin({})).get(f"{FILES}/ui/{DAY}/index.html%00").status_code == 404
 
 
-# TC: TC-REQUIREMENTS-035@6a85b17b
+# TC: TC-REQUIREMENTS-035@43386c55
 def test_tc_requirements_035_headers_of_a_mockup_file(root: Path) -> None:
     res = make(root, FakeGin({})).get(f"{FILES}/ui/{DAY}/index.html")
     assert res.status_code == 200
@@ -412,3 +417,25 @@ def test_tc_requirements_036_svg(root: Path) -> None:
     assert res.status_code == 200 and res.headers["content-type"] == "image/svg+xml"
     assert res.headers["x-content-type-options"] == "nosniff"
     assert res.headers["content-security-policy"] == POLICY
+
+
+# TC: TC-REQUIREMENTS-063@528942cd
+def test_tc_requirements_063_grant_per_folder(root: Path) -> None:
+    second = root / "docs" / "specs" / "reports" / "assets" / "2026-11-12"
+    write(second / "description.md", "Confirmed: 2026-11-12\n")
+    write(second / "index.html", "<p>reports</p>")
+    users_file = root.parent / "users.yaml"
+    an = User(name="an", email="an@x.io", password_hash=hash_password("P"), projects=["proj"])
+    save_users(users_file, [an])
+    settings = Settings(
+        projects=[ProjectEntry(name="proj", path=root)],
+        auth=AuthSettings(enabled=True, users_file=users_file),
+    )
+    client = TestClient(
+        create_app(settings, run_gin=FakeGin({"trace": trace()}), schedule_pulls=False)
+    )
+    client.post("/api/auth/login", json={"username": "an", "password": "P"})
+    mockups = client.get("/api/requirements/mockups", params=LIST).json()["mockups"]
+    grants = [m["grant"] for m in mockups if m["date"] in (DAY, "2026-11-12")]
+    assert len(grants) == 2 and all(isinstance(g, str) and g for g in grants)
+    assert grants[0] != grants[1]

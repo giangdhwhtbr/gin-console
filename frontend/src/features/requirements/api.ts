@@ -28,7 +28,7 @@ export type ChangeFolder = { folder: string; change: string; title: string; epic
 export type ChangeRow = ChangeFolder & { signoff: Signoff | null; added: number | null; modified: number | null; removed: number | null };
 export type ChangeList = { changes: ChangeRow[]; error: string | null; cause: Cause | null };
 export type ChangeContent = ChangeFolder & { files: Record<string, string> };
-export type Mockup = { capability: string; date: string; confirmed: string; confirmed_by: string | null; description: string; html: string[]; images: string[]; requirements: string[] };
+export type Mockup = { capability: string; date: string; confirmed: string; confirmed_by: string | null; description: string; html: string[]; images: string[]; requirements: string[]; grant: string | null };
 export type MockupList = { mockups: Mockup[] };
 
 export class RequirementsFailure extends Error {
@@ -78,7 +78,7 @@ const isContent = (value: unknown): value is ChangeContent => {
   return isObject(files) && Object.values(files).every(isString);
 };
 const isMockup = (value: unknown) =>
-  isObject(value) && has(value, ["capability", "date", "confirmed", "description"], isString) && isStringOrNull(field(value, "confirmed_by")) && has(value, ["html", "images", "requirements"], (item) => every(item, isString));
+  isObject(value) && has(value, ["capability", "date", "confirmed", "description"], isString) && isStringOrNull(field(value, "confirmed_by")) && (field(value, "grant") === undefined || isStringOrNull(field(value, "grant"))) && has(value, ["html", "images", "requirements"], (item) => every(item, isString));
 const isMockups = (value: unknown): value is MockupList => isObject(value) && every(field(value, "mockups"), isMockup);
 
 async function get<T>(path: string, check: (value: unknown) => value is T): Promise<T> {

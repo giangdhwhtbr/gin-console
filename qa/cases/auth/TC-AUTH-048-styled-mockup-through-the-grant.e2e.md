@@ -1,6 +1,6 @@
 # TC-AUTH-048: Styled mockup through the grant
 
-- **REQ:** REQ-AUTH-016@d91a919b
+- **REQ:** REQ-AUTH-016@9b0a0c99
 - **Priority:** high
 
 **Preconditions:**
@@ -14,5 +14,5 @@
 1. Open `/requirements/mockups?project=alpha&mockup=ui/2026-11-22`
 
 **Expected:**
-- The mockup frame loads from a grant path
+- The mockup frame loads from a grant path of its folder
 - The frame's heading has the colour `style.css` sets

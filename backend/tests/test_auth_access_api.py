@@ -25,10 +25,15 @@ from gin_console.projects.models import BlockError
 from gin_console.requirements.source import RequirementsError
 
 DAY = "2026-11-22"
+REPORTS_DAY = "2026-11-12"
 CSS = "body { color: red; }"
 PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
 SHA = hashlib.sha256(PNG).hexdigest()
 NOT_FOUND = {"error": "not found"}
+POLICY = (
+    "sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; "
+    "connect-src 'none'; form-action 'none'; frame-src 'none'"
+)
 
 # Every route that takes a project, by path or by `project` query, with project `b`.
 PROJECT_ROUTES = [
@@ -70,9 +75,9 @@ PROJECT_ROUTES = [
 
 
 def fill(project: Path, *more: dict[str, Any]) -> None:
-    """A bead `x-1` with an image and an attachment of the local store and the beads `more`,
-    a change `c`, a confirmed mockup with `style.css`, and a run of case `TC-UI-001` whose step
-    has that image."""
+    """A bead `x-1` with an image and an attachment of the local store and the beads `more`, a
+    change `c`, a confirmed mockup `ui` with `index.html` and `style.css`, a second confirmed
+    mockup `reports` with `index.html`, and a run of case `TC-UI-001` whose step has that image."""
     for image in (
         project / "qa" / "evidence" / "01.png",
         project / ".agent-workflow" / "attachments" / SHA[:2] / SHA,
@@ -93,7 +98,12 @@ def fill(project: Path, *more: dict[str, Any]) -> None:
     folder = project / "docs" / "specs" / "ui" / "assets" / DAY
     folder.mkdir(parents=True)
     (folder / "description.md").write_text(f"# ui\nConfirmed: {DAY}\n")
+    (folder / "index.html").write_text('<link rel="stylesheet" href="style.css">')
     (folder / "style.css").write_text(CSS)
+    reports = project / "docs" / "specs" / "reports" / "assets" / REPORTS_DAY
+    reports.mkdir(parents=True)
+    (reports / "description.md").write_text(f"# reports\nConfirmed: {REPORTS_DAY}\n")
+    (reports / "index.html").write_text("<p>reports</p>")
 
 
 def make(tmp_path: Path, bd: FakeBd | None = None) -> TestClient:
@@ -112,10 +122,21 @@ def make(tmp_path: Path, bd: FakeBd | None = None) -> TestClient:
     return client
 
 
+def grant_of(client: TestClient, project: str, capability: str = "ui", date: str = DAY) -> str:
+    """The grant the mockup list gives `client` for one folder of `project`."""
+    res = client.get("/api/requirements/mockups", params={"project": project})
+    mockups = res.json()["mockups"]
+    grant: str = next(
+        m["grant"] for m in mockups if (m["capability"], m["date"]) == (capability, date)
+    )
+    return grant
+
+
 def signed_in(client: TestClient, name: str) -> tuple[TestClient, str]:
-    """A new client of the same app signed in as `name`, and its mockup grant."""
+    """A new client of the same app signed in as `name`, and its grant of `ui/DAY` in `a`."""
     other = TestClient(client.app)
-    return other, sign_in(other, name).json()["mockup_grant"]
+    sign_in(other, name)
+    return other, grant_of(other, "a")
 
 
 def unknown(url: str) -> str:
@@ -126,7 +147,8 @@ def unknown(url: str) -> str:
 @pytest.mark.parametrize(("route", "url"), PROJECT_ROUTES, ids=[r for r, _ in PROJECT_ROUTES])
 def test_auth_007_other_project(tmp_path: Path, route: str, url: str) -> None:
     app = make(tmp_path)
-    root, root_grant = signed_in(app, "root")
+    root, _ = signed_in(app, "root")
+    root_grant = grant_of(root, "b")
     an, an_grant = signed_in(app, "an")
     allowed = root.get(url.format(grant=root_grant))
     assert allowed.status_code != 404, allowed.text  # the route reaches `b` for its user
@@ -171,7 +193,8 @@ def test_auth_007_all_projects(tmp_path: Path) -> None:
 def test_auth_007_no_project(tmp_path: Path) -> None:
     app = make(tmp_path)
     write_users(tmp_path / "users.yaml", [user("an", []), user("root", "*")])
-    an, _ = signed_in(app, "an")
+    an = TestClient(app.app)
+    sign_in(an, "an")
     assert an.get("/api/projects/beads").json() == []
     assert an.get("/api/overview").json()["projects"] == []
     assert an.get("/api/beads?project=a").status_code == 404
@@ -211,26 +234,57 @@ def test_auth_008_refresh_drops_caches(tmp_path: Path) -> None:
     assert [b["id"] for b in an.get("/api/beads?project=a").json()] == ["x-2"]
 
 
-def grant_path(project: str, grant: str, name: str = "style.css") -> str:
-    return f"/api/requirements/mockups/{project}/g/{grant}/files/ui/{DAY}/{name}"
+def grant_path(project: str, grant: str, name: str = "style.css", folder: str = f"ui/{DAY}") -> str:
+    return f"/api/requirements/mockups/{project}/g/{grant}/files/{folder}/{name}"
 
 
-# REQ-AUTH-016: Styled mockup
+# REQ-AUTH-016: Styled mockup, through the grant of the mockup list and without a cookie
 def test_auth_016_styled_mockup(tmp_path: Path) -> None:
     app = make(tmp_path)
     _, grant = signed_in(app, "an")
     res = TestClient(app.app).get(grant_path("a", grant), headers={"sec-fetch-site": "cross-site"})
     assert res.status_code == 200 and res.text == CSS
-    assert res.headers["content-security-policy"].startswith("sandbox allow-scripts")
+    assert res.headers["content-security-policy"] == POLICY
     assert res.headers["x-content-type-options"] == "nosniff"
 
 
-# REQ-AUTH-016: Other project
+# REQ-AUTH-016: the grant is `<grant id>.<mac>`, one id per session and one mac per folder
+def test_auth_016_grant_format(tmp_path: Path) -> None:
+    an, grant = signed_in(make(tmp_path), "an")
+    reports = grant_of(an, "a", "reports", REPORTS_DAY)
+    grant_id, _, mac = grant.rpartition(".")
+    assert reports.rpartition(".")[0] == grant_id and reports != grant
+    assert len(mac) == 43 and "=" not in mac  # SHA-256, unpadded base64url
+    assert an.cookies[COOKIE] not in (grant_id, grant)
+    assert grant_of(an, "a") == grant  # the same folder gets the same grant again
+
+
+# REQ-AUTH-016: Grant of another folder
+def test_auth_016_grant_of_another_folder(tmp_path: Path) -> None:
+    app = make(tmp_path)
+    an, grant = signed_in(app, "an")
+    reports = grant_path("a", grant, "index.html", f"reports/{REPORTS_DAY}")
+    res = TestClient(app.app).get(reports)
+    assert res.status_code == 404 and res.json() == NOT_FOUND
+    # the same file through its own folder's grant
+    own = grant_of(an, "a", "reports", REPORTS_DAY)
+    res = TestClient(app.app).get(reports.replace(grant, own))
+    assert res.status_code == 200 and res.text == "<p>reports</p>"
+
+
+# REQ-AUTH-016: Other project, also for a user allowed both projects
 def test_auth_016_other_project(tmp_path: Path) -> None:
     app = make(tmp_path)
     _, grant = signed_in(app, "an")
     res = TestClient(app.app).get(grant_path("b", grant))
-    assert res.status_code == 404
+    assert res.status_code == 404 and res.json() == NOT_FOUND
+    _, root_grant = signed_in(app, "root")
+    res = TestClient(app.app).get(grant_path("b", root_grant))
+    assert res.status_code == 404 and res.json() == NOT_FOUND
+    # a grant issued before the project was taken away, while the session lives on
+    write_users(tmp_path / "users.yaml", [user("an", ["b"]), user("root", "*")])
+    res = TestClient(app.app).get(grant_path("a", grant))
+    assert res.status_code == 404 and res.json() == NOT_FOUND
 
 
 # REQ-AUTH-016: Ended session
@@ -242,26 +296,41 @@ def test_auth_016_ended_session(tmp_path: Path) -> None:
     assert res.status_code == 404 and res.json() == NOT_FOUND
 
 
-# REQ-AUTH-016: an unknown grant, or a session token used as a grant, is not found
-def test_auth_016_unknown_grant(tmp_path: Path) -> None:
+# REQ-AUTH-016: Malformed grant
+def test_auth_016_malformed_grant(tmp_path: Path) -> None:
     app = make(tmp_path)
-    an, _ = signed_in(app, "an")
+    an, grant = signed_in(app, "an")
+    _, other_grant = signed_in(app, "an")
+    grant_id, _, mac = grant.rpartition(".")
     token = an.cookies[COOKIE]
-    for grant in ("forged", token):
-        res = TestClient(app.app).get(grant_path("a", grant))
-        assert res.status_code == 404 and res.json() == NOT_FOUND
+    flipped = ("B" if mac[0] == "A" else "A") + mac[1:]
+    for bad in (
+        "abc",
+        token,
+        grant_id,
+        f"{grant_id}.{flipped}",  # a valid grant id with a wrong mac
+        f"{grant_id}.",
+        f".{mac}",
+        f"{other_grant.rpartition('.')[0]}.{mac}",  # another session's id with this mac
+        f"{grant}.{mac}",
+        f"{grant_id}.%C3%A9",  # a non-ASCII mac
+    ):
+        res = TestClient(app.app).get(grant_path("a", bad))
+        assert res.status_code == 404 and res.json() == NOT_FOUND, bad
     # a signed-in user's cookie does not stand in for a grant
-    assert an.get(grant_path("a", "forged")).status_code == 404
+    res = an.get(grant_path("a", "abc"))
+    assert res.status_code == 404 and res.json() == NOT_FOUND
 
 
 # REQ-AUTH-016: Grant is not a session
 def test_auth_016_grant_is_not_a_session(tmp_path: Path) -> None:
     app = make(tmp_path)
     _, grant = signed_in(app, "an")
-    client = TestClient(app.app)
-    client.cookies.set(COOKIE, grant)
-    res = client.get("/api/overview")
-    assert res.status_code == 401 and res.json() == {"error": "sign-in required"}
+    for cookie in (grant, grant.rpartition(".")[0]):
+        client = TestClient(app.app)
+        client.cookies.set(COOKIE, cookie)
+        res = client.get("/api/overview")
+        assert res.status_code == 401 and res.json() == {"error": "sign-in required"}
 
 
 # REQ-AUTH-016: a grant grants nothing but GET requests of the grant path
@@ -273,14 +342,18 @@ def test_auth_016_get_only(tmp_path: Path) -> None:
     assert plain.head(grant_path("a", grant)).status_code == 401
     assert plain.get(f"/api/requirements/mockups/a/files/ui/{DAY}/style.css").status_code == 401
     assert plain.get(f"/api/beads?project=a&g={grant}").status_code == 401
+    assert plain.get(f"/api/requirements/mockups?project=a&g={grant}").status_code == 401
     # with a session cookie, a method other than GET does not pass the grant check either
     assert an.head(grant_path("a", grant)).status_code == 405
 
 
-# REQ-AUTH-016: while auth is off the grant path answers 404
+# REQ-AUTH-016: Auth off, the list has no grant and the grant path answers 404
 def test_auth_016_off(tmp_path: Path) -> None:
     fill(tmp_path / "a")
     settings = Settings(projects=[ProjectEntry(name="a", path=tmp_path / "a")])
     client = TestClient(create_app(settings, run_bd=FakeBd(), schedule_pulls=False))
+    mockups = client.get("/api/requirements/mockups", params={"project": "a"}).json()["mockups"]
+    assert len(mockups) == 2 and [m["grant"] for m in mockups] == [None, None]
     assert client.get(f"/api/requirements/mockups/a/files/ui/{DAY}/style.css").text == CSS
-    assert client.get(grant_path("a", "anything")).status_code == 404
+    res = client.get(grant_path("a", "anything"))
+    assert res.status_code == 404 and res.json() == NOT_FOUND
