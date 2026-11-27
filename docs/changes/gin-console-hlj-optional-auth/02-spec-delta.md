@@ -112,7 +112,7 @@ The console SHALL count failed sign-ins in memory per lower-cased username and p
 - THEN the next attempt is checked, not answered 429
 
 ### REQ-AUTH-005: API requires a session
-WHILE auth is on, the console SHALL answer 401 with `{"error": "sign-in required"}` to every `/api` request without a valid session cookie, except `GET /api/health`, `POST /api/auth/login`, `GET /api/auth/me` and GET requests on a mockup grant path, which REQ-AUTH-016 checks; the cross-site refusal (REQ-SERVER-012) SHALL run before this check, and requests outside `/api` (the built frontend) SHALL be served without a session.
+WHILE auth is on, the console SHALL answer 401 with `{"error": "sign-in required"}` to every `/api` request without a valid session cookie, except `GET /api/health`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout` (REQ-AUTH-006) and GET requests on a mockup grant path, which REQ-AUTH-016 checks; the cross-site refusal (REQ-SERVER-012) SHALL run before this check, and requests outside `/api` (the built frontend) SHALL be served without a session.
 
 #### Scenario: No cookie
 - GIVEN auth on
