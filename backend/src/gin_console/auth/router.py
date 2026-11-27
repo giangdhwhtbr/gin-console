@@ -127,17 +127,19 @@ def build_router(settings: Settings, state: AuthState) -> APIRouter:
         if refusal is not None:  # the password is not checked
             return refusal
         user: User | None = None
+        session: Session | None = None
         try:
             if credentials is not None and key is not None:
                 user = await checked(key, credentials[1])
+            if user is not None:  # None when the user was reset or removed during the check
+                session = await run_in_threadpool(state.start_session, user)
         finally:
-            if user is None:  # the reserved attempts stay counted, also when the check raised
+            if session is None:  # the reserved attempts stay counted, also when a step raised
                 _log.info("failed sign-in for %r from %s", key, ip)
-        if user is None or key is None:
+        if user is None or session is None or key is None:
             return JSONResponse(status_code=401, content=INVALID)
         state.per_user.clear(key)
         state.per_ip.release(ip)  # a success counts against neither (REQ-AUTH-004)
-        session = state.sessions.create(user.name)
         response.set_cookie(
             COOKIE,
             session.token,

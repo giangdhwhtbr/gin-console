@@ -611,6 +611,35 @@ def test_auth_009_reload_ends_sessions_before_other_reads(
     assert blocked == [True] and seen == [None]
 
 
+@pytest.mark.parametrize("change", ["password reset", "user removed"])
+def test_auth_009_change_during_sign_in(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
+) -> None:
+    """REQ-AUTH-009: a sign-in whose old password is being checked while the operator resets
+    or removes the user gets no session, even when another request reloads the file first."""
+    client = auth_app(tmp_path)
+    other = TestClient(client.app)
+    sign_in(other, "root")
+    an = [user("an", ["a"], hash_password("new"))] if change == "password reset" else []
+
+    def changed_mid_check(password: str, encoded: str) -> bool:
+        write_users(tmp_path / "users.yaml", [*an, user("root", "*")])
+        assert other.get("/api/overview").status_code == 200  # this request reloads
+        return verify(password, encoded)
+
+    monkeypatch.setattr(auth_router, "verify", changed_mid_check)
+    res = sign_in(client, "an")
+    assert res.status_code == 401 and res.json() == INVALID
+    assert "set-cookie" not in res.headers
+    monkeypatch.setattr(auth_router, "verify", verify)
+    assert client.get("/api/overview").status_code == 401
+    assert client.get("/api/auth/me").json() == {"enabled": True, "user": None}
+    # counted as a failure: four more wrong attempts lock `an`
+    for _ in range(4):
+        assert sign_in(client, "an", "wrong").status_code == 401
+    assert sign_in(client, "an", "wrong").status_code == 429
+
+
 # REQ-AUTH-009: a removed user is signed out
 def test_auth_009_user_removed(tmp_path: Path) -> None:
     client = auth_app(tmp_path)

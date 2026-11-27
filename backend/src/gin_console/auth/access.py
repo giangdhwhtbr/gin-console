@@ -37,10 +37,24 @@ class AuthState:
         """The current users; reading them ends the sessions of users removed or given a new
         password since the last read (REQ-AUTH-009)."""
         with self._reload:
-            users, changed = self._directory.current()
-            if changed:
-                self.sessions.end_users(changed)
+            return self._current()
+
+    def _current(self) -> dict[str, User]:
+        """The users, after ending the sessions of the changed ones (`_reload` held)."""
+        users, changed = self._directory.current()
+        if changed:
+            self.sessions.end_users(changed)
         return users
+
+    def start_session(self, user: User) -> Session | None:
+        """A session for `user`, verified against `user.password_hash`; None when the users
+        file has since removed the user or changed that hash, so a sign-in checked against
+        an old password cannot outlive a reset in flight (REQ-AUTH-009)."""
+        with self._reload:
+            current = self._current().get(user.name)
+            if current is None or current.password_hash != user.password_hash:
+                return None
+            return self.sessions.create(user.name)
 
     def _user_of(self, find: Callable[[str], Session | None], key: str | None) -> User | None:
         if not key:
