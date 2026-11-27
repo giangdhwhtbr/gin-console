@@ -1,4 +1,4 @@
-import { Fragment, lazy, Suspense, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useState } from "react";
 import { BeadDetailPage } from "@/features/beads/BeadDetailPage";
 import { BeadsPage } from "@/features/beads/BeadsPage";
 import { OldGraphLink } from "@/features/beads/OldGraphLink";
@@ -13,6 +13,8 @@ import { Layout } from "./Layout";
 import { LoginPage } from "./LoginPage";
 import { NotFoundPage } from "./NotFoundPage";
 import { useLocation } from "./route";
+import { loadSession, useSession } from "./session";
+import { SignInPage } from "./SignInPage";
 
 const ReportsPage = lazy(() => import("@/features/reports/ReportsPage").then((m) => ({ default: m.ReportsPage })));
 const RequirementsPage = lazy(() => import("@/features/requirements/RequirementsPage").then((m) => ({ default: m.RequirementsPage })));
@@ -55,6 +57,12 @@ export function App() {
   const bead = beadRoute(pathname);
   const milestone = milestoneRoute(pathname);
   const email = useEmail();
+  const session = useSession();
+  useEffect(() => {
+    void loadSession();
+  }, []);
+  if (session.status === "loading") return <p className="text-muted-foreground">Loading…</p>;
+  if (session.status === "signed-out") return <SignInPage />;
   if (email === null) return <LoginPage />;
   return (
     <HintProvider>

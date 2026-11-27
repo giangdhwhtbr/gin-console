@@ -1,3 +1,5 @@
+import { apiFetch } from "@/app/session";
+
 export type BlockError = { error: string };
 
 export type ReviewWaiver = { task_id: string; reason: string; actor: string };
@@ -83,7 +85,7 @@ export function pullOf(project: { pull?: unknown }): PullResult | null {
 export const pullError = (pull: PullResult): string => pull.error ?? "unknown error";
 
 export async function fetchProjectBeads(): Promise<ProjectBeads[]> {
-  const response = await fetch("/api/projects/beads");
+  const response = await apiFetch("/api/projects/beads");
   if (!response.ok) {
     throw new Error(`Could not load projects (HTTP ${response.status})`);
   }
