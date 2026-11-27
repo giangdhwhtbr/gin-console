@@ -1,6 +1,6 @@
 # TC-REQUIREMENTS-031: Parent path
 
-- **REQ:** REQ-REQUIREMENTS-010@f4cb8de5
+- **REQ:** REQ-REQUIREMENTS-010@1ea0e060
 - **Priority:** high
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-25T23-57-24-api

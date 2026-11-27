@@ -19,9 +19,20 @@ The case types this repository uses. `gin-qa cases check` reports a case whose t
 
 - Playwright: `@playwright/test` 1.49 or later (the evidence fixture records ARIA snapshots).
 - Locators: prefer `getByRole` with the accessible name; use `getByTestId` only when no stable name exists.
-- Sign-in: none (the console has no authentication).
+- Sign-in: specs under `qa/e2e/auth/` run against a console with auth on and read the account from the environment variables `GIN_E2E_AUTH_USER` and `GIN_E2E_AUTH_PASSWORD`; each spec skips when either is unset. Other specs need no sign-in (their server has auth off).
 - Test data: preconditions describe what `gin-workflow` and `bd` report; specs stub the matching `/api/*` responses instead of relying on real projects. Use `stubApi` and the builders in `qa/e2e/support/api.ts` (`import { … } from '../support/api'`); `qa/e2e/milestone-ui/tc-milestone-ui-001.spec.ts` is an example. Project names in URLs are the stubbed ones (default `P`).
 - Server: `playwright.config.ts` serves the built UI on `http://127.0.0.1:8701` with `qa/e2e/gin-console.yaml` (no projects) and reuses a server already running there. Run `pnpm -C frontend build` after UI changes.
+- Auth e2e server: see the section below.
+
+## Auth e2e server
+
+The specs under `qa/e2e/auth/` need a second console with auth on. Never stop the server on port 8701.
+
+- Build the UI (`pnpm -C frontend build`), then start `uv --directory backend run -m gin_console` with `GIN_CONSOLE_CONFIG` set to a config outside the repository, on a port other than 8701 (8702 suggested).
+- The config sets `auth.enabled: true`, `auth.users_file` (a file outside the repository) and `auth.rate_limit.per_ip: 1000` (the specs add failed sign-ins from one IP on each run; the default 20 would lock it), and lists the projects `alpha` and `beta`.
+- `alpha` holds a confirmed mockup `ui/2026-11-22` (`description.md` with `Confirmed:`, an `index.html` that links `style.css`, and a `style.css` that colours the `h1` `rgb(200, 30, 60)`); `beta` may hold the same.
+- Create the user with `uv --directory backend run -m gin_console user add an --email an@x.io --project alpha` (same `GIN_CONSOLE_CONFIG`); it prints the password once. Pass `an` and that password as `GIN_E2E_AUTH_USER` and `GIN_E2E_AUTH_PASSWORD`. The email must be `<user>@x.io`.
+- Run the specs with a Playwright config outside the repository whose `baseURL` is that server; stop only the server you started.
 
 ## Automated types
 
