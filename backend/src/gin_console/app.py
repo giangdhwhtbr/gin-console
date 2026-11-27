@@ -1,15 +1,17 @@
 """HTTP app: /api/* routes plus the built frontend with SPA fallback."""
 
 import asyncio
-from collections.abc import AsyncIterator, Callable
+import re
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from datetime import datetime
 from importlib.metadata import version
 from pathlib import Path
 
-from fastapi import APIRouter, FastAPI, HTTPException
-from fastapi.responses import FileResponse, PlainTextResponse, Response
+from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.types import Scope
 
 from gin_console.beads.pull import BdRunner, PullScheduler, PullService, run_bd_pull
 from gin_console.beads.router import build_router as build_beads_router
@@ -33,6 +35,29 @@ from gin_console.requirements.source import run_gin as default_run_gin
 # backend/src/gin_console/app.py -> repository root is parents[3]
 _METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
 DEFAULT_STATIC_DIR = Path(__file__).resolve().parents[3] / "frontend" / "dist"
+_REFUSED_SITES = {"cross-site", "same-site"}
+_MOCKUP_FILES = re.compile(r"/api/requirements/mockups/[^/]+/files/")
+
+
+def route_path(scope: Scope) -> str:
+    """The decoded path the router matches: scope["path"] without the proxy's root_path.
+    Not request.url.path, which is cut at a decoded "?" or "#"."""
+    path: str = scope["path"]
+    root: str = scope.get("root_path", "")
+    if root and path.startswith(root + "/"):
+        return path[len(root) :]
+    return path
+
+
+def refuses_cross_site(method: str, path: str, site: str | None) -> bool:
+    """REQ-SERVER-012: a browser marks requests of other sites; only a mockup's GETs of its own
+    files pass. `path` is the decoded path the router matches, so the exception covers only
+    the mockup file route."""
+    if site is None or site.lower() not in _REFUSED_SITES:
+        return False
+    if path != "/api" and not path.startswith("/api/"):
+        return False
+    return not (method == "GET" and _MOCKUP_FILES.match(path) is not None)
 
 
 def create_app(
@@ -74,6 +99,16 @@ def create_app(
         title="gin-console", docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan
     )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+    # added after gzip, so it runs first: a refusal never reaches gzip or a router
+    @app.middleware("http")
+    async def refuse_cross_site(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        site = request.headers.get("sec-fetch-site")
+        if refuses_cross_site(request.method, route_path(request.scope), site):
+            return JSONResponse(status_code=403, content={"error": "cross-site request refused"})
+        return await call_next(request)
 
     api = APIRouter(prefix="/api")
 

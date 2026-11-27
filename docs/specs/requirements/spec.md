@@ -224,7 +224,7 @@ The server SHALL read project files for the requirements endpoints only inside t
 ### REQ-REQUIREMENTS-011: Mockup isolation
 Type: non-functional
 Category: security
-Every mockup file response SHALL carry `X-Content-Type-Options: nosniff` and the header `Content-Security-Policy` with `sandbox allow-scripts`, `connect-src 'none'`, `form-action 'none'` and `frame-src 'none'`. The frontend SHALL show a mockup only in an iframe whose `sandbox` attribute is exactly `allow-scripts`.
+Every mockup file response SHALL carry `X-Content-Type-Options: nosniff` and the header `Content-Security-Policy` with `sandbox allow-scripts`, `connect-src 'none'`, `form-action 'none'` and `frame-src 'none'`. The frontend SHALL show a mockup only in an iframe whose `sandbox` attribute is exactly `allow-scripts`. A request a mockup makes to any other `/api` path, by any element or script, SHALL be refused (REQ-SERVER-012).
 
 #### Scenario: Script calls the API
 - GIVEN a mockup whose script fetches `/api/projects/beads` and posts to `/api/refresh`
@@ -240,6 +240,11 @@ Every mockup file response SHALL carry `X-Content-Type-Options: nosniff` and the
 - GIVEN an SVG file of a confirmed folder
 - WHEN it is requested
 - THEN its response carries the same headers
+
+#### Scenario: Elements request the API
+- GIVEN a mockup with `<img src="/api/projects/beads">` and `<script src="/api/projects/beads">`
+- WHEN it is shown in the console or opened in its own tab
+- THEN neither request reaches a console endpoint
 
 ### REQ-REQUIREMENTS-012: Requirements sections
 The frontend SHALL offer the sections Matrix, Changes and Mockups at `/requirements/matrix`, `/requirements/changes` and `/requirements/mockups`, and SHALL replace `/requirements` with the Matrix section keeping the query. From 1024px with the sidebar expanded, the sidebar SHALL list the sections under Requirements with the number of requirements that are not covered, the number of open changes and the number of mockup folders, leaving a number out while it is unknown; otherwise the page SHALL show them as a scrollable row of links. The selected one SHALL have `aria-current="page"`. An unknown path under `/requirements` SHALL show the page of REQ-UI-125.

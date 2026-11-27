@@ -1,6 +1,6 @@
 # TC-REQUIREMENTS-036: SVG
 
-- **REQ:** REQ-REQUIREMENTS-011@2f736f3a
+- **REQ:** REQ-REQUIREMENTS-011@9bc2cbb9
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-25T17-33-21-api
