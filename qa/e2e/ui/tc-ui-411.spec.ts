@@ -48,7 +48,7 @@ test('TC-UI-411: Short label (REQ-UI-055)', async ({ page, ev }, testInfo) => {
       await expect(link).toBeVisible();
       await expect(link).toHaveText(/^REQs/);
       const all = await measure();
-      expect(all).toHaveLength(6);
+      expect(all).toHaveLength(7);
       // measured overhang of each label beyond its own box, kept in the run's annotations (the pre-existing "Milestones" overhangs by about 2px in the rail)
       testInfo.annotations.push({ type: `overhang ${width}px`, description: all.map((m) => `${m.name}=${m.overhang} (${m.text})`).join(' ') });
       for (const m of all) {

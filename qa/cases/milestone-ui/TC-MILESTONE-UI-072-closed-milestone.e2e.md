@@ -1,6 +1,6 @@
 # TC-MILESTONE-UI-072: Closed milestone
 
-- **REQ:** REQ-MILESTONE-UI-018@3dbf80c2
+- **REQ:** REQ-MILESTONE-UI-018@85c83880
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

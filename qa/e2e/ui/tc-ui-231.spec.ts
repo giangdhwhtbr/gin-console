@@ -1,4 +1,4 @@
-// TC: TC-UI-231@8530bf32
+// TC: TC-UI-231@943fa71e
 import { test, expect } from '../evidence';
 import { stubApi } from '../support/api';
 import { mainNav } from '../support/shell';
@@ -14,6 +14,7 @@ test('TC-UI-231: Links carry the project (REQ-UI-124)', async ({ page, ev }) => 
     await expect(nav.getByRole('link', { name: 'Beads', exact: true })).toHaveAttribute('href', '/beads?project=b');
     await expect(nav.getByRole('link', { name: 'Milestones', exact: true })).toHaveAttribute('href', '/milestones?project=b');
     await expect(nav.getByRole('link', { name: 'Requirements', exact: true })).toHaveAttribute('href', '/requirements?project=b');
+    await expect(nav.getByRole('link', { name: 'Tests', exact: true })).toHaveAttribute('href', '/tests?project=b');
     await expect(nav.getByRole('link', { name: 'Reports', exact: true })).toHaveAttribute('href', '/reports/status?project=b');
     await expect(nav.getByRole('link', { name: 'My work', exact: true })).toHaveAttribute('href', '/my-tasks?project=b');
     await expect(nav.getByRole('link', { name: 'Overview', exact: true })).toHaveAttribute('href', '/');

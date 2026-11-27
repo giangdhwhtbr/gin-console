@@ -1,6 +1,6 @@
 # TC-UI-236: Storage refused
 
-- **REQ:** REQ-UI-124@12df9249
+- **REQ:** REQ-UI-124@79a26394
 - **Priority:** low
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-25T17-32-34
