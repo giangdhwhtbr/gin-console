@@ -5,7 +5,7 @@ import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Legend } from "@/components/Legend";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { fetchProjectBeads, isStale, pullError, pullOf, type ProjectBeads } from "@/features/projects/api";
+import { fetchProjectBeads, fetchOf, isStale, pullError, pullOf, type ProjectBeads } from "@/features/projects/api";
 import { BeadsView } from "./BeadsView";
 import { filtersToSearch, parseFilters, type BeadFilters } from "./filters";
 import { rememberOrigin, type OriginMilestone } from "@/app/origin";
@@ -31,7 +31,13 @@ export function BeadsPage() {
         setProjects({ status: "ok", names: existing.map((p) => p.name), stale: existing.filter(isStale).map((p) => p.name),
           pullFailures: existing.flatMap((p) => {
             const pull = pullOf(p);
-            return pull?.status === "error" ? [{ project: p.name, path: p.path, error: pullError(pull) }] : [];
+            const fetched = fetchOf(p);
+            return [
+              ...(pull?.status === "error" ? [{ project: p.name, path: p.path, error: pullError(pull) }] : []),
+              ...(fetched?.status === "error"
+                ? [{ project: p.name, path: p.path, error: fetched.error ?? "unknown error", kind: "attachments" as const }]
+                : []),
+            ];
           }),
         });
       },

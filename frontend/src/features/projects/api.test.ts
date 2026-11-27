@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchProjectBeads, isStale, pullOf } from "./api";
+import { fetchOf, fetchProjectBeads, isStale, pullOf } from "./api";
 
 const beads = (extra: object) => ({ open: 0, in_progress: 0, blocked: 0, ready: 0, epics: [], ...extra });
 const project = (b: unknown) => ({ name: "alpha", path: "/p/alpha", exists: true, beads: b });
@@ -78,5 +78,25 @@ describe("pullOf", () => {
     expect(pullOf({ pull: { at, status: "weird", error: null } })).toBeNull();
     expect(pullOf({ pull: { at: 5, status: "ok", error: null } })).toBeNull();
     expect(pullOf({ pull: { at, status: "error", error: 7 } })).toBeNull();
+  });
+});
+
+describe("fetchOf", () => {
+  const at = "2026-11-19T10:00:00Z";
+
+  it("REQ-BEADS-034 accepts the four statuses", () => {
+    for (const status of ["ok", "no_store", "no_remote"] as const) {
+      expect(fetchOf({ attachments_fetch: { at, status, error: null } })).toEqual({ at, status, error: null });
+    }
+    expect(fetchOf({ attachments_fetch: { at, status: "error", error: "boom" } })).toEqual({ at, status: "error", error: "boom" });
+  });
+
+  it("REQ-BEADS-034 reads a missing, null or malformed value as null", () => {
+    expect(fetchOf({})).toBeNull();
+    expect(fetchOf({ attachments_fetch: null })).toBeNull();
+    expect(fetchOf({ attachments_fetch: "ok" })).toBeNull();
+    expect(fetchOf({ attachments_fetch: { at, status: "weird", error: null } })).toBeNull();
+    expect(fetchOf({ attachments_fetch: { at: 5, status: "ok", error: null } })).toBeNull();
+    expect(fetchOf({ attachments_fetch: { at, status: "error", error: 7 } })).toBeNull();
   });
 });
