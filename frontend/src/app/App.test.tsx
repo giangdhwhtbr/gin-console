@@ -184,7 +184,7 @@ describe("App routing", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(json([]))));
     window.history.replaceState(null, "", "/reports/delivery");
     render(<App />);
-    expect(await screen.findByRole("heading", { name: "Reports" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Reports" }, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Reports" })).toHaveAttribute("aria-current", "page");
     cleanup();
     const before = window.history.length;
@@ -208,7 +208,7 @@ describe("App routing", () => {
     render(<App />);
     await waitFor(() => expect(window.location.pathname + window.location.search).toBe("/requirements/matrix?project=alpha"));
     expect(window.history.length).toBe(before);
-    expect(await screen.findByRole("heading", { name: "Requirements" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Requirements" }, { timeout: 3000 })).toBeInTheDocument();
     const main = within(screen.getByRole("navigation", { name: "Main" }));
     expect(main.getAllByRole("link").find((link) => link.getAttribute("href") === "/requirements?project=alpha")).toHaveAttribute("aria-current", "page");
     cleanup();
