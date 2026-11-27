@@ -103,7 +103,7 @@ WHILE the page is visible, the bead list SHALL reload every 10 seconds without r
 - THEN the old list stays visible with an error message and a retry button
 
 ### REQ-UI-028: Bead detail
-The bead page SHALL show the bead's id, title and type, a line of facts with its state as REQ-UI-064 describes (for example "In progress", never the raw `in_progress`; for a milestone, its milestone status as REQ-MILESTONE-UI-022 describes), its priority as `P<n>` (REQ-UI-110) and its size as REQ-UI-110 describes, the reason of its points (`points_reason`) on its own line under that line, its labels, and its assignee (REQ-UI-135), creator (the person of `created_by`, else of `owner`, REQ-BEADS-023), creation and update times and comment count as label/value pairs (REQ-UI-110), each time written as REQ-UI-131 describes, its description rendered as GitHub-flavored Markdown (headings, emphasis, lists, task lists, inline code, code blocks, tables, block quotes and links), its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with the strand of its tracks (REQ-UI-138), from its `child_counts` (REQ-UI-130), when it has a track. WHEN an epic has prep tasks (REQ-BEADS-002), the bead page SHALL show "Prep x/y" next to the strand, where x is its closed prep tasks and y all its prep tasks, and SHALL mark each prep task in the children list with the word "Prep" (REQ-UI-140). Raw HTML in the description SHALL be shown as text and SHALL NOT create elements, a link SHALL open in a new tab with `rel="noreferrer"`, and a link whose URL is not `http`, `https` or `mailto` SHALL be shown as text.
+The bead page SHALL show the bead's id, title and type, a line of facts with its state as REQ-UI-064 describes (for example "In progress", never the raw `in_progress`; for a milestone, its milestone status as REQ-MILESTONE-UI-022 describes), its priority as `P<n>` (REQ-UI-110) and its size as REQ-UI-110 describes, the reason of its points (`points_reason`) on its own line under that line, its labels, and its assignee (REQ-UI-135), creator (the person of `created_by`, else of `owner`, REQ-BEADS-023), creation and update times and comment count as label/value pairs (REQ-UI-110), each time written as REQ-UI-131 describes, its description rendered as GitHub-flavored Markdown (headings, emphasis, lists, task lists, inline code, code blocks, tables, block quotes and links), its dependencies and the beads it blocks (each with id, title and status, linking to that bead in the same project), and for an epic its children with the strand of its tracks (REQ-UI-138), from its `child_counts` (REQ-UI-130), when it has a track. WHEN an epic has prep tasks (REQ-BEADS-002), the bead page SHALL show "Prep x/y" next to the strand, where x is its closed prep tasks and y all its prep tasks, and SHALL mark each prep task in the children list with the word "Prep" (REQ-UI-140). Raw HTML in the description SHALL be shown as text and SHALL NOT create elements, a link SHALL open in a new tab with `rel="noreferrer"`, and a link whose URL is not `http`, `https` or `mailto` SHALL be shown as text, except a link to an available image of the bead (REQ-BEADS-026, REQ-BEADS-027), which SHALL open the lightbox of REQ-BEADS-030 on it. A Markdown image that names an available image of the bead SHALL show that image from REQ-BEADS-028, at most 24rem high and never wider than the description, with its alt text, and SHALL open the lightbox when clicked. Wherever the console renders Markdown, an image whose address is `http` or `https` SHALL NOT be loaded and SHALL be shown as a link "Image: <alt> (<host>)" opening in a new tab, and any other image SHALL be shown as its alt text.
 Source: `assets/2026-11-08/mockup/index.html#bead-detail`
 
 #### Scenario: Markdown description
@@ -145,6 +145,21 @@ Source: `assets/2026-11-08/mockup/index.html#bead-detail`
 - GIVEN a task with owner `lead@example.com` and no assignee
 - WHEN its page loads
 - THEN the facts read Assignee "Unassigned" and Created by "lead"
+
+#### Scenario: Bead image inline
+- GIVEN a bug whose description holds `![Step 1](qa/evidence/r1/01.png)` and whose image 1 is that file, available
+- WHEN the page loads and the user clicks the image
+- THEN the description shows an image from `/api/beads/<project>/<id>/images/1` with `alt` "Step 1", and the lightbox opens on it
+
+#### Scenario: External image not loaded
+- GIVEN a bead with a description containing `![chart](https://example.com/x.png)` and `![key](attachment:ab12)`
+- WHEN the page loads
+- THEN "Image: chart (example.com)" is a link to `https://example.com/x.png` in a new tab, "key" is text, no `img` element is in the description and no request goes to example.com
+
+#### Scenario: Link to a bead image
+- GIVEN a bug with `[BUG-5.png](file:///srv/att/BUG-5.png)` whose image 1 is that file, available
+- WHEN the user activates "BUG-5.png"
+- THEN the lightbox opens on image 1
 
 ### REQ-UI-029: Bead errors
 IF a request for the list or a bead fails, THEN the page SHALL show the error and a retry button that repeats the request, IF the server answers 404 for a bead, THEN the page SHALL say "Bead not found" with a link back to the list, and IF a response has an unexpected shape, THEN the page SHALL show an error instead of failing.
@@ -987,7 +1002,7 @@ A bead card of the Board and Focus views SHALL show on its first line the id in 
 - THEN it shows "Blocked by Set up CI" and "+1"
 
 ### REQ-UI-066: Count indicators
-WHERE a bead has comments or dependencies, a bead card, a list row and a Tree row SHALL show a comment indicator, an icon with the count of comments, and a dependency indicator, an icon with the count of dependencies, each with an accessible label such as "3 comments" or "2 dependencies", SHALL show the comment indicator in a stronger style than the dependency one using no colour outside the palette, and SHALL show neither indicator, nor the text "0 comments" or "0 deps", when the count is 0.
+WHERE a bead has comments, dependencies or images, a bead card, a list row and a Tree row SHALL show a comment indicator, an icon with the count of comments, a dependency indicator, an icon with the count of dependencies, and an image indicator, an icon with `image_count` (REQ-BEADS-001), each with an accessible label such as "3 comments", "2 dependencies" or "1 image", SHALL show the comment indicator in a stronger style than the dependency one using no colour outside the palette, and SHALL show no indicator, nor a text such as "0 comments" or "0 deps", whose count is 0.
 
 #### Scenario: Comments
 - GIVEN a bead with `comment_count` 3
@@ -998,6 +1013,11 @@ WHERE a bead has comments or dependencies, a bead card, a list row and a Tree ro
 - GIVEN a bead with `comment_count` 0 and `dependency_count` 0
 - WHEN its card, list row and Tree row are shown
 - THEN no indicator and no "0 comments" or "0 deps" text appears
+
+#### Scenario: Images
+- GIVEN a bead with `image_count` 2
+- WHEN its card and its list row are shown
+- THEN each shows an image indicator with the label "2 images" and the number 2
 
 ### REQ-UI-067: Type
 The frontend SHALL show the type of a bead as its name in plain text, never as a pill: on the List and Tree rows, the Board and Focus cards and the Graph nodes only for a bug, as the word "bug" in the bug colour (carnelian) without a border or a tint, and on the bead page for every type, among its facts (REQ-UI-028).
@@ -2578,7 +2598,7 @@ The frontend SHALL write every date as "<d> <Mon>" when it falls in the current 
 - THEN its end reads "1 Dec"
 
 ### REQ-UI-132: Tooltips for marks and counts
-WHEN the pointer rests on a state mark (REQ-UI-064), a size or points value, the word Prep or a Prep count, a lane or lane count, a strand (REQ-UI-138), a Gantt verdict (REQ-MILESTONE-UI-024), a comment or dependency indicator (REQ-UI-066), or a count of blocked, done or in-progress beads, and WHEN keyboard focus reaches one of them that takes focus, the frontend SHALL show within 500 ms a tooltip with one sentence that says what it means, and for a count the rule it counts by and the scope it counts in, SHALL tie the tooltip to the element with `aria-describedby`, and SHALL close it on Escape, on blur and when the pointer leaves; the native `title` SHALL remain only for text cut short (REQ-UI-107).
+WHEN the pointer rests on a state mark (REQ-UI-064), a size or points value, the word Prep or a Prep count, a lane or lane count, a strand (REQ-UI-138), a Gantt verdict (REQ-MILESTONE-UI-024), a comment, dependency or image indicator (REQ-UI-066), or a count of blocked, done or in-progress beads, and WHEN keyboard focus reaches one of them that takes focus, the frontend SHALL show within 500 ms a tooltip with one sentence that says what it means, and for a count the rule it counts by and the scope it counts in, SHALL tie the tooltip to the element with `aria-describedby`, and SHALL close it on Escape, on blur and when the pointer leaves; the native `title` SHALL remain only for text cut short (REQ-UI-107).
 
 #### Scenario: Blocked count
 - GIVEN the Board of `example` whose Blocked column holds 4 beads
@@ -2589,6 +2609,11 @@ WHEN the pointer rests on a state mark (REQ-UI-064), a size or points value, the
 - GIVEN a bead card with the dependency indicator 2
 - WHEN the pointer rests on the indicator
 - THEN a tooltip says what the 2 dependencies are, and the indicator has no `title`
+
+#### Scenario: Image indicator
+- GIVEN a bead card with the image indicator 2
+- WHEN the pointer rests on the indicator
+- THEN a tooltip says that it counts the screenshots the bead names that exist on the console host
 
 ### REQ-UI-133: Legend
 The Beads page, the milestone page and the Reports page SHALL offer a "Legend" control in their header that, on a click, a tap, Enter or Space, opens a panel listing, each with its look and one sentence, the state glyphs (REQ-UI-064), the strand (REQ-UI-138), the size and points, Prep, lanes, the comment and dependency indicators, on the milestone page the two verdict marks of the Gantt (REQ-MILESTONE-UI-024), and what blocked, done and progress mean; the panel SHALL close on Escape, on a click outside it and on the control, SHALL return focus to the control, and SHALL fit inside a window 360px wide.
