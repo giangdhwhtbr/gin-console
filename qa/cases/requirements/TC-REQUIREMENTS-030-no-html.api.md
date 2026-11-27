@@ -1,6 +1,6 @@
 # TC-REQUIREMENTS-030: No HTML
 
-- **REQ:** REQ-REQUIREMENTS-009@682ff794
+- **REQ:** REQ-REQUIREMENTS-009@c0995b92
 - **Priority:** low
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-25T17-33-21-api
