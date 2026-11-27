@@ -165,7 +165,7 @@ def test_tc_auth_004_sign_in_right_password(tmp_path: Path) -> None:
     assert len(cookie["value"]) >= 43  # 32 random bytes, URL-safe base64
     assert "httponly" in cookie and cookie["samesite"].lower() == "strict"
     assert cookie["path"] == "/" and cookie["max-age"] == "43200"
-    assert len(body["mockup_grant"]) >= 43 and body["mockup_grant"] != cookie["value"]
+    assert "mockup_grant" not in body
 
 
 # TC: TC-AUTH-005@e0b0fbb5

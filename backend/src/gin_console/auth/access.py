@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import hmac
 import threading
 from collections.abc import Callable
 from datetime import datetime
@@ -56,18 +59,51 @@ class AuthState:
                 return None
             return self.sessions.create(user.name)
 
-    def _user_of(self, find: Callable[[str], Session | None], key: str | None) -> User | None:
-        if not key:
+    def session_of_token(self, token: str | None) -> Session | None:
+        if not token:
+            return None
+        self.users()  # first, so a changed user's session has ended
+        return self.sessions.get(token)
+
+    def user_of_folder_grant(
+        self, token: str, project: str, capability: str, date: str
+    ) -> User | None:
+        """The user of a live session whose grant of this mockup folder is `token`; None for
+        any other token, also a malformed one (REQ-AUTH-016)."""
+        grant_id, _, mac = token.rpartition(".")
+        if not grant_id or not mac or not token.isascii():  # compare_digest takes ASCII text
             return None
         users = self.users()  # first, so a changed user's session has ended
-        session = find(key)
-        return None if session is None else users.get(session.name)
+        session = self.sessions.by_grant(grant_id)
+        if session is None:
+            return None
+        if not hmac.compare_digest(token, folder_grant(session, project, capability, date)):
+            return None
+        return users.get(session.name)
 
-    def user_of_token(self, token: str | None) -> User | None:
-        return self._user_of(self.sessions.get, token)
 
-    def user_of_grant(self, grant: str) -> User | None:
-        return self._user_of(self.sessions.by_grant, grant)
+def folder_grant(session: Session, project: str, capability: str, date: str) -> str:
+    """`<grant id>.<mac>`: the grant of one mockup folder, the unpadded base64url HMAC-SHA256
+    of `<project>/<capability>/<date>` under the session's grant key (REQ-AUTH-016)."""
+    folder = f"{project}/{capability}/{date}".encode()
+    mac = hmac.new(session.grant_key, folder, hashlib.sha256).digest()
+    return f"{session.grant}.{base64.urlsafe_b64encode(mac).rstrip(b'=').decode()}"
+
+
+MockupGrant = Callable[[Request, str, str, str], str | None]
+
+
+def mockup_grant_of(state: AuthState) -> MockupGrant:
+    """The grant of a mockup folder for the request's session; None while auth is off or
+    without a session (REQ-REQUIREMENTS-009)."""
+
+    def grant(request: Request, project: str, capability: str, date: str) -> str | None:
+        session: Session | None = getattr(request.state, "session", None)
+        if not state.enabled or session is None:
+            return None
+        return folder_grant(session, project, capability, date)
+
+    return grant
 
 
 ProjectsOf = Callable[[Request], list[ProjectEntry]]

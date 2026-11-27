@@ -16,7 +16,10 @@ from gin_console.requirements.source import RequirementsError
 
 DAY = "2026-11-22"
 FILES = "/api/requirements/mockups/proj/files"
-POLICY = "sandbox allow-scripts; connect-src 'none'; form-action 'none'; frame-src 'none'"
+POLICY = (
+    "sandbox allow-scripts; default-src 'self' 'unsafe-inline' data: blob:; "
+    "connect-src 'none'; form-action 'none'; frame-src 'none'"
+)
 LIST = {"project": "proj"}
 
 

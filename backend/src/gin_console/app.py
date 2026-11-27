@@ -14,8 +14,10 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Res
 from starlette.middleware.gzip import GZipMiddleware
 from starlette.types import Scope
 
-from gin_console.auth.access import COOKIE, AuthState, projects_of
+from gin_console.auth.access import COOKIE, AuthState, mockup_grant_of, projects_of
 from gin_console.auth.router import build_router as build_auth_router
+from gin_console.auth.sessions import Session
+from gin_console.auth.users import User
 from gin_console.beads.pull import BdRunner, PullScheduler, PullService, run_bd_pull
 from gin_console.beads.router import build_router as build_beads_router
 from gin_console.beads.snapshot import Reader, SnapshotStore
@@ -40,7 +42,9 @@ _METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"]
 DEFAULT_STATIC_DIR = Path(__file__).resolve().parents[3] / "frontend" / "dist"
 _REFUSED_SITES = {"cross-site", "same-site"}
 _MOCKUP_FILES = re.compile(r"/api/requirements/mockups/[^/]+/(?:g/[^/]+/)?files/")
-_GRANT_FILES = re.compile(r"/api/requirements/mockups/[^/]+/g/([^/]+)/files/")
+# project, grant, capability and date of a mockup file requested by its folder grant
+_GRANT_FILES = re.compile(r"/api/requirements/mockups/([^/]+)/g/([^/]+)/files/([^/]+)/([^/]+)/")
+_NOT_FOUND = {"error": "not found"}
 # the API a request without a session may call while auth is on (REQ-AUTH-005, REQ-AUTH-006)
 _OPEN = {
     ("GET", "/api/health"),
@@ -113,24 +117,36 @@ def create_app(
     )
     app.add_middleware(GZipMiddleware, minimum_size=1000)
 
+    def signed_in(token: str | None) -> tuple[Session | None, User | None]:
+        session = auth.session_of_token(token)
+        return session, None if session is None else auth.users().get(session.name)
+
     # added after gzip and before the cross-site guard, so it runs between them (REQ-AUTH-005)
     @app.middleware("http")
     async def require_session(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         path = route_path(request.scope)
-        if not auth.enabled or (path != "/api" and not path.startswith("/api/")):
-            return await call_next(request)
         grant = _GRANT_FILES.match(path) if request.method == "GET" else None
-        if grant is not None:  # a mockup's file: the grant alone, never the cookie (REQ-AUTH-016)
-            user = await run_in_threadpool(auth.user_of_grant, grant[1])
+        if not auth.enabled:  # no grant is valid while auth is off (REQ-AUTH-016)
+            if grant is not None:
+                return JSONResponse(status_code=404, content=_NOT_FOUND)
+            return await call_next(request)
+        if path != "/api" and not path.startswith("/api/"):
+            return await call_next(request)
+        if grant is not None:  # a mockup's file: its folder grant, never the cookie (REQ-AUTH-016)
+            project, token, capability, date = grant.groups()
+            user = await run_in_threadpool(
+                auth.user_of_folder_grant, token, project, capability, date
+            )
             if user is None:
-                return JSONResponse(status_code=404, content={"error": "not found"})
-            request.state.grant = grant[1]
+                return JSONResponse(status_code=404, content=_NOT_FOUND)
+            request.state.grant = token
         else:
-            user = await run_in_threadpool(auth.user_of_token, request.cookies.get(COOKIE))
+            session, user = await run_in_threadpool(signed_in, request.cookies.get(COOKIE))
             if user is None and (request.method, path) not in _OPEN:
                 return JSONResponse(status_code=401, content={"error": "sign-in required"})
+            request.state.session = session
         request.state.user = user
         return await call_next(request)
 
@@ -167,7 +183,11 @@ def create_app(
     api.include_router(
         build_milestones_router(settings, run_gw, clock, on_refresh, snapshots, projects)
     )
-    api.include_router(build_requirements_router(settings, run_gin, clock, on_refresh, projects))
+    api.include_router(
+        build_requirements_router(
+            settings, run_gin, clock, on_refresh, projects, mockup_grant_of(auth)
+        )
+    )
     api.include_router(
         build_reports_router(settings, snapshots, interactions, clock, on_refresh, projects)
     )

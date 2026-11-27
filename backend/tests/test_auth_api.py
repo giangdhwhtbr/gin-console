@@ -20,6 +20,7 @@ from gin_console.app import create_app
 from gin_console.auth import router as auth_router
 from gin_console.auth.access import COOKIE, AuthState
 from gin_console.auth.passwords import DUMMY_HASH, hash_password, verify
+from gin_console.auth.sessions import Session
 from gin_console.auth.users import User, save_users
 from gin_console.config import AuthSettings, ProjectEntry, RateLimitSettings, Settings
 
@@ -157,7 +158,6 @@ def test_auth_002_right_password(tmp_path: Path) -> None:
     assert cookie["path"] == "/"
     assert cookie["max-age"] == "43200"
     assert "secure" not in cookie
-    assert body["mockup_grant"] != cookie["value"] and len(body["mockup_grant"]) >= 43
 
 
 # REQ-AUTH-002: Secure on https, and Max-Age follows the TTL
@@ -180,13 +180,20 @@ def test_auth_002_secure_on_https(tmp_path: Path) -> None:
 # REQ-AUTH-002: Me after sign-in
 def test_auth_002_me_after_sign_in(tmp_path: Path) -> None:
     client = auth_app(tmp_path)
-    grant = sign_in(client, "an").json()["mockup_grant"]
+    sign_in(client, "an")
     res = client.get("/api/auth/me")
     assert res.status_code == 200
     assert res.json() == {
         "enabled": True,
-        "user": {"name": "an", "email": "an@x.io", "projects": ["a"], "mockup_grant": grant},
+        "user": {"name": "an", "email": "an@x.io", "projects": ["a"]},
     }
+
+
+# REQ-AUTH-002: No grant in the user, neither from sign-in nor from me
+def test_auth_002_no_grant_in_the_user(tmp_path: Path) -> None:
+    client = auth_app(tmp_path)
+    assert "mockup_grant" not in sign_in(client, "an").json()
+    assert "mockup_grant" not in client.get("/api/auth/me").json()["user"]
 
 
 # REQ-AUTH-002: Me before sign-in
@@ -594,9 +601,9 @@ def test_auth_009_reload_ends_sessions_before_other_reads(
     state.users()
     token = state.sessions.create("an").token
     write_users(users_file, [user("an", [], hash_password("new"))])
-    seen: list[User | None] = []
+    seen: list[Session | None] = []
     blocked: list[bool] = []
-    reader = threading.Thread(target=lambda: seen.append(state.user_of_token(token)))
+    reader = threading.Thread(target=lambda: seen.append(state.session_of_token(token)))
     end_users = state.sessions.end_users
 
     def slow_end(names: Any) -> None:

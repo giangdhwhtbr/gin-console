@@ -29,6 +29,15 @@ def test_auth_002_create() -> None:
     assert store.get(session.token) == session
 
 
+# REQ-AUTH-016: each session holds its own secret grant key of 32 random bytes
+def test_auth_016_grant_key() -> None:
+    store = SessionStore(Clock(), ttl=43200)
+    session, other = store.create("an"), store.create("an")
+    assert len(session.grant_key) == 32
+    assert session.grant_key != other.grant_key
+    assert session.grant_key not in (session.token.encode(), session.grant.encode())
+
+
 # REQ-AUTH-006 (Expired): a session ends at created + ttl
 def test_auth_006_expires_at_ttl() -> None:
     clock = Clock()
