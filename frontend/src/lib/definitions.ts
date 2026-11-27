@@ -12,6 +12,7 @@ export const DEFINITIONS = {
   prep: "Prep: a prep task, done before discuss. Prep tasks are counted apart from tracks.",
   lane: "Lane: the line of work a track belongs to; tracks of different lanes can run in parallel.",
   comments: "Comments: how many comments the bead has.",
+  images: "Images: screenshots this bead names that exist on the console host.",
   commitmentMet: "Commitment met: the share of the points committed at kick-off that were completed.",
   parallelLanes: "Parallel lanes: how many lines of work the forecast runs at the same time.",
   notEstimated: "Not estimated: open epics with no estimate in days.",

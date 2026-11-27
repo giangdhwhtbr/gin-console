@@ -1,4 +1,5 @@
 import hashlib
+import re
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -7,6 +8,7 @@ from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import JSONResponse, Response
 from pydantic import TypeAdapter
 
+from gin_console.beads.images import ImageIndex
 from gin_console.beads.models import BeadDetail, BeadSummary, Comment, ProjectMilestones
 from gin_console.beads.service import KeyedCache
 from gin_console.beads.snapshot import SnapshotStore
@@ -19,11 +21,20 @@ from gin_console.beads.source import (
     list_milestones,
     valid_id,
 )
-from gin_console.config import Settings
+from gin_console.config import ProjectEntry, Settings
 from gin_console.projects.models import BlockError, EpicWorkflow
 
 _LIST = TypeAdapter(list[BeadSummary])
 WORKFLOW_TTL = timedelta(seconds=60)
+# one answer for every image that is not served, so a client learns nothing about the files
+IMAGE_NOT_FOUND = b'{"error":"not found"}'
+IMAGE_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "sandbox; default-src 'none'",
+    "Content-Disposition": "inline",
+    "Cache-Control": "private, no-cache",
+}
+_IMAGE_NUMBER = re.compile(r"[0-9]{1,3}")  # an image number; anything else is not found
 
 
 class WorkflowError(Exception):
@@ -54,11 +65,16 @@ def build_router(
     workflows = KeyedCache[tuple[str, str], EpicWorkflow](WORKFLOW_TTL, clock)
     on_refresh.append(workflows.clear)
 
-    def project_dir(name: str | None) -> Path:
+    images = ImageIndex(Path.home())
+
+    def project_entry(name: str | None) -> ProjectEntry:
         entry = next((p for p in settings.projects if p.name == name), None)
         if entry is None or not entry.path.is_dir():
             raise HTTPException(status_code=404)
-        return entry.path
+        return entry
+
+    def project_dir(name: str | None) -> Path:
+        return project_entry(name).path
 
     def failure(exc: BeadsError | RecursionError) -> JSONResponse:
         return JSONResponse(
@@ -71,10 +87,11 @@ def build_router(
         closed: str | None = None,
         if_none_match: str | None = Header(default=None),
     ) -> Response:
-        cwd = project_dir(project)
+        entry = project_entry(project)
         wants_closed = closed == "1"  # any other value means "no": it is never passed on
         try:
-            beads = list_beads(snapshots.get(cwd), wants_closed)
+            snapshot = snapshots.get(entry.path)
+            beads = list_beads(snapshot, wants_closed, images.of(entry, snapshot))
         except (BeadsError, RecursionError) as exc:
             return failure(exc)
         body = _LIST.dump_json(beads)
@@ -95,15 +112,36 @@ def build_router(
 
     @router.get("/beads/{project}/{bead_id}", response_model=BeadDetail)
     def get_one(project: str, bead_id: str) -> BeadDetail | JSONResponse:
-        cwd = project_dir(project)
+        entry = project_entry(project)
         if not valid_id(bead_id):
             raise HTTPException(status_code=404)
         try:
-            return get_bead(snapshots.get(cwd), bead_id)
+            snapshot = snapshots.get(entry.path)
+            return get_bead(snapshot, bead_id, images.of(entry, snapshot))
         except BeadNotFound:
             raise HTTPException(status_code=404) from None
         except (BeadsError, RecursionError) as exc:
             return failure(exc)
+
+    @router.get("/beads/{project}/{bead_id}/images/{n}")
+    def get_image(project: str, bead_id: str, n: str) -> Response:
+        """Image `n` of a bead, checked again now (REQ-BEADS-028); never a path from the client."""
+        not_found = Response(
+            status_code=404, content=IMAGE_NOT_FOUND, media_type="application/json"
+        )
+        if not valid_id(bead_id) or not _IMAGE_NUMBER.fullmatch(n):
+            return not_found
+        try:
+            entry = project_entry(project)
+            snapshot = snapshots.get(entry.path)
+        except (HTTPException, BeadsError, RecursionError):  # no project, or no beads to read
+            return not_found
+        found = images.read(entry, snapshot, bead_id, int(n))
+        if found is None:
+            return not_found
+        content, media = found
+        # a plain response: FileResponse answers a bad Range header without these headers
+        return Response(content, media_type=media, headers=IMAGE_HEADERS)
 
     @router.get("/beads/{project}/{bead_id}/comments", response_model=list[Comment])
     def get_bead_comments(project: str, bead_id: str) -> list[Comment] | JSONResponse:

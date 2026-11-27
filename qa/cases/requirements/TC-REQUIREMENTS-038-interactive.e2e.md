@@ -1,10 +1,10 @@
 # TC-REQUIREMENTS-038: Interactive
 
-- **REQ:** REQ-REQUIREMENTS-011@2f736f3a
+- **REQ:** REQ-REQUIREMENTS-011@9bc2cbb9
 - **Priority:** medium
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-26T02-30-19
-- **Checked:** c3fa7bdd
+- **Run:** qa/evidence/2026-11-26T14-15-34
+- **Checked:** d51d7179
 
 **Preconditions:**
 - The second console server of the previous case; `index.html` has a button and an inline script that writes "clicked" into the page

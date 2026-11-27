@@ -10,6 +10,7 @@ from typing import Any
 from fake_bd import FakeBd
 from fake_export import bead, dep, write_export
 from fastapi.testclient import TestClient
+from test_cross_site import FILE, REFUSED, client, site
 
 from gin_console.app import create_app
 from gin_console.config import ProjectEntry, Settings
@@ -155,3 +156,41 @@ def test_tc_server_017_project_beads_endpoint_unchanged(tmp_path: Path) -> None:
     ]
     assert (epic["id"], epic["title"], epic["status"]) == ("e-1", "Title of e-1", "in_progress")
     assert not epic.get("workflow")
+
+
+# REQ-SERVER-012 (Image from another site)
+# TC: TC-SERVER-013@d3ad3ea9
+def test_tc_server_013_image_from_another_site(tmp_path: Path) -> None:
+    res = client(tmp_path, FakeBd()).get("/api/projects/beads", headers=site("cross-site"))
+    assert res.status_code == 403 and res.json() == REFUSED
+
+
+# REQ-SERVER-012 (Refresh from another site)
+# TC: TC-SERVER-014@6f58d064
+def test_tc_server_014_refresh_from_another_site(tmp_path: Path) -> None:
+    bd = FakeBd()
+    res = client(tmp_path, bd).post("/api/refresh", headers=site("cross-site"))
+    assert res.status_code == 403
+    assert bd.calls == []
+
+
+# REQ-SERVER-012 (The console itself)
+# TC: TC-SERVER-020@515623f7
+def test_tc_server_020_the_console_itself(tmp_path: Path) -> None:
+    res = client(tmp_path, FakeBd()).get("/api/projects/beads", headers=site("same-origin"))
+    assert res.status_code == 200
+
+
+# REQ-SERVER-012 (Tools)
+# TC: TC-SERVER-021@292f4e4c
+def test_tc_server_021_tools(tmp_path: Path) -> None:
+    assert client(tmp_path, FakeBd()).get("/api/projects/beads").status_code == 200
+
+
+# REQ-SERVER-012 (Mockup files)
+# TC: TC-SERVER-022@3c5dde19
+def test_tc_server_022_mockup_files(tmp_path: Path) -> None:
+    app = client(tmp_path, FakeBd())
+    res = app.get(FILE, headers=site("cross-site"))
+    assert res.status_code == 200 and res.text == "body { color: red; }"
+    assert app.post(FILE, headers=site("cross-site")).status_code == 403

@@ -5,7 +5,7 @@
 ## Requirements
 
 ### REQ-BEADS-001: Bead list
-WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return the beads of that configured project, each with `id`, `title`, `status`, `priority`, `issue_type`, `labels`, `owner`, `assignee`, `parent`, `created_at`, `updated_at`, `dependency_count`, `dependent_count`, `comment_count`, `milestone` (the id of the nearest bead of type `milestone` among the bead and its ancestors, found over every bead of the export whether closed or not, or `null`), `kind` (for an epic, `technical` or `parity` from its `kind:` label, else `capability`; `null` for any other type), `capabilities` (the names on the `Capabilities:` line of the bead's description, split by commas, without a trailing `(new)`, together with the lower-cased `<CAP>` of each `req:REQ-<CAP>-<NNN>` label of the bead and, for an epic, of its children, sorted and without duplicates) `complexity` (`low`, `medium` or `high` from a `Complexity:` line of the bead's description, or `null`), `estimate_minutes` (the bead's `estimated_minutes` when above 0, or `null`), `points` (the bead's `metadata.points` when it is one of the whole numbers 1, 2, 3, 5, 8, 13 and 21, or `null`) and `points_reason` (the bead's `metadata.points_reason` when it is a string and `points` is set, or `null`), and without the description, SHALL leave out closed beads unless the request has `closed=1`, and SHALL respond 404 when the project is not configured or its directory does not exist.
+WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return the beads of that configured project, each with `id`, `title`, `status`, `priority`, `issue_type`, `labels`, `owner`, `assignee`, `parent`, `created_at`, `updated_at`, `dependency_count`, `dependent_count`, `comment_count`, `milestone` (the id of the nearest bead of type `milestone` among the bead and its ancestors, found over every bead of the export whether closed or not, or `null`), `kind` (for an epic, `technical` or `parity` from its `kind:` label, else `capability`; `null` for any other type), `capabilities` (the names on the `Capabilities:` line of the bead's description, split by commas, without a trailing `(new)`, together with the lower-cased `<CAP>` of each `req:REQ-<CAP>-<NNN>` label of the bead and, for an epic, of its children, sorted and without duplicates) `complexity` (`low`, `medium` or `high` from a `Complexity:` line of the bead's description, or `null`), `estimate_minutes` (the bead's `estimated_minutes` when above 0, or `null`), `points` (the bead's `metadata.points` when it is one of the whole numbers 1, 2, 3, 5, 8, 13 and 21, or `null`) and `points_reason` (the bead's `metadata.points_reason` when it is a string and `points` is set, or `null`) and `image_count` (the number of its images of REQ-BEADS-026 that are available as REQ-BEADS-027 says, worked out once per export snapshot), and without the description, SHALL leave out closed beads unless the request has `closed=1`, and SHALL respond 404 when the project is not configured or its directory does not exist.
 
 #### Scenario: Open beads by default
 - GIVEN a project with 3 open, 1 in-progress and 4 closed beads
@@ -47,8 +47,13 @@ WHEN a client requests `GET /api/beads?project=<name>`, the server SHALL return 
 - WHEN a client requests the list
 - THEN `e-1` has `points: 5` and that `points_reason`, and `e-2` and `e-3` have `points: null` and `points_reason: null`
 
+#### Scenario: Image count
+- GIVEN bug `b-1` naming 3 images of which 2 are available, and a task naming none
+- WHEN a client requests the list
+- THEN `b-1` has `image_count: 2` and the task `image_count: 0`
+
 ### REQ-BEADS-002: Bead detail
-WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return the bead with the fields of REQ-BEADS-001 plus `description`, `dependencies` and `dependents` (each with `id`, `title`, `status` and `type`, where `type` is `blocks` or `parent-child`), `bugs` (each bead of type `bug` that has a `discovered-from` dependency on this bead, open or closed, with `id`, `title`, `status` and `type` `discovered-from`) and, for an epic, `children` (each with `id`, `title`, `status` and `prep`, closed children included), and SHALL respond 404 when the project or the bead does not exist. A bead SHALL be a prep task when its `labels` hold `prep` and no label starts with `track:` or `req:`. The children of an epic that are not prep tasks are its tracks. The `prep` field of a child SHALL be true for a prep task and false for a track.
+WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return the bead with the fields of REQ-BEADS-001 plus `description`, `dependencies` and `dependents` (each with `id`, `title`, `status` and `type`, where `type` is `blocks` or `parent-child`), `bugs` (each bead of type `bug` that has a `discovered-from` dependency on this bead, open or closed, with `id`, `title`, `status` and `type` `discovered-from`) `images` (the images of REQ-BEADS-026, each with `n`, `path`, `caption` and `available` as REQ-BEADS-027 says) and, for an epic, `children` (each with `id`, `title`, `status` and `prep`, closed children included), and SHALL respond 404 when the project or the bead does not exist. A bead SHALL be a prep task when its `labels` hold `prep` and no label starts with `track:` or `req:`. The children of an epic that are not prep tasks are its tracks. The `prep` field of a child SHALL be true for a prep task and false for a track.
 
 #### Scenario: Dependencies and dependents
 - GIVEN a bead blocked by one bead and blocking another
@@ -74,6 +79,11 @@ WHEN a client requests `GET /api/beads/{project}/{id}`, the server SHALL return 
 - GIVEN epic `e-1` with tracks `t-1` and `t-2`, prep task `p-1` labelled `prep` and `prep:mockup`, and child `t-3` labelled `prep` and `track:api`
 - WHEN a client requests the detail of `e-1`
 - THEN `children` lists `t-1`, `t-2`, `t-3` and `p-1`, with `prep` true for `p-1` only
+
+#### Scenario: Images
+- GIVEN bug `b-1` whose description names `qa/evidence/r1/01.png`, present in the project, and `/tmp/x.png`
+- WHEN a client requests its detail
+- THEN `images` is `{n: 1, path: "qa/evidence/r1/01.png", caption: "01.png", available: true}` and `{n: 2, path: "/tmp/x.png", caption: "x.png", available: false}`
 
 ### REQ-BEADS-003: Safe, read-only commands
 The server SHALL NOT run any `bd` command other than `bd dolt pull` in a project directory when it pulls (REQ-BEADS-016), SHALL otherwise only read files under the project's `.beads` directory, SHALL accept a bead `id` only when it matches `[A-Za-z0-9][A-Za-z0-9._-]*` and respond 404 otherwise, SHALL treat any `closed` value other than `1` as absent without failing the request, and SHALL never itself create, update, close or delete a bead or write a file under `.beads`.
@@ -296,11 +306,13 @@ The server SHALL keep, per project, the beads that `.beads/issues.jsonl` holds (
 - [Bead state as shown](diagrams/bead-state.md)
 - [Me filter](diagrams/me-filter-activity.md)
 - [Next command](diagrams/next-command-activity.md)
+- [Bead images](diagrams/bead-images-activity.md)
 
 ## Use Cases
 - [Refresh pulls Beads](use-cases/refresh-pulls-beads.md)
 - [Scheduled Beads pull](use-cases/scheduled-beads-pull.md)
 - [Filter my beads](use-cases/filter-my-beads.md)
+- [See a bug's screenshots](use-cases/see-bug-screenshots.md)
 
 ### REQ-BEADS-013: Stale export
 The server SHALL record, each time it reads a project's `.beads/issues.jsonl`, the content of the project's embedded Dolt manifests (`.beads/embeddeddolt/*/.dolt/noms/manifest`), and SHALL report the project's export as stale WHILE that content differs from the recorded content and the file has not changed since; WHERE a project has no such manifest, its export SHALL never be stale. `GET /api/projects/beads` SHALL include `stale` (a boolean) in the `beads` object of each project whose beads were read.
@@ -623,3 +635,104 @@ WHEN given a bead, the signed-in email, and, for an epic, the workflow stage rep
 - GIVEN a merge gate `g-1` and a milestone `m-1`
 - WHEN their next commands are named
 - THEN there is none for either
+
+### REQ-BEADS-026: Images a bead names
+Type: business-rule
+The server SHALL take as the images of a bead the paths ending in `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp` (in any letter case) that its description, and then its notes, name in any of these forms: the address of a Markdown image, the target of a Markdown link, the rest of a line starting with `local:` after optional spaces, and a path standing alone between spaces, backticks or the start and end of a line. It SHALL:
+- percent-decode the address of a Markdown image or link; turn a `file:` address into its path, dropping `file://` or `file://localhost`, and the `/` before a Windows drive (`file:///C:/a.png` is `C:/a.png`), and drop a `file:` address that names another host; drop any `http:`, `https:`, `attachment:` or other address with a scheme;
+- read a path starting with `~/` from the home folder of the user running the console, and a relative path from the project's `path`;
+- keep the order of first appearance, keep a path met again once, and keep at most 50 images;
+- give each image `n` (1, 2, … in that order), `path` (as written, without `file://`), and `caption`: the alt text of the Markdown image or the text of the link that names it first, else, for a `local:` line, the alt text of a Markdown image on the line right above it, else its file name.
+
+#### Scenario: gin-qa evidence
+- GIVEN a bug whose description holds `## Evidence`, `- ![TC-UI-115 step 1: Open the list](attachment:ab12)` and `  local: qa/evidence/r1/tc-ui-115/01.png`
+- WHEN its images are found
+- THEN it has one image, `n` 1, `path` `qa/evidence/r1/tc-ui-115/01.png`, caption "TC-UI-115 step 1: Open the list", and nothing for the `attachment:` address
+
+#### Scenario: File link and absolute path line
+- GIVEN a bug with `[BUG-005_1.png](file:///home/gin/att/BUG-005_1.png)` followed by ``Absolute Path: `/home/gin/att/BUG-005_1.png` ``
+- WHEN its images are found
+- THEN it has one image with `path` `/home/gin/att/BUG-005_1.png` and caption `BUG-005_1.png`
+
+#### Scenario: Forms and order
+- GIVEN a task whose description names `![Before](shots/a.png)`, then `see ~/brain/b.JPG`, then `https://example.com/c.png`, and whose notes name `shots/a.png` and `d.webp`
+- WHEN its images are found
+- THEN its images are `shots/a.png` (caption "Before"), `~/brain/b.JPG` and `d.webp`, numbered 1 to 3
+
+#### Scenario: Limit
+- GIVEN a bead whose description names 60 different PNG paths
+- WHEN its images are found
+- THEN it has the first 50
+
+### REQ-BEADS-027: Available image
+Type: business-rule
+An image of a bead (REQ-BEADS-026) SHALL be available only when its path holds no `..` part, no `\`, no NUL and no `:` other than in a Windows drive of an absolute path, and the file it names, with every symlink resolved, is a regular file inside the project's `path` or inside a folder of its `evidence_roots` (REQ-CONFIG-008), each folder taken with its own symlinks resolved, is at most 10 MB, and starts with the bytes of a PNG, JPEG, GIF or WebP file. The server SHALL check the text rules before touching the disk, and SHALL treat a file it cannot read as not available.
+
+#### Scenario: Inside the project
+- GIVEN project `alpha` at `/p/alpha` and a PNG file `/p/alpha/qa/evidence/r1/01.png` of 200 KB
+- WHEN the image `qa/evidence/r1/01.png` of a bead of `alpha` is checked
+- THEN it is available
+
+#### Scenario: Listed folder
+- GIVEN project `q` with `evidence_roots: [/srv/att]` and a JPEG file `/srv/att/BUG-5.jpg`
+- WHEN the image `/srv/att/BUG-5.jpg` of a bead of `q` is checked, and then the same path for a bead of `alpha`
+- THEN it is available for `q` and not for `alpha`
+
+#### Scenario: Refused paths
+- GIVEN project `alpha` at `/p/alpha` with the PNG file `/p/alpha/qa/evidence/r1/01.png`, a PNG file `/tmp/x.png`, a symlink `/p/alpha/link.png` to `/tmp/x.png`, and a symlink `/p/alpha/shots` to `/p/alpha/qa/evidence`
+- WHEN the images `/tmp/x.png`, `link.png`, `../alpha/qa/evidence/r1/01.png` and `shots/r1/01.png` are checked
+- THEN only `shots/r1/01.png` is available
+
+#### Scenario: Not an image
+- GIVEN in the project folder a file `fake.png` that holds text, an SVG file `logo.png`, a PNG file of 11 MB and a missing `gone.png`
+- WHEN they are checked
+- THEN none is available
+
+### REQ-BEADS-028: Image request
+WHEN a client requests `GET /api/beads/{project}/{id}/images/{n}`, the server SHALL check image `n` of the bead (REQ-BEADS-026) again as REQ-BEADS-027 says and, when it is available, SHALL respond 200 with the file's bytes, `Content-Type` `image/png`, `image/jpeg`, `image/gif` or `image/webp` from its first bytes, `X-Content-Type-Options: nosniff`, `Content-Security-Policy: sandbox; default-src 'none'`, `Content-Disposition: inline` and `Cache-Control: private, no-cache`. It SHALL respond 404, without saying why, when the project, the bead or the image `n` does not exist or the image is not available, and SHALL NOT take a path from the client.
+
+#### Scenario: Served
+- GIVEN bead `a-1` of `alpha` whose image 1 is an available PNG
+- WHEN a client requests `/api/beads/alpha/a-1/images/1`
+- THEN the response is 200 with `image/png`, the file's bytes and the four headers
+
+#### Scenario: Not served
+- GIVEN bead `a-1` with one available image and one image outside the allowed folders
+- WHEN a client requests images 2, 3 and 0 of `a-1`, image 1 of `a-9`, and image 1 of project `nope`
+- THEN every response is 404 with the same body
+
+#### Scenario: Removed after the snapshot
+- GIVEN bead `a-1` whose image 1 was available when the export was read and was deleted since
+- WHEN a client requests `/api/beads/alpha/a-1/images/1`
+- THEN the response is 404
+
+### REQ-BEADS-029: Images panel
+WHEN a bead has images (REQ-BEADS-002 `images`), the bead page, the epic page and the details panel SHALL show under the description a panel "Images (<count>)" with one tile per image in the order of `n`, each with its number and its caption: the image itself, loaded lazily from REQ-BEADS-028 with the caption as `alt`, for an available image, and "Not on this host" with the path as written for one that is not. Clicking or pressing Enter on an available tile SHALL open the lightbox of REQ-BEADS-030 on that image. The panel SHALL NOT show for a bead without images, and its tiles SHALL wrap so that the page does not scroll sideways at 390px.
+
+#### Scenario: Two images, one missing
+- GIVEN bug `a-1` with image 1 available and caption `01.png`, and image 2 not available with path `/tmp/x.png`
+- WHEN its page is shown
+- THEN the panel reads "Images (2)", tile 1 shows the image with `alt` `01.png`, and tile 2 reads "Not on this host" and `/tmp/x.png`
+
+#### Scenario: No images
+- GIVEN a bead whose `images` is empty
+- WHEN its page is shown
+- THEN there is no Images panel
+
+### REQ-BEADS-030: Image lightbox
+The lightbox SHALL be a modal dialog that shows one available image of the bead large, its caption, "<k> of <m>" counting the available images, and a link "Open original" to its address of REQ-BEADS-028 opening in a new tab. WHILE it is open, ← and → SHALL show the previous and the next available image, without wrapping, and Escape or the close button SHALL close it and return the focus to the tile or link that opened it.
+
+#### Scenario: Step through
+- GIVEN bug `a-1` with available images 1 and 3 and a missing image 2
+- WHEN the user opens image 1 and presses →
+- THEN image 3 is shown with "2 of 2", and pressing → again keeps it
+
+#### Scenario: Close
+- GIVEN the lightbox opened from tile 1
+- WHEN the user presses Escape
+- THEN the lightbox closes and tile 1 has the focus
+
+#### Scenario: Open original
+- GIVEN the lightbox shows image 1 of `a-1` in `alpha`
+- WHEN the user looks at "Open original"
+- THEN it links to `/api/beads/alpha/a-1/images/1` with `target="_blank"` and `rel="noreferrer"`

@@ -88,6 +88,7 @@ export function BeadCard({
         <SizeBadge points={bead.points} estimateMinutes={bead.estimate_minutes} />
         <CountBadge kind="comments" count={bead.comment_count} />
         <CountBadge kind="dependencies" count={bead.dependency_count} />
+        <CountBadge kind="images" count={bead.image_count ?? 0} />
         <AssigneeName assignee={bead.assignee} className="text-muted-foreground wrap-anywhere" />
       </div>
     </li>

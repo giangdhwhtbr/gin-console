@@ -147,3 +147,33 @@ WHEN a client that sends `Accept-Encoding` naming `gzip` requests any path, the 
 - GIVEN the same project
 - WHEN a client sends `GET /api/beads?project=<name>&closed=1` with `Accept-Encoding: identity`
 - THEN the response has no `Content-Encoding` header
+
+### REQ-SERVER-012: Cross-site API requests
+Type: non-functional
+Category: security
+WHEN a request to a path under `/api/` carries the header `Sec-Fetch-Site` with the value `cross-site` or `same-site`, the server SHALL answer 403 with `{"error": "cross-site request refused"}` and SHALL NOT run the endpoint, for every method, except a GET request under `/api/requirements/mockups/<project>/files/` (REQ-REQUIREMENTS-010). A request with `Sec-Fetch-Site` `same-origin` or `none`, or without the header, SHALL be handled as before.
+
+#### Scenario: Image from another site
+- GIVEN a page of another origin with `<img src="https://<console>/api/projects/beads">`
+- WHEN the browser loads it
+- THEN the answer is 403 and the endpoint does not run
+
+#### Scenario: Refresh from another site
+- GIVEN a page of another origin that posts to `/api/refresh` with `mode: "no-cors"`
+- WHEN the request arrives with `Sec-Fetch-Site: cross-site`
+- THEN the answer is 403 and no pull runs
+
+#### Scenario: The console itself
+- GIVEN the console page
+- WHEN it requests `/api/projects/beads` with `Sec-Fetch-Site: same-origin`
+- THEN the answer is 200
+
+#### Scenario: Tools
+- GIVEN curl or a test client that sends no `Sec-Fetch-Site`
+- WHEN it requests `/api/projects/beads`
+- THEN the answer is 200
+
+#### Scenario: Mockup files
+- GIVEN a confirmed mockup whose page loads its own `style.css`
+- WHEN the request arrives with `Sec-Fetch-Site: cross-site`
+- THEN the file is served; a POST to the same path is refused

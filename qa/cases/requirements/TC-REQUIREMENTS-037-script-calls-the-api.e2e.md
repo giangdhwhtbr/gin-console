@@ -1,10 +1,10 @@
 # TC-REQUIREMENTS-037: Script calls the API
 
-- **REQ:** REQ-REQUIREMENTS-011@2f736f3a
+- **REQ:** REQ-REQUIREMENTS-011@9bc2cbb9
 - **Priority:** high
 - **Result:** passed
-- **Run:** qa/evidence/2026-11-26T02-30-19
-- **Checked:** 35851ed1
+- **Run:** qa/evidence/2026-11-26T14-15-50
+- **Checked:** b9b49655
 
 **Preconditions:**
 - A second console server runs on a free port with a temporary config holding project `m` whose folder `docs/specs/ui/assets/2026-11-22` is confirmed

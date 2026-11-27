@@ -6,8 +6,16 @@ test('TC-REQUIREMENTS-037: Script calls the API (REQ-REQUIREMENTS-011)', async (
   // Precondition: a second console server of this checkout runs on a free port with project m and a confirmed mockup
   // whose script calls fetch('/api/projects/beads') and a no-cors POST to /api/refresh.
   const server = await startMockupServer();
-  const count = (needle: string) => server.log().split('\n').filter((line) => line.includes(needle)).length;
-  const seen = (request: import('@playwright/test').Request) => `${request.method()} ${new URL(request.url()).pathname}`;
+  // lines of the access log that contain `needle`; those answered 403 are the refused requests, not the console's own
+  const lines = (needle: string) => server.log().split('\n').filter((line) => line.includes(needle));
+  const count = (needle: string) => lines(needle).filter((line) => !line.includes('" 403')).length;
+  const refused = (from: string) => lines(`"GET /api/projects/beads?from=${from} HTTP/1.1"`).filter((line) => line.includes('" 403'));
+  const reached = (from: string) => lines(`"GET /api/projects/beads?from=${from} HTTP/1.1" 200`);
+  // with the query, so the <img> and <script src> requests (?from=...) are not taken for the mockup's fetch calls
+  const seen = (request: import('@playwright/test').Request) => {
+    const url = new URL(request.url());
+    return `${request.method()} ${url.pathname}${url.search}`;
+  };
   const fromFrames: string[] = [];
   page.on('request', (request) => {
     if (request.frame() !== page.mainFrame()) fromFrames.push(seen(request));
@@ -29,6 +37,11 @@ test('TC-REQUIREMENTS-037: Script calls the API (REQ-REQUIREMENTS-011)', async (
       // the listener works: the frame's own document was requested; the mockup's two calls were not
       expect(fromFrames).toContain('GET /api/requirements/mockups/m/files/ui/2026-11-22/index.html');
       expect(fromFrames.filter((r) => r.endsWith('/api/refresh') || r.endsWith('/api/projects/beads'))).toEqual([]);
+      // the mockup's <img> and <script src> were answered 403 by the server and never 200 (REQ-SERVER-012)
+      await expect.poll(() => refused('img').length).toBe(1);
+      await expect.poll(() => refused('script').length).toBe(1);
+      expect(reached('img')).toEqual([]);
+      expect(reached('script')).toEqual([]);
     });
 
     const beadsBefore = count('GET /api/projects/beads');
@@ -47,6 +60,10 @@ test('TC-REQUIREMENTS-037: Script calls the API (REQ-REQUIREMENTS-011)', async (
     });
 
     await ev.step('5. Read the server log', async () => {
+      await expect.poll(() => refused('img').length).toBe(2); // one from the frame, one from the tab
+      await expect.poll(() => refused('script').length).toBe(2);
+      expect(reached('img')).toEqual([]);
+      expect(reached('script')).toEqual([]);
       expect(count('POST /api/refresh')).toBe(0);
       expect(count('GET /api/projects/beads')).toBe(beadsBefore);
       expect(fromTab).toContain('GET /api/requirements/mockups/m/files/ui/2026-11-22/index.html');

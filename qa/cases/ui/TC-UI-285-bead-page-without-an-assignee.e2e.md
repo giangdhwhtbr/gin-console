@@ -1,6 +1,6 @@
 # TC-UI-285: Bead page without an assignee
 
-- **REQ:** REQ-UI-028@a720e49e
+- **REQ:** REQ-UI-028@5c612d02
 - **Priority:** medium
 - **Result:** passed
 - **Run:** qa/evidence/2026-11-23T10-34-33

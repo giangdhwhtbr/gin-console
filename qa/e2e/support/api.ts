@@ -55,6 +55,8 @@ export type BeadSummary = {
   lane: string | null; track: { plan: string | null; number: number } | null;
   claim: { holder: string; expires_at: string } | null;
   waits_for: { plan: string; number: number; track_id: string | null; lane: string | null } | null;
+  /** The images of the bead that exist on the console host (REQ-BEADS-001); absent counts as 0. */
+  image_count?: number;
 };
 
 export type OverviewProject = {

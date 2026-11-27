@@ -541,3 +541,39 @@ def test_beads_001_malformed_estimate_is_null(tmp_path: Path, minutes: Any) -> N
     api = make(tmp_path, FakeExport([bead("a-1", estimated_minutes=minutes)]))
     (item,) = api.get("/api/beads", params={"project": "proj"}).json()
     assert item["estimate_minutes"] is None and item["capabilities"] == []
+
+
+PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+
+
+def put_png(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(PNG)
+
+
+# REQ-BEADS-001 (Image count)
+def test_beads_001_image_count(tmp_path: Path) -> None:
+    for name in ("a.png", "b.png"):
+        put_png(tmp_path / "proj" / "shots" / name)
+    rows = [
+        bead("b-1", issue_type="bug", description="shots/a.png\nshots/b.png\nshots/gone.png"),
+        bead("t-1", description="nothing to see"),
+    ]
+    body = make(tmp_path, FakeExport(rows)).get("/api/beads", params={"project": "proj"}).json()
+    assert {b["id"]: b["image_count"] for b in body} == {"b-1": 2, "t-1": 0}
+
+
+# REQ-BEADS-002 (Images)
+def test_beads_002_images(tmp_path: Path) -> None:
+    put_png(tmp_path / "proj" / "qa/evidence/r1/01.png")
+    outside = tmp_path / "x.png"
+    put_png(outside)
+    shown = bead(
+        "b-1", issue_type="bug", description=f"qa/evidence/r1/01.png and {outside.as_posix()}"
+    )
+    api = make(tmp_path, FakeExport(shown={"b-1": shown, "t-1": bead("t-1")}))
+    assert api.get("/api/beads/proj/b-1").json()["images"] == [
+        {"n": 1, "path": "qa/evidence/r1/01.png", "caption": "01.png", "available": True},
+        {"n": 2, "path": outside.as_posix(), "caption": "x.png", "available": False},
+    ]
+    assert api.get("/api/beads/proj/t-1").json()["images"] == []

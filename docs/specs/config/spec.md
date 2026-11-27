@@ -64,6 +64,7 @@ IF the config has `server.scotty_base_url` or a project with `scotty_id`, THEN t
 ## Diagrams
 - [Pull settings](diagrams/pull-settings-activity.md)
 - [Overview settings](diagrams/overview-settings-activity.md)
+- [Evidence folders](diagrams/evidence-folders-activity.md)
 
 ### REQ-CONFIG-006: Pull settings
 The config SHALL accept an optional top-level `beads` section whose `pull_interval` is `0` or a duration of whole seconds, minutes or hours written as `<n>s`, `<n>m` or `<n>h`, of at least one minute, and an optional `pull` boolean (default `true`) on each project entry; IF `pull_interval` does not parse, is under one minute and not `0`, or `pull` is not a boolean, THEN the console SHALL exit with a non-zero status and a message naming the field (REQ-CONFIG-003).
@@ -100,3 +101,21 @@ The config SHALL accept an optional top-level `overview` section whose `aging_da
 - GIVEN a config with `overview: {aging_days: 0}`
 - WHEN the console starts
 - THEN it exits non-zero and the message names `overview.aging_days`
+
+### REQ-CONFIG-008: Evidence folders
+The config SHALL accept on each project entry an optional `evidence_roots` list of absolute folder paths (default empty), the folders besides the project's `path` from which images of its beads may be served (REQ-BEADS-027); IF an entry of `evidence_roots` is not an absolute path or the field is not a list, THEN the console SHALL exit with a non-zero status and a message naming the field (REQ-CONFIG-003). A listed folder that does not exist SHALL serve no image and SHALL NOT stop the console.
+
+#### Scenario: Listed folders
+- GIVEN project `qwikfone` with `evidence_roots: [/home/gin/infra/bug-sync-mcp/data/attachments]`
+- WHEN the console starts
+- THEN that folder is an evidence folder of `qwikfone` and of no other project
+
+#### Scenario: Default
+- GIVEN a project without `evidence_roots`
+- WHEN the console starts
+- THEN its only evidence folder is its `path`
+
+#### Scenario: Relative folder
+- GIVEN a project with `evidence_roots: [shots]`
+- WHEN the console starts
+- THEN it exits non-zero and the message names that project's `evidence_roots`

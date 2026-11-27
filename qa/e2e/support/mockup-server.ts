@@ -9,6 +9,8 @@ import * as path from 'node:path';
 
 export const MOCKUP = `<!doctype html><title>Mockup</title>
 <button id="b">Click</button><p id="out"></p><p id="beads">pending</p><p id="refresh">pending</p>
+<img id="img" src="/api/projects/beads?from=img">
+<script src="/api/projects/beads?from=script"></script>
 <script>
 const show = (id, text) => { document.getElementById(id).textContent = text; };
 fetch('/api/projects/beads').then(() => show('beads', 'allowed'), () => show('beads', 'blocked'));

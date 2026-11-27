@@ -1,4 +1,4 @@
-import { Link2, MessageSquare } from "lucide-react";
+import { Image as ImageIcon, Link2, MessageSquare } from "lucide-react";
 import { Hint } from "@/components/ui/tooltip";
 import { DEFINITIONS } from "@/lib/definitions";
 import { cn } from "@/lib/utils";
@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 const KINDS = {
   comments: { icon: MessageSquare, nouns: ["comment", "comments"], tone: "text-muted-foreground" },
   dependencies: { icon: Link2, nouns: ["dependency", "dependencies"], tone: "text-muted-foreground" },
+  images: { icon: ImageIcon, nouns: ["image", "images"], tone: "text-muted-foreground" },
 } as const;
 
 export function CountBadge({ kind, count }: { kind: keyof typeof KINDS; count: number }) {

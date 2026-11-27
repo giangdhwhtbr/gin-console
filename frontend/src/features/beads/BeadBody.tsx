@@ -1,6 +1,11 @@
+import { useRef, useState } from "react";
 import { Strand } from "@/components/Strand";
-import type { BeadDetail } from "./api";
+import { imageUrl, type BeadDetail } from "./api";
+import { ImagesPanel } from "./images/ImagesPanel";
+import { Lightbox } from "./images/Lightbox";
+import { findImage } from "./images/match";
 import { MarkdownText } from "./MarkdownText";
+import type { ImageResolver } from "./MarkdownView";
 import { prepLabel, progressOf } from "./progress";
 import { RelationList } from "./RelationList";
 import { TextSection } from "./TextSection";
@@ -9,6 +14,22 @@ import { TextSection } from "./TextSection";
 export function BeadBody({ project, bead, overview = false }: { project: string; bead: BeadDetail; overview?: boolean }) {
   const progress = progressOf(bead);
   const prep = progress.prepTotal > 0 ? prepLabel(progress) : null;
+  const images = bead.images ?? [];
+  const [current, setCurrent] = useState<number | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const open = (n: number, from: HTMLElement) => {
+    opener.current = from;
+    setCurrent(n);
+  };
+  const close = () => {
+    setCurrent(null);
+    opener.current?.focus();
+  };
+  const resolver: ImageResolver = {
+    find: (address) => findImage(images, address),
+    url: (n) => imageUrl(project, bead.id, n),
+    open,
+  };
 
   return (
     <>
@@ -16,8 +37,10 @@ export function BeadBody({ project, bead, overview = false }: { project: string;
       {bead.description === null ? (
         <p className="text-muted-foreground">No description.</p>
       ) : (
-        <MarkdownText text={bead.description} />
+        <MarkdownText text={bead.description} images={resolver} />
       )}
+      <ImagesPanel project={project} beadId={bead.id} images={images} onOpen={open} />
+      <Lightbox project={project} beadId={bead.id} images={images} current={current} onChange={setCurrent} onClose={close} />
       <TextSection title="Acceptance criteria" text={bead.acceptance_criteria} />
       <TextSection title="Design" text={bead.design} />
       <TextSection title="Notes" text={bead.notes} />

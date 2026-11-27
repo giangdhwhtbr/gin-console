@@ -201,3 +201,45 @@ def test_config_007_invalid_aging_days(tmp_path: Path, value: str) -> None:
     path = write(tmp_path, f"overview: {{aging_days: {value}}}\n")
     with pytest.raises(ConfigError, match=r"overview\.aging_days"):
         load_settings(path)
+
+
+# REQ-CONFIG-008 (Listed folders): the folders belong to their own project only
+def test_config_008_listed_folders(tmp_path: Path) -> None:
+    path = write(
+        tmp_path,
+        "projects:\n"
+        "  - name: qwikfone\n"
+        "    path: /home/gin/qwikfone\n"
+        "    evidence_roots: [/home/gin/infra/bug-sync-mcp/data/attachments]\n"
+        "  - {name: scotty, path: /home/gin/scotty}\n",
+    )
+    qwikfone, scotty = load_settings(path).projects
+    assert qwikfone.evidence_roots == [Path("/home/gin/infra/bug-sync-mcp/data/attachments")]
+    assert scotty.evidence_roots == []
+
+
+# REQ-CONFIG-008 (Default)
+def test_config_008_default_is_empty(tmp_path: Path) -> None:
+    path = write(tmp_path, "projects:\n  - {name: qwikfone, path: /home/gin/qwikfone}\n")
+    assert load_settings(path).projects[0].evidence_roots == []
+
+
+# REQ-CONFIG-008: a folder that does not exist does not stop the console
+def test_config_008_missing_folder_is_accepted(tmp_path: Path) -> None:
+    missing = (tmp_path / "no-such-folder").as_posix()
+    path = write(tmp_path, f"projects:\n  - {{name: q, path: /q, evidence_roots: [{missing}]}}\n")
+    assert load_settings(path).projects[0].evidence_roots == [Path(missing)]
+
+
+# REQ-CONFIG-008: a Windows folder is absolute too
+def test_config_008_windows_folder(tmp_path: Path) -> None:
+    path = write(tmp_path, "projects:\n  - {name: q, path: /q, evidence_roots: ['C:\\shots']}\n")
+    assert len(load_settings(path).projects[0].evidence_roots) == 1
+
+
+# REQ-CONFIG-008 (Relative folder), REQ-CONFIG-003; and a field that is not a list
+@pytest.mark.parametrize("value", ["[shots]", "[/abs, shots]", "/abs/shots", "{a: 1}"])
+def test_config_008_relative_or_not_a_list_names_the_field(tmp_path: Path, value: str) -> None:
+    path = write(tmp_path, f"projects:\n  - {{name: q, path: /q, evidence_roots: {value}}}\n")
+    with pytest.raises(ConfigError, match=r"projects\.0\.evidence_roots"):
+        load_settings(path)
