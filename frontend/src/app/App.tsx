@@ -17,6 +17,8 @@ import { loadSession, useSession } from "./session";
 import { SignInPage } from "./SignInPage";
 
 const ReportsPage = lazy(() => import("@/features/reports/ReportsPage").then((m) => ({ default: m.ReportsPage })));
+const TestsPage = lazy(() => import("@/features/qa/TestsPage").then((m) => ({ default: m.TestsPage })));
+const CasePage = lazy(() => import("@/features/qa/CasePage").then((m) => ({ default: m.CasePage })));
 const RequirementsPage = lazy(() => import("@/features/requirements/RequirementsPage").then((m) => ({ default: m.RequirementsPage })));
 
 function graphRoute(pathname: string): { project: string; id: string | null } | null {
@@ -49,6 +51,16 @@ function milestoneRoute(pathname: string): { project: string; id: string } | nul
   }
 }
 
+function caseRoute(pathname: string): { project: string; id: string } | null {
+  const match = /^\/tests\/([^/]+)\/([^/]+)$/.exec(pathname);
+  if (!match) return null;
+  try {
+    return { project: decodeURIComponent(match[1]), id: decodeURIComponent(match[2]) };
+  } catch {
+    return null;
+  }
+}
+
 export function App() {
   const { pathname, search } = useLocation();
   const [epoch, setEpoch] = useState(0); // a new key remounts the page, which loads its data again
@@ -56,6 +68,7 @@ export function App() {
   const select = new URLSearchParams(search).get("select") ?? "";
   const bead = beadRoute(pathname);
   const milestone = milestoneRoute(pathname);
+  const testCase = caseRoute(pathname);
   const email = useEmail();
   const session = useSession();
   useEffect(() => {
@@ -84,6 +97,14 @@ export function App() {
       ) : pathname === "/requirements" || pathname.startsWith("/requirements/") ? (
         <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
           <RequirementsPage />
+        </Suspense>
+      ) : pathname === "/tests" ? (
+        <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+          <TestsPage />
+        </Suspense>
+      ) : testCase !== null ? (
+        <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>
+          <CasePage key={`${testCase.project}/${testCase.id}`} project={testCase.project} id={testCase.id} />
         </Suspense>
       ) : pathname === "/reports" || pathname.startsWith("/reports/") ? (
         <Suspense fallback={<p className="text-muted-foreground">Loading…</p>}>

@@ -201,6 +201,27 @@ describe("App routing", () => {
     await waitFor(() => expect(document.title).toBe("Page not found · gin-console"));
   });
 
+  it("REQ-QA-010 REQ-QA-011 REQ-UI-055 /tests is the Tests page, /tests/<project>/<id> a case page, and the Tests link is the current one", async () => {
+    const detail = { id: "TC-UI-001", title: "Login", capability: "ui", type: "e2e", priority: "high", result: "passed", effective_result: "passed", reqs: [], bug: null, file: "f.md", preconditions: [], steps: [], expected: [], latest_run: null, latest_run_reason: "no_run" };
+    const list = { cases: [{ ...detail, preconditions: undefined }], counts: { by_capability: [], by_type: [] } };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => Promise.resolve(url === "/api/projects/beads" ? alpha() : url.startsWith("/api/qa/cases?") ? json(list) : url.startsWith("/api/qa/cases/") ? json(detail) : new Response("{}", { status: 500 }))),
+    );
+    window.history.replaceState(null, "", "/tests?project=alpha");
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Tests" }, { timeout: 3000 })).toBeInTheDocument();
+    expect(within(screen.getByRole("navigation", { name: "Main" })).getByRole("link", { name: "Tests" })).toHaveAttribute("aria-current", "page");
+    cleanup();
+    window.history.replaceState(null, "", "/tests/alpha/TC-UI-001");
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "TC-UI-001 Login" }, { timeout: 3000 })).toBeInTheDocument();
+    cleanup();
+    window.history.replaceState(null, "", "/tests/alpha");
+    render(<App />);
+    expect(await screen.findByRole("heading", { name: "Page not found" })).toBeInTheDocument();
+  });
+
   it("REQ-REQUIREMENTS-012 REQ-UI-057 every path under /requirements is the Requirements page: /requirements, a section, a change, or the not-found page", async () => {
     vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve(url === "/api/projects/beads" ? alpha() : new Response("{}", { status: 500 }))));
     const before = window.history.length;

@@ -1,32 +1,28 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-import { imageUrl, type BeadImage } from "../api";
 
-/** REQ-BEADS-030: one available image large, stepping over the available images without wrapping. */
+export type LightboxSlide = { key: number; src: string; caption: string };
+
+/** REQ-BEADS-030: one slide large, stepping over the slides without wrapping. */
 export function Lightbox({
-  project,
-  beadId,
-  images,
+  slides,
   current,
   onChange,
   onClose,
 }: {
-  project: string;
-  beadId: string;
-  images: readonly BeadImage[];
+  slides: readonly LightboxSlide[];
   current: number | null;
-  onChange: (n: number) => void;
+  onChange: (key: number) => void;
   onClose: () => void;
 }) {
   const popupRef = useRef<HTMLDivElement>(null);
-  const available = images.filter((image) => image.available);
-  const index = available.findIndex((image) => image.n === current);
-  const image = index >= 0 ? available[index] : null;
+  const index = slides.findIndex((slide) => slide.key === current);
+  const image = index >= 0 ? slides[index] : null;
 
   const step = (by: number) => {
-    const next = available[index + by];
-    if (next) onChange(next.n);
+    const next = slides[index + by];
+    if (next) onChange(next.key);
   };
   const onKeyDown = (event: React.KeyboardEvent) => {
     const by = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0;
@@ -67,7 +63,7 @@ export function Lightbox({
                 </button>
                 <div className="flex min-w-0 flex-1 justify-center">
                   <img
-                    src={imageUrl(project, beadId, image.n)}
+                    src={image.src}
                     alt={image.caption}
                     className="max-h-[70vh] max-w-full object-contain"
                   />
@@ -75,7 +71,7 @@ export function Lightbox({
                 <button
                   type="button"
                   aria-label="Next image"
-                  disabled={index === available.length - 1}
+                  disabled={index === slides.length - 1}
                   onClick={() => step(1)}
                   className={arrow}
                 >
@@ -84,9 +80,9 @@ export function Lightbox({
               </div>
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span>
-                  {index + 1} of {available.length}
+                  {index + 1} of {slides.length}
                 </span>
-                <a href={imageUrl(project, beadId, image.n)} target="_blank" rel="noreferrer" className="prose-link">
+                <a href={image.src} target="_blank" rel="noreferrer" className="prose-link">
                   Open original
                 </a>
               </div>
