@@ -17,7 +17,9 @@ test('TC-UI-232: Last chosen beats the favorite (REQ-UI-124)', async ({ page, ev
   await ev.step('1. Open `/milestones`', async () => {
     await page.goto('/milestones');
     await expect(page).toHaveURL((url) => url.pathname + url.search === '/milestones?project=b');
-    await expect(page.getByRole('list', { name: 'Milestones' }).getByRole('listitem')).toContainText('Milestone of b');
+    // the page opens on Timeline (REQ-MILESTONE-UI-033), so check the heading and the request for b
+    await expect(page.getByRole('heading', { level: 1, name: 'Milestones' })).toBeVisible();
+    await expect.poll(() => stub.calls.some((u) => u.pathname === '/api/milestones' && u.searchParams.get('project') === 'b')).toBe(true);
     expect(stub.calls.some((u) => u.pathname === '/api/milestones' && u.searchParams.get('project') === 'a')).toBe(false);
   });
 });

@@ -13,7 +13,7 @@ test('TC-UI-236: Storage refused (REQ-UI-124)', async ({ page, ev }) => {
   });
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await stubApi(page, {
+  const stub = await stubApi(page, {
     projects: ['a', 'b'],
     milestones: (url) => list([entry('M1', { title: `Milestone of ${url.searchParams.get('project')}` })]),
   });
@@ -36,7 +36,9 @@ test('TC-UI-236: Storage refused (REQ-UI-124)', async ({ page, ev }) => {
   await ev.step('4. Click "Milestones" in the main navigation', async () => {
     await mainNav(page).getByRole('link', { name: 'Milestones', exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname + url.search === '/milestones?project=b');
-    await expect(page.getByRole('list', { name: 'Milestones' }).getByRole('listitem')).toContainText('Milestone of b');
+    // the page opens on Timeline (REQ-MILESTONE-UI-033), so check the heading and the request for b
+    await expect(page.getByRole('heading', { level: 1, name: 'Milestones' })).toBeVisible();
+    await expect.poll(() => stub.calls.some((u) => u.pathname === '/api/milestones' && u.searchParams.get('project') === 'b')).toBe(true);
     await expect(page.getByRole('alert')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
