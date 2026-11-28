@@ -33,6 +33,7 @@ def ui(result: str, at: str, case: str = "TC-UI-001", **fields: Any) -> dict[str
     return run_record(case, result, at, **fields)
 
 
+# TC: TC-QA-041@2e61a6c5
 # REQ-QA-014: Window in the browser's zone
 def test_qa_014_window_in_the_browsers_zone(tmp_path: Path) -> None:
     rows = [
@@ -97,6 +98,7 @@ def test_qa_014_response_shape(tmp_path: Path) -> None:
     ]
 
 
+# TC: TC-QA-046@50c227c3
 # REQ-QA-015: the rate of a day, a gap and the points of every day
 def test_qa_015_rate_and_gap(tmp_path: Path) -> None:
     rows = [ui("passed", f"2026-11-26T0{n}:00:00Z") for n in (1, 2, 3)]
@@ -109,6 +111,7 @@ def test_qa_015_rate_and_gap(tmp_path: Path) -> None:
     assert len(points) == 7
 
 
+# TC: TC-QA-042@a7dbe56d
 # REQ-QA-014: Bad window
 def test_qa_014_bad_window(tmp_path: Path) -> None:
     fake = FakeGinQa({})
@@ -151,6 +154,7 @@ def test_qa_014_missing(tmp_path: Path) -> None:
     assert res.json() == {"error": "gin-qa is not installed", "cause": "missing"}
 
 
+# TC: TC-QA-043@98fae12d
 # REQ-QA-014: Old gin-qa
 def test_qa_014_old_gin_qa(tmp_path: Path) -> None:
     fake = FakeGinQa(
@@ -171,6 +175,7 @@ def test_qa_014_timeout(tmp_path: Path) -> None:
     assert res.json() == {"error": "gin-qa timed out after 30s", "cause": None}
 
 
+# TC: TC-QA-044@9018bafb
 # REQ-QA-014: Problems kept
 def test_qa_014_problems_kept(tmp_path: Path) -> None:
     problem = "qa/runs/2026-11/bao.jsonl:4: not JSON"
@@ -182,6 +187,7 @@ def test_qa_014_problems_kept(tmp_path: Path) -> None:
     assert (point["passed"], point["failed"]) == (1, 1)
 
 
+# TC: TC-QA-045@e95deb11
 # REQ-QA-014: Cache
 def test_qa_014_cache(tmp_path: Path) -> None:
     rows = [
@@ -259,3 +265,44 @@ def test_qa_014_no_runs(tmp_path: Path) -> None:
     body = trends_of(make_today(tmp_path, fake)).json()
     assert body["pass_rate"] == [] and body["flaky"] == [] and body["still_failing"] == []
     assert body["time_to_fix"]["overall"] == {"fixes": 0, "median_seconds": None}
+
+
+# TC: TC-QA-047@9dc35c41
+def test_qa_016_flips_under_one_hash(tmp_path: Path) -> None:
+    rows = [
+        ui("passed", "2026-11-26T09:00:00Z", hash8="aaaa1111"),
+        ui("failed", "2026-11-26T10:00:00Z", hash8="aaaa1111"),
+        ui("passed", "2026-11-26T11:00:00Z", hash8="aaaa1111"),
+        ui("failed", "2026-11-26T09:00:00Z", "TC-UI-002", hash8="aaaa2222"),
+        ui("passed", "2026-11-26T10:00:00Z", "TC-UI-002", hash8="bbbb2222"),
+    ]
+    fake = FakeGinQa({runs_args(SINCE_30): runs_export(*rows)})
+    flaky = trends_of(make_today(tmp_path, fake)).json()["flaky"]
+    assert [(f["case"], f["flips"], f["last_result"]) for f in flaky] == [
+        ("TC-UI-001", 2, "passed")
+    ]
+
+
+# TC: TC-QA-048@ee520335
+def test_qa_017_median_and_open_streak_over_http(tmp_path: Path) -> None:
+    rows = [
+        ui("failed", "2026-11-26T09:00:00Z", "TC-UI-003"),
+        ui("passed", "2026-11-26T09:30:00Z", "TC-UI-003"),
+        ui("failed", "2026-11-26T10:00:00Z"),
+        ui("failed", "2026-11-26T11:00:00Z"),
+        ui(
+            "failed",
+            "2026-11-26T12:00:00Z",
+            "TC-BEADS-001",
+            capability="beads",
+            bug="gin-console-3kd",
+        ),
+        ui("passed", "2026-11-26T13:00:00Z"),
+    ]
+    fake = FakeGinQa({runs_args(SINCE_30): runs_export(*rows)})
+    body = trends_of(make_today(tmp_path, fake)).json()
+    assert body["time_to_fix"]["overall"] == {"fixes": 2, "median_seconds": 6300}
+    assert [(s["case"], s["bug"]) for s in body["still_failing"]] == [
+        ("TC-BEADS-001", "gin-console-3kd")
+    ]
+    assert body["still_failing"][0]["failing_since"].startswith("2026-11-26T12:00:00")
