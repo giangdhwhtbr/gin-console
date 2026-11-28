@@ -9,7 +9,7 @@ const percent = (value: unknown) => (typeof value === "number" ? `${value} %` : 
 export function PassRateChart({ rows, days }: { rows: readonly PassRateRow[]; days: readonly string[] }) {
   const data = days.map((date, at) => ({
     date,
-    ...Object.fromEntries(rows.map((row) => [row.name, row.points[at]?.rate == null ? null : Math.round(row.points[at].rate * 100)])),
+    ...Object.fromEntries(rows.map((row, i) => [`s${i}`, row.points[at]?.rate == null ? null : Math.round(row.points[at].rate * 100)])),
   }));
   const names = rows.map((row) => row.name).sort();
   return (
@@ -21,8 +21,8 @@ export function PassRateChart({ rows, days }: { rows: readonly PassRateRow[]; da
           <YAxis domain={[0, 100]} unit=" %" tick={tick} tickMargin={8} />
           <Tooltip contentStyle={tooltipStyle} formatter={percent} />
           <Legend formatter={legendText} />
-          {rows.map((row) => (
-            <Line key={row.name} dataKey={row.name} stroke={`var(--series-${names.indexOf(row.name) + 1})`} connectNulls={false} dot={false} isAnimationActive={false} />
+          {rows.map((row, i) => (
+            <Line key={row.name} dataKey={`s${i}`} name={row.name} stroke={`var(--series-${(names.indexOf(row.name) % 8) + 1})`} connectNulls={false} dot={false} isAnimationActive={false} />
           ))}
         </LineChart>
       </ChartBox>
