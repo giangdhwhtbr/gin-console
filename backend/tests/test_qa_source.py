@@ -2,13 +2,15 @@
 
 import json
 import subprocess
+from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
-from fake_gin_qa import EXPORT, FakeGinQa, case, export
+from fake_gin_qa import EXPORT, FakeGinQa, case, export, run_record, runs_args, runs_export
 
-from gin_console.qa.source import QA_TIMEOUT, QaError, load_cases, run_gin_qa
+from gin_console.projects.collect import CollectError
+from gin_console.qa.source import QA_TIMEOUT, QaError, load_cases, load_runs, run_gin_qa
 
 
 class Cli:
@@ -157,3 +159,89 @@ def test_qa_002_not_understood(tmp_path: Path, data: Any) -> None:
     error = raises(FakeGinQa({EXPORT: data}), tmp_path)
     assert error.cause is None
     assert str(error) == "gin-qa cases export output was not understood"
+
+
+OLD_GIN_QA = "usage: gin-qa ...\ngin-qa: error: argument command: invalid choice: 'runs'"
+
+
+def refuse(returncode: int, stderr: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    def fail(cmd: list[str], cwd: Path, timeout: float) -> Any:
+        raise CollectError(f"gin-qa exited {returncode}: usage", returncode, stderr)
+
+    monkeypatch.setattr("gin_console.qa.source.run_json", fail)
+
+
+# REQ-QA-014: a gin-qa that does not know the command is outdated, not a plain failure
+def test_qa_014_invalid_choice_is_outdated(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    refuse(2, OLD_GIN_QA, monkeypatch)
+    with pytest.raises(QaError) as err:
+        run_gin_qa(["runs", "export"], tmp_path)
+    assert err.value.cause == "outdated"
+    assert str(err.value) == "this gin-qa has no `runs` command"
+
+
+# REQ-QA-014: exit 2 for another reason keeps its message and has no cause
+def test_qa_014_exit_two_without_invalid_choice(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    refuse(2, "gin-qa: error: --since: bad date", monkeypatch)
+    with pytest.raises(QaError) as err:
+        run_gin_qa(["runs", "export"], tmp_path)
+    assert err.value.cause is None
+    assert "gin-qa exited 2" in str(err.value)
+
+
+# REQ-QA-014: the runs are read in export order with the --since date, unknown keys ignored
+def test_qa_014_load_runs_in_order(tmp_path: Path) -> None:
+    rows = [
+        run_record("TC-UI-002", "failed", "2026-11-26T10:00:00Z", flaky=True),
+        run_record("TC-UI-001", "passed", "2026-11-26T09:00:00Z", bug="gin-console-3kd"),
+    ]
+    fake = FakeGinQa({runs_args("2026-11-21"): runs_export(*rows)})
+    found = load_runs(fake, tmp_path, date(2026, 11, 21))
+    assert fake.calls == [(list(runs_args("2026-11-21")), tmp_path)]
+    assert [r.case for r in found.runs] == ["TC-UI-002", "TC-UI-001"]
+    assert found.problems == []
+    first = found.runs[0]
+    assert (first.capability, first.hash8, first.result) == ("ui", "aaaa1111", "failed")
+    assert first.at == datetime(2026, 11, 26, 10, 0, tzinfo=UTC)
+    assert found.runs[1].bug == "gin-console-3kd"
+    assert "flaky" not in first.model_dump()
+
+
+# REQ-QA-014: a bad row is skipped with a problem, after the export's own problems
+def test_qa_014_load_runs_skips_bad_rows(tmp_path: Path) -> None:
+    good = run_record("TC-UI-001")
+    no_case = {k: v for k, v in run_record("x").items() if k != "case"}
+    rows: list[Any] = [good, no_case, run_record("TC-UI-002", at="yesterday"), "text"]
+    rows.append(run_record("TC-UI-003"))
+    fake = FakeGinQa({runs_args("2026-11-21"): runs_export(*rows, problems=["qa/runs/x.jsonl:4"])})
+    found = load_runs(fake, tmp_path, date(2026, 11, 21))
+    assert [r.case for r in found.runs] == ["TC-UI-001", "TC-UI-003"]
+    assert found.problems[0] == "qa/runs/x.jsonl:4"
+    assert [p.split(":")[0] for p in found.problems[1:]] == ["run 2", "run 3", "run 4"]
+
+
+# REQ-QA-014: a time without a zone is a bad row too
+def test_qa_014_load_runs_naive_time(tmp_path: Path) -> None:
+    fake = FakeGinQa({runs_args("2026-11-21"): runs_export(run_record(at="2026-11-26T10:00:00"))})
+    found = load_runs(fake, tmp_path, date(2026, 11, 21))
+    assert found.runs == [] and found.problems[0].startswith("run 1:")
+
+
+# REQ-QA-014: a problems value that is not a list of strings is read as none
+def test_qa_014_load_runs_odd_problems(tmp_path: Path) -> None:
+    for problems in ("bad", [1, 2], None):
+        data = {"runs": [run_record()], "problems": problems}
+        found = load_runs(FakeGinQa({runs_args("2026-11-21"): data}), tmp_path, date(2026, 11, 21))
+        assert found.problems == [] and len(found.runs) == 1
+
+
+# REQ-QA-014: no runs list means an old gin-qa
+@pytest.mark.parametrize("data", [{"cases": []}, {"runs": "none"}, [run_record()]])
+def test_qa_014_load_runs_outdated(tmp_path: Path, data: Any) -> None:
+    fake = FakeGinQa({runs_args("2026-11-21"): data})
+    with pytest.raises(QaError) as err:
+        load_runs(fake, tmp_path, date(2026, 11, 21))
+    assert err.value.cause == "outdated"
+    assert str(err.value) == "this gin-qa has no run history"

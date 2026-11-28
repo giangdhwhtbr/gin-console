@@ -1,6 +1,7 @@
 """A stand-in for the `gin-qa` runner: canned `cases export` answers and a call log."""
 
 import time
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,32 @@ def case(ident: str = "TC-UI-001", **fields: Any) -> dict[str, Any]:
 
 def export(*cases: dict[str, Any]) -> dict[str, Any]:
     return {"cases": list(cases)}
+
+
+def run_record(
+    case: str = "TC-UI-001", result: str = "passed", at: str = "2026-11-26T10:00:00Z", **fields: Any
+) -> dict[str, Any]:
+    """One run of `gin-qa runs export --format json`, with every key it prints."""
+    return {
+        "case": case,
+        "result": result,
+        "at": at,
+        "actor": "claude",
+        "bug": "",
+        "capability": "ui",
+        "evidence": [],
+        "hash8": "aaaa1111",
+        "run": "",
+        **fields,
+    }
+
+
+def runs_export(*records: dict[str, Any], problems: Sequence[str] = ()) -> dict[str, Any]:
+    return {"runs": list(records), "problems": list(problems)}
+
+
+def runs_args(since: str) -> tuple[str, ...]:
+    return ("runs", "export", "--format", "json", "--since", since)
 
 
 class FakeGinQa:
