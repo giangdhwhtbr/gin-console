@@ -1,9 +1,10 @@
 import re
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from functools import partial
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
@@ -18,11 +19,12 @@ from gin_console.config import ProjectEntry, Settings
 from gin_console.milestones.models import MilestoneDetail
 from gin_console.milestones.source import GwRunner, MilestonesError, show_milestone
 from gin_console.projects.models import BlockError, EpicWorkflow
-from gin_console.qa.models import CaseExport, CaseList, QaErrorBody, Readiness
+from gin_console.qa.models import CaseExport, CaseList, QaErrorBody, Readiness, RunExport, Trends
 from gin_console.qa.readiness import build_readiness
 from gin_console.qa.runs import read_screenshot
 from gin_console.qa.service import build_list, case_detail, find_case
-from gin_console.qa.source import GinQaRunner, QaError, load_cases
+from gin_console.qa.source import GinQaRunner, QaError, load_cases, load_runs
+from gin_console.qa.trends import WINDOWS, build_trends, window
 from gin_console.reports.models import ReportBead
 from gin_console.reports.source import read_beads
 from gin_console.requirements.models import Trace
@@ -50,7 +52,8 @@ def build_router(
     traces = KeyedCache[str, Trace](TTL, clock)
     details = KeyedCache[tuple[str, str], MilestoneDetail](TTL, clock)
     gates = KeyedCache[tuple[str, str], EpicWorkflow](TTL, clock)
-    on_refresh += [exports.clear, traces.clear, details.clear, gates.clear]
+    runs = KeyedCache[tuple[str, date], RunExport](TTL, clock)
+    on_refresh += [exports.clear, traces.clear, details.clear, gates.clear, runs.clear]
     gate_pool = ThreadPoolExecutor(max_workers=GATE_WORKERS, thread_name_prefix="qa-gates")
 
     def project_entry(request: Request, name: str | None) -> ProjectEntry:
@@ -172,5 +175,32 @@ def build_router(
         return build_readiness(
             detail, trace, trace_error, export, export_error, beads, beads_error, found, clock()
         )
+
+    @router.get("/qa/trends/{project}", response_model=Trends)
+    def get_trends(
+        request: Request,
+        project: str,
+        days: int = 30,
+        tz: str = "UTC",
+        capability: str | None = None,
+    ) -> Trends | JSONResponse:
+        """The pass rate, flaky cases and time to fix of the last `days` local days (REQ-QA-014).
+        The project and the window are checked before the cache; the capability filter applies
+        after it, so it reads no new export."""
+        entry = project_entry(request, project)
+        if days not in WINDOWS:
+            raise HTTPException(status_code=422, detail="days must be 7, 30 or 90")
+        try:
+            zone = ZoneInfo(tz)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise HTTPException(status_code=422, detail="unknown time zone") from None
+        win = window(days, zone, clock())
+        try:
+            export = runs.get(
+                (entry.name, win.since), lambda: load_runs(run_gin_qa, entry.path, win.since)
+            )
+        except QaError as exc:
+            return failure(exc)
+        return build_trends(export, win, zone, capability or None)
 
     return router

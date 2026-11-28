@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import UTC, date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_validator
 
 from gin_console.reports.models import EpicRef
 
@@ -181,3 +181,77 @@ class Readiness(BaseModel):
     generated_at: datetime
     verdict: Verdict
     items: list[ReadinessItem]  # always cases, results, bugs and gates, in that order
+
+
+# what `gin-qa runs export --format json` prints, only the keys the console uses (REQ-QA-014)
+class ExportRun(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    case: str
+    capability: str = ""
+    hash8: str = ""
+    result: str
+    at: AwareDatetime
+    bug: str = ""
+
+    @field_validator("at")
+    @classmethod
+    def _utc(cls, value: datetime) -> datetime:
+        return value.astimezone(UTC)
+
+
+class RunExport(BaseModel):
+    runs: list[ExportRun]
+    problems: list[str] = Field(default_factory=list)
+
+
+# the trends of a project (REQ-QA-014 to REQ-QA-017)
+class PassRatePoint(BaseModel):
+    date: date
+    passed: int
+    failed: int
+    rate: float | None
+
+
+class PassRateRow(BaseModel):
+    name: str
+    points: list[PassRatePoint]
+
+
+class FlakyCase(BaseModel):
+    case: str
+    capability: str
+    flips: int
+    last_result: str
+    last_at: datetime
+
+
+class FixStats(BaseModel):
+    fixes: int
+    median_seconds: float | None
+
+
+class CapabilityFix(FixStats):
+    name: str
+
+
+class TimeToFix(BaseModel):
+    overall: FixStats
+    by_capability: list[CapabilityFix]
+
+
+class StillFailing(BaseModel):
+    case: str
+    capability: str
+    failing_since: datetime
+    bug: str | None
+
+
+class Trends(BaseModel):
+    days: list[date]
+    tz: str
+    pass_rate: list[PassRateRow]
+    flaky: list[FlakyCase]
+    time_to_fix: TimeToFix
+    still_failing: list[StillFailing]
+    problems: list[str]
