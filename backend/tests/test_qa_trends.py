@@ -1,8 +1,9 @@
 """Trends worked out from runs: window, pass rate, flaky cases, time to fix (REQ-QA-014 to 017)."""
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import pytest
 from fake_gin_qa import run_record
 
 from gin_console.qa.models import ExportRun, FixStats, RunExport
@@ -56,7 +57,79 @@ def test_qa_014_window_today_is_local() -> None:
     assert window(7, UTC_ZONE, late).days[-1] == day(28)
 
 
-# REQ-QA-014: a run at the start counts, one second earlier does not
+# REQ-QA-014: time-zone edges of the window: a skipped midnight, a half-hour zone and +14
+@pytest.mark.parametrize(
+    ("zone", "now", "first", "last", "start", "end", "since"),
+    [
+        (  # DST began at 00:00 on 2018-11-04, so that midnight does not exist (03:00Z, UTC-3)
+            "America/Sao_Paulo",
+            datetime(2018, 11, 10, 12, 0, tzinfo=UTC),
+            date(2018, 11, 4),
+            date(2018, 11, 10),
+            datetime(2018, 11, 4, 3, 0, tzinfo=UTC),
+            datetime(2018, 11, 11, 2, 0, tzinfo=UTC),  # 00:00 on the 11th at UTC-2
+            date(2018, 11, 4),
+        ),
+        (  # UTC+5:30: midnight is 18:30Z of the day before
+            "Asia/Kolkata",
+            NOW,
+            day(22),
+            day(28),
+            datetime(2026, 11, 21, 18, 30, tzinfo=UTC),
+            datetime(2026, 11, 28, 18, 30, tzinfo=UTC),
+            day(21),
+        ),
+        (  # UTC+14: 12:00Z is already the 29th
+            "Pacific/Kiritimati",
+            datetime(2026, 11, 28, 12, 0, tzinfo=UTC),
+            day(23),
+            day(29),
+            datetime(2026, 11, 22, 10, 0, tzinfo=UTC),
+            datetime(2026, 11, 29, 10, 0, tzinfo=UTC),
+            day(22),
+        ),
+    ],
+)
+def test_qa_014_window_zone_edges(
+    zone: str,
+    now: datetime,
+    first: date,
+    last: date,
+    start: datetime,
+    end: datetime,
+    since: date,
+) -> None:
+    win = window(7, ZoneInfo(zone), now)
+    assert (win.days[0], win.days[-1], len(win.days)) == (first, last, 7)
+    assert (win.start, win.end, win.since) == (start, end, since)
+    inside = ExportRun.model_validate(run_record(at=(end - timedelta(seconds=1)).isoformat()))
+    at_end = ExportRun.model_validate(run_record(at=end.isoformat()))
+    before = ExportRun.model_validate(run_record(at=(start - timedelta(seconds=1)).isoformat()))
+    at_start = ExportRun.model_validate(run_record(at=start.isoformat()))
+    assert in_window([before, at_start, inside, at_end], win, None) == [at_start, inside]
+
+
+# REQ-QA-014: a run after the end of today (clock skew) is in no section
+def test_qa_014_run_after_today_is_dropped() -> None:
+    win = window(7, HCM, NOW)  # today is the 28th in Ho Chi Minh; it ends at 17:00Z
+    export = RunExport(
+        runs=[
+            run("TC-UI-001", "failed", "2026-11-28T16:59:59Z"),
+            run("TC-UI-001", "passed", "2026-11-28T17:00:00Z"),  # the 29th
+            run("TC-UI-002", "failed", "2026-11-28T17:00:00Z"),
+            run("TC-UI-003", "passed", "2026-11-29T01:00:00Z", capability="api"),
+        ]
+    )
+    trends = build_trends(export, win, HCM, None)
+    assert [r.name for r in trends.pass_rate] == ["ui"]
+    assert sum(p.passed + p.failed for p in trends.pass_rate[0].points) == 1
+    assert trends.flaky == []
+    assert trends.time_to_fix.overall == FixStats(fixes=0, median_seconds=None)
+    assert [s.case for s in trends.still_failing] == ["TC-UI-001"]
+    assert [c.name for c in trends.time_to_fix.by_capability] == ["ui"]
+
+
+# REQ-QA-014: a run at the window start counts, one second earlier does not
 def test_qa_014_run_at_the_window_start() -> None:
     win = window(7, HCM, NOW)
     runs = [run(at="2026-11-21T16:59:59Z"), run(at="2026-11-21T17:00:00Z")]

@@ -30,23 +30,26 @@ COUNTED = ("passed", "failed")
 @dataclass(frozen=True)
 class Window:
     days: list[date]  # local dates, oldest first; the last is today in the zone
-    start: datetime  # 00:00 of days[0] in the zone
+    start: datetime  # 00:00 of days[0] in the zone, in UTC
+    end: datetime  # 00:00 after days[-1] in the zone, in UTC; a run at `end` is outside
     since: date  # the UTC date of `start`, the `--since` value
 
 
 def window(days: int, tz: ZoneInfo, now: datetime) -> Window:
     today = now.astimezone(tz).date()
     dates = [today - timedelta(days=n) for n in range(days - 1, -1, -1)]
-    start = datetime.combine(dates[0], time.min, tzinfo=tz)
-    return Window(dates, start, start.astimezone(UTC).date())
+    # in UTC: a local midnight that a clock change skips is not equal to its instant otherwise
+    start = datetime.combine(dates[0], time.min, tzinfo=tz).astimezone(UTC)
+    end = datetime.combine(today + timedelta(days=1), time.min, tzinfo=tz).astimezone(UTC)
+    return Window(dates, start, end, start.date())
 
 
 def in_window(runs: Sequence[ExportRun], win: Window, capability: str | None) -> list[ExportRun]:
-    """The passed and failed runs from the window start on, of one capability when given."""
+    """The passed and failed runs inside the window, of one capability when given."""
     return [
         run
         for run in runs
-        if run.at >= win.start
+        if win.start <= run.at < win.end
         and run.result in COUNTED
         and (capability is None or run.capability == capability)
     ]
