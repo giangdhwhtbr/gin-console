@@ -142,3 +142,26 @@ The config SHALL accept an optional top-level `auth` section with `enabled` (boo
 - GIVEN a config with `auth: {rate_limit: {per_user: 0}}`
 - WHEN the console starts
 - THEN it exits non-zero and the message names `auth.rate_limit.per_user`
+
+### REQ-CONFIG-010: Path of the gin executable
+The config SHALL accept an optional top-level `gin` section whose `path` is an absolute path to the `gin` executable; WHEN `gin.path` is set, every `gin` call of the console SHALL run that file, and WHEN it is not set, `gin` SHALL be found as before (on `PATH`, through the `gin.cmd` shim or Git Bash on Windows). IF `gin` cannot be found or run, THEN the error the console shows SHALL name `gin.path` and the config file. IF `gin.path` is not absolute, THEN the console SHALL exit with a non-zero status and a message naming `gin.path` (REQ-CONFIG-003).
+
+#### Scenario: Default
+- GIVEN a config without `gin`
+- WHEN the console runs `gin`
+- THEN it runs the `gin` found on `PATH`
+
+#### Scenario: Set
+- GIVEN `gin: {path: /opt/gin/gin}`
+- WHEN the console runs `gin state`
+- THEN the process started is `/opt/gin/gin`
+
+#### Scenario: Not found
+- GIVEN no `gin` on `PATH` and no `gin.path`
+- WHEN a page asks for a project's milestones
+- THEN the error names `gin.path`
+
+#### Scenario: Relative path
+- GIVEN `gin: {path: bin/gin}`
+- WHEN the console starts
+- THEN it exits non-zero and the message names `gin.path`
