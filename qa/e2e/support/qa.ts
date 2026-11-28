@@ -97,3 +97,35 @@ export async function stubQa(
   });
   return stub;
 }
+
+export type TrendsBody = {
+  days: string[]; tz: string;
+  pass_rate: { name: string; points: { date: string; passed: number; failed: number; rate: number | null }[] }[];
+  flaky: { case: string; capability: string; flips: number; last_result: string; last_at: string }[];
+  time_to_fix: { overall: { fixes: number; median_seconds: number | null }; by_capability: { name: string; fixes: number; median_seconds: number | null }[] };
+  still_failing: { case: string; capability: string; failing_since: string; bug: string | null }[];
+  problems: string[];
+};
+
+/** `n` local dates ending today, oldest first. */
+export const lastDays = (n: number, end = new Date()): string[] =>
+  Array.from({ length: n }, (_, i) => new Date(end.getTime() - (n - 1 - i) * 86_400_000).toISOString().slice(0, 10));
+
+/** `GET /api/qa/trends/{project}` of the spec (REQ-QA-014 to REQ-QA-017), with no run in any section. */
+export const trendsBody = (days: number, o: Partial<TrendsBody> = {}): TrendsBody => ({
+  days: lastDays(days), tz: 'UTC', pass_rate: [], flaky: [],
+  time_to_fix: { overall: { fixes: 0, median_seconds: null }, by_capability: [] }, still_failing: [], problems: [], ...o,
+});
+
+/** Routes /api/qa/trends/*; call after `stubQa` (a route added later answers first). Returns the URLs requested. */
+export async function stubTrends(page: Page, answer: Answer<TrendsBody>): Promise<{ calls: URL[] }> {
+  const stub = { calls: [] as URL[] };
+  await page.route('**/api/qa/trends/**', async (route) => {
+    const url = new URL(route.request().url());
+    stub.calls.push(url);
+    const value = typeof answer === 'function' ? (answer as (u: URL) => unknown)(url) : answer;
+    const reply: Reply = isReply(value) ? value : { body: value };
+    await route.fulfill({ status: reply.status ?? 200, json: reply.body });
+  });
+  return stub;
+}
