@@ -12,7 +12,7 @@ import pytest
 from fake_bd import FakeBd
 from fake_export import bead, write_export
 from fake_gin import FakeGin, trace
-from fake_gin_qa import EXPORT, FakeGinQa, case, export
+from fake_gin_qa import EXPORT, FakeGinQa, case, export, runs_args, runs_export
 from fake_git import FakeGit
 from fake_gw import FakeGw
 from fastapi.testclient import TestClient
@@ -71,6 +71,7 @@ PROJECT_ROUTES = [
         "/api/qa/cases/b/TC-UI-001/run/steps/1/screenshot",
     ),
     ("/api/qa/readiness/{project}/{milestone}", "/api/qa/readiness/b/m-1"),
+    ("/api/qa/trends/{project}", "/api/qa/trends/b"),
 ]
 
 
@@ -114,7 +115,12 @@ def make(tmp_path: Path, bd: FakeBd | None = None) -> TestClient:
         run_gw=FakeGw(),
         run_gin=FakeGin({"trace": trace(), "reqs": RequirementsError("no reqs")}),
         run_epic_workflow=lambda cwd, ident: BlockError(error="no workflow"),
-        run_gin_qa=FakeGinQa({EXPORT: export(case("TC-UI-001", run="qa/evidence/r1"))}),
+        run_gin_qa=FakeGinQa(
+            {
+                EXPORT: export(case("TC-UI-001", run="qa/evidence/r1")),
+                runs_args("2026-10-29"): runs_export(),  # the 30 days of the trends route
+            }
+        ),
         run_git=FakeGit(),
     )
     fill(tmp_path / "a")
