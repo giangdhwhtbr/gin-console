@@ -129,14 +129,14 @@ def test_server_013_main_prints_ok_and_exits_0(
 # REQ-SERVER-013 (Current gin)
 def test_server_013_calls_use_the_timeouts_of_the_sources(tmp_path: Path) -> None:
     from gin_console.milestones.source import GW_TIMEOUT
-    from gin_console.projects.collect import TIMEOUT_SECONDS
+    from gin_console.qa.router import GATE_TIMEOUT
     from gin_console.requirements.source import GIN_TIMEOUT
 
     project = project_with_epics(tmp_path, capability_epic())
     runner = FakeRunner(answers())
     run_check(project, None, None, runner)
     assert runner.timeouts == {
-        state_key("c1"): TIMEOUT_SECONDS,
+        state_key("c1"): GATE_TIMEOUT,
         LIST_KEY: GW_TIMEOUT,
         SHOW_KEY: GW_TIMEOUT,
         TRACE_KEY: GIN_TIMEOUT,
@@ -238,6 +238,30 @@ def test_server_013_new_keys_follow_models_aliases_and_lists() -> None:
         ("new", "review_waivers[0].bead"),
     ]
     assert new_keys(EpicWorkflow, "not an object") == []
+    # the root of `gin state` holds much the console does not read: only objects inside count
+    assert [(f.kind, f.path) for f in new_keys(EpicWorkflow, raw, root=False)] == [
+        ("new", "review_waivers[0].bead")
+    ]
+
+
+# REQ-SERVER-013 (New key)
+def test_server_013_state_root_keys_are_not_noted_but_waiver_keys_are(tmp_path: Path) -> None:
+    project = project_with_epics(tmp_path, capability_epic())
+    state = {**STATE, "harness": {"x": 1}, "review_waivers": [{"task_id": "t", "bead": "b"}]}
+    reports = run_check(project, None, None, FakeRunner(answers(state=state)))
+    found = report_for(reports, "gin state")
+    assert not found.failed
+    assert [f.path for f in found.findings] == ["review_waivers[0].bead"]
+
+
+# REQ-SERVER-013 (Current gin)
+def test_server_013_state_calls_use_the_readiness_timeout(tmp_path: Path) -> None:
+    from gin_console.qa.router import GATE_TIMEOUT
+
+    project = project_with_epics(tmp_path, capability_epic())
+    runner = FakeRunner(answers())
+    run_check(project, None, None, runner)
+    assert runner.timeouts[state_key("c1")] == GATE_TIMEOUT
 
 
 # REQ-SERVER-013 (Kind not covered)

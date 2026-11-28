@@ -608,3 +608,25 @@ def test_tc_milestone_ui_119_unreadable_export_falls_back_to_the_list(tmp_path: 
         "ready": 2,
         "deferred": 0,
     }
+
+
+# REQ-CONFIG-010 (Not found)
+def test_config_010_not_found_reaches_the_milestones_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from gin_console.projects.collect import configure_gin
+
+    config = tmp_path / "config.yaml"
+    configure_gin(None, config)
+
+    def missing(cmd: list[str], **kwargs: Any) -> None:
+        raise FileNotFoundError(cmd[0])
+
+    monkeypatch.setattr(subprocess, "run", missing)
+    try:
+        response = make(tmp_path, run_gw).get("/api/milestones", params={"project": "proj"})
+    finally:
+        configure_gin(None, None)
+    assert response.status_code == 502
+    error = response.json()["error"]
+    assert "gin.path" in error and str(config) in error

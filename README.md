@@ -159,7 +159,7 @@ projects:
     path: /home/username/projects/my-project
 ```
 
-The console runs the `gin` found on `PATH`. To run another file, add an optional top-level `gin` section with an absolute path: `gin: {path: /opt/gin/gin}`. A relative path stops the console at startup with a message naming `gin.path`. When `gin` cannot be run, the page error names `gin.path` and the config file.
+The console runs the `gin` found on `PATH`. To run another file, add an optional top-level `gin` section with an absolute path: `gin: {path: /opt/gin/gin}`. A relative path stops the console at startup with a message naming `gin.path`. When `gin` cannot be run, the page error names `gin.path` and the config file. On Windows, a `gin.path` that does not end in `.cmd`, `.bat` or `.exe` runs through bash, and a missing file then shows as "gin exited 127".
 
 #### 4. Install Dependencies & Build
 

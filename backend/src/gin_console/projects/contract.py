@@ -25,13 +25,13 @@ from gin_console.milestones.source import (
     show_milestone,
 )
 from gin_console.projects.collect import (
-    TIMEOUT_SECONDS,
     CollectError,
     configure_gin,
     parse_epic_workflow,
     run_json,
 )
 from gin_console.projects.models import EpicWorkflow
+from gin_console.qa.router import GATE_TIMEOUT
 from gin_console.requirements.models import Reqs, Trace
 from gin_console.requirements.source import (
     GIN_TIMEOUT,
@@ -102,8 +102,11 @@ def _models_in(annotation: Any, value: Any, path: str) -> list[Finding]:
     return []
 
 
-def new_keys(model: type[BaseModel], raw: Any, path: str = "") -> list[Finding]:
-    """Keys of `raw` that `model` does not read, inside the objects the model reads."""
+def new_keys(
+    model: type[BaseModel], raw: Any, path: str = "", root: bool = True
+) -> list[Finding]:
+    """Keys of `raw` that `model` does not read, inside the objects the model reads; with
+    `root` false, unknown keys of `raw` itself are not listed, only those of objects below."""
     if not isinstance(raw, dict):
         return []
     known: dict[str, Any] = {}
@@ -116,7 +119,8 @@ def new_keys(model: type[BaseModel], raw: Any, path: str = "") -> list[Finding]:
     for key, value in raw.items():
         where = f"{path}.{key}" if path else str(key)
         if key not in known:
-            found.append(Finding("new", where, "key the console does not read"))
+            if root:
+                found.append(Finding("new", where, "key the console does not read"))
         else:
             found += _models_in(known[key].annotation, value, where)
     return found
@@ -170,6 +174,7 @@ def _check(
     timeout: float,
     parse: Callable[[_Run], Any],
     model: type[BaseModel],
+    root: bool = True,
 ) -> tuple[CallReport, Any]:
     """Run one call and parse it as the server does; returns the report and what was parsed."""
     call = f"gin {' '.join(argv)}"
@@ -195,7 +200,7 @@ def _check(
     raw = seen[0]
     if isinstance(raw, dict):
         raw = {k: v for k, v in raw.items() if k != "schema"}  # compared by the source
-    return CallReport(call, _once_per_item(new_keys(model, raw))), parsed
+    return CallReport(call, _once_per_item(new_keys(model, raw, root=root))), parsed
 
 
 def run_check(
@@ -221,7 +226,7 @@ def run_check(
             continue
         args = ["state", "--workflow-id", epic, "--format", "json"]
         reports.append(_check(
-            runner, args, TIMEOUT_SECONDS, _parse_state(cwd, args), EpicWorkflow
+            runner, args, GATE_TIMEOUT, _parse_state(cwd, args), EpicWorkflow, root=False
         )[0])
 
     report, listing = _check(

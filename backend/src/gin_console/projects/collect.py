@@ -119,7 +119,8 @@ def _run(cmd: list[str], cwd: Path, timeout: float) -> "subprocess.CompletedProc
     except subprocess.TimeoutExpired:
         raise CollectError(f"{cmd[0]} timed out") from None
     except OSError as exc:  # e.g. PermissionError on the command or the project directory
-        raise CollectError(f"{cmd[0]} failed: {exc.strerror}") from None
+        fix = f" (check gin.path in {_config_file})" if cmd[0] == "gin" and _config_file else ""
+        raise CollectError(f"{cmd[0]} failed: {exc.strerror}{fix}") from None
 
 
 def _exit_error(cmd: list[str], done: "subprocess.CompletedProcess[str]") -> CollectError:

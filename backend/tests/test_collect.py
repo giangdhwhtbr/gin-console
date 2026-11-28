@@ -405,3 +405,21 @@ def collect_block(path: Path) -> Any:
     from gin_console.projects.collect import collect_epic_workflow
 
     return collect_epic_workflow(path, "e1")
+
+
+# REQ-CONFIG-010 (Not found)
+def test_config_010_unusable_gin_path_names_the_fix(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, reset_gin: None
+) -> None:
+    from gin_console.projects.collect import CollectError, configure_gin, run_json
+
+    config = tmp_path / "config.yaml"
+    configure_gin(Path("/opt/gin"), config)
+    patch(monkeypatch, Fake(fail={"/opt/gin": PermissionError(13, "Permission denied")}))
+    with pytest.raises(CollectError) as exc:
+        run_json(["gin", "state"], tmp_path)
+    assert str(exc.value) == f"gin failed: Permission denied (check gin.path in {config})"
+    patch(monkeypatch, Fake(fail={"bd": PermissionError(13, "Permission denied")}))
+    with pytest.raises(CollectError) as exc:
+        run_json(["bd", "list"], tmp_path)
+    assert str(exc.value) == "bd failed: Permission denied"
