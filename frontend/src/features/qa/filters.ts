@@ -1,6 +1,6 @@
-import { RESULT_KEYS, type CaseRow, type ResultKey } from "./api";
+import { RESULT_KEYS, TREND_WINDOWS, type CaseRow, type ResultKey, type TrendWindow } from "./api";
 
-export type CaseFilters = { capability: string | null; type: string | null; result: ResultKey | null; q: string };
+export type CaseFilters = { capability: string | null; type: string | null; result: ResultKey | null; q: string; tab: "cases" | "trends"; days: TrendWindow };
 
 const KNOWN = ["passed", "failed", "blocked", "not run", "outdated"];
 
@@ -11,12 +11,16 @@ export function parseCaseFilters(search: string): CaseFilters {
     type: params.get("type") || null,
     result: RESULT_KEYS.find((key) => key === params.get("result")) ?? null,
     q: params.get("q") ?? "",
+    tab: params.get("tab") === "trends" ? "trends" : "cases",
+    days: TREND_WINDOWS.find((days) => String(days) === params.get("days")) ?? 30,
   };
 }
 
 /** `/tests` with the project and the filters that are set. */
 export function caseFiltersToSearch(project: string, filters: CaseFilters): string {
   const params = new URLSearchParams({ project });
+  if (filters.tab === "trends") params.set("tab", "trends");
+  if (filters.days !== 30) params.set("days", String(filters.days));
   if (filters.capability !== null) params.set("capability", filters.capability);
   if (filters.type !== null) params.set("type", filters.type);
   if (filters.result !== null) params.set("result", filters.result);

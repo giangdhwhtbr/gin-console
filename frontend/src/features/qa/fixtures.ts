@@ -1,4 +1,4 @@
-import type { CaseCounts, CaseDetail, CaseList, CaseRow } from "./api";
+import type { CaseCounts, CaseDetail, CaseList, CaseRow, Trends } from "./api";
 
 export const jsonResponse = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
@@ -28,5 +28,42 @@ export const caseDetail = (fields: Partial<CaseDetail> = {}): CaseDetail => ({
   expected: [],
   latest_run: null,
   latest_run_reason: "no_run",
+  ...fields,
+});
+
+export const trends = (fields: Partial<Trends> = {}): Trends => ({
+  days: ["2026-06-01", "2026-06-02", "2026-06-03"],
+  tz: "UTC",
+  pass_rate: [
+    {
+      name: "beads",
+      points: [
+        { date: "2026-06-01", passed: 0, failed: 0, rate: null },
+        { date: "2026-06-02", passed: 1, failed: 0, rate: 1 },
+        { date: "2026-06-03", passed: 1, failed: 1, rate: 0.5 },
+      ],
+    },
+    {
+      name: "ui",
+      points: [
+        { date: "2026-06-01", passed: 2, failed: 0, rate: 1 },
+        { date: "2026-06-02", passed: 1, failed: 1, rate: 0.5 },
+        { date: "2026-06-03", passed: 2, failed: 0, rate: 1 },
+      ],
+    },
+  ],
+  flaky: [{ case: "TC-UI-001", capability: "ui", flips: 3, last_result: "passed", last_at: "2026-06-03T09:00:00Z" }],
+  time_to_fix: {
+    overall: { fixes: 2, median_seconds: 6300 },
+    by_capability: [
+      { name: "beads", fixes: 0, median_seconds: null },
+      { name: "ui", fixes: 2, median_seconds: 6300 },
+    ],
+  },
+  still_failing: [
+    { case: "TC-BEADS-001", capability: "beads", failing_since: "2026-06-02T08:00:00Z", bug: "gin-console-3kd" },
+    { case: "TC-BEADS-002", capability: "beads", failing_since: "2026-06-03T08:00:00Z", bug: null },
+  ],
+  problems: [],
   ...fields,
 });

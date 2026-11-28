@@ -3,8 +3,8 @@ import { VELOCITY_COLORS } from "../colors";
 import { ChartBox, legendText } from "../ChartBox";
 import type { VelocityPoint } from "./velocity";
 
-const tick = { fill: "var(--color-muted-foreground)", fontSize: 12 };
-const tooltipStyle = { background: "var(--color-popover)", border: "1px solid var(--color-border)" };
+export const tick = { fill: "var(--color-muted-foreground)", fontSize: 12 };
+export const tooltipStyle = { background: "var(--color-popover)", border: "1px solid var(--color-border)" };
 
 const MARK = "var(--color-identity)";
 

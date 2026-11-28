@@ -117,6 +117,30 @@ describe("TestsPage", () => {
     }
   });
 
+  it("REQ-QA-018 the tabs Cases and Trends: Cases is selected by default, ?tab=trends selects Trends and does not fetch the cases", async () => {
+    const fetched = serve();
+    open("/tests?project=a");
+    await list();
+    expect(screen.getByRole("tab", { name: "Cases" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Trends" })).toHaveAttribute("aria-selected", "false");
+    cleanup();
+    fetched.mockClear();
+    open("/tests?project=a&tab=trends");
+    expect(await screen.findByText("Loading trends…")).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Trends" })).toHaveAttribute("aria-selected", "true");
+    expect(fetched.mock.calls.some(([u]) => String(u).startsWith("/api/qa/cases"))).toBe(false);
+  });
+
+  it("REQ-QA-018 the capability filter is shared: choosing Trends keeps it, and the Cases URL stays without tab", async () => {
+    serve();
+    open("/tests?project=a&capability=ui");
+    await list();
+    await userEvent.click(screen.getByRole("tab", { name: "Trends" }));
+    expect(url()).toBe("/tests?project=a&tab=trends&capability=ui");
+    await userEvent.click(screen.getByRole("tab", { name: "Cases" }));
+    expect(url()).toBe("/tests?project=a&capability=ui");
+  });
+
   it("REQ-QA-013 Project without gin-qa: the page says so and shows no table", async () => {
     serve(() => jsonResponse({ error: "gin-qa not found", cause: "missing" }, 502));
     open("/tests?project=qwikfone");
