@@ -4,16 +4,22 @@ import { navigate, useLocation } from "@/app/route";
 import { UnknownProject } from "@/app/UnknownProject";
 import { usePageTitle } from "@/app/usePageTitle";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Tabs, type TabItem } from "@/components/Tabs";
 import { Button } from "@/components/ui/button";
 import { fetchCases, RESULT_KEYS, testsHref, useFetched, type CaseList as Cases, type ResultKey } from "./api";
 import { CaseList } from "./CaseList";
 import { CountsTable } from "./CountsTable";
 import { caseFiltersToSearch, filterCases, parseCaseFilters, type CaseFilters } from "./filters";
 import { QaError } from "./QaError";
+import { TrendsTab } from "./TrendsTab";
 
 const SELECT = "min-w-0 max-w-full rounded border bg-background px-2 py-1 text-sm text-foreground";
 const RESULT_LABELS: Record<ResultKey, string> = { passed: "Passed", failed: "Failed", blocked: "Blocked", not_run: "Not run", outdated: "Outdated", other: "Other" };
-const NO_FILTERS: CaseFilters = { capability: null, type: null, result: null, q: "" };
+const NO_FILTERS = { capability: null, type: null, result: null, q: "" };
+const TABS: readonly TabItem<CaseFilters["tab"]>[] = [
+  { value: "cases", label: "Cases" },
+  { value: "trends", label: "Trends" },
+];
 
 /** REQ-QA-010, REQ-UI-124: the Tests page of the current project, written into the URL without adding a history entry. */
 export function TestsPage() {
@@ -50,27 +56,38 @@ export function TestsPage() {
 }
 
 function TestsView({ project, search }: { project: string; search: string }) {
-  const { state, retry } = useFetched(useCallback(() => fetchCases(project), [project]));
+  const filters = parseCaseFilters(search);
+  const change = (next: CaseFilters) => navigate(`/tests${caseFiltersToSearch(project, next)}`, { replace: true });
   return (
     <section className="flex min-w-0 flex-col gap-4">
       <h1 className="text-2xl font-semibold">Tests</h1>
-      {state.status === "loading" && <p className="text-muted-foreground">Loading cases…</p>}
-      {state.status === "error" && <QaError failure={state.failure} onRetry={retry} />}
-      {state.status === "ok" && (state.data.cases.length === 0 ? <p>No test cases yet. Write them with <code>/gin-qa:cases</code>.</p> : <Loaded project={project} search={search} data={state.data} />)}
+      <Tabs tabs={TABS} tab={filters.tab} onChange={(tab) => change({ ...filters, tab })} label="Tests views" />
+      <div role="tabpanel" id={`panel-${filters.tab}`} aria-labelledby={`tab-${filters.tab}`} className="flex min-w-0 flex-col gap-4">
+        {filters.tab === "trends" ? <TrendsTab project={project} filters={filters} onChange={change} /> : <CasesTab project={project} filters={filters} onChange={change} />}
+      </div>
     </section>
   );
 }
 
-function Loaded({ project, search, data }: { project: string; search: string; data: Cases }) {
-  const filters = parseCaseFilters(search);
-  const change = (next: CaseFilters) => navigate(`/tests${caseFiltersToSearch(project, next)}`, { replace: true });
+function CasesTab({ project, filters, onChange }: { project: string; filters: CaseFilters; onChange: (next: CaseFilters) => void }) {
+  const { state, retry } = useFetched(useCallback(() => fetchCases(project), [project]));
+  return (
+    <>
+      {state.status === "loading" && <p className="text-muted-foreground">Loading cases…</p>}
+      {state.status === "error" && <QaError failure={state.failure} onRetry={retry} />}
+      {state.status === "ok" && (state.data.cases.length === 0 ? <p>No test cases yet. Write them with <code>/gin-qa:cases</code>.</p> : <Loaded project={project} filters={filters} change={onChange} data={state.data} />)}
+    </>
+  );
+}
+
+function Loaded({ project, filters, change, data }: { project: string; filters: CaseFilters; change: (next: CaseFilters) => void; data: Cases }) {
   const rows = filterCases(data.cases, filters);
   const capabilities = data.counts.by_capability.map((row) => row.name);
   const types = data.counts.by_type.map((row) => row.name);
   return (
     <>
-      <CountsTable title="By capability" rows={data.counts.by_capability} groupKey="capability" onPick={(group, result) => change({ ...NO_FILTERS, capability: group, result })} />
-      <CountsTable title="By type" rows={data.counts.by_type} groupKey="type" onPick={(group, result) => change({ ...NO_FILTERS, type: group, result })} />
+      <CountsTable title="By capability" rows={data.counts.by_capability} groupKey="capability" onPick={(group, result) => change({ ...filters, ...NO_FILTERS, capability: group, result })} />
+      <CountsTable title="By type" rows={data.counts.by_type} groupKey="type" onPick={(group, result) => change({ ...filters, ...NO_FILTERS, type: group, result })} />
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
         <label className="flex items-center gap-1">
           Capability
@@ -113,7 +130,7 @@ function Loaded({ project, search, data }: { project: string; search: string; da
       {rows.length === 0 ? (
         <div className="flex flex-col items-start gap-2">
           <p>No cases match</p>
-          <Button variant="outline" size="sm" onClick={() => change(NO_FILTERS)}>
+          <Button variant="outline" size="sm" onClick={() => change({ ...filters, ...NO_FILTERS })}>
             Clear filters
           </Button>
         </div>

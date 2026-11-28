@@ -39,6 +39,23 @@ export type Readiness = {
   items: ReadinessItem[];
 };
 
+export type PassRatePoint = { date: string; passed: number; failed: number; rate: number | null };
+export type PassRateRow = { name: string; points: PassRatePoint[] };
+export type FlakyCase = { case: string; capability: string; flips: number; last_result: string; last_at: string };
+export type FixStats = { fixes: number; median_seconds: number | null };
+export type StillFailing = { case: string; capability: string; failing_since: string; bug: string | null };
+export type Trends = {
+  days: string[];
+  tz: string;
+  pass_rate: PassRateRow[];
+  flaky: FlakyCase[];
+  time_to_fix: { overall: FixStats; by_capability: (FixStats & { name: string })[] };
+  still_failing: StillFailing[];
+  problems: string[];
+};
+export const TREND_WINDOWS = [7, 30, 90] as const;
+export type TrendWindow = (typeof TREND_WINDOWS)[number];
+
 /** The results a count can be filtered on; `not_run` is the URL value of "not run". */
 export const RESULT_KEYS = ["passed", "failed", "blocked", "not_run", "outdated", "other"] as const;
 export type ResultKey = (typeof RESULT_KEYS)[number];
@@ -113,6 +130,25 @@ const isReadiness = (value: unknown): value is Readiness => {
   );
 };
 
+const isFixStats = (value: unknown) => isObject(value) && isFiniteNumber(field(value, "fixes")) && (field(value, "median_seconds") === null || isFiniteNumber(field(value, "median_seconds")));
+const isPassRatePoint = (value: unknown) =>
+  isObject(value) && isString(field(value, "date")) && has(value, ["passed", "failed"], isFiniteNumber) && (field(value, "rate") === null || isFiniteNumber(field(value, "rate")));
+const isTrends = (value: unknown): value is Trends => {
+  if (!isObject(value)) return false;
+  const fix = field(value, "time_to_fix");
+  return (
+    every(field(value, "days"), isString) &&
+    isString(field(value, "tz")) &&
+    every(field(value, "pass_rate"), (row) => isObject(row) && isString(field(row, "name")) && every(field(row, "points"), isPassRatePoint)) &&
+    every(field(value, "flaky"), (row) => isObject(row) && has(row, ["case", "capability", "last_result", "last_at"], isString) && isFiniteNumber(field(row, "flips"))) &&
+    isObject(fix) &&
+    isFixStats(field(fix, "overall")) &&
+    every(field(fix, "by_capability"), (row) => isFixStats(row) && isObject(row) && isString(field(row, "name"))) &&
+    every(field(value, "still_failing"), (row) => isObject(row) && has(row, ["case", "capability", "failing_since"], isString) && isStringOrNull(field(row, "bug"))) &&
+    every(field(value, "problems"), isString)
+  );
+};
+
 async function get<T>(path: string, check: (value: unknown) => value is T): Promise<T> {
   const response = await apiFetch(path);
   const body: unknown = await response.json().catch(() => null);
@@ -129,6 +165,9 @@ const enc = encodeURIComponent;
 export const fetchCases = (project: string) => get(`/api/qa/cases?project=${enc(project)}`, isCaseList);
 export const fetchCase = (project: string, id: string) => get(`/api/qa/cases/${enc(project)}/${enc(id)}`, isCaseDetail);
 export const fetchReadiness = (project: string, milestone: string) => get(`/api/qa/readiness/${enc(project)}/${enc(milestone)}`, isReadiness);
+export const fetchTrends = (project: string, days: TrendWindow, tz: string, capability: string | null) =>
+  get(`/api/qa/trends/${enc(project)}?${new URLSearchParams({ days: String(days), tz, ...(capability ? { capability } : {}) }).toString()}`, isTrends);
+export const browserZone = (): string => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 export const screenshotUrl = (project: string, id: string, n: number): string => `/api/qa/cases/${enc(project)}/${enc(id)}/run/steps/${n}/screenshot`;
 export const testsHref = (project: string, extra: Readonly<Record<string, string>> = {}): string => `/tests?${new URLSearchParams({ project, ...extra }).toString()}`;
 export const caseHref = (project: string, id: string): string => `/tests/${enc(project)}/${enc(id)}`;
