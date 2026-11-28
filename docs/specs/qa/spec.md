@@ -7,11 +7,13 @@
 - [case-run-activity](diagrams/case-run-activity.md)
 - [readiness-activity](diagrams/readiness-activity.md)
 - [readiness-state](diagrams/readiness-state.md)
+- [trends-activity](diagrams/trends-activity.md)
 
 ## Use Cases
 
 - [check-release-readiness](use-cases/check-release-readiness.md)
 - [review-test-results](use-cases/review-test-results.md)
+- [review-test-trends](use-cases/review-test-trends.md)
 
 ## Requirements
 
