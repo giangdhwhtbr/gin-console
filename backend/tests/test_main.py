@@ -96,3 +96,39 @@ def test_main_host_env_still_hits_guard(
     monkeypatch.delenv(ALLOW_NON_LOOPBACK_ENV, raising=False)
     assert main() == 1
     assert "0.0.0.0" in capsys.readouterr().err
+
+
+# REQ-SERVER-013
+def test_main_check_contract_dispatches(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[list[str]] = []
+
+    def fake_contract(argv: list[str]) -> int:
+        seen.append(argv)
+        return 1
+
+    monkeypatch.setattr("gin_console.__main__.contract.main", fake_contract)
+    assert main(["check-contract", "--project", "x"]) == 1
+    assert seen == [["--project", "x"]]
+
+
+# REQ-CONFIG-010
+def test_main_configures_gin_before_serving(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from gin_console.projects.collect import configure_gin
+
+    configured: list[tuple[Path | None, Path | None]] = []
+    monkeypatch.setattr(
+        "gin_console.__main__.configure_gin", lambda p, c: configured.append((p, c))
+    )
+    monkeypatch.setattr("gin_console.__main__.uvicorn.run", lambda app, host, port: None)
+    config = tmp_path / "config.yaml"
+    config.write_text("gin: {path: /opt/gin/gin}\nprojects: []\n")
+    monkeypatch.setenv(CONFIG_ENV, str(config))
+    monkeypatch.delenv(ALLOW_NON_LOOPBACK_ENV, raising=False)
+    monkeypatch.delenv(HOST_ENV, raising=False)
+    try:
+        assert main() == 0
+    finally:
+        configure_gin(None, None)
+    assert configured == [(Path("/opt/gin/gin"), config)]

@@ -247,3 +247,161 @@ def test_server_006_epics_carry_status(monkeypatch: pytest.MonkeyPatch, tmp_path
         "e1": "in_progress",
         "e2": "open",
     }
+
+
+@pytest.fixture
+def reset_gin() -> Any:
+    """`configure_gin` sets module state; every test that sets it gets it cleared."""
+    from gin_console.projects.collect import configure_gin
+
+    yield
+    configure_gin(None, None)
+
+
+# REQ-SERVER-014 (Session id removed)
+def test_server_014_child_env_drops_session_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    from gin_console.projects.collect import _child_env
+
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "abc")
+    monkeypatch.setenv("KEEP_ME", "yes")
+    env = _child_env()
+    assert "CLAUDE_CODE_SESSION_ID" not in env
+    assert env["KEEP_ME"] == "yes"
+
+
+# REQ-SERVER-014 (Session id removed)
+def test_server_014_gin_call_runs_without_session_id(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from gin_console.projects.collect import run_json
+
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "abc")
+    fake = Fake()
+    patch(monkeypatch, fake)
+    run_json(["gin", "state"], tmp_path)
+    assert "CLAUDE_CODE_SESSION_ID" not in fake.envs[0]
+
+
+# REQ-CONFIG-010 (Default)
+def test_config_010_default_runs_gin_from_path(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, reset_gin: None
+) -> None:
+    from gin_console.projects.collect import configure_gin, run_json
+
+    configure_gin(None, None)
+    fake = Fake()
+    patch(monkeypatch, fake)
+    run_json(["gin", "state"], tmp_path)
+    assert fake.calls == [["gin", "state"]]
+
+
+# REQ-CONFIG-010 (Set)
+@pytest.mark.skipif(sys.platform == "win32", reason="runs a shell script")
+def test_config_010_configured_path_is_the_process_started(
+    tmp_path: Path, reset_gin: None
+) -> None:
+    from gin_console.projects.collect import configure_gin, run_json
+
+    script = tmp_path / "mygin"
+    script.write_text('#!/bin/sh\necho \'{"argv": "\'"$*"\'"}\'\n')
+    script.chmod(0o755)
+    configure_gin(script, tmp_path / "config.yaml")
+    assert run_json(["gin", "state", "--format", "json"], tmp_path) == {
+        "argv": "state --format json"
+    }
+
+
+# REQ-CONFIG-010 (Set)
+def test_config_010_configured_path_replaces_gin_only(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, reset_gin: None
+) -> None:
+    from gin_console.projects.collect import configure_gin, run_json
+
+    configure_gin(Path("/opt/gin/gin"), None)
+    fake = Fake()
+    patch(monkeypatch, fake)
+    run_json(["gin", "state"], tmp_path)
+    run_json(["gin-qa", "state"], tmp_path)
+    assert fake.calls == [["/opt/gin/gin", "state"], ["gin-qa", "state"]]
+
+
+# REQ-CONFIG-010 (Set)
+def test_config_010_configured_path_without_shim_suffix_runs_via_bash_on_windows(
+    monkeypatch: pytest.MonkeyPatch, reset_gin: None
+) -> None:
+    from gin_console.projects.collect import _resolve_cmd, configure_gin
+
+    monkeypatch.setattr(sys, "platform", "win32")
+    bash = r"C:\Git\bin\bash.exe"
+    monkeypatch.setattr("shutil.which", lambda name: bash if "bash" in name else None)
+    configure_gin(Path("/opt/gin/gin"), None)
+    assert _resolve_cmd(["gin", "state"]) == [bash, str(Path("/opt/gin/gin")), "state"]
+    configure_gin(Path(r"C:\gin\gin.cmd"), None)
+    assert _resolve_cmd(["gin", "state"]) == [str(Path(r"C:\gin\gin.cmd")), "state"]
+
+
+# REQ-CONFIG-010 (Not found)
+def test_config_010_not_found_names_gin_path_and_config(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, reset_gin: None
+) -> None:
+    from gin_console.projects.collect import CollectError, configure_gin, run_json
+
+    configure_gin(None, tmp_path / "config.yaml")
+    patch(monkeypatch, Fake(fail={"gin": FileNotFoundError()}))
+    with pytest.raises(CollectError) as exc:
+        run_json(["gin", "state"], tmp_path)
+    assert str(exc.value) == f"gin not found: set gin.path in {tmp_path / 'config.yaml'}"
+
+
+# REQ-CONFIG-010 (Not found)
+def test_config_010_not_found_without_config_file_and_other_commands(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, reset_gin: None
+) -> None:
+    from gin_console.projects.collect import CollectError, configure_gin, run_json
+
+    configure_gin(None, None)
+    patch(monkeypatch, Fake(fail={"gin": FileNotFoundError(), "bd": FileNotFoundError()}))
+    with pytest.raises(CollectError) as exc:
+        run_json(["gin", "state"], tmp_path)
+    assert str(exc.value) == "gin not found"
+    with pytest.raises(CollectError) as exc:
+        run_json(["bd", "list"], tmp_path)
+    assert str(exc.value) == "bd not found"
+
+
+# REQ-SERVER-006
+def test_server_006_parse_epic_workflow_matches_collect(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from gin_console.projects.collect import collect_epic_workflow, parse_epic_workflow
+    from gin_console.projects.models import EpicWorkflow
+
+    state = {
+        "stage": "plan",
+        "gates": {"requirement_confirmed": "satisfied"},
+        "warnings": ["w", 3],
+        "review_waivers": [{"task_id": "t1", "reason": "r", "actor": "a"}, "junk"],
+    }
+    patch(monkeypatch, Fake(epic_states={"e1": state}))
+    collected = collect_epic_workflow(tmp_path, "e1")
+    assert isinstance(collected, EpicWorkflow)
+    assert parse_epic_workflow(state) == collected
+    assert collected.warnings == ["w"] and len(collected.review_waivers) == 1
+
+
+# REQ-SERVER-006
+def test_server_006_collect_epic_workflow_still_returns_block_error(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    patch(monkeypatch, Fake(epic_states={"e1": {"stage": "plan"}}))
+    result = collect_block(tmp_path)
+    assert isinstance(result, BlockError) and result.error.startswith("gin: unexpected output")
+    patch(monkeypatch, Fake(fail={"gin": 1}))
+    result = collect_block(tmp_path)
+    assert isinstance(result, BlockError) and result.error.startswith("gin printed invalid JSON")
+
+
+def collect_block(path: Path) -> Any:
+    from gin_console.projects.collect import collect_epic_workflow
+
+    return collect_epic_workflow(path, "e1")

@@ -5,7 +5,7 @@ services:
       args:
         APP_UID: ${APP_UID:-1002}
         APP_GID: ${APP_GID:-1002}
-        GIN_WORKFLOW_REF: ${GIN_WORKFLOW_REF:-v1.4.2}
+        GIN_WORKFLOW_REF: ${GIN_WORKFLOW_REF:-v3.5.4}
     image: gin-console:local
     user: "${APP_UID:-1002}:${APP_GID:-1002}"
     restart: on-failure:3

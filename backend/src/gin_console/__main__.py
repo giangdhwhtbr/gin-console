@@ -13,12 +13,17 @@ from gin_console.config import (
     load_settings,
     resolve_config_path,
 )
+from gin_console.projects import contract
+from gin_console.projects.collect import configure_gin
 
 
 def main(argv: Sequence[str] = ()) -> int:
-    """`user ...` manages the users file; with no arguments the server starts."""
+    """`user ...` manages the users file, `check-contract ...` checks the gin JSON; with no
+    arguments the server starts."""
     if list(argv[:1]) == ["user"]:
         return cli.main(argv[1:])
+    if list(argv[:1]) == ["check-contract"]:
+        return contract.main(argv[1:])
     try:
         settings = load_settings(resolve_config_path(os.environ))
         host = effective_host(settings, os.environ)
@@ -26,6 +31,7 @@ def main(argv: Sequence[str] = ()) -> int:
     except ConfigError as exc:
         print(f"gin-console: {exc}", file=sys.stderr)
         return 1
+    configure_gin(settings.gin.path, resolve_config_path(os.environ))
     uvicorn.run(create_app(settings), host=host, port=settings.server.port)
     return 0
 

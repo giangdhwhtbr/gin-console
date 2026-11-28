@@ -132,6 +132,12 @@ class AuthSettings(BaseModel):
         return parse_duration(value, 300)
 
 
+class GinSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    path: AbsolutePath | None = None  # the gin executable; unset: found on PATH (REQ-CONFIG-010)
+
+
 class Settings(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -139,6 +145,7 @@ class Settings(BaseModel):
     beads: BeadsSettings = Field(default_factory=BeadsSettings)
     overview: OverviewSettings = Field(default_factory=OverviewSettings)
     projects: list[ProjectEntry] = Field(default_factory=list)
+    gin: GinSettings = Field(default_factory=GinSettings)
     auth: AuthSettings = Field(default_factory=AuthSettings)
 
     @model_validator(mode="after")

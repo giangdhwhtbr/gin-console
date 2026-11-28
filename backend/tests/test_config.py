@@ -388,3 +388,27 @@ def test_config_006_interval_messages(tmp_path: Path, text: str, message: str) -
     with pytest.raises(ConfigError, match=message) as exc:
         load_settings(path)
     assert "0 or at most" not in str(exc.value)
+
+
+# REQ-CONFIG-010 (Default)
+def test_config_010_default_has_no_gin_path(tmp_path: Path) -> None:
+    assert load_settings(write(tmp_path, "projects: []\n")).gin.path is None
+
+
+# REQ-CONFIG-010 (Set)
+def test_config_010_absolute_path(tmp_path: Path) -> None:
+    settings = load_settings(write(tmp_path, "gin: {path: /opt/gin/gin}\nprojects: []\n"))
+    assert settings.gin.path == Path("/opt/gin/gin")
+
+
+# REQ-CONFIG-010 (Relative path)
+def test_config_010_relative_path_names_gin_path(tmp_path: Path) -> None:
+    with pytest.raises(ConfigError, match=r"gin\.path") as exc:
+        load_settings(write(tmp_path, "gin: {path: bin/gin}\nprojects: []\n"))
+    assert "absolute" in str(exc.value)
+
+
+# REQ-CONFIG-010 (Relative path)
+def test_config_010_unknown_key_in_gin_section_refused(tmp_path: Path) -> None:
+    with pytest.raises(ConfigError, match="gin"):
+        load_settings(write(tmp_path, "gin: {exe: /opt/gin/gin}\nprojects: []\n"))

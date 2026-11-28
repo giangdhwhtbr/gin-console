@@ -159,6 +159,8 @@ projects:
     path: /home/username/projects/my-project
 ```
 
+The console runs the `gin` found on `PATH`. To run another file, add an optional top-level `gin` section with an absolute path: `gin: {path: /opt/gin/gin}`. A relative path stops the console at startup with a message naming `gin.path`. When `gin` cannot be run, the page error names `gin.path` and the config file.
+
 #### 4. Install Dependencies & Build
 
 ```bash
@@ -199,6 +201,37 @@ Check the health and smoke test:
 ```bash
 scripts/docker-smoke.sh
 ```
+
+The image installs gin-workflow `v3.5.4`. Set `GIN_WORKFLOW_REF` in `.env` to build with another tag.
+
+---
+
+## Contract check
+
+After installing a new gin-workflow release, run the contract check to learn whether the console still reads the JSON of the five `gin` calls it makes. It needs no running server and writes nothing.
+
+```bash
+uv run --directory backend -m gin_console check-contract [--project NAME] [--epic ID]... [--milestone ID]
+```
+
+It runs these calls in the project (default: the first configured one), through the same code and environment as the server, and parses each output with the console's own parsing:
+
+- `gin state --workflow-id <epic> --format json`, for each chosen epic.
+- `gin milestone list --all --json`.
+- `gin milestone show <milestone> --json`.
+- `gin specs trace --all --format json`.
+- `gin specs reqs --format json`.
+
+Without `--epic`, the check takes the newest epic of each kind (capability, technical, parity) in the project's `.beads/issues.jsonl` and prints `not covered` for a kind with no epic. Without `--milestone`, it takes the first milestone of the list, and skips `show` when the list is empty.
+
+Each call prints `ok`, or `FAILED` with one line per problem:
+
+- `missing: <path>` for a key the console needs and the output lacks.
+- `type: <path> (<message>)` for a key of another type.
+- `error: <message>` for a call that did not run or whose output was not understood.
+- `new: <path>` for a key the console does not read, inside an object it reads. A `new:` line is a note: it does not fail the check.
+
+The exit status is 0 when no call failed, 1 when a call failed or printed `missing:` or `type:`, and 2 when the check could not start: a wrong argument, an unknown project, no project, or a config that does not load.
 
 ---
 

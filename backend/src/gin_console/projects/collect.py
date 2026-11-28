@@ -14,6 +14,11 @@ from gin_console.projects.models import BlockError, EpicWorkflow, ReviewWaiver
 
 TIMEOUT_SECONDS = 10
 
+# simplified: set once at startup by `configure_gin`, so no runner signature changes; a
+# second gin location per request would need this passed down instead
+_gin_path: Path | None = None
+_config_file: Path | None = None
+
 
 class CollectError(Exception):
     """A command failed; the message is shown to the operator in the UI."""
@@ -34,6 +39,7 @@ def _child_env() -> dict[str, str]:
     """Environment without the console's own venv: gin's `env python3` shebang must
     resolve to the system Python, which has its dependencies, not ours."""
     env = dict(os.environ)
+    env.pop("CLAUDE_CODE_SESSION_ID", None)  # a gin run must not join the console's session
     venv = env.pop("VIRTUAL_ENV", None)
     if venv and "PATH" in env:
         is_win = sys.platform == "win32" or "\\" in venv or (len(venv) >= 2 and venv[1] == ":")
@@ -64,10 +70,23 @@ def _find_bash() -> str | None:
     return None
 
 
+def configure_gin(path: Path | None, config_file: Path | None) -> None:
+    """Run `gin` from `path` (`gin.path` of the config); without one, find it as usual.
+    `config_file` is named in the message when gin cannot be found."""
+    global _gin_path, _config_file
+    _gin_path, _config_file = path, config_file
+
+
 def _resolve_cmd(cmd: list[str]) -> list[str]:
     """Adapt commands on Windows where shell scripts cannot be spawned directly."""
     if not cmd:
         return cmd
+    if cmd[0] == "gin" and _gin_path is not None:
+        if sys.platform == "win32" and _gin_path.suffix.lower() not in {".cmd", ".bat", ".exe"}:
+            bash = _find_bash()
+            if bash:
+                return [bash, str(_gin_path), *cmd[1:]]
+        return [str(_gin_path), *cmd[1:]]
     if sys.platform == "win32" and cmd[0] in {"gin", "gin-qa"}:
         # install.ps1 puts a gin.cmd (gin-qa.cmd) shim on PATH; CreateProcess finds it only by
         # full name
@@ -94,6 +113,8 @@ def _run(cmd: list[str], cwd: Path, timeout: float) -> "subprocess.CompletedProc
             check=False,
         )
     except FileNotFoundError:
+        if cmd[0] == "gin" and _config_file is not None:
+            raise CollectError(f"gin not found: set gin.path in {_config_file}") from None
         raise CollectError(f"{cmd[0]} not found") from None
     except subprocess.TimeoutExpired:
         raise CollectError(f"{cmd[0]} timed out") from None
@@ -151,6 +172,17 @@ def _waivers(value: Any) -> list[ReviewWaiver]:
     return [w for w in items if w is not None]
 
 
+def parse_epic_workflow(data: Any) -> EpicWorkflow:
+    """The workflow of an epic from the JSON of `gin state`; raises KeyError, TypeError or
+    ValidationError when the output is not what the console reads."""
+    return EpicWorkflow(
+        stage=data["stage"],
+        gates=data["gates"],
+        warnings=_strings(data.get("warnings")),
+        review_waivers=_waivers(data.get("review_waivers")),
+    )
+
+
 def collect_epic_workflow(
     path: Path, epic_id: str, *, timeout: float = TIMEOUT_SECONDS
 ) -> EpicWorkflow | BlockError:
@@ -161,12 +193,7 @@ def collect_epic_workflow(
             json_on_failure=True,
             timeout=timeout,
         )
-        return EpicWorkflow(
-            stage=data["stage"],
-            gates=data["gates"],
-            warnings=_strings(data.get("warnings")),
-            review_waivers=_waivers(data.get("review_waivers")),
-        )
+        return parse_epic_workflow(data)
     except CollectError as exc:
         return BlockError(error=str(exc))
     except (KeyError, TypeError, ValidationError) as exc:

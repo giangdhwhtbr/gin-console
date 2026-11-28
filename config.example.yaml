@@ -10,6 +10,9 @@ server:
 # Older installs refuse this key.
 # overview:
 #   aging_days: 3
+# The gin executable to run (absolute path). Without it, `gin` is found on PATH.
+# gin:
+#   path: /opt/gin/gin
 # Sign-in (off by default). Create users first with `python -m gin_console user add`;
 # with `enabled: true` the console refuses to start without a valid users file.
 # auth:
